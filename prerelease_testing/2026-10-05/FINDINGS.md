@@ -4,7 +4,11 @@ User-directed disposition is recorded in [issue triage](issue-triage/README.md):
 findings 1–3 link to the supplied enterprise references, 4–8 have filed issues,
 and 9–10 are ignored as requested. The original evidence remains below.
 
-## Confirmed release regressions
+The [published enterprise a3 rerun](enterprise/a3/REPORT.md) confirms findings
+**1–3 resolved** in the tested alpha combination. New observations are appended
+as 12–14; no new issues or external comments were filed during the rerun.
+
+## Confirmed a2 release regressions, resolved in a3
 
 1. **P1 — Enterprise `rxe.field` no longer becomes a State Var.** With
    `reflex==0.10.0a1` and `reflex-enterprise==0.9.7a2`, rendering
@@ -143,11 +147,52 @@ and 9–10 are ignored as requested. The original evidence remains below.
     A1 was not executed, so this is a **preexisting source-level automation
     limitation observed on a2**, not a demonstrated new release regression.
 
+## Published enterprise a3 follow-up
+
+12. **P1 — A protected async computed value does not restore on a public page
+    with Reflex 0.10.0a1.** Enterprise a3's full auth suite passes 21/22 on
+    alpha and 22/22 on stable. A small identical-source probe using core State
+    fields, `rxe.var` and an awaited sibling-State authorization check confirms
+    3/3 alpha failures and 3/3 stable passes: log Alice in on `/dashboard`,
+    observe `async-admin-data`, then fully navigate to public `/` and reload.
+    Alpha retains `async-admin-placeholder` after 15 seconds; sync protected
+    values and Alice's identity remain valid. No page/HTTP error or backend
+    traceback accompanies it. This is a confirmed alpha/stable compatibility
+    difference, **not proven newly introduced by a3**, since the a2 alpha full
+    app could not compile. [Control report and minimal repro](enterprise/a3/auth-stable/README.md),
+    [full alpha suite and independent repeats](enterprise/a3/auth-alpha/REPORT.md).
+
+13. **P2 — Combined iframe login and pending protected-event replay stalls.**
+    With default scopes, enter `/iframe` anonymously, click Reveal in the child,
+    sign Alice in via the popup and let it close. The child receives the app's
+    post-auth message but stays on `/login?redirect_to=%2F`, preserving pending
+    event storage. Three focused alpha repeats fail after ten extra seconds;
+    manual navigation of that same child to `/` replays and consumes the event
+    in all three. The enhanced stable driver fails the same combined case;
+    ordinary pending replay and direct iframe login pass. Extra-scope alpha
+    passes the combination. This is **shared with stable**, with no a2 baseline
+    for the newly combined flow. [Repro and message/storage evidence](enterprise/a3/auth-alpha/REPORT.md),
+    [stable control](enterprise/a3/auth-stable/README.md).
+
+14. **P2 — Default production MCP endpoint returns 405 before authentication.**
+    Public full-stack production returns 405 for `POST /_reflex/mcp` with no or
+    fabricated bearer; dev redirects to the expected authentication response.
+    `POST /_reflex/mcp/` returns 401 and supports the complete session-isolation/
+    mutation/redaction tests. Fresh minimal public-CLI a2/a3 comparisons with
+    otherwise identical 104-package alpha graphs reproduce this boundary on
+    both versions. This is **preexisting in the tested a2/core-alpha combination**.
+    The slash variant is a diagnostic and does not convert the default-route
+    failure into a pass. [Repro, wire comparison and production contexts](enterprise/a3/components/REPORT.md).
+
+No new issues or external comments were filed for 12–14. Historical finding 11
+also reproduces in the [a3 Free-tier matrix](enterprise/a3/free_tier/REPORT.md).
+
 ## Triage and rerun guidance
 
-Findings 1–3 block enterprise compatibility acceptance. Repeat the same published
-wheel pairs after release-owner fixes; do not install a patched checkout to
-claim prerelease validation. Findings 4–7 need followup with their existing
+Findings 1–3 blocked a2 compatibility and are now confirmed resolved on published
+a3. Finding 12 remains an alpha compatibility blocker. Repeat published wheel
+pairs after release-owner fixes; do not install a patched checkout to claim
+prerelease validation. Findings 4–7 need followup with their existing
 artifacts and classifications. A visually successful grid or progress test is
 insufficient when console/ARIA checks fail. Hosting initial-auth wording and the
 migration link have separate dispositions in the issue-triage record.

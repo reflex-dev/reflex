@@ -1,0 +1,30 @@
+WARN `--no-project` was provided, but no project was found
+{"case": "profile_login_reveal_logout", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8152/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8152/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8152/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8152/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": []}
+{"case": "anonymous_event_replay", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8152/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": []}
+{"case": "iframe_popup", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8152/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8152/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": [], "frame_observations": [{"url": "http://localhost:3152/", "text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile", "pending_event": null}]}
+Stable auth_min case iframe_pending_event_replay failed
+Traceback (most recent call last):
+  File "/private/tmp/reflex-enterprise-a3-20261005-auth-stable/drive_auth_min.py", line 157, in main
+    expect(frame.locator("#message")).to_have_text("revealed-alice")
+  File "/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 19981, in to_have_text
+    self._sync(
+  File "/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/_impl/_assertions.py", line 559, in to_have_text
+    await self._expect_impl(
+  File "/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/_impl/_assertions.py", line 83, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to have text 'revealed-alice'
+Actual value: <element(s) not found> 
+Call log:
+  - Expect "to_have_text" with timeout 5000ms
+  - waiting for locator("iframe").content_frame.locator("#message")
+
+{"case": "iframe_pending_event_replay", "passed": false, "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a3-20261005-auth-stable/drive_auth_min.py\", line 157, in main\n    expect(frame.locator(\"#message\")).to_have_text(\"revealed-alice\")\n  File \"/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 19981, in to_have_text\n    self._sync(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 559, in to_have_text\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to have text 'revealed-alice'\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_have_text\" with timeout 5000ms\n  - waiting for locator(\"iframe\").content_frame.locator(\"#message\")\n\n", "url": "http://localhost:3152/iframe", "page_errors": [], "failed_requests": [{"url": "http://localhost:8152/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8152/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": [], "frame_observations": [{"url": "http://localhost:3152/login?redirect_to=%2F", "text": "Sign in\nLogin with Generic", "pending_event": "{\"name\": \"reflex___state____state.auth_min___auth_min____profile_state.reveal\", \"payload\": {}, \"path\": \"/\", \"ts\": 1791248874.642505, \"id\": \"ed1eae7fd49f41bd92703ca53da10d6b\"}"}]}
+Traceback (most recent call last):
+  File "/private/tmp/reflex-enterprise-a3-20261005-auth-stable/drive_auth_min.py", line 217, in <module>
+    main()
+  File "/private/tmp/reflex-enterprise-a3-20261005-auth-stable/drive_auth_min.py", line 213, in main
+    assert all(r["passed"] for r in results), "A stable auth-flow case failed"
+AssertionError: A stable auth-flow case failed

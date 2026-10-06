@@ -1,0 +1,62 @@
+[
+  {
+    "attempt": 1,
+    "page_errors": [],
+    "passed": false,
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a3-20261005-auth-alpha/apps/auth_min/../../recheck_iframe.py\", line 47, in main\n    expect(frame.locator(\"#message\")).to_have_text(\"revealed-alice\")\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 19981, in to_have_text\n    self._sync(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 559, in to_have_text\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to have text 'revealed-alice'\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_have_text\" with timeout 5000ms\n  - waiting for locator(\"iframe\").content_frame.locator(\"#message\")\n\n",
+    "delivered_after_extra_wait": false,
+    "frame_url": "http://localhost:3132/login?redirect_to=%2F",
+    "pending_event": "{\"name\": \"reflex___state____state.auth_min___auth_min____profile_state.reveal\", \"payload\": {}, \"path\": \"/\", \"ts\": 1791248478.7313569, \"id\": \"9955c20401b545afa81e68c255411617\"}",
+    "received_message_types": [
+      {
+        "origin": "http://localhost:3132",
+        "type": "post_auth_generic"
+      }
+    ],
+    "frame_text": "Sign in\nLogin with Generic",
+    "direct_child_navigation_recovery": {
+      "replayed": true,
+      "pending_consumed": true
+    }
+  },
+  {
+    "attempt": 2,
+    "page_errors": [],
+    "passed": false,
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a3-20261005-auth-alpha/apps/auth_min/../../recheck_iframe.py\", line 47, in main\n    expect(frame.locator(\"#message\")).to_have_text(\"revealed-alice\")\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 19981, in to_have_text\n    self._sync(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 559, in to_have_text\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to have text 'revealed-alice'\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_have_text\" with timeout 5000ms\n  - waiting for locator(\"iframe\").content_frame.locator(\"#message\")\n\n",
+    "delivered_after_extra_wait": false,
+    "frame_url": "http://localhost:3132/login?redirect_to=%2F",
+    "pending_event": "{\"name\": \"reflex___state____state.auth_min___auth_min____profile_state.reveal\", \"payload\": {}, \"path\": \"/\", \"ts\": 1791248496.344311, \"id\": \"b703590b90764874a48d191517b86118\"}",
+    "received_message_types": [
+      {
+        "origin": "http://localhost:3132",
+        "type": "post_auth_generic"
+      }
+    ],
+    "frame_text": "Sign in\nLogin with Generic",
+    "direct_child_navigation_recovery": {
+      "replayed": true,
+      "pending_consumed": true
+    }
+  },
+  {
+    "attempt": 3,
+    "page_errors": [],
+    "passed": false,
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a3-20261005-auth-alpha/apps/auth_min/../../recheck_iframe.py\", line 47, in main\n    expect(frame.locator(\"#message\")).to_have_text(\"revealed-alice\")\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 19981, in to_have_text\n    self._sync(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 559, in to_have_text\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to have text 'revealed-alice'\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_have_text\" with timeout 5000ms\n  - waiting for locator(\"iframe\").content_frame.locator(\"#message\")\n\n",
+    "delivered_after_extra_wait": false,
+    "frame_url": "http://localhost:3132/login?redirect_to=%2F",
+    "pending_event": "{\"name\": \"reflex___state____state.auth_min___auth_min____profile_state.reveal\", \"payload\": {}, \"path\": \"/\", \"ts\": 1791248512.8936472, \"id\": \"ccb772a83bed47108cd0bfd870bdf678\"}",
+    "received_message_types": [
+      {
+        "origin": "http://localhost:3132",
+        "type": "post_auth_generic"
+      }
+    ],
+    "frame_text": "Sign in\nLogin with Generic",
+    "direct_child_navigation_recovery": {
+      "replayed": true,
+      "pending_consumed": true
+    }
+  }
+]

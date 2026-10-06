@@ -1,0 +1,323 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packa
+ges/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='components', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3131, frontend_path='', 
+backend_port=8131, backend_path='', api_url='http://localhost:8131', 
+deploy_url='http://localhost:3131', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'backend_port', 'bun_path', 'app_name', 
+'api_url', 'telemetry_enabled', 'plugins', 'frontend_port'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-components/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packa
+ges/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='components', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3131, frontend_path='', 
+backend_port=8131, backend_path='', api_url='http://localhost:8131', 
+deploy_url='http://localhost:3131', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'backend_port', 'bun_path', 'app_name', 
+'api_url', 'telemetry_enabled', 'plugins', 'frontend_port'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-components/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+─────────────────────────── Initializing components ────────────────────────────
+Debug: Creating /private/tmp/reflex-enterprise-a3-20261005-components-runtime
+Debug: Ensuring reflex installation id.
+Debug: Creating /private/tmp/reflex-enterprise-a3-20261005-components-runtime
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packag
+es/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-enterprise-a3-20261005-components-app/app/reflex.lock/packag
+e.json
+Debug: Initializing the bun config file.
+Debug: Getting best registry...
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.068 seconds
+Debug: Latency of https://registry.npmjs.org: 68013
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.024 seconds
+Debug: Latency of https://registry.npmjs.org: 24183
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.024 seconds
+Debug: Latency of https://registry.npmjs.org: 23830
+Debug: Average latency of https://registry.npmjs.org: 38675
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.382 seconds
+Debug: Latency of https://registry.npmmirror.com: 381557
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.196 seconds
+Debug: Latency of https://registry.npmmirror.com: 195811
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.183 seconds
+Debug: Latency of https://registry.npmmirror.com: 182517
+Debug: Average latency of https://registry.npmmirror.com: 253295
+Debug: Best registry: https://registry.npmjs.org
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 210573843132614574806648559519719262838.
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized components. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value backend_host with env var BACKEND_HOST=127.0.0.1
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3131 is in use.
+Debug: Checking if Frontend port: 3131 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3131 is not in use.
+Debug: Checking if Backend port: 8131 is in use.
+Debug: Checking if Backend port: 8131 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8131 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value backend_host with env var BACKEND_HOST=127.0.0.1
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packa
+ges/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='components', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3131, frontend_path='', 
+backend_port=8131, backend_path='', api_url='http://localhost:8131', 
+deploy_url='http://localhost:3131', backend_host='127.0.0.1', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'backend_port', 'api_url', 'loglevel', 
+'bun_path', 'backend_host', 'telemetry_enabled', 'plugins', 'frontend_port'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-components/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3131 is in use.
+Debug: Checking if Frontend port: 3131 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3131 is not in use.
+Debug: Checking if Backend port: 8131 is in use.
+Debug: Checking if Backend port: 8131 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8131 is not in use.
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/spawn.py", line 246, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/spawn.py", line 297, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-app/app/cli_entry.py", line 9, in <module>
+    cli()
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/reflex/reflex.py", line 812, in run
+    _run(
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/reflex/reflex.py", line 686, in _run
+    _run_dev(running_mode, frontend_port, backend_port, backend_host)
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/reflex/reflex.py", line 439, in _run_dev
+    _compile_app()
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/reflex/reflex.py", line 369, in _compile_app
+    compile_future = executor.submit(
+                     ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/process.py", line 835, in submit
+    self._adjust_process_count()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/process.py", line 794, in _adjust_process_count
+    self._spawn_process()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/process.py", line 812, in _spawn_process
+    p.start()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/process.py", line 121, in start
+    self._popen = self._Popen(self)
+                  ^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/context.py", line 289, in _Popen
+    return Popen(process_obj)
+           ^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/popen_spawn_posix.py", line 32, in __init__
+    super().__init__(process_obj)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/popen_fork.py", line 19, in __init__
+    self._launch(process_obj)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/popen_spawn_posix.py", line 42, in _launch
+    prep_data = spawn.get_preparation_data(process_obj._name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/spawn.py", line 164, in get_preparation_data
+    _check_not_importing_main()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/spawn.py", line 140, in _check_not_importing_main
+    raise RuntimeError('''
+RuntimeError: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+Traceback (most recent call last):
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-app/app/cli_entry.py", line 9, in <module>
+    cli()
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/reflex/reflex.py", line 812, in run
+    _run(
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/reflex/reflex.py", line 686, in _run
+    _run_dev(running_mode, frontend_port, backend_port, backend_host)
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/reflex/reflex.py", line 439, in _run_dev
+    _compile_app()
+  File "/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packages/reflex/reflex.py", line 372, in _compile_app
+    return_result = compile_future.result()
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+concurrent.futures.process.BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.

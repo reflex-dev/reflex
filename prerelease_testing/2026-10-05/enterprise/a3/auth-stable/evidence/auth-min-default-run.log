@@ -1,0 +1,451 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/
+reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='auth_min', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3152, frontend_path='', 
+backend_port=8152, backend_path='', api_url='http://localhost:8152', 
+deploy_url='http://localhost:3152', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'telemetry_enabled', 
+'frontend_port', 'bun_path', 'backend_port', 'loglevel'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.12 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-stable/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/
+reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='auth_min', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3152, frontend_path='', 
+backend_port=8152, backend_path='', api_url='http://localhost:8152', 
+deploy_url='http://localhost:3152', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'telemetry_enabled', 
+'frontend_port', 'bun_path', 'backend_port', 'loglevel'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.12 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-stable/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+──────────────────────────── Initializing auth_min ─────────────────────────────
+Debug: Creating /private/tmp/reflex-enterprise-a3-20261005-runtime-stable-min
+Debug: Ensuring reflex installation id.
+Debug: Creating /private/tmp/reflex-enterprise-a3-20261005-runtime-stable-min
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/r
+eflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Copying 
+/private/tmp/reflex-enterprise-a3-20261005-auth-stable/apps/auth_min/reflex.lock
+/bun.lock to .web/bun.lock
+Debug: Initializing the web directory.
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-enterprise-a3-20261005-auth-stable/apps/auth_min/reflex.lock
+/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-enterprise-a3-20261005-auth-stable/apps/auth_min/reflex.lock
+/package.json
+Debug: Initializing the bun config file.
+Debug: Getting best registry...
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.077 seconds
+Debug: Latency of https://registry.npmjs.org: 77289
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.019 seconds
+Debug: Latency of https://registry.npmjs.org: 19164
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.030 seconds
+Debug: Latency of https://registry.npmjs.org: 29456
+Debug: Average latency of https://registry.npmjs.org: 41969
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.828 seconds
+Debug: Latency of https://registry.npmmirror.com: 827617
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.299 seconds
+Debug: Latency of https://registry.npmmirror.com: 298587
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.339 seconds
+Debug: Latency of https://registry.npmmirror.com: 338200
+Debug: Average latency of https://registry.npmmirror.com: 488134
+Debug: Best registry: https://registry.npmjs.org
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Project hash is already set to 140108793978591507056507685274403892805.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.075 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized auth_min. Install dependencies from `requirements.txt` with
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3152 is in use.
+Debug: Checking if Frontend port: 3152 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3152 is not in use.
+Debug: Checking if Backend port: 8152 is in use.
+Debug: Checking if Backend port: 8152 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8152 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/
+reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.11s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 34/33 0:00:00
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.2 (744846f84)
+Debug: 
+Debug: + @emotion/react@11.14.0
+Debug: + @react-router/dev@8.4.0
+Debug: + @react-router/fs-routes@8.4.0
+Debug: + autoprefixer@10.6.1
+Debug: + postcss@8.5.29
+Debug: + postcss-import@17.0.0
+Debug: + vite@8.3.2
+Debug: + @radix-ui/themes@3.3.0
+Debug: + @react-router/node@8.4.0
+Debug: + isbot@5.2.2
+Debug: + lucide-react@1.26.0
+Debug: + mergician@2.0.2
+Debug: + react@19.3.0
+Debug: + react-dom@19.3.0
+Debug: + react-error-boundary@6.1.6
+Debug: + react-helmet@6.1.0
+Debug: + react-router@8.4.0
+Debug: + socket.io-client@4.8.4
+Debug: + sonner@2.0.8
+Debug: + universal-cookie@8.1.2
+Debug: 
+Debug: 225 packages installed [216.00ms]
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@react-router/fs-routes@8.4.0', 
+'postcss-import@17.0.0', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@emotion/react@11.14.0', 'vite@8.2.2', '@react-router/dev@8.4.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Saved lockfile
+Debug: 
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss-import@17.0.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @emotion/react@11.14.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: 7 packages installed [50.00ms]
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'universal-cookie@8.1.2', 'sonner@2.0.8', 
+'mergician@v2.0.2', '@radix-ui/themes@3.3.0', 'react-router@8.4.0', 
+'socket.io-client@4.8.3', 'lucide-react@1.26.0', 'react@19.2.8', 
+'react-dom@19.2.8', 'isbot@5.2.2', '@react-router/node@8.4.0', 
+'react-helmet@6.1.0', 'react-error-boundary@6.1.2']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Saved lockfile
+Debug: 
+Debug: installed universal-cookie@8.1.2
+Debug: installed sonner@2.0.8
+Debug: installed mergician@2.0.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-router@8.4.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed lucide-react@1.26.0
+Debug: installed react@19.2.8
+Debug: installed react-dom@19.2.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-helmet@6.1.0
+Debug: installed react-error-boundary@6.1.2
+Debug: 
+Debug: 13 packages installed [23.00ms]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-enterprise-a3-20261005-auth-stable/apps/auth_min/reflex.lock
+/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-enterprise-a3-20261005-auth-stable/apps/auth_min/reflex.lock
+/package.json
+Debug: [timing] Install Frontend Packages: 0.32s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Using Granian for backend
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Reload paths: 
+['/private/tmp/reflex-enterprise-a3-20261005-auth-stable/apps/auth_min/rxconfig.
+py', 
+'/private/tmp/reflex-enterprise-a3-20261005-auth-stable/apps/auth_min/requiremen
+ts.txt', 
+'/private/tmp/reflex-enterprise-a3-20261005-auth-stable/apps/auth_min/auth_min',
+'/private/tmp/reflex-enterprise-a3-20261005-auth-stable/apps/auth_min/assets']
+[INFO] Starting granian (main PID: 38537)
+[INFO] Listening at: http://0.0.0.0:8152
+[INFO] Spawning worker-1 with PID: 38565
+Debug: [restart] Relaunching with --conditions=development
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/
+reflex_enterprise/plugins/mcp.py:1552)
+Debug: MCPPlugin: using the in-memory OAuth store (no Redis configured). Tokens 
+do not survive restarts and are per-process; configure redis_url for 
+multi-worker deployments.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/
+reflex_enterprise/plugins/api_tokens.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/05/26 18:07:28] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3152/
+App running at: http://localhost:3152/
+Backend running at: http://0.0.0.0:8152
+Debug:   ➜  Network: http://192.168.0.105:3152/  en1
+Debug:   ➜  Network: http://100.80.29.50:3152/   utun6
+Debug: 6:07:50 PM [vite] (ssr) connected.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 18:07:51] INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.schemas                       
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.tables                        
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.types                         
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.constraints                   
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.defaults                      
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.comments                      
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.ext.checkconstraint_byname                 
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/.well-known/o                
+                             penid-configuration "HTTP/1.1 200                  
+                             OK"                                                
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/jwks                         
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     eedfda37-0f87-447b-dd5f-8bcd3821569c  state.py:2163
+                             [txid=234633d2c9ab4ee5926269bff3a34d8              
+                             a] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     eedfda37-0f87-447b-dd5f-8bcd3821569c  state.py:1723
+                             [txid=bcfcf0b480cf4c3992fd4e1e4ad2e82              
+                             e] User initiated logout                           
+                             (from_popup=False); clearing session.              
+[10/05/26 18:07:52] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     eedfda37-0f87-447b-dd5f-8bcd3821569c  state.py:2163
+                             [txid=b750f63158a8488188b9a3b82d91117              
+                             d] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     d89a4a25-5a00-4cdf-f631-e22b19fa5cb4  state.py:2163
+                             [txid=62b5b5bb1d8b4e998800bdfbc3e132c              
+                             f] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/'.                     
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 18:07:53] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     76b3abb1-15e8-4743-ba65-62ba3b61c4d7  state.py:2163
+                             [txid=6c0125dca309429a838ffc08a5ed5ca              
+                             a] ─ Auth callback succeeded; user                 
+                             logged in, handing the tokens to the               
+                             popup opener.                                      
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 18:07:54] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     f8f89ba9-a209-4a2a-90e3-b5263ac4a4ef  state.py:2163
+                             [txid=b77be060dd1f4897b7efa4fe2cc4043              
+                             c] ─ Auth callback succeeded; user                 
+                             logged in, handing the tokens to the               
+                             popup opener.                                      
+[10/05/26 18:07:55] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[10/05/26 18:09:24] INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

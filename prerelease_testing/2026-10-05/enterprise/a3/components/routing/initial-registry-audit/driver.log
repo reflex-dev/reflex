@@ -1,0 +1,9 @@
+WARN `--no-project` was provided, but no project was found
+WARN `--no-project` was provided, but no project was found
+Traceback (most recent call last):
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/compare.py", line 105, in <module>
+    results = {name: run_case(name, prefix) for name, prefix in ENVIRONMENTS.items()}
+                     ^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/compare.py", line 69, in run_case
+    raise RuntimeError(f"{name} CLI exited {process.returncode}")
+RuntimeError: a2 CLI exited 1

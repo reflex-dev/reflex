@@ -1,0 +1,36 @@
+{
+  "ports": {
+    "3132": {
+      "listening": false,
+      "exit_code": 1,
+      "output": "",
+      "stderr": ""
+    },
+    "8132": {
+      "listening": false,
+      "exit_code": 1,
+      "output": "",
+      "stderr": ""
+    },
+    "9131": {
+      "listening": false,
+      "exit_code": 1,
+      "output": "",
+      "stderr": ""
+    }
+  },
+  "neutral_app_directory": "/private/tmp/reflex-enterprise-a3-20261005-auth-alpha",
+  "neutral_directory_used": true,
+  "profile_has_this_campaign_runtime_path": false,
+  "profile_has_prior_neutral_bun_path": false,
+  "parsed_python_files": 44,
+  "graph_difference": {
+    "removed": [
+      "reflex-enterprise==0.9.7a2"
+    ],
+    "added": [
+      "reflex-enterprise==0.9.7a3"
+    ]
+  },
+  "no_framework_fixes": true
+}

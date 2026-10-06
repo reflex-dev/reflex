@@ -1,0 +1,12 @@
+{
+  "ag-grid-react": "36.2.0",
+  "ag-grid-enterprise": "36.2.0",
+  "ag-grid-community": "36.2.0",
+  "ag-charts-enterprise": "14.2.0",
+  "react": "19.3.0",
+  "react-dom": "19.3.0",
+  "react-leaflet": "5.0.0",
+  "leaflet": "1.9.4",
+  "react-router": "8.4.0",
+  "vite": "8.3.2"
+}

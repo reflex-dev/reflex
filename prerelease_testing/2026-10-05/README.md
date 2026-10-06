@@ -1,10 +1,17 @@
 # Published prerelease exploration — October 5, 2026
 
-**Do not release this combination without resolving the enterprise compatibility
-findings.** Published Reflex 0.10.0a1 breaks enterprise auth fields, extra OIDC
-scopes and logout with enterprise 0.9.7a2. The same enterprise wheel works with
-Reflex 0.9.12. [Numbered findings and exact repros](FINDINGS.md) distinguish these
-regressions from older defects and unresolved limits.
+**Latest enterprise rerun: 0.9.7a3 resolves the three a2 auth blockers, but
+validation is not fully passing.** The full auth browser suite passes 21/22 on
+Reflex 0.10.0a1 and 22/22 on stable. An independently reproduced protected async
+value fails on public-page navigation/reload with the alpha; stable passes.
+Grid/maps, cookie scenarios and the Free-tier matrix pass. Embedded pending
+login and production MCP routing have additional recorded limits.
+See the [a3 report and reusable repros](enterprise/a3/REPORT.md).
+
+The initial 0.9.7a2 campaign below found broken auth fields, extra OIDC scopes
+and logout with Reflex 0.10.0a1; the same a2 wheel worked with Reflex 0.9.12.
+That evidence is retained. [Numbered findings and exact repros](FINDINGS.md)
+distinguish resolved blockers, remaining compatibility failures and older defects.
 
 [Issue triage](issue-triage/README.md) records the user-supplied enterprise
 references, filed issues for findings 4–8, and the instruction to ignore 9–10.
@@ -34,7 +41,7 @@ and prior-stable upgrade comparisons. No framework fixes were attempted.
 | reflex-docgen | 0.10.0a1 |
 | reflex-hosting-cli | 0.1.73a1 |
 | reflex-release | 0.1.2a1 |
-| reflex-enterprise | 0.9.7a2 |
+| reflex-enterprise | 0.9.7a2 initially; follow-up 0.9.7a3 |
 
 The six other branch changelog heads describe unchanged stable releases. See
 [every changelog head](inventory/changelog-heads.md),
@@ -43,6 +50,8 @@ The six other branch changelog heads describe unchanged stable releases. See
 [exact alpha pins](inventory/alpha-requirements.txt) and
 [linked issue/PR descriptions](inventory/linked-descriptions.json).
 The main and tooling refs are independently recorded with their commit IDs.
+The follow-up a3 [publication audit](enterprise/a3/publication.json) independently
+verifies its PyPI wheel/sdist hashes and matching stubs.
 The migration fragment links to unrelated issue #6706; its implementing PR is
 #6770, whose description is separately saved under `tooling/reference/`.
 
@@ -50,6 +59,7 @@ The migration fragment links to unrelated issue #6706; its implementing PR is
 
 | Exploration | Outcome and reusable report |
 | --- | --- |
+| Enterprise a3 follow-up: auth, cookies, grid/maps, OAuth/anonymous MCP and Free-tier guards | Three a2 blockers resolved; async public reload and additional limits remain; [a3 report](enterprise/a3/REPORT.md) |
 | State descriptors, shadowing, inherited events/background mutation, ABC, mode guards, contexts, memo/ComponentState/client State, shared/private state, deep equality, slicing, download and event recovery | 71 browser assertions in each of dev/prod plus backend checks; [core report](core_state/README.md) |
 | Buffered/chunked uploads, HTTP event streams, concurrent clients/uploads, disconnect/navigation cancellation, recovery after response closure and actual OTel lineage | All seven scenarios in each mode, with 25 visible assertions plus timing/transport/span checks; [upload report](core_state/upload/README.md) |
 | Redis application state corruption/recovery, concurrent contexts, inherited background values and lock notification race; DB-extra guidance and SQLAlchemy-only migrations | Seven browser scenarios/79 value assertions, four lock scenarios and four actual cross-version Redis scenarios pass; [Redis and DB report](core_state/redis/README.md) |

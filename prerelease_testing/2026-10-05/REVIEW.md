@@ -1,5 +1,10 @@
 # Adversarial artifact review
 
+The [a3 follow-up review](enterprise/a3/REVIEW.md) records additional reusable
+driver limits and exact diagnostic allowances. The a3 Free-tier rerun uses a
+neutral app copy, eliminating the historical directory exception for that run.
+The original numbered review below remains intact.
+
 The independent reviewer confirmed that current reported behavior—including
 the unique UUID migration limit and fresh-Bun browser crash—matches saved
 evidence. Framework/package source is unchanged. Four reusable-driver issues

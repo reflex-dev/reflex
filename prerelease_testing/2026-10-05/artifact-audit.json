@@ -1,72 +1,73 @@
 {
-  "file_count": 614,
-  "bytes": 10011455,
+  "file_count": 966,
+  "bytes": 19154326,
   "suffixes": {
-    "": 10,
+    "": 12,
     ".css": 3,
-    ".html": 8,
+    ".html": 12,
     ".http": 1,
     ".ico": 2,
-    ".json": 143,
-    ".jsonl": 40,
-    ".log": 132,
-    ".md": 38,
+    ".json": 203,
+    ".jsonl": 70,
+    ".lock": 1,
+    ".log": 215,
+    ".md": 49,
     ".pickle": 13,
-    ".png": 46,
-    ".py": 125,
+    ".png": 95,
+    ".py": 229,
     ".sh": 2,
     ".toml": 2,
-    ".txt": 49
+    ".txt": 57
   },
   "validation_counts": {
-    "json_documents": 143,
-    "python_syntax": 125,
-    "jsonl_records": 69,
-    "jsonl_files": 40
+    "json_documents": 203,
+    "python_syntax": 229,
+    "jsonl_records": 170,
+    "jsonl_files": 70
   },
   "parse_errors": [],
   "missing_central_document_links": [],
   "forbidden_generated_files": [],
   "largest_files": [
     {
+      "file": "enterprise/a3/components/evidence/prod/screenshots/map-fly.png",
+      "bytes": 1266874
+    },
+    {
       "file": "enterprise/screenshots/map-fly.png",
       "bytes": 1265654
+    },
+    {
+      "file": "enterprise/a3/components/evidence/dev/screenshots/map-fly.png",
+      "bytes": 1265521
+    },
+    {
+      "file": "enterprise/a3/components/evidence/prod-initial-map-fixture/screenshots/map_vectors-failure.png",
+      "bytes": 1226398
     },
     {
       "file": "enterprise/screenshots/map_vectors-failure.png",
       "bytes": 1223241
     },
     {
+      "file": "enterprise/a3/components/evidence/prod/screenshots/map-vectors.png",
+      "bytes": 1179748
+    },
+    {
       "file": "enterprise/screenshots/map-vectors.png",
       "bytes": 1158917
     },
     {
+      "file": "enterprise/a3/components/evidence/dev/screenshots/map-vectors.png",
+      "bytes": 802668
+    },
+    {
+      "file": "enterprise/a3/auth-stable/evidence/auth-stable-browser.json",
+      "bytes": 405341
+    },
+    {
       "file": "core_state/upload/evidence/prod/backend-evidence-final.json",
       "bytes": 331799
-    },
-    {
-      "file": "core_state/upload/evidence/prod/backend-evidence.json",
-      "bytes": 328889
-    },
-    {
-      "file": "inventory/linked-descriptions.json",
-      "bytes": 205970
-    },
-    {
-      "file": "components/evidence/prod-final/dashboard.png",
-      "bytes": 183180
-    },
-    {
-      "file": "components/evidence/prod-final/failure-radix-primitive-progress-accessibility.png",
-      "bytes": 176826
-    },
-    {
-      "file": "components/evidence/prod-final/failure-shiki-default-transformer.png",
-      "bytes": 163326
-    },
-    {
-      "file": "enterprise/logs/components-run.log",
-      "bytes": 150994
     }
   ],
   "scope": "Git-visible campaign files; ignored installed runtimes/build outputs excluded."

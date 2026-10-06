@@ -1,0 +1,4 @@
+WARN `--no-project` was provided, but no project was found
+{"attempt": 1, "passed": false, "frame_url": "http://localhost:3132/login?redirect_to=%2F", "delivered_after_extra_wait": false, "direct_child_navigation_recovery": {"replayed": true, "pending_consumed": true}}
+{"attempt": 2, "passed": false, "frame_url": "http://localhost:3132/login?redirect_to=%2F", "delivered_after_extra_wait": false, "direct_child_navigation_recovery": {"replayed": true, "pending_consumed": true}}
+{"attempt": 3, "passed": false, "frame_url": "http://localhost:3132/login?redirect_to=%2F", "delivered_after_extra_wait": false, "direct_child_navigation_recovery": {"replayed": true, "pending_consumed": true}}

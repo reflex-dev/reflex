@@ -1,0 +1,17 @@
+{
+  "command": [
+    "git",
+    "diff",
+    "--cached",
+    "--check"
+  ],
+  "exit_code": 2,
+  "diagnostic_count": 4180,
+  "by_suffix": {
+    ".log": 4176,
+    ".html": 4
+  },
+  "python_shell_toml_issues": [],
+  "markdown_issues": [],
+  "classification": "Raw logs retain emitted whitespace; changelog snapshots retain their captured bytes. No whitespace changes were applied after review."
+}

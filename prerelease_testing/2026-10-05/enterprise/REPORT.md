@@ -1,5 +1,8 @@
 # Enterprise alpha compatibility report
 
+This is the historical **0.9.7a2** report. The [published a3 rerun](a3/REPORT.md)
+resolves its field/scope/logout blockers and records the remaining failures.
+
 Tested published `reflex-enterprise==0.9.7a2` with the exact announced alpha
 manifest, including `reflex==0.10.0a1`, on CPython 3.12.1/macOS arm64.
 Two compatibility defects remain: enterprise auth fields cannot render, and

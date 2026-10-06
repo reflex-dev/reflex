@@ -1,0 +1,30 @@
+[
+  {
+    "method": "POST",
+    "route": "/_reflex/mcp",
+    "status": 405,
+    "content_type": "text/plain; charset=utf-8",
+    "body": "Method Not Allowed"
+  },
+  {
+    "method": "POST",
+    "route": "/_reflex/mcp/",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}"
+  },
+  {
+    "method": "POST",
+    "route": "/_reflex/auth/token",
+    "status": 200,
+    "content_type": "application/json",
+    "body": "{\"access_token\": \"[omitted disposable anonymous token]\", \"token_type\": \"Bearer\", \"expires_in\": 3600, \"session\": \"anonymous\"}"
+  },
+  {
+    "method": "POST",
+    "route": "/_reflex/auth/token/",
+    "status": 405,
+    "content_type": "text/plain; charset=utf-8",
+    "body": "Method Not Allowed"
+  }
+]

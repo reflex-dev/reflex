@@ -1,0 +1,57 @@
+{
+  "ports": {
+    "3131": {
+      "listening": false,
+      "output": ""
+    },
+    "8131": {
+      "listening": false,
+      "output": ""
+    },
+    "3132": {
+      "listening": false,
+      "output": ""
+    },
+    "8132": {
+      "listening": false,
+      "output": ""
+    },
+    "9131": {
+      "listening": false,
+      "output": ""
+    },
+    "3152": {
+      "listening": false,
+      "output": ""
+    },
+    "8152": {
+      "listening": false,
+      "output": ""
+    },
+    "9151": {
+      "listening": false,
+      "output": ""
+    },
+    "3144": {
+      "listening": false,
+      "output": ""
+    },
+    "3145": {
+      "listening": false,
+      "output": ""
+    },
+    "8145": {
+      "listening": false,
+      "output": ""
+    },
+    "54717": {
+      "listening": false,
+      "output": ""
+    },
+    "58000": {
+      "listening": false,
+      "output": ""
+    }
+  },
+  "all_closed": true
+}

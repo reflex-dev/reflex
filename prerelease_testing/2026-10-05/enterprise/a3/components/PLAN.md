@@ -1,0 +1,6 @@
+# Published enterprise a3 component rerun
+
+1. Create a fresh Python 3.12 environment under `/private/tmp`; install the retained a2 exact requirements graph with only `reflex-enterprise==0.9.7a2` changed to published `0.9.7a3`.
+2. Copy only the retained component app, upstream grid tests and drivers into `/private/tmp/reflex-enterprise-a3-20261005-components-app`. Set the existing Bun 1.4.2 binary explicitly. Redirect credential paths to an empty disposable file and unset ambient account tokens. Keep the component lane's established CI account-check bypass explicit; Free-tier guards belong to the root lane.
+3. Run all 15 AG Grid browser scenarios, the map/vector/bounds/geolocation/fly-to/saved-state/font flows, and anonymous MCP bearer rejection/session isolation/router redaction against development. Repeat browser coverage in production on the shared fullstack port, and repeat MCP against that production backend URL.
+4. Capture exact package/import provenance, frontend versions, source hashes, server/browser/network/HTTP diagnostics, screenshots and MCP request/result evidence. Preserve all a2 artifacts. Stop owned processes after final checks and report unchanged failures or new regressions without product fixes.

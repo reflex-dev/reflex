@@ -1,0 +1,184 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-p
+ackages/reflex_base/config.py'
+Debug: Config: Config(app_name='cookie_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3145, frontend_path='', 
+backend_port=8145, backend_path='', api_url='http://localhost:8145', 
+deploy_url='http://localhost:3145', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'backend_port', 'loglevel', 'app_name', 
+'frontend_port', 'plugins', 'telemetry_enabled', 'bun_path'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[RadixThemesPlugin(theme={"name": 
+"RadixThemesTheme", "props": ["accentColor:\"blue\"", 
+"css:{...theme.styles.global[':root'], ...theme.styles.global.body}"], 
+"children": []}), SitemapPlugin(trailing_slash='preserve')], disable_plugins=[],
+transport='websocket')
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-p
+ackages/reflex_base/config.py'
+Debug: Config: Config(app_name='cookie_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3145, frontend_path='', 
+backend_port=8145, backend_path='', api_url='http://localhost:8145', 
+deploy_url='http://localhost:3145', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'backend_port', 'loglevel', 'app_name', 
+'frontend_port', 'plugins', 'telemetry_enabled', 'bun_path'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[RadixThemesPlugin(theme={"name": 
+"RadixThemesTheme", "props": ["accentColor:\"blue\"", 
+"css:{...theme.styles.global[':root'], ...theme.styles.global.body}"], 
+"children": []}), SitemapPlugin(trailing_slash='preserve')], disable_plugins=[],
+transport='websocket')
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+─────────────────────────── Initializing cookie_app ────────────────────────────
+Debug: Creating /private/tmp/reflex-enterprise-a3-cookie-runtime
+Debug: Ensuring reflex installation id.
+Debug: Creating /private/tmp/reflex-enterprise-a3-cookie-runtime
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-pa
+ckages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-enterprise-a3-20261005-cookies/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Getting best registry...
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.056 seconds
+Debug: Latency of https://registry.npmjs.org: 55840
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.018 seconds
+Debug: Latency of https://registry.npmjs.org: 18047
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.028 seconds
+Debug: Latency of https://registry.npmjs.org: 27544
+Debug: Average latency of https://registry.npmjs.org: 33810
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.832 seconds
+Debug: Latency of https://registry.npmmirror.com: 831351
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.335 seconds
+Debug: Latency of https://registry.npmmirror.com: 334599
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.335 seconds
+Debug: Latency of https://registry.npmmirror.com: 334756
+Debug: Average latency of https://registry.npmmirror.com: 500235
+Debug: Best registry: https://registry.npmjs.org
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 309409459474285028283958517522218014045.
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized cookie_app. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3145
+Debug: Overriding config value backend_host with env var BACKEND_HOST=127.0.0.1
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3145 is in use.
+Debug: Checking if Fullstack port: 3145 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Fullstack port: 3145 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.00s
+Traceback (most recent call last):
+  File "/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 339, in get_compiled_app
+    app._compile(
+  File "/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-packages/reflex/app.py", line 1734, in _compile
+    compiler.compile_app(
+  File "/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1324, in compile_app
+    compile_ctx.compile(
+  File "/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 716, in compile
+    page_ctx = self.hooks.eval_page(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 268, in eval_page
+    result = hook_impl(page_fn, page=page, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-packages/reflex/compiler/plugins/builtin.py", line 42, in eval_page
+    component = compiler.into_component(page_fn)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 969, in into_component
+    component_called = component()
+                       ^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-cookies/cookie_app/cookie_app.py", line 77, in index
+    inherited_view(ChildCookieState.inherited),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-free-tier-venv/lib/python3.12/site-packages/reflex_base/components/memo.py", line 1823, in __call__
+    raise TypeError(msg)
+TypeError: `inherited_view` only accepts keyword props.
+Happened while evaluating page 'index'

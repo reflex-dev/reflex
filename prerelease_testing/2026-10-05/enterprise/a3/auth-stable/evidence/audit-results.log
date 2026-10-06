@@ -1,0 +1,2 @@
+WARN `--no-project` was provided, but no project was found
+{"observation_audit": "passed", "stable_full_auth_functional": {"passed": 22, "total": 22}, "stable_focus_functional": {"passed": 5, "total": 5}, "tiny_alpha_functional": {"passed": 0, "total": 3}, "tiny_stable_functional": {"passed": 3, "total": 3}, "stable_auth_min_functional": {"passed": 3, "total": 4}}

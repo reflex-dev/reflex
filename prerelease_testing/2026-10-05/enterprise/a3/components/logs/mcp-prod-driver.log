@@ -1,0 +1,16 @@
+WARN `--no-project` was provided, but no project was found
+Traceback (most recent call last):
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-app/check_mcp.py", line 164, in <module>
+    asyncio.run(main())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 684, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-app/check_mcp.py", line 77, in main
+    assert response.status_code == 401
+AssertionError

@@ -1,0 +1,35 @@
+WARN `--no-project` was provided, but no project was found
+BLE001 Do not catch blind exception: `Exception`
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/a3/auth-stable/drive_auth.py:72:20
+   |
+70 |                 assert not errors, errors
+71 |                 result = {"case": name, "passed": True}
+72 |             except Exception:
+   |                    ^^^^^^^^^
+73 |                 result = {
+74 |                     "case": name,
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/a3/auth-stable/focus_reload.py:48:20
+   |
+46 |                 tests.test_protected_vars_survive_reload_on_public_page(harness, page)
+47 |                 result["passed"] = True
+48 |             except Exception:
+   |                    ^^^^^^^^^
+49 |                 result["passed"] = False
+50 |                 result["traceback"] = traceback.format_exc()
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/a3/auth-stable/narrow-alpha/drive_reload.py:93:20
+   |
+91 |                 result["async_restored"] = observations[-1]["fields"].get("#async-view") == "async-admin-data"
+92 |                 result["completed"] = True
+93 |             except Exception:
+   |                    ^^^^^^^^^
+94 |                 result["completed"] = False
+95 |                 result["traceback"] = traceback.format_exc()
+   |
+
+Found 3 errors.

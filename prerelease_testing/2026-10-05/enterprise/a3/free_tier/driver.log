@@ -1,0 +1,20 @@
+WARN `--no-project` was provided, but no project was found
+free-prod-badge-on PASS
+free-prod-badge-off PASS
+free-export-prod-badge-on PASS
+free-export-prod-badge-off PASS
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET /assets/entry.client-qPZbTPY2.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET /assets/errorBoundaries-BQfNx61a.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET /assets/components-Bl0Za3ky.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET /assets/root-DAlDIpZ3.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET /assets/manifest-43a84708.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET /assets/button-32K-NAiB.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET /assets/__reflex_global_styles-NccINl-w.css HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET /assets/reflex-env-rXEEST8y.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET /assets/emotion-react.browser.esm-Ne-RHRfi.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 17:52:06] "GET /assets/_index-tHqbI1e0.js HTTP/1.1" 200 -
+free-export-dev-badge-on PASS
+paid-export-prod-badge-off PASS
+rejected-prod PASS
+rejected-export PASS

@@ -1,0 +1,1082 @@
+[
+  {
+    "case": "sort_filter_pagination_pinned",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "edit_row_id_backend_update",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "selection_helpers",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "loading_overlay",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "csv_export",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "grouping",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "integrated_charts",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "theme_quartz",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "theme_alpine",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "theme_balham",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "theme_material",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "overlay_suppressed_False",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "overlay_suppressed_True",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "datasource_infinite",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "datasource_server-side",
+    "passed": true,
+    "console": [
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186686
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/assets/main.esm-CvT1wl3T.js",
+          "lineNumber": 21,
+          "columnNumber": 186579
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  }
+]

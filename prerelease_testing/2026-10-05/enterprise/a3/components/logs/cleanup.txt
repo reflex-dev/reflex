@@ -1,0 +1,2 @@
+Owned development main PID34793, production main PID35715, production comparison process groups, and fictional account fixture PID35635 stopped. Final lsof -nP -iTCP:3131 -iTCP:8131 -iTCP:54717 -sTCP:LISTEN returned no listeners. Explicit pre-existing Bun1.4.2 path used; installer not run and no shell startup file changes.
+Dynamic-port comparison retest reproduced the same a2/a3 statuses. Repeated fictional account fixture PID38731 stopped; final account loopback port58000 also has no listener. First comparison evidence retained under routing/first-comparison.

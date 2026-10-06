@@ -1,0 +1,4 @@
+WARN `--no-project` was provided, but no project was found
+{"attempt": 1, "passed": false, "delivered_after_extra_wait": false, "final_values": {"secret": "initial-secret", "secret-view": "computed:initial-secret", "admin-view": "admin-data", "async-admin-view": "async-admin-placeholder"}}
+{"attempt": 2, "passed": false, "delivered_after_extra_wait": false, "final_values": {"secret": "initial-secret", "secret-view": "computed:initial-secret", "admin-view": "admin-data", "async-admin-view": "async-admin-placeholder"}}
+{"attempt": 3, "passed": false, "delivered_after_extra_wait": false, "final_values": {"secret": "initial-secret", "secret-view": "computed:initial-secret", "admin-view": "admin-data", "async-admin-view": "async-admin-placeholder"}}

@@ -1,0 +1,49 @@
+{
+  "auth-full-browser.json": {
+    "cases": 22,
+    "passed": 21,
+    "failed_cases": [
+      "test_protected_vars_survive_reload_on_public_page"
+    ],
+    "page_errors": 0,
+    "console_errors": 0,
+    "requestfailed_count": 24,
+    "requestfailed_paths": {
+      "http://localhost:8132/_reflex/cookies/sync": 21,
+      "http://localhost:3132/app/routes/_index.jsx": 3
+    },
+    "requestfailed_reasons": {
+      "net::ERR_ABORTED": 24
+    }
+  },
+  "auth-min-default-browser.json": {
+    "cases": 4,
+    "passed": 3,
+    "failed_cases": [
+      "iframe_pending_event_replay"
+    ],
+    "page_errors": 0,
+    "console_errors": 0,
+    "requestfailed_count": 9,
+    "requestfailed_paths": {
+      "http://localhost:8132/_reflex/cookies/sync": 9
+    },
+    "requestfailed_reasons": {
+      "net::ERR_ABORTED": 9
+    }
+  },
+  "auth-min-extra-browser.json": {
+    "cases": 4,
+    "passed": 4,
+    "failed_cases": [],
+    "page_errors": 0,
+    "console_errors": 0,
+    "requestfailed_count": 11,
+    "requestfailed_paths": {
+      "http://localhost:8132/_reflex/cookies/sync": 11
+    },
+    "requestfailed_reasons": {
+      "net::ERR_ABORTED": 11
+    }
+  }
+}

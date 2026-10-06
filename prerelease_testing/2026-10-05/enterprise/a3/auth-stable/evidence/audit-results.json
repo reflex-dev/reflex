@@ -1,0 +1,201 @@
+{
+  "observation_audit": "passed",
+  "stable_full_auth_functional": {
+    "passed": 22,
+    "total": 22
+  },
+  "stable_full_auth_diagnostics": {
+    "console_errors": {},
+    "page_errors": {},
+    "http_errors": {},
+    "failed_requests": {
+      "test_full_login_flow_returns_to_requested_page": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_protected_surfaces_delivered_after_login": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_blocked_event_replays_after_login": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_access_token_refresh_round_trips": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_admin_check_passes_for_admin_user": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_authz_failure_denies_without_login_redirect": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_async_var_delivered_for_admin": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_async_var_withheld_for_non_admin": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_protected_vars_survive_reload_on_public_page": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_protected_vars_survive_client_side_navigation": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_public_page_redelivery_respects_checks_for_non_admin": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_async_event_check_allows_admin": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_async_event_check_denies_non_admin": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_user_logout_event_ends_session": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_logout_ends_session_and_reprotects": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "test_logout_resets_state_so_next_user_sees_no_leak": [
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://localhost:8152/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED"
+        }
+      ]
+    }
+  },
+  "stable_focus_functional": {
+    "passed": 5,
+    "total": 5
+  },
+  "tiny_alpha_functional": {
+    "passed": 0,
+    "total": 3
+  },
+  "tiny_stable_functional": {
+    "passed": 3,
+    "total": 3
+  },
+  "stable_auth_min_functional": {
+    "passed": 3,
+    "total": 4
+  },
+  "stable_auth_min_failure": {
+    "case": "iframe_pending_event_replay",
+    "passed": false,
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a3-20261005-auth-stable/drive_auth_min.py\", line 157, in main\n    expect(frame.locator(\"#message\")).to_have_text(\"revealed-alice\")\n  File \"/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 19981, in to_have_text\n    self._sync(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 559, in to_have_text\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-stable/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to have text 'revealed-alice'\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_have_text\" with timeout 5000ms\n  - waiting for locator(\"iframe\").content_frame.locator(\"#message\")\n\n",
+    "url": "http://localhost:3152/iframe",
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8152/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8152/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": [],
+    "frame_observations": [
+      {
+        "url": "http://localhost:3152/login?redirect_to=%2F",
+        "text": "Sign in\nLogin with Generic",
+        "pending_event": "{\"name\": \"reflex___state____state.auth_min___auth_min____profile_state.reveal\", \"payload\": {}, \"path\": \"/\", \"ts\": 1791248874.642505, \"id\": \"ed1eae7fd49f41bd92703ca53da10d6b\"}"
+      }
+    ]
+  }
+}

@@ -26,4 +26,9 @@ compatibility failures, so it is recorded as the user's followup reference
 rather than proof that the original logout behavior has been retested or fixed.
 No unpublished implementation was installed or tested during this triage.
 
+The subsequent [published a3 validation](../enterprise/a3/REPORT.md) independently
+confirms fields, scopes and logout pass. It also tests HTTP-only cookie
+compatibility and records new residual findings 12–14. No additional issue or
+external comment was submitted during that rerun.
+
 [Filing record](filing-record.json) retains exact repositories, titles and URLs.

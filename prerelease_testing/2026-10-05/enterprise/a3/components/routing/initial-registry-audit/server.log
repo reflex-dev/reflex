@@ -1,0 +1,225 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.1
+2/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='mcp_probe', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3131, frontend_path='', 
+backend_port=3131, backend_path='', api_url='http://localhost:3131', 
+deploy_url='http://localhost:3131', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'api_url', 'backend_port', 'plugins', 'loglevel', 
+'app_name', 'bun_path', 'frontend_port', 'telemetry_enabled'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.1
+2/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='mcp_probe', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3131, frontend_path='', 
+backend_port=3131, backend_path='', api_url='http://localhost:3131', 
+deploy_url='http://localhost:3131', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'api_url', 'backend_port', 'plugins', 'loglevel', 
+'app_name', 'bun_path', 'frontend_port', 'telemetry_enabled'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+──────────────────────────── Initializing mcp_probe ────────────────────────────
+Debug: Creating 
+/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/runtime
+Debug: Ensuring reflex installation id.
+Debug: Creating 
+/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/runtime
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12
+/site-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/app/reflex.l
+ock/package.json
+Debug: Initializing the bun config file.
+Debug: Getting best registry...
+Traceback (most recent call last):
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/app/cli_entry.py", line 10, in <module>
+    cli()
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/reflex.py", line 812, in run
+    _run(
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/reflex.py", line 639, in _run
+    _init(name=config.app_name)
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/reflex.py", line 289, in _init
+    prerequisites.initialize_frontend_dependencies()
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 815, in initialize_frontend_dependencies
+    initialize_web_directory()
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/frontend_skeleton.py", line 470, in initialize_web_directory
+    initialize_bun_config()
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/frontend_skeleton.py", line 647, in initialize_bun_config
+    best_registry = get_npm_registry()
+                    ^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex_base/utils/decorator.py", line 29, in wrapper
+    value = f() if value is unset else value
+            ^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/registry.py", line 84, in get_npm_registry
+    return environment.NPM_CONFIG_REGISTRY.get() or _get_best_registry()
+                                                    ^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex_base/utils/decorator.py", line 122, in _inner
+    new_value = func(*args, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/registry.py", line 72, in _get_best_registry
+    best_registry = min(registries, key=lambda x: average_latency(x[0]) * x[1])[0]
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/registry.py", line 72, in <lambda>
+    best_registry = min(registries, key=lambda x: average_latency(x[0]) * x[1])[0]
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/registry.py", line 45, in average_latency
+    registry_latency = sum(latency(registry) for _ in range(attempts)) // attempts
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/registry.py", line 45, in <genexpr>
+    registry_latency = sum(latency(registry) for _ in range(attempts)) // attempts
+                           ^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/registry.py", line 26, in latency
+    time_to_respond = net.get(registry, timeout=2).elapsed.microseconds
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/net.py", line 85, in wrapper
+    f = _wrap_https_func(func())
+                         ^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/net.py", line 175, in <lambda>
+    get = _wrap_https_lazy_func(lambda: _httpx_client().get)
+                                        ^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex_base/utils/decorator.py", line 29, in wrapper
+    value = f() if value is unset else value
+            ^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/net.py", line 159, in _httpx_client
+    local_address=_httpx_local_address_kwarg(),
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/net.py", line 142, in _httpx_local_address_kwarg
+    "::" if _should_use_ipv6() else "0.0.0.0"
+            ^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/net.py", line 130, in _should_use_ipv6
+    return not _is_ipv4_supported() and _is_ipv6_supported()
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/reflex/utils/net.py", line 101, in _is_ipv4_supported
+    httpx.head("http://1.1.1.1", timeout=3)
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpx/_api.py", line 267, in head
+    return request(
+           ^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpx/_api.py", line 109, in request
+    return client.request(
+           ^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpx/_transports/default.py", line 250, in handle_request
+    resp = self._pool.handle_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 101, in handle_request
+    raise exc
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 78, in handle_request
+    stream = self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 124, in _connect
+    stream = self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.12/site-packages/httpcore/_backends/sync.py", line 208, in connect_tcp
+    sock = socket.create_connection(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socket.py", line 837, in create_connection
+    sock.connect(sa)
+  File "/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/app/fixture_setup.py", line 65, in audit_network
+    raise RuntimeError(f"Fixture rejected non-loopback Python connection: {host}")
+RuntimeError: Fixture rejected non-loopback Python connection: 1.1.1.1

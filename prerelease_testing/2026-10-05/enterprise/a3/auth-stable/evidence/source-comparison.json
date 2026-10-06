@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "executed_app_source_pairs": {
+    "reload_probe/reload_probe.py": {
+      "identical_executed_alpha_stable": true,
+      "sha256": "167c572f755aa109c2194030de19d37e5c6f36151eee11daf3e6c4f1a306491b"
+    },
+    "reload_probe/__init__.py": {
+      "identical_executed_alpha_stable": true,
+      "sha256": "d50ad659ac3332cedd58467ad04f610654b53d991660ada193509515f4358315"
+    },
+    "rxconfig.py": {
+      "identical_executed_alpha_stable": true,
+      "sha256": "f63b1c24e2e188c1753f7922891c026285171093355f8a1a28a856ba100aeff6"
+    }
+  },
+  "browser_executed_probe_driver": {
+    "path": "executed-source/drive_reload.py",
+    "sha256": "c6ca7d663f4cd8fd4c1d9ae2790449f660f8ac8c8311e873660b21d95fab5828",
+    "terminal_check": "observations_completed"
+  },
+  "reusable_probe_driver": {
+    "path": "narrow-alpha/drive_reload.py",
+    "sha256": "5b415179e92930b0ad9b799c4e8dc9296a51016d00eefe71dd24d0614be7b043",
+    "browser_run": false,
+    "terminal_check": "actual_async_restoration_assertion_added"
+  },
+  "syntax_parsed_helpers": 15,
+  "copied_generated_lock_directories": 0
+}

@@ -1,0 +1,200 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.1
+2/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='mcp_probe', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3131, frontend_path='', 
+backend_port=3131, backend_path='', api_url='http://localhost:3131', 
+deploy_url='http://localhost:3131', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'backend_port', 'frontend_port', 
+'telemetry_enabled', 'api_url', 'plugins', 'app_name', 'bun_path'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value backend_host with env var BACKEND_HOST=127.0.0.1
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3131 is in use.
+Debug: Checking if Fullstack port: 3131 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Fullstack port: 3131 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.1
+2/site-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.05s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bu
+n'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), ('mergician', 
+'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), ('react-helmet', 
+'6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', '4.8.4'), 
+('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/app/reflex.l
+ock/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/app/reflex.l
+ock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 431 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             2.81 kB │ 
+gzip:  0.56 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-Dj0WhMZW.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-BH4Lz19y.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_index-49RYWBZ5.js                       0.60 kB │ 
+gzip:  0.40 kB
+Debug: build/client/assets/react-dom-CDPjmXo9.js                    3.86 kB │ 
+gzip:  1.39 kB
+Debug: build/client/assets/emotion-react.browser.esm-Ne-RHRfi.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-CH_OHpId.js             33.51 kB │ 
+gzip: 11.74 kB
+Debug: build/client/assets/components-Bl0Za3ky.js                  86.82 kB │ 
+gzip: 28.73 kB
+Debug: build/client/assets/box-BQTHA9ag.js                        114.49 kB │ 
+gzip: 34.29 kB
+Debug: build/client/assets/entry.client-DUpOIdAx.js               210.99 kB │ 
+gzip: 66.26 kB
+Debug: build/client/assets/root-CfcBehP-.js                       312.88 kB │ 
+gzip: 87.88 kB
+Debug: 
+Debug: ✓ built in 414ms
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 26 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.70 kB │ 
+gzip:  0.28 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-Dj0WhMZW.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     45.72 kB │ 
+gzip: 14.50 kB
+Debug: 
+Debug: ✓ built in 149ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:01
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+PosixPath('/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/a
+pp/.web/compress-static.js'), 
+PosixPath('/private/tmp/reflex-enterprise-a3-20261005-components-routing-probe/a
+pp/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://127.0.0.1:3131/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 38755)
+[INFO] Listening at: http://127.0.0.1:3131
+[INFO] Spawning worker-1 with PID: 38765
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value backend_host with env var BACKEND_HOST=127.0.0.1
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-a3-20261005-components-a2-baseline/lib/python3.1
+2/site-packages/reflex_enterprise/plugins/api_tokens.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/05/26 18:08:28] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+                    INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+Debug: StateManagerDisk._flush_write_queue: writing 1 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 1 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

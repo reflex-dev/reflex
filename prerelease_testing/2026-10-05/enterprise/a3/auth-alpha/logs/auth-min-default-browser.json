@@ -1,0 +1,282 @@
+[
+  {
+    "case": "profile_login_reveal_logout",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8132/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8132/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8132/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8132/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": []
+  },
+  {
+    "case": "anonymous_event_replay",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8132/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": []
+  },
+  {
+    "case": "iframe_popup",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8132/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8132/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": [],
+    "frame_observations": [
+      {
+        "url": "http://localhost:3132/",
+        "text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile",
+        "pending_event": null
+      }
+    ]
+  },
+  {
+    "case": "iframe_pending_event_replay",
+    "passed": false,
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a3-20261005-auth-alpha/apps/auth_min/../../drive_auth_min.py\", line 155, in main\n    expect(frame.locator(\"#message\")).to_have_text(\"revealed-alice\")\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 19981, in to_have_text\n    self._sync(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 559, in to_have_text\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a3-20261005-alpha/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to have text 'revealed-alice'\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_have_text\" with timeout 5000ms\n  - waiting for locator(\"iframe\").content_frame.locator(\"#message\")\n\n",
+    "url": "http://localhost:3132/iframe",
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8132/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8132/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": [],
+    "frame_observations": [
+      {
+        "url": "http://localhost:3132/login?redirect_to=%2F",
+        "text": "Sign in\nLogin with Generic",
+        "pending_event": "{\"name\": \"reflex___state____state.auth_min___auth_min____profile_state.reveal\", \"payload\": {}, \"path\": \"/\", \"ts\": 1791248240.4066062, \"id\": \"96b8c19a64d64ced8f6afcdebabfc853\"}"
+      }
+    ]
+  }
+]

@@ -1,0 +1,62 @@
+{
+  "dev": {
+    "grid_cases": 15,
+    "grid_passes": 15,
+    "map_flows": 5,
+    "map_passes": 5,
+    "bounds_and_storage_assertions": 2,
+    "browser_diagnostics": {
+      "grid": {
+        "page_exceptions": 0,
+        "HTTP_errors": 0,
+        "failed_requests": 0,
+        "expected_license_banner_lines": 210,
+        "unexpected_console": []
+      },
+      "maps": {
+        "page_exceptions": 0,
+        "HTTP_errors": 0,
+        "failed_requests": 32,
+        "expected_license_banner_lines": 28,
+        "unexpected_console": []
+      }
+    },
+    "MCP": {
+      "default_endpoint": "passed",
+      "explicit_slash_diagnostic": "not needed"
+    }
+  },
+  "prod": {
+    "grid_cases": 15,
+    "grid_passes": 15,
+    "map_flows": 5,
+    "map_passes": 5,
+    "bounds_and_storage_assertions": 2,
+    "browser_diagnostics": {
+      "grid": {
+        "page_exceptions": 0,
+        "HTTP_errors": 0,
+        "failed_requests": 0,
+        "expected_license_banner_lines": 105,
+        "unexpected_console": []
+      },
+      "maps": {
+        "page_exceptions": 0,
+        "HTTP_errors": 0,
+        "failed_requests": 29,
+        "expected_license_banner_lines": 14,
+        "unexpected_console": []
+      }
+    },
+    "MCP": {
+      "default_endpoint": "failed HTTP405",
+      "explicit_slash_diagnostic": "passed full assertions"
+    }
+  },
+  "production_MCP_classification": {
+    "a2_and_a3_documented_route_status": 405,
+    "a2_and_a3_slash_route_status": 401,
+    "only_package_changed": "reflex-enterprise0.9.7a2\u21920.9.7a3",
+    "regression_in_a3": false
+  }
+}

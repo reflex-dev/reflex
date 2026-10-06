@@ -1,0 +1,102 @@
+{
+  "changed_packages": {
+    "reflex-enterprise": [
+      "0.9.7a2",
+      "0.9.7a3"
+    ]
+  },
+  "results": {
+    "a2": [
+      {
+        "method": "POST",
+        "route": "/_reflex/mcp",
+        "bearer_case": "missing",
+        "status": 405,
+        "body": "Method Not Allowed",
+        "location": null
+      },
+      {
+        "method": "POST",
+        "route": "/_reflex/mcp",
+        "bearer_case": "fabricated",
+        "status": 405,
+        "body": "Method Not Allowed",
+        "location": null
+      },
+      {
+        "method": "POST",
+        "route": "/_reflex/mcp/",
+        "bearer_case": "missing",
+        "status": 401,
+        "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}",
+        "location": null
+      },
+      {
+        "method": "POST",
+        "route": "/_reflex/mcp/",
+        "bearer_case": "fabricated",
+        "status": 401,
+        "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}",
+        "location": null
+      },
+      {
+        "method": "POST",
+        "route": "/_reflex/auth/token",
+        "status": 200,
+        "response_keys": [
+          "access_token",
+          "expires_in",
+          "session",
+          "token_type"
+        ],
+        "session": "anonymous"
+      }
+    ],
+    "a3": [
+      {
+        "method": "POST",
+        "route": "/_reflex/mcp",
+        "bearer_case": "missing",
+        "status": 405,
+        "body": "Method Not Allowed",
+        "location": null
+      },
+      {
+        "method": "POST",
+        "route": "/_reflex/mcp",
+        "bearer_case": "fabricated",
+        "status": 405,
+        "body": "Method Not Allowed",
+        "location": null
+      },
+      {
+        "method": "POST",
+        "route": "/_reflex/mcp/",
+        "bearer_case": "missing",
+        "status": 401,
+        "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}",
+        "location": null
+      },
+      {
+        "method": "POST",
+        "route": "/_reflex/mcp/",
+        "bearer_case": "fabricated",
+        "status": 401,
+        "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}",
+        "location": null
+      },
+      {
+        "method": "POST",
+        "route": "/_reflex/auth/token",
+        "status": 200,
+        "response_keys": [
+          "access_token",
+          "expires_in",
+          "session",
+          "token_type"
+        ],
+        "session": "anonymous"
+      }
+    ]
+  }
+}

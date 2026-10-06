@@ -1,0 +1,991 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packa
+ges/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='components', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3131, frontend_path='', 
+backend_port=8131, backend_path='', api_url='http://localhost:8131', 
+deploy_url='http://localhost:3131', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'plugins', 'app_name', 'loglevel', 'frontend_port', 
+'telemetry_enabled', 'api_url', 'bun_path', 'backend_port'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a3-20261005-components/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value backend_host with env var BACKEND_HOST=127.0.0.1
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3131 is in use.
+Debug: Checking if Frontend port: 3131 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3131 is not in use.
+Debug: Checking if Backend port: 8131 is in use.
+Debug: Checking if Backend port: 8131 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8131 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value backend_host with env var BACKEND_HOST=127.0.0.1
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packa
+ges/reflex_enterprise/components/ag_grid/aggrid.py:1758)
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packa
+ges/reflex_enterprise/components/ag_grid/datasource.py:182)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packa
+ges/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.64s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 33/32 0:00:00
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', 'postcss@8.5.29', 'postcss-import@17.0.0', 
+'vite@8.3.2', '@react-router/dev@8.4.0', '@react-router/fs-routes@8.4.0', 
+'autoprefixer@10.6.1', '@emotion/react@11.14.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss@8.5.29
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed @emotion/react@11.14.0
+Debug: 
+Debug: 127 packages installed [135.00ms]
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-dom@19.3.0', 'leaflet@1.9.4', 
+'ag-grid-react@36.2.0', 'react@19.3.0', 'isbot@5.2.2', 'universal-cookie@8.1.2',
+'lucide-react@1.26.0', 'react-helmet@6.1.0', '@radix-ui/themes@3.3.0', 
+'mergician@v2.0.2', 'react-error-boundary@6.1.6', 'react-leaflet@5.0.0', 
+'sonner@2.0.8', 'ag-charts-enterprise@14.2.0', '@react-router/node@8.4.0', 
+'ag-grid-community@36.2.0', 'react-router@8.4.0', 'ag-grid-enterprise@36.2.0', 
+'socket.io-client@4.8.4']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [1]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-dom@19.3.0
+Debug: installed leaflet@1.9.4
+Debug: installed ag-grid-react@36.2.0
+Debug: installed react@19.3.0
+Debug: installed isbot@5.2.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-helmet@6.1.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed mergician@2.0.2
+Debug: installed react-error-boundary@6.1.6
+Debug: installed react-leaflet@5.0.0
+Debug: installed sonner@2.0.8
+Debug: installed ag-charts-enterprise@14.2.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed ag-grid-community@36.2.0
+Debug: installed react-router@8.4.0
+Debug: installed ag-grid-enterprise@36.2.0
+Debug: installed socket.io-client@4.8.4
+Debug: 
+Debug: 110 packages installed [345.00ms]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-enterprise-a3-20261005-components-app/app/reflex.lock/bun.lo
+ck
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-enterprise-a3-20261005-components-app/app/reflex.lock/packag
+e.json
+Debug: [timing] Install Frontend Packages: 0.50s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Using Granian for backend
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Reload paths: 
+['/private/tmp/reflex-enterprise-a3-20261005-components-app/app/rxconfig.py', 
+'/private/tmp/reflex-enterprise-a3-20261005-components-app/app/cli_entry.py', 
+'/private/tmp/reflex-enterprise-a3-20261005-components-app/app/fixture_setup.py'
+, 
+'/private/tmp/reflex-enterprise-a3-20261005-components-app/app/requirements.txt'
+, '/private/tmp/reflex-enterprise-a3-20261005-components-app/app/components', 
+'/private/tmp/reflex-enterprise-a3-20261005-components-app/app/assets']
+[INFO] Starting granian (main PID: 34793)
+[INFO] Listening at: http://127.0.0.1:8131
+[INFO] Spawning worker-1 with PID: 34815
+Debug: [restart] Relaunching with --conditions=development
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value backend_host with env var BACKEND_HOST=127.0.0.1
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+Debug:   ➜  Local:   http://localhost:3131/
+App running at: http://localhost:3131/
+Backend running at: http://127.0.0.1:8131
+Debug:   ➜  Network: http://192.168.0.105:3131/  en1
+Debug:   ➜  Network: http://100.80.29.50:3131/   utun6
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-a3-20261005-components/lib/python3.12/site-packa
+ges/reflex_enterprise/plugins/api_tokens.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/05/26 17:53:29] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:53:29 PM [vite] (ssr) connected.
+Debug: 5:53:30 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:30 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:30 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:30 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:30 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:30 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:30 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:30 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:30 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:30 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:30 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:30 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:30 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:30 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:33 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:33 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:33 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:33 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:33 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:33 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:33 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:33 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:33 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:33 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:33 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:33 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:33 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:33 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:34 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:34 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:34 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:34 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:34 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:34 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:34 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:34 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:34 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:34 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:34 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:34 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:34 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:34 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:36 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:36 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:36 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:36 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:36 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:36 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:36 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:36 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:36 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:36 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:36 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:36 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:36 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:36 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:37 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:37 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:37 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:37 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:37 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:37 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:37 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:37 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:37 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:37 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:37 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:37 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:37 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:37 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:38 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:38 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:38 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:38 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:38 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:38 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:38 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:38 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:38 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:38 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:38 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:38 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:38 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:38 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:39 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:39 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:39 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:39 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:39 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:41 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:41 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:41 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:41 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:41 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:43 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:43 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:43 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:43 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:43 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:43 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:43 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:43 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:43 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:43 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:43 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:43 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:43 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:43 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:44 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:44 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:44 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:44 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:44 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:44 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:44 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:44 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:44 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:44 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:44 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:44 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:44 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:44 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:45 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:45 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:45 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:45 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:45 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:45 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:45 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:45 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:45 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:45 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:45 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:45 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:45 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:45 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:46 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:46 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:46 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:46 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:46 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:46 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:46 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:46 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:46 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:46 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:46 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:46 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:46 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:46 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:47 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:47 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:47 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:47 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:47 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:47 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:47 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:47 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:47 PM [vite] (client) [console.error] 
+***************************************** AG Grid and AG Charts Enterprise 
+License *****************************************
+Debug: 5:53:47 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:53:47 PM [vite] (client) [console.error] * All AG Grid and AG Charts 
+Enterprise features are unlocked for trial.                                     
+*
+Debug: 5:53:47 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:53:47 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:53:47 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+[10/05/26 17:53:52] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListResourceTemplatesRequest                       
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListResourceTemplatesRequest                       
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/map/base/MapLazyComponents.jsx, 
+use /external/reflex_enterprise/components/map/base/MapLazyComponents.jsx.
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] * All AG Grid Enterprise 
+features are unlocked for trial.                                                
+*
+Debug: 5:54:26 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] * All AG Grid Enterprise 
+features are unlocked for trial.                                                
+*
+Debug: 5:54:26 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] * All AG Grid Enterprise 
+features are unlocked for trial.                                                
+*
+Debug: 5:54:26 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] * All AG Grid Enterprise 
+features are unlocked for trial.                                                
+*
+Debug: 5:54:26 PM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:54:26 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[10/05/26 17:56:34] INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.
