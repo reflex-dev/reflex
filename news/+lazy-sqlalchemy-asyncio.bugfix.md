@@ -1,0 +1,1 @@
+`reflex.model` (and `rx.ModelRegistry`, `rx.session`, `rx.Model`) can be imported without `greenlet`, which SQLAlchemy 2.1 only installs with its `asyncio` extra; only `rx.asession` and `get_async_engine` require it now.
