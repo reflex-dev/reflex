@@ -274,6 +274,49 @@ def test_backend_var_event_arg_reports_repr():
         cast(EventSpec, S.on_event()).add_args(S._secret)  # pyright: ignore[reportArgumentType]
 
 
+class BackendTriggerState(BaseState):
+    """A state with a backend var, for event trigger misuse tests."""
+
+    _secret: int = 42
+
+    @event
+    def on_upload(self, files: list[rx.UploadFile]):
+        """Receive uploaded files.
+
+        Args:
+            files: The uploaded files.
+        """
+
+
+@pytest.mark.parametrize(
+    ("value", "match"),
+    [
+        (BackendTriggerState._secret, r"Invalid event chain: Field\(default=42"),
+        ([BackendTriggerState._secret], r"Invalid event: Field\(default=42"),
+        (lambda: BackendTriggerState._secret, r"-> Field\(default=42"),
+    ],
+)
+def test_backend_var_event_trigger_reports_repr(value: Any, match: str):
+    """Binding a backend var as an event trigger reports its repr, not a format error.
+
+    Args:
+        value: The misused event trigger value.
+        match: The expected error message pattern.
+    """
+    with pytest.raises(ValueError, match=match):
+        EventChain.create(value=value, args_spec=lambda: ())
+
+
+def test_backend_var_upload_progress_reports_repr():
+    """A backend var passed as on_upload_progress reports its repr."""
+    upload = rx.upload_files(
+        upload_id="u",
+        on_upload_progress=BackendTriggerState._secret,  # pyright: ignore[reportArgumentType]
+    )
+    with pytest.raises(ValueError, match=r"^Field\(default=42.* is not a valid"):
+        upload.as_event_spec(handler=cast(EventHandler, BackendTriggerState.on_upload))
+
+
 def test_state_event_handler_caches_unresolved_type_hints():
     """Unresolved annotations should be retried after their type is defined."""
 

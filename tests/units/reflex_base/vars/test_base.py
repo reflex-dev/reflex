@@ -27,6 +27,7 @@ from reflex_base.utils.exceptions import (
     BackendVarFormatError,
     ReflexRuntimeError,
     StateValueError,
+    UntypedVarError,
 )
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
@@ -1324,6 +1325,36 @@ def test_backend_field_format_raises(name: str):
         BackendVarFormatError, match=rf"Backend var 'Model\.{name}' exists only"
     ):
         f"{getattr(Model, name)}px"
+
+
+def test_mixin_field_format_raises():
+    """A mixin's frontend field has no Var, and the error says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    with pytest.raises(
+        BackendVarFormatError, match=r"Var 'Mixin\.count' is declared on a mixin state"
+    ):
+        f"{Mixin.count}"
+
+
+def test_unbound_field_format_raises():
+    """An unbound field has no Var to format."""
+    with pytest.raises(
+        BackendVarFormatError, match=r"Field 'field' has no frontend var"
+    ):
+        f"{field(default=0)}"
+
+
+def test_untyped_var_item_access_reports_backend_var_key():
+    """Indexing an untyped Var with a backend var names the key, not a format error."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(UntypedVarError, match=r"access the item 'Field\(default=42"):
+        Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
 
 
 def test_backend_field_literal_var_reports_repr():

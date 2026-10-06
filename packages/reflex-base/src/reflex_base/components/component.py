@@ -1079,7 +1079,7 @@ class Component(BaseComponent, ABC):
                         raise TypeError(msg)
                     has_var = True
                 else:
-                    msg = f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c} of type {type(c)}."
+                    msg = f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c!s} of type {type(c)}."
                     raise TypeError(msg)
             if has_var:
                 kwargs["class_name"] = LiteralArrayVar.create(

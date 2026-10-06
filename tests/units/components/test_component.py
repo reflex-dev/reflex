@@ -803,6 +803,16 @@ def test_component_create_backend_var_prop():
         rx.heading("x", size=BackendPropState._size)  # pyright: ignore[reportArgumentType]
 
 
+def test_component_create_backend_var_class_name():
+    """A backend var in a class_name list reports its repr, not a format error."""
+
+    class BackendClassNameState(BaseState):
+        _cls: str = "a"
+
+    with pytest.raises(TypeError, match=r"got value Field\(default='a'"):
+        rx.box(class_name=["b", BackendClassNameState._cls])
+
+
 @pytest.mark.parametrize(
     ("element", "expected"),
     [

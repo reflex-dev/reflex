@@ -1653,7 +1653,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             if self._var_type is Any:
                 raise exceptions.UntypedVarError(
                     self,
-                    f"access the item '{key}'",
+                    f"access the item '{key!s}'",
                 )
             msg = f"Var of type {self._var_type} does not support item access."
             raise TypeError(msg)
@@ -4123,21 +4123,31 @@ class Field(Generic[FIELD_TYPE]):
     def __format__(self, format_spec: str) -> str:
         """Refuse to format the field: only a Var has a frontend expression.
 
-        Class access reaches the field itself only when it has no Var, so
-        formatting it would otherwise silently embed its repr in the page.
+        Class access reaches the field itself only when it has no Var (a backend
+        var, or any field of a mixin state), so formatting it would otherwise
+        silently embed its repr in the page.
 
         Args:
             format_spec: The format specifier (unused).
 
         Raises:
-            BackendVarFormatError: Always; the field has no frontend value.
+            BackendVarFormatError: Always; the field has no frontend var.
         """
         qualname = f"{self._owner.__name__}.{self._name}" if self._owner else "field"
-        msg = (
-            f"Backend var '{qualname}' exists only on the server and has no"
-            " frontend value, so it cannot be used in the UI. Use a regular"
-            " state var instead."
-        )
+        if self._backend:
+            msg = (
+                f"Backend var '{qualname}' exists only on the server and has no"
+                " frontend value, so it cannot be used in the UI. Use a regular"
+                " state var instead."
+            )
+        elif getattr(self._owner, "_mixin", False):
+            msg = (
+                f"Var '{qualname}' is declared on a mixin state, which has no"
+                " frontend vars. Access it through a state that includes the"
+                " mixin instead."
+            )
+        else:
+            msg = f"Field '{qualname}' has no frontend var, so it cannot be used in the UI."
         raise BackendVarFormatError(msg)
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
