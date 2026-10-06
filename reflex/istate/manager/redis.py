@@ -6,7 +6,6 @@ import dataclasses
 import inspect
 import logging
 import os
-import sys
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -1061,7 +1060,7 @@ class StateManagerRedis(StateManager):
             and (lease_task := self._local_leases.get(token)) is not None
             and not lease_task.done()
             and not lease_task.cancelled()
-            and (sys.version_info < (3, 11) or not lease_task.cancelling())
+            and not lease_task.cancelling()
         ):
             if raise_when_found:
                 raise OplockFound
@@ -1116,7 +1115,7 @@ class StateManagerRedis(StateManager):
                         lock_released_event.wait(),
                         timeout=max(self.lock_expiration / 1000, 0),
                     )
-                except (TimeoutError, asyncio.TimeoutError):
+                except TimeoutError:
                     if self._debug_enabled:
                         logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} wait timeout for {lock_id.decode()}"

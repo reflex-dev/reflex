@@ -12,7 +12,7 @@ maintainers = [
     { name = "Simon Young", email = "simon@reflex.dev" },
     { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "click >=8.2",
     # Imported directly by `check_version`, so it is declared here rather than

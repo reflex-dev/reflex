@@ -935,7 +935,7 @@ def test_deployment_status_failed(status: str, failed: bool):
 def test_as_json_document_renders_ids_and_timestamps_as_strings():
     """A document keeps the shape it had when response bodies were printed."""
     connection = _connection("prod", 1)
-    when = datetime.datetime(2026, 7, 1, tzinfo=datetime.timezone.utc)
+    when = datetime.datetime(2026, 7, 1, tzinfo=datetime.UTC)
 
     assert as_json_document(connection) == {
         "id": str(uuid.UUID(int=1)),
@@ -1406,7 +1406,7 @@ def test_as_json_document_keeps_the_keys_the_api_sent():
         pause_reason=None,
         reflex_version="1.2.3",
         python_version="3.12",
-        created_at=datetime.datetime(2026, 7, 1, tzinfo=datetime.timezone.utc),
+        created_at=datetime.datetime(2026, 7, 1, tzinfo=datetime.UTC),
         regions=[],
         vm_type_name="c1m1",
         vm_type_cpu=1.0,

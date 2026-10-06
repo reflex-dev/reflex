@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from datetime import UTC
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -15,7 +16,7 @@ def DatetimeOperationsApp():
         date1: datetime = datetime(2021, 1, 1)
         date2: datetime = datetime(2031, 1, 1)
         date3: datetime = datetime(2021, 1, 1)
-        date4: datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
+        date4: datetime = datetime(2021, 1, 1, tzinfo=UTC)
         date5: datetime = datetime(2021, 1, 1, 1, tzinfo=timezone(timedelta(hours=1)))
         date6: datetime = datetime(2021, 1, 1, 1, tzinfo=timezone(timedelta(hours=2)))
         date7: datetime = datetime(
@@ -31,7 +32,7 @@ def DatetimeOperationsApp():
             23,
             50,
             39,
-            tzinfo=timezone.utc,
+            tzinfo=UTC,
         )
         date9: date = date(2021, 1, 1)
         date10: date = date(2031, 1, 1)

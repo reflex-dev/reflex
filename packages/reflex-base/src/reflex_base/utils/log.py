@@ -325,7 +325,7 @@ def _to_records(
     Returns:
         The JSON lines, each ending with a newline.
     """
-    timestamp = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    timestamp = datetime.datetime.now(tz=datetime.UTC).isoformat()
     out: list[bytes] = []
 
     def record(message: str, level: str = level, exception: str | None = None):
@@ -521,7 +521,7 @@ class JsonHandler(logging.Handler):
                 message = strip_markup(message)
             payload = {
                 "timestamp": datetime.datetime.fromtimestamp(
-                    record.created, tz=datetime.timezone.utc
+                    record.created, tz=datetime.UTC
                 ).isoformat(),
                 "level": logging.getLevelName(record.levelno).lower(),
                 "logger": record.name,
@@ -811,7 +811,7 @@ def emit_json_print(
         {
             # Extras first: the canonical fields below always win.
             **fields,
-            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.datetime.now(tz=datetime.UTC).isoformat(),
             "level": level,
             "logger": "reflex.console",
             "message": strip_markup(msg),

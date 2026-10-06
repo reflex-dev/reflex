@@ -84,24 +84,8 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
-import sys
-
 from reflex_base.utils import lazy_loader
-
-if sys.version_info < (3, 11):
-    # Python 3.10 reaches end of life in October 2026; 0.11.0 requires 3.11+.
-    from reflex_base.utils import console
-
-    console.deprecate(
-        feature_name="Support for Python 3.10",
-        reason="Upgrade to Python 3.11 or newer.",
-        deprecation_version="0.10.0",
-        removal_version="0.11.0",
-    )
-    del console
-del sys
-
-from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402
+from reflex_components_radix.mappings import RADIX_MAPPING
 
 _COMPONENTS_CORE_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_components_core.core.banner": [
