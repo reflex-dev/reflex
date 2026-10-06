@@ -4187,7 +4187,7 @@ class Field(Generic[FIELD_TYPE]):
         ):
             logger.error(
                 f"Expected field '{type(state).__name__}.{self._name}' to receive type"
-                f" '{self.outer_type_}', but got '{value}' of type '{type(value)}'."
+                f" '{self.outer_type_}', but got {value!r} of type '{type(value)}'."
             )
         state.__dict__[self._name] = value
         if self._tracked:

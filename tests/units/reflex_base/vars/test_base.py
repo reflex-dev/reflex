@@ -1338,6 +1338,24 @@ def test_backend_field_literal_var_reports_repr():
         LiteralVar.create(Model._secret)
 
 
+def test_mistyped_backend_field_value_logs_repr(caplog: pytest.LogCaptureFixture):
+    """Assigning a backend var to a typed field logs its repr and stores it.
+
+    Args:
+        caplog: The log capture fixture.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+        count: int = 0
+
+    model = Model()  # pyright: ignore[reportCallIssue]
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        model.count = Model._secret  # pyright: ignore[reportAttributeAccessIssue]
+    assert "but got Field(default=42" in caplog.text
+    assert model.__dict__["count"] is Model._secret
+
+
 def test_classvar_over_inherited_field_is_not_a_field():
     """A ClassVar redeclaring an inherited field stays a class attribute."""
 
