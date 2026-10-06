@@ -1,6 +1,7 @@
 """The database tables of the playground and their seeding at backend start."""
 
 import reflex as rx
+from sqlalchemy.schema import CreateTable
 
 from playground.seed import product_rows
 
@@ -20,15 +21,18 @@ class Product(rx.Model, table=True):
 
 
 def seed_database():
-    """Create the tables and fill an empty product table with the seed rows.
+    """Create the product table and fill it with the seed rows when it is empty.
 
-    Runs at backend start as a lifespan task, before the backend answers. The
-    rows go in with one ``executemany`` in one transaction, and ``INSERT OR
-    IGNORE`` keeps two workers seeding at once from inserting a row twice.
+    Runs at backend start as a lifespan task in every backend worker, before
+    the backend answers. ``CREATE TABLE IF NOT EXISTS`` and ``INSERT OR
+    IGNORE`` keep workers starting at once from creating the table or
+    inserting a row twice, and the rows go in with one ``executemany`` in one
+    transaction.
     """
-    rx.Model.create_all()
     with rx.session() as session:
         connection = session.connection()
+        product_table = Product.__table__  # pyright: ignore[reportAttributeAccessIssue]
+        connection.execute(CreateTable(product_table, if_not_exists=True))
         table = Product.__tablename__
         if connection.exec_driver_sql(f"SELECT 1 FROM {table} LIMIT 1").first():
             return
