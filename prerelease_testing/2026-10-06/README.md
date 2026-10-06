@@ -11,6 +11,18 @@ regression status, refuted claims, cluster summaries) and [RELEASE_PLAN.md](./RE
 The rules every agent followed are in [AGENT_BRIEF.md](./AGENT_BRIEF.md); the per-cluster assignments
 (changelog lines verbatim, PR numbers, things to build and combine) are in [briefs/](./briefs/).
 
+## Campaign status
+
+**Paused 2026-10-06 ~21:45 UTC at the user's request (a new round of pre-releases is being cut).**
+Interim deliverables: [FINDINGS.md](./FINDINGS.md) (20 findings, 5 verifier runs, partial evidence from the
+four interrupted clusters) and [RELEASE_PLAN.md](./RELEASE_PLAN.md). Completed clusters: `smoke`,
+`packaging`, `thirdparty`, `upgrades_a`, `upgrades_b`, `hydration`, `pymatrix_install` (each with a
+`NOTES.md`, drivers, logs and a `verification/` appendix where a claim was verified). Interrupted by the org
+spend limit before writing their reports: `ent_demos`, `dataeditor_components`, `events_vars`,
+`ent_auth_mcp_redis` (their working directories are preserved outside the repo; see FINDINGS.md "Partial
+clusters"). Not started: `statemgr_perf`. The pending verifier for the npm-SIGTERM and forward-ref claims
+was not launched.
+
 ## Versions under test
 
 Unchanged from 2026-10-05 except where noted: reflex / reflex-base 0.10.0a1; reflex-components-code,
