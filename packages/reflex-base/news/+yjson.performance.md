@@ -1,0 +1,1 @@
+Install the new `yjson` extra (`pip install reflex-base[yjson]`, CPython 3.11+ on Linux x86_64) to serialize state updates, uploads and compiled state with a native encoder. `format.json_dumps` now writes compact JSON (`{"a":1}`) by default, with or without the extra.

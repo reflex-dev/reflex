@@ -15,6 +15,11 @@ from rich.markup import escape as escape_markup
 from reflex_base import constants
 from reflex_base.utils import exceptions
 
+try:
+    import mojson  # pyright: ignore[reportMissingImports]
+except ImportError:  # the optional reflex[yjson] extra
+    mojson = None
+
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
     from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
@@ -737,8 +742,17 @@ def _get_json_encoder(separators: tuple[str, str] | None) -> json.JSONEncoder:
     )
 
 
-def json_dumps(obj: Any, separators: tuple[str, str] | None = None, **kwargs) -> str:
+_COMPACT_SEPARATORS = (",", ":")
+
+
+def json_dumps(
+    obj: Any, separators: tuple[str, str] | None = _COMPACT_SEPARATORS, **kwargs
+) -> str:
     """Takes an object and returns a jsonified string.
+
+    Compact output is written by yjson when the ``reflex[yjson]`` extra is
+    installed. It matches the stdlib's output, except that it escapes lone
+    surrogates and writes the shortest float exponent (``1e-7``, not ``1e-07``).
 
     Args:
         obj: The object to be serialized.
@@ -748,6 +762,14 @@ def json_dumps(obj: Any, separators: tuple[str, str] | None = None, **kwargs) ->
     Returns:
         A string
     """
+    if (
+        mojson is not None
+        and separators == _COMPACT_SEPARATORS
+        and kwargs.keys() <= {"default"}
+    ):
+        return mojson.dumps_socket(
+            obj, default=kwargs.get("default") or _get_serialize()
+        ).decode()
     if not kwargs and (separators is None or isinstance(separators, tuple)):
         return _get_json_encoder(separators).encode(obj)
 

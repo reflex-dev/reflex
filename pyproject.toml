@@ -67,6 +67,7 @@ db = [
   "sqlmodel >=0.0.24,<0.0.45",
 ]
 pydantic = ["reflex-base[pydantic]"]
+yjson = ["reflex-base[yjson]"]
 testing = [
   "psutil >=7.0.0,<8.0",
   "selenium >=4.0.0,<5.0",
@@ -135,6 +136,8 @@ dev = [
   "ty",
   "typer",
   "uvicorn",
+  # The reflex[yjson] encoder; its wheels cover CPython 3.11+ on Linux x86_64.
+  "yjson; python_version >= '3.11' and sys_platform == 'linux' and platform_machine == 'x86_64'",
   "cronsim",
   "croniter",
 ]
@@ -553,6 +556,9 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
+# Third-party, but its first release fixing a subprocess environment leak (0.1.2)
+# is inside the window. Remove once 0.1.2 is older than 7 days (2026-10-13).
+yjson = false
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
