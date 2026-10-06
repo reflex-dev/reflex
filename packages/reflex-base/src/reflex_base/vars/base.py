@@ -4119,6 +4119,29 @@ class Field(Generic[FIELD_TYPE]):
             return f"Field(default={self.default!r}, is_var={self.is_var}{annotated_type_str})"
         return f"Field(default_factory={self.default_factory!r}, is_var={self.is_var}{annotated_type_str})"
 
+    def __format__(self, format_spec: str) -> str:
+        """Refuse to format the field: only a Var has a frontend expression.
+
+        Class access reaches the field itself only when it has no Var, so an
+        f-string would otherwise silently embed its repr in the page.
+
+        Args:
+            format_spec: The format specifier (unused).
+
+        Raises:
+            VarTypeError: Always; the field has no frontend value.
+        """
+        qualname = f"{self._owner.__name__}.{self._name}" if self._owner else "field"
+        if self._backend:
+            msg = (
+                f"Backend var '{qualname}' cannot be used in an f-string: backend"
+                " vars (prefixed with '_') exist only on the server and have no"
+                " frontend value. Use a regular var instead."
+            )
+        else:
+            msg = f"Field '{qualname}' has no frontend var to format into an f-string."
+        raise VarTypeError(msg)
+
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.
 

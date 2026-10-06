@@ -23,7 +23,11 @@ from reflex_base import constants
 from reflex_base.constants import RouteArgType
 from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.utils import serializers
-from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
+from reflex_base.utils.exceptions import (
+    ReflexRuntimeError,
+    StateValueError,
+    VarTypeError,
+)
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
@@ -1302,6 +1306,16 @@ def test_backend_field_is_not_type_checked():
     model = Model()  # pyright: ignore[reportCallIssue]
     model._value = 1
     assert model._value == 1
+
+
+def test_backend_field_in_fstring_raises():
+    """Formatting a backend var into an f-string raises instead of embedding its repr."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(VarTypeError, match=r"Backend var 'Model._secret'"):
+        f"{Model._secret}px"
 
 
 def test_classvar_over_inherited_field_is_not_a_field():
