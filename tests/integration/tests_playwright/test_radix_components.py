@@ -33,10 +33,10 @@ def ProgressApp():
 
 @pytest.fixture(scope="module")
 def progress_app(
-    tmp_path_factory: pytest.TempPathFactory,
+    app_harness_env: type[AppHarness], tmp_path_factory: pytest.TempPathFactory
 ) -> Generator[AppHarness, None, None]:
-    """Run the primitive Progress app with AppHarness."""
-    with AppHarness.create(
+    """Run the primitive Progress app in dev and prod modes."""
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("radix_progress"),
         app_source=ProgressApp,
     ) as harness:
