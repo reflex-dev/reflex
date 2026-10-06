@@ -66,6 +66,7 @@ async function createConnection(t, dispatch = {}) {
     dispatch,
     reports: () => sent.filter((event) => event.name === "client_error"),
     receive: (update) => handlers.get("event")(update),
+    reconnect: () => handlers.get("connect")(),
     enqueue: (events) =>
       runtime.queueEvents(events, socket, false, () => {}, params),
   };
@@ -140,6 +141,18 @@ test("unknown-only updates report each missing name once and allow events", asyn
   assert.deepEqual(applied, [{ value: "registered" }]);
   assert.equal(c.saved.get("unknown.first.value"), "registered");
   assert.equal(c.reports().length, 2);
+});
+
+test("a reconnect reports unknown substates to the new connection", async (t) => {
+  const c = await createConnection(t);
+  c.receive({ delta: { "unknown.first": {} } });
+  c.receive({ delta: { "unknown.first": {} } });
+  assert.equal(c.reports().length, 1);
+  await c.reconnect();
+  c.receive({ delta: { "unknown.first": {} } });
+  c.receive({ delta: { "unknown.first": {} } });
+  assert.equal(c.reports().length, 2);
+  assert.equal(c.reports()[1].value.substate, "unknown.first");
 });
 
 test("reducer failures still reach the backend error handler", async (t) => {

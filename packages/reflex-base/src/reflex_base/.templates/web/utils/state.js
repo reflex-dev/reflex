@@ -779,9 +779,13 @@ export const connect = async (
     socket.current.disconnect();
   };
 
+  // Report each unknown substate once per connection without stopping events.
+  const reported_missing_substates = new Set();
+
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
+    reported_missing_substates.clear();
     setConnectErrors([]);
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
@@ -829,9 +833,6 @@ export const connect = async (
       error_type: ERROR_TYPE_STATE_UPDATE,
     });
   };
-
-  // Report each unknown substate once per connection without stopping events.
-  const reported_missing_substates = new Set();
 
   // On each received message, queue the updates and events.
   socket.current.on("event", (update) => {
