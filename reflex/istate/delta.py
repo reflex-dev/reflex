@@ -181,7 +181,6 @@ def _record_or_drop_delta_value(
 async def _drop_unchanged_delta_value(
     cvar: AsyncComputedVar,
     instance: BaseState,
-    prop: str,
     token: str,
     state_name: str,
     key: str,
@@ -192,7 +191,6 @@ async def _drop_unchanged_delta_value(
     Args:
         cvar: The async computed var to resolve.
         instance: The state instance the computed var is attached to.
-        prop: The name of the computed var to read once this coroutine is awaited.
         token: The client token the delta is being produced for.
         state_name: The full name of the state the value belongs to.
         key: The delta key the resolved value is stored under.
@@ -203,7 +201,13 @@ async def _drop_unchanged_delta_value(
         value that was sent to the client.
     """
     return _record_or_drop_delta_value(
-        cvar, instance, await instance.get_value(prop), token, state_name, key, pending
+        cvar,
+        instance,
+        await cvar.__get__(instance, type(instance)),
+        token,
+        state_name,
+        key,
+        pending,
     )
 
 
@@ -246,7 +250,7 @@ def build_delta(state: BaseState) -> Delta:
                 # Create the getter coroutine only when the wrapper is awaited:
                 # a filter may close the wrapper without ever starting it.
                 value = _drop_unchanged_delta_value(
-                    cvar, state, prop, token, full_name, key, pending
+                    cvar, state, token, full_name, key, pending
                 )
                 # An async value cannot be compared to what the client has
                 # until it is awaited, and a filter that withholds it closes
