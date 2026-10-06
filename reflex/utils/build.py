@@ -10,7 +10,14 @@ from pathlib import Path, PurePosixPath
 from reflex_base import constants
 from reflex_base.config import get_config
 
-from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
+from reflex.utils import (
+    build_cache,
+    console,
+    js_runtimes,
+    path_ops,
+    prerequisites,
+    processes,
+)
 from reflex.utils.exec import frontend_env, is_in_app_harness
 
 logger = logging.getLogger(__name__)
@@ -253,7 +260,31 @@ def build():
         SystemExit: If the build process fails.
     """
     wdir = prerequisites.get_web_dir()
+    command = [
+        *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
+        "run",
+        "export",
+    ]
+    with build_cache.frontend_build_cache(wdir, command) as cache:
+        if cache is None or not cache.restore():
+            _build_frontend(wdir, command)
+            if cache is not None:
+                cache.capture()
+        _postprocess_frontend(wdir)
+        if cache is not None:
+            cache.commit()
 
+
+def _build_frontend(wdir: Path, command: list[str]) -> None:
+    """Run a fresh production JavaScript build.
+
+    Args:
+        wdir: Frontend working directory.
+        command: Package manager export command.
+
+    Raises:
+        SystemExit: The frontend build failed.
+    """
     # Clean the static directory if it exists.
     path_ops.rm(str(wdir / constants.Dirs.BUILD_DIR))
 
@@ -266,11 +297,7 @@ def build():
 
     # Start the subprocess with the progress bar.
     process = processes.new_process(
-        [
-            *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
-            "run",
-            "export",
-        ],
+        command,
         cwd=wdir,
         shell=constants.IS_WINDOWS,
         env=frontend_env(os.environ),
@@ -282,6 +309,14 @@ def build():
             "Failed to build the frontend. Please run with --loglevel debug for more information.",
         )
         raise SystemExit(1)
+
+
+def _postprocess_frontend(wdir: Path) -> None:
+    """Apply build hooks and serving transformations to pristine frontend output.
+
+    Args:
+        wdir: Frontend working directory.
+    """
     config = get_config()
     static_dir = wdir / constants.Dirs.STATIC
 
