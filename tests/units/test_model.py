@@ -1,6 +1,7 @@
 import math
 import subprocess
 import sys
+import typing
 from pathlib import Path
 from unittest import mock
 
@@ -440,6 +441,7 @@ for mod in [
     del sys.modules[mod]
 
 import sqlalchemy.orm
+import sqlmodel
 
 import reflex as rx
 import reflex.model
@@ -457,7 +459,10 @@ class Item(rx.Model, table=True):
 
 
 with rx.session("sqlite:///reflex.db") as session:
-    assert session.bind is not None
+    rx.Model.metadata.create_all(session.get_bind())
+    session.add(Item(name="widget"))
+    session.commit()
+    assert session.exec(sqlmodel.select(Item.name)).all() == ["widget"]
 
 try:
     rx.asession("sqlite+aiosqlite:///reflex.db")
@@ -489,3 +494,16 @@ def test_sync_db_api_without_greenlet(tmp_path: Path):
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip().endswith("OK")
+
+
+def test_async_db_api_type_hints_resolve():
+    """The async helpers' annotations resolve when greenlet is installed."""
+    pytest.importorskip("greenlet")
+    import sqlalchemy.ext.asyncio
+    from sqlmodel.ext.asyncio.session import AsyncSession
+
+    assert typing.get_type_hints(reflex.model.asession)["return"] is AsyncSession
+    assert (
+        typing.get_type_hints(reflex.model.get_async_engine)["return"]
+        is sqlalchemy.ext.asyncio.AsyncEngine
+    )
