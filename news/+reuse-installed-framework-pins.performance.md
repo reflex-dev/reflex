@@ -1,0 +1,1 @@
+Skip re-adding framework dependencies whose exact pins are already installed from the persisted lockfile. On npm, the saved caret declarations are verified against the lockfile and the installed package before being reused.
