@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 _T = TypeVar("_T")
 _SCALING_RETRY_DELAY = 15
+_DEPLOYMENTS_PATH = "deployments"
 
 
 def _is_scaling_conflict(error: APIStatusError, path: str) -> bool:
@@ -35,7 +36,7 @@ def _is_scaling_conflict(error: APIStatusError, path: str) -> bool:
         or urlsplit(error.request.url).path != f"/api/v1/{path}"
     ):
         return False
-    if path == "deployments":
+    if path == _DEPLOYMENTS_PATH:
         # app_busy also covers stopping and another deployment, so its code
         # alone does not identify the scale that this retry waits for.
         return error.code == "app_busy" and error.detail == (
@@ -155,7 +156,7 @@ class _DeploymentRetryTransport:
             self._state.submission = submission
         return submission[1].run(
             lambda: self._send_submission(request),
-            path="deployments",
+            path=_DEPLOYMENTS_PATH,
             action="deployment",
         )
 
@@ -186,7 +187,7 @@ class _DeploymentRetryTransport:
             response=response,
             detail=detail,
         )
-        if _is_scaling_conflict(error, "deployments"):
+        if _is_scaling_conflict(error, _DEPLOYMENTS_PATH):
             raise error
         return response
 
