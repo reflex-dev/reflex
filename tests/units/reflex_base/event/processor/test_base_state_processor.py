@@ -1776,6 +1776,9 @@ async def test_hydrate_keeps_storage_write_guard_for_mismatched_substate(
 @pytest.mark.parametrize("asynchronous", [True, False])
 @pytest.mark.parametrize("with_load", [True, False])
 @pytest.mark.parametrize("with_hashes", [True, False])
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
 async def test_hydrate_delivers_computed_var_mutations(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
@@ -1805,6 +1808,15 @@ async def test_hydrate_delivers_computed_var_mutations(
         value: str = storage("")
         status: str = "initial"
         loaded_value: str = "initial"
+
+        @rx.var
+        def before_validation(self) -> str:
+            """Expose values captured before the validating computed var runs.
+
+            Returns:
+                The status and storage value.
+            """
+            return f"{self.status}:{self.value}"
 
         def _sanitize(self) -> str:
             """Clear rejected storage and update a plain var.
@@ -1846,7 +1858,7 @@ async def test_hydrate_delivers_computed_var_mutations(
             self.loaded_value = self.value
 
     wired_app.add_page(
-        lambda: rx.text(StorageState.checked),
+        lambda: rx.text(StorageState.checked, StorageState.before_validation),
         route="/",
         on_load=StorageState.load if with_load else None,
     )
@@ -1867,6 +1879,7 @@ async def test_hydrate_delivers_computed_var_mutations(
     snapshot = emitted_deltas[0][1]
     assert snapshot.get(name, {}).get(key, "") == ""
     assert snapshot[name]["status" + FIELD_MARKER] == "cleared"
+    assert snapshot[name]["before_validation" + FIELD_MARKER] == "cleared:"
     assert any(
         delta.get(name, {}).get(key) == ""
         and delta.get(State.get_full_name(), {}).get(
@@ -1880,6 +1893,11 @@ async def test_hydrate_delivers_computed_var_mutations(
             delta.get(name, {}).get("loaded_value" + FIELD_MARKER) == ""
             for _, delta in emitted_deltas[1:]
         )
+    async with _read_back(real_base_state_processor, token) as root:
+        stored = await root.get_state(StorageState)
+        assert stored.value == ""
+        assert stored.status == "cleared"
+        assert stored.loaded_value == ("" if with_load else "initial")
 
 
 @pytest.mark.parametrize(

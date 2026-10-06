@@ -2338,32 +2338,22 @@ class State(BaseState):
         self._reset_client_storage()
         if vars:
             await _apply_client_storage_vars(self, vars)
+        self._clean()
         # The snapshot must carry is_hydrated=False: the frontend skips
         # writing client storage for a delta that is not yet hydrated, and
         # the reset defaults above must not be written back to the browser.
         self.is_hydrated = False
-        self._clean()
         ctx = EventContext.get()
         if ctx.emit_delta_impl is not None:
             delta = await _resolve_delta(self.dict())
-            # Computed vars can rewrite base vars after dict() captured them.
-            mutations = list(_dirty_base_vars(self))
-            for state, names in mutations:
-                state_delta = delta.setdefault(state.get_full_name(), {})
-                state_delta.update(
-                    (name + FIELD_MARKER, state.get_value(name)) for name in names
-                )
             if hashes:
                 delta = await _diff_against_initial_state(type(self), delta, hashes)
-            delta.setdefault(self.get_full_name(), {})[
-                constants.CompileVars.IS_HYDRATED + FIELD_MARKER
-            ] = False
+            # Include the guard and values changed while resolving the snapshot.
+            for state_name, changes in (await self._get_resolved_delta()).items():
+                delta.setdefault(state_name, {}).update(changes)
             await ctx.emit_delta(delta=delta)
-            self._clean()
-            # Deliver these writes after the snapshot's storage-write guard.
-            for state, names in mutations:
-                state.dirty_vars.update(names)
-                state._mark_ancestors_dirty()
+            # Follow-up corrections must be allowed to write browser storage.
+            self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
             return None
@@ -2375,21 +2365,6 @@ class State(BaseState):
 
 
 T = TypeVar("T", bound=BaseState)
-
-
-def _dirty_base_vars(state: BaseState) -> Iterator[tuple[BaseState, set[str]]]:
-    """Find base vars written while evaluating a hydration snapshot.
-
-    Args:
-        state: The root of the dirty state tree.
-
-    Yields:
-        Each changed state and its dirty base-var names.
-    """
-    if names := state.dirty_vars.intersection(state.base_vars):
-        yield state, names
-    for name in state.dirty_substates:
-        yield from _dirty_base_vars(state.substates[name])
 
 
 def _short_digest(text: str) -> str:
