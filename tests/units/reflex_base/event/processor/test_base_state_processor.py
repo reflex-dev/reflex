@@ -3,8 +3,10 @@
 import asyncio
 import contextlib
 import dataclasses
+import gc
 import logging
 import traceback
+import weakref
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
@@ -731,6 +733,63 @@ async def test_background_flush_failure_does_not_mask_handler_exception(
         record.exc_info and record.exc_info[0] is ValueError
         for record in caplog.records
     ), f"the flush failure was not logged: {caplog.records}"
+
+
+@pytest.mark.parametrize("processor_state_manager", ["redis"], indirect=True)
+async def test_background_event_releases_the_dispatch_state_tree(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A suspended background handler does not keep the dispatch-time tree alive.
+
+    Regression: after dropping the state lock, ``_execute_event`` kept the
+    tree it loaded under that lock referenced from its frame locals for as
+    long as the background handler ran. With a manager that loads a fresh
+    tree for every lock, like redis, each running background task pinned an
+    extra copy of the session's state. Once the handler has entered
+    ``async with self``, its proxy wraps the tree loaded there, and nothing
+    should reference the dispatch-time one anymore.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    dispatch_root: list[weakref.ref[BaseState]] = []
+    ticked = asyncio.Event()
+    resume = asyncio.Event()
+
+    class RetainingBgState(State):
+        @event(background=True)
+        async def bg(self):
+            dispatch_root.append(
+                weakref.ref(self.__wrapped__._get_root_state())  # pyright: ignore [reportAttributeAccessIssue]
+            )
+            async with self:
+                pass
+            ticked.set()
+            await resume.wait()
+
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(RetainingBgState.bg())[0])
+        await asyncio.wait_for(ticked.wait(), timeout=5)
+        gc.collect()
+        retained = dispatch_root[0]() is not None
+        resume.set()
+        await processor.join(5)
+
+    assert not retained, (
+        "the dispatch-time state tree stayed referenced while the background "
+        "handler was suspended outside `async with self`"
+    )
 
 
 async def test_chained_event_keeps_originating_router_data(
