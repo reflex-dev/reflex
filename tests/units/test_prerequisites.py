@@ -358,7 +358,7 @@ def _patch_frontend_package_manager(
     # inspect the install args without mocking subprocess primitives.
     def _stub_initial_install(primary_pm, env, frozen_lockfile):
         args = [primary_pm, "install", "--legacy-peer-deps"]
-        if not js_runtimes._is_bun_package_manager(primary_pm):
+        if js_runtimes._is_npm(primary_pm):
             args.append("--include=dev")
         if frozen_lockfile and js_runtimes._is_bun_package_manager(primary_pm):
             args.append("--frozen-lockfile")
@@ -1283,24 +1283,28 @@ def _record_calls_with_pm(
     return calls
 
 
-@pytest.mark.parametrize("package_manager", ["bun", "npm"])
+@pytest.mark.parametrize("package_manager", ["bun", "/opt/tools/bun-1.3", "npm"])
 def test_install_frontend_packages_uses_package_manager_dev_flag(
     install_packages_env: InstallPackagesEnv,
     monkeypatch: pytest.MonkeyPatch,
     package_manager: str,
 ):
-    """Npm must save development tools in devDependencies, including in production."""
+    """Npm must save development tools in devDependencies, including in production.
+
+    Bun silently ignores npm's ``--save-dev``, so a custom-named bun still gets ``-d``.
+    """
     env = install_packages_env
     monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
     monkeypatch.setenv("NODE_ENV", "production")
     calls = _record_calls_with_pm(env, package_manager)
+    is_npm = package_manager == "npm"
 
     env.install()
 
     assert len(calls) == 1
-    assert ("--save-dev" in calls[0]) == (package_manager == "npm")
-    assert ("-d" in calls[0]) == (package_manager == "bun")
-    assert ("--include=dev" in calls[0]) == (package_manager == "npm")
+    assert ("--save-dev" in calls[0]) == is_npm
+    assert ("-d" in calls[0]) != is_npm
+    assert ("--include=dev" in calls[0]) == is_npm
 
 
 def test_install_frontend_packages_all_npm_operations_include_dev(
@@ -1320,10 +1324,14 @@ def test_install_frontend_packages_all_npm_operations_include_dev(
     assert all("--include=dev" in call for call in calls)
 
 
-def test_run_initial_npm_install_includes_dev_in_production(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize("package_manager", ["bun", "/opt/tools/bun-1.3", "npm"])
+def test_run_initial_install_includes_dev_only_for_npm(
+    monkeypatch: pytest.MonkeyPatch, package_manager: str
 ):
-    """Installing a restored npm lock must include development tools for the build."""
+    """Installing a restored npm lock must include development tools for the build.
+
+    The npm-only flag must not reach bun, whatever its executable is named.
+    """
     monkeypatch.setenv("NODE_ENV", "production")
     new_process = mock.Mock(return_value=mock.Mock(returncode=0))
     monkeypatch.setattr(js_runtimes.processes, "new_process", new_process)
@@ -1331,9 +1339,11 @@ def test_run_initial_npm_install_includes_dev_in_production(
         js_runtimes.processes, "show_status", mock.Mock(return_value=[])
     )
 
-    js_runtimes._run_initial_install("npm", {}, frozen_lockfile=True)
+    js_runtimes._run_initial_install(package_manager, {}, frozen_lockfile=True)
 
-    assert "--include=dev" in new_process.call_args.args[0]
+    assert ("--include=dev" in new_process.call_args.args[0]) == (
+        package_manager == "npm"
+    )
 
 
 def test_install_frontend_packages_npm_skips_frozen_lockfile(

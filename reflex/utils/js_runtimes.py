@@ -537,7 +537,7 @@ def _run_initial_install(
         "install",
         "--legacy-peer-deps",
     ]
-    if not _is_bun_package_manager(primary_package_manager):
+    if _is_npm(primary_package_manager):
         install_args.append("--include=dev")
     if frozen_lockfile and _is_bun_package_manager(primary_package_manager):
         # ``--frozen-lockfile`` is bun-only; npm ignores it today and the
@@ -703,7 +703,9 @@ def _install_frontend_packages(
     )
 
     primary_package_manager = install_package_managers[0]
-    is_bun = _is_bun_package_manager(primary_package_manager)
+    # Detect npm rather than bun: npm is always found by name, but a custom
+    # bun_path may be named anything, and bun silently ignores npm's flags.
+    is_bun = not _is_npm(primary_package_manager)
     # npm drops devDependencies under NODE_ENV=production unless told otherwise;
     # bun has no such flag and always installs them.
     include_dev_args = [] if is_bun else ["--include=dev"]
