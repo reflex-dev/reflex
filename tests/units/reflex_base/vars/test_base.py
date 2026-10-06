@@ -1340,9 +1340,10 @@ def test_mixin_field_format_raises():
 
 
 def test_unbound_field_format_raises():
-    """An unbound field has no Var to format."""
+    """An unbound field has no Var to format, and the error shows its definition."""
     with pytest.raises(
-        BackendVarFormatError, match=r"Field 'field' has no frontend var"
+        BackendVarFormatError,
+        match=r"^Field\(default=0, is_var=True, annotated_type=typing.Any\) has no",
     ):
         f"{field(default=0)}"
 

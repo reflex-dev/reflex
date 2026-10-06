@@ -4133,21 +4133,21 @@ class Field(Generic[FIELD_TYPE]):
         Raises:
             BackendVarFormatError: Always; the field has no frontend var.
         """
-        qualname = f"{self._owner.__name__}.{self._name}" if self._owner else "field"
+        name = f"'{self._owner.__name__}.{self._name}'" if self._owner else repr(self)
         if self._backend:
             msg = (
-                f"Backend var '{qualname}' exists only on the server and has no"
+                f"Backend var {name} exists only on the server and has no"
                 " frontend value, so it cannot be used in the UI. Use a regular"
                 " state var instead."
             )
         elif getattr(self._owner, "_mixin", False):
             msg = (
-                f"Var '{qualname}' is declared on a mixin state, which has no"
+                f"Var {name} is declared on a mixin state, which has no"
                 " frontend vars. Access it through a state that includes the"
                 " mixin instead."
             )
         else:
-            msg = f"Field '{qualname}' has no frontend var, so it cannot be used in the UI."
+            msg = f"{name} has no frontend var, so it cannot be used in the UI."
         raise BackendVarFormatError(msg)
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
