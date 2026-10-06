@@ -773,6 +773,9 @@ async def test_background_event_releases_the_dispatch_state_tree(
 
     assert real_base_state_processor._root_context is not None
     state_manager = real_base_state_processor._root_context.state_manager
+    assert isinstance(state_manager, StateManagerRedis)
+    # Oplock serves every lock from one cached tree, so there is no second tree.
+    state_manager._oplock_enabled = False
     async with state_manager.modify_state(
         BaseStateToken(ident=token, cls=State)
     ) as seed_root:
