@@ -43,8 +43,11 @@ def test_progress_forwards_numeric_props_to_root_and_indicator(
 def test_progress_forwards_defaults_to_root_and_indicator() -> None:
     """The default progress state is shared by both primitive parts."""
     component = progress()
+    assert isinstance(component, ProgressRoot)
+    indicator = component.children[0]
+    assert isinstance(indicator, ProgressIndicator)
 
-    for part in (component, component.children[0]):
+    for part in (component, indicator):
         props = part._render().props
         assert props["value"]._js_expr == "0"
         assert props["max"]._js_expr == "100"
