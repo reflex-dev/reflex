@@ -403,6 +403,8 @@ class MemoizeStatefulPlugin(Plugin):
         # wrapped subtree. Delegate ref collection to the original component
         # so descendants inside the memo body remain reachable for ref lookup.
         object.__setattr__(wrapper, "_get_all_refs", comp._get_all_refs)
+        # Keep each ref's owning control available after replacing the subtree.
+        object.__setattr__(wrapper, "_form_control_source", comp)
         return wrapper
 
 
