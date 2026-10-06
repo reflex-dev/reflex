@@ -361,12 +361,7 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
                 # An unsubscripted generic base takes its type parameters'
                 # defaults, or Any; a TypeVar has no has_default before 3.13.
                 base = base_origin[
-                    tuple(
-                        param.__default__
-                        if getattr(param, "has_default", bool)()
-                        else Any
-                        for param in params
-                    )
+                    tuple(_type_param_default(param) for param in params)
                 ]
             base_annotations = base_origin.__annotations__
             field_types.update(
@@ -374,9 +369,14 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
                 for name, hint in get_typed_dict_field_types(base).items()
                 if annotations[name] == base_annotations[name]
             )
-    substitution = _match_type_args(
-        getattr(origin, "__parameters__", ()), get_args(typed_dict)
-    )
+    type_params = getattr(origin, "__parameters__", ())
+    type_args = get_args(typed_dict)
+    substitution = _match_type_args(type_params, type_args)
+    if not any(isinstance(param, TypeVarTuples) for param in type_params):
+        substitution.update(
+            (param, _type_param_default(param))
+            for param in type_params[len(type_args) :]
+        )
     declared = getattr(typed_dict, "__parameters__", ())
     for name, hint in field_types.items():
         if hint in substitution:
@@ -545,6 +545,20 @@ def _match_type_args(
     if n_after:
         substitution.update(zip(type_params[-n_after:], args[-n_after:], strict=False))
     return substitution
+
+
+def _type_param_default(param: Any) -> Any:
+    """Get a type parameter's default, or Any when it has none.
+
+    Args:
+        param: The type parameter to inspect.
+
+    Returns:
+        The declared default or Any.
+    """
+    if getattr(param, "has_default", bool)():
+        return param.__default__
+    return Any
 
 
 def _unpacked_type_var_tuple(arg: Any) -> Any | None:

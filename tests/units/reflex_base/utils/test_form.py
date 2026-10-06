@@ -421,6 +421,17 @@ class _ConcreteFields(_MiddleFields[str]):
     pass
 
 
+_DefaultListT = typing_extensions.TypeVar("_DefaultListT", default=list[str])
+_DefaultBoolT = typing_extensions.TypeVar("_DefaultBoolT", default=bool)
+
+
+class _DefaultedFields(
+    typing_extensions.TypedDict, Generic[_DefaultListT, _DefaultBoolT]
+):
+    tags: _DefaultListT
+    agree: _DefaultBoolT
+
+
 @pytest.mark.parametrize(
     "typed_dict", [_InheritedFields, _ConcreteFields, _MiddleFields[str]]
 )
@@ -439,6 +450,20 @@ def test_transform_form_data_resolves_inherited_generic_bool_fields():
         "tags": False,
         "maybe": None,
     }
+
+
+def test_transform_form_data_resolves_unsubscripted_generic_defaults():
+    """Bare generic field parameters use their defaults during form coercion."""
+    assert _transform(
+        _DefaultedFields,
+        {
+            FORM_DATA_ENTRIES_KEY: [
+                ["tags", "first"],
+                ["tags", "second"],
+                ["agree", "on"],
+            ]
+        },
+    ) == {"tags": ["first", "second"], "agree": True}
 
 
 _BRACKETED_ITEMS = [("range[]", "20"), ("name", "x"), ("range[]", "80"), ("one[]", "a")]

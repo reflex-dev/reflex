@@ -369,10 +369,13 @@ class _Unresolved(TypedDict):
 
 
 def test_get_typed_dict_field_types_rejects_unresolved_type_variables():
-    """A field typed by a type variable its class does not declare is an error."""
+    """A field typed by an undeclared variable fails; a generic uses Any when bare."""
     with pytest.raises(TypeError, match="_Unresolved"):
         get_typed_dict_field_types(_Unresolved)
-    assert get_typed_dict_field_types(_GenericBase)["value"] is _FieldT
+    assert get_typed_dict_field_types(_GenericBase) == {
+        "value": Any,
+        "maybe": Any | None,
+    }
 
 
 class _BareGenericChild(_GenericBase):
@@ -402,7 +405,8 @@ class _DefaultChild(_DefaultBase):
 
 
 def test_get_typed_dict_field_types_unsubscripted_base_uses_defaults():
-    """An unsubscripted generic base takes its type parameters' defaults."""
+    """An unsubscripted generic TypedDict or base takes its parameter defaults."""
+    assert get_typed_dict_field_types(_DefaultBase) == {"flag": bool}
     assert get_typed_dict_field_types(_DefaultChild) == {"flag": bool}
 
 
