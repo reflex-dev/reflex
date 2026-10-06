@@ -556,8 +556,8 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
-# Third-party, but its first release fixing a subprocess environment leak (0.1.2)
-# is inside the window. Remove once 0.1.2 is older than 7 days (2026-10-13).
+# Third-party, but 0.2.0, the release it needs (module renamed to yjson, no
+# subprocess environment leak), is inside the window. Remove after 2026-10-13.
 yjson = false
 
 [tool.uv.sources]

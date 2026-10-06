@@ -61,15 +61,15 @@ _WIRE_PAYLOADS = [
 @pytest.mark.parametrize("payload", _WIRE_PAYLOADS)
 def test_json_dumps_compact_yjson_matches_stdlib(payload, monkeypatch):
     """The yjson wire path writes the same JSON as the stdlib path."""
-    pytest.importorskip("mojson")
+    pytest.importorskip("yjson")
     native = format.json_dumps(payload, separators=(",", ":"))
-    monkeypatch.setattr(format, "mojson", None)
+    monkeypatch.setattr(format, "yjson", None)
     assert native == format.json_dumps(payload, separators=(",", ":"))
 
 
 def test_json_dumps_compact_yjson_escapes_lone_surrogates():
     """The yjson path escapes a lone surrogate, keeping the packet UTF-8 encodable."""
-    pytest.importorskip("mojson")
+    pytest.importorskip("yjson")
     out = format.json_dumps({"s": "\ud800"}, separators=(",", ":"))
     assert out == '{"s":"\\ud800"}'
     assert json.loads(out) == {"s": "\ud800"}
@@ -77,11 +77,11 @@ def test_json_dumps_compact_yjson_escapes_lone_surrogates():
 
 def test_json_dumps_compact_yjson_custom_default(monkeypatch):
     """A caller-supplied default is used by the yjson path."""
-    pytest.importorskip("mojson")
+    pytest.importorskip("yjson")
     payload = {"value": object()}
     out = format.json_dumps(payload, separators=(",", ":"), default=lambda _: "x")
     assert out == '{"value":"x"}'
-    monkeypatch.setattr(format, "mojson", None)
+    monkeypatch.setattr(format, "yjson", None)
     assert out == format.json_dumps(
         payload, separators=(",", ":"), default=lambda _: "x"
     )
@@ -89,6 +89,6 @@ def test_json_dumps_compact_yjson_custom_default(monkeypatch):
 
 def test_json_dumps_compact_yjson_small_floats_round_trip():
     """The shortest float repr of the yjson path parses to the same values."""
-    pytest.importorskip("mojson")
+    pytest.importorskip("yjson")
     payload = [1e-7, 5e-324, 1.7976931348623157e308]
     assert json.loads(format.json_dumps(payload, separators=(",", ":"))) == payload

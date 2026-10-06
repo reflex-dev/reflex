@@ -16,9 +16,9 @@ from reflex_base import constants
 from reflex_base.utils import exceptions
 
 try:
-    import mojson  # pyright: ignore[reportMissingImports]
+    import yjson  # pyright: ignore[reportMissingImports]
 except ImportError:  # the optional reflex[yjson] extra
-    mojson = None
+    yjson = None
 
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
@@ -763,11 +763,11 @@ def json_dumps(
         A string
     """
     if (
-        mojson is not None
+        yjson is not None
         and separators == _COMPACT_SEPARATORS
         and kwargs.keys() <= {"default"}
     ):
-        return mojson.dumps_socket(
+        return yjson.dumps_socket(
             obj, default=kwargs.get("default") or _get_serialize()
         ).decode()
     if not kwargs and (separators is None or isinstance(separators, tuple)):

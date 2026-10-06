@@ -4393,7 +4393,7 @@ requires-dist = [
     { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.12.0,<3.0" },
     { name = "rich", specifier = ">=13,<16" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
-    { name = "yjson", marker = "python_full_version >= '3.11' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'yjson'", specifier = ">=0.1.2,<1.0" },
+    { name = "yjson", marker = "python_full_version >= '3.11' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'yjson'", specifier = ">=0.2.0,<1.0" },
 ]
 provides-extras = ["pydantic", "yjson"]
 
@@ -6322,13 +6322,13 @@ wheels = [
 
 [[package]]
 name = "yjson"
-version = "0.1.2"
+version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e7/e7/5f5b9c065066a228bf1aad5a25a53dd9e790f6d8d4456730bff1a2bf2d0c/yjson-0.1.2.tar.gz", hash = "sha256:04f67aa460c2edeb4d0b6c50aaa3b9a0701ad6f8c9faa9174a6efa18998e00d0", size = 80845, upload-time = "2026-10-06T17:14:57.019Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/61/eb/0a2d3aa657a9ae38f070fb6abbeba353f4ef90619efe4877935ec8ea04e8/yjson-0.2.0.tar.gz", hash = "sha256:1f9e5771806dc3a26c958f9a75d0dadb52f67635a86ac342a616e34ce7ac19ca", size = 79932, upload-time = "2026-10-06T17:33:02.653Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/66/c0d1d8ee4037c47203f600ad316a395873a3833cdbc623ad590d9f1e8412/yjson-0.1.2-cp311-cp311-manylinux_2_35_x86_64.whl", hash = "sha256:2510ac66187fab76d068685563f8d3c81f50c6be1770ff5893605ea5f53e57a2", size = 1277723, upload-time = "2026-10-06T17:14:50.229Z" },
-    { url = "https://files.pythonhosted.org/packages/ae/b6/6935436878d006bffa184cf5de3afe9d307078192faffeb02d992cfcaf0f/yjson-0.1.2-cp312-cp312-manylinux_2_35_x86_64.whl", hash = "sha256:68654b608a0b715c732e188e5d5d9e6d00d97f30b914c37572ccc9d13fff723c", size = 1277610, upload-time = "2026-10-06T17:14:51.7Z" },
-    { url = "https://files.pythonhosted.org/packages/58/4f/a6e14e7bb62eb1c326d5e541dc8e825ae21d127eada4481ea230290f4ff6/yjson-0.1.2-cp313-cp313-manylinux_2_35_x86_64.whl", hash = "sha256:e65708f806ee0233c3458405ef7b12c1a04601f0a9ba51c36a61e399b2ec8565", size = 1277786, upload-time = "2026-10-06T17:14:53.314Z" },
-    { url = "https://files.pythonhosted.org/packages/bd/79/0cbabada81bf8b3fd44f3650b18f4a5c283dbec1a44bab2b1e67ef287918/yjson-0.1.2-cp314-cp314-manylinux_2_35_x86_64.whl", hash = "sha256:71c20e69093ffa2637a49c26025cfccb14fe4cd8b8263ea9e1b689a16a7a4794", size = 1277986, upload-time = "2026-10-06T17:14:54.663Z" },
-    { url = "https://files.pythonhosted.org/packages/7e/4b/6b10f463aa7e4ef36f0eed92c821111bff044590a3497e31f285e735ae43/yjson-0.1.2-cp315-cp315-manylinux_2_35_x86_64.whl", hash = "sha256:d4020fd19741346e39a45c1c7931ed0f66ac0b3e703f6890e0b33246619bd150", size = 1278158, upload-time = "2026-10-06T17:14:56.006Z" },
+    { url = "https://files.pythonhosted.org/packages/76/28/b5852f4417a714c2b45a955a1ed9f75d1af3962c6de3bae97ed9abaa183d/yjson-0.2.0-cp311-cp311-manylinux_2_35_x86_64.whl", hash = "sha256:6efa8eb49c8b886a49a7ed3ffd1383184a046776325aad3f1b1c683df35a943a", size = 1277668, upload-time = "2026-10-06T17:32:56.756Z" },
+    { url = "https://files.pythonhosted.org/packages/9f/cd/3e9c88ac49bde5f8fe1dbeca6c8bc1cc9b1f45f086fbf841047b3e550983/yjson-0.2.0-cp312-cp312-manylinux_2_35_x86_64.whl", hash = "sha256:c1558951e0837224ce07446b00791996d128f8447aa3385d9d67ef1eb869cafb", size = 1277560, upload-time = "2026-10-06T17:32:58.085Z" },
+    { url = "https://files.pythonhosted.org/packages/38/db/f0f8b59db74fb42677185cd8b104feb4966b0249971792d693b1121e251f/yjson-0.2.0-cp313-cp313-manylinux_2_35_x86_64.whl", hash = "sha256:3fa76b3b43c44648d963806d2534788a81d85bd209c0758c85c6e745c4ebb56c", size = 1277731, upload-time = "2026-10-06T17:32:59.168Z" },
+    { url = "https://files.pythonhosted.org/packages/67/ff/af9dcdda95e376d4e6f30ec7642ff924711163daee6e7991a32ba9aa3aa1/yjson-0.2.0-cp314-cp314-manylinux_2_35_x86_64.whl", hash = "sha256:458d737f05e68d71bbf11d3c9d6526cbf5caa5374c49154352d09dba3929ebae", size = 1277955, upload-time = "2026-10-06T17:33:00.229Z" },
+    { url = "https://files.pythonhosted.org/packages/86/cf/d96f87727f628de2bd7e5e974cf40aee250574e9875407da443208053996/yjson-0.2.0-cp315-cp315-manylinux_2_35_x86_64.whl", hash = "sha256:d39673c9e07738ec3fcbfc07b2a677bd234d7b9f6a90979d7f1897730b5e0caf", size = 1278111, upload-time = "2026-10-06T17:33:01.372Z" },
 ]
