@@ -18,9 +18,9 @@ set -euo pipefail
 uv run --no-config --script \
   "$(dirname "$0")/../../../scripts/verify_pyi.py"
 
-# Install every archive separately before approval and upload, skipping runtime
-# dependencies whose required versions may not be published yet. The verifier
-# uses fresh environments outside the checkout and disables uv's cache so the
-# wheel cannot mask a broken source build.
+# Install every archive separately with its external dependencies before
+# approval and upload. Only workspace siblings are excluded because their
+# releases may still be pending. Fresh environments outside the checkout and
+# disabled uv caches keep the wheel from masking a broken source build.
 exec uv run --no-config --script \
   "$(dirname "$0")/../../../scripts/verify_install.py"

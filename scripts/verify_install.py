@@ -1,14 +1,17 @@
 """Install each release artifact independently before allowing publication.
 
-Run from the publish workflow's post-build hook with DIST_DIR in the environment.
+Run from the publish workflow's post-build hook with PACKAGE and DIST_DIR in the
+environment.
 Use fresh virtual environments outside the checkout with no uv cache or
-configuration so a working wheel cannot mask a broken sdist. Skip runtime
-dependencies because their required versions may not be published yet.
+configuration so a working wheel cannot mask a broken sdist. Resolve runtime
+dependencies except workspace siblings whose versions may not be published yet.
 """
 
 # /// script
 # requires-python = ">=3.10"
-# dependencies = []
+# dependencies = [
+#     "tomli; python_version < '3.11'",
+# ]
 # ///
 
 import os
@@ -17,12 +20,37 @@ import sys
 import tempfile
 from pathlib import Path
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib  # pyright: ignore[reportMissingImports]
 
-def install_artifact(artifact: Path) -> None:
-    """Install one archive without runtime dependencies in an isolated environment.
+
+def workspace_siblings(package: str) -> tuple[str, ...]:
+    """Find other workspace packages whose releases may still be pending.
+
+    Args:
+        package: The package being verified, which must not be excluded.
+
+    Returns:
+        Names explicitly declared as workspace sources in the checkout.
+    """
+    with (Path(__file__).resolve().parent.parent / "pyproject.toml").open("rb") as f:
+        project = tomllib.load(f)
+    sources = project.get("tool", {}).get("uv", {}).get("sources", {})
+    return tuple(
+        name
+        for name, source in sources.items()
+        if source.get("workspace") and name != package
+    )
+
+
+def install_artifact(artifact: Path, excluded_packages: tuple[str, ...] = ()) -> None:
+    """Install one archive and its external dependencies in isolation.
 
     Args:
         artifact: The absolute path to a wheel or source distribution.
+        excluded_packages: Workspace siblings exempt from dependency resolution.
 
     Raises:
         subprocess.CalledProcessError: If environment creation or installation fails.
@@ -35,6 +63,8 @@ def install_artifact(artifact: Path) -> None:
     }
     uv = ["uv", "--no-config", "--no-cache"]
     with tempfile.TemporaryDirectory(prefix="verify-install-") as directory:
+        excludes = Path(directory) / "excludes.txt"
+        excludes.write_text("\n".join(excluded_packages))
         venv = Path(directory) / "venv"
         python = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         subprocess.run(
@@ -48,7 +78,8 @@ def install_artifact(artifact: Path) -> None:
                 *uv,
                 "pip",
                 "install",
-                "--no-deps",
+                "--excludes",
+                str(excludes),
                 "--python",
                 str(python),
                 str(artifact),
@@ -71,10 +102,15 @@ def main() -> int:
     if not wheels or not sdists:
         print(f"Error: expected both wheels and sdists in {dist_dir}", file=sys.stderr)
         return 1
+    excluded_packages = workspace_siblings(os.environ["PACKAGE"])
+    if excluded_packages:
+        print(
+            f"Excluding workspace siblings: {', '.join(excluded_packages)}", flush=True
+        )
     for artifact in [*wheels, *sdists]:
         print(f"Checking installation of {artifact.name}", flush=True)
         try:
-            install_artifact(artifact)
+            install_artifact(artifact, excluded_packages)
         except subprocess.CalledProcessError:
             print(f"Error: installation failed for {artifact.name}", file=sys.stderr)
             return 1

@@ -134,13 +134,16 @@ a release branch — never by tagging manually. The pieces:
    the changelog bump and the next push retries automatically.
 
 Before approval, the post-build hook checks generated type stubs and installs
-every wheel and sdist in a separate temporary environment. Installation uses
-`--no-deps` because required runtime dependency versions may not be published yet.
+every wheel and sdist with its external runtime dependencies in a separate
+temporary environment. Only other packages declared as workspace sources in the
+root `pyproject.toml` are excluded from runtime dependency resolution because their
+releases may still be pending. Each package is verified when it is released.
 Source distributions still build in isolation with their build dependencies.
 Installation runs outside the checkout with uv configuration and caches disabled.
 A missing distribution format or failed installation stops publication.
 To run the installation check locally after building, use
-`DIST_DIR=dist uv run --no-config --script scripts/verify_install.py`.
+`PACKAGE=reflex DIST_DIR=dist uv run --no-config --script scripts/verify_install.py`
+(set `PACKAGE` to the name of the package being checked).
 
 **The release workflows are generated.** `dispatch_release.yml`,
 `release_from_changelog.yml`, `publish.yml`, `changelog.yml` and
