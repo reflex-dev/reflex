@@ -7,7 +7,7 @@
     "jsonl_records": 112,
     "jsonl": 33
   },
-  "bytes": 9225672,
+  "bytes": 9225821,
   "errors": [],
   "scope": "Syntax, evidence parsing, all local Markdown targets and generated-file exclusions; sample apps are not imported."
 }

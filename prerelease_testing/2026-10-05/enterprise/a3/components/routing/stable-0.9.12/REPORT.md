@@ -4,6 +4,7 @@
 0.9.7a3.** The minimal app and config are byte-identical to the previous alpha
 comparison. The bare MCP URL returns 405 even with a valid issued token; the
 slash URL authenticates and supports published SDK initialization/tool listing.
+The result is recorded in [enterprise #254's follow-up comment](https://github.com/reflex-dev/reflex-enterprise/issues/254#issuecomment-6007840638).
 
 | Production request | Bare `/_reflex/mcp` | Slash `/_reflex/mcp/` |
 | --- | --- | --- |

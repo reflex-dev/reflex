@@ -126,5 +126,18 @@
       244,
       245
     ]
-  }
+  },
+  "comments": [
+    {
+      "finding": 14,
+      "repo": "reflex-dev/reflex-enterprise",
+      "issue_number": 254,
+      "url": "https://github.com/reflex-dev/reflex-enterprise/issues/254#issuecomment-6007840638",
+      "body_file": "14-enterprise-production-mcp-stable-comment.md",
+      "verified_body_matches": true,
+      "issue_state": "OPEN",
+      "evidence_commit": "ac56c845e6695db38b0c264a3ea68ee3d47e2976",
+      "result": "Reproduces with Reflex/base0.9.12 and enterprise0.9.7a3; bare405, slash401/200 and SDK initialize/list_tools pass."
+    }
+  ]
 }

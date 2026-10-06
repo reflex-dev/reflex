@@ -37,6 +37,15 @@ immutable a3 testing commit `5e949cac0af6ee10ed89f625a7395793a7a66a4b` and prese
 the alpha/stable and a2/a3 distinctions. All 14 existing enterprise issues,
 including closed issues, were checked first; no matching report was found.
 Each new issue's title, URL, open state and body were verified after creation.
-No existing-thread comments or framework fixes were made.
+No existing-thread comments or framework fixes were made during issue filing.
+
+The user then requested a stable MCP routing control and a result on #254.
+Published Reflex/base 0.9.12 with enterprise a3 reproduces the bare-route 405,
+including with a valid issued bearer. The slash route passes SDK initialization/
+tool listing. [Stable control report](../enterprise/a3/components/routing/stable-0.9.12/REPORT.md)
+and [verified issue comment](https://github.com/reflex-dev/reflex-enterprise/issues/254#issuecomment-6007840638)
+record that result. The [submitted comment](14-enterprise-production-mcp-stable-comment.md)
+and [verification record](mcp-stable-comment-record.json) preserve the exact body
+and immutable evidence commit. No framework fix was made.
 
 [Filing record](filing-record.json) retains exact repositories, titles and URLs.
