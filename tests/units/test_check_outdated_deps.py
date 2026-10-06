@@ -1,16 +1,6 @@
 """Unit tests for scripts/check_outdated_deps.py (the outdated-dependency checker)."""
 
-import sys
-
 import pytest
-
-# The script relies on ``tomllib`` (stdlib only on 3.11+); on 3.10 it falls back to the
-# ``tomli`` backport. Skip the whole module when neither is available, so the tests still
-# run on 3.10 whenever ``tomli`` happens to be installed.
-if sys.version_info < (3, 11):
-    pytest.importorskip(
-        "tomli", reason="check_outdated_deps requires tomli on Python < 3.11"
-    )
 
 from scripts import check_outdated_deps
 

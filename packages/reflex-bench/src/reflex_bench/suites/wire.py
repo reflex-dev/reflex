@@ -438,7 +438,7 @@ def measure(endpoint: Endpoint, work: Callable[[WireSession], Awaitable[_T]]) ->
             session = WireSession(ws, token, endpoint.pathname)
             try:
                 return await asyncio.wait_for(work(session), WIRE_TIMEOUT_S)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 msg = f"the session did not finish within {WIRE_TIMEOUT_S:g} s"
                 raise TimeoutError(msg) from None
             finally:

@@ -782,8 +782,8 @@ async def test_chained_event_keeps_originating_router_data(
 
         @event(background=True)
         async def outer(self):
-            # wait_for rather than asyncio.timeout: this package supports 3.10.
-            await asyncio.wait_for(router_moved.wait(), timeout=5)
+            async with asyncio.timeout(5):
+                await router_moved.wait()
             yield RouterState.note
 
     def client_event(spec, router_data: dict[str, Any]) -> Event:

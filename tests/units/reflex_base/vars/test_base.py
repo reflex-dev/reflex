@@ -16,7 +16,7 @@ import weakref
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, ClassVar, Literal, TypeVar
+from typing import Any, ClassVar, Literal, Self, TypeVar
 
 import pytest
 from reflex_base import constants
@@ -50,7 +50,7 @@ from reflex_base.vars.base import (
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
-from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
+from typing_extensions import TypeAliasType, TypeVarTuple
 
 from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
@@ -196,18 +196,18 @@ def test_guess_type_resolves_variadic_type_alias(alias_cls: type) -> None:
     just the one a plain positional zip would pair it with.
     """
     ts = TypeVarTuple("ts")
-    tup = alias_cls("Tup", tuple[Unpack[ts]], type_params=(ts,))  # pyright: ignore[reportGeneralTypeIssues]
+    tup = alias_cls("Tup", tuple[*ts], type_params=(ts,))  # pyright: ignore[reportGeneralTypeIssues]
     var = Var(_js_expr="t", _var_type=tup[str, int]).guess_type()
     assert isinstance(var, ArrayVar)
     assert var._var_type == tuple[str, int]
 
     t = TypeVar("t")
-    prefixed = alias_cls("Prefixed", dict[t, tuple[Unpack[ts]]], type_params=(t, ts))  # pyright: ignore[reportGeneralTypeIssues]
+    prefixed = alias_cls("Prefixed", dict[t, tuple[*ts]], type_params=(t, ts))  # pyright: ignore[reportGeneralTypeIssues]
     prefixed_var = Var(_js_expr="p", _var_type=prefixed[str, int, float]).guess_type()
     assert isinstance(prefixed_var, ObjectVar)
     assert prefixed_var._var_type == dict[str, tuple[int, float]]
 
-    suffixed = alias_cls("Suffixed", dict[t, tuple[Unpack[ts]]], type_params=(ts, t))  # pyright: ignore[reportGeneralTypeIssues]
+    suffixed = alias_cls("Suffixed", dict[t, tuple[*ts]], type_params=(ts, t))  # pyright: ignore[reportGeneralTypeIssues]
     suffixed_var = Var(_js_expr="s", _var_type=suffixed[int, float, str]).guess_type()
     assert isinstance(suffixed_var, ObjectVar)
     assert suffixed_var._var_type == dict[str, tuple[int, float]]
