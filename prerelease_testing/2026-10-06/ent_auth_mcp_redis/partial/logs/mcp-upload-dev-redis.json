@@ -1,0 +1,24 @@
+{
+  "post_ok": "{\"delta\": {\"reflex___state____state.entauth___entauth____agent_state\": {\"uploaded_rx_state_\": [\"a.txt:5\"]}}}\n\nHTTP=200 | stderr=",
+  "uploaded_after_1": {
+    "state": "reflex___state____state.entauth___entauth____agent_state",
+    "var": "uploaded",
+    "computed": false,
+    "value": [
+      "a.txt:5"
+    ]
+  },
+  "post_same_ticket_again": "{\"error\":\"invalid_token\",\"error_description\":\"A valid MCP upload ticket (`?ticket=`) is required to upload. Call `queue_event` for the upload handler to obtain a pre-signed upload URL.\"}\nHTTP=401 | stderr=",
+  "post_missing_handler_header": "{\"error\":\"forbidden_handler\",\"error_description\":\"This upload is not authorized for the requested event handler. The Reflex-Event-Handler must be a handler exposed to the MCP surface, and must match the one the upload ticket was issued for.\"}\nHTTP=403 | stderr=",
+  "post_other_handler_header": "{\"error\":\"forbidden_handler\",\"error_description\":\"This upload is not authorized for the requested event handler. The Reflex-Event-Handler must be a handler exposed to the MCP surface, and must match the one the upload ticket was issued for.\"}\nHTTP=403 | stderr=",
+  "post_bad_ticket": "{\"error\":\"invalid_token\",\"error_description\":\"A valid MCP upload ticket (`?ticket=`) is required to upload. Call `queue_event` for the upload handler to obtain a pre-signed upload URL.\"}\nHTTP=401 | stderr=",
+  "post_bearer_instead_of_ticket": "{\"error\":\"invalid_token\",\"error_description\":\"A valid MCP upload ticket (`?ticket=`) is required to upload. Call `queue_event` for the upload handler to obtain a pre-signed upload URL.\"}\nHTTP=401 | stderr=",
+  "uploaded_final": {
+    "state": "reflex___state____state.entauth___entauth____agent_state",
+    "var": "uploaded",
+    "computed": false,
+    "value": [
+      "a.txt:5"
+    ]
+  }
+}

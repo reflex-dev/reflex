@@ -1,0 +1,282 @@
+{
+ "label": "alpha_dev_api",
+ "base": "http://localhost:3460",
+ "results": [
+  {
+   "name": "api.bg_get_state_get_var_value_sibling",
+   "status": "fail",
+   "details": {
+    "report": "",
+    "expected": "out=10 in=10 in2=11 ; after=11",
+    "ui_sibling_x": "10"
+   },
+   "t": 13.713
+  },
+  {
+   "name": "api.raw_setvar_events",
+   "status": "pass",
+   "details": {
+    "api-setvar-pub": {
+     "ok": true,
+     "new_backend_exc": 0,
+     "exc_tail": "",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-secret": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-missing": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-computed": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": " attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-raw-missing-handler": {
+     "ok": null,
+     "new_backend_exc": 0,
+     "exc_tail": " attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    }
+   },
+   "t": 21.904
+  },
+  {
+   "name": "api.raw_setvar_is_hydrated_false",
+   "status": "info",
+   "details": {
+    "new_backend_exc": 0,
+    "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+    "still_interactive": true,
+    "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events_vars/out/alpha_dev/alpha_dev_api_setvar_is_hydrated.png"
+   },
+   "t": 23.625
+  },
+  {
+   "name": "api.reset_client_storage_substates",
+   "status": "pass",
+   "details": {
+    "before": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-default"
+    },
+    "mutated": {
+     "reset-ls": "ls-changed",
+     "reset-ck": "ck-changed",
+     "reset-plain": "plain-changed",
+     "reset-sub": "sub-changed",
+     "reset-cs-val": "cs-changed"
+    },
+    "storage_mutated": {
+     "ls": "ls-changed",
+     "cookie": "ev_ck=ck-changed"
+    },
+    "after_reset": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-changed"
+    },
+    "storage_after_reset": {
+     "ls": "ls-default",
+     "cookie": "ev_ck=ck-default"
+    },
+    "after_reload": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-changed"
+    }
+   },
+   "t": 28.486
+  },
+  {
+   "name": "api.dataclass_nested_inplace_mutation",
+   "status": "fail",
+   "details": {
+    "initial": [
+     "[]",
+     "[[1]]"
+    ],
+    "after_2_mutations": [
+     "[0,1]",
+     "[[1,7,7]]"
+    ],
+    "snapshot": "",
+    "other_session": [
+     "[]",
+     "[[1]]"
+    ]
+   },
+   "t": 37.144
+  },
+  {
+   "name": "api.undeclared_attribute_assignment",
+   "status": "info",
+   "details": {
+    "report_after_assign": "",
+    "backend_exc": 1,
+    "exc_tail": "SetUndefinedStateVarError: The state variable 'undeclared_attr' has not been defined in 'UndeclState'. All",
+    "report_after_readback": "readback=MISSING",
+    "undeclared_name_in_ws_delta": true
+   },
+   "t": 41.795
+  },
+  {
+   "name": "bind.instance_access_and_inheritance",
+   "status": "info",
+   "details": {
+    "bind-inherited-template": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-template-via-self": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-parent-via-self": {
+     "p_log_added": "bump:self=BindParent ; after_bump",
+     "p_count": "1",
+     "c_count": "1",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-bg-parent": {
+     "p_log_added": "bump:self=StateProxy",
+     "p_count": "2",
+     "c_count": "1",
+     "c_log": "bg_outside=ImmutableStateError",
+     "new_exc": 0,
+     "exc_tail": ""
+    }
+   },
+   "t": 50.067
+  },
+  {
+   "name": "bind.foreach_args_0_to_5_and_lambdas",
+   "status": "pass",
+   "details": {
+    "got": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ],
+    "expected": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ]
+   },
+   "t": 53.268
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 13.745,
+   "tag": "api-sib",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 23.629,
+   "tag": "api-setvar",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 27.132,
+   "tag": "api-reset",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3460/utils/state.js:776",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 28.504,
+   "tag": "api-reset",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 37.147,
+   "tag": "api-dc-2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 37.185,
+   "tag": "api-dc",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 41.797,
+   "tag": "api-undecl",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 53.288,
+   "tag": "bind",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/bind"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "extra": {}
+}

@@ -1,0 +1,55 @@
+--- t_sup_slow
+[PASS   ] sup.slow_rapid_clicks: {"final": "a0,b0,c0,c1,c2,c3,c4,cdone", "expected": "a0,b0,c0,c1,c2,c3,c4,cdone", "timeline": [[0.0, "a0,b0"], [0.12, "a0,b0,c0"], [1.09, "a0,b0,c0,c1"], [2.08, "a0,b0,c0,c1,c2"], [3.05, "a0,b0,c0,c1,c2,c3"], [4.07, "a0,b0,c0,c1,c2,c3,c4"], [5.05, "a0,b0,c0,c1,c2,c3,c4,cdone"]]}
+--- t_sup_partial
+[ANOMALY] sup.cancelled_unyielded_mutation: {"final": "astart,aunflushed,bstart,bunflushed,bend", "cancelled_handler_mutation_after_last_yield_visible": true, "timeline": [[0.01, "astart"], [0.12, "astart,aunflushed,bstart"], [3.08, "astart,aunflushed,bstart,bunflushed,bend"]]}
+--- t_sup_bg
+[PASS   ] sup.background_plus_supersedes: {"final": "a0,b0,c0,c1,c2,c3,c4,cdone", "expected": "a0,b0,c0,c1,c2,c3,c4,cdone", "timeline": [[0.01, "a0,b0"], [0.11, "a0,b0,c0"], [1.08, "a0,b0,c0,c1"], [2.05, "a0,b0,c0,c1,c2"], [3.04, "a0,b0,c0,c1,c2,c3"], [4.01, "a0,b0,c0,c1,c2,c3,c4"], [5.1, "a0,b0,c0,c1,c2,c3,c4,cdone"]]}
+--- t_sup_lock
+[PASS   ] sup.bg_cancel_while_holding_lock: {"final": "ain,bin,bin2,ping-1,bdone,ping-2", "a_in_kept": true, "timeline": [[0.01, "ain"], [1.78, "ain,bin,bin2,ping-1,bdone"]]}
+--- t_sup_cpu
+[INFO   ] sup.cpu_bound_non_yielding: {"final": "astart,aend,bstart,bend,cstart,cend", "timeline": [[0.01, ""], [1.22, "astart,aend"], [2.79, "astart,aend,bstart,bend"], [4.3, "astart,aend,bstart,bend,cstart,cend"]]}
+--- t_sup_gen
+[INFO   ] sup.sync_generator_blocking_sleep: {"final": "a0,a1,b0,b1,b2,b3,bdone", "timeline": [[0.0, "a0"], [0.33, "a0,a1"], [0.98, "a0,a1,b0"], [1.51, "a0,a1,b0,b1,b2"], [2.16, "a0,a1,b0,b1,b2,b3"], [2.69, "a0,a1,b0,b1,b2,b3,bdone"]]}
+--- t_sup_chain
+[PASS   ] sup.chained_child_cancelled: {"final": "a0,a1,b0,b1,b2,b3,bdone", "parent_log": "aP,bP", "b0_seconds_after_click": 0.12, "child_a_cancelled": true, "timeline": [[0.01, "a0,a1"], [0.12, "a0,a1,b0"], [1.13, "a0,a1,b0,b1"], [2.03, "a0,a1,b0,b1,b2"], [3.03, "a0,a1,b0,b1,b2,b3"], [4.04, "a0,a1,b0,b1,b2,b3,bdone"]]}
+--- t_sup_component_state
+[PASS   ] sup.component_state_instances_independent: {"A": "A0,A1,A2,Adone", "B": "B0,B1,B2,Bdone", "timeline": {"cs-log-A": [[0.0, "A0"], [0.67, "A0,A1"], [1.67, "A0,A1,A2"], [2.7, "A0,A1,A2,Adone"]], "cs-log-B": [[0.01, ""], [2.71, "B0"], [3.72, "B0,B1"], [4.72, "B0,B1,B2"], [5.72, "B0,B1,B2,Bdone"]]}}
+[PASS   ] sup.component_state_self_supersede: {"A": "A0,A0,A1,A2,Adone", "expected": "A0,A0,A1,A2,Adone"}
+--- t_deco
+[PASS   ] deco.late_marker_before_first_use: {"final": "late:start,ping1,late:end", "ran_as_background": true, "new_backend_errors": 0, "exc_list_tail": "", "timeline": [[0.01, "late:start"], [0.12, "late:start,ping1"], [1.32, "late:start,ping1,late:end"]]}
+[PASS   ] deco.late_marker_after_is_background_read: {"final": "lateread:start,ping1,lateread:end", "ran_as_background": true, "new_backend_errors": 0, "exc_list_tail": "", "timeline": [[0.0, "lateread:start"], [0.11, "lateread:start,ping1"], [1.29, "lateread:start,ping1,lateread:end"]]}
+[PASS   ] deco.functools_wraps_inner: {"final": "wrapinner:start,ping1,wrapinner:end", "ran_as_background": true, "new_backend_errors": 0, "exc_list_tail": "", "timeline": [[0.0, "wrapinner:start"], [0.11, "wrapinner:start,ping1"], [1.28, "wrapinner:start,ping1,wrapinner:end"]]}
+[PASS   ] deco.functools_wraps_outer: {"final": "wrapouter:start,ping1,wrapouter:end", "ran_as_background": true, "new_backend_errors": 0, "exc_list_tail": "", "timeline": [[0.0, "wrapouter:start"], [0.11, "wrapouter:start,ping1"], [1.29, "wrapouter:start,ping1,wrapouter:end"]]}
+[INFO   ] deco.trace_wrapper_executed: {"log": "wrapouter:start,ping1,wrapouter:end,trace=wrapped_inner/wrapped_outer"}
+[PASS   ] deco.mixin_background_two_substates: {"A": "A:start,pingA,A:end", "B": "B:start,B:end", "B_started_before_A_end": true, "timeline": {"mix-a-log": [[0.0, "A:start"], [0.12, "A:start,pingA"], [1.26, "A:start,pingA,A:end"]], "mix-b-log": [[0.01, "B:start"], [1.37, "B:start,B:end"]]}}
+[PASS   ] deco.pkg_redecorated_early: {"added": "pkg:start,ping,pkg:end", "new_backend_errors": 0}
+[PASS   ] deco.pkg_redecorated_late: {"added": "pkg:start,ping,pkg:end", "new_backend_errors": 0}
+--- t_nested_cases
+node:events:505
+    throw er; // Unhandled 'error' event
+    ^
+
+Error: write EINVAL
+    at afterWriteDispatched (node:internal/stream_base_commons:159:15)
+    at writevGeneric (node:internal/stream_base_commons:142:3)
+    at Socket._writeGeneric (node:net:1260:11)
+    at Socket._writev (node:net:1269:8)
+    at doWrite (node:internal/streams/writable:598:12)
+    at clearBuffer (node:internal/streams/writable:777:5)
+    at onwrite (node:internal/streams/writable:655:7)
+    at WritableState.onwrite [as callback] (node:internal/streams/writable:351:26)
+    at WriteWrap.onWriteComplete [as oncomplete] (node:internal/stream_base_commons:105:10)
+Emitted 'error' event on Socket instance at:
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  errno: -22,
+  code: 'EINVAL',
+  syscall: 'write'
+}
+
+Node.js v24.21.0
+[ERROR  ] t_nested_cases: {"exception": "Exception: Page.wait_for_timeout: Connection closed while reading from the driver", "tb": "ratchpad/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 12744, in wait_for_timeout\n    self._sync(\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_page.py\", line 1144, in wait_for_timeout\n    await self._main_frame.wait_for_timeout(timeout)\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_frame.py\", line 925, in wai
+--- t_nested_prevent_default
+[ERROR  ] t_nested_prevent_default: {"exception": "Exception: Browser.new_context: Connection closed while reading from the driver", "tb": "ewport={\"width\": 1400, \"height\": 1800})\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 16232, in new_context\n    self._sync(\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_browser.py\", line 175, in new_context\n    channel = await self._channel.sen
+--- t_nested_ctrl_b

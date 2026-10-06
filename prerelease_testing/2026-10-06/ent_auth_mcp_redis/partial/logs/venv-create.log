@@ -1,0 +1,4 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment at: envs/ent_auth
+Activate with: source envs/ent_auth/bin/activate

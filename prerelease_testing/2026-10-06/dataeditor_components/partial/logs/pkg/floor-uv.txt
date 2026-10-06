@@ -1,0 +1,30 @@
+$ uv pip install --dry-run 'reflex-components-dataeditor==0.9.3.post1' 'reflex-base==0.9.11'
+Using Python 3.12.3 environment at: apps/dataeditor_components/tmpvenv-floor
+  × No solution found when resolving dependencies:
+  ╰─▶ Because reflex-components-dataeditor>=0.9.3.post1
+      depends on reflex-base>=0.9.12 and you require
+      reflex-components-dataeditor==0.9.3.post1, we can conclude that you
+      require reflex-base>=0.9.12.
+      And because you require reflex-base==0.9.11, we can conclude that your
+      requirements are unsatisfiable.
+exit=1
+
+$ uv pip install --dry-run --prerelease=allow 'reflex-components-dataeditor==0.9.3.post1' 'reflex-base==0.9.11'
+Using Python 3.12.3 environment at: apps/dataeditor_components/tmpvenv-floor
+  × No solution found when resolving dependencies:
+  ╰─▶ Because reflex-components-dataeditor>=0.9.3.post1
+      depends on reflex-base>=0.9.12 and you require
+      reflex-components-dataeditor==0.9.3.post1, we can conclude that you
+      require reflex-base>=0.9.12.
+      And because you require reflex-base==0.9.11, we can conclude that your
+      requirements are unsatisfiable.
+exit=1
+
+$ uv pip install --dry-run 'reflex-components-dataeditor==0.9.3.post1' 'reflex-base==0.9.12'
+Would install 16 packages
+ + reflex-base==0.9.12
+ + reflex-components-core==0.9.10.post1
+ + reflex-components-dataeditor==0.9.3.post1
+ + reflex-components-lucide==1.0.4
+ + reflex-components-sonner==0.9.4
+exit=0

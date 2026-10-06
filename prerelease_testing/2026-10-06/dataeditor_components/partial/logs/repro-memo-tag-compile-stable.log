@@ -1,0 +1,80 @@
+───────────────────────── Initializing repro_memo_tag ──────────────────────────
+Info: Initializing the web directory.
+Success: Initialized repro_memo_tag. Install dependencies from 
+`requirements.txt` with `uv pip install -r requirements.txt` (or your preferred 
+installer) before running `uv run reflex run`.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_component
+s_radix/plugin.py:76)
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/bin/reflex", line 10, in <module>
+    sys.exit(cli())
+             ^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex/reflex.py", line 794, in compile
+    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 338, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex/app.py", line 1719, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1325, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 840, in compile
+    page_ctx.root_component = self.hooks.compile_component(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 327, in compile_component
+    return self._compile_component_with_replacements(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 556, in _compile_component_with_replacements
+    return visit(
+           ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 530, in visit
+    hook_impl(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 248, in leave_component
+    hook_impl(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex/compiler/plugins/memoize.py", line 357, in leave_component
+    return self._build_wrapper(comp, page_context, compile_context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex/compiler/plugins/memoize.py", line 389, in _build_wrapper
+    wrapper_factory, definition = create_passthrough_component_memo(
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/components/memo.py", line 2099, in create_passthrough_component_memo
+    tag = memo_tag(preview)
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/components/memo.py", line 2010, in memo_tag
+    f"{type(component).__qualname__}_{component.tag or 'Comp'}_"
+                                      ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-stable/lib/python3.12/site-packages/reflex_base/vars/base.py", line 1657, in __bool__
+    raise VarTypeError(msg)
+reflex_base.utils.exceptions.VarTypeError: Cannot convert Var 'reflex___state____state__repro_memo_tag___repro_memo_tag___s.label_rx_state_' to bool for use with `if`, `and`, `or`, and `not`. Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert).

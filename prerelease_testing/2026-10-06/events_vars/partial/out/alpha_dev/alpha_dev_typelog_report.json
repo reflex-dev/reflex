@@ -1,0 +1,55 @@
+{
+ "label": "alpha_dev_typelog",
+ "base": "http://localhost:3460",
+ "results": [
+  {
+   "name": "typelog.counts",
+   "status": "info",
+   "details": {
+    "bump_x20": {
+     "bad_inner": 20,
+     "bad_inner_const": 0,
+     "bad_outer": 20,
+     "bad_uncached": 21,
+     "nums_field": 0
+    },
+    "assign_inner_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 0,
+     "bad_uncached": 21,
+     "nums_field": 20
+    },
+    "assign_outer_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 0,
+     "bad_uncached": 21,
+     "nums_field": 20
+    },
+    "ui_nums": "\"notalist\"",
+    "ui_bad_outer": "\"x20\"",
+    "segments_found": [
+     true,
+     true,
+     true
+    ]
+   },
+   "t": 13.653
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 13.661,
+   "tag": "typelog",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/typelog"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "extra": {}
+}

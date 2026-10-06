@@ -1,0 +1,111 @@
+{
+  "console": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "url": "http://localhost:3340/agent-consent"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:3340/agent-consent"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:3340/agent-consent"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "url": "http://localhost:3340/agent-consent"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:3340/login"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "url": "http://localhost:8358/oauth2/authorize"
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "url": "http://localhost:3340/callback"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:3340/callback"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:3340/callback"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "url": "http://localhost:3340/callback"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+      "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:8340/_reflex/cookies/sync",
+      "failure": "net::ERR_ABORTED",
+      "method": "POST"
+    }
+  ],
+  "http_errors": [],
+  "ws_frames": {
+    "sent": 10,
+    "received": 32
+  },
+  "final_url": "http://localhost:3340/agent-consent?txn=2D0aht0eA7Kr7R6YwhuPRl0VGz8KYydcLp6_oupuITU",
+  "final_text": "Authorize MCP access\n\ndbg is asking to act as you in this app.\n\nThe authorization code will be sent to localhost:8358.\n\nNo specific scopes were requested.\n\nGrant this client permission to:\n\nprofile:read\n\nRead the test profile\n\nitems:write\n\nModify the agent items\n\nOnly the ticked permissions are gran",
+  "session_storage": {
+    "token": "40c2a147-ddc5-49e4-93b1-312708d43866",
+    "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "GS_0np4E_vM_znr-ClbjNbPaX8nv5CD-RBqSY2mDeJ2HjJ_J8QTrPOHOTwp0MnrNtMnbisHuvyvsBUP_EG-g2w",
+    "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_": "Rwm4LFHsFvdDRXLiSyVEmT8B2zdoTomYEsW447EgiHpGLWHTv9ROvz2OFgYwpzGe4yZY0a88OPY0F01rDNrQKA",
+    "react-router-scroll-positions": "{\"default\":0,\"w4jr08hm\":0}",
+    "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "/agent-consent?txn=2D0aht0eA7Kr7R6YwhuPRl0VGz8KYydcLp6_oupuITU"
+  },
+  "navs": [
+    [
+      1791313052.19,
+      "http://localhost:3340/agent-consent?txn=2D0aht0eA7Kr7R6YwhuPRl0VGz8KYydcLp6_oupuITU"
+    ],
+    [
+      1791313053.0,
+      "http://localhost:3340/agent-consent?txn=2D0aht0eA7Kr7R6YwhuPRl0VGz8KYydcLp6_oupuITU"
+    ],
+    [
+      1791313053.09,
+      "http://localhost:3340/login?redirect_to=%2Fagent-consent%3Ftxn%3D2D0aht0eA7Kr7R6YwhuPRl0VGz8KYydcLp6_oupuITU"
+    ],
+    [
+      1791313053.22,
+      "http://localhost:8358/oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http%3A%2F%2Flocalhost%3A3340%2Fcallback&scope=openid+email+profile&state=Rwm4LFHsFvdDRXLiSyVEmT8B2zdoTomYEsW447EgiHpGLWHTv9ROvz2OFgYw"
+    ],
+    [
+      1791313053.63,
+      "http://localhost:3340/callback?code=kUjpz453lwo4RXD2ZiZBENVC1Bbk3gR9m1QaxQ4q5vQw3ta5&state=Rwm4LFHsFvdDRXLiSyVEmT8B2zdoTomYEsW447EgiHpGLWHTv9ROvz2OFgYwpzGe4yZY0a88OPY0F01rDNrQKA"
+    ],
+    [
+      1791313054.25,
+      "http://localhost:3340/callback?code=kUjpz453lwo4RXD2ZiZBENVC1Bbk3gR9m1QaxQ4q5vQw3ta5&state=Rwm4LFHsFvdDRXLiSyVEmT8B2zdoTomYEsW447EgiHpGLWHTv9ROvz2OFgYwpzGe4yZY0a88OPY0F01rDNrQKA"
+    ],
+    [
+      1791313054.49,
+      "http://localhost:3340/agent-consent?txn=2D0aht0eA7Kr7R6YwhuPRl0VGz8KYydcLp6_oupuITU"
+    ]
+  ]
+}

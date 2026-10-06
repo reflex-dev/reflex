@@ -1,0 +1,2638 @@
+{
+ "name": "ag_features-ent_demos",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 5.35,
+   "name": "pivot: pivot headers by sport (virtualised) with sum(Gold) value columns",
+   "ok": true,
+   "detail": "Biathlon | Cross Country Skiing | Cycling | Diving | Gymnastics | Short-Track Speed Skating | Speed Skating | Group | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold)"
+  },
+  {
+   "t": 5.35,
+   "name": "pivot: rows grouped by country",
+   "ok": true,
+   "detail": [
+    "United States",
+    "Australia",
+    "Canada",
+    "Norway",
+    "China",
+    "Zimbabwe"
+   ]
+  },
+  {
+   "t": 5.38,
+   "name": "pivot: pivot panel + columns side bar visible",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 12.14,
+   "name": "cell-selection: range drag fires on_cell_selection_changed(finished) -> toast",
+   "ok": true,
+   "detail": [
+    "Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]",
+    "Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]"
+   ]
+  },
+  {
+   "t": 12.16,
+   "name": "cell-selection: highlighted cells match reported range (3 rows x 2 cols)",
+   "ok": true,
+   "detail": 6
+  },
+  {
+   "t": 19.38,
+   "name": "selected-items: Select All -> on_selection_changed -> State count",
+   "ok": true,
+   "detail": "Selected Items (128)"
+  },
+  {
+   "t": 23.22,
+   "name": "selected-items: tags input 'n' -> upper-cased key -> select_rows_by_key(direction=N)",
+   "ok": true,
+   "detail": {
+    "heading": "Selected Items (8)",
+    "visible_selected_N_rows": 2
+   }
+  },
+  {
+   "t": 27.62,
+   "name": "row_id_key: getRowId uses data.uid",
+   "ok": true,
+   "detail": [
+    "u-1",
+    "u-2",
+    "u-3"
+   ]
+  },
+  {
+   "t": 27.66,
+   "name": "pinned rows (new names pinned_top_row_data/pinned_bottom_row_data)",
+   "ok": true,
+   "detail": {
+    "top": [
+     "TOP-NEW\npinned top new\nundefined units\nS:"
+    ],
+    "bottom": [
+     "BOT-NEW\npinned bottom new\nundefined units\nS:"
+    ]
+   }
+  },
+  {
+   "t": 27.68,
+   "name": "pinned rows (legacy aliases pinned_row_top_data/pinned_row_bottom_data)",
+   "ok": true,
+   "detail": {
+    "top": [
+     "TOP-OLD\npinned top old"
+    ],
+    "bottom": [
+     "BOT-OLD\npinned bottom old"
+    ]
+   }
+  },
+  {
+   "t": 27.69,
+   "name": "suppress_overlays=['noRows'] hides the no-rows overlay (default grid shows it)",
+   "ok": true,
+   "detail": {
+    "default": [
+     "No Rows To Show"
+    ],
+    "suppressed": []
+   }
+  },
+  {
+   "t": 27.69,
+   "name": "value_formatter string renders 'N units'",
+   "ok": true,
+   "detail": [
+    "1 units",
+    "2 units",
+    "3 units"
+   ]
+  },
+  {
+   "t": 27.69,
+   "name": "custom JS cell renderer (rx.badge via ArgsFunctionOperation) renders",
+   "ok": true,
+   "detail": [
+    "S:",
+    "S:new",
+    "S:new",
+    "S:done",
+    "S:"
+   ]
+  },
+  {
+   "t": 29.0,
+   "name": "row_id_key: prepending a row keeps stable ids",
+   "ok": true,
+   "detail": [
+    "u-4",
+    "u-1",
+    "u-2",
+    "u-3"
+   ]
+  },
+  {
+   "t": 30.24,
+   "name": "row_id_key: immutable State update bumps u-2 in place",
+   "ok": true,
+   "detail": {
+    "u-4": "4 units",
+    "u-1": "1 units",
+    "u-2": "12 units",
+    "u-3": "3 units"
+   }
+  },
+  {
+   "t": 32.67,
+   "name": "select cell editor edit -> on_cell_value_changed node_id == row_id_key uid -> State",
+   "ok": true,
+   "detail": {
+    "edits": "edits: u-1:status->doing",
+    "badge": "S:doing"
+   }
+  },
+  {
+   "t": 34.94,
+   "name": "clipboard (ClipboardModule): Ctrl+C copies cell, Ctrl+V pastes + fires on_cell_value_changed",
+   "ok": true,
+   "detail": {
+    "clipboard": "10",
+    "b": [
+     "10",
+     "20",
+     "10"
+    ],
+    "log": "clip: 2:b=10"
+   }
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a1 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 17,
+  "console_total": 132,
+  "console_benign": 128,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 1.04,
+   "ctx": "pivot",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/pivot",
+    "line": 27,
+    "column": 22,
+    "lineNumber": 27,
+    "columnNumber": 22
+   },
+   "benign": true
+  },
+  {
+   "t": 2.8,
+   "ctx": "pivot",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 933,
+    "column": 8,
+    "lineNumber": 933,
+    "columnNumber": 8
+   },
+   "benign": true
+  },
+  {
+   "t": 3.34,
+   "ctx": "pivot",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 1046,
+    "column": 11,
+    "lineNumber": 1046,
+    "columnNumber": 11
+   },
+   "benign": true
+  },
+  {
+   "t": 3.46,
+   "ctx": "pivot",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/node_modules/.vite/deps/react-dom_client.js?v=9409e6f7",
+    "line": 15804,
+    "column": 48,
+    "lineNumber": 15804,
+    "columnNumber": 48
+   },
+   "benign": true
+  },
+  {
+   "t": 3.99,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 3.99,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 3.99,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 3.99,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 3.99,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 4.0,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 4.0,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 4.02,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 4.03,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 4.03,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 4.03,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 4.03,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 4.03,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 4.03,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 5.72,
+   "ctx": "cell_selection",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/cell-selection",
+    "line": 27,
+    "column": 22,
+    "lineNumber": 27,
+    "columnNumber": 22
+   },
+   "benign": true
+  },
+  {
+   "t": 6.79,
+   "ctx": "cell_selection",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 933,
+    "column": 8,
+    "lineNumber": 933,
+    "columnNumber": 8
+   },
+   "benign": true
+  },
+  {
+   "t": 7.21,
+   "ctx": "cell_selection",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 1046,
+    "column": 11,
+    "lineNumber": 1046,
+    "columnNumber": 11
+   },
+   "benign": true
+  },
+  {
+   "t": 7.35,
+   "ctx": "cell_selection",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/node_modules/.vite/deps/react-dom_client.js?v=9409e6f7",
+    "line": 15804,
+    "column": 48,
+    "lineNumber": 15804,
+    "columnNumber": 48
+   },
+   "benign": true
+  },
+  {
+   "t": 7.85,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.85,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.85,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.86,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.86,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.86,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.86,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.9,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.9,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.91,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.91,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.91,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.91,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 7.91,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 12.51,
+   "ctx": "selected_items",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/selected-items",
+    "line": 27,
+    "column": 22,
+    "lineNumber": 27,
+    "columnNumber": 22
+   },
+   "benign": true
+  },
+  {
+   "t": 13.64,
+   "ctx": "selected_items",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 933,
+    "column": 8,
+    "lineNumber": 933,
+    "columnNumber": 8
+   },
+   "benign": true
+  },
+  {
+   "t": 14.05,
+   "ctx": "selected_items",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 1046,
+    "column": 11,
+    "lineNumber": 1046,
+    "columnNumber": 11
+   },
+   "benign": true
+  },
+  {
+   "t": 14.19,
+   "ctx": "selected_items",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/node_modules/.vite/deps/react-dom_client.js?v=9409e6f7",
+    "line": 15804,
+    "column": 48,
+    "lineNumber": 15804,
+    "columnNumber": 48
+   },
+   "benign": true
+  },
+  {
+   "t": 14.75,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.76,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.76,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.76,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.76,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.76,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.76,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.81,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.81,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.81,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.81,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.81,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.81,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 14.82,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 23.61,
+   "ctx": "qa_props",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/qa-grid-props",
+    "line": 27,
+    "column": 22,
+    "lineNumber": 27,
+    "columnNumber": 22
+   },
+   "benign": true
+  },
+  {
+   "t": 25.11,
+   "ctx": "qa_props",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 933,
+    "column": 8,
+    "lineNumber": 933,
+    "columnNumber": 8
+   },
+   "benign": true
+  },
+  {
+   "t": 25.73,
+   "ctx": "qa_props",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 1046,
+    "column": 11,
+    "lineNumber": 1046,
+    "columnNumber": 11
+   },
+   "benign": true
+  },
+  {
+   "t": 25.88,
+   "ctx": "qa_props",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/node_modules/.vite/deps/react-dom_client.js?v=9409e6f7",
+    "line": 15804,
+    "column": 48,
+    "lineNumber": 15804,
+    "columnNumber": 48
+   },
+   "benign": true
+  },
+  {
+   "t": 26.73,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.74,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.74,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.75,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.75,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.75,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.75,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.78,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.78,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.78,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.78,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.78,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.78,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.78,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.79,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.79,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.79,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.79,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.79,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.79,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.8,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.8,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.8,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.81,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.81,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.82,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.82,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.82,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.82,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.82,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.82,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.82,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.82,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.82,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.83,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.84,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.85,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.85,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.85,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.85,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.85,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.87,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.87,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.87,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 26.93,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": true
+  },
+  {
+   "t": 35.08,
+   "ctx": "pivot",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 35.1,
+   "ctx": "cell_selection",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 35.12,
+   "ctx": "selected_items",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 35.22,
+   "ctx": "qa_props",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3300/?token=tR9ByUKFFlfQ": {
+   "ctx": "pivot",
+   "sent": 113,
+   "recv": 4,
+   "sent_samples": [
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}"
+   ],
+   "recv_samples": [
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=226e992c-923f-40b8-e41b-7665d3f9203c&EIO=4&transport=websocket": {
+   "ctx": "pivot",
+   "sent": 2,
+   "recv": 5,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"Cm2RPzGrWCP24AE7AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"c8wDWSudmN3TEGKgAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"pzD7LB5SsVgdRzpOxUGE/A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=d7f0f2ef-995c-4a49-b6a3-f588d3476e04&EIO=4&transport=websocket": {
+   "ctx": "cell_selection",
+   "sent": 8,
+   "recv": 9,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":0,\"columns\":[\"athlete\"]}],\"started\":true,\"finished\":true},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":0,\"columns\":[\"athlete\"]}],\"started\":true,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":1,\"columns\":[\"athlete\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":1,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":2,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":2,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":true},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"kD4O3Bkx1lGH803hAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"oooXt6q-TdQMkaPoAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Altuqcu6td4aS5HFHH40ew==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___cell_selection____cell_selection_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"ath",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]\\\")))\",\"callback\":null}}]}]",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=6a2a8e1a-bdf1-47aa-9cdf-2d1f82af99e3&EIO=4&transport=websocket": {
+   "ctx": "selected_items",
+   "sent": 6,
+   "recv": 11,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_keys\",\"payload\":{\"keys\":[]},\"router_data\":{\"pathname\":\"/selected-items\",\"asPath\":\"/selected-items\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[]},\"router_data\":{\"pathname\":\"/selected-items\",\"asPath\":\"/selected-items\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_keys\",\"payload\":{\"keys\":[\"n\"]},\"router_data\":{\"pathname\":\"/selected-items\",\"asPath\":\"/selected-items\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"N\",\"strength\":\"1-2\",\"frequency\":1.6},{\"direction\":\"N\",\"strength\":\"2-3\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"3-4\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"4-4\",\"frequency\":0.4},{\"direction\":\"N\",\"strength\":\"4-5\",\"frequency\":0.3},{\"direction\":\"N\",\"strength\":\"5-6\",\"frequency\":0.2},{\"direction\":\"N\",\"strength\":\"6+\",\"frequency\":0.1}]},\"router_data\":{\"pathname\":\"/selected-items\",\"asPath\":\"/"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"DFZFLTrgxIT8kwh1AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"dJzVVNfA4r8GMDHbAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"7zJkfiQsyYXAmsDmolSMtg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direc",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"keys_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"let api = refs['ref_ag_grid_basic_1']?.current?.api;\\nconst selected_nodes = [];\\nlet keys_set = new Set([]);\\napi.forEachNode((node) => {\\n    if (keys_set.has(node.data.direction)) {\\n        selected_nodes.push(node);\\n    }\\n});\\napi.deselectAll();\\napi.setNodesSelected({ nodes: selected_nodes, newValue: true });\\n    \",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"keys_rx_state_\":[\"N\"]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"let api = refs['ref_ag_grid_basic_1']?.current?.api;\\nconst selected_nodes = [];\\nlet keys_set = new Set([\\\"N\\\"]);\\napi.forEachNode((node) => {\\n    if (keys_set.has(node.data.direction)) {\\n        selected_nodes.push(node);\\n    }\\n});\\napi.deselectAll();\\napi.setNodesSelected({ nodes: selected_nodes, newValue: true });\\n    \",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"N\",\"strength\":\"1-2\",\"frequency\":1.6},{\"direction\":\"N\",\"strength\":\"2-3\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"3-4\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"4-4\",\"frequency\":0.4},{\"direction\":\"N\",\"strength\":\"4-5\",\"frequency\":0.3},{\"direction\":\"N\",\"strength\":\"5-6\",\"frequency\":0.2},{\"direction\":\"N\",\"strength\":\"6+\",\"frequency\":0.1}]}}}]"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=6cf8cb47-e914-4d67-dbfe-3e6a9774028f&EIO=4&transport=websocket": {
+   "ctx": "qa_props",
+   "sent": 5,
+   "recv": 8,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.prepend\",\"router_data\":{\"pathname\":\"/qa-grid-props\",\"asPath\":\"/qa-grid-props\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.bump\",\"router_data\":{\"pathname\":\"/qa-grid-props\",\"asPath\":\"/qa-grid-props\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_edit\",\"payload\":{\"params\":{\"rowIndex\":1,\"field\":\"status\",\"newValue\":\"doing\",\"node_id\":\"u-1\"}},\"router_data\":{\"pathname\":\"/qa-grid-props\",\"asPath\":\"/qa-grid-props\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_clip_change\",\"payload\":{\"params\":{\"rowIndex\":2,\"field\":\"b\",\"newValue\":10,\"node_id\":\"2\"}},\"router_data\":{\"pathname\":\"/qa-grid-props\",\"asPath\":\"/qa-grid-props\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"pIPPacwmcK73ZjTPAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"gblsfhmN_gQL7a-eAAAH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"sg+tkfM9jk8rlaTDinKn9A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"new\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":2,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"new\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":12,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"edits_rx_state_\":[\"u-1:status->doing\"],\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"doing\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":12,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"clip_log_rx_state_\":[\"2:b=10\"]}}}]"
+   ],
+   "closed": false
+  }
+ },
+ "requests": [
+  {
+   "t": 0.83,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/pivot",
+   "method": "GET"
+  },
+  {
+   "t": 1.04,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/utils/context.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 1.04,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 1.05,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 1.05,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/app_components/reflex/compiler/compiler.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 1.05,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/app_components/reflex/app.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 1.05,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/app_components/ag_grid/formatters.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 1.42,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 1.44,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 1.46,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 3.51,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/app/routes/[pivot]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 3.53,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/app_components/ag_grid/pivot.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 5.61,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/cell-selection",
+   "method": "GET"
+  },
+  {
+   "t": 5.72,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/utils/context.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 5.72,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 5.73,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 5.73,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/app_components/reflex/compiler/compiler.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 5.73,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/app_components/reflex/app.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 5.73,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/app_components/ag_grid/formatters.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 5.8,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 5.86,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 5.93,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 7.44,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/app/routes/[cell-selection]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 7.46,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/app_components/ag_grid/cell_selection.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 12.42,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/selected-items",
+   "method": "GET"
+  },
+  {
+   "t": 12.55,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/utils/context.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 12.55,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 12.55,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 12.55,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/app_components/reflex/compiler/compiler.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 12.55,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/app_components/reflex/app.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 12.55,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/app_components/ag_grid/formatters.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 12.66,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 12.66,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 12.72,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 14.26,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/app/routes/[selected-items]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 14.28,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/app_components/ag_grid/selected_items.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 23.48,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/qa-grid-props",
+   "method": "GET"
+  },
+  {
+   "t": 23.63,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/utils/context.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 23.63,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 23.63,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 23.63,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/app_components/reflex/compiler/compiler.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 23.63,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/app_components/reflex/app.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 23.63,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/app_components/ag_grid/formatters.jsx?t=1791312107266",
+   "method": "GET"
+  },
+  {
+   "t": 23.79,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 23.79,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 23.87,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 25.95,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/app/routes/[qa-grid-props]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 26.02,
+   "ctx": "qa_props",
+   "url": "http://localhost:3300/app_components/ag_grid/qa_extras.jsx?t=1791312107266",
+   "method": "GET"
+  }
+ ]
+}

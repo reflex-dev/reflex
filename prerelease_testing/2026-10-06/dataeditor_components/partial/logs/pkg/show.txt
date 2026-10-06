@@ -1,0 +1,20 @@
+$ uv pip show reflex-components-dataeditor (alpha)
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/dataeditor_components-alpha
+Name: reflex-components-dataeditor
+Version: 0.9.3.post1
+Location: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages
+Requires: reflex-base, reflex-components-core
+Required-by: reflex
+Files:
+  reflex_components_dataeditor-0.9.3.post1.dist-info/INSTALLER
+  reflex_components_dataeditor-0.9.3.post1.dist-info/METADATA
+  reflex_components_dataeditor-0.9.3.post1.dist-info/RECORD
+  reflex_components_dataeditor-0.9.3.post1.dist-info/REQUESTED
+  reflex_components_dataeditor-0.9.3.post1.dist-info/WHEEL
+  reflex_components_dataeditor/__init__.py
+  reflex_components_dataeditor/dataeditor.py
+  reflex_components_dataeditor/dataeditor.pyi
+
+$ pip show (stable, via python -m pip if present)
+pip 26.2.1 from /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/pip (python 3.12)

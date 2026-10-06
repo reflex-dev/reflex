@@ -1,0 +1,3387 @@
+{
+ "name": "ag_features-ent_demos",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 34.42,
+   "name": "master_detail: scenario completed",
+   "ok": false,
+   "detail": "exception: TimeoutError('Locator.click: Timeout 30000ms exceeded.\\nCall log:\\n  - waiting for locator(\"[grid-id=\\\\\"state-vars-grid\\\\\"] .ag-row[row-index=\\'0\\'] .ag-group-contracted\").first\\n')"
+  },
+  {
+   "t": 37.69,
+   "name": "tree: top-level groups are folders (combine hosts on)",
+   "ok": true,
+   "detail": [
+    "Desktop",
+    "Documents",
+    "Pictures",
+    "Videos",
+    "Downloads"
+   ]
+  },
+  {
+   "t": 38.72,
+   "name": "tree: expanding Documents shows Work/Personal",
+   "ok": true,
+   "detail": [
+    "Work",
+    "Personal"
+   ]
+  },
+  {
+   "t": 38.72,
+   "name": "tree: aggregated size uses JS value_formatter (MB/KB)",
+   "ok": true,
+   "detail": "7.91 MB"
+  },
+  {
+   "t": 41.37,
+   "name": "tree: toggling Combine Hosts re-keys grid with hosts at top level",
+   "ok": true,
+   "detail": [
+    "vali",
+    "vidar"
+   ]
+  },
+  {
+   "t": 42.93,
+   "name": "tree: Save column state writes LocalStorage var",
+   "ok": true,
+   "detail": {
+    "reflex___state____state.ag_grid___tree____grid_state.column_state_json_rx_state_": "[{\"colId\": \"ag-Grid-AutoColumn\", \"width\": 280, \"hide\": false, \"pinned\": null, \"sort\": null, \"sortType\": null, \"sortIndex"
+   }
+  },
+  {
+   "t": 42.94,
+   "name": "tree: Load column state button enabled after save (computed var from LocalStorage)",
+   "ok": true,
+   "detail": true
+  },
+  {
+   "t": 45.55,
+   "name": "tree: Load column state still enabled after reload",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 50.41,
+   "name": "pivot: pivot headers by sport (virtualised) with sum(Gold) value columns",
+   "ok": true,
+   "detail": "Biathlon | Cross Country Skiing | Cycling | Diving | Gymnastics | Short-Track Speed Skating | Speed Skating | Group | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold)"
+  },
+  {
+   "t": 50.43,
+   "name": "pivot: rows grouped by country",
+   "ok": true,
+   "detail": [
+    "United States",
+    "Australia",
+    "Canada",
+    "Norway",
+    "China",
+    "Zimbabwe"
+   ]
+  },
+  {
+   "t": 50.51,
+   "name": "pivot: pivot panel + columns side bar visible",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 56.61,
+   "name": "cell-selection: range drag fires on_cell_selection_changed(finished) -> toast",
+   "ok": true,
+   "detail": [
+    "Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]",
+    "Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]"
+   ]
+  },
+  {
+   "t": 56.62,
+   "name": "cell-selection: highlighted cells match reported range (3 rows x 2 cols)",
+   "ok": true,
+   "detail": 6
+  },
+  {
+   "t": 79.52,
+   "name": "fill-handle: handle visible on selected cell",
+   "ok": true,
+   "detail": {
+    "x": 367,
+    "y": 590,
+    "width": 6,
+    "height": 6
+   }
+  },
+  {
+   "t": 92.23,
+   "name": "fill-handle: dragging fills rows 1-2 and fires on_cell_value_changed toasts",
+   "ok": true,
+   "detail": {
+    "ages": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ],
+    "toasts": [
+     "Updated age: 23",
+     "Updated age: 23"
+    ]
+   }
+  },
+  {
+   "t": 94.96,
+   "name": "fill-handle: filled values persisted in State across reload",
+   "ok": true,
+   "detail": {
+    "before_reload": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ],
+    "after_reload": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ]
+   }
+  },
+  {
+   "t": 98.04,
+   "name": "clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event",
+   "ok": false,
+   "detail": {
+    "golds": [
+     "8",
+     "6",
+     "4",
+     "1",
+     "2"
+    ],
+    "toasts": []
+   }
+  },
+  {
+   "t": 112.77,
+   "name": "aligned: both grids show data",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 114.42,
+   "name": "aligned: expanding Medals group in grid1 also expands grid2",
+   "ok": true,
+   "detail": {
+    "before": [
+     0,
+     0
+    ],
+    "after": [
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "t": 115.73,
+   "name": "aligned: resizing athlete column in grid1 resizes grid2",
+   "ok": true,
+   "detail": {
+    "w1_before": 200,
+    "w1_after": 318,
+    "w2_after": 318
+   }
+  },
+  {
+   "t": 120.78,
+   "name": "editable: edit fires on_cell_value_changed toast",
+   "ok": true,
+   "detail": [
+    "Cell value changed: name = Johnny"
+   ]
+  },
+  {
+   "t": 122.85,
+   "name": "editable: edited value persisted in State across reload",
+   "ok": true,
+   "detail": [
+    "Johnny",
+    "Anna",
+    "Mike"
+   ]
+  },
+  {
+   "t": 126.93,
+   "name": "state-grid: Load Columns sets header_name/headerName from State",
+   "ok": true,
+   "detail": [
+    "",
+    "DIR",
+    "STR",
+    "HZ"
+   ]
+  },
+  {
+   "t": 129.03,
+   "name": "state-grid: data loaded with JS value_formatter suffix",
+   "ok": true,
+   "detail": [
+    {
+     "idx": 0,
+     "id": "0",
+     "sel": "true",
+     "val": "0.5 Hz"
+    },
+    {
+     "idx": 1,
+     "id": "1",
+     "sel": "true",
+     "val": "0.6 Hz"
+    }
+   ]
+  },
+  {
+   "t": 129.03,
+   "name": "state-grid: on_row_data_updated event chain selected all rows (select_all_on_load)",
+   "ok": true,
+   "detail": [
+    "true",
+    "true",
+    "true",
+    "true",
+    "true"
+   ]
+  },
+  {
+   "t": 129.04,
+   "name": "state-grid: chained set_select_all_on_load(False) reset the switch",
+   "ok": true,
+   "detail": "unchecked"
+  },
+  {
+   "t": 130.08,
+   "name": "state-grid: Clear Data empties grid",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 131.14,
+   "name": "state-grid: Clear Columns removes headers",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "t": 136.47,
+   "name": "selected-items: Select All -> on_selection_changed -> State count",
+   "ok": true,
+   "detail": "Selected Items (128)"
+  },
+  {
+   "t": 140.23,
+   "name": "selected-items: tags input 'n' -> upper-cased key -> select_rows_by_key(direction=N)",
+   "ok": true,
+   "detail": {
+    "heading": "Selected Items (8)",
+    "visible_selected_N_rows": 2
+   }
+  },
+  {
+   "t": 149.2,
+   "name": "integrated-charts: chart range -> chart dialog with canvas",
+   "ok": true,
+   "detail": 1
+  },
+  {
+   "t": 152.19,
+   "name": "row_id_key: getRowId uses data.uid",
+   "ok": true,
+   "detail": [
+    "u-1",
+    "u-2",
+    "u-3"
+   ]
+  },
+  {
+   "t": 152.23,
+   "name": "pinned rows (new names pinned_top_row_data/pinned_bottom_row_data)",
+   "ok": true,
+   "detail": {
+    "top": [
+     "TOP-NEW\npinned top new\nundefined units\nS:"
+    ],
+    "bottom": [
+     "BOT-NEW\npinned bottom new\nundefined units\nS:"
+    ]
+   }
+  },
+  {
+   "t": 152.24,
+   "name": "pinned rows (legacy aliases pinned_row_top_data/pinned_row_bottom_data)",
+   "ok": true,
+   "detail": {
+    "top": [
+     "TOP-OLD\npinned top old"
+    ],
+    "bottom": [
+     "BOT-OLD\npinned bottom old"
+    ]
+   }
+  },
+  {
+   "t": 152.25,
+   "name": "suppress_overlays=['noRows'] hides the no-rows overlay (default grid shows it)",
+   "ok": true,
+   "detail": {
+    "default": [
+     "No Rows To Show"
+    ],
+    "suppressed": []
+   }
+  },
+  {
+   "t": 152.25,
+   "name": "value_formatter string renders 'N units'",
+   "ok": true,
+   "detail": [
+    "1 units",
+    "2 units",
+    "3 units"
+   ]
+  },
+  {
+   "t": 152.25,
+   "name": "custom JS cell renderer (rx.badge via ArgsFunctionOperation) renders",
+   "ok": true,
+   "detail": [
+    "S:",
+    "S:new",
+    "S:new",
+    "S:done",
+    "S:"
+   ]
+  },
+  {
+   "t": 153.58,
+   "name": "row_id_key: prepending a row keeps stable ids",
+   "ok": true,
+   "detail": [
+    "u-4",
+    "u-1",
+    "u-2",
+    "u-3"
+   ]
+  },
+  {
+   "t": 154.82,
+   "name": "row_id_key: immutable State update bumps u-2 in place",
+   "ok": true,
+   "detail": {
+    "u-4": "4 units",
+    "u-1": "1 units",
+    "u-2": "12 units",
+    "u-3": "3 units"
+   }
+  },
+  {
+   "t": 157.36,
+   "name": "select cell editor edit -> on_cell_value_changed node_id == row_id_key uid -> State",
+   "ok": true,
+   "detail": {
+    "edits": "edits: u-1:status->doing",
+    "badge": "S:doing"
+   }
+  },
+  {
+   "t": 159.72,
+   "name": "clipboard (ClipboardModule): Ctrl+C copies cell, Ctrl+V pastes + fires on_cell_value_changed",
+   "ok": true,
+   "detail": {
+    "clipboard": "10",
+    "b": [
+     "10",
+     "20",
+     "10"
+    ],
+    "log": "clip: 2:b=10"
+   }
+  },
+  {
+   "t": 162.83,
+   "name": "memo grid: column defs from State.fields.foreach",
+   "ok": false,
+   "detail": []
+  },
+  {
+   "t": 192.83,
+   "name": "qa_memo: scenario completed",
+   "ok": false,
+   "detail": "exception: TimeoutError('Locator.click: Timeout 30000ms exceeded.\\nCall log:\\n  - waiting for locator(\"[grid-id=\\\\\"qa_memo_grid\\\\\"] .ag-grid-scrolling-container .ag-row[row-index=\\\\\"1\\\\\"] .ag-cell[col-id=\\\\\"name\\\\\"]\").first\\n')"
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a1 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [
+   "master_detail: scenario completed",
+   "clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event",
+   "memo grid: column defs from State.fields.foreach",
+   "qa_memo: scenario completed"
+  ],
+  "n_checks": 43,
+  "console_total": 162,
+  "console_benign": 147,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 2.12,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 2.35,
+   "ctx": "master_detail",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 35.25,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 35.25,
+   "ctx": "tree",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 35.25,
+   "ctx": "tree",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 35.25,
+   "ctx": "tree",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 35.25,
+   "ctx": "tree",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 35.25,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 35.25,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 38.81,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 38.81,
+   "ctx": "tree",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 38.81,
+   "ctx": "tree",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 38.81,
+   "ctx": "tree",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 38.81,
+   "ctx": "tree",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 38.81,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 38.81,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 42.96,
+   "ctx": "tree",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 43.19,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 43.2,
+   "ctx": "tree",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 43.2,
+   "ctx": "tree",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 43.21,
+   "ctx": "tree",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 43.21,
+   "ctx": "tree",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 43.21,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 43.21,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 43.34,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 43.34,
+   "ctx": "tree",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 43.34,
+   "ctx": "tree",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 43.34,
+   "ctx": "tree",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 43.34,
+   "ctx": "tree",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 43.34,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 43.34,
+   "ctx": "tree",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 47.88,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/pivot/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 47.88,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/pivot/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 47.89,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/pivot/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 47.89,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/pivot/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 47.89,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/pivot/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 47.89,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/pivot/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 47.9,
+   "ctx": "pivot",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/pivot/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 52.34,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/cell-selection/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 52.34,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/cell-selection/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 52.34,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/cell-selection/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 52.34,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/cell-selection/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 52.34,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/cell-selection/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 52.34,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/cell-selection/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 52.34,
+   "ctx": "cell_selection",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/cell-selection/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 75.98,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 76.0,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 76.02,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 76.02,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 76.02,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 76.02,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 76.02,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 92.25,
+   "ctx": "fill_handle",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 92.64,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 92.64,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 92.64,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 92.64,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 92.66,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 92.66,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 92.66,
+   "ctx": "fill_handle",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 120.79,
+   "ctx": "editable",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/editable/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 123.46,
+   "ctx": "state_grid",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/state-grid/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 123.47,
+   "ctx": "state_grid",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/state-grid/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 123.47,
+   "ctx": "state_grid",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/state-grid/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 123.47,
+   "ctx": "state_grid",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/state-grid/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 123.47,
+   "ctx": "state_grid",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/state-grid/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 123.47,
+   "ctx": "state_grid",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/state-grid/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 123.47,
+   "ctx": "state_grid",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/state-grid/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 132.08,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/selected-items/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 132.08,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/selected-items/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 132.08,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/selected-items/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 132.08,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/selected-items/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 132.08,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/selected-items/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 132.08,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/selected-items/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 132.08,
+   "ctx": "selected_items",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/selected-items/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 141.26,
+   "ctx": "integrated_charts",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 141.26,
+   "ctx": "integrated_charts",
+   "type": "error",
+   "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+   "url": "http://localhost:3301/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 141.26,
+   "ctx": "integrated_charts",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 141.26,
+   "ctx": "integrated_charts",
+   "type": "error",
+   "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+   "url": "http://localhost:3301/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 141.27,
+   "ctx": "integrated_charts",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 141.27,
+   "ctx": "integrated_charts",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 141.27,
+   "ctx": "integrated_charts",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 149.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 149.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.86,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.9,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.43,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.43,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.43,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.43,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 160.44,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 160.44,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.44,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 160.48,
+   "ctx": "qa_memo",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/main.esm-DRvnEY79.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 192.95,
+   "ctx": "master_detail",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 192.97,
+   "ctx": "tree",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 193.01,
+   "ctx": "pivot",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/pivot/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 193.05,
+   "ctx": "cell_selection",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/cell-selection/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 193.1,
+   "ctx": "fill_handle",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 193.14,
+   "ctx": "aligned",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/aligned-grids/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 193.18,
+   "ctx": "editable",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/editable/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 193.21,
+   "ctx": "state_grid",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/state-grid/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 193.25,
+   "ctx": "selected_items",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/selected-items/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 193.29,
+   "ctx": "integrated_charts",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 193.32,
+   "ctx": "qa_props",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 193.36,
+   "ctx": "qa_memo",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-DN0_NpoQ.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3301/_event/?token=e36328a8-4149-4904-85d9-48be368927e6&EIO=4&transport=websocket": {
+   "ctx": "master_detail",
+   "sent": 8,
+   "recv": 11,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"LkDtC030yB4p8DsfAAAy\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"gqcqonDTSEpjxyVLAAAz\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"xOunbhDEmfkHULJ1dkXyYQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=f1427cf4-6d45-466d-9eb7-4c0f723d6be2&EIO=4&transport=websocket": {
+   "ctx": "tree",
+   "sent": 10,
+   "recv": 15,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___tree____tree_display_state.set_combine_hosts\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/tree/\",\"asPath\":\"/tree/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___tree____grid_state.save_column_state\",\"payload\":{\"state\":[{\"colId\":\"ag-Grid-AutoColumn\",\"width\":280,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivotIndex\":null,\"pivotSort\":\"asc\",\"flex\":null,\"showValuesAs\":null,\"headerName\":null},{\"colId\":\"created\",\"width\":200,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivot",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___tree____grid_state.column_state_json_rx_state_\":\"[{\\\"colId\\\": \\\"ag-Grid-AutoColumn\\\", \\\"width\\\": 280, \\\"hide\\\": false, \\\"pinned\\\": null, \\\"sort\\\": null, \\\"sortType\\\": null, \\\"sortIndex\\\": null, \\\"aggFunc\\\": null, \\\"valueIndex\\\": null, \\\"rowGroup\\\": false, \\\"rowGroupIndex\\\": null, \\\"pivot\\\": false, \\\"pivotIndex\\\": null, \\\"pivotSort\\\": \\\"asc\\\", \\\"flex\\\": null, \\\"showValuesAs\\\": null, \\\"headerName\\\": null}, {\\\"colId\\\": \\\"created\\\", \\\"width\\\": 200, \\\"hide\\\": false, \\\"pinned\\\"",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"gRM-xaXar8WGR8CnAAA0\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"nXly5pPiQ5J25xLAAAA1\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"IF1zzdelB8UAPYLjt+2cYg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___tree____tree_display_state\":{\"combine_hosts_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___tree____grid_state\":{\"column_state_rx_state_\":[{\"colId\":\"ag-Grid-AutoColumn\",\"width\":280,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivotIndex\":null,\"pivotSort\":\"asc\",\"flex\":null,\"showValuesAs\":null,\"headerName\":null},{\"colId\":\"created\",\"width\":200,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivotIndex\":nu",
+    "0{\"sid\":\"86_cPgdv6YS_PASIAAA2\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"8GUzHGjf93IiJoKJAAA3\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"3I1G97UFgYODXCEnCQMGqw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3301/_event/?token=691f6d72-58fd-467b-c392-bcc90f5bc7dd&EIO=4&transport=websocket": {
+   "ctx": "pivot",
+   "sent": 6,
+   "recv": 9,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"OeGmnGPTZJlXQcX7AAA4\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"yxFTrAwYDFxzF5b5AAA5\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Y8FI43bphiQF+hCqrPJFFg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=b838c48c-9219-4ed3-835c-022174d2a2a8&EIO=4&transport=websocket": {
+   "ctx": "cell_selection",
+   "sent": 12,
+   "recv": 13,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":0,\"columns\":[\"athlete\"]}],\"started\":true,\"finished\":true},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":0,\"columns\":[\"athlete\"]}],\"started\":true,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":1,\"columns\":[\"athlete\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":1,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":2,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":2,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":true},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"Etoc-Yj5l4IaOpPhAAA6\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"F1OmcrUICxVWKbx-AAA7\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"fcuMupmsfpMBlbu8C55H/g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___cell_selection____cell_selection_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"ath",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]\\\")))\",\"callback\":null}}]}]",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=a6ce40c4-b499-4212-d2a4-cc2332594f8f&EIO=4&transport=websocket": {
+   "ctx": "fill_handle",
+   "sent": 9,
+   "recv": 16,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___fill_handle____fill_handle_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":1,\"field\":\"age\",\"newValue\":23,\"node_id\":\"1\"}},\"router_data\":{\"pathname\":\"/fill-handle/\",\"asPath\":\"/fill-handle/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___fill_handle____fill_handle_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":2,\"field\":\"age\",\"newValue\":23,\"node_id\":\"2\"}},\"router_data\":{\"pathname\":\"/fill-handle/\",\"asPath\":\"/fill-handle/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"-jwtChI1_y828mJkAAA8\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Q3J674OLh9U-hJD4AAA9\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"O7OiqbWpE0cLL7Mw72REXA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___fill_handle____fill_handle_state\":{\"row_data_rx_state_\":[{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2008,\"date\":\"24/08/2008\",\"sport\":\"Swimming\",\"gold\":8,\"silver\":0,\"bronze\":0,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2004,\"date\":\"29/08/2004\",\"sport\":\"Swimming\",\"gold\":6,\"silver\":0,\"bronze\":2,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":27,\"country\":\"United States\",\"year\":2012,\"date\":\"12/08/2012\",\"sport\":\"Swimming\",\"gold\":4,\"silver\":2,\"bronze\":0,\"total\":6},{\"athlete\":",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Updated age: 23\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___fill_handle____fill_handle_state\":{\"row_data_rx_state_\":[{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2008,\"date\":\"24/08/2008\",\"sport\":\"Swimming\",\"gold\":8,\"silver\":0,\"bronze\":0,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2004,\"date\":\"29/08/2004\",\"sport\":\"Swimming\",\"gold\":6,\"silver\":0,\"bronze\":2,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2012,\"date\":\"12/08/2012\",\"sport\":\"Swimming\",\"gold\":4,\"silver\":2,\"bronze\":0,\"total\":6},{\"athlete\":",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Updated age: 23\\\")))\",\"callback\":null}}]}]",
+    "0{\"sid\":\"Z0XWvz_CkuZRvyDiAAA-\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"GAWDr2nlDmabIYKgAAA_\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"MlY9p+Pg68XsugLlQmjjcg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3301/_event/?token=72ba295f-8075-4016-aeb4-28f45351f361&EIO=4&transport=websocket": {
+   "ctx": "aligned",
+   "sent": 4,
+   "recv": 9,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"FKjH66yBFB3t0Oy-AABA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Lsa2mY-uD-OPcQeNAABB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"7ta96Rs7zyY106JVyo1zHA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___aligned_grids____aligned_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"athlete\":\"M",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=a977a2cc-7a16-4c5e-e198-0d1f8618108f&EIO=4&transport=websocket": {
+   "ctx": "editable",
+   "sent": 6,
+   "recv": 12,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___editable____editable_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":0,\"field\":\"name\",\"newValue\":\"Johnny\",\"node_id\":\"0\"}},\"router_data\":{\"pathname\":\"/editable/\",\"asPath\":\"/editable/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"cFxQcydVGSZLVUV8AABC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"D9ud_KTGly3VPgB1AABD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXBXkmjlIncIfc/59WF89Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___editable____editable_state\":{\"row_data_rx_state_\":[{\"name\":\"Johnny\",\"age\":30,\"country\":\"USA\"},{\"name\":\"Anna\",\"age\":25,\"country\":\"Sweden\"},{\"name\":\"Mike\",\"age\":35,\"country\":\"Canada\"}]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Cell value changed: name = Johnny\\\")))\",\"callback\":null}}]}]",
+    "0{\"sid\":\"1BrCOrQjVYNZWcGUAABE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"KKzJ25MuYHrj3D9VAABF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"3fsf3vIUig5Du+iXk+PCtw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3301/_event/?token=b7f03a80-863d-4307-9812-060f4dbd7f6e&EIO=4&transport=websocket": {
+   "ctx": "state_grid",
+   "sent": 11,
+   "recv": 14,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.load_columns\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":true},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.load_data\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.clear_data\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.clear_columns\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"y5mQscjoaWKkraBOAABG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"ifI5wgCg2_aCNW3WAABH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"oQo9T85Fwir/GqfAXp+cBA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"column_defs_rx_state_\":[{\"field\":\"direction\",\"header_name\":\"DIR\"},{\"field\":\"strength\",\"headerName\":\"STR\"},{\"field\":\"frequency\",\"header_name\":\"HZ\",\"value_formatter\":\"params.value + ' Hz'\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"row_data_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"SSW\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"row_data_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"column_defs_rx_state_\":[]}}}]",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=d4f077c5-1a63-4567-bc49-938cce94e6ae&EIO=4&transport=websocket": {
+   "ctx": "selected_items",
+   "sent": 8,
+   "recv": 13,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_keys\",\"payload\":{\"keys\":[]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_keys\",\"payload\":{\"keys\":[\"n\"]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"N\",\"strength\":\"1-2\",\"frequency\":1.6},{\"direction\":\"N\",\"strength\":\"2-3\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"3-4\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"4-4\",\"frequency\":0.4},{\"direction\":\"N\",\"strength\":\"4-5\",\"frequency\":0.3},{\"direction\":\"N\",\"strength\":\"5-6\",\"frequency\":0.2},{\"direction\":\"N\",\"strength\":\"6+\",\"frequency\":0.1}]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"cpcdKiIGplXk9VPgAABI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"yr7tpLn_rcwOHTdoAABJ\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"jFx4QoZMoM0EBHSsxRCN2Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direc",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"keys_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"let api = refs['ref_ag_grid_basic_1']?.current?.api;\\nconst selected_nodes = [];\\nlet keys_set = new Set([]);\\napi.forEachNode((node) => {\\n    if (keys_set.has(node.data.direction)) {\\n        selected_nodes.push(node);\\n    }\\n});\\napi.deselectAll();\\napi.setNodesSelected({ nodes: selected_nodes, newValue: true });\\n    \",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"keys_rx_state_\":[\"N\"]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"let api = refs['ref_ag_grid_basic_1']?.current?.api;\\nconst selected_nodes = [];\\nlet keys_set = new Set([\\\"N\\\"]);\\napi.forEachNode((node) => {\\n    if (keys_set.has(node.data.direction)) {\\n        selected_nodes.push(node);\\n    }\\n});\\napi.deselectAll();\\napi.setNodesSelected({ nodes: selected_nodes, newValue: true });\\n    \",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"N\",\"strength\":\"1-2\",\"frequency\":1.6},{\"direction\":\"N\",\"strength\":\"2-3\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"3-4\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"4-4\",\"frequency\":0.4},{\"direction\":\"N\",\"strength\":\"4-5\",\"frequency\":0.3},{\"direction\":\"N\",\"strength\":\"5-6\",\"frequency\":0.2},{\"direction\":\"N\",\"strength\":\"6+\",\"frequency\":0.1}]}}}]",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=b94e3729-4b53-4abe-97b8-37b4cbcd3da3&EIO=4&transport=websocket": {
+   "ctx": "integrated_charts",
+   "sent": 3,
+   "recv": 6,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"-fuRm4bB4cNNVH0JAABK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"livZ_h4SaLolw0F0AABL\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"cx++sg1t3gUDJRD4uOEJFw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=d6810dd8-bc07-4803-e094-facb15ebbf32&EIO=4&transport=websocket": {
+   "ctx": "qa_props",
+   "sent": 6,
+   "recv": 9,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.prepend\",\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.bump\",\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_edit\",\"payload\":{\"params\":{\"rowIndex\":1,\"field\":\"status\",\"newValue\":\"doing\",\"node_id\":\"u-1\"}},\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_clip_change\",\"payload\":{\"params\":{\"rowIndex\":2,\"field\":\"b\",\"newValue\":10,\"node_id\":\"2\"}},\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"m7WCSMbbJW3K5ZAhAABM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"asmeSR9UQc7o3nB_AABN\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"WJpx6+HbBQbw56DgCf0EUw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"new\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":2,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"new\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":12,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"edits_rx_state_\":[\"u-1:status->doing\"],\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"doing\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":12,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"clip_log_rx_state_\":[\"2:b=10\"]}}}]",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=93d2f752-d938-4ed9-f1aa-0d6f4c0c92fa&EIO=4&transport=websocket": {
+   "ctx": "qa_memo",
+   "sent": 2,
+   "recv": 5,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"aBz_g7jy3_cL6e9MAABO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"JbMYFwIYe0V1KCN6AABP\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"205+29l6Mpt0+NKLJJGRtw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2"
+   ],
+   "closed": false
+  }
+ },
+ "requests": [
+  {
+   "t": 1.54,
+   "ctx": "master_detail",
+   "url": "http://localhost:3301/master-detail",
+   "method": "GET"
+  },
+  {
+   "t": 1.54,
+   "ctx": "master_detail",
+   "url": "http://localhost:3301/master-detail/",
+   "method": "GET"
+  },
+  {
+   "t": 34.64,
+   "ctx": "tree",
+   "url": "http://localhost:3301/tree",
+   "method": "GET"
+  },
+  {
+   "t": 34.65,
+   "ctx": "tree",
+   "url": "http://localhost:3301/tree/",
+   "method": "GET"
+  },
+  {
+   "t": 42.96,
+   "ctx": "tree",
+   "url": "http://localhost:3301/tree/",
+   "method": "GET"
+  },
+  {
+   "t": 46.92,
+   "ctx": "pivot",
+   "url": "http://localhost:3301/pivot",
+   "method": "GET"
+  },
+  {
+   "t": 46.92,
+   "ctx": "pivot",
+   "url": "http://localhost:3301/pivot/",
+   "method": "GET"
+  },
+  {
+   "t": 51.36,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3301/cell-selection",
+   "method": "GET"
+  },
+  {
+   "t": 51.39,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3301/cell-selection/",
+   "method": "GET"
+  },
+  {
+   "t": 63.77,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3301/fill-handle",
+   "method": "GET"
+  },
+  {
+   "t": 64.66,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3301/fill-handle/",
+   "method": "GET"
+  },
+  {
+   "t": 92.26,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3301/fill-handle/",
+   "method": "GET"
+  },
+  {
+   "t": 98.34,
+   "ctx": "aligned",
+   "url": "http://localhost:3301/aligned-grids",
+   "method": "GET"
+  },
+  {
+   "t": 98.36,
+   "ctx": "aligned",
+   "url": "http://localhost:3301/aligned-grids/",
+   "method": "GET"
+  },
+  {
+   "t": 115.98,
+   "ctx": "editable",
+   "url": "http://localhost:3301/editable",
+   "method": "GET"
+  },
+  {
+   "t": 116.0,
+   "ctx": "editable",
+   "url": "http://localhost:3301/editable/",
+   "method": "GET"
+  },
+  {
+   "t": 120.79,
+   "ctx": "editable",
+   "url": "http://localhost:3301/editable/",
+   "method": "GET"
+  },
+  {
+   "t": 122.96,
+   "ctx": "state_grid",
+   "url": "http://localhost:3301/state-grid",
+   "method": "GET"
+  },
+  {
+   "t": 122.98,
+   "ctx": "state_grid",
+   "url": "http://localhost:3301/state-grid/",
+   "method": "GET"
+  },
+  {
+   "t": 131.29,
+   "ctx": "selected_items",
+   "url": "http://localhost:3301/selected-items",
+   "method": "GET"
+  },
+  {
+   "t": 131.32,
+   "ctx": "selected_items",
+   "url": "http://localhost:3301/selected-items/",
+   "method": "GET"
+  },
+  {
+   "t": 140.47,
+   "ctx": "integrated_charts",
+   "url": "http://localhost:3301/integrated-charts",
+   "method": "GET"
+  },
+  {
+   "t": 140.49,
+   "ctx": "integrated_charts",
+   "url": "http://localhost:3301/integrated-charts/",
+   "method": "GET"
+  },
+  {
+   "t": 149.36,
+   "ctx": "qa_props",
+   "url": "http://localhost:3301/qa-grid-props",
+   "method": "GET"
+  },
+  {
+   "t": 149.4,
+   "ctx": "qa_props",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "method": "GET"
+  },
+  {
+   "t": 159.98,
+   "ctx": "qa_memo",
+   "url": "http://localhost:3301/qa-grid-memo",
+   "method": "GET"
+  },
+  {
+   "t": 159.98,
+   "ctx": "qa_memo",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "method": "GET"
+  }
+ ]
+}

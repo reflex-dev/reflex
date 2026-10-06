@@ -1,0 +1,190 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/confi
+g.py'
+Debug: Config: Config(app_name='cluster_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8420', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'plugins', 'api_url', 'telemetry_enabled', 'app_name', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/dataeditor_components-alpha/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/confi
+g.py'
+Debug: Config: Config(app_name='cluster_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8420', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'plugins', 'api_url', 'telemetry_enabled', 'app_name', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/dataeditor_components-alpha/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+─────────────────────────── Initializing cluster_app ───────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/.templ
+ates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/dataeditor_components/app-alpha/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 171943329815035421483652063543424260748.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.039 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized cluster_app. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3420
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8420
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3420 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3420 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3420 is not in use.
+Debug: Checking if Backend port: 8420 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8420 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8420 is not in use.
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+CLUSTER_APP reflex 0.10.0a1 /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex/__init__.py
+Debug: Registered lifespan task: _setup_event_processor
+CONSTRUCTION_ERROR rc_untyped: TypeError: tick_formatter must be a FunctionVar or JavaScript function expression.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_components
+_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.76s
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 339, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex/app.py", line 1734, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1324, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 747, in compile
+    page_ctx.root_component = self.hooks.compile_component(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 324, in compile_component
+    return self._compile_component_with_replacements(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 553, in _compile_component_with_replacements
+    return visit(
+           ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 512, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 480, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 512, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 480, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 512, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 480, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 527, in visit
+    hook_impl(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 245, in leave_component
+    hook_impl(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex/compiler/plugins/memoize.py", line 357, in leave_component
+    return self._build_wrapper(comp, page_context, compile_context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex/compiler/plugins/memoize.py", line 389, in _build_wrapper
+    wrapper_factory, definition = create_passthrough_component_memo(
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/components/memo.py", line 2187, in create_passthrough_component_memo
+    tag = memo_tag(preview)
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/components/memo.py", line 2087, in memo_tag
+    prefix, tag = type(component).__qualname__, component.tag or "Comp"
+                                                ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/dataeditor_components-alpha/lib/python3.12/site-packages/reflex_base/vars/base.py", line 1705, in __bool__
+    raise VarTypeError(msg)
+reflex_base.utils.exceptions.VarTypeError: Cannot convert Var '"t1"' to bool for use with `if`, `and`, `or`, and `not`. Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert).

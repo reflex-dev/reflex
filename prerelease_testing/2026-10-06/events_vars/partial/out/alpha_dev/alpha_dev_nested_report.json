@@ -1,0 +1,301 @@
+{
+ "label": "alpha_dev_nested",
+ "base": "http://localhost:3460",
+ "results": [
+  {
+   "name": "nested.match_list_branch",
+   "status": "pass",
+   "details": {
+    "order": "M1,M2",
+    "expected": "M1,M2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=0 frontend=0"
+   },
+   "t": 5.625
+  },
+  {
+   "name": "nested.deep50_nested_match",
+   "status": "pass",
+   "details": {
+    "order": "Z49,Z48,Z47,Z46,Z45,Z44,Z43,Z42,Z41,Z40,Z39,Z38,Z37,Z36,Z35,Z34,Z33,Z32,Z31,Z30,Z29,Z28,Z27,Z26,Z25,Z24,Z23,Z22,Z21,Z20,Z19,Z18,Z17,Z16,Z15,Z14,Z13,Z12,Z11,Z10,Z9,Z8,Z7,Z6,Z5,Z4,Z3,Z2,Z1,Z0",
+    "expected": "Z49,Z48,Z47,Z46,Z45,Z44,Z43,Z42,Z41,Z40,Z39,Z38,Z37,Z36,Z35,Z34,Z33,Z32,Z31,Z30,Z29,Z28,Z27,Z26,Z25,Z24,Z23,Z22,Z21,Z20,Z19,Z18,Z17,Z16,Z15,Z14,Z13,Z12,Z11,Z10,Z9,Z8,Z7,Z6,Z5,Z4,Z3,Z2,Z1,Z0",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=0 frontend=0"
+   },
+   "t": 12.456
+  },
+  {
+   "name": "nested.backend_failure_mid_list_flat",
+   "status": "pass",
+   "details": {
+    "order": "P1,P2,P3",
+    "expected": "P1,P2,P3",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=1 frontend=0"
+   },
+   "t": 17.561
+  },
+  {
+   "name": "nested.backend_failure_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "order": "Q1,Q2",
+    "expected": "Q1,Q2",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=1 frontend=0",
+    "handler_counts_after": "backend=2 frontend=0"
+   },
+   "t": 22.661
+  },
+  {
+   "name": "nested.malformed_event_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "order": "W1,W2",
+    "expected": "W1,W2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=2 frontend=0",
+    "handler_counts_after": "backend=2 frontend=1"
+   },
+   "t": 27.856
+  },
+  {
+   "name": "nested.handler_returns_nested_list",
+   "status": "fail",
+   "details": {
+    "order": "",
+    "expected": "A,B,C,D",
+    "backend_exc_records": 1,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "TypeError: Your handler NestState.ret_nested must only return/yield: None, Events or other",
+    "handler_counts_before": "backend=2 frontend=1",
+    "handler_counts_after": "backend=3 frontend=1"
+   },
+   "t": 32.827
+  },
+  {
+   "name": "nested.handler_yields_nested_list",
+   "status": "fail",
+   "details": {
+    "order": "",
+    "expected": "Y1,Y2",
+    "backend_exc_records": 1,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "TypeError: Your handler NestState.yield_nested must only return/yield: None, Events or othe",
+    "handler_counts_before": "backend=3 frontend=1",
+    "handler_counts_after": "backend=4 frontend=1"
+   },
+   "t": 37.887
+  },
+  {
+   "name": "nested.handler_returns_flat_with_failing",
+   "status": "pass",
+   "details": {
+    "order": "R1,R2",
+    "expected": "R1,R2",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=4 frontend=1",
+    "handler_counts_after": "backend=5 frontend=1"
+   },
+   "t": 42.961
+  },
+  {
+   "name": "nested.call_script_throws_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "order": "C1,C2",
+    "expected": "C1,C2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=1",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 48.088
+  },
+  {
+   "name": "nested.call_script_callback_list",
+   "status": "pass",
+   "details": {
+    "order": "cbv,CB2",
+    "expected": "cbv,CB2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=2",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 53.041
+  },
+  {
+   "name": "nested.run_script_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "order": "RS1,RS2",
+    "expected": "RS1,RS2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=2",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 58.2
+  },
+  {
+   "name": "nested.prevent_default_inside_nested_list",
+   "status": "pass",
+   "details": {
+    "input_value": "y",
+    "expected_value": "y",
+    "order": "PDX,PDX2,PDX,PDX2",
+    "ordinary_after_ok": true
+   },
+   "t": 61.648
+  },
+  {
+   "name": "t_nested_ctrl_b",
+   "status": "error",
+   "details": {
+    "exception": "TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#nest-order\")\n    - locator resolved to <p id=\"nest-order\" class=\"rt-Text\"></p>\n  - attempting click action\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 \u00d7 waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n",
+    "tb": "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_frame.py\", line 594, in _click\n    await self._channel.send(\"click\", self._timeout, locals_to_params(locals()))\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py\", line 76, in send\n    return await self._connection.wrap_api_call(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py\", line 632, in wrap_api_call\n    raise rewrite_error(error, f\"{parsed_st['apiName']}: {error}\") from None\nplaywright._impl._errors.TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#nest-order\")\n    - locator resolved to <p id=\"nest-order\" class=\"rt-Text\"></p>\n  - attempting click action\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 \u00d7 waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n"
+   },
+   "t": 93.158
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 5.629,
+   "tag": "match_list_branch",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 12.46,
+   "tag": "deep50_nested_match",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 17.565,
+   "tag": "backend_failure_mid_list_flat",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 22.668,
+   "tag": "backend_failure_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 27.859,
+   "tag": "malformed_event_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 32.831,
+   "tag": "handler_returns_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 37.89,
+   "tag": "handler_yields_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 42.967,
+   "tag": "handler_returns_flat_with_failing",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 45.012,
+   "tag": "call_script_throws_mid_nested_list",
+   "type": "log",
+   "text": "_call_script Error: cs-boom\n    at eval (eval at applyEvent (http://localhost:3460/utils/state.js:491:13), <anonymous>:1:7)\n    at applyEvent (http://localhost:3460/utils/state.js:491:13)\n    at processEvent (http://localhost:3460/utils/state.js:658:13)\n    at processEvent (http://localhost:3460/utils/state.js:663:13)\n    at async queueEvents (http://localhost:3460/utils/state.js:622:3)",
+   "loc": "http://localhost:3460/utils/state.js:505",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 48.091,
+   "tag": "call_script_throws_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 53.054,
+   "tag": "call_script_callback_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 58.204,
+   "tag": "run_script_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 61.654,
+   "tag": "pd",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "extra": {}
+}

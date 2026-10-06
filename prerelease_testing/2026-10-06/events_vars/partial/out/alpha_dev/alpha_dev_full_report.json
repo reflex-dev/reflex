@@ -1,0 +1,1459 @@
+{
+ "label": "alpha_dev_full",
+ "base": "http://localhost:3460",
+ "results": [
+  {
+   "name": "sup.slow_rapid_clicks",
+   "status": "pass",
+   "details": {
+    "final": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "expected": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "timeline": [
+     [
+      0.0,
+      "a0,b0"
+     ],
+     [
+      0.11,
+      "a0,b0,c0"
+     ],
+     [
+      1.12,
+      "a0,b0,c0,c1"
+     ],
+     [
+      2.09,
+      "a0,b0,c0,c1,c2"
+     ],
+     [
+      3.09,
+      "a0,b0,c0,c1,c2,c3"
+     ],
+     [
+      4.07,
+      "a0,b0,c0,c1,c2,c3,c4"
+     ],
+     [
+      5.03,
+      "a0,b0,c0,c1,c2,c3,c4,cdone"
+     ]
+    ]
+   },
+   "t": 13.523
+  },
+  {
+   "name": "sup.cancelled_unyielded_mutation",
+   "status": "anomaly",
+   "details": {
+    "final": "astart,aunflushed,bstart,bunflushed,bend",
+    "cancelled_handler_mutation_after_last_yield_visible": true,
+    "timeline": [
+     [
+      0.0,
+      "astart"
+     ],
+     [
+      0.11,
+      "astart,aunflushed,bstart"
+     ],
+     [
+      3.09,
+      "astart,aunflushed,bstart,bunflushed,bend"
+     ]
+    ]
+   },
+   "t": 21.163
+  },
+  {
+   "name": "sup.background_plus_supersedes",
+   "status": "pass",
+   "details": {
+    "final": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "expected": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "timeline": [
+     [
+      0.0,
+      "a0,b0"
+     ],
+     [
+      0.12,
+      "a0,b0,c0"
+     ],
+     [
+      1.1,
+      "a0,b0,c0,c1"
+     ],
+     [
+      2.11,
+      "a0,b0,c0,c1,c2"
+     ],
+     [
+      3.05,
+      "a0,b0,c0,c1,c2,c3"
+     ],
+     [
+      4.04,
+      "a0,b0,c0,c1,c2,c3,c4"
+     ],
+     [
+      5.02,
+      "a0,b0,c0,c1,c2,c3,c4,cdone"
+     ]
+    ]
+   },
+   "t": 31.766
+  },
+  {
+   "name": "sup.bg_cancel_while_holding_lock",
+   "status": "pass",
+   "details": {
+    "final": "ain,bin,bin2,ping-1,bdone,ping-2",
+    "a_in_kept": true,
+    "timeline": [
+     [
+      0.07,
+      "ain"
+     ],
+     [
+      1.73,
+      "ain,bin,bin2,ping-1,bdone"
+     ]
+    ]
+   },
+   "t": 40.07
+  },
+  {
+   "name": "sup.cpu_bound_non_yielding",
+   "status": "info",
+   "details": {
+    "final": "astart,aend,bstart,bend,cstart,cend",
+    "timeline": [
+     [
+      0.01,
+      ""
+     ],
+     [
+      1.34,
+      "astart,aend"
+     ],
+     [
+      2.83,
+      "astart,aend,bstart,bend"
+     ],
+     [
+      4.29,
+      "astart,aend,bstart,bend,cstart,cend"
+     ]
+    ]
+   },
+   "t": 49.746
+  },
+  {
+   "name": "sup.sync_generator_blocking_sleep",
+   "status": "info",
+   "details": {
+    "final": "a0,a1,b0,b1,b2,b3,bdone",
+    "timeline": [
+     [
+      0.01,
+      "a0"
+     ],
+     [
+      0.33,
+      "a0,a1,b0"
+     ],
+     [
+      0.89,
+      "a0,a1,b0,b1"
+     ],
+     [
+      1.55,
+      "a0,a1,b0,b1,b2"
+     ],
+     [
+      2.09,
+      "a0,a1,b0,b1,b2,b3"
+     ],
+     [
+      2.74,
+      "a0,a1,b0,b1,b2,b3,bdone"
+     ]
+    ]
+   },
+   "t": 57.212
+  },
+  {
+   "name": "sup.chained_child_cancelled",
+   "status": "pass",
+   "details": {
+    "final": "a0,a1,b0,b1,b2,b3,bdone",
+    "parent_log": "aP,bP",
+    "b0_seconds_after_click": 0.01,
+    "child_a_cancelled": true,
+    "timeline": [
+     [
+      0.01,
+      "a0,a1,b0"
+     ],
+     [
+      1.03,
+      "a0,a1,b0,b1"
+     ],
+     [
+      2.11,
+      "a0,a1,b0,b1,b2"
+     ],
+     [
+      3.01,
+      "a0,a1,b0,b1,b2,b3"
+     ],
+     [
+      4.1,
+      "a0,a1,b0,b1,b2,b3,bdone"
+     ]
+    ]
+   },
+   "t": 67.811
+  },
+  {
+   "name": "sup.component_state_instances_independent",
+   "status": "pass",
+   "details": {
+    "A": "A0,A1,A2,Adone",
+    "B": "B0,B1,B2,Bdone",
+    "timeline": {
+     "cs-log-A": [
+      [
+       0.01,
+       "A0"
+      ],
+      [
+       0.76,
+       "A0,A1"
+      ],
+      [
+       1.7,
+       "A0,A1,A2"
+      ],
+      [
+       2.65,
+       "A0,A1,A2,Adone"
+      ]
+     ],
+     "cs-log-B": [
+      [
+       0.01,
+       ""
+      ],
+      [
+       2.65,
+       "B0"
+      ],
+      [
+       3.67,
+       "B0,B1"
+      ],
+      [
+       4.77,
+       "B0,B1,B2"
+      ],
+      [
+       5.67,
+       "B0,B1,B2,Bdone"
+      ]
+     ]
+    }
+   },
+   "t": 78.404
+  },
+  {
+   "name": "sup.component_state_self_supersede",
+   "status": "pass",
+   "details": {
+    "A": "A0,A0,A1,A2,Adone",
+    "expected": "A0,A0,A1,A2,Adone"
+   },
+   "t": 84.006
+  },
+  {
+   "name": "deco.late_marker_before_first_use",
+   "status": "pass",
+   "details": {
+    "final": "late:start,ping1,late:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.01,
+      "late:start"
+     ],
+     [
+      0.11,
+      "late:start,ping1"
+     ],
+     [
+      1.32,
+      "late:start,ping1,late:end"
+     ]
+    ]
+   },
+   "t": 89.501
+  },
+  {
+   "name": "deco.late_marker_after_is_background_read",
+   "status": "fail",
+   "details": {
+    "final": "lateread:start,lateread:end,ping1",
+    "ran_as_background": false,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      ""
+     ],
+     [
+      1.3,
+      "lateread:start,lateread:end,ping1"
+     ]
+    ]
+   },
+   "t": 92.944
+  },
+  {
+   "name": "deco.functools_wraps_inner",
+   "status": "pass",
+   "details": {
+    "final": "wrapinner:start,ping1,wrapinner:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      "wrapinner:start"
+     ],
+     [
+      0.11,
+      "wrapinner:start,ping1"
+     ],
+     [
+      1.28,
+      "wrapinner:start,ping1,wrapinner:end"
+     ]
+    ]
+   },
+   "t": 96.493
+  },
+  {
+   "name": "deco.functools_wraps_outer",
+   "status": "pass",
+   "details": {
+    "final": "wrapouter:start,ping1,wrapouter:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      "wrapouter:start"
+     ],
+     [
+      0.11,
+      "wrapouter:start,ping1"
+     ],
+     [
+      1.29,
+      "wrapouter:start,ping1,wrapouter:end"
+     ]
+    ]
+   },
+   "t": 99.988
+  },
+  {
+   "name": "deco.trace_wrapper_executed",
+   "status": "info",
+   "details": {
+    "log": "wrapouter:start,ping1,wrapouter:end,trace=wrapped_inner/wrapped_outer"
+   },
+   "t": 100.146
+  },
+  {
+   "name": "deco.mixin_background_two_substates",
+   "status": "pass",
+   "details": {
+    "A": "A:start,pingA,A:end",
+    "B": "B:start,B:end",
+    "B_started_before_A_end": true,
+    "timeline": {
+     "mix-a-log": [
+      [
+       0.0,
+       "A:start"
+      ],
+      [
+       0.11,
+       "A:start,pingA"
+      ],
+      [
+       1.21,
+       "A:start,pingA,A:end"
+      ]
+     ],
+     "mix-b-log": [
+      [
+       0.01,
+       "B:start"
+      ],
+      [
+       1.43,
+       "B:start,B:end"
+      ]
+     ]
+    }
+   },
+   "t": 103.536
+  },
+  {
+   "name": "deco.pkg_redecorated_early",
+   "status": "pass",
+   "details": {
+    "added": "pkg:start,ping,pkg:end",
+    "new_backend_errors": 0
+   },
+   "t": 106.473
+  },
+  {
+   "name": "deco.pkg_redecorated_late",
+   "status": "pass",
+   "details": {
+    "added": "pkg:start,ping,pkg:end",
+    "new_backend_errors": 0
+   },
+   "t": 109.44
+  },
+  {
+   "name": "nested.match_list_branch",
+   "status": "pass",
+   "details": {
+    "order": "M1,M2",
+    "expected": "M1,M2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=0 frontend=0"
+   },
+   "t": 115.36
+  },
+  {
+   "name": "nested.deep50_nested_match",
+   "status": "pass",
+   "details": {
+    "order": "Z49,Z48,Z47,Z46,Z45,Z44,Z43,Z42,Z41,Z40,Z39,Z38,Z37,Z36,Z35,Z34,Z33,Z32,Z31,Z30,Z29,Z28,Z27,Z26,Z25,Z24,Z23,Z22,Z21,Z20,Z19,Z18,Z17,Z16,Z15,Z14,Z13,Z12,Z11,Z10,Z9,Z8,Z7,Z6,Z5,Z4,Z3,Z2,Z1,Z0",
+    "expected": "Z49,Z48,Z47,Z46,Z45,Z44,Z43,Z42,Z41,Z40,Z39,Z38,Z37,Z36,Z35,Z34,Z33,Z32,Z31,Z30,Z29,Z28,Z27,Z26,Z25,Z24,Z23,Z22,Z21,Z20,Z19,Z18,Z17,Z16,Z15,Z14,Z13,Z12,Z11,Z10,Z9,Z8,Z7,Z6,Z5,Z4,Z3,Z2,Z1,Z0",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=0 frontend=0"
+   },
+   "t": 123.25
+  },
+  {
+   "name": "nested.backend_failure_mid_list_flat",
+   "status": "pass",
+   "details": {
+    "order": "P1,P2,P3",
+    "expected": "P1,P2,P3",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=1 frontend=0"
+   },
+   "t": 128.56
+  },
+  {
+   "name": "nested.backend_failure_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "order": "Q1,Q2",
+    "expected": "Q1,Q2",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=1 frontend=0",
+    "handler_counts_after": "backend=2 frontend=0"
+   },
+   "t": 133.656
+  },
+  {
+   "name": "nested.malformed_event_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "order": "W1,W2",
+    "expected": "W1,W2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=2 frontend=0",
+    "handler_counts_after": "backend=2 frontend=1"
+   },
+   "t": 139.277
+  },
+  {
+   "name": "nested.handler_returns_nested_list",
+   "status": "fail",
+   "details": {
+    "order": "",
+    "expected": "A,B,C,D",
+    "backend_exc_records": 1,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "TypeError: Your handler NestState.ret_nested must only return/yield: None, Events or other",
+    "handler_counts_before": "backend=2 frontend=1",
+    "handler_counts_after": "backend=3 frontend=1"
+   },
+   "t": 145.075
+  },
+  {
+   "name": "nested.handler_yields_nested_list",
+   "status": "fail",
+   "details": {
+    "order": "",
+    "expected": "Y1,Y2",
+    "backend_exc_records": 1,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "TypeError: Your handler NestState.yield_nested must only return/yield: None, Events or othe",
+    "handler_counts_before": "backend=3 frontend=1",
+    "handler_counts_after": "backend=4 frontend=1"
+   },
+   "t": 150.311
+  },
+  {
+   "name": "nested.handler_returns_flat_with_failing",
+   "status": "pass",
+   "details": {
+    "order": "R1,R2",
+    "expected": "R1,R2",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=4 frontend=1",
+    "handler_counts_after": "backend=5 frontend=1"
+   },
+   "t": 155.691
+  },
+  {
+   "name": "nested.call_script_throws_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "order": "C1,C2",
+    "expected": "C1,C2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=1",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 161.342
+  },
+  {
+   "name": "nested.call_script_callback_list",
+   "status": "pass",
+   "details": {
+    "order": "cbv,CB2",
+    "expected": "cbv,CB2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=2",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 166.292
+  },
+  {
+   "name": "nested.run_script_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "order": "RS1,RS2",
+    "expected": "RS1,RS2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=2",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 171.339
+  },
+  {
+   "name": "nested.prevent_default_inside_nested_list",
+   "status": "pass",
+   "details": {
+    "input_value": "y",
+    "expected_value": "y",
+    "order": "PDX,PDX2,PDX,PDX2",
+    "ordinary_after_ok": true
+   },
+   "t": 174.476
+  },
+  {
+   "name": "nested.issue7319_ctrl_b_shortcut",
+   "status": "pass",
+   "details": {
+    "order": "K1,K2",
+    "ordinary_after_ok": true
+   },
+   "t": 177.612
+  },
+  {
+   "name": "throttle.throttle200_supersedes_typing",
+   "status": "pass",
+   "details": {
+    "typing_seconds": 0.67,
+    "received": [
+     "a",
+     "abcdefgh",
+     "abcdefghijklmno"
+    ],
+    "applied": [
+     "abcdefghijklmno"
+    ],
+    "final_value_reached_backend": false,
+    "input_value": "abcdefghijklmnopqrst",
+    "timeline": {
+     "thr-received": [
+      [
+       0.01,
+       "a|abcdefgh|abcdefghijklmno"
+      ]
+     ],
+     "thr-applied": [
+      [
+       0.01,
+       ""
+      ],
+      [
+       0.23,
+       "abcdefghijklmno"
+      ]
+     ]
+    }
+   },
+   "t": 182.512
+  },
+  {
+   "name": "throttle.leading_edge_drops_final_value",
+   "status": "anomaly",
+   "details": {
+    "note": "throttle has no trailing call: the last keystrokes never reach the backend",
+    "last_received": "abcdefghijklmno",
+    "input_value": "abcdefghijklmnopqrst"
+   },
+   "t": 182.514
+  },
+  {
+   "name": "throttle.debounce300_supersedes_typing",
+   "status": "pass",
+   "details": {
+    "received": [
+     "abcdefghijklmnopqrst"
+    ]
+   },
+   "t": 184.692
+  },
+  {
+   "name": "temporal.sigstop_3s_socket_still_open",
+   "status": "pass",
+   "details": {
+    "hits": "T1,N1,T2,N2",
+    "expected": "T1,N1,T2,N2",
+    "stopped_pids": [
+     696,
+     795
+    ],
+    "note": "socket.io client still reports connected during a 3s stop, so temporal events are sent and delivered late"
+   },
+   "t": 189.533
+  },
+  {
+   "name": "temporal.offline_disconnect",
+   "status": "fail",
+   "details": {
+    "hits": "T3,N3,T4,N4",
+    "expected": "N3,N4 (temporal dropped, normal delivered in order after reconnect)",
+    "ws_closed_while_offline": false
+   },
+   "t": 195.056
+  },
+  {
+   "name": "vars.initial",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 197.525
+  },
+  {
+   "name": "vars.initial.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 197.525
+  },
+  {
+   "name": "vars.step_neg3",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 198.329
+  },
+  {
+   "name": "vars.step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 198.329
+  },
+  {
+   "name": "vars.bounds_7_2_step_neg3",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 199.132
+  },
+  {
+   "name": "vars.bounds_7_2_step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 199.132
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step2",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 200.006
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step2.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 200.006
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step_neg3",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 200.849
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 200.849
+  },
+  {
+   "name": "vars.objkey_z",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 201.648
+  },
+  {
+   "name": "vars.objkey_z.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 201.648
+  },
+  {
+   "name": "vars.objkey_missing",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 202.43
+  },
+  {
+   "name": "vars.objkey_missing.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 202.43
+  },
+  {
+   "name": "vars.deep_equals_state_client_computed_cond_match",
+   "status": "pass",
+   "details": {
+    "initial": {
+     "v-deq-cs": "eq",
+     "v-deq-comp": "eq",
+     "v-deq-match": "M-eq"
+    },
+    "after_mutate_left": {
+     "v-deq-cs": "neq",
+     "v-deq-comp": "eq",
+     "v-deq-match": "M-neq",
+     "v-left": "{\"a\":[1,2,9],\"b\":[3]}"
+    },
+    "after_client_set": {
+     "v-deq-cs": "eq",
+     "v-csdict": "{\"a\":[1,2,9],\"b\":[3]}"
+    }
+   },
+   "t": 204.229
+  },
+  {
+   "name": "typelog.counts",
+   "status": "info",
+   "details": {
+    "bump_x20": {
+     "bad_inner": 20,
+     "bad_inner_const": 0,
+     "bad_outer": 20,
+     "bad_uncached": 21,
+     "nums_field": 0
+    },
+    "assign_inner_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 0,
+     "bad_uncached": 21,
+     "nums_field": 20
+    },
+    "assign_outer_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 0,
+     "bad_uncached": 21,
+     "nums_field": 20
+    },
+    "ui_nums": "\"notalist\"",
+    "ui_bad_outer": "\"x20\"",
+    "segments_found": [
+     true,
+     true,
+     true
+    ]
+   },
+   "t": 217.266
+  },
+  {
+   "name": "api.bg_get_state_get_var_value_sibling",
+   "status": "pass",
+   "details": {
+    "report": "out=ImmutableStateError in=10 in2=11 ; after=ImmutableStateError",
+    "in_lock_expected": "in=10 in2=11",
+    "ui_sibling_x": "11",
+    "outside_lock_get_var_value": "out=ImmutableStateError"
+   },
+   "t": 219.066
+  },
+  {
+   "name": "api.raw_setvar_events",
+   "status": "pass",
+   "details": {
+    "api-setvar-pub": {
+     "ok": true,
+     "new_backend_exc": 0,
+     "exc_tail": "",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-secret": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-missing": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-computed": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": " attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-raw-missing-handler": {
+     "ok": null,
+     "new_backend_exc": 0,
+     "exc_tail": " attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    }
+   },
+   "t": 226.834
+  },
+  {
+   "name": "api.raw_setvar_is_hydrated_false",
+   "status": "info",
+   "details": {
+    "new_backend_exc": 0,
+    "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+    "still_interactive": true,
+    "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events_vars/out/alpha_dev/alpha_dev_full_setvar_is_hydrated.png"
+   },
+   "t": 228.504
+  },
+  {
+   "name": "api.reset_client_storage_substates",
+   "status": "pass",
+   "details": {
+    "before": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-default"
+    },
+    "mutated": {
+     "reset-ls": "ls-changed",
+     "reset-ck": "ck-changed",
+     "reset-plain": "plain-changed",
+     "reset-sub": "sub-changed",
+     "reset-cs-val": "cs-changed"
+    },
+    "storage_mutated": {
+     "ls": "ls-changed",
+     "cookie": "ev_ck=ck-changed"
+    },
+    "after_reset": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-changed"
+    },
+    "storage_after_reset": {
+     "ls": "ls-default",
+     "cookie": "ev_ck=ck-default"
+    },
+    "after_reload": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-changed"
+    }
+   },
+   "t": 232.934
+  },
+  {
+   "name": "api.dataclass_nested_inplace_mutation",
+   "status": "pass",
+   "details": {
+    "initial": [
+     "[]",
+     "[[1]]"
+    ],
+    "after_2_mutations": [
+     "[0,1]",
+     "[[1,7,7]]"
+    ],
+    "snapshot": {
+     "gv_type": "Box",
+     "gv": {
+      "name": "box",
+      "items": [
+       0,
+       1
+      ],
+      "nested": [
+       [
+        1,
+        7,
+        7
+       ]
+      ]
+     },
+     "dict_type": "Box",
+     "dict": {
+      "name": "box",
+      "items": [
+       0,
+       1
+      ],
+      "nested": [
+       [
+        1,
+        7,
+        7
+       ]
+      ]
+     }
+    },
+    "other_session": [
+     "[]",
+     "[[1]]"
+    ]
+   },
+   "t": 237.078
+  },
+  {
+   "name": "api.undeclared_attribute_assignment",
+   "status": "info",
+   "details": {
+    "report_after_assign": "",
+    "backend_exc": 1,
+    "exc_tail": "SetUndefinedStateVarError: The state variable 'undeclared_attr' has not been defined in 'UndeclState'. All",
+    "report_after_readback": "readback=MISSING",
+    "undeclared_name_in_ws_delta": false
+   },
+   "t": 241.457
+  },
+  {
+   "name": "bind.instance_access_and_inheritance",
+   "status": "info",
+   "details": {
+    "bind-inherited-template": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-template-via-self": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-parent-via-self": {
+     "p_log_added": "bump:self=BindParent ; after_bump",
+     "p_count": "1",
+     "c_count": "1",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-bg-parent": {
+     "p_log_added": "bump:self=StateProxy",
+     "p_count": "2",
+     "c_count": "1",
+     "c_log": "bg_outside=ImmutableStateError",
+     "new_exc": 0,
+     "exc_tail": ""
+    }
+   },
+   "t": 249.789
+  },
+  {
+   "name": "bind.foreach_args_0_to_5_and_lambdas",
+   "status": "pass",
+   "details": {
+    "got": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ],
+    "expected": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ]
+   },
+   "t": 252.957
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 13.535,
+   "tag": "sup-slow",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 21.18,
+   "tag": "sup-partial",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 31.772,
+   "tag": "sup-bg",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 40.073,
+   "tag": "sup-lock",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 49.772,
+   "tag": "sup-cpu",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 57.217,
+   "tag": "sup-gen",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 67.815,
+   "tag": "sup-chain",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 84.015,
+   "tag": "sup-cs",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 109.552,
+   "tag": "deco",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/deco"
+  },
+  {
+   "t": 115.363,
+   "tag": "match_list_branch",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 123.252,
+   "tag": "deep50_nested_match",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 128.592,
+   "tag": "backend_failure_mid_list_flat",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 133.663,
+   "tag": "backend_failure_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 139.296,
+   "tag": "malformed_event_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 145.082,
+   "tag": "handler_returns_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 150.319,
+   "tag": "handler_yields_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 155.73,
+   "tag": "handler_returns_flat_with_failing",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 158.261,
+   "tag": "call_script_throws_mid_nested_list",
+   "type": "log",
+   "text": "_call_script Error: cs-boom\n    at eval (eval at applyEvent (http://localhost:3460/utils/state.js:491:13), <anonymous>:1:7)\n    at applyEvent (http://localhost:3460/utils/state.js:491:13)\n    at processEvent (http://localhost:3460/utils/state.js:658:13)\n    at processEvent (http://localhost:3460/utils/state.js:663:13)\n    at async queueEvents (http://localhost:3460/utils/state.js:622:3)",
+   "loc": "http://localhost:3460/utils/state.js:505",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 161.345,
+   "tag": "call_script_throws_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 166.295,
+   "tag": "call_script_callback_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 171.343,
+   "tag": "run_script_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 174.479,
+   "tag": "pd",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 177.615,
+   "tag": "ctrlb",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 184.695,
+   "tag": "thr",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/throttle"
+  },
+  {
+   "t": 189.537,
+   "tag": "temporal",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/throttle"
+  },
+  {
+   "t": 195.059,
+   "tag": "temporal-offline",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/throttle"
+  },
+  {
+   "t": 204.324,
+   "tag": "vars",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/vars"
+  },
+  {
+   "t": 217.277,
+   "tag": "typelog",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/typelog"
+  },
+  {
+   "t": 219.07,
+   "tag": "api-sib",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 228.508,
+   "tag": "api-setvar",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 231.64,
+   "tag": "api-reset",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3460/utils/state.js:776",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 232.937,
+   "tag": "api-reset",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 237.083,
+   "tag": "api-dc-2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 237.123,
+   "tag": "api-dc",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 241.461,
+   "tag": "api-undecl",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/api"
+  },
+  {
+   "t": 252.96,
+   "tag": "bind",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/bind"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "extra": {}
+}

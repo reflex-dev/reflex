@@ -1,0 +1,748 @@
+{
+ "name": "ag_model-ent_demos-mixed",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 4.22,
+   "name": "ssrm: logged-out initial data request made",
+   "ok": true,
+   "detail": [
+    "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=sboGhqb8pWccuG7fAAAT"
+   ]
+  },
+  {
+   "t": 4.22,
+   "name": "ssrm: datasource URL carries endpoint_kwargs (state, sid) + SSRM params",
+   "ok": true,
+   "detail": {
+    "startRow": "0",
+    "endRow": "50",
+    "sortModel": "[]",
+    "filterModel": "{}",
+    "rowGroupCols": "[]",
+    "groupKeys": "[]",
+    "valueCols": "[]",
+    "pivotMode": "false",
+    "pivotCols": "[]",
+    "state": "reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n",
+    "sid": "sboGhqb8pWccuG7fAAAT"
+   }
+  },
+  {
+   "t": 4.23,
+   "name": "ssrm: logged out shows no rows",
+   "ok": true,
+   "detail": 0
+  },
+  {
+   "t": 6.57,
+   "name": "ssrm: Generate Friends inserted 50 rows into sqlite",
+   "ok": true,
+   "detail": {
+    "before": 48,
+    "after": 98
+   }
+  },
+  {
+   "t": 8.76,
+   "name": "ssrm: login (backend var) survives reload",
+   "ok": true,
+   "detail": "Logout button shown after reload"
+  },
+  {
+   "t": 9.58,
+   "name": "ssrm: rows rendered after generate",
+   "ok": true,
+   "detail": 22
+  },
+  {
+   "t": 11.72,
+   "name": "ssrm: sort asc request carries sortModel(age)",
+   "ok": true,
+   "detail": [
+    "[{\"sort\":\"asc\",\"type\":\"default\",\"colId\":\"age\"}]"
+   ]
+  },
+  {
+   "t": 11.72,
+   "name": "ssrm: sort asc first row has min age from db",
+   "ok": true,
+   "detail": {
+    "first_rows": [
+     18,
+     18,
+     18,
+     18,
+     20,
+     21,
+     21,
+     21
+    ],
+    "db_min": 18
+   }
+  },
+  {
+   "t": 13.82,
+   "name": "ssrm: sort desc first row has max age",
+   "ok": true,
+   "detail": {
+    "first_rows": [
+     80,
+     78,
+     76,
+     76,
+     74,
+     74,
+     74,
+     74
+    ],
+    "db_max": 80
+   }
+  },
+  {
+   "t": 19.3,
+   "name": "ssrm: filter request carries filterModel(name)",
+   "ok": true,
+   "detail": [
+    "{\"name\":{\"filterType\":\"text\",\"type\":\"contains\",\"filter\":\"Barb\"}}"
+   ]
+  },
+  {
+   "t": 19.3,
+   "name": "ssrm: filtered rows all match and count matches db",
+   "ok": false,
+   "detail": {
+    "sub": "Barb",
+    "shown": 22,
+    "db_matches": 2,
+    "sample": [
+     "Barbara Carter",
+     "Barbara Smith",
+     "",
+     "",
+     ""
+    ]
+   }
+  },
+  {
+   "t": 26.6,
+   "name": "ssrm: editing a cell updates sqlite",
+   "ok": true,
+   "detail": {
+    "id": "3",
+    "db_name": "QA Edited SSRM"
+   }
+  },
+  {
+   "t": 28.11,
+   "name": "ssrm: edited value visible after refresh",
+   "ok": true,
+   "detail": [
+    "QA Edited SSRM",
+    "Frank Christensen",
+    "Kimberly Rose",
+    "Jose Price",
+    "Erin Cook"
+   ]
+  },
+  {
+   "t": 30.05,
+   "name": "ssrm: selection -> selected_items computed var renders 2 badges",
+   "ok": true,
+   "detail": [
+    "QA Edited SSRM",
+    "Frank Christensen"
+   ]
+  },
+  {
+   "t": 32.22,
+   "name": "ssrm: enable_advanced_filter switch shows advanced filter bar",
+   "ok": true,
+   "detail": 1
+  },
+  {
+   "t": 34.96,
+   "name": "ssrm: logout refreshes grid to empty",
+   "ok": true,
+   "detail": 0
+  }
+ ],
+ "notes": [
+  "guard: 0.9.12 0.9.7a4",
+  "db rows at start: 48",
+  "ssrm rows right after generate (demo only calls setRowCount, no SSRM refresh): 22",
+  "db rows at end: 98"
+ ],
+ "summary": {
+  "checks_failed": [
+   "ssrm: filtered rows all match and count matches db"
+  ],
+  "n_checks": 16,
+  "console_total": 23,
+  "console_benign": 14,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 1.94,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 1.94,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 1.94,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 1.94,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 1.94,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 1.94,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 1.94,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 8.1,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-DOXST5MA.js",
+    "line": 2,
+    "column": 9852,
+    "lineNumber": 2,
+    "columnNumber": 9852
+   },
+   "benign": false
+  },
+  {
+   "t": 8.43,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 8.43,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 8.43,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 8.43,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 8.43,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13112,
+    "lineNumber": 0,
+    "columnNumber": 13112
+   },
+   "benign": true
+  },
+  {
+   "t": 8.43,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 8.43,
+   "ctx": "ssrm",
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/main.esm-CLcL29HN.js",
+    "line": 0,
+    "column": 13005,
+    "lineNumber": 0,
+    "columnNumber": 13005
+   },
+   "benign": true
+  },
+  {
+   "t": 16.09,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{col_id: name, source: COLUMN_MENU, type: filterOpened}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-Diu14yCl.js",
+    "line": 0,
+    "column": 10748,
+    "lineNumber": 0,
+    "columnNumber": 10748
+   },
+   "benign": false
+  },
+  {
+   "t": 16.16,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{filter_instance: Object, col_id: name, type: filterModified}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-Diu14yCl.js",
+    "line": 0,
+    "column": 11274,
+    "lineNumber": 0,
+    "columnNumber": 11274
+   },
+   "benign": false
+  },
+  {
+   "t": 16.79,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{source: columnFilter, after_data_change: undefined, after_floating_filter: undefined, col_ids: Array(1), type: filterChanged}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-Diu14yCl.js",
+    "line": 0,
+    "column": 10963,
+    "lineNumber": 0,
+    "columnNumber": 10963
+   },
+   "benign": false
+  },
+  {
+   "t": 19.75,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{col_id: name, source: COLUMN_MENU, type: filterOpened}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-Diu14yCl.js",
+    "line": 0,
+    "column": 10748,
+    "lineNumber": 0,
+    "columnNumber": 10748
+   },
+   "benign": false
+  },
+  {
+   "t": 19.81,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{filter_instance: Object, col_id: name, type: filterModified}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-Diu14yCl.js",
+    "line": 0,
+    "column": 11274,
+    "lineNumber": 0,
+    "columnNumber": 11274
+   },
+   "benign": false
+  },
+  {
+   "t": 20.42,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{source: columnFilter, after_data_change: undefined, after_floating_filter: undefined, col_ids: Array(1), type: filterChanged}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-Diu14yCl.js",
+    "line": 0,
+    "column": 10963,
+    "lineNumber": 0,
+    "columnNumber": 10963
+   },
+   "benign": false
+  },
+  {
+   "t": 30.21,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{source: advancedFilter, after_data_change: undefined, after_floating_filter: undefined, col_ids: Array(0), type: filterChanged}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-Diu14yCl.js",
+    "line": 0,
+    "column": 10963,
+    "lineNumber": 0,
+    "columnNumber": 10963
+   },
+   "benign": false
+  },
+  {
+   "t": 35.05,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-DOXST5MA.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3302/_event/?token=476ebb06-651d-48fd-eb0a-c93d294582f9&EIO=4&transport=websocket": {
+   "ctx": "ssrm",
+   "sent": 17,
+   "recv": 24,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_mount\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state.toggle_login\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state.generate_friends\",\"payload\":{\"n\":50},\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_mount\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\",\"payload\":{\"row_data\":{\"id\":3,\"name\":\"Barbara Carter\",\"years_known\":23,\"has_a_dog\":false,\"owes_me\":true,\"age\":59,\"spouse_is_annoying\":false,\"met\":\"2003-08-21 07:10:05.811810\"},\"field_name\":\"name\",\"value\":\"QA Edited SSRM\"},\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_selection_changed\",\"payload\":{\"rows\":[{\"id\":3,\"name\":\"QA Edited SSRM\",\"years_known\":23,\"has_a_dog\":false,\"owes_me\":true,\"age\":59,\"spouse_is_annoying\":false,\"met\":\"2003-08-21 07:10:05.811810\"}],\"source\":\"checkboxSelected\",\"type\":\"selectionChanged\"},\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_selection_changed\",\"payload\":{\"rows\":[{\"id\":3,\"name\":\"QA Edited SSRM\",\"years_known\":23,\"has_a_dog\":false,\"owes_me\":true,\"age\":59,\"spouse_is_annoying\":false,\"met\":\"2003-08-21 07:10:05.811810\"},{\"id\":4,\"name\":\"Frank Christensen\",\"years_known\":8,\"has_a_dog\":false,\"owes_me\":false,\"age\":63,\"spouse_is_annoying\":true,\"met\":\"2017-11-08 07:25:53.514437\"}],\"source\":\"checkboxSelected\",\"type\":\"selectionChanged\"},\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.set_enable_advanced_filter\",\"payload\":{\"v\":true},\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state.toggle_login\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"g5RdmLqfS9q5GixMAAAS\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"sboGhqb8pWccuG7fAAAT\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"eHzBKIlPB2wI2BZIS/zvqQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state\":{\"logged_in_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast']?.[\\\"info\\\"](\\\"Created 50 friends.\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setRowCount\\\"](98)))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setRowCount\\\"](98)))\",\"callback\":null}}]}]",
+    "0{\"sid\":\"xPdDDC2cfUvxW14hAAAU\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"FQor30Q6LnTfZ81JAAAV\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"l2uZIn6J8Ylx9vRjahj82Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"refreshServerSide\\\"]()))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1\":{\"row_count_cached_rx_state_\":98,\"selected_items_rx_state_\":[{\"id\":3,\"name\":\"QA Edited SSRM\",\"age\":59,\"years_known\":23,\"owes_me\":true,\"has_a_dog\":false,\"spouse_is_annoying\":false,\"met\":\"2003-08-21 07:10:05.811810\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1\":{\"selected_items_rx_state_\":[{\"id\":3,\"name\":\"QA Edited SSRM\",\"age\":59,\"years_known\":23,\"owes_me\":true,\"has_a_dog\":false,\"spouse_is_annoying\":false,\"met\":\"2003-08-21 07:10:05.811810\"},{\"id\":4,\"name\":\"Frank Christensen\",\"age\":63,\"years_known\":8,\"owes_me\":false,\"has_a_dog\":false,\"spouse_is_annoying\":true,\"met\":\"2017-11-08 07:25:53.514437\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1\":{\"enable_advanced_filter_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state\":{\"logged_in_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "2"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 1.42,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/model-ssrm",
+   "method": "GET"
+  },
+  {
+   "t": 1.44,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/model-ssrm/",
+   "method": "GET"
+  },
+  {
+   "t": 2.2,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=sboGhqb8pWccuG7fAAAT",
+   "method": "GET"
+  },
+  {
+   "t": 4.54,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=sboGhqb8pWccuG7fAAAT",
+   "method": "GET"
+  },
+  {
+   "t": 8.11,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/model-ssrm/",
+   "method": "GET"
+  },
+  {
+   "t": 8.7,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 9.67,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%7B%22sort%22%3A%22asc%22%2C%22type%22%3A%22default%22%2C%22colId%22%3A%22age%22%7D%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 11.8,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%7B%22sort%22%3A%22desc%22%2C%22type%22%3A%22default%22%2C%22colId%22%3A%22age%22%7D%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 13.95,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 16.85,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 17.24,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 17.59,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 17.8,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 18.05,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 18.29,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 18.53,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 18.82,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 19.1,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 19.36,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 19.67,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 19.89,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Barb%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 20.45,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 24.1,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 30.32,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=null&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  },
+  {
+   "t": 32.49,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=null&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=FQor30Q6LnTfZ81JAAAV",
+   "method": "GET"
+  }
+ ]
+}

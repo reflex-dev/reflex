@@ -1,0 +1,1 @@
+ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/dataeditor_components/scripts/probe_construct.py:50)

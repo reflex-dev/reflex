@@ -1,0 +1,1883 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_auth/lib/python3.12/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='entauth', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3340, frontend_path='', 
+backend_port=8340, backend_path='', api_url='http://localhost:8340', 
+deploy_url='http://localhost:3340', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url='redis://localhost:8349', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'frontend_port', 'telemetry_enabled', 'plugins', 
+'backend_port', 'app_name', 'redis_url', 'loglevel'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/ent_auth/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_auth/lib/python3.12/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='entauth', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3340, frontend_path='', 
+backend_port=8340, backend_path='', api_url='http://localhost:8340', 
+deploy_url='http://localhost:3340', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url='redis://localhost:8349', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'frontend_port', 'telemetry_enabled', 'plugins', 
+'backend_port', 'app_name', 'redis_url', 'loglevel'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/ent_auth/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────── Initializing entauth ─────────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/ent_auth/lib/python3.12/site-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/ent_auth_mcp_redis/entauth/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 183633172158459708693058352873750279928.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.044 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized entauth. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3340 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3340 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3340 is not in use.
+Debug: Checking if Backend port: 8340 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8340 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8340 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_auth/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76
+)
+Debug: [timing] Compile pages: 0.40s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 36/35 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'postcss@8.5.29', 'postcss-import@17.0.0', 'autoprefixer@10.6.1', 
+'@react-router/dev@8.4.0', '@emotion/react@11.14.0', 'vite@8.3.2', 
+'@react-router/fs-routes@8.4.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss@8.5.29
+Debug: installed postcss-import@17.0.0
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: 
+Debug: 128 packages installed [82.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'universal-cookie@8.1.2', '@radix-ui/themes@3.3.0', 
+'react-error-boundary@6.1.6', 'react-dom@19.3.0', 'mergician@v2.0.2', 
+'react-helmet@6.1.0', 'socket.io-client@4.8.4', 'sonner@2.0.8', 
+'react-router@8.4.0', '@react-router/node@8.4.0', 'react@19.3.0', 'isbot@5.2.2',
+'lucide-react@1.26.0', 'react-dropzone@17.0.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [2]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed universal-cookie@8.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-error-boundary@6.1.6
+Debug: installed react-dom@19.3.0
+Debug: installed mergician@2.0.2
+Debug: installed react-helmet@6.1.0
+Debug: installed socket.io-client@4.8.4
+Debug: installed sonner@2.0.8
+Debug: installed react-router@8.4.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed react@19.3.0
+Debug: installed isbot@5.2.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-dropzone@17.0.0
+Debug: 
+Debug: 101 packages installed [197.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/ent_auth_mcp_redis/entauth/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/ent_auth_mcp_redis/entauth/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.36s
+Debug: [timing] Write to Disk: 0.01s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpa
+d/apps/ent_auth_mcp_redis/entauth/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/ent_auth_mcp_redis/entauth/assets', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/ent_auth_mcp_redis/entauth/entauth', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/ent_auth_mcp_redis/entauth/rxconfig.py']
+[INFO] Starting granian (main PID: 29401)
+[INFO] Listening at: http://0.0.0.0:8340
+[INFO] Spawning worker-1 with PID: 29500
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Registered lifespan task: _verify_redis_version_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/06/26 18:39:54] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+Debug: Started lifespan task: _verify_redis_version_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3340/
+App running at: http://localhost:3340/
+Backend running at: http://0.0.0.0:8340
+Debug:   ➜  Network: http://192.0.2.2:3340/  eth0
+Debug: 6:40:30 PM [vite] (ssr) connected.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 18:41:44] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/.well-known/o                
+                             penid-configuration "HTTP/1.1 200                  
+                             OK"                                                
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/jwks                         
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     04da59d1-688e-487a-a63d-4a817b03e944  state.py:2168
+                             [txid=d372793d4c744f85b59a16fef927047              
+                             d] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/dashboard'.                                      
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 18:42:53] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     f5c087c4-d202-41e8-e99a-724a27830cd0  state.py:2168
+                             [txid=69c522f94d464a1d81a613d7ebc095c              
+                             f] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/list'.                 
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 18:43:52] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     c60f96ea-cf3d-486e-f32b-fd96b8172744  state.py:2168
+                             [txid=5f08cc1145384a1f80a8ec1c214f2fc              
+                             f] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/dashboard'.                                      
+[10/06/26 18:44:08] INFO     c60f96ea-cf3d-486e-f32b-fd96b8172744  state.py:1728
+                             [txid=4ebb54666489411db49c3d0d0aecdb7              
+                             8] User initiated logout                           
+                             (from_popup=False); clearing session.              
+[10/06/26 18:44:12] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     c60f96ea-cf3d-486e-f32b-fd96b8172744  state.py:2168
+                             [txid=809b82162dae4371ae2160046880a62              
+                             c] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/dashboard'.                                      
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 18:44:19] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     1d1fbbe9-9459-4201-9dd5-3f1309489bc1  state.py:2168
+                             [txid=1d45721388c2499e98cb28e7d554d58              
+                             f] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/dashboard'.                                      
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 18:44:24] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     249f9bc6-a8d7-4832-9bd9-bdd049a1536a  state.py:2168
+                             [txid=dceb3734c79c4cea923ca834a0429ad              
+                             9] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/dashboard'.                                      
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+[10/06/26 18:44:25] INFO     d58cb1d5-27f9-4a4e-ae2a-21fc5eb6f794  state.py:1728
+                             [txid=c53cbfe6c9ab4342a2e4fad38d338cb              
+                             6] User initiated logout                           
+                             (from_popup=False); clearing session.              
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 18:45:53] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     e806cc8a-9e86-47a9-d2ea-a23e6b660c7a  state.py:2168
+                             [txid=0539bf0a77d7489c9efdcf7ff97dbdd              
+                             2] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/list'.                 
+[10/06/26 18:45:54] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+[10/06/26 18:45:55] INFO     1d116d15-c8b5-4735-9a60-e9bbf00531d9  state.py:1728
+                             [txid=455dd9bd1aed496cba0ce32007b2597              
+                             a] User initiated logout                           
+                             (from_popup=False); clearing session.              
+[10/06/26 18:47:12] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+[10/06/26 18:47:14] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    ERROR    Error reading resource                server.py:410
+                             state-resource://entauth___entauth___              
+                             _agent_state/private_summary                       
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/mcp/serve │              
+                             │ r/fastmcp/resources/types.py:62   │              
+                             │ in read                           │              
+                             │                                   │              
+                             │    59 │   │   │   result = self.f │              
+                             │    60 │   │   │   # If it's a cor │              
+                             │    61 │   │   │   if inspect.isco │              
+                             │ ❱  62 │   │   │   │   result = aw │              
+                             │    63 │   │   │                   │              
+                             │    64 │   │   │   if isinstance(r │              
+                             │    65 │   │   │   │   return awai │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/pydantic/ │              
+                             │ _internal/_validate_call.py:35 in │              
+                             │ wrapper_function                  │              
+                             │                                   │              
+                             │    32 │   │                       │              
+                             │    33 │   │   @functools.wraps(wr │              
+                             │    34 │   │   async def wrapper_f │              
+                             │ ❱  35 │   │   │   return await wr │              
+                             │    36 │   else:                   │              
+                             │    37 │   │                       │              
+                             │    38 │   │   @functools.wraps(wr │              
+                             │ in _resource:2                    │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/reflex_en │              
+                             │ terprise/plugins/mcp_resources.py │              
+                             │ :175 in impl                      │              
+                             │                                   │              
+                             │   172 │   │   │   )               │              
+                             │   173 │   │   │   substate = awai │              
+                             │   174 │   │   │   if enforce_auth │              
+                             │ ❱ 175 │   │   │   │   await _enfo │              
+                             │   176 │   │   │   result = getatt │              
+                             │   177 │   │   │   if inspect.isco │              
+                             │   178 │   │   │   │   result = aw │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/reflex_en │              
+                             │ terprise/plugins/mcp_resources.py │              
+                             │ :288 in _enforce_resource_auth    │              
+                             │                                   │              
+                             │   285 │                           │              
+                             │   286 │   userinfo = await enforc │              
+                             │   287 │   if userinfo is None:    │              
+                             │ ❱ 288 │   │   raise ValueError(   │              
+                             │   289 │   │   │   f"Reading the { │              
+                             │   290 │   │   │   "session, but n │              
+                             │   291 │   │   )                   │              
+                             ╰───────────────────────────────────╯              
+                             ValueError: Reading the                            
+                             'private_summary' resource requires                
+                             an authenticated session, but no user              
+                             could be resolved.                                 
+                                                                                
+                             During handling of the above                       
+                             exception, another exception                       
+                             occurred:                                          
+                                                                                
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/mcp/serve │              
+                             │ r/fastmcp/server.py:407 in        │              
+                             │ read_resource                     │              
+                             │                                   │              
+                             │    404 │   │   │   raise Resource │              
+                             │    405 │   │                      │              
+                             │    406 │   │   try:               │              
+                             │ ❱  407 │   │   │   content = awai │              
+                             │    408 │   │   │   return [ReadRe │              
+                             │        meta=resource.meta)]       │              
+                             │    409 │   │   except Exception a │              
+                             │    410 │   │   │   logger.excepti │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/mcp/serve │              
+                             │ r/fastmcp/resources/types.py:73   │              
+                             │ in read                           │              
+                             │                                   │              
+                             │    70 │   │   │   else:           │              
+                             │    71 │   │   │   │   return pyda │              
+                             │    72 │   │   except Exception as │              
+                             │ ❱  73 │   │   │   raise ValueErro │              
+                             │    74 │                           │              
+                             │    75 │   @classmethod            │              
+                             │    76 │   def from_function(      │              
+                             ╰───────────────────────────────────╯              
+                             ValueError: Error reading resource                 
+                             state-resource://entauth___entauth___              
+                             _agent_state/private_summary: Reading              
+                             the 'private_summary' resource                     
+                             requires an authenticated session,                 
+                             but no user could be resolved.                     
+[10/06/26 18:47:15] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:47:16] INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:47:17] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:47:46] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+[10/06/26 18:47:48] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:47:54] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:47:55] INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+[10/06/26 18:47:56] INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:47:57] INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:48:19] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:48:20] INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:48:36] INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:48:37] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:50:03] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+[10/06/26 18:50:04] INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:50:05] INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:51:01] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+[10/06/26 18:51:03] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    ERROR    Error reading resource                server.py:410
+                             state-resource://entauth___entauth___              
+                             _agent_state/private_summary                       
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/mcp/serve │              
+                             │ r/fastmcp/resources/types.py:62   │              
+                             │ in read                           │              
+                             │                                   │              
+                             │    59 │   │   │   result = self.f │              
+                             │    60 │   │   │   # If it's a cor │              
+                             │    61 │   │   │   if inspect.isco │              
+                             │ ❱  62 │   │   │   │   result = aw │              
+                             │    63 │   │   │                   │              
+                             │    64 │   │   │   if isinstance(r │              
+                             │    65 │   │   │   │   return awai │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/pydantic/ │              
+                             │ _internal/_validate_call.py:35 in │              
+                             │ wrapper_function                  │              
+                             │                                   │              
+                             │    32 │   │                       │              
+                             │    33 │   │   @functools.wraps(wr │              
+                             │    34 │   │   async def wrapper_f │              
+                             │ ❱  35 │   │   │   return await wr │              
+                             │    36 │   else:                   │              
+                             │    37 │   │                       │              
+                             │    38 │   │   @functools.wraps(wr │              
+                             │ in _resource:2                    │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/reflex_en │              
+                             │ terprise/plugins/mcp_resources.py │              
+                             │ :175 in impl                      │              
+                             │                                   │              
+                             │   172 │   │   │   )               │              
+                             │   173 │   │   │   substate = awai │              
+                             │   174 │   │   │   if enforce_auth │              
+                             │ ❱ 175 │   │   │   │   await _enfo │              
+                             │   176 │   │   │   result = getatt │              
+                             │   177 │   │   │   if inspect.isco │              
+                             │   178 │   │   │   │   result = aw │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/reflex_en │              
+                             │ terprise/plugins/mcp_resources.py │              
+                             │ :288 in _enforce_resource_auth    │              
+                             │                                   │              
+                             │   285 │                           │              
+                             │   286 │   userinfo = await enforc │              
+                             │   287 │   if userinfo is None:    │              
+                             │ ❱ 288 │   │   raise ValueError(   │              
+                             │   289 │   │   │   f"Reading the { │              
+                             │   290 │   │   │   "session, but n │              
+                             │   291 │   │   )                   │              
+                             ╰───────────────────────────────────╯              
+                             ValueError: Reading the                            
+                             'private_summary' resource requires                
+                             an authenticated session, but no user              
+                             could be resolved.                                 
+                                                                                
+                             During handling of the above                       
+                             exception, another exception                       
+                             occurred:                                          
+                                                                                
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/mcp/serve │              
+                             │ r/fastmcp/server.py:407 in        │              
+                             │ read_resource                     │              
+                             │                                   │              
+                             │    404 │   │   │   raise Resource │              
+                             │    405 │   │                      │              
+                             │    406 │   │   try:               │              
+                             │ ❱  407 │   │   │   content = awai │              
+                             │    408 │   │   │   return [ReadRe │              
+                             │        meta=resource.meta)]       │              
+                             │    409 │   │   except Exception a │              
+                             │    410 │   │   │   logger.excepti │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/ent_auth/lib/p │              
+                             │ ython3.12/site-packages/mcp/serve │              
+                             │ r/fastmcp/resources/types.py:73   │              
+                             │ in read                           │              
+                             │                                   │              
+                             │    70 │   │   │   else:           │              
+                             │    71 │   │   │   │   return pyda │              
+                             │    72 │   │   except Exception as │              
+                             │ ❱  73 │   │   │   raise ValueErro │              
+                             │    74 │                           │              
+                             │    75 │   @classmethod            │              
+                             │    76 │   def from_function(      │              
+                             ╰───────────────────────────────────╯              
+                             ValueError: Error reading resource                 
+                             state-resource://entauth___entauth___              
+                             _agent_state/private_summary: Reading              
+                             the 'private_summary' resource                     
+                             requires an authenticated session,                 
+                             but no user could be resolved.                     
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:51:04] INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:51:05] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 18:57:34] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     40c2a147-ddc5-49e4-93b1-312708d43866  state.py:2168
+                             [txid=67d4b8b563f0449a8ec91da56e68c5a              
+                             0] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 18:58:04] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     9804bea4-e967-4056-c5a7-c9ef7ab71a76  state.py:2168
+                             [txid=76f5f1de334e4329bc855801c553e08              
+                             6] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+[10/06/26 18:58:07] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 18:58:57] WARNING  1fc7ab6b-0e9f-4a66-ba09-a624a1ec1de1  state.py:1091
+                             [txid=f7ed3514db264d7ab5839b3f23637d3              
+                             a] Authorization request failed:                   
+                             access_denied: The resource owner or               
+                             authorization server denied the                    
+                             request                                            
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 18:59:02] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 18:59:03] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+[10/06/26 18:59:04] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+[10/06/26 18:59:05] INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 19:00:57] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     d793dc0d-a804-4ba1-b8ac-87fd948dcee3  state.py:2168
+                             [txid=428f3fc0d1f54eada06352968a95dab              
+                             c] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+[10/06/26 19:00:59] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/06/26 19:01:46] WARNING  e70bd02b-e2cc-410d-c50b-4add3e9bc147  state.py:1091
+                             [txid=36f4e3d903e746ca9d6865818f622ab              
+                             b] Authorization request failed:                   
+                             access_denied: The resource owner or               
+                             authorization server denied the                    
+                             request                                            
+[10/06/26 19:01:52] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+[10/06/26 19:01:53] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+[10/06/26 19:02:02] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/06/26 19:02:03] INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831

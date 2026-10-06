@@ -1,0 +1,3 @@
+{"method": "POST", "path": "/api/v1/authenticate/me", "authorized": true, "status": 200, "tier": "Pro"}
+{"method": "POST", "path": "/api/v1/authenticate/me", "authorized": true, "status": 200, "tier": "Pro"}
+{"method": "POST", "path": "/api/v1/authenticate/me", "authorized": true, "status": 200, "tier": "Pro"}
