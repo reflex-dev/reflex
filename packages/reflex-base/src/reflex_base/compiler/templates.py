@@ -560,16 +560,15 @@ const SUBSTATES = [{substates_str}
 
 function ClientStateProvider({{ children }}) {{
   const dispatchers = useContext(DispatchContext);
-  const [state, dispatchState] = useReducer(
-    (state, action) => ({{
-      ...state,
-      [action.substateName]: applyDelta(
-        state[action.substateName],
-        action.delta,
-      ),
-    }}),
-    initialState,
-  );
+  const state = useRef({{ ...initialState }});
+  const [version, render] = useReducer((version) => version + 1, 0);
+  const dispatchState = ({{ substateName, delta }}) => {{
+    state.current[substateName] = applyDelta(
+      state.current[substateName],
+      delta,
+    );
+    render();
+  }};
 
   // A layout effect, not a passive one: layout effects for the whole commit
   // run before any passive effect, so every dispatcher is registered before
@@ -588,7 +587,7 @@ function ClientStateProvider({{ children }}) {{
         delete dispatchers[substateName];
       }}
     }};
-  }}, [dispatchers, dispatchState]);
+  }}, [dispatchers]);
 
   return useMemo(() => {{
     let tree = children;
@@ -596,12 +595,12 @@ function ClientStateProvider({{ children }}) {{
       const [substateName, contextName] = SUBSTATES[i];
       tree = createElement(
         StateContexts[contextName],
-        {{ value: state[substateName] }},
+        {{ value: state.current[substateName] }},
         tree,
       );
     }}
     return tree;
-  }}, [children, state]);
+  }}, [children, version]);
 }}
 
 function BrowserStateProvider({{ children }}) {{

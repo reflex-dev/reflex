@@ -1774,6 +1774,8 @@ def test_context_template_one_provider_per_substate():
         )
     ]
     assert "useReducer(" in client
+    assert "state.current[substateName] = applyDelta(" in client
+    assert "...state," not in client
     assert "StateContexts[contextName]," in client
     assert "createElement(DispatchProvider, {}, tree)" not in client
 

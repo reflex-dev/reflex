@@ -168,3 +168,127 @@ def test_server_state_provider_renders_one_context_per_substate(tmp_path: Path):
     assert levels == [{"context": "DispatchContext"}] + [
         {"context": name, "value": True} for name in names
     ]
+
+
+@requires_node
+def test_client_state_provider_routes_delta_to_one_substate(tmp_path: Path):
+    """A client delta updates its substate without changing another context."""
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        initial_state={
+            "reflex___state____state": {"value": 1},
+            "reflex___state____state__sub": {"value": 2},
+        },
+        state_name="reflex___state____state",
+    ).replace("function ClientStateProvider", "export function ClientStateProvider")
+    react_stub = """
+let hookIndex = 0;
+let hookStates = [];
+export let rerender;
+export const dispatchers = {};
+export const useContext = () => dispatchers;
+export const useMemo = (fn) => fn();
+export const useRef = (value) => {
+  const index = hookIndex++;
+  return hookStates[index] ??= { current: value };
+};
+export const useReducer = (reducer, initial) => {
+  const index = hookIndex++;
+  hookStates[index] ??= initial;
+  const dispatch = (action) => {
+    hookStates[index] = reducer(hookStates[index], action);
+    rerender();
+  };
+  return [hookStates[index], dispatch];
+};
+export const useState = (initial) => useReducer((_, value) => value, initial);
+export const useEffect = () => {};
+export const useLayoutEffect = (effect) => effect();
+export const createElement = (type, props, ...children) => ({
+  type,
+  props: { ...props, children: children.length === 1 ? children[0] : children },
+});
+export const resetHooks = () => { hookIndex = 0; };
+export const setRerender = (fn) => { rerender = fn; };
+"""
+    state_stub = """
+export const applyDelta = (state, delta) => ({ ...state, ...delta });
+export const ReflexEvent = () => ({});
+export const hydrateClientStorage = () => ({});
+export const useEventLoop = () => [];
+export const refs = {};
+"""
+    context_stub = """
+export const ColorModeContext = {};
+export const UploadFilesContext = {};
+export const DispatchContext = {};
+export const EventLoopContext = {};
+export const getStateContext = (name) => ({ name });
+export const registerApp = () => {};
+export const eventLoop = {};
+"""
+    for specifier, source in (
+        ("react", react_stub),
+        ("$/utils/state", state_stub),
+        ("$/utils/context-registry", context_stub),
+        ("@emotion/react", "export const jsx = () => null;\n"),
+    ):
+        stub = tmp_path / (specifier.replace("/", "_").replace("$", "") + ".mjs")
+        stub.write_text(source)
+        rendered = rendered.replace(f'from "{specifier}"', f'from "./{stub.name}"')
+    module = tmp_path / "context.mjs"
+    module.write_text(rendered)
+    driver = tmp_path / "driver.mjs"
+    driver.write_text(
+        """
+import * as react from "./react.mjs";
+globalThis.document = {};
+const mod = await import("./context.mjs");
+const leaf = { leaf: true };
+let tree;
+const render = () => {
+  react.resetHooks();
+  tree = mod.ClientStateProvider({ children: leaf });
+};
+react.setRerender(render);
+render();
+const contexts = {};
+let node = tree;
+while (node !== leaf) {
+  const name = Object.keys(mod.StateContexts).find(
+    (key) => mod.StateContexts[key] === node.type,
+  );
+  contexts[name] = node.props.value;
+  node = node.props.children;
+}
+const untouched = contexts.reflex___state____state;
+react.dispatchers["reflex___state____state__sub"]({ value: 3 });
+const updated = {};
+node = tree;
+while (node !== leaf) {
+  const name = Object.keys(mod.StateContexts).find(
+    (key) => mod.StateContexts[key] === node.type,
+  );
+  updated[name] = node.props.value;
+  node = node.props.children;
+}
+process.stdout.write(JSON.stringify({
+  updated: updated.reflex___state____state__sub,
+  untouched: updated.reflex___state____state,
+  untouchedIdentity: updated.reflex___state____state === untouched,
+}));
+"""
+    )
+
+    result = subprocess.run(
+        ["node", str(driver)],
+        capture_output=True,
+        encoding="utf-8",
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {
+        "updated": {"value": 3},
+        "untouched": {"value": 1},
+        "untouchedIdentity": True,
+    }
