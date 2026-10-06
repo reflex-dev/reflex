@@ -13,6 +13,14 @@ maintainers = [
     { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
 ]
 requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+]
 dependencies = [
     "click >=8.2",
     # Imported directly by `check_version`, so it is declared here rather than
