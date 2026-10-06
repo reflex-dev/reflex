@@ -24,9 +24,9 @@ from reflex_base.constants import RouteArgType
 from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     ReflexRuntimeError,
     StateValueError,
-    VarTypeError,
 )
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
@@ -1308,18 +1308,34 @@ def test_backend_field_is_not_type_checked():
     assert model._value == 1
 
 
-def test_backend_field_in_fstring_raises():
-    """Formatting a backend var into an f-string raises instead of embedding its repr."""
+@pytest.mark.parametrize("name", ["_secret", "bookkeeping"])
+def test_backend_field_format_raises(name: str):
+    """Formatting a backend var raises instead of embedding its repr.
+
+    Args:
+        name: The backend field to format, underscore-prefixed or is_var=False.
+    """
 
     class Model(EvenMoreBasicBaseState):
         _secret: int = 42
         bookkeeping: int = field(default=0, is_var=False)
 
-    with pytest.raises(VarTypeError, match=r"Backend var 'Model._secret'"):
-        f"{Model._secret}px"
-    # A bookkeeping field (is_var=False) is backend too, but not underscore-prefixed.
-    with pytest.raises(VarTypeError, match=r"Field 'Model.bookkeeping' has no"):
-        f"{Model.bookkeeping}"
+    with pytest.raises(
+        BackendVarFormatError, match=rf"Backend var 'Model\.{name}' exists only"
+    ):
+        f"{getattr(Model, name)}px"
+
+
+def test_backend_field_literal_var_reports_repr():
+    """Creating a LiteralVar from a backend var reports its repr, not a format error."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(
+        TypeError, match=r"Tried to create a LiteralVar from Field\(default=42"
+    ):
+        LiteralVar.create(Model._secret)
 
 
 def test_classvar_over_inherited_field_is_not_a_field():

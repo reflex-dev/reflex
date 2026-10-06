@@ -783,6 +783,16 @@ def test_component_create_unallowed_types(children, test_component):
         test_component.create(*children)
 
 
+def test_component_create_backend_var_child(test_component):
+    """A backend var child reports its repr rather than formatting the field."""
+
+    class BackendChildState(BaseState):
+        _secret: int = 42
+
+    with pytest.raises(ChildrenTypeError, match=r"received child Field\(default=42"):
+        test_component.create(BackendChildState._secret)
+
+
 @pytest.mark.parametrize(
     ("element", "expected"),
     [

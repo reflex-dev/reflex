@@ -49,6 +49,7 @@ from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     ComputedVarSignatureError,
     EventHandlerShadowsBuiltInStateMethodError,
     ReflexRuntimeError,
@@ -1937,7 +1938,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return ArrayVar.range(value.start, value.stop, value.step)
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
         raise TypeError(msg)
 
     if not TYPE_CHECKING:
@@ -2016,7 +2017,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return None
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
         raise TypeError(msg)
 
     @property
@@ -4122,26 +4123,22 @@ class Field(Generic[FIELD_TYPE]):
     def __format__(self, format_spec: str) -> str:
         """Refuse to format the field: only a Var has a frontend expression.
 
-        Class access reaches the field itself only when it has no Var, so an
-        f-string would otherwise silently embed its repr in the page.
+        Class access reaches the field itself only when it has no Var, so
+        formatting it would otherwise silently embed its repr in the page.
 
         Args:
             format_spec: The format specifier (unused).
 
         Raises:
-            VarTypeError: Always; the field has no frontend value.
+            BackendVarFormatError: Always; the field has no frontend value.
         """
         qualname = f"{self._owner.__name__}.{self._name}" if self._owner else "field"
-        if self._name.startswith("_"):
-            msg = (
-                f"Backend var '{qualname}' cannot be used in an f-string: backend"
-                " vars (prefixed with '_') exist only on the server and have no"
-                " frontend value. Use a regular var instead."
-            )
-        else:
-            # Declared with is_var=False, or not bound to a state at all.
-            msg = f"Field '{qualname}' has no frontend var to format into an f-string."
-        raise VarTypeError(msg)
+        msg = (
+            f"Backend var '{qualname}' exists only on the server and has no"
+            " frontend value, so it cannot be used in the UI. Use a regular"
+            " state var instead."
+        )
+        raise BackendVarFormatError(msg)
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.

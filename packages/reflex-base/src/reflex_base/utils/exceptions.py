@@ -51,7 +51,7 @@ class ChildrenTypeError(ComponentTypeError):
             child: The child that caused the error.
         """
         super().__init__(
-            f"Component {component} received child {child} of type {type(child)}. "
+            f"Component {component} received child {child!r} of type {type(child)}. "
             "Accepted types are other components, state vars, or primitive Python types (dict excluded)."
         )
 
@@ -74,6 +74,10 @@ class VarNameError(ReflexError, NameError):
 
 class VarTypeError(ReflexError, TypeError):
     """Custom TypeError for var related errors."""
+
+
+class BackendVarFormatError(VarTypeError):
+    """Raised when a backend var, which has no frontend value, is formatted as a string."""
 
 
 class VarValueError(ReflexError, ValueError):
