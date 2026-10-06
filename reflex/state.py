@@ -61,6 +61,7 @@ from reflex_base.vars.base import (
     EvenMoreBasicBaseState,
     ToOperation,
     Var,
+    _declared_value,
     _inherited_value,
     _is_descriptor,
     _slot_names,
@@ -784,7 +785,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         A field declared on this class or a parent state stays bound where it
         is declared: its value lives on that state's instance. One declared on
-        a mixin or non-state base gets a copy bound to this class.
+        a mixin or non-state base gets a copy bound to this class. A var a mixin
+        declares without a default only restates the type of the var declared
+        further along the MRO, which is bound in its place.
         """
         tree_states = set()
         state_cls: type[BaseState] | None = cls
@@ -793,7 +796,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             state_cls = state_cls.get_parent_state()
         fields = cls.__fields__
         for name, declared in list(fields.items()):
-            f = _inherited_value(cls.__mro__, name)
+            f = _declared_value(cls.__mro__, name)
             if not isinstance(f, Field):
                 if callable(f) or _is_descriptor(f):
                     # Overridden by something else, like a property.
@@ -804,6 +807,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             if f._owner not in tree_states:
                 f = f._replace()
                 _bind_attr(cls, name, f)
+            elif _inherited_value(cls.__mro__, name) is not f:
+                # The mixin restating the parent state's var hides it on this class.
+                setattr(cls, name, f)
             fields[name] = f
 
     @classmethod

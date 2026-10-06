@@ -206,6 +206,29 @@ def nested_mixin_example():
 
 This pattern allows you to build complex functionality by composing simpler mixins.
 
+## Using a Parent State's Variables
+
+A mixin that declares a variable without a default uses the variable of that name declared by a parent state of the class it is combined into:
+
+```python
+class ParentState(rx.State):
+    count: int = 5
+
+
+class DoublingMixin(rx.State, mixin=True):
+    count: int
+
+    @rx.event
+    def double(self):
+        self.count *= 2
+
+
+class ChildState(DoublingMixin, ParentState):
+    pass
+```
+
+`ChildState.double` doubles `ParentState.count`, and the declaration types `count` for the mixin's own code. Several mixins combined into one state may each declare a variable this way, as long as the state or its parent state declares it. When no parent state declares `count`, the mixin's declaration creates the variable, with the type's default (`0` here).
+
 ## Best Practices
 
 ```md alert info
@@ -224,7 +247,7 @@ This pattern allows you to build complex functionality by composing simpler mixi
 # Important Limitations
 
 - Mixins cannot be instantiated directly - they must be inherited by concrete State classes
-- Variable name conflicts between mixins are resolved by method resolution order (MRO)
+- Two mixins that do not inherit from one another cannot both declare a variable of the same name: creating the state that combines them raises `MixinVarNameConflictError`. The exception is a variable they declare without a default that the state or its parent state declares. Mixins a parent state already combines do not count: a substate's mixins may redeclare their variables, like any inherited variable. Declare a variable the mixins share in a mixin both inherit from
 - Mixins cannot override methods from the base State class
 - The `mixin=True` parameter is required when defining a mixin
 ```

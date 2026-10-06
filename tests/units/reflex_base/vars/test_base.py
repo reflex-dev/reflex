@@ -23,7 +23,11 @@ from reflex_base import constants
 from reflex_base.constants import RouteArgType
 from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.utils import serializers
-from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
+from reflex_base.utils.exceptions import (
+    MixinVarNameConflictError,
+    ReflexRuntimeError,
+    StateValueError,
+)
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
@@ -866,6 +870,127 @@ def test_abc_mixin(state_mixin: bool, clean_registration_context):
     assert concrete_state()._value() == 7
 
 
+def test_mixin_var_name_conflict(clean_registration_context):
+    """Reject two mixins that do not inherit from one another declaring the same var.
+
+    Declaring it without a default conflicts too when the state has no var of that
+    name, which a ClassVar is not. So does declaring a backend var.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int
+
+    class AnnotatingMixin(BaseState, mixin=True):
+        shared: int
+
+    class FirstBackendMixin(BaseState, mixin=True):
+        _shared: int = 1
+
+    class SecondBackendMixin(BaseState, mixin=True):
+        _shared: int = 2
+
+    match = r"`shared`.*FirstMixin.*SecondMixin"
+    with pytest.raises(MixinVarNameConflictError, match=match):
+
+        class SubState(FirstMixin, SecondMixin, State):
+            pass
+
+    with pytest.raises(MixinVarNameConflictError, match=match):
+
+        class RootState(FirstMixin, SecondMixin, BaseState):
+            pass
+
+    with pytest.raises(MixinVarNameConflictError, match=match):
+
+        class CombinedMixin(FirstMixin, SecondMixin, mixin=True):
+            pass
+
+    with pytest.raises(
+        MixinVarNameConflictError, match=r"`shared`.*AnnotatingMixin.*SecondMixin"
+    ):
+
+        class AnnotatedState(AnnotatingMixin, SecondMixin, State):
+            pass
+
+    with pytest.raises(
+        MixinVarNameConflictError, match=r"`shared`.*AnnotatingMixin.*SecondMixin"
+    ):
+
+        class ClassVarState(AnnotatingMixin, SecondMixin, State):
+            shared: ClassVar[int] = 1  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    with pytest.raises(MixinVarNameConflictError, match="`_shared`"):
+
+        class BackendState(FirstBackendMixin, SecondBackendMixin, State):
+            pass
+
+
+def test_mixins_may_type_a_var_the_state_declares(clean_registration_context):
+    """Mixins may each declare without a default a var the state declares.
+
+    Such a declaration only types the var for the mixin's code: the state keeps
+    the var it declares, or one a mixin declares with a default.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int
+
+    class ValueMixin(BaseState, mixin=True):
+        shared: int = 3
+
+    class Parent(State):
+        shared: int = 1
+
+    class Child(FirstMixin, SecondMixin, Parent):
+        pass
+
+    class OwnState(FirstMixin, SecondMixin, State):
+        shared: int = 2
+
+    class RedeclaringChild(FirstMixin, ValueMixin, Parent):
+        pass
+
+    assert Child.get_fields()["shared"]._owner is Parent
+    assert OwnState.get_fields()["shared"].default == 2
+    assert RedeclaringChild.get_fields()["shared"]._owner is RedeclaringChild
+    assert RedeclaringChild.get_fields()["shared"].default == 3
+
+
+def test_mixin_may_redeclare_a_var_of_the_parents_mixin(clean_registration_context):
+    """Only mixins combined into the same state conflict, not those of its parent.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int = 2
+
+    class Parent(FirstMixin, State):
+        pass
+
+    class Child(SecondMixin, Parent):
+        pass
+
+    assert Child.get_fields()["shared"]._owner is Child
+    assert Child.get_fields()["shared"].default == 2
+
+
 @pytest.mark.parametrize("registration", ["declared", "var"])
 def test_reserved_abc_bookkeeping(registration: str, clean_registration_context):
     """Keep rejecting a state's own ``_abc_impl``, which would clash with ABCMeta's.
@@ -1182,6 +1307,17 @@ def test_new_default_for_inherited_field_declares_a_field():
     assert child_field.default == 5
     assert child_field.outer_type_ is int
     assert "count" in Child.base_vars
+
+
+def test_field_default_from_type():
+    """A field declared without a default notes that its default comes from its type."""
+    from_type = Field(annotated_type=int)
+    assert from_type._default_from_type
+    assert from_type._replace()._default_from_type
+    assert from_type._replace(annotated_type=bool)._default_from_type
+    assert not from_type._replace(default=1)._default_from_type
+    assert not Field(default=0, annotated_type=int)._default_from_type
+    assert not Field(default_factory=list, annotated_type=list[int])._default_from_type
 
 
 class TaggedField(Field[FIELD_TYPE]):
