@@ -20,6 +20,7 @@ from packaging import version
 from reflex_cli import constants
 from reflex_cli.utils import console, log
 from reflex_cli.utils.dependency import extract_domain
+from reflex_cli.utils.deploy import _retry_scaling_conflicts
 
 if TYPE_CHECKING:
     from reflex_build_sdk.types import App, AppSummary, GcpConnection
@@ -1104,23 +1105,21 @@ def deploy(
         bounds_applied = min_instances is not None or max_instances is not None
         if bounds_applied:
             try:
-                bounds_error = hosting.set_instance_bounds(
-                    app_id=str(app.id),
-                    min_instances=min_instances,
-                    max_instances=max_instances,
-                    client=authenticated_client,
+                bounds_error = _retry_scaling_conflicts(
+                    lambda: hosting.set_instance_bounds(
+                        app_id=str(app.id),
+                        min_instances=min_instances,
+                        max_instances=max_instances,
+                        client=authenticated_client,
+                    ),
+                    path=f"apps/{app.id}/instance_bounds",
+                    action="the instance bounds update",
+                    attempts=8,
                 )
-            except BaseException:
-                # A dropped connection says nothing about whether the server
-                # applied the write, and the bounds are billable state, so hedge
-                # rather than report either outcome as fact.
-                logger.warning(
-                    f"Lost contact while setting the instance bounds of "
-                    f"'{app.name}'; they may or may not have been applied. "
-                    "Check the app in the Reflex Cloud dashboard before relying "
-                    "on its scaling."
+            except ReflexBuildError as ex:
+                hosting.exit_reporting(
+                    ex, f"set instance bounds failed: {hosting.error_message(ex)}"
                 )
-                raise
             if bounds_error:
                 logger.error(bounds_error)
                 raise click.exceptions.Exit(1)

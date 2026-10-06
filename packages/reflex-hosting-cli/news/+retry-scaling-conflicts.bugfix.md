@@ -1,0 +1,1 @@
+`reflex deploy` now waits and retries when ongoing scaling temporarily blocks instance-bound updates or deployment submission, with bounded waits and progress messages. Submission retries reuse the uploaded build and do not replay writes whose outcome is unknown.

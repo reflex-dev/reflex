@@ -4,14 +4,22 @@ import datetime
 import json
 import logging
 import uuid
+from pathlib import Path
 from unittest.mock import MagicMock, mock_open
+from urllib.parse import parse_qs, urlsplit
 
 import click
 import pytest
 from pytest_mock import MockerFixture, MockFixture
 from reflex_base.utils.log import SUCCESS
+from reflex_build_sdk import (
+    APIConnectionError,
+    APIResponseValidationError,
+    APITimeoutError,
+)
 from reflex_build_sdk.types import DeploymentReport, GcpConnection, GcpStatus
 from reflex_cli import constants
+from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationError
 from reflex_cli.utils.hosting import (
     _WATCH_UNREACHABLE_GRACE,
@@ -46,9 +54,85 @@ from reflex_cli.utils.hosting import (
     watch_deployment_status,
 )
 
+from tests.units.reflex_build_sdk.conftest import MockAPI, MockTransport, reply
 from tests.units.reflex_cli.sdk import api_error, fake_client
 
 _client = fake_client
+
+
+def test_upload_client_retries_submission_without_uploading_again(
+    mocker: MockerFixture, tmp_path: Path
+):
+    """Scaling retries reuse the uploaded build and close their HTTP transport.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        tmp_path: The directory for the build archives.
+    """
+    mock_api = MockAPI()
+    transport = MockTransport(mock_api)
+    mocker.patch(
+        "reflex_cli.utils.hosting.HttpxTransport", return_value=transport, create=True
+    )
+    mocker.patch(
+        "reflex_build_sdk._sync._client.default_transport", return_value=transport
+    )
+    sleep = mocker.patch("time.sleep")
+    client = _client()
+    client.api.token = "test-token"
+    deployment_id = str(uuid.UUID(int=41))
+    archives = [tmp_path / name for name in ("backend.zip", "frontend.zip")]
+    for archive in archives:
+        archive.write_bytes(b"build")
+        mock_api.add("PUT", f"/{archive.name}", reply(200))
+    mock_api.add(
+        "POST",
+        "/api/v1/deployments/reserve",
+        reply(
+            200,
+            json={
+                "deployment_id": deployment_id,
+                "backend": {
+                    "url": "https://storage.example/backend.zip",
+                    "headers": {},
+                },
+                "frontend": {
+                    "url": "https://storage.example/frontend.zip",
+                    "headers": {},
+                },
+                "expires_in": 1800,
+            },
+        ),
+    )
+    mock_api.add(
+        "POST",
+        "/api/v1/deployments",
+        reply(
+            409,
+            headers={"x-reflex-error-code": "app_busy"},
+            json={
+                "detail": "the app is currently being scaled; wait for the scale to finish, then deploy again"
+            },
+        ),
+        reply(201, json=deployment_id),
+    )
+
+    with hosting.upload_client(client) as uploader:
+        result = uploader.deployments.create(
+            uuid.UUID(int=51), backend=archives[0], frontend=archives[1]
+        )
+
+    assert str(result) == deployment_id
+    paths = [urlsplit(request.url).path for request in mock_api.requests]
+    assert paths.count("/api/v1/deployments/reserve") == 1
+    assert paths.count("/backend.zip") == paths.count("/frontend.zip") == 1
+    submits = mock_api.requests[-2:]
+    assert paths[-2:] == ["/api/v1/deployments"] * 2
+    assert submits[0] is submits[1]
+    assert isinstance(submits[0].content, bytes)
+    assert parse_qs(submits[0].content.decode())["stored_build_id"] == [deployment_id]
+    sleep.assert_called_once_with(15)
+    assert mock_api.closed
 
 
 @pytest.mark.parametrize(
@@ -823,6 +907,52 @@ def test_set_instance_bounds_error(status_code: int, detail: str):
     assert result is not None
     assert result.startswith("set instance bounds failed")
     assert detail in result
+
+
+def test_set_instance_bounds_preserves_scaling_refusal():
+    """The deploy retry receives the typed refusal, including its request id."""
+    client = _client()
+    error = api_error(
+        409,
+        "the app is being scaled; change instance bounds after it finishes",
+        code="instance_bounds_scale_conflict",
+        method="POST",
+        path="apps/app-1/instance_bounds",
+    )
+    client.api.apps.set_instance_bounds.side_effect = error
+
+    with pytest.raises(type(error)) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    client.api.apps.set_instance_bounds.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "error_type", [APIConnectionError, APITimeoutError, APIResponseValidationError]
+)
+def test_set_instance_bounds_preserves_uncertain_outcomes(
+    error_type: type[APIConnectionError] | type[APIResponseValidationError],
+):
+    """A write without a usable answer must reach the deploy's uncertainty guard.
+
+    Args:
+        error_type: The SDK failure that leaves the write's result unknown.
+    """
+    client = _client()
+    response = api_error(200, "invalid response").response
+    error = (
+        error_type("invalid response", response=response)
+        if issubclass(error_type, APIResponseValidationError)
+        else error_type("lost response", request=response.request)
+    )
+    client.api.apps.set_instance_bounds.side_effect = error
+
+    with pytest.raises(error_type) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    client.api.apps.set_instance_bounds.assert_called_once()
 
 
 def test_validate_token_names_the_product_it_logs_in_through(

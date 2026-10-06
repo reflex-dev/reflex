@@ -32,6 +32,7 @@ import click
 from reflex_build_sdk import (
     APIConnectionError,
     APIError,
+    APIResponseValidationError,
     APIStatusError,
     AuthenticationError,
     DeploymentFailedError,
@@ -44,12 +45,14 @@ from reflex_build_sdk import (
 )
 from reflex_build_sdk._decode import json_key
 from reflex_build_sdk._deploy import status_message_outcome
+from reflex_build_sdk.transports import HttpxTransport
 from reflex_build_sdk.types import DeploymentReport, LoginRequest, Me
 
 import reflex_cli.constants as constants
 from reflex_cli.core.config import Config, RegionOption
 from reflex_cli.utils import console, log
 from reflex_cli.utils.dependency import is_valid_url
+from reflex_cli.utils.deploy import _DeploymentRetryTransport, _is_scaling_conflict
 from reflex_cli.utils.exceptions import (
     ResponseError,
     ScaleAppError,
@@ -784,7 +787,8 @@ def identity_as_dict(me: Me) -> dict[str, Any]:
     }
 
 
-def upload_client(client: AuthenticatedClient) -> ReflexBuild:
+@contextlib.contextmanager
+def upload_client(client: AuthenticatedClient) -> Iterator[ReflexBuild]:
     """Build a client whose timeouts suit pushing a build's archives.
 
     The SDK's defaults are sized for API calls. An archive is not one: it is
@@ -794,15 +798,25 @@ def upload_client(client: AuthenticatedClient) -> ReflexBuild:
     Args:
         client: The authenticated client the deploy is running under.
 
-    Returns:
-        A client to submit the deployment with. The caller closes it.
+    Yields:
+        A client that retries confirmed scaling refusals without reuploading.
 
     """
-    return ReflexBuild(
-        token=client.token,
-        base_url=constants.Hosting.HOSTING_SERVICE,
-        timeout=UPLOAD_IO_TIMEOUT.total_seconds(),
-    )
+    base_url = constants.Hosting.HOSTING_SERVICE.rstrip("/")
+    with (
+        contextlib.closing(
+            _DeploymentRetryTransport(
+                HttpxTransport(), url=f"{base_url}/api/v1/deployments"
+            )
+        ) as transport,
+        ReflexBuild(
+            token=client.token,
+            base_url=base_url,
+            timeout=UPLOAD_IO_TIMEOUT.total_seconds(),
+            transport=transport,
+        ) as uploader,
+    ):
+        yield uploader
 
 
 def validate_token(token: str) -> dict[str, Any]:
@@ -1230,21 +1244,45 @@ def set_instance_bounds(
 
     Returns:
         None on success, or a ``"set instance bounds failed: ..."`` string on
-        error (validation, unsupported platform, or a scale already running).
+        a non-retryable refusal (validation or unsupported platform).
+
+    Raises:
+        APIStatusError: If scaling refused the write, so deploy can retry it.
+        APIConnectionError: If contact is lost while reading or updating bounds.
+        APIResponseValidationError: If the response could not be decoded.
 
     """
     try:
         current = client.api.apps.get(app_id)
-        client.api.apps.set_instance_bounds(
-            app_id,
-            min_instances=current.min_instances
-            if min_instances is None
-            else min_instances,
-            max_instances=current.max_instances
-            if max_instances is None
-            else max_instances,
-        )
+        try:
+            client.api.apps.set_instance_bounds(
+                app_id,
+                min_instances=current.min_instances
+                if min_instances is None
+                else min_instances,
+                max_instances=current.max_instances
+                if max_instances is None
+                else max_instances,
+            )
+        except (APIStatusError, MissingTokenError):
+            raise
+        except BaseException:
+            # Only an unanswered write is uncertain. A failed preliminary read
+            # or an interrupted wait after a refusal cannot have changed bounds.
+            logger.warning(
+                f"Lost contact while setting the instance bounds of "
+                f"'{current.name}'; they may or may not have been applied. "
+                "Check the app in the Reflex Cloud dashboard before relying "
+                "on its scaling."
+            )
+            raise
+    except (APIConnectionError, APIResponseValidationError):
+        raise
     except ReflexBuildError as ex:
+        if isinstance(ex, APIStatusError) and _is_scaling_conflict(
+            ex, f"apps/{app_id}/instance_bounds"
+        ):
+            raise
         return f"set instance bounds failed: {error_message(ex)}"
     return None
 
