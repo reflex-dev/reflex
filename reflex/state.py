@@ -23,6 +23,7 @@ from typing import (
     BinaryIO,
     ClassVar,
     ParamSpec,
+    Self,
     TypeVar,
     cast,
     get_type_hints,
@@ -70,7 +71,6 @@ from reflex_base.vars.base import (
     is_computed_var,
 )
 from rich.markup import escape
-from typing_extensions import Self
 
 import reflex.istate.dynamic
 from reflex import event
@@ -2167,12 +2167,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         if not payload:
             e = StateSerializationError(error)
-            if sys.version_info >= (3, 11):
-                try:
-                    debug_failed_pickles(self, pickle_function)
-                except HANDLED_PICKLE_ERRORS as ex:
-                    for note in ex.__notes__:
-                        e.add_note(note)
+            try:
+                debug_failed_pickles(self, pickle_function)
+            except HANDLED_PICKLE_ERRORS as ex:
+                for note in ex.__notes__:
+                    e.add_note(note)
             raise e
 
         return payload

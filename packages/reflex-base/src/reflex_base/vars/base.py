@@ -28,6 +28,7 @@ from typing import (
     Final,
     Generic,
     Literal,
+    LiteralString,
     NoReturn,
     ParamSpec,
     Protocol,
@@ -39,7 +40,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import LiteralString, dataclass_transform, override
+from typing_extensions import dataclass_transform, override
 
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
@@ -49,6 +50,7 @@ from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     ComputedVarSignatureError,
     EventHandlerShadowsBuiltInStateMethodError,
     ReflexRuntimeError,
@@ -1652,7 +1654,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             if self._var_type is Any:
                 raise exceptions.UntypedVarError(
                     self,
-                    f"access the item '{key}'",
+                    f"access the item '{key!s}'",
                 )
             msg = f"Var of type {self._var_type} does not support item access."
             raise TypeError(msg)
@@ -1937,7 +1939,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return ArrayVar.range(value.start, value.stop, value.step)
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
         raise TypeError(msg)
 
     if not TYPE_CHECKING:
@@ -2016,7 +2018,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return None
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
         raise TypeError(msg)
 
     @property
@@ -4119,6 +4121,36 @@ class Field(Generic[FIELD_TYPE]):
             return f"Field(default={self.default!r}, is_var={self.is_var}{annotated_type_str})"
         return f"Field(default_factory={self.default_factory!r}, is_var={self.is_var}{annotated_type_str})"
 
+    def __format__(self, format_spec: str) -> str:
+        """Refuse to format the field: only a Var has a frontend expression.
+
+        Class access reaches the field itself only when it has no Var (a backend
+        var, or any field of a mixin state), so formatting it would otherwise
+        silently embed its repr in the page.
+
+        Args:
+            format_spec: The format specifier (unused).
+
+        Raises:
+            BackendVarFormatError: Always; the field has no frontend var.
+        """
+        name = f"'{self._owner.__name__}.{self._name}'" if self._owner else repr(self)
+        if self._backend:
+            msg = (
+                f"Backend var {name} exists only on the server and has no"
+                " frontend value, so it cannot be used in the UI. Use a regular"
+                " state var instead."
+            )
+        elif getattr(self._owner, "_mixin", False):
+            msg = (
+                f"Var {name} is declared on a mixin state, which has no"
+                " frontend vars. Access it through a state that includes the"
+                " mixin instead."
+            )
+        else:
+            msg = f"{name} has no frontend var, so it cannot be used in the UI."
+        raise BackendVarFormatError(msg)
+
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.
 
@@ -4166,7 +4198,7 @@ class Field(Generic[FIELD_TYPE]):
         ):
             logger.error(
                 f"Expected field '{type(state).__name__}.{self._name}' to receive type"
-                f" '{self.outer_type_}', but got '{value}' of type '{type(value)}'."
+                f" '{self.outer_type_}', but got {value!r} of type '{type(value)}'."
             )
         state.__dict__[self._name] = value
         if self._tracked:

@@ -18,13 +18,11 @@ from reflex_base.utils.types import (
     resolve_type_alias,
     typehint_issubclass,
 )
-from typing_extensions import ParamSpec, TypeAliasType, TypeVarTuple, Unpack
+from typing_extensions import ParamSpec, TypeAliasType, TypeVarTuple
 
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
-Handlers = TypeAliasType(
-    "Handlers", tuple[Callable[P, int], Unpack[Ts]], type_params=(P, Ts)
-)
+Handlers = TypeAliasType("Handlers", tuple[Callable[P, int], *Ts], type_params=(P, Ts))
 
 
 def test_types_import_keeps_optional_orm_lazy():
@@ -126,8 +124,8 @@ def test_asgi_aliases_keep_their_names():
 def test_resolve_type_alias_substitutes_param_spec():
     """A ParamSpec is substituted even next to a TypeVarTuple.
 
-    That combination falls back to manual substitution on 3.10 and 3.11, which
-    has to treat a ParamSpec as a type parameter too.
+    That combination falls back to manual substitution on 3.11, which has to
+    treat a ParamSpec as a type parameter too.
     """
     resolved = resolve_type_alias(Handlers[[str], bool, float])
     assert resolved == tuple[Callable[[str], int], bool, float]
