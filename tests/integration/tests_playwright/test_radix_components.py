@@ -35,7 +35,16 @@ def ProgressApp():
 def progress_app(
     app_harness_env: type[AppHarness], tmp_path_factory: pytest.TempPathFactory
 ) -> Generator[AppHarness, None, None]:
-    """Run the primitive Progress app in dev and prod modes."""
+    """Run the primitive Progress app in dev and prod modes.
+
+    Args:
+        app_harness_env: AppHarness class for dev or production mode.
+        tmp_path_factory: Pytest fixture for creating temporary directories.
+
+    Yields:
+        The running app harness.
+
+    """
     with app_harness_env.create(
         root=tmp_path_factory.mktemp("radix_progress"),
         app_source=ProgressApp,
