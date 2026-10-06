@@ -77,7 +77,7 @@ def charts() -> rx.Component:
                 spacing="3",
             ),
             rx.slider(
-                default_value=[24],
+                default_value=[ChartsState.points],
                 min=MIN_POINTS,
                 max=MAX_POINTS,
                 on_value_commit=ChartsState.set_points,

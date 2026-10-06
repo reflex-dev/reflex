@@ -2,6 +2,7 @@
 
 import secrets
 from pathlib import Path
+from urllib.parse import quote
 
 import reflex as rx
 
@@ -11,7 +12,7 @@ UPLOAD_ID = "upload-files"
 class UploadState(rx.State):
     """The uploaded files and the progress of the current upload."""
 
-    # One entry per stored file: its ``name`` and its ``path`` in the upload directory.
+    # One entry per stored file: its ``name`` and its URL-quoted ``path`` in the upload directory.
     files: list[dict[str, str]] = []
     progress: int = 0
     uploading: bool = False
@@ -35,7 +36,8 @@ class UploadState(rx.State):
             if name in {"", ".", ".."}:
                 continue
             (directory / name).write_bytes(await file.read())
-            entry = {"name": name, "path": f"{self._folder}/{name}"}
+            # Quoted, so a name with ``#`` or ``?`` stays one URL path segment.
+            entry = {"name": name, "path": f"{self._folder}/{quote(name)}"}
             if entry not in self.files:
                 self.files.append(entry)
         self.uploading = False

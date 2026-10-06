@@ -57,7 +57,7 @@ def settings() -> rx.Component:
                         setting(
                             "Volume",
                             rx.slider(
-                                default_value=[50],
+                                default_value=[SettingsState.volume],
                                 on_value_commit=SettingsState.set_volume,
                                 width="12rem",
                                 id="settings-volume",

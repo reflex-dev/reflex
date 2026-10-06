@@ -34,7 +34,7 @@ def check_signup(form: dict[str, str]) -> dict[str, str]:
     if not is_email(form.get("email", "")):
         errors["email"] = "Not an email address."
     age = form.get("age", "")
-    if not age.isdigit() or not 13 <= int(age) <= 120:
+    if not age.isdecimal() or not 13 <= int(age) <= 120:
         errors["age"] = "An age from 13 to 120."
     if form.get("plan") not in PLANS:
         errors["plan"] = "Pick a plan."
@@ -79,6 +79,11 @@ class FormState(rx.State):
             self.errors.pop("email", None)
         else:
             self.errors["email"] = "Not an email address."
+
+    @rx.event
+    def clear_errors(self):
+        """Forget the errors, as the form's fields reset."""
+        self.errors = {}
 
     @rx.event
     def submit(self, form_data: dict[str, Any]):

@@ -284,8 +284,11 @@ def _check_data(page: Page, app: AppProcess) -> None:
 
     page.goto((app.frontend_url or app.backend_url) + "/data/new")
     page.fill("#product-name", "x")
+    # int() cannot parse a superscript digit, which str.isdigit() accepts.
+    page.fill("#product-price-cents", "\u00b2")
     page.click("#product-save")
     expect(page.get_by_text("At least 3 characters.")).to_be_visible()
+    expect(page.get_by_text("A whole number from 1 to 1000000.")).to_be_visible()
     for field, value in (
         ("name", "Test Widget"),
         ("price-cents", "1234"),
@@ -317,30 +320,42 @@ def _check_forms(page: Page) -> None:
     # Blur and submit apply the same check.
     expect(page.locator("#forms-error-email")).to_be_visible()
     page.fill("#forms-username", "ada")
+    page.click("#forms-submit")
+    # A rejected sign-up keeps what the visitor typed.
+    expect(page.locator("#forms-error-age")).to_be_visible()
+    expect(page.locator("#forms-username")).to_have_value("ada")
+    # Reset clears the fields and the errors.
+    page.click("#forms-reset")
+    expect(page.locator("#forms-error-age")).to_have_count(0)
+    expect(page.locator("#forms-username")).to_have_value("")
+    page.fill("#forms-username", "ada")
     page.fill("#forms-email", "ada@example.com")
     page.fill("#forms-age", "36")
     page.click("#forms-terms")
     page.click("#forms-submit")
     expect(page.locator("#forms-count")).to_have_text("1 sign-ups")
+    # An accepted sign-up clears the fields.
+    expect(page.locator("#forms-username")).to_have_value("")
 
 
-def _upload(page: Page, content: bytes) -> str:
-    """Upload a file named ``hello.txt`` and return the link to it.
+def _upload(page: Page, content: bytes, name: str = "hello.txt") -> str:
+    """Upload a file and return the link to it.
 
     Args:
         page: The ``/upload`` page.
         content: The file's bytes.
+        name: The file's name.
 
     Returns:
         The stored file's URL.
     """
     page.set_input_files(
         "#upload-files input[type=file]",
-        files=[{"name": "hello.txt", "mimeType": "text/plain", "buffer": content}],
+        files=[{"name": name, "mimeType": "text/plain", "buffer": content}],
     )
     page.click("#upload-start")
-    link = page.locator("#upload-stored a")
-    expect(link).to_have_text("hello.txt")
+    link = page.locator("#upload-stored a").filter(has_text=name)
+    expect(link).to_have_text(name)
     href = link.get_attribute("href")
     assert href is not None
     return href
@@ -375,10 +390,19 @@ def test_interactions_work(tmp_path: Path, home: Path, spec: str):
             first_url = _upload(_open(first, app, "/upload"), b"first")
             second_url = _upload(_open(second, app, "/upload"), b"second")
             assert first_url != second_url
-            for url, content in ((first_url, b"first"), (second_url, b"second")):
+            # A name with URL delimiters links to the whole name.
+            third_url = _upload(_open(second, app, "/upload"), b"third", "a#b?.txt")
+            for url, content in (
+                (first_url, b"first"),
+                (second_url, b"second"),
+                (third_url, b"third"),
+            ):
                 with urllib.request.urlopen(url, timeout=30) as response:
                     assert response.read() == content
 
+            page = _open(first, app, "/storage")
+            # A value that str.isdigit() accepts and int() cannot parse.
+            page.evaluate("localStorage.setItem('playground_visits', '\u00b2')")
             page = _open(first, app, "/storage")
             stored = page.locator("#storage-values")
             page.click("#storage-local")
@@ -390,6 +414,20 @@ def test_interactions_work(tmp_path: Path, home: Path, spec: str):
             _open(first, app, "/storage")
             expect(stored).to_contain_text("note-1")
             expect(stored).to_contain_text("2")
+            # The input shows the value the browser kept.
+            expect(page.locator("#storage-cookie")).to_have_value("note-1")
+
+            # A slider shows its state when its page mounts again.
+            page = _open(first, app, "/charts")
+            page.locator("#charts-resolution [role=slider]").press("End")
+            expect(page.locator("#charts-points")).not_to_have_text("Points: 24")
+            points = page.locator("#charts-points").inner_text().split()[-1]
+            page.click("a[href='/counter']")
+            page.wait_for_url(re.compile(r"/counter$"))
+            page.click("a[href='/charts']")
+            expect(page.locator("#charts-resolution [role=slider]")).to_have_attribute(
+                "aria-valuenow", points
+            )
 
             # Two visitors of one room see each other and each other's updates.
             a = _open(first, app, "/room/check")
@@ -402,11 +440,22 @@ def test_interactions_work(tmp_path: Path, home: Path, spec: str):
             expect(a.locator("#room-count")).to_have_text("11")
             b.click("#room-broadcast")
             expect(a.locator("#room-last")).to_contain_text("Last broadcast: 1")
+            # Entering another room leaves the first one.
+            b = _open(second, app, "/room/other")
+            expect(b.locator("#room-presence-count")).to_have_text("Here: 1")
+            expect(a.locator("#room-presence-count")).to_have_text("Here: 1")
+            b = _open(second, app, "/room/check")
+            expect(a.locator("#room-presence-count")).to_have_text("Here: 2")
             b.click("#room-leave")
             expect(a.locator("#room-presence-count")).to_have_text("Here: 1")
             expect(a.locator("#room-presence")).to_have_text(
                 a.locator("#room-me").inner_text()
             )
+            # A second Leave, with no room linked, does nothing.
+            b.click("#room-leave")
+            b.click("#room-broadcast")
+            expect(b.locator("#room-last")).to_contain_text("Last broadcast: 2")
+            expect(b.get_by_text("An error occurred.")).to_have_count(0)
             for tab in (first, second):
                 tab.raise_errors()
         finally:

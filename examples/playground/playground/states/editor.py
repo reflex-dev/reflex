@@ -34,7 +34,7 @@ def validate_product(form: dict[str, str]) -> tuple[dict[str, object], dict[str,
         ("rating", 10, 50),
     ):
         text = form.get(field, "").strip()
-        if not text.isdigit() or not low <= int(text) <= high:
+        if not text.isdecimal() or not low <= int(text) <= high:
             errors[field] = f"A whole number from {low} to {high}."
         else:
             values[field] = int(text)
@@ -88,7 +88,9 @@ class ProductEditState(rx.State):
         product_id = route_arg(self.router.url.path)
         with rx.session() as session:
             self.product = (
-                session.get(Product, int(product_id)) if product_id.isdigit() else None
+                session.get(Product, int(product_id))
+                if product_id.isdecimal()
+                else None
             )
         if self.product is None:
             return rx.toast.error(f"No product {product_id}.")

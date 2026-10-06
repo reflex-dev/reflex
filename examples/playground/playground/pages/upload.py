@@ -10,7 +10,7 @@ def uploaded_file(file: rx.vars.ObjectVar[dict[str, str]]) -> rx.Component:
     """Render one stored file.
 
     Args:
-        file: The file's name and its path in the upload directory.
+        file: The file's name and its URL-quoted path in the upload directory.
 
     Returns:
         A link to the file.

@@ -46,7 +46,8 @@ def storage() -> rx.Component:
                         StorageState.note,
                         rx.input(
                             placeholder="a note",
-                            on_blur=StorageState.set_note,
+                            value=StorageState.note,
+                            on_change=StorageState.set_note,
                             id="storage-cookie",
                         ),
                     ),
@@ -64,7 +65,8 @@ def storage() -> rx.Component:
                         StorageState.draft,
                         rx.input(
                             placeholder="a draft",
-                            on_blur=StorageState.set_draft,
+                            value=StorageState.draft,
+                            on_change=StorageState.set_draft,
                             id="storage-session",
                         ),
                     ),

@@ -22,7 +22,7 @@ class StorageState(rx.State):
     @rx.event
     def count_visit(self):
         """Count a visit in localStorage."""
-        count = int(self.visits) if self.visits.isdigit() else 0
+        count = int(self.visits) if self.visits.isdecimal() else 0
         self.visits = str(count + 1)
 
     @rx.event

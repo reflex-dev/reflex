@@ -116,6 +116,7 @@ def forms() -> rx.Component:
                         rx.button(
                             "Reset",
                             type="reset",
+                            on_click=FormState.clear_errors,
                             variant="soft",
                             color_scheme="gray",
                             id="forms-reset",
@@ -124,7 +125,9 @@ def forms() -> rx.Component:
                     width="100%",
                 ),
                 on_submit=FormState.submit,
-                reset_on_submit=True,
+                # A new key per accepted sign-up starts the fields over; a rejected
+                # sign-up keeps them.
+                key=FormState.signup_count,
                 id="forms-signup",
                 width="100%",
                 max_width="28rem",

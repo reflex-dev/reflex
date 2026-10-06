@@ -3,9 +3,10 @@
 import reflex as rx
 
 from playground.models import Product
+from playground.seed import CATEGORIES as PRODUCT_CATEGORIES
 
 PAGE_SIZE = 20
-CATEGORIES = ("all", "books", "garden", "games", "kitchen", "music", "outdoor", "tools")
+CATEGORIES = ("all", *PRODUCT_CATEGORIES)
 SORTABLE = ("id", "name", "category", "price_cents", "stock", "rating")
 
 

@@ -277,7 +277,7 @@ def analytics_page() -> rx.Component:
                 rx.spinner(),
             ),
             rx.slider(
-                default_value=[30],
+                default_value=[AnalyticsState.min_rating],
                 min=10,
                 max=50,
                 on_value_commit=AnalyticsState.set_min_rating,

@@ -146,10 +146,14 @@ class BoardState(rx.SharedState):
     async def enter_room(self, token: str):
         """Link this session to a room's board and show its name to everyone there.
 
+        The name leaves the room this session was in before.
+
         Args:
             token: The room's token.
         """
         name = guest_name(self.router.session.client_token)
+        if self._linked_to != token and name in self.members:
+            self.members.remove(name)
         board = await self._link_to(token)
         if name not in board.members:
             board.members.append(name)
@@ -159,8 +163,11 @@ class BoardState(rx.SharedState):
         """Take this session's name off the room, then unlink it from the board.
 
         Returns:
-            The events that rehydrate this session's own board.
+            The events that rehydrate this session's own board; none when no
+            board is linked.
         """
+        if not self._linked_to:
+            return None
         name = guest_name(self.router.session.client_token)
         if name in self.members:
             self.members.remove(name)
