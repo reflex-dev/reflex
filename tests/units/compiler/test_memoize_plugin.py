@@ -1673,15 +1673,17 @@ def test_local_client_state_keeps_sibling_components_in_page_scope() -> None:
         return rx.box(
             rx.text(local.value),
             rx.el.button("set", on_click=local.set_value("changed")),
+            rx.text(SpecialFormMemoState.value, id="unrelated-reactive"),
         )
 
     ctx, page_ctx = _compile_single_page(page)
     page_output = page_ctx.output_code or ""
 
-    assert not ctx.memoize_wrappers, (
-        "Page-local client state cannot be split across memo components. "
-        f"Got wrappers: {list(ctx.memoize_wrappers)}"
+    assert ctx.memoize_wrappers, (
+        "Unrelated reactive components should retain auto-memoization when "
+        "page-local client state is shared."
     )
+    assert "local_sibling" not in _compile_memo_module_text(ctx)
     assert (
         'const [local_sibling, setLocal_sibling] = useState("initial")' in page_output
     )

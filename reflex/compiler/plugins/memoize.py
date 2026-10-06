@@ -124,6 +124,50 @@ def _subtree_requires_shared_scope(
             _subtree_requires_shared_scope(prop_component, scope_owners, _seen)
 
 
+def _subtree_splits_shared_scope(
+    component: Component, shared_scope_counts: dict[str, int]
+) -> bool:
+    """Whether memoizing this subtree would separate users of a shared hook scope.
+
+    Args:
+        component: Subtree candidate for memoization.
+        shared_scope_counts: Total component users of each shared scope on the page.
+
+    Returns:
+        Whether this subtree contains only part of any shared scope.
+    """
+    if not shared_scope_counts:
+        return False
+    scope_owners: dict[str, set[int]] = {}
+    _subtree_requires_shared_scope(component, scope_owners)
+    return any(
+        0 < len(scope_owners.get(key, ())) < count
+        for key, count in shared_scope_counts.items()
+    )
+
+
+def _component_uses_shared_scope(
+    component: Component, shared_scope_counts: dict[str, int]
+) -> bool:
+    """Whether a component directly uses a hook scope shared across components.
+
+    Args:
+        component: Component being considered for memoization.
+        shared_scope_counts: Shared hook scopes present on the page.
+
+    Returns:
+        Whether the component directly carries a shared-scope Var.
+    """
+    if not shared_scope_counts:
+        return False
+    return any(
+        key in shared_scope_counts
+        for var in component._get_vars(include_children=False)
+        if (var_data := var._get_all_var_data()) is not None
+        for key in var_data.shared_scope_keys
+    )
+
+
 def _component_subtree_is_reactive(
     component: Component, _cache: dict[int, bool]
 ) -> bool:
@@ -305,15 +349,17 @@ class MemoizeStatefulPlugin(Plugin):
         if comp is root or page_context._owned.get(id(root)) is comp:
             scope_owners: dict[str, set[int]] = {}
             _subtree_requires_shared_scope(comp, scope_owners)
-            if any(len(owners) > 1 for owners in scope_owners.values()):
-                # Local client-state setters are bare React setters. Keep their
-                # readers and setters in the same component scope.
-                page_context.memoize_suppressor_stack.append(id(comp))
-                return None
+            page_context.memoize_shared_scope_counts = {
+                key: len(owners)
+                for key, owners in scope_owners.items()
+                if len(owners) > 1
+            }
         if page_context.memoize_suppressor_stack:
             return None
         strategy = get_memoization_strategy(comp)
         if strategy is not MemoizationStrategy.SNAPSHOT:
+            return None
+        if _subtree_splits_shared_scope(comp, page_context.memoize_shared_scope_counts):
             return None
         snapshot_boundary = is_snapshot_boundary(comp)
 
@@ -372,6 +418,9 @@ class MemoizeStatefulPlugin(Plugin):
             stack.pop()
 
         if stack:
+            return None
+
+        if _component_uses_shared_scope(comp, page_context.memoize_shared_scope_counts):
             return None
 
         if len(children) != len(comp.children) or any(

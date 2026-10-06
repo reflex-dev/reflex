@@ -603,6 +603,11 @@ class PageContext(BaseContext):
     # the matching ``leave_component``. Non-empty iff we are inside such a
     # subtree.
     memoize_suppressor_stack: list[int] = dataclasses.field(default_factory=list)
+    # Number of components using each page-local hook scope shared across
+    # multiple components. Memoization boundaries must not split these scopes.
+    memoize_shared_scope_counts: dict[str, int] = dataclasses.field(
+        default_factory=dict
+    )
     # Maps both the user-owned original's ``id()`` and the clone's ``id()`` to
     # the page-local clone. Lets the walker and plugins rebind children, style,
     # or event_triggers on a page-local copy without mutating a user-owned
