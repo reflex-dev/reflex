@@ -1,0 +1,30 @@
+{
+  "issue": {
+    "url": "https://github.com/reflex-dev/reflex-enterprise/issues/245",
+    "title": "Define fail-closed recovery when protected-state logout resets fail",
+    "issue_number": 245,
+    "body": "Follow-up to the logout-sweep review on #243. The backend-field compatibility fix now attempts the remaining protected states after a reset failure, logs the failed state's name, and re-raises the first error after the sweep. Factory output is no longer deep-copied.\n\nRecovery inside a failed state needs a separate auth-lifecycle change. Simply swallowing field or state exceptions and returning success can leave the previous user's protected data accessible on the same client token.\n\nFollow-up work:\n\n- Define a fail-closed session invalidation/recovery policy when a protected default factory, setter, or state load fails during logout.\n- Decide whether to continue clearing other fields and computed caches within the failed state, while retaining a failure signal.\n- Cover subsequent login on the same token so protected data left in a failed state cannot reach the next user.\n- Cover provider cleanup and browser cookie synchronization when application cleanup fails.\n\nThe existing `get_state` failure handling and per-field recovery are deliberately unchanged in #243 to keep the backend API migration focused.\n",
+    "state": "open",
+    "user": {
+      "login": "masenf",
+      "name": "masenf",
+      "email": null,
+      "avatar_url": "https://avatars.githubusercontent.com/u/1524005?v=4",
+      "id": 1524005
+    },
+    "assignees": null,
+    "labels": null,
+    "milestone": null,
+    "state_reason": null,
+    "comments": 0,
+    "created_at": "2026-10-05T23:44:07Z",
+    "updated_at": "2026-10-05T23:44:07Z",
+    "closed_at": null,
+    "display_url": "https://github.com/reflex-dev/reflex-enterprise/issues/245",
+    "display_title": "Define fail-closed recovery when protected-state logout resets fail"
+  },
+  "url": "https://github.com/reflex-dev/reflex-enterprise/issues/245",
+  "title": "Define fail-closed recovery when protected-state logout resets fail",
+  "display_url": "https://github.com/reflex-dev/reflex-enterprise/issues/245",
+  "display_title": "Define fail-closed recovery when protected-state logout resets fail"
+}

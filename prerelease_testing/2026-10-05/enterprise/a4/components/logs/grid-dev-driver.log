@@ -1,0 +1,16 @@
+WARN `--no-project` was provided, but no project was found
+{"case": "sort_filter_pagination_pinned", "passed": true}
+{"case": "edit_row_id_backend_update", "passed": true}
+{"case": "selection_helpers", "passed": true}
+{"case": "loading_overlay", "passed": true}
+{"case": "csv_export", "passed": true}
+{"case": "grouping", "passed": true}
+{"case": "integrated_charts", "passed": true}
+{"case": "theme_quartz", "passed": true}
+{"case": "theme_alpine", "passed": true}
+{"case": "theme_balham", "passed": true}
+{"case": "theme_material", "passed": true}
+{"case": "overlay_suppressed_False", "passed": true}
+{"case": "overlay_suppressed_True", "passed": true}
+{"case": "datasource_infinite", "passed": true}
+{"case": "datasource_server-side", "passed": true}

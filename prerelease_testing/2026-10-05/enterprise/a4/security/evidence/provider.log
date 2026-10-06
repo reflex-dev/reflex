@@ -1,0 +1,45 @@
+WARN `--no-project` was provided, but no project was found
+/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-packages/oidc_provider_mock/_app.py:24: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib import jose
+/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-packages/authlib/integrations/httpx_client/assertion_client.py:5: AuthlibDeprecationWarning: The httpx module is deprecated; please use httpx2 instead.
+  from ._compat import httpx2
+Local OIDC provider listening at http://localhost:9151
+127.0.0.1 - - [05/Oct/2026 21:49:18] "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:18] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=PCgV8YiSjQebiRVKR2pGiDnNU18GMcgNSyngrr2_XMg&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:18] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=PCgV8YiSjQebiRVKR2pGiDnNU18GMcgNSyngrr2_XMg&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [05/Oct/2026 21:49:18] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:18] "GET /jwks HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:18] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:18] "GET /oauth2/end_session?state=<redacted>&id_token_hint=<redacted>&post_logout_redirect_uri=http://localhost:3152/ HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:18] "[32mPOST /oauth2/end_session/confirm HTTP/1.1[0m" 302 -
+127.0.0.1 - - [05/Oct/2026 21:49:22] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=Hgs2-lneQIyenO-3Zok6nnVzfP-qK-RC9WwY6fs5qYo&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:22] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=Hgs2-lneQIyenO-3Zok6nnVzfP-qK-RC9WwY6fs5qYo&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [05/Oct/2026 21:49:22] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:22] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:24] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=-sIMQhfqQxIDUrURIo0tNEjq2ewxgooxgRs3UXso1-c&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:24] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=-sIMQhfqQxIDUrURIo0tNEjq2ewxgooxgRs3UXso1-c&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [05/Oct/2026 21:49:24] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:24] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:30] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=Q9alsLR99kKZEaRYCE1mMBxGGg7qZ0Lp1C9T8OgBRDM&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:30] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=Q9alsLR99kKZEaRYCE1mMBxGGg7qZ0Lp1C9T8OgBRDM&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [05/Oct/2026 21:49:31] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:31] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:32] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=WgNRCYLPC3AdlLyOQGypO4WasIeK4Q_UZ_ck7oIiJpQ&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:33] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=WgNRCYLPC3AdlLyOQGypO4WasIeK4Q_UZ_ck7oIiJpQ&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [05/Oct/2026 21:49:33] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:33] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:39] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=UBiVyEMe4bW4NBYZXRBLaAJP-BoHDeLYEE0tZKNywU8&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:39] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=UBiVyEMe4bW4NBYZXRBLaAJP-BoHDeLYEE0tZKNywU8&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [05/Oct/2026 21:49:39] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:49:39] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:51:48] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=2kprq25MJN7VUD5-40vcdr-Bl0b8-RZT73sqeEkqMhw&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:51:48] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=2kprq25MJN7VUD5-40vcdr-Bl0b8-RZT73sqeEkqMhw&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [05/Oct/2026 21:51:49] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:51:49] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:51:49] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:51:49] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=Cj689CKx559wg9w-gNg6ddMA1V34vALy_-1GpGWtIog&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:51:49] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3152/callback&scope=openid+email+profile+offline_access&state=<redacted>&code_challenge=Cj689CKx559wg9w-gNg6ddMA1V34vALy_-1GpGWtIog&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [05/Oct/2026 21:51:50] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:51:50] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 21:51:50] "GET /userinfo HTTP/1.1" 200 -

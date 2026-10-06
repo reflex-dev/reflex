@@ -1,0 +1,113 @@
+{
+  "alice_oauth": {
+    "exchange_status": 200,
+    "opaque": true,
+    "code_replay_status": 400
+  },
+  "bob_oauth": {
+    "exchange_status": 200,
+    "opaque": true,
+    "code_replay_status": 400
+  },
+  "missing": {
+    "status": 401,
+    "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}"
+  },
+  "invented": {
+    "status": 401,
+    "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}"
+  },
+  "unsigned_jwt": {
+    "status": 401,
+    "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}"
+  },
+  "anonymous": {
+    "tools": [
+      "search_events",
+      "queue_event"
+    ],
+    "prime": "Error executing tool queue_event: `security_probe___security_probe____record_state.prime` requires an authenticated session, but this session is anonymous. Re-run the OAuth authorization flow (discovered via the MCP server's WWW-Authenticate / protected-resource metadata) to establish a new session.",
+    "protected_field": {
+      "content": {
+        "state": "reflex___state____state.security_probe___security_probe____record_state",
+        "var": "private_record",
+        "computed": false,
+        "value": {
+          "owner": "none",
+          "secret": "empty"
+        }
+      }
+    },
+    "protected_resource": {
+      "denial": "McpError: Error reading resource state-resource://security_probe___security_probe____record_state/private_summary: Reading the 'private_summary' resource requires an authenticated session, but no user could be resolved."
+    },
+    "root_state": {
+      "content": {
+        "reflex___state____state": {
+          "is_hydrated": false,
+          "rx_router_headers": {
+            "host": "",
+            "origin": "",
+            "upgrade": "",
+            "connection": "",
+            "cookie": "",
+            "pragma": "",
+            "cache_control": "",
+            "user_agent": "",
+            "sec_websocket_version": "",
+            "sec_websocket_key": "",
+            "sec_websocket_extensions": "",
+            "accept_encoding": "",
+            "accept_language": "",
+            "raw_headers": {}
+          },
+          "rx_router_page": {
+            "host": "",
+            "path": "",
+            "raw_path": "",
+            "full_path": "",
+            "full_raw_path": "",
+            "params": {}
+          },
+          "rx_router_route_id": "",
+          "rx_router_session": {
+            "client_token": "",
+            "client_ip": "0.0.0.0",
+            "session_id": ""
+          },
+          "rx_router_url": {
+            "scheme": "",
+            "netloc": "",
+            "origin": "://",
+            "path": "",
+            "query": "",
+            "query_parameters": {},
+            "fragment": "",
+            "href": ""
+          }
+        },
+        "reflex___state____state.security_probe___security_probe____action_state": {
+          "calls": 0,
+          "last_actor": "none"
+        },
+        "reflex___state____state.security_probe___security_probe____backend_state": {
+          "private_cache": "private-placeholder"
+        },
+        "reflex___state____state.security_probe___security_probe____record_state": {
+          "armed": "none",
+          "private_record": {
+            "owner": "none",
+            "secret": "empty"
+          }
+        }
+      }
+    },
+    "framework_logout_search": {
+      "query": "logout",
+      "total_available": 5,
+      "total_matched": 0,
+      "returned": 0,
+      "results": []
+    }
+  }
+}

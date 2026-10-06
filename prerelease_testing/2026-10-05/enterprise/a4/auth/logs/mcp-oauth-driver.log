@@ -1,0 +1,2 @@
+WARN `--no-project` was provided, but no project was found
+MCP OAuth discovery, registration, browser consent, PKCE, protected event, code replay and refresh rotation passed

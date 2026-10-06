@@ -1,0 +1,314 @@
+{
+  "case_count": 8,
+  "cases": [
+    {
+      "name": "free-prod-badge-on",
+      "result": "PASS",
+      "exit_code": null
+    },
+    {
+      "name": "free-prod-badge-off",
+      "result": "PASS",
+      "exit_code": null
+    },
+    {
+      "name": "free-export-prod-badge-on",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "free-export-prod-badge-off",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "free-export-dev-badge-on",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "paid-export-prod-badge-off",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "rejected-prod",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "rejected-export",
+      "result": "PASS",
+      "exit_code": 0
+    }
+  ],
+  "account_request_count": 10,
+  "guard_context_count": 33,
+  "contexts": [
+    {
+      "pid": 58380,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/paid-export-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58380,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/paid-export-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58380,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/paid-export-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58356,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-export-prod-badge-on-hosting.json"
+    },
+    {
+      "pid": 58356,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-export-prod-badge-on-hosting.json"
+    },
+    {
+      "pid": 58356,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-export-prod-badge-on-hosting.json"
+    },
+    {
+      "pid": 58393,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/rejected-export-hosting.json"
+    },
+    {
+      "pid": 58393,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/rejected-export-hosting.json"
+    },
+    {
+      "pid": 58393,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/rejected-export-hosting.json"
+    },
+    {
+      "pid": 58316,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-on-hosting.json"
+    },
+    {
+      "pid": 58316,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-on-hosting.json"
+    },
+    {
+      "pid": 58316,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-on-hosting.json"
+    },
+    {
+      "pid": 58316,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-on-hosting.json"
+    },
+    {
+      "pid": 58339,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-on-hosting.json"
+    },
+    {
+      "pid": 58339,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-on-hosting.json"
+    },
+    {
+      "pid": 58339,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-on-hosting.json"
+    },
+    {
+      "pid": 58372,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-export-dev-badge-on-hosting.json"
+    },
+    {
+      "pid": 58372,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-export-dev-badge-on-hosting.json"
+    },
+    {
+      "pid": 58372,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-export-dev-badge-on-hosting.json"
+    },
+    {
+      "pid": 58390,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/rejected-prod-hosting.json"
+    },
+    {
+      "pid": 58390,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/rejected-prod-hosting.json"
+    },
+    {
+      "pid": 58390,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/rejected-prod-hosting.json"
+    },
+    {
+      "pid": 58390,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/rejected-prod-hosting.json"
+    },
+    {
+      "pid": 58364,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-export-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58364,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-export-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58364,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-export-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58342,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58342,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58342,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58342,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58348,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58348,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-off-hosting.json"
+    },
+    {
+      "pid": 58348,
+      "ci_env_present": false,
+      "ci_parser_value": false,
+      "app_harness_env_present": false,
+      "offline_distribution": false,
+      "credential_path": "/private/tmp/reflex-free-tier-cl89uyds/free-prod-badge-off-hosting.json"
+    }
+  ],
+  "passed": true
+}

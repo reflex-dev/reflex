@@ -1,0 +1,222 @@
+[
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 401
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 401
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/auth/token",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/auth/token",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 202
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 202
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp",
+    "status": 307
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8131/_reflex/mcp/",
+    "status": 200
+  }
+]

@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/Users/masenf/.local/bin/uv",
+    "--no-config",
+    "run",
+    "--no-project",
+    "--python",
+    "/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/bin/python",
+    "/private/tmp/reflex-enterprise-a4-20261005-rolling/worker.py",
+    "rolling-a4-ae7d236f-3e11-4f11-97b8-8cbad796b910",
+    "seed",
+    "/private/tmp/reflex-enterprise-a4-20261005-rolling/evidence/stable-stable-stable-seed.json",
+    "/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv",
+    "0.9.12"
+  ],
+  "returncode": 0,
+  "cwd": "/private/tmp/reflex-enterprise-a4-20261005-rolling",
+  "PYTHONPATH_unset": true,
+  "environment_overrides": {
+    "REFLEX_OPLOCK_ENABLED": "false",
+    "REFLEX_DIR": "/private/tmp/reflex-enterprise-a4-20261005-rolling/runtime",
+    "UV_CACHE_DIR": "/private/tmp/reflex-enterprise-a4-20261005-rolling/uv-cache"
+  }
+}

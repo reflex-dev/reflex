@@ -1,0 +1,1121 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='security_probe', 
+app_module_import=None, loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3152, 
+frontend_path='', backend_port=8152, backend_path='', 
+api_url='http://localhost:8152', deploy_url='http://localhost:3152', 
+backend_host='0.0.0.0', db_url=None, async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'backend_port', 'frontend_port', 'loglevel', 
+'bun_path', 'telemetry_enabled', 'app_name', 'plugins'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a4-20261005-security-venv/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='security_probe', 
+app_module_import=None, loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3152, 
+frontend_path='', backend_port=8152, backend_path='', 
+api_url='http://localhost:8152', deploy_url='http://localhost:3152', 
+backend_host='0.0.0.0', db_url=None, async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'backend_port', 'frontend_port', 'loglevel', 
+'bun_path', 'telemetry_enabled', 'app_name', 'plugins'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-a4-20261005-security-venv/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────── Initializing security_probe ──────────────────────────
+Debug: Creating /private/tmp/reflex-enterprise-a4-20261005-security-runtime
+Debug: Ensuring reflex installation id.
+Debug: Creating /private/tmp/reflex-enterprise-a4-20261005-security-runtime
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun'), 
+'--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pac
+kages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-enterprise-a4-20261005-security/app/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Getting best registry...
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.086 seconds
+Debug: Latency of https://registry.npmjs.org: 85700
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.018 seconds
+Debug: Latency of https://registry.npmjs.org: 17456
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.022 seconds
+Debug: Latency of https://registry.npmjs.org: 21443
+Debug: Average latency of https://registry.npmjs.org: 41533
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.523 seconds
+Debug: Latency of https://registry.npmmirror.com: 522263
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.352 seconds
+Debug: Latency of https://registry.npmmirror.com: 352181
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Debug: Received response from https://registry.npmmirror.com in 0.294 seconds
+Debug: Latency of https://registry.npmmirror.com: 293347
+Debug: Average latency of https://registry.npmmirror.com: 389263
+Debug: Best registry: https://registry.npmjs.org
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 162527305080424393679091626510614005388.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.067 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized security_probe. Install dependencies from 
+`requirements.txt` with `uv pip install -r requirements.txt` (or your preferred 
+installer) before running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3152 is in use.
+Debug: Checking if Frontend port: 3152 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3152 is not in use.
+Debug: Checking if Backend port: 8152 is in use.
+Debug: Checking if Backend port: 8152 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8152 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.44s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 32/31 0:00:00
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', 'vite@8.3.2', '@react-router/fs-routes@8.4.0', 
+'@emotion/react@11.14.0', 'autoprefixer@10.6.1', '@react-router/dev@8.4.0', 
+'postcss-import@17.0.0', 'postcss@8.5.29']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed postcss-import@17.0.0
+Debug: installed postcss@8.5.29
+Debug: 
+Debug: 127 packages installed [93.00ms]
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 
+'@react-router/node@8.4.0', 'react-dom@19.3.0', 'isbot@5.2.2', 'sonner@2.0.8', 
+'universal-cookie@8.1.2', 'react-helmet@6.1.0', 'mergician@v2.0.2', 
+'socket.io-client@4.8.4', 'react-error-boundary@6.1.6', 'react@19.3.0', 
+'react-router@8.4.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed lucide-react@1.26.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-dom@19.3.0
+Debug: installed isbot@5.2.2
+Debug: installed sonner@2.0.8
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-helmet@6.1.0
+Debug: installed mergician@2.0.2
+Debug: installed socket.io-client@4.8.4
+Debug: installed react-error-boundary@6.1.6
+Debug: installed react@19.3.0
+Debug: installed react-router@8.4.0
+Debug: 
+Debug: 98 packages installed [133.00ms]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-enterprise-a4-20261005-security/app/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-enterprise-a4-20261005-security/app/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.25s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Using Granian for backend
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: 
+['/private/tmp/reflex-pre-js-runtime-20261005/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Reload paths: 
+['/private/tmp/reflex-enterprise-a4-20261005-security/app/rxconfig.py', 
+'/private/tmp/reflex-enterprise-a4-20261005-security/app/requirements.txt', 
+'/private/tmp/reflex-enterprise-a4-20261005-security/app/assets', 
+'/private/tmp/reflex-enterprise-a4-20261005-security/app/security_probe']
+[INFO] Starting granian (main PID: 58141)
+[INFO] Listening at: http://0.0.0.0:8152
+[INFO] Spawning worker-1 with PID: 58176
+Debug: [restart] Relaunching with --conditions=development
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+Debug:   ➜  Local:   http://localhost:3152/
+App running at: http://localhost:3152/
+Backend running at: http://0.0.0.0:8152
+Debug:   ➜  Network: http://192.168.0.105:3152/  en1
+Debug:   ➜  Network: http://100.80.29.50:3152/   utun6
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_enterprise/plugins/mcp.py:1552)
+Debug: MCPPlugin: using the in-memory OAuth store (no Redis configured). Tokens 
+do not survive restarts and are per-process; configure redis_url for 
+multi-worker deployments.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_enterprise/plugins/api_tokens.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/05/26 21:47:18] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+Debug: 9:49:17 PM [vite] (ssr) connected.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 21:49:18] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/.well-known/o                
+                             penid-configuration "HTTP/1.1 200                  
+                             OK"                                                
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/jwks                         
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     <redacted-session-id>  state.py:2168
+                             [txid=e7cfb6cc4bf044ddab3a2b034efa369              
+                             d] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+                    INFO     <redacted-session-id>  state.py:1728
+                             [txid=dda3f32c33bc4fc6a28e43f8677c8c2              
+                             1] User initiated logout                           
+                             (from_popup=False); clearing session.              
+[10/05/26 21:49:22] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     <redacted-session-id>  state.py:2168
+                             [txid=838b26e11ea34391af351b0be6c1dce              
+                             e] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/'.                     
+                    INFO     Pending event                         replay.py:220
+                             'reflex___state____state.security_pro              
+                             be___security_probe____action_state.p              
+                             rotected_action' fired from '/' but                
+                             the user landed on '/profile'; not                 
+                             replaying.                                         
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 21:49:24] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     <redacted-session-id>  state.py:2168
+                             [txid=c8d0be1d28084d84a8d0b484d5a8752              
+                             4] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+                    INFO     <redacted-session-id>  state.py:1728
+                             [txid=27902d7fbc344fc1a7848b987a5809e              
+                             2] User initiated logout                           
+                             (from_popup=False); clearing session.              
+                    ERROR    Failed to reset protected state enforcement.py:1051
+                             reflex___state____state.securit                    
+                             y_probe___security_probe____rec                    
+                             ord_state                                          
+                             ╭─ Traceback (most recent cal─╮                    
+                             │ /private/tmp/reflex-enterpr │                    
+                             │ ise-a4-20261005-security-ve │                    
+                             │ nv/lib/python3.12/site-pack │                    
+                             │ ages/reflex_enterprise/auth │                    
+                             │ /enforcement.py:1049 in     │                    
+                             │ reset_app_state             │                    
+                             │                             │                    
+                             │   1046 │   │   except Excep │                    
+                             │   1047 │   │   │   continue │                    
+                             │   1048 │   │   try:         │                    
+                             │ ❱ 1049 │   │   │   _reset_p │                    
+                             │   1050 │   │   except Excep │                    
+                             │   1051 │   │   │   logger.e │                    
+                             │   1052 │   │   │   │   "Fai │                    
+                             │                             │                    
+                             │ /private/tmp/reflex-enterpr │                    
+                             │ ise-a4-20261005-security-ve │                    
+                             │ nv/lib/python3.12/site-pack │                    
+                             │ ages/reflex_enterprise/auth │                    
+                             │ /enforcement.py:1089 in     │                    
+                             │ _reset_protected            │                    
+                             │                             │                    
+                             │   1086 │   for name in stat │                    
+                             │   1087 │   │   if _auth_for │                    
+                             │   1088 │   │   │   continue │                    
+                             │ ❱ 1089 │   │   setattr(subs │                    
+                             │   1090 │   # Backend vars n │                    
+                             │   1091 │   # always clear t │                    
+                             │   1092 │   for name in get_ │                    
+                             │                             │                    
+                             │ /private/tmp/reflex-enterpr │                    
+                             │ ise-a4-20261005-security-ve │                    
+                             │ nv/lib/python3.12/site-pack │                    
+                             │ ages/reflex_enterprise/auth │                    
+                             │ /enforcement.py:1071 in     │                    
+                             │ _field_default              │                    
+                             │                             │                    
+                             │   1068 │   │   The factory- │                    
+                             │   1069 │   """              │                    
+                             │   1070 │   if field.default │                    
+                             │ ❱ 1071 │   │   return field │                    
+                             │   1072 │   return copy.deep │                    
+                             │   1073                      │                    
+                             │   1074                      │                    
+                             │                             │                    
+                             │ /private/tmp/reflex-enterpr │                    
+                             │ ise-a4-20261005-security/ap │                    
+                             │ p/security_probe/security_p │                    
+                             │ robe.py:24 in fresh_record  │                    
+                             │                             │                    
+                             │    21 │   │   RuntimeError: │                    
+                             │    22 │   """               │                    
+                             │    23 │   if (ROOT / "front │                    
+                             │ ❱  24 │   │   raise Runtime │                    
+                             │    25 │   return {"owner":  │                    
+                             │    26                       │                    
+                             │    27                       │                    
+                             ╰─────────────────────────────╯                    
+                             RuntimeError: Application                          
+                             record-default service                             
+                             unavailable                                        
+[10/05/26 21:49:25] ERROR    <redacted-session-id>  state.py:1091
+                             [txid=27902d7fbc344fc1a7848b987a5809e              
+                             2] Processing logout flow                          
+                             (from_popup=False) failed:                         
+                             Application record-default service                 
+                             unavailable                                        
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/oidc/state.py:1131 in   │              
+                             │ _error_context                    │              
+                             │                                   │              
+                             │   1128 │   │   self._logger.debug │              
+                             │   1129 │   │   exceptions = []    │              
+                             │   1130 │   │   try:               │              
+                             │ ❱ 1131 │   │   │   yield exceptio │              
+                             │   1132 │   │   except NestedExcep │              
+                             │   1133 │   │   │   exceptions.app │              
+                             │   1134 │   │   │   # No re-loggin │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/oidc/state.py:1765 in   │              
+                             │ redirect_to_logout                │              
+                             │                                   │              
+                             │   1762 │   │   │   │   # Clear to │              
+                             │   1763 │   │   │   │   # the sess │              
+                             │   1764 │   │   │   │   # redirect │              
+                             │ ❱ 1765 │   │   │   │   await self │              
+                             │   1766 │   │   │   await self._au │              
+                             │   1767 │   │   │   │   AuditActio │              
+                             │   1768 │   │   │   )              │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/oidc/state.py:848 in    │              
+                             │ _reset_session                    │              
+                             │                                   │              
+                             │    845 │   │   client token (the  │              
+                             │    846 │   │   """                │              
+                             │    847 │   │   self._reset_auth() │              
+                             │ ❱  848 │   │   await self._reset_ │              
+                             │    849 │                          │              
+                             │    850 │   @requires_plugin(AuthP │              
+                             │    851 │   async def _reset_plugi │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/plugins/guards.py:127 in     │              
+                             │ _async_guarded                    │              
+                             │                                   │              
+                             │   124 │   │   │   async def _asyn │              
+                             │   125 │   │   │   │   if not has_ │              
+                             │   126 │   │   │   │   │   return  │              
+                             │ ❱ 127 │   │   │   │   return awai │              
+                             │   128 │   │   │                   │              
+                             │   129 │   │   │   return cast("Ca │              
+                             │   130                             │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/oidc/state.py:863 in    │              
+                             │ _reset_plugin_owned_state         │              
+                             │                                   │              
+                             │    860 │   │   from reflex_enterp │              
+                             │    861 │   │   from reflex_enterp │              
+                             │    862 │   │                      │              
+                             │ ❱  863 │   │   await reset_app_st │              
+                             │    864 │   │   auth_user = await  │              
+                             │    865 │   │   auth_user.reset()  │              
+                             │    866                            │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/enforcement.py:1058 in  │              
+                             │ reset_app_state                   │              
+                             │                                   │              
+                             │   1055 │   │   │   │   first_rese │              
+                             │   1056 │   # Finish clearing othe │              
+                             │   1057 │   if first_reset_error i │              
+                             │ ❱ 1058 │   │   raise first_reset_ │              
+                             │   1059                            │              
+                             │   1060                            │              
+                             │   1061 def _field_default(field:  │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/enforcement.py:1049 in  │              
+                             │ reset_app_state                   │              
+                             │                                   │              
+                             │   1046 │   │   except Exception:  │              
+                             │   1047 │   │   │   continue  # fa │              
+                             │   1048 │   │   try:               │              
+                             │ ❱ 1049 │   │   │   _reset_protect │              
+                             │   1050 │   │   except Exception a │              
+                             │   1051 │   │   │   logger.excepti │              
+                             │   1052 │   │   │   │   "Failed to │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/enforcement.py:1089 in  │              
+                             │ _reset_protected                  │              
+                             │                                   │              
+                             │   1086 │   for name in state_cls. │              
+                             │   1087 │   │   if _auth_for(state │              
+                             │   1088 │   │   │   continue       │              
+                             │ ❱ 1089 │   │   setattr(substate,  │              
+                             │   1090 │   # Backend vars never r │              
+                             │   1091 │   # always clear them. I │              
+                             │   1092 │   for name in get_backen │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/enforcement.py:1071 in  │              
+                             │ _field_default                    │              
+                             │                                   │              
+                             │   1068 │   │   The factory-called │              
+                             │   1069 │   """                    │              
+                             │   1070 │   if field.default_facto │              
+                             │ ❱ 1071 │   │   return field.defau │              
+                             │   1072 │   return copy.deepcopy(f │              
+                             │   1073                            │              
+                             │   1074                            │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security/app/security_p │              
+                             │ robe/security_probe.py:24 in      │              
+                             │ fresh_record                      │              
+                             │                                   │              
+                             │    21 │   │   RuntimeError: The s │              
+                             │    22 │   """                     │              
+                             │    23 │   if (ROOT / "frontend-un │              
+                             │ ❱  24 │   │   raise RuntimeError( │              
+                             │    25 │   return {"owner": "none" │              
+                             │    26                             │              
+                             │    27                             │              
+                             ╰───────────────────────────────────╯              
+                             RuntimeError: Application                          
+                             record-default service unavailable                 
+/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-packages/reflex/state.py:-1: RuntimeWarning: coroutine 'AsyncComputedVar.__get__.<locals>._awaitable_result' was never awaited
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_base/event/processor/event_processor.py", line 953, in 
+_resolve_future
+    future.result()
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_base/event/processor/event_processor.py", line 942, in 
+_resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_base/event/processor/event_processor.py", line 741, in 
+_process_event_queue_entry
+    await self._execute_event(
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_base/event/processor/base_state_processor.py", line 514, in 
+_execute_event
+    await process_event(
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_base/event/processor/base_state_processor.py", line 326, in 
+process_event
+    events = await fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex/state.py", line 2348, in hydrate_and_load
+    delta = await _resolve_delta(self.dict())
+                                 ^^^^^^^^^^^
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex/state.py", line 2006, in dict
+    v.dict(include_computed=include_computed, initial=initial, **kwargs)
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_enterprise/auth/enforcement.py", line 1625, in filtered_dict
+    return filter_protected_delta(self, d, defer_to_guard=defer_to_guard)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_enterprise/auth/enforcement.py", line 1498, in 
+filter_protected_delta
+    _record_withhold(key, var_name)
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_enterprise/auth/enforcement.py", line 1486, in _record_withhold
+    placeholder = _anon_placeholder(state_cls, var_name)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_enterprise/auth/enforcement.py", line 1298, in _anon_placeholder
+    return _field_default(field)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-pa
+ckages/reflex_enterprise/auth/enforcement.py", line 1071, in _field_default
+    return field.default_factory()
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/private/tmp/reflex-enterprise-a4-20261005-security/app/security_probe/security
+_probe.py", line 24, in fresh_record
+    raise RuntimeError("Application record-default service unavailable")
+RuntimeError: Application record-default service unavailable
+
+
+[10/05/26 21:49:31] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     <redacted-session-id>  state.py:2168
+                             [txid=d53c8bd7b4b64a38af0324816359778              
+                             b] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/'.                     
+                    INFO     Pending event                         replay.py:220
+                             'reflex___state____state.security_pro              
+                             be___security_probe____action_state.p              
+                             rotected_action' fired from                        
+                             '/profile' but the user landed on                  
+                             '/'; not replaying.                                
+Warning: Attempting to send delta to disconnected client 
+'<redacted-session-id>'
+Warning: Attempting to send delta to disconnected client 
+'<redacted-session-id>'
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 21:49:33] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     <redacted-session-id>  state.py:2168
+                             [txid=01ad8690f72e4d2b9366e4661b84162              
+                             b] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+                    INFO     <redacted-session-id>  state.py:1728
+                             [txid=1a411694d73c4e1297ce555b3938653              
+                             1] User initiated logout                           
+                             (from_popup=False); clearing session.              
+                    ERROR    Failed to reset protected state enforcement.py:1051
+                             reflex___state____state.securit                    
+                             y_probe___security_probe____bac                    
+                             kend_state                                         
+                             ╭─ Traceback (most recent cal─╮                    
+                             │ /private/tmp/reflex-enterpr │                    
+                             │ ise-a4-20261005-security-ve │                    
+                             │ nv/lib/python3.12/site-pack │                    
+                             │ ages/reflex_enterprise/auth │                    
+                             │ /enforcement.py:1049 in     │                    
+                             │ reset_app_state             │                    
+                             │                             │                    
+                             │   1046 │   │   except Excep │                    
+                             │   1047 │   │   │   continue │                    
+                             │   1048 │   │   try:         │                    
+                             │ ❱ 1049 │   │   │   _reset_p │                    
+                             │   1050 │   │   except Excep │                    
+                             │   1051 │   │   │   logger.e │                    
+                             │   1052 │   │   │   │   "Fai │                    
+                             │                             │                    
+                             │ /private/tmp/reflex-enterpr │                    
+                             │ ise-a4-20261005-security-ve │                    
+                             │ nv/lib/python3.12/site-pack │                    
+                             │ ages/reflex_enterprise/auth │                    
+                             │ /enforcement.py:1096 in     │                    
+                             │ _reset_protected            │                    
+                             │                             │                    
+                             │   1093 │   │   value = (    │                    
+                             │   1094 │   │   │   copy.dee │                    
+                             │   1095 │   │   │   if _HAS_ │                    
+                             │ ❱ 1096 │   │   │   else _fi │                    
+                             │   1097 │   │   )            │                    
+                             │   1098 │   │   setattr(subs │                    
+                             │   1099 │   # Drop every pro │                    
+                             │                             │                    
+                             │ /private/tmp/reflex-enterpr │                    
+                             │ ise-a4-20261005-security-ve │                    
+                             │ nv/lib/python3.12/site-pack │                    
+                             │ ages/reflex_enterprise/auth │                    
+                             │ /enforcement.py:1071 in     │                    
+                             │ _field_default              │                    
+                             │                             │                    
+                             │   1068 │   │   The factory- │                    
+                             │   1069 │   """              │                    
+                             │   1070 │   if field.default │                    
+                             │ ❱ 1071 │   │   return field │                    
+                             │   1072 │   return copy.deep │                    
+                             │   1073                      │                    
+                             │   1074                      │                    
+                             │                             │                    
+                             │ /private/tmp/reflex-enterpr │                    
+                             │ ise-a4-20261005-security/ap │                    
+                             │ p/security_probe/security_p │                    
+                             │ robe.py:38 in fresh_cache   │                    
+                             │                             │                    
+                             │    35 │   │   RuntimeError: │                    
+                             │    36 │   """               │                    
+                             │    37 │   if (ROOT / "backe │                    
+                             │ ❱  38 │   │   raise Runtime │                    
+                             │    39 │   return {"owner":  │                    
+                             │    40                       │                    
+                             │    41                       │                    
+                             ╰─────────────────────────────╯                    
+                             RuntimeError: Application                          
+                             cache-default service                              
+                             unavailable                                        
+                    ERROR    <redacted-session-id>  state.py:1091
+                             [txid=1a411694d73c4e1297ce555b3938653              
+                             1] Processing logout flow                          
+                             (from_popup=False) failed:                         
+                             Application cache-default service                  
+                             unavailable                                        
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/oidc/state.py:1131 in   │              
+                             │ _error_context                    │              
+                             │                                   │              
+                             │   1128 │   │   self._logger.debug │              
+                             │   1129 │   │   exceptions = []    │              
+                             │   1130 │   │   try:               │              
+                             │ ❱ 1131 │   │   │   yield exceptio │              
+                             │   1132 │   │   except NestedExcep │              
+                             │   1133 │   │   │   exceptions.app │              
+                             │   1134 │   │   │   # No re-loggin │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/oidc/state.py:1765 in   │              
+                             │ redirect_to_logout                │              
+                             │                                   │              
+                             │   1762 │   │   │   │   # Clear to │              
+                             │   1763 │   │   │   │   # the sess │              
+                             │   1764 │   │   │   │   # redirect │              
+                             │ ❱ 1765 │   │   │   │   await self │              
+                             │   1766 │   │   │   await self._au │              
+                             │   1767 │   │   │   │   AuditActio │              
+                             │   1768 │   │   │   )              │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/oidc/state.py:848 in    │              
+                             │ _reset_session                    │              
+                             │                                   │              
+                             │    845 │   │   client token (the  │              
+                             │    846 │   │   """                │              
+                             │    847 │   │   self._reset_auth() │              
+                             │ ❱  848 │   │   await self._reset_ │              
+                             │    849 │                          │              
+                             │    850 │   @requires_plugin(AuthP │              
+                             │    851 │   async def _reset_plugi │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/plugins/guards.py:127 in     │              
+                             │ _async_guarded                    │              
+                             │                                   │              
+                             │   124 │   │   │   async def _asyn │              
+                             │   125 │   │   │   │   if not has_ │              
+                             │   126 │   │   │   │   │   return  │              
+                             │ ❱ 127 │   │   │   │   return awai │              
+                             │   128 │   │   │                   │              
+                             │   129 │   │   │   return cast("Ca │              
+                             │   130                             │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/oidc/state.py:863 in    │              
+                             │ _reset_plugin_owned_state         │              
+                             │                                   │              
+                             │    860 │   │   from reflex_enterp │              
+                             │    861 │   │   from reflex_enterp │              
+                             │    862 │   │                      │              
+                             │ ❱  863 │   │   await reset_app_st │              
+                             │    864 │   │   auth_user = await  │              
+                             │    865 │   │   auth_user.reset()  │              
+                             │    866                            │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/enforcement.py:1058 in  │              
+                             │ reset_app_state                   │              
+                             │                                   │              
+                             │   1055 │   │   │   │   first_rese │              
+                             │   1056 │   # Finish clearing othe │              
+                             │   1057 │   if first_reset_error i │              
+                             │ ❱ 1058 │   │   raise first_reset_ │              
+                             │   1059                            │              
+                             │   1060                            │              
+                             │   1061 def _field_default(field:  │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/enforcement.py:1049 in  │              
+                             │ reset_app_state                   │              
+                             │                                   │              
+                             │   1046 │   │   except Exception:  │              
+                             │   1047 │   │   │   continue  # fa │              
+                             │   1048 │   │   try:               │              
+                             │ ❱ 1049 │   │   │   _reset_protect │              
+                             │   1050 │   │   except Exception a │              
+                             │   1051 │   │   │   logger.excepti │              
+                             │   1052 │   │   │   │   "Failed to │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/enforcement.py:1096 in  │              
+                             │ _reset_protected                  │              
+                             │                                   │              
+                             │   1093 │   │   value = (          │              
+                             │   1094 │   │   │   copy.deepcopy( │              
+                             │   1095 │   │   │   if _HAS_BACKEN │              
+                             │ ❱ 1096 │   │   │   else _field_de │              
+                             │   1097 │   │   )                  │              
+                             │   1098 │   │   setattr(substate,  │              
+                             │   1099 │   # Drop every protected │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/auth/enforcement.py:1071 in  │              
+                             │ _field_default                    │              
+                             │                                   │              
+                             │   1068 │   │   The factory-called │              
+                             │   1069 │   """                    │              
+                             │   1070 │   if field.default_facto │              
+                             │ ❱ 1071 │   │   return field.defau │              
+                             │   1072 │   return copy.deepcopy(f │              
+                             │   1073                            │              
+                             │   1074                            │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security/app/security_p │              
+                             │ robe/security_probe.py:38 in      │              
+                             │ fresh_cache                       │              
+                             │                                   │              
+                             │    35 │   │   RuntimeError: The s │              
+                             │    36 │   """                     │              
+                             │    37 │   if (ROOT / "backend-una │              
+                             │ ❱  38 │   │   raise RuntimeError( │              
+                             │    39 │   return {"owner": "none" │              
+                             │    40                             │              
+                             │    41                             │              
+                             ╰───────────────────────────────────╯              
+                             RuntimeError: Application                          
+                             cache-default service unavailable                  
+[10/05/26 21:49:39] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     <redacted-session-id>  state.py:2168
+                             [txid=4c68486a93124f469d153e823ba3f98              
+                             4] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/'.                     
+[INFO] Failed to close websocket with error Io(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+                    INFO     Pending event                         replay.py:220
+                             'reflex___state____state.security_pro              
+                             be___security_probe____action_state.p              
+                             rotected_action' fired from '/' but                
+                             the user landed on '/profile'; not                 
+                             replaying.                                         
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 21:51:49] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     <redacted-session-id>  state.py:2168
+                             [txid=e6713b69303a4d199b5c5e107c49324              
+                             c] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Warning: Attempting to send delta to disconnected client 
+'<redacted-session-id>'
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 21:51:50] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9151/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     <redacted-session-id>  state.py:2168
+                             [txid=b444cc0601414e0db9ba4d19dd605e2              
+                             8] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9151/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Warning: Attempting to send delta to disconnected client 
+'<redacted-session-id>'
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    ERROR    Error reading resource                server.py:410
+                             state-resource://security_probe___sec              
+                             urity_probe____record_state/private_s              
+                             ummary                                             
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/mcp/server/fa │              
+                             │ stmcp/resources/types.py:62 in    │              
+                             │ read                              │              
+                             │                                   │              
+                             │    59 │   │   │   result = self.f │              
+                             │    60 │   │   │   # If it's a cor │              
+                             │    61 │   │   │   if inspect.isco │              
+                             │ ❱  62 │   │   │   │   result = aw │              
+                             │    63 │   │   │                   │              
+                             │    64 │   │   │   if isinstance(r │              
+                             │    65 │   │   │   │   return awai │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/pydantic/_int │              
+                             │ ernal/_validate_call.py:35 in     │              
+                             │ wrapper_function                  │              
+                             │                                   │              
+                             │    32 │   │                       │              
+                             │    33 │   │   @functools.wraps(wr │              
+                             │    34 │   │   async def wrapper_f │              
+                             │ ❱  35 │   │   │   return await wr │              
+                             │    36 │   else:                   │              
+                             │    37 │   │                       │              
+                             │    38 │   │   @functools.wraps(wr │              
+                             │ in _resource:2                    │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/plugins/mcp_resources.py:175 │              
+                             │  in impl                          │              
+                             │                                   │              
+                             │   172 │   │   │   )               │              
+                             │   173 │   │   │   substate = awai │              
+                             │   174 │   │   │   if enforce_auth │              
+                             │ ❱ 175 │   │   │   │   await _enfo │              
+                             │   176 │   │   │   result = getatt │              
+                             │   177 │   │   │   if inspect.isco │              
+                             │   178 │   │   │   │   result = aw │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/reflex_enterp │              
+                             │ rise/plugins/mcp_resources.py:288 │              
+                             │  in _enforce_resource_auth        │              
+                             │                                   │              
+                             │   285 │                           │              
+                             │   286 │   userinfo = await enforc │              
+                             │   287 │   if userinfo is None:    │              
+                             │ ❱ 288 │   │   raise ValueError(   │              
+                             │   289 │   │   │   f"Reading the { │              
+                             │   290 │   │   │   "session, but n │              
+                             │   291 │   │   )                   │              
+                             ╰───────────────────────────────────╯              
+                             ValueError: Reading the                            
+                             'private_summary' resource requires                
+                             an authenticated session, but no user              
+                             could be resolved.                                 
+                                                                                
+                             During handling of the above                       
+                             exception, another exception                       
+                             occurred:                                          
+                                                                                
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/mcp/server/fa │              
+                             │ stmcp/server.py:407 in            │              
+                             │ read_resource                     │              
+                             │                                   │              
+                             │    404 │   │   │   raise Resource │              
+                             │    405 │   │                      │              
+                             │    406 │   │   try:               │              
+                             │ ❱  407 │   │   │   content = awai │              
+                             │    408 │   │   │   return [ReadRe │              
+                             │        meta=resource.meta)]       │              
+                             │    409 │   │   except Exception a │              
+                             │    410 │   │   │   logger.excepti │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-a4 │              
+                             │ -20261005-security-venv/lib/pytho │              
+                             │ n3.12/site-packages/mcp/server/fa │              
+                             │ stmcp/resources/types.py:73 in    │              
+                             │ read                              │              
+                             │                                   │              
+                             │    70 │   │   │   else:           │              
+                             │    71 │   │   │   │   return pyda │              
+                             │    72 │   │   except Exception as │              
+                             │ ❱  73 │   │   │   raise ValueErro │              
+                             │    74 │                           │              
+                             │    75 │   @classmethod            │              
+                             │    76 │   def from_function(      │              
+                             ╰───────────────────────────────────╯              
+                             ValueError: Error reading resource                 
+                             state-resource://security_probe___sec              
+                             urity_probe____record_state/private_s              
+                             ummary: Reading the 'private_summary'              
+                             resource requires an authenticated                 
+                             session, but no user could be                      
+                             resolved.                                          
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[10/05/26 21:57:13] INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

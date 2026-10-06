@@ -1,0 +1,5 @@
+Port 3131: no listener (lsof exit 1)
+Port 8131: no listener (lsof exit 1)
+Port 56221: no listener (lsof exit 1)
+Owned development and production apps and account fixture stopped.
+No Bun installer invoked; explicit existing Bun path used.

@@ -1,0 +1,66 @@
+{
+  "source_checks": {
+    "rolling_app.py": {
+      "identical_to_retained_original": true,
+      "sha256": "8fa702649ef9b0ba478a214c1e07052ed2d12f64ab7faceeee924a81f904fa87"
+    },
+    "worker.py": {
+      "identical_to_retained_original": true,
+      "sha256": "fbcbe01756cc0e270c9ad5caf04058f0d687513b3808cd62ab21b51b4c7d28f0"
+    }
+  },
+  "syntax_checks": {
+    "rolling_app.py": "passed",
+    "worker.py": "passed",
+    "compare.py": "passed",
+    "finalize.py": "passed"
+  },
+  "provenance": {
+    "stable": {
+      "distributions": 91,
+      "python": "3.12.1 (v3.12.1:2305ca5144, Dec  7 2023, 17:23:38) [Clang 13.0.0 (clang-1300.0.29.30)]",
+      "executable": "/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/bin/python",
+      "origins": {
+        "reflex": "/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/reflex/__init__.py",
+        "reflex.state": "/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/reflex/state.py",
+        "reflex_base": "/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/reflex_base/__init__.py"
+      },
+      "reflex": "0.9.12",
+      "reflex-base": "0.9.12",
+      "reflex-enterprise": "0.9.7a4",
+      "worker_asserted_no_direct_url_or_checkout_paths": true
+    },
+    "alpha": {
+      "distributions": 104,
+      "python": "3.12.1 (v3.12.1:2305ca5144, Dec  7 2023, 17:23:38) [Clang 13.0.0 (clang-1300.0.29.30)]",
+      "executable": "/private/tmp/reflex-enterprise-a4-20261005-root-venv/bin/python",
+      "origins": {
+        "reflex": "/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/reflex/__init__.py",
+        "reflex.state": "/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/reflex/state.py",
+        "reflex_base": "/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/reflex_base/__init__.py"
+      },
+      "reflex": "0.10.0a1",
+      "reflex-base": "0.10.0a1",
+      "reflex-enterprise": "0.9.7a4",
+      "worker_asserted_no_direct_url_or_checkout_paths": true
+    }
+  },
+  "cleanup": {
+    "dbsize_before_shutdown": 0,
+    "shutdown_without_save": true,
+    "final_port_audit_returncode": 1,
+    "final_port_audit_stdout": "",
+    "final_port_audit_stderr": ""
+  },
+  "initial_port_audit": {
+    "command": [
+      "/usr/sbin/lsof",
+      "-nP",
+      "-iTCP:9141",
+      "-sTCP:LISTEN"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "recorded_from_prelaunch_tool_result": true
+  }
+}

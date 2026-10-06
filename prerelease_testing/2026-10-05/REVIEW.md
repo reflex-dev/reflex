@@ -1,5 +1,11 @@
 # Adversarial artifact review
 
+The [a4 release-gate review](enterprise/a4/REVIEW.md) adds the independent
+logout-recovery security assessment and fresh rolling-upgrade controls.
+Current gate: HOLD for findings 15–16. A documented newly introduced persistence
+regression remains a blocker under the user's rule; earlier coverage passes
+must not silently waive it. Historical review text below is retained.
+
 The [a3 follow-up review](enterprise/a3/REVIEW.md) records additional reusable
 driver limits and exact diagnostic allowances. The a3 Free-tier rerun uses a
 neutral app copy, eliminating the historical directory exception for that run.

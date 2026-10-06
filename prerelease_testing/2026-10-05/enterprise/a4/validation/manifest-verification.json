@@ -1,0 +1,28 @@
+{
+  "results": [
+    {
+      "manifest": "auth/source-hashes.json",
+      "base": "auth",
+      "files": 44,
+      "errors": []
+    },
+    {
+      "manifest": "security/sha256.json",
+      "base": "security",
+      "files": 50,
+      "errors": []
+    },
+    {
+      "manifest": "components/source-sha256.json",
+      "base": "components/source",
+      "files": 25,
+      "errors": []
+    },
+    {
+      "manifest": "rolling/sha256.json",
+      "base": "rolling",
+      "files": 58,
+      "errors": []
+    }
+  ]
+}

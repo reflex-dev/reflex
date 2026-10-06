@@ -1,0 +1,44 @@
+[
+  {
+    "attempt": 1,
+    "page_errors": [],
+    "passed": true,
+    "frame_url": "http://localhost:3132/",
+    "pending_event": "",
+    "received_message_types": [
+      {
+        "origin": "http://localhost:3132",
+        "type": "post_auth_generic"
+      }
+    ],
+    "frame_text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile"
+  },
+  {
+    "attempt": 2,
+    "page_errors": [],
+    "passed": true,
+    "frame_url": "http://localhost:3132/",
+    "pending_event": "",
+    "received_message_types": [
+      {
+        "origin": "http://localhost:3132",
+        "type": "post_auth_generic"
+      }
+    ],
+    "frame_text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile"
+  },
+  {
+    "attempt": 3,
+    "page_errors": [],
+    "passed": true,
+    "frame_url": "http://localhost:3132/",
+    "pending_event": "",
+    "received_message_types": [
+      {
+        "origin": "http://localhost:3132",
+        "type": "post_auth_generic"
+      }
+    ],
+    "frame_text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile"
+  }
+]

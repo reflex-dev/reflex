@@ -1,0 +1,14 @@
+{
+  "auth/enforcement.py::reset_app_state": {
+    "same_ast_in_a3_a4": true
+  },
+  "auth/enforcement.py::_reset_protected": {
+    "same_ast_in_a3_a4": true
+  },
+  "auth/oidc/state.py::_reset_session": {
+    "same_ast_in_a3_a4": true
+  },
+  "auth/oidc/state.py::_reset_plugin_owned_state": {
+    "same_ast_in_a3_a4": true
+  }
+}

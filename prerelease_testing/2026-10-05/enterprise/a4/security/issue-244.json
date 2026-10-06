@@ -1,0 +1,30 @@
+{
+  "issue": {
+    "url": "https://github.com/reflex-dev/reflex-enterprise/issues/244",
+    "title": "Complete remaining Reflex 0.10 auth compatibility",
+    "issue_number": 244,
+    "body": "Found while validating #243 against Reflex `main`. These eight failures also reproduce with the original production code (only the scope-restoration fixture was adapted so the tests could run), and are outside the backend-variable compatibility change.\n\nTrack and fix the remaining auth migration work separately:\n\n- `tests/units/auth/test_cookie.py::test_get_skip_vars_cookie_inheritance_hierarchy`: Reflex `main` removes `get_skip_vars`.\n- Cookie synchronization failures in `test_sync_cookies_from_browser`, `test_sync_cookies_to_browser`, `test_sync_cookies_partitioned`, `test_sync_cookies_bidirectional`, and `test_sync_cookies_browser_reset`. Browser cookie values are not synchronized, and expected Set-Cookie headers are absent.\n- `tests/units/auth/test_cookie.py::test_var_dependencies_with_http_cookie`: the cookie dependency is absent from the parent's `_var_dependencies`.\n- `tests/units/auth/test_enforcement.py::test_rxe_wrappers_without_explicit_auth_are_protected_by_sweep`: `RxeDefaultState.base_vars[\"data\"]` raises `KeyError`.\n\nReproduce with Reflex and reflex-base installed from current Reflex `main`:\n\n```shell\npython -m pytest tests/units/auth/test_cookie.py tests/units/auth/test_enforcement.py -q\n```\n\nKeep these changes in a separate PR, with coverage on supported 0.9.x versions as well as Reflex `main`.\n",
+    "state": "closed",
+    "user": {
+      "login": "masenf",
+      "name": "masenf",
+      "email": null,
+      "avatar_url": "https://avatars.githubusercontent.com/u/1524005?v=4",
+      "id": 1524005
+    },
+    "assignees": null,
+    "labels": null,
+    "milestone": null,
+    "state_reason": "completed",
+    "comments": 0,
+    "created_at": "2026-10-05T23:44:04Z",
+    "updated_at": "2026-10-06T00:27:09Z",
+    "closed_at": "2026-10-06T00:27:09Z",
+    "display_url": "https://github.com/reflex-dev/reflex-enterprise/issues/244",
+    "display_title": "Complete remaining Reflex 0.10 auth compatibility"
+  },
+  "url": "https://github.com/reflex-dev/reflex-enterprise/issues/244",
+  "title": "Complete remaining Reflex 0.10 auth compatibility",
+  "display_url": "https://github.com/reflex-dev/reflex-enterprise/issues/244",
+  "display_title": "Complete remaining Reflex 0.10 auth compatibility"
+}

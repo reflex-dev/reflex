@@ -1,0 +1,331 @@
+{
+  "results": [
+    {
+      "case": "map_controls",
+      "passed": true
+    },
+    {
+      "case": "map_bounds_callback",
+      "passed": true,
+      "bounds": {
+        "_southWest": {
+          "lat": 51.47828253510034,
+          "lng": -0.20736694335937503
+        },
+        "_northEast": {
+          "lat": 51.5317075306694,
+          "lng": 0.027465820312500003
+        }
+      }
+    },
+    {
+      "case": "map_vectors",
+      "passed": true
+    },
+    {
+      "case": "map_fly_popup_geolocation",
+      "passed": true
+    },
+    {
+      "case": "saved_state_contents",
+      "passed": true,
+      "storage": {
+        "reflex___state____state.components___saved_state____grid_serialization_advanced_state.grid_state_rx_state_": "{\"version\": \"36.2.0\", \"cellSelection\": null, \"sideBar\": {\"visible\": true, \"position\": \"right\", \"openToolPanel\": \"columns\", \"toolPanels\": {\"columns\": {\"expandedGroupIds\": []}, \"filters\": {\"expandedGroupIds\": [], \"expandedColIds\": []}}}, \"sort\": {\"sortModel\": [{\"colId\": \"age\", \"sort\": \"asc\", \"type\": \"default\"}]}, \"rowGroup\": null, \"aggregation\": null, \"showValuesAs\": null, \"pivot\": null, \"columnPinning\": null, \"columnVisibility\": null, \"columnSizing\": {\"columnSizingModel\": [{\"colId\": \"ag-Grid-SelectionColumn\", \"flex\": null, \"width\": 50}, {\"colId\": \"athlete\", \"flex\": null, \"width\": 200}, {\"colId\": \"age\", \"flex\": null, \"width\": 90}, {\"colId\": \"country\", \"flex\": null, \"width\": 200}, {\"colId\": \"year\", \"flex\": null, \"width\": 90}, {\"colId\": \"date\", \"flex\": null, \"width\": 200}, {\"colId\": \"sport\", \"flex\": null, \"width\": 200}, {\"colId\": \"gold\", \"flex\": null, \"width\": 200}, {\"colId\": \"silver\", \"flex\": null, \"width\": 200}, {\"colId\": \"bronze\", \"flex\": null, \"width\": 200}, {\"colId\": \"total\", \"flex\": null, \"width\": 200}]}, \"columnOrder\": {\"orderedColIds\": [\"ag-Grid-SelectionColumn\", \"athlete\", \"age\", \"country\", \"year\", \"date\", \"sport\", \"gold\", \"silver\", \"bronze\", \"total\"]}, \"columnHeaderName\": null, \"columnGroup\": null, \"userColumns\": null, \"filter\": null, \"quickFilter\": null, \"ssrmRowGroupExpansion\": null, \"rowGroupExpansion\": null, \"rowSelection\": null, \"pagination\": {\"page\": 0, \"pageSize\": 100}, \"focusedCell\": null, \"rangeSelection\": null, \"scroll\": null, \"find\": null}"
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "passed": true
+    },
+    {
+      "case": "google_font_head",
+      "passed": true
+    }
+  ],
+  "console": [
+    {
+      "case": "map_vectors",
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "location": {
+        "url": "http://localhost:3131/assets/state-Cxmxiiw_.js",
+        "lineNumber": 1,
+        "columnNumber": 11226
+      }
+    },
+    {
+      "case": "map_vectors",
+      "type": "log",
+      "text": "O",
+      "location": {
+        "url": "",
+        "lineNumber": 0,
+        "columnNumber": 89
+      }
+    },
+    {
+      "case": "map_fly_popup_geolocation",
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "location": {
+        "url": "http://localhost:3131/assets/state-Cxmxiiw_.js",
+        "lineNumber": 1,
+        "columnNumber": 11226
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "location": {
+        "url": "http://localhost:3131/assets/state-Cxmxiiw_.js",
+        "lineNumber": 1,
+        "columnNumber": 11226
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "****************************************************************************************************************************",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11827
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "************************************************ AG Grid Enterprise License ************************************************",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11827
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "************************************************** License Key Not Found ***************************************************",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11827
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11934
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11934
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "****************************************************************************************************************************",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11827
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "****************************************************************************************************************************",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11827
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "location": {
+        "url": "http://localhost:3131/assets/state-Cxmxiiw_.js",
+        "lineNumber": 1,
+        "columnNumber": 11226
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "****************************************************************************************************************************",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11827
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "************************************************ AG Grid Enterprise License ************************************************",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11827
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "************************************************** License Key Not Found ***************************************************",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11827
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11934
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11934
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "****************************************************************************************************************************",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11827
+      }
+    },
+    {
+      "case": "advanced_saved_state",
+      "type": "error",
+      "text": "****************************************************************************************************************************",
+      "location": {
+        "url": "http://localhost:3131/assets/main.esm-FmtKM1Tb.js",
+        "lineNumber": 0,
+        "columnNumber": 11827
+      }
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [
+    {
+      "case": "map_controls",
+      "url": "https://b.tile.openstreetmap.org/13/4093/2724.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://c.tile.openstreetmap.org/13/4094/2724.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://a.tile.openstreetmap.org/13/4093/2723.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://b.tile.openstreetmap.org/13/4094/2723.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://c.tile.openstreetmap.org/13/4093/2725.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://a.tile.openstreetmap.org/13/4094/2725.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://a.tile.openstreetmap.org/13/4092/2724.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://a.tile.openstreetmap.org/13/4095/2724.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://c.tile.openstreetmap.org/13/4092/2723.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://c.tile.openstreetmap.org/13/4095/2723.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://b.tile.openstreetmap.org/13/4092/2725.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://b.tile.openstreetmap.org/13/4095/2725.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://c.tile.openstreetmap.org/13/4091/2724.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://b.tile.openstreetmap.org/13/4096/2724.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://b.tile.openstreetmap.org/13/4091/2723.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://a.tile.openstreetmap.org/13/4096/2723.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://a.tile.openstreetmap.org/13/4091/2725.png",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "case": "map_controls",
+      "url": "https://c.tile.openstreetmap.org/13/4096/2725.png",
+      "failure": "net::ERR_ABORTED"
+    }
+  ],
+  "http_errors": []
+}

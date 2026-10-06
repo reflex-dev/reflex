@@ -1,0 +1,11 @@
+60984:C 05 Oct 2026 22:06:41.465 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+60984:C 05 Oct 2026 22:06:41.465 * Redis version=8.10.2, bits=64, commit=00000000, modified=1, pid=60984, just started
+60984:C 05 Oct 2026 22:06:41.465 * Configuration loaded
+60984:M 05 Oct 2026 22:06:41.466 * monotonic clock: ARM CNTVCT @ 24 ticks/us
+60984:M 05 Oct 2026 22:06:41.468 * Running mode=standalone, port=9141.
+60984:M 05 Oct 2026 22:06:41.468 # WARNING: The TCP backlog setting of 511 cannot be enforced because kern.ipc.somaxconn is set to the lower value of 128.
+60984:M 05 Oct 2026 22:06:41.468 * Server initialized
+60984:M 05 Oct 2026 22:06:41.468 * Ready to accept connections tcp
+60984:M 05 Oct 2026 22:06:41.469 # WARNING: Redis does not require authentication. Redis will accept connections from any local client.
+60984:M 05 Oct 2026 22:08:35.497 * User requested shutdown...
+60984:M 05 Oct 2026 22:08:35.497 # Redis is now ready to exit, bye bye...

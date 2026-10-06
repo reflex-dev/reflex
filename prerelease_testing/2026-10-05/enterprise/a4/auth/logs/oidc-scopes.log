@@ -1,0 +1,3 @@
+{"reflex": "0.10.0a1", "enterprise": "0.9.7a4"}
+{"backend_vars": false, "base_vars": true, "computed_vars": true}
+OIDC scope setup passed

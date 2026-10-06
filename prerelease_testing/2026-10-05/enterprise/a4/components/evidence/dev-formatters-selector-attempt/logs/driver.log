@@ -1,0 +1,21 @@
+WARN `--no-project` was provided, but no project was found
+Traceback (most recent call last):
+  File "/private/tmp/reflex-enterprise-a4-20261005-components-app/drive_formatters.py", line 78, in <module>
+    main()
+  File "/private/tmp/reflex-enterprise-a4-20261005-components-app/drive_formatters.py", line 37, in main
+    expect(first).to_have_text(re.compile(rf"^{counts[0]}\s+\("), timeout=20000)
+  File "/private/tmp/reflex-enterprise-a4-20261005-components/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 19981, in to_have_text
+    self._sync(
+  File "/private/tmp/reflex-enterprise-a4-20261005-components/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-a4-20261005-components/lib/python3.12/site-packages/playwright/_impl/_assertions.py", line 559, in to_have_text
+    await self._expect_impl(
+  File "/private/tmp/reflex-enterprise-a4-20261005-components/lib/python3.12/site-packages/playwright/_impl/_assertions.py", line 83, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to have text 're.compile('^0\\s+\\(')'
+Actual value: <element(s) not found> 
+Call log:
+  - Expect "to_have_text" with timeout 20000ms
+  - waiting for locator("#formatter-grid-bare").locator(".ag-row[row-index=\"0\"] [col-id=\"row counter\"] button")
+

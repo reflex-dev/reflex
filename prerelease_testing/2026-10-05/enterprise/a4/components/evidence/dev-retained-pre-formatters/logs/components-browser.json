@@ -1,0 +1,2567 @@
+[
+  {
+    "case": "sort_filter_pagination_pinned",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "edit_row_id_backend_update",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "selection_helpers",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "loading_overlay",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "csv_export",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "grouping",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/grouping",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "integrated_charts",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/charts",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "theme_quartz",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "theme_alpine",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "theme_balham",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "theme_material",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "overlay_suppressed_False",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "overlay_suppressed_True",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/suppress-overlay",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "datasource_infinite",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/infinite",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  {
+    "case": "datasource_server-side",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3131/server-side",
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=20976c72",
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "************************************************** License Key Not Found ***************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "****************************************************************************************************************************",
+        "location": {
+          "url": "http://localhost:3131/@vite/client",
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "failed_requests": [],
+    "page_errors": [],
+    "http_errors": []
+  }
+]

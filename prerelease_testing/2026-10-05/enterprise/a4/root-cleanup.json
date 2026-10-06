@@ -1,0 +1,28 @@
+{
+  "ports": [
+    {
+      "port": 3144,
+      "closed": true
+    },
+    {
+      "port": 8144,
+      "closed": true
+    },
+    {
+      "port": 3145,
+      "closed": true
+    },
+    {
+      "port": 8145,
+      "closed": true
+    },
+    {
+      "port": 3146,
+      "closed": true
+    },
+    {
+      "port": 8146,
+      "closed": true
+    }
+  ]
+}

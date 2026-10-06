@@ -1,0 +1,45 @@
+{
+  "results": [],
+  "console": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3131/formatters-direct",
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3131/@vite/client",
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3131/@vite/client",
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3131/node_modules/.vite/deps/react-dom_client.js?v=6569834b",
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": [],
+  "failure": "Locator expected to have text 're.compile('^1\\\\s+\\\\(\\\\d{2}:\\\\d{2}\\\\)')'\nActual value: 1(00:04) \nCall log:\n  - Expect \"to_have_text\" with timeout 5000ms\n  - waiting for locator(\"[role=\\\"tabpanel\\\"][data-state=\\\"active\\\"]\").locator(\".ag-row[row-index=\\\"0\\\"] [col-id=\\\"row counter\\\"] button\")\n    2 \u00d7 locator resolved to <button data-accent-color=\"gray\" class=\"rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Button\">0 (\u221e)</button>\n      - unexpected value \"0 (\u221e)\"\n    3 \u00d7 locator resolved to <button data-accent-color=\"blue\" class=\"rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Button\">\u2026</button>\n      - unexpected value \"1(00:00)\"\n    - locator resolved to <button data-accent-color=\"blue\" class=\"rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Button\">\u2026</button>\n    - unexpected value \"1(00:01)\"\n    - locator resolved to <button data-accent-color=\"blue\" class=\"rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Button\">\u2026</button>\n    - unexpected value \"1(00:02)\"\n    - locator resolved to <button data-accent-color=\"blue\" class=\"rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Button\">\u2026</button>\n    - unexpected value \"1(00:03)\"\n    - locator resolved to <button data-accent-color=\"blue\" class=\"rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Button\">\u2026</button>\n    - unexpected value \"1(00:04)\"\n"
+}

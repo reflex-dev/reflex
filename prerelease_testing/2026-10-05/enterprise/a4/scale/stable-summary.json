@@ -1,0 +1,158 @@
+{
+  "cases": [
+    {
+      "lane": "scale",
+      "graph": "stable",
+      "extra_states": 1200,
+      "passed": false,
+      "source_hashes": {
+        "rxconfig.py": "f91f12c74c03fbf0e76b37e12fbbc7e6002117eb35a88e5c0712d2411533ce97",
+        ".gitignore": "803d835eb12e039c2b5dfa15fa2ba0825b7739e19bb99f6318c31bd86155fe85",
+        "lifecycle_app/__init__.py": "222454936893cd6ecb8600195669dc760b4926bc9a8c9c4583ecc49ccd73f6c8",
+        "lifecycle_app/lifecycle_app.py": "221ef8bd6024502a302c515b8a2b12ad05ba7b025ae96afefedd82c9443c2d23",
+        "assets/qa.css": "090eda74ed7683bb7ae551537875820027da6e628701a45b283fc9826945280c"
+      },
+      "command": [
+        "/Users/masenf/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/bin/python",
+        "reflex",
+        "run",
+        "--env",
+        "prod",
+        "--loglevel",
+        "debug"
+      ],
+      "neutral_app": "/private/tmp/reflex-a4-scale-szncyefe/app",
+      "ci_bypass": true,
+      "ready": true,
+      "startup_exit": null,
+      "browser": {
+        "passed": false,
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "location": {
+              "url": "http://localhost:3146/articles/7?self=1",
+              "lineNumber": 0,
+              "columnNumber": 0
+            }
+          },
+          {
+            "type": "error",
+            "text": "RangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)",
+            "location": {
+              "url": "http://localhost:3146/assets/errorBoundaries-D0b1Xva_.js",
+              "lineNumber": 11,
+              "columnNumber": 1828
+            }
+          },
+          {
+            "type": "error",
+            "text": "RangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)",
+            "location": {
+              "url": "http://localhost:3146/assets/entry.client-Dq_ArZZD.js",
+              "lineNumber": 7,
+              "columnNumber": 64111
+            }
+          }
+        ],
+        "page_errors": [],
+        "http_errors": [
+          {
+            "url": "http://localhost:3146/articles/7?self=1",
+            "status": 404
+          }
+        ],
+        "failed_requests": [],
+        "steps": [],
+        "document_status": 404,
+        "failure": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a4-root-controller/root_runs.py\", line 117, in observe_scale\n    assert response.status == 200\nAssertionError\n",
+        "browser_version": "140.0.7339.16",
+        "body": "Application Error\nRangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)"
+      },
+      "stopped_cli_exit": 130
+    },
+    {
+      "lane": "scale",
+      "graph": "stable",
+      "extra_states": 1300,
+      "passed": false,
+      "source_hashes": {
+        "rxconfig.py": "f91f12c74c03fbf0e76b37e12fbbc7e6002117eb35a88e5c0712d2411533ce97",
+        ".gitignore": "803d835eb12e039c2b5dfa15fa2ba0825b7739e19bb99f6318c31bd86155fe85",
+        "lifecycle_app/__init__.py": "222454936893cd6ecb8600195669dc760b4926bc9a8c9c4583ecc49ccd73f6c8",
+        "lifecycle_app/lifecycle_app.py": "221ef8bd6024502a302c515b8a2b12ad05ba7b025ae96afefedd82c9443c2d23",
+        "assets/qa.css": "090eda74ed7683bb7ae551537875820027da6e628701a45b283fc9826945280c"
+      },
+      "command": [
+        "/Users/masenf/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/bin/python",
+        "reflex",
+        "run",
+        "--env",
+        "prod",
+        "--loglevel",
+        "debug"
+      ],
+      "neutral_app": "/private/tmp/reflex-a4-scale-1qdm4a1q/app",
+      "ci_bypass": true,
+      "ready": true,
+      "startup_exit": null,
+      "browser": {
+        "passed": false,
+        "console": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "location": {
+              "url": "http://localhost:3146/articles/7?self=1",
+              "lineNumber": 0,
+              "columnNumber": 0
+            }
+          },
+          {
+            "type": "error",
+            "text": "RangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)",
+            "location": {
+              "url": "http://localhost:3146/assets/errorBoundaries-D0b1Xva_.js",
+              "lineNumber": 11,
+              "columnNumber": 1828
+            }
+          },
+          {
+            "type": "error",
+            "text": "RangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)",
+            "location": {
+              "url": "http://localhost:3146/assets/entry.client-Dq_ArZZD.js",
+              "lineNumber": 7,
+              "columnNumber": 64111
+            }
+          }
+        ],
+        "page_errors": [],
+        "http_errors": [
+          {
+            "url": "http://localhost:3146/articles/7?self=1",
+            "status": 404
+          }
+        ],
+        "failed_requests": [],
+        "steps": [],
+        "document_status": 404,
+        "failure": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a4-root-controller/root_runs.py\", line 117, in observe_scale\n    assert response.status == 200\nAssertionError\n",
+        "browser_version": "140.0.7339.16",
+        "body": "Application Error\nRangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)"
+      },
+      "stopped_cli_exit": 130
+    }
+  ]
+}

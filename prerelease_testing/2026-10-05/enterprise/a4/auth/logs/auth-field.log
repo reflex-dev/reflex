@@ -1,0 +1,5 @@
+{"reflex_version": "0.10.0a1", "enterprise_version": "0.9.7a4", "reflex_origin": "/private/tmp/reflex-enterprise-a4-20261005-alpha/lib/python3.12/site-packages/reflex/__init__.py", "enterprise_origin": "/private/tmp/reflex-enterprise-a4-20261005-alpha/lib/python3.12/site-packages/reflex_enterprise/__init__.py"}
+{"field": "public_count", "value_type": "reflex_base.vars.base.NumberCastedVar", "rendered": true}
+{"field": "secret_count", "value_type": "reflex_base.vars.base.NumberCastedVar", "rendered": true}
+{"field": "core_count", "value_type": "reflex_base.vars.base.NumberCastedVar", "rendered": true}
+{"field": "public_simple", "value_type": "reflex_base.vars.base.NumberCastedVar", "rendered": true}

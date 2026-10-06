@@ -1,0 +1,711 @@
+[
+  {
+    "case": "normal",
+    "stage": "bob_login",
+    "browser_version": "140.0.7339.16",
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8152/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8152/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8152/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": [],
+    "wire_markers": [
+      {
+        "stage": "initial",
+        "alice_record": true,
+        "alice_cache": true,
+        "bytes": 309
+      }
+    ],
+    "alice_before": {
+      "url": "http://localhost:3152/profile",
+      "token_fingerprint": "84ca1bd7636896095091c8ed1c53777908d65b54a72b26a36d470662ea5a29bb",
+      "fields": {
+        "identity": "alice",
+        "private-record": "{\"owner\":\"alice\",\"secret\":\"alice-PRIVATE-RECORD\"}",
+        "private-cache": "alice-PRIVATE-CACHE",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "none"
+      }
+    },
+    "after_logout": {
+      "url": "http://localhost:3152/",
+      "token_fingerprint": "84ca1bd7636896095091c8ed1c53777908d65b54a72b26a36d470662ea5a29bb",
+      "fields": {
+        "identity": "",
+        "private-record": "{\"owner\":\"none\",\"secret\":\"empty\"}",
+        "private-cache": "private-placeholder",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "none"
+      }
+    },
+    "cookies_after_logout": [],
+    "actions_after_logout": [],
+    "after_logout_action": {
+      "url": "http://localhost:3152/login",
+      "token_fingerprint": "84ca1bd7636896095091c8ed1c53777908d65b54a72b26a36d470662ea5a29bb",
+      "fields": {}
+    },
+    "forced_anonymous": {
+      "url": "http://localhost:3152/",
+      "token_fingerprint": "84ca1bd7636896095091c8ed1c53777908d65b54a72b26a36d470662ea5a29bb",
+      "fields": {
+        "identity": "",
+        "private-record": "{\"owner\":\"none\",\"secret\":\"empty\"}",
+        "private-cache": "private-placeholder",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "none"
+      }
+    },
+    "anonymous_mutations": [],
+    "pending_present": true,
+    "bob_after": {
+      "url": "http://localhost:3152/profile",
+      "token_fingerprint": "84ca1bd7636896095091c8ed1c53777908d65b54a72b26a36d470662ea5a29bb",
+      "fields": {
+        "identity": "bob",
+        "private-record": "{\"owner\":\"none\",\"secret\":\"empty\"}",
+        "private-cache": "empty",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "none"
+      }
+    },
+    "bob_observed_alice_record": false,
+    "bob_observed_alice_cache": false,
+    "same_client_token": true,
+    "pending_cleared_after_bob": true,
+    "actions_after_bob": [],
+    "completed": true
+  },
+  {
+    "case": "frontend",
+    "stage": "bob_login",
+    "browser_version": "140.0.7339.16",
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8152/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8152/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": [],
+    "wire_markers": [
+      {
+        "stage": "initial",
+        "alice_record": true,
+        "alice_cache": true,
+        "bytes": 309
+      },
+      {
+        "stage": "bob_login",
+        "alice_record": true,
+        "alice_cache": false,
+        "bytes": 5534
+      },
+      {
+        "stage": "bob_login",
+        "alice_record": true,
+        "alice_cache": false,
+        "bytes": 409
+      }
+    ],
+    "alice_before": {
+      "url": "http://localhost:3152/profile",
+      "token_fingerprint": "d3ec1374804cfa3e0b8abfb655f2f79c9672dde89fbe193e1f1332aabf08e6d6",
+      "fields": {
+        "identity": "alice",
+        "private-record": "{\"owner\":\"alice\",\"secret\":\"alice-PRIVATE-RECORD\"}",
+        "private-cache": "alice-PRIVATE-CACHE",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "none"
+      }
+    },
+    "after_logout": {
+      "url": "http://localhost:3152/profile",
+      "token_fingerprint": "d3ec1374804cfa3e0b8abfb655f2f79c9672dde89fbe193e1f1332aabf08e6d6",
+      "fields": {
+        "identity": "alice",
+        "private-record": "{\"owner\":\"alice\",\"secret\":\"alice-PRIVATE-RECORD\"}",
+        "private-cache": "empty",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "frontend"
+      }
+    },
+    "cookies_after_logout": [
+      {
+        "name": "_oidc_generic_access_token_data_partitioned",
+        "domain": "localhost",
+        "path": "/",
+        "expires": 1791866964.58002,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "None",
+        "partitionKey": "http://localhost",
+        "_crHasCrossSiteAncestor": false,
+        "value_length": 86
+      },
+      {
+        "name": "_oidc_generic_id_token_partitioned",
+        "domain": "localhost",
+        "path": "/",
+        "expires": 1791866964.580041,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "None",
+        "partitionKey": "http://localhost",
+        "_crHasCrossSiteAncestor": false,
+        "value_length": 711
+      },
+      {
+        "name": "_oidc_generic_refresh_token_partitioned",
+        "domain": "localhost",
+        "path": "/",
+        "expires": 1791866964.580054,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "None",
+        "partitionKey": "http://localhost",
+        "_crHasCrossSiteAncestor": false,
+        "value_length": 48
+      },
+      {
+        "name": "_oidc_generic_granted_scopes_partitioned",
+        "domain": "localhost",
+        "path": "/",
+        "expires": 1791866964.580062,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "None",
+        "partitionKey": "http://localhost",
+        "_crHasCrossSiteAncestor": false,
+        "value_length": 22
+      }
+    ],
+    "actions_after_logout": [],
+    "after_logout_action": {
+      "url": "http://localhost:3152/login",
+      "token_fingerprint": "d3ec1374804cfa3e0b8abfb655f2f79c9672dde89fbe193e1f1332aabf08e6d6",
+      "fields": {}
+    },
+    "forced_anonymous": {
+      "url": "http://localhost:3152/",
+      "token_fingerprint": "d3ec1374804cfa3e0b8abfb655f2f79c9672dde89fbe193e1f1332aabf08e6d6",
+      "fields": {
+        "identity": "",
+        "private-record": "{\"owner\":\"none\",\"secret\":\"empty\"}",
+        "private-cache": "private-placeholder",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "none"
+      }
+    },
+    "anonymous_mutations": [],
+    "pending_present": true,
+    "bob_after": {
+      "url": "http://localhost:3152/profile",
+      "token_fingerprint": "d3ec1374804cfa3e0b8abfb655f2f79c9672dde89fbe193e1f1332aabf08e6d6",
+      "fields": {
+        "identity": "bob",
+        "private-record": "{\"owner\":\"alice\",\"secret\":\"alice-PRIVATE-RECORD\"}",
+        "private-cache": "empty",
+        "calls": "1",
+        "last-actor": "bob",
+        "armed": "frontend"
+      }
+    },
+    "bob_observed_alice_record": true,
+    "bob_observed_alice_cache": false,
+    "same_client_token": true,
+    "pending_cleared_after_bob": true,
+    "actions_after_bob": [
+      {
+        "actor": "bob",
+        "calls": 1
+      }
+    ],
+    "completed": true
+  },
+  {
+    "case": "backend",
+    "stage": "bob_login",
+    "browser_version": "140.0.7339.16",
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8152/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8152/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": [],
+    "wire_markers": [
+      {
+        "stage": "initial",
+        "alice_record": true,
+        "alice_cache": true,
+        "bytes": 309
+      },
+      {
+        "stage": "bob_login",
+        "alice_record": false,
+        "alice_cache": true,
+        "bytes": 5463
+      },
+      {
+        "stage": "bob_login",
+        "alice_record": false,
+        "alice_cache": true,
+        "bytes": 407
+      }
+    ],
+    "alice_before": {
+      "url": "http://localhost:3152/profile",
+      "token_fingerprint": "2402920cd98d68e50fbdf17ebc2dbb666ba377a253eb551fa770b31745601154",
+      "fields": {
+        "identity": "alice",
+        "private-record": "{\"owner\":\"alice\",\"secret\":\"alice-PRIVATE-RECORD\"}",
+        "private-cache": "alice-PRIVATE-CACHE",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "none"
+      }
+    },
+    "after_logout": {
+      "url": "http://localhost:3152/profile",
+      "token_fingerprint": "2402920cd98d68e50fbdf17ebc2dbb666ba377a253eb551fa770b31745601154",
+      "fields": {
+        "identity": "alice",
+        "private-record": "{\"owner\":\"none\",\"secret\":\"empty\"}",
+        "private-cache": "alice-PRIVATE-CACHE",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "backend"
+      }
+    },
+    "cookies_after_logout": [
+      {
+        "name": "_oidc_generic_access_token_data_partitioned",
+        "domain": "localhost",
+        "path": "/",
+        "expires": 1791866973.209219,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "None",
+        "partitionKey": "http://localhost",
+        "_crHasCrossSiteAncestor": false,
+        "value_length": 86
+      },
+      {
+        "name": "_oidc_generic_id_token_partitioned",
+        "domain": "localhost",
+        "path": "/",
+        "expires": 1791866973.209244,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "None",
+        "partitionKey": "http://localhost",
+        "_crHasCrossSiteAncestor": false,
+        "value_length": 711
+      },
+      {
+        "name": "_oidc_generic_refresh_token_partitioned",
+        "domain": "localhost",
+        "path": "/",
+        "expires": 1791866973.209259,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "None",
+        "partitionKey": "http://localhost",
+        "_crHasCrossSiteAncestor": false,
+        "value_length": 48
+      },
+      {
+        "name": "_oidc_generic_granted_scopes_partitioned",
+        "domain": "localhost",
+        "path": "/",
+        "expires": 1791866973.209269,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "None",
+        "partitionKey": "http://localhost",
+        "_crHasCrossSiteAncestor": false,
+        "value_length": 22
+      }
+    ],
+    "actions_after_logout": [],
+    "after_logout_action": {
+      "url": "http://localhost:3152/login",
+      "token_fingerprint": "2402920cd98d68e50fbdf17ebc2dbb666ba377a253eb551fa770b31745601154",
+      "fields": {}
+    },
+    "forced_anonymous": {
+      "url": "http://localhost:3152/",
+      "token_fingerprint": "2402920cd98d68e50fbdf17ebc2dbb666ba377a253eb551fa770b31745601154",
+      "fields": {
+        "identity": "",
+        "private-record": "{\"owner\":\"none\",\"secret\":\"empty\"}",
+        "private-cache": "private-placeholder",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "backend"
+      }
+    },
+    "anonymous_mutations": [],
+    "pending_present": true,
+    "bob_after": {
+      "url": "http://localhost:3152/profile",
+      "token_fingerprint": "2402920cd98d68e50fbdf17ebc2dbb666ba377a253eb551fa770b31745601154",
+      "fields": {
+        "identity": "bob",
+        "private-record": "{\"owner\":\"none\",\"secret\":\"empty\"}",
+        "private-cache": "alice-PRIVATE-CACHE",
+        "calls": "0",
+        "last-actor": "none",
+        "armed": "backend"
+      }
+    },
+    "bob_observed_alice_record": false,
+    "bob_observed_alice_cache": true,
+    "same_client_token": true,
+    "pending_cleared_after_bob": true,
+    "actions_after_bob": [],
+    "completed": true
+  }
+]

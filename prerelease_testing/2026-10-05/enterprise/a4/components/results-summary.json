@@ -1,0 +1,154 @@
+{
+  "mode_results": {
+    "dev": {
+      "components-browser": {
+        "cases": 15,
+        "passed": 15,
+        "page_errors": 0,
+        "http_errors": 0,
+        "console_errors": 210,
+        "unexpected_console": [],
+        "failed_requests": 0,
+        "failed_request_errors": {},
+        "failed_request_hosts": {}
+      },
+      "maps-saved-state-browser": {
+        "cases": 7,
+        "passed": 7,
+        "page_errors": 0,
+        "http_errors": 0,
+        "console_errors": 28,
+        "unexpected_console": [],
+        "failed_requests": 52,
+        "failed_request_errors": {
+          "net::ERR_ABORTED": 52
+        },
+        "failed_request_hosts": {
+          "b.tile.openstreetmap.org": 17,
+          "c.tile.openstreetmap.org": 18,
+          "a.tile.openstreetmap.org": 17
+        }
+      },
+      "formatters-browser": {
+        "cases": 3,
+        "passed": 3,
+        "page_errors": 0,
+        "http_errors": 0,
+        "console_errors": 0,
+        "unexpected_console": [],
+        "failed_requests": 0,
+        "failed_request_errors": {},
+        "failed_request_hosts": {}
+      },
+      "anonymous_MCP": "PASS via default path"
+    },
+    "prod": {
+      "components-browser": {
+        "cases": 15,
+        "passed": 15,
+        "page_errors": 0,
+        "http_errors": 0,
+        "console_errors": 105,
+        "unexpected_console": [],
+        "failed_requests": 0,
+        "failed_request_errors": {},
+        "failed_request_hosts": {}
+      },
+      "maps-saved-state-browser": {
+        "cases": 7,
+        "passed": 7,
+        "page_errors": 0,
+        "http_errors": 0,
+        "console_errors": 14,
+        "unexpected_console": [],
+        "failed_requests": 18,
+        "failed_request_errors": {
+          "net::ERR_ABORTED": 18
+        },
+        "failed_request_hosts": {
+          "b.tile.openstreetmap.org": 6,
+          "c.tile.openstreetmap.org": 6,
+          "a.tile.openstreetmap.org": 6
+        }
+      },
+      "formatters-browser": {
+        "cases": 3,
+        "passed": 3,
+        "page_errors": 0,
+        "http_errors": 0,
+        "console_errors": 0,
+        "unexpected_console": [],
+        "failed_requests": 0,
+        "failed_request_errors": {},
+        "failed_request_hosts": {}
+      },
+      "anonymous_MCP": "PASS via explicit slash diagnostic; default separately fails"
+    }
+  },
+  "source_python_parse_passed": true,
+  "pr251_demo_byte_identical": true,
+  "pr251_head": "b112496a043cb88eb0d47a284bf69cc604407f92",
+  "production_bare_MCP": "FAIL: HTTP 405, deferred preexisting issue",
+  "production_slash_MCP": "PASS: complete diagnostic assertions",
+  "archive_integrity": {
+    "memo_module": "$/app_components/components/formatter_demo/formatters",
+    "archives": [
+      {
+        "name": "backend.zip",
+        "bytes": 47755,
+        "sha256": "0426dec32dc166b08607d4eb6693830514099b6e3e76dcce314f8248dd1ba07d",
+        "member_count": 20,
+        "zip_integrity": "passed",
+        "memo_module_JS_files": [],
+        "formatter_files": [
+          "components/formatter_demo/formatters.py"
+        ],
+        "bundled_library_metadata": {
+          ".web/backend/bundled_libraries.json": [
+            "react",
+            "@emotion/react",
+            "$/utils/context",
+            "$/utils/state",
+            "$/app_components/components/formatter_demo/formatters",
+            "@radix-ui/themes"
+          ]
+        }
+      },
+      {
+        "name": "frontend.zip",
+        "bytes": 4467943,
+        "sha256": "bacdc8c3f45c63ca2a39df8fea3471b84b62c44d331e8df4a4387213e81a2238",
+        "member_count": 733,
+        "zip_integrity": "passed",
+        "memo_module_JS_files": [
+          "assets/root-Day9BKt4.js",
+          "assets/formatters-BhOnXZZq.js",
+          "assets/flex-CYuCqbjL.js"
+        ],
+        "formatter_files": [
+          "formatters.html",
+          "formatters-direct.html.gz",
+          "formatters-direct.html",
+          "formatters.html.gz",
+          "formatters/index.html",
+          "formatters/index.html.gz",
+          "formatters-direct/index.html",
+          "formatters-direct/index.html.gz",
+          "assets/_formatters_._index-D9ZgWv8q.js",
+          "assets/_formatters-direct_._index-DEuxkZWG.js.gz",
+          "assets/_formatters_._index-D9ZgWv8q.js.gz",
+          "assets/formatters-BhOnXZZq.js",
+          "assets/_formatters-direct_._index-DEuxkZWG.js",
+          "assets/formatters-BhOnXZZq.js.gz"
+        ]
+      }
+    ]
+  },
+  "account_isolation": {
+    "context_records": 33,
+    "python_connections": 8,
+    "HTTP_account_calls": 8,
+    "all_guards_active": true,
+    "only_loopback_fixture_credentials": true
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "checked_at_utc": "2026-10-06T04:48:24.090886+00:00",
+  "scope": "unchanged original core/tooling alpha artifacts; enterprise a4 audited separately",
+  "packages": [
+    {
+      "package": "reflex",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex-0.10.0a1-py3-none-any.whl": "8f6a153935004b80a5f0eb740495c46b4e09bf5a4a0ecc98d1a4d9b7be1250f5",
+        "reflex-0.10.0a1.tar.gz": "9dd165eae7d0e163e46337c5d8aec4207f7f8f458cf0d7d255481f3d4675a220"
+      }
+    },
+    {
+      "package": "reflex-base",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-base/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_base-0.10.0a1-py3-none-any.whl": "008270f301f2f31ea65ce6669e33fd6521f1430ad9b30dbde71c060dd99a827a",
+        "reflex_base-0.10.0a1.tar.gz": "2bc0e818d2adb04a035008bd0139a46bc7ab1e7b01b996bd413d8a97ff5863a5"
+      }
+    },
+    {
+      "package": "reflex-components-code",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-components-code/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_components_code-0.10.0a1-py3-none-any.whl": "e40f744e43923fe1020835eebafcebaf367b8054ca012de00aea98ea500de920",
+        "reflex_components_code-0.10.0a1.tar.gz": "34ffeb3fc775cadd15018b46c9e3dc2810e45780698868b458399d95fd571960"
+      }
+    },
+    {
+      "package": "reflex-components-core",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-components-core/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_components_core-0.10.0a1-py3-none-any.whl": "69a72f282b473ce2c51cbd692651783673e9da542c26d8d6e0eacab5eceafa3d",
+        "reflex_components_core-0.10.0a1.tar.gz": "53b416295544d995d7a03e281aa2996d71f2044805aa6105ea1edf3895100001"
+      }
+    },
+    {
+      "package": "reflex-components-gridjs",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-components-gridjs/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_components_gridjs-0.10.0a1-py3-none-any.whl": "5e5a119cd8f44753fb3de85d1fc60a8dbfe21b64ec45aea84f16d84de71e056e",
+        "reflex_components_gridjs-0.10.0a1.tar.gz": "e7a8707d7c95ab736bee26201527fb9a58d551636f7f0440ef5e069189be1ae9"
+      }
+    },
+    {
+      "package": "reflex-components-markdown",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-components-markdown/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_components_markdown-0.10.0a1-py3-none-any.whl": "32e85d35ac99053995de3df106d4d774e80d58ffab79007c228c97413ce59ee7",
+        "reflex_components_markdown-0.10.0a1.tar.gz": "13ed4f903832161f7b99ae1270661fe5772a4d467093e0b0075d3c455d9aef7a"
+      }
+    },
+    {
+      "package": "reflex-components-moment",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-components-moment/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_components_moment-0.10.0a1-py3-none-any.whl": "d561cb1b39f288812696418bb5cd27bed7627d0e996b1996aa32845b9edc0173",
+        "reflex_components_moment-0.10.0a1.tar.gz": "68a80905048ea18ad2af854a65c52df77086e3c331848a4a08521852ad778bb6"
+      }
+    },
+    {
+      "package": "reflex-components-plotly",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-components-plotly/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_components_plotly-0.10.0a1-py3-none-any.whl": "c7f9ad89efe3f80c13a992dfe23434215428a91563780a6d3fa3e782631d2499",
+        "reflex_components_plotly-0.10.0a1.tar.gz": "eccd1c3b3392701127b70978825dd83c47fb5ee10a40cfb8fd2aaf5b2c87e197"
+      }
+    },
+    {
+      "package": "reflex-components-radix",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-components-radix/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_components_radix-0.10.0a1-py3-none-any.whl": "6d0a5dcebac4363800b369ff2a69c4379681d4b6e2c6b3f707c1a91987b22d5f",
+        "reflex_components_radix-0.10.0a1.tar.gz": "401bfbf64870e409d1233fcb88d0f5216af764019773aa394da067968e9ed545"
+      }
+    },
+    {
+      "package": "reflex-components-recharts",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-components-recharts/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_components_recharts-0.10.0a1-py3-none-any.whl": "72aea8982c946672123bc705b28d7de65862d3baa0452b50f7f87b291eb9eb9e",
+        "reflex_components_recharts-0.10.0a1.tar.gz": "d50eb5bfdaa1aa4de6af5ab1e91654ee44491b1165be8ee6719ea334e455ff5f"
+      }
+    },
+    {
+      "package": "reflex-docgen",
+      "version": "0.10.0a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-docgen/0.10.0a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_docgen-0.10.0a1-py3-none-any.whl": "ae31bc33181a5b352f945f27802662690c78894ca85e9dcf8246618b0bca201c",
+        "reflex_docgen-0.10.0a1.tar.gz": "4b2dd60074d6e315cb944f80357e1afb54550d36b4fee20ecf1c65e34c09ef98"
+      }
+    },
+    {
+      "package": "reflex-hosting-cli",
+      "version": "0.1.73a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-hosting-cli/0.1.73a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_hosting_cli-0.1.73a1-py3-none-any.whl": "4ad81533a194b6692c26f35fa1f76844ecf24652f2aedc99bc3edfe41c2c0281",
+        "reflex_hosting_cli-0.1.73a1.tar.gz": "789f352a8cae2f25e8e00bf3c38092631a62f0da42878312a1a1151969d1e9d3"
+      }
+    },
+    {
+      "package": "reflex-release",
+      "version": "0.1.2a1",
+      "pypi_url": "https://pypi.org/pypi/reflex-release/0.1.2a1/json",
+      "artifacts_unchanged": true,
+      "any_yanked": false,
+      "files": {
+        "reflex_release-0.1.2a1-py3-none-any.whl": "c50eb7e221a3e5c31bfb8eb1cd527bbfe1cc696f7a7a9974874b84272e0a3e66",
+        "reflex_release-0.1.2a1.tar.gz": "c0b7ffb0571941dfb7c8498a326182b5bcefe475f86759552c4a280f4be5a915"
+      }
+    }
+  ],
+  "passed": true
+}

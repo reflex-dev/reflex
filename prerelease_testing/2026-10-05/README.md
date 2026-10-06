@@ -1,12 +1,15 @@
 # Published prerelease exploration — October 5, 2026
 
-**Latest enterprise rerun: 0.9.7a3 resolves the three a2 auth blockers, but
-validation is not fully passing.** The full auth browser suite passes 21/22 on
-Reflex 0.10.0a1 and 22/22 on stable. An independently reproduced protected async
-value fails on public-page navigation/reload with the alpha; stable passes.
-Grid/maps, cookie scenarios and the Free-tier matrix pass. Embedded pending
-login and production MCP routing have additional recorded limits.
-See the [a3 report and reusable repros](enterprise/a3/REPORT.md).
+**Latest release gate: HOLD for two blockers: enterprise #245's logout-recovery
+security weakness and newly introduced mixed-version Redis mutation loss.**
+Failed application cleanup can preserve protected state across an account
+change; an old worker loses backend mutations on alpha-saved state. The two a3
+auth problems now pass: 36/36 auth browser cases, including
+repeated public reloads and iframe pending replay. Cookie and Free-tier checks
+also pass. See the [a4 combined gate, patch guidance and evidence](enterprise/a4/REPORT.md).
+The MCP trailing-slash issue is explicitly deferred by the user.
+
+The [a3 report](enterprise/a3/REPORT.md) and all earlier evidence remain available.
 
 The initial 0.9.7a2 campaign below found broken auth fields, extra OIDC scopes
 and logout with Reflex 0.10.0a1; the same a2 wheel worked with Reflex 0.9.12.
@@ -42,7 +45,7 @@ and prior-stable upgrade comparisons. No framework fixes were attempted.
 | reflex-docgen | 0.10.0a1 |
 | reflex-hosting-cli | 0.1.73a1 |
 | reflex-release | 0.1.2a1 |
-| reflex-enterprise | 0.9.7a2 initially; follow-up 0.9.7a3 |
+| reflex-enterprise | 0.9.7a2 initially; latest follow-up 0.9.7a4 |
 
 The six other branch changelog heads describe unchanged stable releases. See
 [every changelog head](inventory/changelog-heads.md),
@@ -53,6 +56,10 @@ The six other branch changelog heads describe unchanged stable releases. See
 The main and tooling refs are independently recorded with their commit IDs.
 The follow-up a3 [publication audit](enterprise/a3/publication.json) independently
 verifies its PyPI wheel/sdist hashes and matching stubs.
+The current [a4 archive audit](enterprise/a4/publication.json) also passes;
+[live PyPI metadata](enterprise/a4/unchanged-core-tooling.json) verifies that all
+13 core/tooling alpha artifact hashes are unchanged and not yanked. Their
+previous broad browser/upgrade/service coverage is reused, not claimed rerun.
 The migration fragment links to unrelated issue #6706; its implementing PR is
 #6770, whose description is separately saved under `tooling/reference/`.
 
@@ -60,6 +67,7 @@ The migration fragment links to unrelated issue #6706; its implementing PR is
 
 | Exploration | Outcome and reusable report |
 | --- | --- |
+| Combined payload with enterprise a4 | Auth fixes validated; security and rolling-upgrade persistence blockers remain; [a4 report](enterprise/a4/REPORT.md) |
 | Enterprise a3 follow-up: auth, cookies, grid/maps, OAuth/anonymous MCP and Free-tier guards | Three a2 blockers resolved; async public reload and additional limits remain; [a3 report](enterprise/a3/REPORT.md) |
 | State descriptors, shadowing, inherited events/background mutation, ABC, mode guards, contexts, memo/ComponentState/client State, shared/private state, deep equality, slicing, download and event recovery | 71 browser assertions in each of dev/prod plus backend checks; [core report](core_state/README.md) |
 | Buffered/chunked uploads, HTTP event streams, concurrent clients/uploads, disconnect/navigation cancellation, recovery after response closure and actual OTel lineage | All seven scenarios in each mode, with 25 visible assertions plus timing/transport/span checks; [upload report](core_state/upload/README.md) |
@@ -73,6 +81,7 @@ The migration fragment links to unrelated issue #6706; its implementing PR is
 | Real browser upgrade of unmodified Todo, Overkey and basic_crud examples, preserving frontend/data then cold rebuilding | Main flows pass; Overkey's reset defect is preexisting; [Todo report](upgrades/README.md), [other upgrades](components/upgrades/REPORT.md) |
 | Self-hosted dynamic routes, query/header named self, path prefix, compression, CSS hot reload, package formatting cache, JSON supervision and process shutdown | Pass; [runtime report](lifecycle/README.md) |
 | 500/1,000/1,500 dormant States | Both versions pass 500/1,000; alpha browser fails at 1,500; stable build blocked at 1,500; [controlled comparison](enterprise/many_states/REPORT.md) |
+| Fresh bounded scale follow-up | Alpha works at 1,200 where stable fails; both fail at 1,300; no demonstrated new blocker; [a4 comparison](enterprise/a4/scale/REPORT.md) |
 | Release dispatch input boundary, docgen BOM/whitespace/CRLF parsing, hosting SDK/CLI JSON/error/auth contracts and ty event callbacks | [tooling report](tooling/README.md) |
 
 Browser screenshots and raw diagnostics accompany the reports. No unexpected

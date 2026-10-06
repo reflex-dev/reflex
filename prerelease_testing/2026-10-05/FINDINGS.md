@@ -9,6 +9,14 @@ The [published enterprise a3 rerun](enterprise/a3/REPORT.md) confirms findings
 as 12–14 and subsequently filed as enterprise issues #252–254 at the user's
 request. No framework fixes were attempted.
 
+**Current a4 release gate: HOLD for findings 15–16: the demonstrated security
+weakness tracked in enterprise #245 and a newly introduced rolling-upgrade
+persistence regression.** Findings 12–13 now pass; the
+user deferred finding 14. The [combined a4 reassessment](enterprise/a4/REPORT.md)
+applies the user's gate: newly introduced, critical, or demonstrably weak
+security requiring a pre-release fix. Known noncritical preexisting defects
+are not automatically blockers.
+
 ## Confirmed a2 release regressions, resolved in a3
 
 1. **P1 — Enterprise `rxe.field` no longer becomes a State Var.** With
@@ -70,6 +78,11 @@ request. No framework fixes were attempted.
    [Full controlled report and commands](enterprise/many_states/REPORT.md).
    A fresh isolated Bun 1.4.2 build also reproduces the same browser failure
    in native Chrome 154; see `lifecycle/evidence/fresh-bun-scale/`.
+   The [a4 bounded follow-up](enterprise/a4/scale/REPORT.md) finds alpha working
+   at 1,200 where stable shows a React stack overflow, and both failing at
+   1,300 with a separate stable root-route control. This establishes a
+   preexisting scale-limit class, without a demonstrated working stable app
+   newly broken by alpha. It is not a release blocker on the tested evidence.
 
 5. **P2 — Shiki's convenience transformer flag silently loses highlighting.**
    `rx._x.code_block(use_transformers=True)` produces a transformer with empty
@@ -150,6 +163,12 @@ request. No framework fixes were attempted.
 
 ## Published enterprise a3 follow-up
 
+Historical observations 12–13 below are **resolved in published a4**: the
+full retained suite is 22/22, focused public navigation plus two reloads pass
+3/3, and default iframe pending replay passes automatically 3/3.
+[A4 auth evidence](enterprise/a4/auth/REPORT.md) preserves the runs and limits.
+Finding 14 remains **explicitly deferred to the next release by the user**.
+
 12. **P1 — A protected async computed value does not restore on a public page
     with Reflex 0.10.0a1.** Enterprise a3's full auth suite passes 21/22 on
     alpha and 22/22 on stable. A small identical-source probe using core State
@@ -195,6 +214,50 @@ Findings 12–14 are filed as [enterprise #252](https://github.com/reflex-dev/re
 [#254](https://github.com/reflex-dev/reflex-enterprise/issues/254), respectively.
 Historical finding 11 also reproduces in the [a3 Free-tier matrix](enterprise/a3/free_tier/REPORT.md)
 and remains outside the user's issue-filing requests.
+
+## Published enterprise a4 security release gate
+
+15. **P1 — Failed logout cleanup can preserve protected state across users.**
+    Legitimate application default-factory failures interrupt protected-state
+    cleanup. Completed local browser checks confirm protected state reaching
+    a different authenticated account on the same Reflex client session.
+    Both frontend and backend private-state cases show the weakness; a normal
+    logout control clears the data. Anonymous protected actions remain blocked.
+    This is an account-boundary confidentiality problem, not a claimed anonymous
+    authentication bypass. The completed handoff cleared browser cookies and
+    restored the application dependency before the next login; an uninterrupted
+    handoff without that step and an older baseline were not completed. The
+    introducing version is unestablished, but demonstrated weak security meets
+    the user's blocker rule independently of regression status.
+
+    Existing [enterprise #245](https://github.com/reflex-dev/reflex-enterprise/issues/245)
+    tracks the same fail-closed lifecycle gap. The recommended patch must
+    guarantee auth/cookie revocation even when application resets fail, discard
+    or quarantine the failed session's protected State tree and caches before
+    another identity is admitted, and cover exceptional logout/account changes
+    in browser and backend regression tests. Continuing other resets or simply
+    clearing cookies is insufficient. No patch or external issue/comment was
+    made in this reassessment. [Defensive report and evidence](enterprise/a4/security/REPORT.md),
+    [independent evidence review](enterprise/a4/security/REVIEW.md).
+
+16. **P1 — An old Redis worker silently loses backend mutations on alpha-saved
+    State during a rolling upgrade.** Nine fresh workers on disposable Redis
+    compare identical app source across published 0.9.12 and 0.10.0a1:
+    stable→stable→stable and alpha→alpha→alpha both persist a backend-list
+    append, while alpha→stable→alpha loses it. The mixed old worker sees the
+    appended item in memory but records no dirty vars; the stored pickle stays
+    unchanged and a fresh reader sees the old value and cached checksum.
+    [Exact controls, source and raw persistence evidence](enterprise/a4/rolling/REPORT.md)
+    retain the result and isolated 104/91-package graphs.
+
+    The #7312 changelog advertises this exception. It is still newly introduced
+    loss of previously working persistence and therefore meets the user's
+    blocker criterion; documentation is not an explicit waiver. The repair must
+    preserve backward-compatible mutable-backend wrapping/dirty tracking when
+    old workers deserialize new State, with fresh-worker stable-only, mixed and
+    alpha-only persistence regressions. Avoiding mixed workers or using full
+    reassignment mitigates deployment exposure but is not a tested framework
+    fix. No source fix or external issue/comment was made here.
 
 ## Triage and rerun guidance
 

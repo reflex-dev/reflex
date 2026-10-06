@@ -1,0 +1,190 @@
+{
+  "database": 5,
+  "cases": [
+    {
+      "name": "stable-stable-stable",
+      "seed_version": "0.9.12",
+      "mutation_version": "0.9.12",
+      "read_version": "0.9.12",
+      "before": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved"
+        ],
+        "checksum": 22
+      },
+      "after_in_memory": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved",
+          "inplace"
+        ],
+        "checksum": 23
+      },
+      "mutation_dirty_vars": [
+        "_items",
+        "checksum"
+      ],
+      "fresh_read": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved",
+          "inplace"
+        ],
+        "checksum": 23
+      },
+      "backend_append_persisted": true,
+      "seed_pickle_sha256": "c4ed9617e58d34aeb3ac0a5f2fecc48cf6cad4f18dc63ce04ee61365b0461fa7",
+      "post_mutation_pickle_sha256": "8244af0ee0fd624ed6e90034c82982c63a59ae72db8524a112561e7485cf88c3"
+    },
+    {
+      "name": "alpha-stable-alpha",
+      "seed_version": "0.10.0a1",
+      "mutation_version": "0.9.12",
+      "read_version": "0.10.0a1",
+      "before": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved"
+        ],
+        "checksum": 22
+      },
+      "after_in_memory": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved",
+          "inplace"
+        ],
+        "checksum": 22
+      },
+      "mutation_dirty_vars": [],
+      "fresh_read": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved"
+        ],
+        "checksum": 22
+      },
+      "backend_append_persisted": false,
+      "seed_pickle_sha256": "99ad70db9b131fd5bdee9ca572e6de72775938e687e561026179c3ddd0f601da",
+      "post_mutation_pickle_sha256": "99ad70db9b131fd5bdee9ca572e6de72775938e687e561026179c3ddd0f601da"
+    },
+    {
+      "name": "alpha-alpha-alpha",
+      "seed_version": "0.10.0a1",
+      "mutation_version": "0.10.0a1",
+      "read_version": "0.10.0a1",
+      "before": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved"
+        ],
+        "checksum": 22
+      },
+      "after_in_memory": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved",
+          "inplace"
+        ],
+        "checksum": 23
+      },
+      "mutation_dirty_vars": [
+        "_items",
+        "checksum"
+      ],
+      "fresh_read": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved",
+          "inplace"
+        ],
+        "checksum": 23
+      },
+      "backend_append_persisted": true,
+      "seed_pickle_sha256": "99ad70db9b131fd5bdee9ca572e6de72775938e687e561026179c3ddd0f601da",
+      "post_mutation_pickle_sha256": "27fc4900ccf836906343a99ad65ced414c95d7edef297072820b523b2db6b350"
+    }
+  ],
+  "owned_tokens": [
+    "rolling-a4-ae7d236f-3e11-4f11-97b8-8cbad796b910",
+    "rolling-a4-cce38533-a51b-4603-a5c5-adeb3102e840",
+    "rolling-a4-2eea9e30-1533-4dc0-bbe7-3336299ee9d6"
+  ],
+  "orchestrator_executable": "/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/bin/python",
+  "redis_package_origin": "/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/redis/__init__.py",
+  "redis_server_version": "8.10.2",
+  "redis_persistence_configuration": {
+    "save": "",
+    "appendonly": "no"
+  },
+  "initial_dbsize": 0,
+  "source_sha256": {
+    "rolling_app.py": "8fa702649ef9b0ba478a214c1e07052ed2d12f64ab7faceeee924a81f904fa87",
+    "worker.py": "fbcbe01756cc0e270c9ad5caf04058f0d687513b3808cd62ab21b51b4c7d28f0"
+  },
+  "controls_pass": true,
+  "mixed_version_append_lost": true,
+  "new_rolling_regression_confirmed": true,
+  "execution_status": "completed",
+  "deleted_owned_keys": [
+    "rolling-a4-ae7d236f-3e11-4f11-97b8-8cbad796b910_reflex___state____state.rolling_app____rolling",
+    "rolling-a4-cce38533-a51b-4603-a5c5-adeb3102e840_reflex___state____state.rolling_app____rolling",
+    "rolling-a4-2eea9e30-1533-4dc0-bbe7-3336299ee9d6_reflex___state____state.rolling_app____rolling"
+  ],
+  "final_dbsize": 0
+}

@@ -1,0 +1,4 @@
+WARN `--no-project` was provided, but no project was found
+{"case": "memo_renderer_inline", "passed": true, "counts": [1, 1], "first_button": "1\n(00:00)", "second_button": "1\n(00:00)"}
+{"case": "memo_renderer_state", "passed": true, "counts": [2, 2], "first_button": "2\n(00:00)", "second_button": "2\n(00:00)"}
+{"case": "memo_renderer_api", "passed": true, "counts": [3, 3], "first_button": "3\n(00:01)", "second_button": "3\n(00:01)"}

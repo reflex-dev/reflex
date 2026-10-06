@@ -1,0 +1,49 @@
+{
+  "lane": "scale",
+  "graph": "alpha",
+  "extra_states": 1500,
+  "passed": false,
+  "source_hashes": {
+    "rxconfig.py": "f91f12c74c03fbf0e76b37e12fbbc7e6002117eb35a88e5c0712d2411533ce97",
+    ".gitignore": "803d835eb12e039c2b5dfa15fa2ba0825b7739e19bb99f6318c31bd86155fe85",
+    "lifecycle_app/__init__.py": "222454936893cd6ecb8600195669dc760b4926bc9a8c9c4583ecc49ccd73f6c8",
+    "lifecycle_app/lifecycle_app.py": "221ef8bd6024502a302c515b8a2b12ad05ba7b025ae96afefedd82c9443c2d23",
+    "assets/qa.css": "090eda74ed7683bb7ae551537875820027da6e628701a45b283fc9826945280c"
+  },
+  "command": [
+    "/Users/masenf/.local/bin/uv",
+    "--no-config",
+    "run",
+    "--no-project",
+    "--python",
+    "/private/tmp/reflex-enterprise-a4-20261005-root-venv/bin/python",
+    "reflex",
+    "run",
+    "--env",
+    "prod",
+    "--loglevel",
+    "debug"
+  ],
+  "neutral_app": "/private/tmp/reflex-a4-scale-k_5914q0/app",
+  "ci_bypass": true,
+  "ready": true,
+  "startup_exit": null,
+  "browser": {
+    "passed": false,
+    "console": [],
+    "page_errors": [
+      "Maximum call stack size exceeded",
+      "Maximum call stack size exceeded"
+    ],
+    "http_errors": [],
+    "failed_requests": [],
+    "steps": [],
+    "document_status": 200,
+    "failure": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a4-root-controller/root_runs.py\", line 119, in observe_scale\n    expect(page.get_by_role(\"heading\", name=\"Article 7\", exact=True)).to_be_visible()\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 20424, in to_be_visible\n    self._sync(self._impl_obj.to_be_visible(visible=visible, timeout=timeout))\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 763, in to_be_visible\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to be visible\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_be_visible\" with timeout 5000ms\n  - waiting for get_by_role(\"heading\", name=\"Article 7\", exact=True)\n\n",
+    "root_route_renders": true,
+    "root_route_failure": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a4-root-controller/root_runs.py\", line 119, in observe_scale\n    expect(page.get_by_role(\"heading\", name=\"Article 7\", exact=True)).to_be_visible()\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 20424, in to_be_visible\n    self._sync(self._impl_obj.to_be_visible(visible=visible, timeout=timeout))\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 763, in to_be_visible\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to be visible\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_be_visible\" with timeout 5000ms\n  - waiting for get_by_role(\"heading\", name=\"Article 7\", exact=True)\n\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a4-root-controller/root_runs.py\", line 140, in observe_scale\n    expect(page.locator(\"#count\")).to_have_text(\"1\")\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 19981, in to_have_text\n    self._sync(\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 559, in to_have_text\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to have text '1'\nActual value: 0 \nCall log:\n  - Expect \"to_have_text\" with timeout 5000ms\n  - waiting for locator(\"#count\")\n    9 \u00d7 locator resolved to <p id=\"count\" class=\"rt-Text\">0</p>\n      - unexpected value \"0\"\n\n",
+    "browser_version": "140.0.7339.16",
+    "body": "Runtime QA\n\n0\n\nIncrement\nFail event\nChild output\nArticle seven\nCSS witness\nBuilt with Reflex"
+  },
+  "stopped_cli_exit": 0
+}

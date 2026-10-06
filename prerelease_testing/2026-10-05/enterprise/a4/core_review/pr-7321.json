@@ -1,0 +1,16 @@
+{
+  "url": "https://github.com/reflex-dev/reflex/issues/7321",
+  "status": "read",
+  "number": 7321,
+  "title": "Fail fast on a rejected token with --no-interactive",
+  "body": "Fixes #7298. With --no-interactive, a rejected token (env var or --token) fell through to the interactive login prompt and hung CI. It now errors out right away with a clear message. Added a test for both token sources.\n\n\n<!-- This is an auto-generated description by cubic. -->\n<a href=\"https://cubic.dev/pr/reflex-dev/reflex/pull/7321?utm_source=github\" target=\"_blank\" rel=\"noopener noreferrer\" data-no-image-dialog=\"true\"><picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://www.cubic.dev/buttons/review-in-cubic-dark.svg\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://www.cubic.dev/buttons/review-in-cubic-light.svg\"><img alt=\"Review in cubic\" src=\"https://www.cubic.dev/buttons/review-in-cubic-dark.svg\"></picture></a>\n<!-- End of auto-generated description by cubic. -->\n\n",
+  "html_url": "https://github.com/reflex-dev/reflex/pull/7321",
+  "state": "closed",
+  "pull_request": {
+    "url": "https://api.github.com/repos/reflex-dev/reflex/pulls/7321",
+    "html_url": "https://github.com/reflex-dev/reflex/pull/7321",
+    "diff_url": "https://github.com/reflex-dev/reflex/pull/7321.diff",
+    "patch_url": "https://github.com/reflex-dev/reflex/pull/7321.patch",
+    "merged_at": "2026-09-30T22:25:57Z"
+  }
+}

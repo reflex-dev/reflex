@@ -1,0 +1,2 @@
+{"passed": true, "scenario_count": 6, "failure": null}
+WARN `--no-project` was provided, but no project was found

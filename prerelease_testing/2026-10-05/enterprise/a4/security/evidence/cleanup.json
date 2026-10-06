@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "ports3152_8152_9151": "no listeners",
+  "framework_changes": false,
+  "existing_bun_binary": "1.4.2",
+  "installer_used": false
+}

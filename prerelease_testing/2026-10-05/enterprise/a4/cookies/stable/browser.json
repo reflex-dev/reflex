@@ -1,0 +1,236 @@
+{
+  "passed": true,
+  "scenarios": [
+    {
+      "scenario": "initial_defaults",
+      "passed": true
+    },
+    {
+      "scenario": "backend_pair_http_only_inherited_memo",
+      "passed": true,
+      "cookies": [
+        {
+          "name": "qa_first",
+          "value": "first-1",
+          "domain": "127.0.0.1",
+          "path": "/",
+          "expires": -1,
+          "httpOnly": true,
+          "secure": false,
+          "sameSite": "Strict"
+        },
+        {
+          "name": "qa_second",
+          "value": "second-1",
+          "domain": "127.0.0.1",
+          "path": "/",
+          "expires": -1,
+          "httpOnly": true,
+          "secure": false,
+          "sameSite": "Strict"
+        }
+      ]
+    },
+    {
+      "scenario": "paired_burst_without_clobber",
+      "passed": true,
+      "cookies": [
+        {
+          "name": "qa_first",
+          "value": "first-6",
+          "domain": "127.0.0.1",
+          "path": "/",
+          "expires": -1,
+          "httpOnly": true,
+          "secure": false,
+          "sameSite": "Strict"
+        },
+        {
+          "name": "qa_second",
+          "value": "second-6",
+          "domain": "127.0.0.1",
+          "path": "/",
+          "expires": -1,
+          "httpOnly": true,
+          "secure": false,
+          "sameSite": "Strict"
+        }
+      ]
+    },
+    {
+      "scenario": "reload_persistence",
+      "passed": true
+    },
+    {
+      "scenario": "browser_to_backend_dependency_invalidation",
+      "passed": true
+    },
+    {
+      "scenario": "explicit_delete",
+      "passed": true
+    }
+  ],
+  "failure": null,
+  "diagnostics": {
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation",
+        "location": {
+          "url": "http://127.0.0.1:3145/assets/button-CwLE4ou3.js",
+          "lineNumber": 1,
+          "columnNumber": 9852
+        }
+      }
+    ],
+    "page_errors": [],
+    "http_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:3145/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "cookie_sync": [
+      {
+        "status": 200,
+        "set_cookie": [
+          "qa_first=first-1; HttpOnly; Path=/; SameSite=strict",
+          "qa_second=second-1; HttpOnly; Path=/; SameSite=strict"
+        ]
+      },
+      {
+        "status": 200,
+        "set_cookie": []
+      },
+      {
+        "status": 200,
+        "set_cookie": [
+          "qa_first=first-2; HttpOnly; Path=/; SameSite=strict",
+          "qa_second=second-2; HttpOnly; Path=/; SameSite=strict"
+        ]
+      },
+      {
+        "status": 200,
+        "set_cookie": []
+      },
+      {
+        "status": 200,
+        "set_cookie": [
+          "qa_first=first-3; HttpOnly; Path=/; SameSite=strict",
+          "qa_second=second-3; HttpOnly; Path=/; SameSite=strict"
+        ]
+      },
+      {
+        "status": 200,
+        "set_cookie": []
+      },
+      {
+        "status": 200,
+        "set_cookie": [
+          "qa_first=first-4; HttpOnly; Path=/; SameSite=strict",
+          "qa_second=second-4; HttpOnly; Path=/; SameSite=strict"
+        ]
+      },
+      {
+        "status": 200,
+        "set_cookie": []
+      },
+      {
+        "status": 200,
+        "set_cookie": [
+          "qa_first=first-5; HttpOnly; Path=/; SameSite=strict",
+          "qa_second=second-5; HttpOnly; Path=/; SameSite=strict"
+        ]
+      },
+      {
+        "status": 200,
+        "set_cookie": []
+      },
+      {
+        "status": 200,
+        "set_cookie": [
+          "qa_first=first-6; HttpOnly; Path=/; SameSite=strict",
+          "qa_second=second-6; HttpOnly; Path=/; SameSite=strict"
+        ]
+      },
+      {
+        "status": 200,
+        "set_cookie": []
+      },
+      {
+        "status": 200,
+        "set_cookie": []
+      },
+      {
+        "status": 200,
+        "set_cookie": [
+          "qa_first=\"\"; HttpOnly; Max-Age=0; Path=/; SameSite=strict",
+          "qa_second=\"\"; HttpOnly; Max-Age=0; Path=/; SameSite=strict"
+        ]
+      },
+      {
+        "status": 200,
+        "set_cookie": []
+      }
+    ]
+  },
+  "body": "HTTP cookie QA\n\nchild:\n\n1\n\nSet pair\nSync browser\nDelete pair\nReset State\nBuilt with Reflex",
+  "browser_version": "140.0.7339.16"
+}

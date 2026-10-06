@@ -1,0 +1,64 @@
+{
+  "passed": false,
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "location": {
+        "url": "http://localhost:3146/articles/7?self=1",
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "error",
+      "text": "RangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)",
+      "location": {
+        "url": "http://localhost:3146/assets/errorBoundaries-D0b1Xva_.js",
+        "lineNumber": 11,
+        "columnNumber": 1828
+      }
+    },
+    {
+      "type": "error",
+      "text": "RangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)",
+      "location": {
+        "url": "http://localhost:3146/assets/entry.client-Dq_ArZZD.js",
+        "lineNumber": 7,
+        "columnNumber": 64111
+      }
+    },
+    {
+      "type": "error",
+      "text": "RangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)",
+      "location": {
+        "url": "http://localhost:3146/assets/errorBoundaries-D0b1Xva_.js",
+        "lineNumber": 11,
+        "columnNumber": 1828
+      }
+    },
+    {
+      "type": "error",
+      "text": "RangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)",
+      "location": {
+        "url": "http://localhost:3146/assets/entry.client-Dq_ArZZD.js",
+        "lineNumber": 7,
+        "columnNumber": 64111
+      }
+    }
+  ],
+  "page_errors": [],
+  "http_errors": [
+    {
+      "url": "http://localhost:3146/articles/7?self=1",
+      "status": 404
+    }
+  ],
+  "failed_requests": [],
+  "steps": [],
+  "document_status": 404,
+  "failure": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a4-root-controller/root_runs.py\", line 119, in observe_scale\n    expect(page.get_by_role(\"heading\", name=\"Article 7\", exact=True)).to_be_visible()\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 20424, in to_be_visible\n    self._sync(self._impl_obj.to_be_visible(visible=visible, timeout=timeout))\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 763, in to_be_visible\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to be visible\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_be_visible\" with timeout 5000ms\n  - waiting for get_by_role(\"heading\", name=\"Article 7\", exact=True)\n\n",
+  "root_route_failure": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a4-root-controller/root_runs.py\", line 119, in observe_scale\n    expect(page.get_by_role(\"heading\", name=\"Article 7\", exact=True)).to_be_visible()\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 20424, in to_be_visible\n    self._sync(self._impl_obj.to_be_visible(visible=visible, timeout=timeout))\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 763, in to_be_visible\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to be visible\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_be_visible\" with timeout 5000ms\n  - waiting for get_by_role(\"heading\", name=\"Article 7\", exact=True)\n\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/private/tmp/reflex-enterprise-a4-root-controller/root_runs.py\", line 136, in observe_scale\n    expect(page.get_by_role(\"heading\", name=\"Runtime QA\", exact=True)).to_be_visible()\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 20424, in to_be_visible\n    self._sync(self._impl_obj.to_be_visible(visible=visible, timeout=timeout))\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 763, in to_be_visible\n    await self._expect_impl(\n  File \"/private/tmp/reflex-enterprise-a4-20261005-root-stable-venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py\", line 83, in _expect_impl\n    raise AssertionError(\nAssertionError: Locator expected to be visible\nActual value: <element(s) not found> \nCall log:\n  - Expect \"to_be_visible\" with timeout 5000ms\n  - waiting for get_by_role(\"heading\", name=\"Runtime QA\", exact=True)\n\n",
+  "browser_version": "140.0.7339.16",
+  "body": "Application Error\nRangeError: Maximum call stack size exceeded\n    at Oo (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:47514)\n    at yc (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:69940)\n    at Ic (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:80187)\n    at Mu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:115484)\n    at ku (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114567)\n    at Ou (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:114406)\n    at gu (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:111276)\n    at cd (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:8:122764)\n    at MessagePort.ie (http://localhost:3146/assets/entry.client-Dq_ArZZD.js:1:1752)"
+}

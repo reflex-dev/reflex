@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "console": [],
+  "page_errors": [],
+  "http_errors": [],
+  "failed_requests": [],
+  "steps": [
+    "direct dynamic route and memoized article",
+    "client navigation and backend counter 0\u21921"
+  ],
+  "document_status": 200,
+  "browser_version": "140.0.7339.16",
+  "body": "Runtime QA\n\n1\n\nIncrement\nFail event\nChild output\nArticle seven\nCSS witness\nBuilt with Reflex"
+}

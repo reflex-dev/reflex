@@ -1,0 +1,48 @@
+{
+  "fresh_browser_rerun": false,
+  "verification": "Original six core/state module bytes match the a4 combination installed modules",
+  "modules": [
+    {
+      "module": "reflex",
+      "current_path": "/private/tmp/reflex-enterprise-a4-20261005-components/lib/python3.12/site-packages/reflex/__init__.py",
+      "current_sha256": "c6182fcc4ce53fc4b7a07d8b887019c7685a88621766453a012a8a1b68940ea7",
+      "original_sha256": "c6182fcc4ce53fc4b7a07d8b887019c7685a88621766453a012a8a1b68940ea7",
+      "identical": true
+    },
+    {
+      "module": "reflex.state",
+      "current_path": "/private/tmp/reflex-enterprise-a4-20261005-components/lib/python3.12/site-packages/reflex/state.py",
+      "current_sha256": "a5a0b0061326da696da7d397859dd650dcd783f521530d38ecc3de9c45c17ef8",
+      "original_sha256": "a5a0b0061326da696da7d397859dd650dcd783f521530d38ecc3de9c45c17ef8",
+      "identical": true
+    },
+    {
+      "module": "reflex.experimental.client_state",
+      "current_path": "/private/tmp/reflex-enterprise-a4-20261005-components/lib/python3.12/site-packages/reflex/experimental/client_state.py",
+      "current_sha256": "974d9103b5f2d341df0d9972e5bf9d9b19862d749ea387e2c905a07ec2a11cc0",
+      "original_sha256": "974d9103b5f2d341df0d9972e5bf9d9b19862d749ea387e2c905a07ec2a11cc0",
+      "identical": true
+    },
+    {
+      "module": "reflex_base",
+      "current_path": "/private/tmp/reflex-enterprise-a4-20261005-components/lib/python3.12/site-packages/reflex_base/__init__.py",
+      "current_sha256": "3adeaa12cd4e76eb2e48c30dd76d59bf4bf08a05886143a737cb9840622977d4",
+      "original_sha256": "3adeaa12cd4e76eb2e48c30dd76d59bf4bf08a05886143a737cb9840622977d4",
+      "identical": true
+    },
+    {
+      "module": "reflex_base.vars.base",
+      "current_path": "/private/tmp/reflex-enterprise-a4-20261005-components/lib/python3.12/site-packages/reflex_base/vars/base.py",
+      "current_sha256": "1bb54fe0ee9b873376a2e543cd631db66497790e11c365213e58cd8123d100de",
+      "original_sha256": "1bb54fe0ee9b873376a2e543cd631db66497790e11c365213e58cd8123d100de",
+      "identical": true
+    },
+    {
+      "module": "reflex_base.components.memo",
+      "current_path": "/private/tmp/reflex-enterprise-a4-20261005-components/lib/python3.12/site-packages/reflex_base/components/memo.py",
+      "current_sha256": "789604eab57cbcd0b56e9076faa751ca363d9ceb892494ade88c7fc0cfb22006",
+      "original_sha256": "789604eab57cbcd0b56e9076faa751ca363d9ceb892494ade88c7fc0cfb22006",
+      "identical": true
+    }
+  ]
+}

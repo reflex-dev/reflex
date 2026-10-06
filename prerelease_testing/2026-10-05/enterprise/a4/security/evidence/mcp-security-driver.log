@@ -1,0 +1,42 @@
+WARN `--no-project` was provided, but no project was found
+  + Exception Group Traceback (most recent call last):
+  |   File "/private/tmp/reflex-enterprise-a4-20261005-security/check_mcp_security.py", line 168, in <module>
+  |     main()
+  |   File "/private/tmp/reflex-enterprise-a4-20261005-security/check_mcp_security.py", line 161, in main
+  |     asyncio.run(probe(alice, bob, evidence))
+  |   File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+  |     return runner.run(main)
+  |            ^^^^^^^^^^^^^^^^
+  |   File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+  |     return self._loop.run_until_complete(task)
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 684, in run_until_complete
+  |     return future.result()
+  |            ^^^^^^^^^^^^^^^
+  |   File "/private/tmp/reflex-enterprise-a4-20261005-security/check_mcp_security.py", line 124, in probe
+  |     async with streamable_http_client(RESOURCE, http_client=client) as (read, write, session_id):
+  |   File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 231, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-packages/mcp/client/streamable_http.py", line 672, in streamable_http_client
+  |     async with anyio.create_task_group() as tg:
+  |   File "/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-packages/mcp/client/streamable_http.py", line 695, in streamable_http_client
+    |     yield (
+    |   File "/private/tmp/reflex-enterprise-a4-20261005-security/check_mcp_security.py", line 125, in probe
+    |     async with ClientSession(read, write) as session:
+    |   File "/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-packages/mcp/shared/session.py", line 238, in __aexit__
+    |     return await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/private/tmp/reflex-enterprise-a4-20261005-security-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+    |     raise BaseExceptionGroup(
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/private/tmp/reflex-enterprise-a4-20261005-security/check_mcp_security.py", line 143, in probe
+      |     assert identifier
+      | AssertionError
+      +------------------------------------

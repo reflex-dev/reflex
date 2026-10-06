@@ -1,0 +1,46 @@
+{
+  "lane": "scale",
+  "graph": "alpha",
+  "extra_states": 1200,
+  "passed": true,
+  "source_hashes": {
+    "rxconfig.py": "f91f12c74c03fbf0e76b37e12fbbc7e6002117eb35a88e5c0712d2411533ce97",
+    ".gitignore": "803d835eb12e039c2b5dfa15fa2ba0825b7739e19bb99f6318c31bd86155fe85",
+    "lifecycle_app/__init__.py": "222454936893cd6ecb8600195669dc760b4926bc9a8c9c4583ecc49ccd73f6c8",
+    "lifecycle_app/lifecycle_app.py": "221ef8bd6024502a302c515b8a2b12ad05ba7b025ae96afefedd82c9443c2d23",
+    "assets/qa.css": "090eda74ed7683bb7ae551537875820027da6e628701a45b283fc9826945280c"
+  },
+  "command": [
+    "/Users/masenf/.local/bin/uv",
+    "--no-config",
+    "run",
+    "--no-project",
+    "--python",
+    "/private/tmp/reflex-enterprise-a4-20261005-root-venv/bin/python",
+    "reflex",
+    "run",
+    "--env",
+    "prod",
+    "--loglevel",
+    "debug"
+  ],
+  "neutral_app": "/private/tmp/reflex-a4-scale-czrkw_3x/app",
+  "ci_bypass": true,
+  "ready": true,
+  "startup_exit": null,
+  "browser": {
+    "passed": true,
+    "console": [],
+    "page_errors": [],
+    "http_errors": [],
+    "failed_requests": [],
+    "steps": [
+      "direct dynamic route and memoized article",
+      "client navigation and backend counter 0\u21921"
+    ],
+    "document_status": 200,
+    "browser_version": "140.0.7339.16",
+    "body": "Runtime QA\n\n1\n\nIncrement\nFail event\nChild output\nArticle seven\nCSS witness\nBuilt with Reflex"
+  },
+  "stopped_cli_exit": 130
+}

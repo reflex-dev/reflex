@@ -1,0 +1,56 @@
+{
+  "gate": "hold",
+  "criteria": "newly introduced OR critical severity OR demonstrably weak security requiring a release fix",
+  "blockers": [
+    {
+      "finding": 15,
+      "category": "security",
+      "issue": "https://github.com/reflex-dev/reflex-enterprise/issues/245",
+      "summary": "Failed protected-state logout cleanup can preserve confidential State across authenticated identities.",
+      "introduction": "not established; security criterion independently satisfied",
+      "evidence": "security/REPORT.md"
+    },
+    {
+      "finding": 16,
+      "category": "newly introduced regression",
+      "change": "https://github.com/reflex-dev/reflex/pull/7312",
+      "summary": "Mixed-version Redis workers silently lose in-place mutable backend changes to alpha-saved State.",
+      "evidence": "rolling/REPORT.md",
+      "documented_caveat_is_not_user_waiver": true
+    }
+  ],
+  "resolved": [
+    1,
+    2,
+    3,
+    12,
+    13
+  ],
+  "deferred_by_user": [
+    14
+  ],
+  "nonblocking_historical_findings": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "new_runs": {
+    "auth_browser_cases": 36,
+    "cookie_groups_per_graph": 6,
+    "free_tier_cases": 8,
+    "enterprise_grid_cases_per_mode": 15,
+    "map_storage_font_cases_per_mode": 7,
+    "formatter_cases_per_mode": 3,
+    "formatter_export_integrity": "passed",
+    "rolling_persistence_fresh_workers": 9
+  },
+  "reused_core_tooling_packages": 13,
+  "source_installs": false,
+  "framework_fixes": false,
+  "external_issue_actions": false
+}

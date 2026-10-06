@@ -1,0 +1,76 @@
+{
+  "auth-full-browser": {
+    "cases": 22,
+    "passed": 22,
+    "page_errors": 0,
+    "console_errors": 0,
+    "http_errors": null,
+    "failed_requests": 24,
+    "failed_request_categories": {
+      "http://localhost:8132/_reflex/cookies/sync net::ERR_ABORTED": 21,
+      "http://localhost:3132/app/routes/_index.jsx net::ERR_ABORTED": 3
+    }
+  },
+  "auth-min-default-browser": {
+    "cases": 4,
+    "passed": 4,
+    "page_errors": 0,
+    "console_errors": 0,
+    "http_errors": 0,
+    "failed_requests": 9,
+    "failed_request_categories": {
+      "http://localhost:8132/_reflex/cookies/sync net::ERR_ABORTED": 9
+    }
+  },
+  "auth-min-extra-browser": {
+    "cases": 4,
+    "passed": 4,
+    "page_errors": 0,
+    "console_errors": 0,
+    "http_errors": 0,
+    "failed_requests": 10,
+    "failed_request_categories": {
+      "http://localhost:8132/_reflex/cookies/sync net::ERR_ABORTED": 10
+    }
+  },
+  "reload-repeat": {
+    "cases": 3,
+    "passed": 3,
+    "page_errors": 0,
+    "console_errors": null,
+    "http_errors": 0,
+    "failed_requests": 3,
+    "failed_request_categories": {
+      "http://localhost:8132/_reflex/cookies/sync net::ERR_ABORTED": 3
+    }
+  },
+  "iframe-repeat": {
+    "cases": 3,
+    "passed": 3,
+    "page_errors": 0,
+    "console_errors": null,
+    "http_errors": null,
+    "failed_requests": null,
+    "failed_request_categories": null
+  },
+  "mcp-oauth": {
+    "passed": true,
+    "page_errors": []
+  },
+  "mcp-anonymous": {
+    "passed": true
+  },
+  "source_python_files": 44,
+  "source_changes_from_a3": [
+    "recheck_reload.py"
+  ],
+  "cleanup": {
+    "ports": {
+      "3132": "closed",
+      "8132": "closed",
+      "9131": "closed"
+    },
+    "shell_profile_runtime_reference": false
+  },
+  "unobserved_metric": "null means the retained driver did not record this diagnostic."
+}

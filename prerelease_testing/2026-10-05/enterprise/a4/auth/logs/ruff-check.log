@@ -1,0 +1,38 @@
+WARN `--no-project` was provided, but no project was found
+I001 [*] Import block is un-sorted or un-formatted
+  --> /private/tmp/reflex-enterprise-a4-20261005-auth/check_mcp_oauth.py:3:1
+   |
+ 1 |   """Run local MCP OAuth discovery, consent, PKCE, tools and token rotation."""
+ 2 |
+ 3 | / import asyncio
+ 4 | | import base64
+ 5 | | import hashlib
+ 6 | | import json
+ 7 | | import re
+ 8 | | from pathlib import Path
+ 9 | | from urllib.parse import parse_qs, urlencode, urlparse
+10 | |
+11 | | import httpx
+12 | | from mcp import ClientSession
+13 | | from mcp.client.streamable_http import streamable_http_client
+14 | | from playwright.sync_api import expect, sync_playwright
+15 | |
+16 | | from check_mcp import text_value
+   | |________________________________^
+17 |
+18 |   ROOT = Path(__file__).resolve().parent
+   |
+help: Organize imports
+   |
+11 | import httpx
+12 + from check_mcp import text_value
+13 | from mcp import ClientSession
+14 | from mcp.client.streamable_http import streamable_http_client
+15 | from playwright.sync_api import expect, sync_playwright
+   -
+   - from check_mcp import text_value
+16 |
+   |
+
+Found 1 error.
+[*] 1 fixable with the `--fix` option.

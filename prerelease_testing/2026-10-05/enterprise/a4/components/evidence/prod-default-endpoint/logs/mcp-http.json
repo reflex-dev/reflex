@@ -1,0 +1,7 @@
+[
+  {
+    "method": "POST",
+    "url": "http://localhost:3131/_reflex/mcp",
+    "status": 405
+  }
+]

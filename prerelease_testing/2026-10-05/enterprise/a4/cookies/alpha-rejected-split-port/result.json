@@ -1,0 +1,30 @@
+{
+  "lane": "cookies",
+  "graph": "alpha",
+  "extra_states": null,
+  "passed": false,
+  "source_hashes": {
+    "rxconfig.py": "68900e97e79c38bdeba54328d85257c8a2b1f97e427dc17a99a527c21da8e725",
+    "cookie_app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cookie_app/cookie_app.py": "f1f3a51074b0f1f7ac47cf130571e4b12fd0f8d5f01c088df18cc79441dbed46"
+  },
+  "command": [
+    "/Users/masenf/.local/bin/uv",
+    "--no-config",
+    "run",
+    "--no-project",
+    "--python",
+    "/private/tmp/reflex-enterprise-a4-20261005-root-venv/bin/python",
+    "reflex",
+    "run",
+    "--env",
+    "prod",
+    "--loglevel",
+    "debug"
+  ],
+  "neutral_app": "/private/tmp/reflex-a4-cookies-edrf_n2s/app",
+  "ci_bypass": true,
+  "ready": false,
+  "startup_exit": 1,
+  "stopped_cli_exit": 1
+}

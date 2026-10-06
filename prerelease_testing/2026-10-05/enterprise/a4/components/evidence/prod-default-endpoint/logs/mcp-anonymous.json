@@ -1,0 +1,6 @@
+{
+  "missing_bearer": {
+    "status": 405,
+    "body": "Method Not Allowed"
+  }
+}

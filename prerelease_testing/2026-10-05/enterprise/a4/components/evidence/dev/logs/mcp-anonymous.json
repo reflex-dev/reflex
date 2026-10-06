@@ -1,0 +1,1055 @@
+{
+  "missing_bearer": {
+    "status": 401,
+    "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}"
+  },
+  "fabricated_bearer": {
+    "status": 401,
+    "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}"
+  },
+  "A": {
+    "instructions": "# components MCP (v1.0.0)\n\nMCP access to the Reflex app **components** and its 15 event handler(s).\n\nThe app is served at http://localhost:8131.\n\n## Authentication\n\nRequests require an app-issued Bearer token. For an anonymous session (no user identity; only public surfaces when the app enforces auth), POST to the app's token endpoint `/_reflex/auth/token` and use the returned `access_token` as your Bearer token. The session is server-generated and bound to the token; reuse the token across calls to address the same session.\n\n## Tools\n\n- `search_events(query)` -- Search the app's event handlers; returns each handler's name (for queue_event) and payload schema.\n- `queue_event(event_name, payload, query)` -- Apply an event to your session: event_name + payload (the handler's parameters) + optional query (a JSON object of query parameters, e.g. the dynamic route variables listed below). Returns the resulting state delta -- or, for a file-upload handler, out-of-band upload directions (files must be POSTed to the MCP upload endpoint separately).\n- `get_pending_updates()` -- Return and clear followup deltas buffered for the session (chained events, background-task results).\n\n## Resources\n\nIntrospect and read the app over `reflex://` resources:\n\n- `reflex://state` -- list the exposed state names.\n- `reflex://event` -- enumerate the event handlers; `reflex://event/<event_name>` -- one handler's full schema.\n- `reflex://state/events/<state_name>` -- the event handlers on a state.\n- `reflex://state/vars/<state_name>` -- the resolved `.dict()` rooted at a state (cached frontend + computed var values); read the root `reflex___state____state` for the whole app.\n- `reflex://state/vars/<state_name>/<var_name>` -- a single var's live value (a computed var is marked dirty and recomputed).\n\nExposed states (for the `<state_name>` above):\n\n- `reflex___state____state`\n- `reflex___state____state.components___components____agent_state`\n- `reflex___state____state.components___components____grid_state`\n- `reflex___state____state.components___fly_to_location____fly_to_location_state`\n- `reflex___state____state.components___formatter_demo___formatters____row_click_counter_state`\n- `reflex___state____state.components___saved_state____grid_serialization_advanced_state`\n\nCall search_events (or read `reflex://event`) to find an event and its payload schema, queue_event to apply it to your session, then read `reflex://state/vars/<state_name>` to inspect the resulting state.\n\n## App resources\n\nApp-defined, read-only resources returning a value from your session state. Each parameter is a required URI path segment.\n\n- `state-resource://components___components____agent_state/summary/{label}` -- Return a parameterized read-only summary.\n\n## Pages\n\n- `http://localhost:3131/index`\n- `http://localhost:3131/suppress-overlay`\n- `http://localhost:3131/charts`\n- `http://localhost:3131/grouping`\n- `http://localhost:3131/infinite`\n- `http://localhost:3131/server-side`\n- `http://localhost:3131/formatters-direct`\n- `http://localhost:3131/formatters`\n- `http://localhost:3131/fly-to-location`\n- `http://localhost:3131/map-controls`\n- `http://localhost:3131/advanced-serialization` -- on_load triggers `components___saved_state____grid_serialization_advanced_state.load_data`\n- `http://localhost:3131/vector-layers`",
+    "tools": [
+      "search_events",
+      "queue_event",
+      "get_pending_updates"
+    ],
+    "search": {
+      "query": "bump",
+      "total_available": 15,
+      "total_matched": 1,
+      "returned": 1,
+      "results": [
+        {
+          "name": "components___components____agent_state.bump",
+          "state": "components___components____agent_state",
+          "handler": "bump",
+          "rest_path": "/_reflex/event/components___components____agent_state/bump",
+          "summary": "Increment the current agent session.",
+          "description": "Increment the current agent session.",
+          "parameters": [
+            {
+              "name": "amount",
+              "required": false,
+              "type": "integer",
+              "default": 1
+            }
+          ],
+          "upload": null
+        }
+      ]
+    },
+    "mutation": {
+      "event": "components___components____agent_state.bump",
+      "delta": {
+        "reflex___state____state": {
+          "rx_router_session": {
+            "client_token": "",
+            "client_ip": "0.0.0.0",
+            "session_id": ""
+          },
+          "rx_router_url": {
+            "scheme": "",
+            "netloc": "",
+            "origin": "://",
+            "path": "/_reflex/mcp",
+            "query": "",
+            "query_parameters": {},
+            "fragment": "",
+            "href": "/_reflex/mcp"
+          },
+          "rx_router_page": {
+            "host": "",
+            "path": "/_reflex/mcp",
+            "raw_path": "/_reflex/mcp",
+            "full_path": "/_reflex/mcp",
+            "full_raw_path": "/_reflex/mcp",
+            "params": {}
+          },
+          "rx_router_headers": {
+            "host": "",
+            "origin": "",
+            "upgrade": "",
+            "connection": "",
+            "cookie": "",
+            "pragma": "",
+            "cache_control": "",
+            "user_agent": "",
+            "sec_websocket_version": "",
+            "sec_websocket_key": "",
+            "sec_websocket_extensions": "",
+            "accept_encoding": "",
+            "accept_language": "",
+            "raw_headers": {}
+          },
+          "rx_router_route_id": "/_reflex/mcp"
+        },
+        "reflex___state____state.components___components____agent_state": {
+          "doubled": 8,
+          "count": 4
+        }
+      }
+    },
+    "count": {
+      "state": "reflex___state____state.components___components____agent_state",
+      "var": "count",
+      "computed": false,
+      "value": 4
+    },
+    "doubled": {
+      "state": "reflex___state____state.components___components____agent_state",
+      "var": "doubled",
+      "computed": true,
+      "value": 8
+    },
+    "root_state": {
+      "reflex___state____state": {
+        "is_hydrated": false,
+        "rx_router_headers": {
+          "host": "",
+          "origin": "",
+          "upgrade": "",
+          "connection": "",
+          "cookie": "",
+          "pragma": "",
+          "cache_control": "",
+          "user_agent": "",
+          "sec_websocket_version": "",
+          "sec_websocket_key": "",
+          "sec_websocket_extensions": "",
+          "accept_encoding": "",
+          "accept_language": "",
+          "raw_headers": {}
+        },
+        "rx_router_page": {
+          "host": "",
+          "path": "/_reflex/mcp",
+          "raw_path": "/_reflex/mcp",
+          "full_path": "/_reflex/mcp",
+          "full_raw_path": "/_reflex/mcp",
+          "params": {}
+        },
+        "rx_router_route_id": "/_reflex/mcp",
+        "rx_router_session": {
+          "client_token": "",
+          "client_ip": "0.0.0.0",
+          "session_id": ""
+        },
+        "rx_router_url": {
+          "scheme": "",
+          "netloc": "",
+          "origin": "://",
+          "path": "/_reflex/mcp",
+          "query": "",
+          "query_parameters": {},
+          "fragment": "",
+          "href": "/_reflex/mcp"
+        }
+      },
+      "reflex___state____state.components___components____agent_state": {
+        "count": 4,
+        "doubled": 8
+      },
+      "reflex___state____state.components___formatter_demo___formatters____formatter_state": {
+        "cols_defs": [
+          {
+            "field": "name"
+          },
+          {
+            "field": "name reversed",
+            "value_getter": {
+              "function": "params.data.name.split(\"\").reverse().join(\"\")"
+            }
+          },
+          {
+            "field": "country",
+            "value_formatter": "params.value.toUpperCase()"
+          },
+          {
+            "field": "percent",
+            "value_formatter": {
+              "_js_expr": "(params) => {\nif (typeof params.value === 'undefined' || Number.isNaN(params.value)) {\n    return '';\n}\nvar rounded = (params.value * 100).toFixed(2);\nreturn `${rounded}%`;}\n",
+              "_var_type": null,
+              "_var_data": null
+            }
+          },
+          {
+            "field": "flag",
+            "value_getter": {
+              "_js_expr": "((params) => params?.[\"data\"]?.[\"country\"])",
+              "_var_type": "Callable"
+            },
+            "value_formatter": {
+              "_js_expr": "((params) => {\nconst isTrue = __reflex['$/utils/state']?.isTrue;\nreturn (isTrue(({ [\"USA\"] : \"\\ud83c\\uddfa\\ud83c\\uddf8\", [\"Sweden\"] : \"\\ud83c\\uddf8\\ud83c\\uddea\", [\"Germany\"] : \"\\ud83c\\udde9\\ud83c\\uddea\", [\"Canada\"] : \"\\ud83c\\udde8\\ud83c\\udde6\" })?.[params?.[\"value\"]]) ? ({ [\"USA\"] : \"\\ud83c\\uddfa\\ud83c\\uddf8\", [\"Sweden\"] : \"\\ud83c\\uddf8\\ud83c\\uddea\", [\"Germany\"] : \"\\ud83c\\udde9\\ud83c\\uddea\", [\"Canada\"] : \"\\ud83c\\udde8\\ud83c\\udde6\" })?.[params?.[\"value\"]] : \"\\ud83c\\udff3\\ufe0f\\u200d\\ud83c\\udf08\")\n})",
+              "_var_type": "Callable",
+              "_var_data": {
+                "field_dependencies": {},
+                "imports": [
+                  [
+                    "$/utils/state",
+                    [
+                      {
+                        "tag": "isTrue",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ]
+                ],
+                "hooks": [],
+                "deps": [],
+                "position": null,
+                "components": [],
+                "app_wraps": []
+              }
+            }
+          },
+          {
+            "field": "number",
+            "cell_renderer": {
+              "_js_expr": "((params) => {\nconst jsx = __reflex['@emotion/react']?.jsx;\nconst Fragment = __reflex['react']?.Fragment;\nconst RadixThemesText = __reflex['@radix-ui/themes']?.Text;\nconst pyOr = __reflex['$/utils/state']?.pyOr;\nreturn (jsx(RadixThemesText, ({as:\"p\",css:({ [\"fontFamily\"] : \"monospace\", [\"--default-font-family\"] : \"monospace\", [\"lineHeight\"] : \"inherit\", [\"color\"] : \"rebeccapurple\" })}), (JSON.stringify(params?.[\"value\"]))))\n})",
+              "_var_type": "Callable",
+              "_var_data": {
+                "field_dependencies": {},
+                "imports": [
+                  [
+                    "@emotion/react",
+                    [
+                      {
+                        "tag": "jsx",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "react",
+                    [
+                      {
+                        "tag": "Fragment",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "@radix-ui/themes@3.3.0",
+                    [
+                      {
+                        "tag": "Text",
+                        "is_default": false,
+                        "alias": "RadixThemesText",
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "$/utils/state",
+                    [
+                      {
+                        "tag": "pyOr",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ]
+                ],
+                "hooks": [],
+                "deps": [],
+                "position": null,
+                "components": [
+                  "//__reflex_evaluate\nconst React = window.__reflex.react;\n\nconst {jsx} = window.__reflex['@emotion/react']\nconst {Fragment,useEffect} = window.__reflex['react']\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\nconst {pyOr} = window.__reflex['$/utils/state']\n\nexport default function MySSRComponent () {\n  \n\n\n\n  return (\n    (jsx(RadixThemesText, ({as:\"p\",css:({ [\"fontFamily\"] : \"monospace\", [\"--default-font-family\"] : \"monospace\", [\"lineHeight\"] : \"inherit\", [\"color\"] : \"rebeccapurple\" })}), (JSON.stringify(params?.[\"value\"]))))\n  )\n}"
+                ],
+                "app_wraps": []
+              }
+            }
+          },
+          {
+            "field": "currency number",
+            "value_getter": "params.data.number",
+            "value_formatter": {
+              "_js_expr": "((params) => (params?.[\"data\"]?.[\"symbol\"]+(JSON.stringify((+params?.[\"data\"]?.[\"number\"].toFixed(2)))).replaceAll(/\\B(?=(\\d{3})+(?!\\d))/g, \",\")))",
+              "_var_type": "Callable"
+            }
+          },
+          {
+            "field": "scaled number",
+            "value_getter": "params.data.number * params.data.percent",
+            "value_formatter": {
+              "_js_expr": "((params) => (+params?.[\"value\"].toFixed(4)))",
+              "_var_type": "Callable"
+            },
+            "cell_renderer": {
+              "_js_expr": "((params) => {\nconst jsx = __reflex['@emotion/react']?.jsx;\nconst Fragment = __reflex['react']?.Fragment;\nconst RadixThemesTooltip = __reflex['@radix-ui/themes']?.Tooltip;\nconst RadixThemesText = __reflex['@radix-ui/themes']?.Text;\nconst pyOr = __reflex['$/utils/state']?.pyOr;\nreturn (jsx(RadixThemesTooltip, ({content:(params?.[\"data\"]?.[\"number\"]+\" * \"+params?.[\"data\"]?.[\"percent\"]),side:\"left\"}), (jsx(RadixThemesText, ({as:\"p\",css:({ [\"lineHeight\"] : \"inherit\", [\"width\"] : \"fit-content\" })}), (JSON.stringify(params?.[\"valueFormatted\"]))))))\n})",
+              "_var_type": "Callable",
+              "_var_data": {
+                "field_dependencies": {},
+                "imports": [
+                  [
+                    "@emotion/react",
+                    [
+                      {
+                        "tag": "jsx",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "react",
+                    [
+                      {
+                        "tag": "Fragment",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "@radix-ui/themes@3.3.0",
+                    [
+                      {
+                        "tag": "Tooltip",
+                        "is_default": false,
+                        "alias": "RadixThemesTooltip",
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      },
+                      {
+                        "tag": "Text",
+                        "is_default": false,
+                        "alias": "RadixThemesText",
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "$/utils/state",
+                    [
+                      {
+                        "tag": "pyOr",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ]
+                ],
+                "hooks": [],
+                "deps": [],
+                "position": null,
+                "components": [
+                  "//__reflex_evaluate\nconst React = window.__reflex.react;\n\nconst {jsx} = window.__reflex['@emotion/react']\nconst {Fragment,useEffect} = window.__reflex['react']\nconst {Text: RadixThemesText,Tooltip: RadixThemesTooltip} = window.__reflex['@radix-ui/themes']\nconst {pyOr} = window.__reflex['$/utils/state']\n\nexport default function MySSRComponent () {\n  \n\n\n\n  return (\n    (jsx(RadixThemesTooltip, ({content:(params?.[\"data\"]?.[\"number\"]+\" * \"+params?.[\"data\"]?.[\"percent\"]),side:\"left\"}), (jsx(RadixThemesText, ({as:\"p\",css:({ [\"lineHeight\"] : \"inherit\", [\"width\"] : \"fit-content\" })}), (JSON.stringify(params?.[\"valueFormatted\"]))))))\n  )\n}"
+                ],
+                "app_wraps": []
+              }
+            }
+          },
+          {
+            "field": "row counter",
+            "header_name": "# Clicks (Last click)",
+            "cell_renderer": {
+              "_js_expr": "((params) => {\nconst jsx = __reflex['@emotion/react']?.jsx;\nconst Fragment = __reflex['react']?.Fragment;\nconst RowCounter_bb59f568 = __reflex['$/app_components/components/formatter_demo/formatters']?.RowCounter_bb59f568;\nconst pyOr = __reflex['$/utils/state']?.pyOr;\nreturn (jsx(RowCounter_bb59f568, ({rowid:params?.[\"node\"]?.[\"id\"]})))\n})",
+              "_var_type": "Callable",
+              "_var_data": {
+                "field_dependencies": {},
+                "imports": [
+                  [
+                    "@emotion/react",
+                    [
+                      {
+                        "tag": "jsx",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "react",
+                    [
+                      {
+                        "tag": "Fragment",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "$/app_components/components/formatter_demo/formatters",
+                    [
+                      {
+                        "tag": "RowCounter_bb59f568",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "$/utils/state",
+                    [
+                      {
+                        "tag": "pyOr",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ]
+                ],
+                "hooks": [],
+                "deps": [],
+                "position": null,
+                "components": [
+                  "//__reflex_evaluate\nconst React = window.__reflex.react;\n\nconst {jsx} = window.__reflex['@emotion/react']\nconst {Fragment,useEffect} = window.__reflex['react']\nconst {RowCounter_bb59f568} = window.__reflex['$/app_components/components/formatter_demo/formatters']\nconst {pyOr} = window.__reflex['$/utils/state']\n\nexport default function MySSRComponent () {\n  \n\n\n\n  return (\n    (jsx(RowCounter_bb59f568, ({rowid:params?.[\"node\"]?.[\"id\"]})))\n  )\n}"
+                ],
+                "app_wraps": []
+              }
+            },
+            "sortable": false
+          },
+          {
+            "field": "raw data",
+            "header_name": "Show raw data",
+            "cell_renderer": "dataDialog",
+            "sortable": false
+          }
+        ]
+      },
+      "reflex___state____state.components___saved_state____grid_serialization_advanced_state": {
+        "grid_state": "",
+        "grid_state_dict": {},
+        "row_data": []
+      },
+      "reflex___state____state.components___formatter_demo___common____demo_state": {
+        "pages": [
+          {
+            "route": "/formatters",
+            "title": "AG Grid Formatters",
+            "description": "AG Grid with custom formatters."
+          }
+        ]
+      },
+      "reflex___state____state.components___fly_to_location____fly_to_location_state": {
+        "center": {
+          "lat": 51.505,
+          "lng": -0.09
+        },
+        "location_found": null,
+        "zoom": 13,
+        "zoom_levels_changed": false
+      },
+      "reflex___state____state.components___components____grid_state": {
+        "columns": [
+          {
+            "field": "name",
+            "pinned": "left",
+            "filter": "agTextColumnFilter"
+          },
+          {
+            "header_name": "Inventory",
+            "children": [
+              {
+                "field": "quantity",
+                "editable": true,
+                "cell_data_type": "number",
+                "value_formatter": "params.value + ' units'"
+              },
+              {
+                "field": "category"
+              }
+            ]
+          }
+        ],
+        "edit": "{}",
+        "filter_event": "{}",
+        "query": "",
+        "ready": false,
+        "rows": [
+          {
+            "id": "a",
+            "name": "Alpha",
+            "quantity": 3,
+            "category": "Tools"
+          },
+          {
+            "id": "b",
+            "name": "Beta",
+            "quantity": 1,
+            "category": "Tools"
+          },
+          {
+            "id": "c",
+            "name": "Gamma",
+            "quantity": 4,
+            "category": "Parts"
+          },
+          {
+            "id": "d",
+            "name": "Delta",
+            "quantity": 2,
+            "category": "Parts"
+          }
+        ],
+        "selected": "[]",
+        "theme": "quartz"
+      },
+      "reflex___state____state.components___map_controls____controls_state": {},
+      "reflex___state____state.components___formatter_demo___formatters____row_click_counter_state": {
+        "button_colors": {},
+        "last_click": {},
+        "row_clicks": {}
+      },
+      "reflex___state____state.components___vector_layers____vector_layers_state": {
+        "center": {
+          "lat": 51.505,
+          "lng": -0.09
+        },
+        "zoom": 13
+      }
+    },
+    "resource_templates": [
+      "reflex://event/{event_name}",
+      "reflex://state/events/{state_name}",
+      "reflex://state/vars/{state_name}",
+      "reflex://state/vars/{state_name}/{var_name}",
+      "state-resource://components___components____agent_state/summary/{label}"
+    ],
+    "summary": {
+      "label": "local-label",
+      "count": 4
+    }
+  },
+  "B": {
+    "instructions": "# components MCP (v1.0.0)\n\nMCP access to the Reflex app **components** and its 15 event handler(s).\n\nThe app is served at http://localhost:8131.\n\n## Authentication\n\nRequests require an app-issued Bearer token. For an anonymous session (no user identity; only public surfaces when the app enforces auth), POST to the app's token endpoint `/_reflex/auth/token` and use the returned `access_token` as your Bearer token. The session is server-generated and bound to the token; reuse the token across calls to address the same session.\n\n## Tools\n\n- `search_events(query)` -- Search the app's event handlers; returns each handler's name (for queue_event) and payload schema.\n- `queue_event(event_name, payload, query)` -- Apply an event to your session: event_name + payload (the handler's parameters) + optional query (a JSON object of query parameters, e.g. the dynamic route variables listed below). Returns the resulting state delta -- or, for a file-upload handler, out-of-band upload directions (files must be POSTed to the MCP upload endpoint separately).\n- `get_pending_updates()` -- Return and clear followup deltas buffered for the session (chained events, background-task results).\n\n## Resources\n\nIntrospect and read the app over `reflex://` resources:\n\n- `reflex://state` -- list the exposed state names.\n- `reflex://event` -- enumerate the event handlers; `reflex://event/<event_name>` -- one handler's full schema.\n- `reflex://state/events/<state_name>` -- the event handlers on a state.\n- `reflex://state/vars/<state_name>` -- the resolved `.dict()` rooted at a state (cached frontend + computed var values); read the root `reflex___state____state` for the whole app.\n- `reflex://state/vars/<state_name>/<var_name>` -- a single var's live value (a computed var is marked dirty and recomputed).\n\nExposed states (for the `<state_name>` above):\n\n- `reflex___state____state`\n- `reflex___state____state.components___components____agent_state`\n- `reflex___state____state.components___components____grid_state`\n- `reflex___state____state.components___fly_to_location____fly_to_location_state`\n- `reflex___state____state.components___formatter_demo___formatters____row_click_counter_state`\n- `reflex___state____state.components___saved_state____grid_serialization_advanced_state`\n\nCall search_events (or read `reflex://event`) to find an event and its payload schema, queue_event to apply it to your session, then read `reflex://state/vars/<state_name>` to inspect the resulting state.\n\n## App resources\n\nApp-defined, read-only resources returning a value from your session state. Each parameter is a required URI path segment.\n\n- `state-resource://components___components____agent_state/summary/{label}` -- Return a parameterized read-only summary.\n\n## Pages\n\n- `http://localhost:3131/index`\n- `http://localhost:3131/suppress-overlay`\n- `http://localhost:3131/charts`\n- `http://localhost:3131/grouping`\n- `http://localhost:3131/infinite`\n- `http://localhost:3131/server-side`\n- `http://localhost:3131/formatters-direct`\n- `http://localhost:3131/formatters`\n- `http://localhost:3131/fly-to-location`\n- `http://localhost:3131/map-controls`\n- `http://localhost:3131/advanced-serialization` -- on_load triggers `components___saved_state____grid_serialization_advanced_state.load_data`\n- `http://localhost:3131/vector-layers`",
+    "tools": [
+      "search_events",
+      "queue_event",
+      "get_pending_updates"
+    ],
+    "search": {
+      "query": "bump",
+      "total_available": 15,
+      "total_matched": 1,
+      "returned": 1,
+      "results": [
+        {
+          "name": "components___components____agent_state.bump",
+          "state": "components___components____agent_state",
+          "handler": "bump",
+          "rest_path": "/_reflex/event/components___components____agent_state/bump",
+          "summary": "Increment the current agent session.",
+          "description": "Increment the current agent session.",
+          "parameters": [
+            {
+              "name": "amount",
+              "required": false,
+              "type": "integer",
+              "default": 1
+            }
+          ],
+          "upload": null
+        }
+      ]
+    },
+    "count": {
+      "state": "reflex___state____state.components___components____agent_state",
+      "var": "count",
+      "computed": false,
+      "value": 0
+    },
+    "doubled": {
+      "state": "reflex___state____state.components___components____agent_state",
+      "var": "doubled",
+      "computed": true,
+      "value": 0
+    },
+    "root_state": {
+      "reflex___state____state": {
+        "is_hydrated": false,
+        "rx_router_headers": {
+          "host": "",
+          "origin": "",
+          "upgrade": "",
+          "connection": "",
+          "cookie": "",
+          "pragma": "",
+          "cache_control": "",
+          "user_agent": "",
+          "sec_websocket_version": "",
+          "sec_websocket_key": "",
+          "sec_websocket_extensions": "",
+          "accept_encoding": "",
+          "accept_language": "",
+          "raw_headers": {}
+        },
+        "rx_router_page": {
+          "host": "",
+          "path": "",
+          "raw_path": "",
+          "full_path": "",
+          "full_raw_path": "",
+          "params": {}
+        },
+        "rx_router_route_id": "",
+        "rx_router_session": {
+          "client_token": "",
+          "client_ip": "0.0.0.0",
+          "session_id": ""
+        },
+        "rx_router_url": {
+          "scheme": "",
+          "netloc": "",
+          "origin": "://",
+          "path": "",
+          "query": "",
+          "query_parameters": {},
+          "fragment": "",
+          "href": ""
+        }
+      },
+      "reflex___state____state.components___components____agent_state": {
+        "count": 0,
+        "doubled": 0
+      },
+      "reflex___state____state.components___formatter_demo___formatters____formatter_state": {
+        "cols_defs": [
+          {
+            "field": "name"
+          },
+          {
+            "field": "name reversed",
+            "value_getter": {
+              "function": "params.data.name.split(\"\").reverse().join(\"\")"
+            }
+          },
+          {
+            "field": "country",
+            "value_formatter": "params.value.toUpperCase()"
+          },
+          {
+            "field": "percent",
+            "value_formatter": {
+              "_js_expr": "(params) => {\nif (typeof params.value === 'undefined' || Number.isNaN(params.value)) {\n    return '';\n}\nvar rounded = (params.value * 100).toFixed(2);\nreturn `${rounded}%`;}\n",
+              "_var_type": null,
+              "_var_data": null
+            }
+          },
+          {
+            "field": "flag",
+            "value_getter": {
+              "_js_expr": "((params) => params?.[\"data\"]?.[\"country\"])",
+              "_var_type": "Callable"
+            },
+            "value_formatter": {
+              "_js_expr": "((params) => {\nconst isTrue = __reflex['$/utils/state']?.isTrue;\nreturn (isTrue(({ [\"USA\"] : \"\\ud83c\\uddfa\\ud83c\\uddf8\", [\"Sweden\"] : \"\\ud83c\\uddf8\\ud83c\\uddea\", [\"Germany\"] : \"\\ud83c\\udde9\\ud83c\\uddea\", [\"Canada\"] : \"\\ud83c\\udde8\\ud83c\\udde6\" })?.[params?.[\"value\"]]) ? ({ [\"USA\"] : \"\\ud83c\\uddfa\\ud83c\\uddf8\", [\"Sweden\"] : \"\\ud83c\\uddf8\\ud83c\\uddea\", [\"Germany\"] : \"\\ud83c\\udde9\\ud83c\\uddea\", [\"Canada\"] : \"\\ud83c\\udde8\\ud83c\\udde6\" })?.[params?.[\"value\"]] : \"\\ud83c\\udff3\\ufe0f\\u200d\\ud83c\\udf08\")\n})",
+              "_var_type": "Callable",
+              "_var_data": {
+                "field_dependencies": {},
+                "imports": [
+                  [
+                    "$/utils/state",
+                    [
+                      {
+                        "tag": "isTrue",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ]
+                ],
+                "hooks": [],
+                "deps": [],
+                "position": null,
+                "components": [],
+                "app_wraps": []
+              }
+            }
+          },
+          {
+            "field": "number",
+            "cell_renderer": {
+              "_js_expr": "((params) => {\nconst jsx = __reflex['@emotion/react']?.jsx;\nconst Fragment = __reflex['react']?.Fragment;\nconst RadixThemesText = __reflex['@radix-ui/themes']?.Text;\nconst pyOr = __reflex['$/utils/state']?.pyOr;\nreturn (jsx(RadixThemesText, ({as:\"p\",css:({ [\"fontFamily\"] : \"monospace\", [\"--default-font-family\"] : \"monospace\", [\"lineHeight\"] : \"inherit\", [\"color\"] : \"rebeccapurple\" })}), (JSON.stringify(params?.[\"value\"]))))\n})",
+              "_var_type": "Callable",
+              "_var_data": {
+                "field_dependencies": {},
+                "imports": [
+                  [
+                    "@emotion/react",
+                    [
+                      {
+                        "tag": "jsx",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "react",
+                    [
+                      {
+                        "tag": "Fragment",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "@radix-ui/themes@3.3.0",
+                    [
+                      {
+                        "tag": "Text",
+                        "is_default": false,
+                        "alias": "RadixThemesText",
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "$/utils/state",
+                    [
+                      {
+                        "tag": "pyOr",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ]
+                ],
+                "hooks": [],
+                "deps": [],
+                "position": null,
+                "components": [
+                  "//__reflex_evaluate\nconst React = window.__reflex.react;\n\nconst {jsx} = window.__reflex['@emotion/react']\nconst {Fragment,useEffect} = window.__reflex['react']\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\nconst {pyOr} = window.__reflex['$/utils/state']\n\nexport default function MySSRComponent () {\n  \n\n\n\n  return (\n    (jsx(RadixThemesText, ({as:\"p\",css:({ [\"fontFamily\"] : \"monospace\", [\"--default-font-family\"] : \"monospace\", [\"lineHeight\"] : \"inherit\", [\"color\"] : \"rebeccapurple\" })}), (JSON.stringify(params?.[\"value\"]))))\n  )\n}"
+                ],
+                "app_wraps": []
+              }
+            }
+          },
+          {
+            "field": "currency number",
+            "value_getter": "params.data.number",
+            "value_formatter": {
+              "_js_expr": "((params) => (params?.[\"data\"]?.[\"symbol\"]+(JSON.stringify((+params?.[\"data\"]?.[\"number\"].toFixed(2)))).replaceAll(/\\B(?=(\\d{3})+(?!\\d))/g, \",\")))",
+              "_var_type": "Callable"
+            }
+          },
+          {
+            "field": "scaled number",
+            "value_getter": "params.data.number * params.data.percent",
+            "value_formatter": {
+              "_js_expr": "((params) => (+params?.[\"value\"].toFixed(4)))",
+              "_var_type": "Callable"
+            },
+            "cell_renderer": {
+              "_js_expr": "((params) => {\nconst jsx = __reflex['@emotion/react']?.jsx;\nconst Fragment = __reflex['react']?.Fragment;\nconst RadixThemesTooltip = __reflex['@radix-ui/themes']?.Tooltip;\nconst RadixThemesText = __reflex['@radix-ui/themes']?.Text;\nconst pyOr = __reflex['$/utils/state']?.pyOr;\nreturn (jsx(RadixThemesTooltip, ({content:(params?.[\"data\"]?.[\"number\"]+\" * \"+params?.[\"data\"]?.[\"percent\"]),side:\"left\"}), (jsx(RadixThemesText, ({as:\"p\",css:({ [\"lineHeight\"] : \"inherit\", [\"width\"] : \"fit-content\" })}), (JSON.stringify(params?.[\"valueFormatted\"]))))))\n})",
+              "_var_type": "Callable",
+              "_var_data": {
+                "field_dependencies": {},
+                "imports": [
+                  [
+                    "@emotion/react",
+                    [
+                      {
+                        "tag": "jsx",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "react",
+                    [
+                      {
+                        "tag": "Fragment",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "@radix-ui/themes@3.3.0",
+                    [
+                      {
+                        "tag": "Tooltip",
+                        "is_default": false,
+                        "alias": "RadixThemesTooltip",
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      },
+                      {
+                        "tag": "Text",
+                        "is_default": false,
+                        "alias": "RadixThemesText",
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "$/utils/state",
+                    [
+                      {
+                        "tag": "pyOr",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ]
+                ],
+                "hooks": [],
+                "deps": [],
+                "position": null,
+                "components": [
+                  "//__reflex_evaluate\nconst React = window.__reflex.react;\n\nconst {jsx} = window.__reflex['@emotion/react']\nconst {Fragment,useEffect} = window.__reflex['react']\nconst {Text: RadixThemesText,Tooltip: RadixThemesTooltip} = window.__reflex['@radix-ui/themes']\nconst {pyOr} = window.__reflex['$/utils/state']\n\nexport default function MySSRComponent () {\n  \n\n\n\n  return (\n    (jsx(RadixThemesTooltip, ({content:(params?.[\"data\"]?.[\"number\"]+\" * \"+params?.[\"data\"]?.[\"percent\"]),side:\"left\"}), (jsx(RadixThemesText, ({as:\"p\",css:({ [\"lineHeight\"] : \"inherit\", [\"width\"] : \"fit-content\" })}), (JSON.stringify(params?.[\"valueFormatted\"]))))))\n  )\n}"
+                ],
+                "app_wraps": []
+              }
+            }
+          },
+          {
+            "field": "row counter",
+            "header_name": "# Clicks (Last click)",
+            "cell_renderer": {
+              "_js_expr": "((params) => {\nconst jsx = __reflex['@emotion/react']?.jsx;\nconst Fragment = __reflex['react']?.Fragment;\nconst RowCounter_bb59f568 = __reflex['$/app_components/components/formatter_demo/formatters']?.RowCounter_bb59f568;\nconst pyOr = __reflex['$/utils/state']?.pyOr;\nreturn (jsx(RowCounter_bb59f568, ({rowid:params?.[\"node\"]?.[\"id\"]})))\n})",
+              "_var_type": "Callable",
+              "_var_data": {
+                "field_dependencies": {},
+                "imports": [
+                  [
+                    "@emotion/react",
+                    [
+                      {
+                        "tag": "jsx",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "react",
+                    [
+                      {
+                        "tag": "Fragment",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "$/app_components/components/formatter_demo/formatters",
+                    [
+                      {
+                        "tag": "RowCounter_bb59f568",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ],
+                  [
+                    "$/utils/state",
+                    [
+                      {
+                        "tag": "pyOr",
+                        "is_default": false,
+                        "alias": null,
+                        "install": true,
+                        "render": true,
+                        "package_path": "/"
+                      }
+                    ]
+                  ]
+                ],
+                "hooks": [],
+                "deps": [],
+                "position": null,
+                "components": [
+                  "//__reflex_evaluate\nconst React = window.__reflex.react;\n\nconst {jsx} = window.__reflex['@emotion/react']\nconst {Fragment,useEffect} = window.__reflex['react']\nconst {RowCounter_bb59f568} = window.__reflex['$/app_components/components/formatter_demo/formatters']\nconst {pyOr} = window.__reflex['$/utils/state']\n\nexport default function MySSRComponent () {\n  \n\n\n\n  return (\n    (jsx(RowCounter_bb59f568, ({rowid:params?.[\"node\"]?.[\"id\"]})))\n  )\n}"
+                ],
+                "app_wraps": []
+              }
+            },
+            "sortable": false
+          },
+          {
+            "field": "raw data",
+            "header_name": "Show raw data",
+            "cell_renderer": "dataDialog",
+            "sortable": false
+          }
+        ]
+      },
+      "reflex___state____state.components___saved_state____grid_serialization_advanced_state": {
+        "grid_state": "",
+        "grid_state_dict": {},
+        "row_data": []
+      },
+      "reflex___state____state.components___formatter_demo___common____demo_state": {
+        "pages": [
+          {
+            "route": "/formatters",
+            "title": "AG Grid Formatters",
+            "description": "AG Grid with custom formatters."
+          }
+        ]
+      },
+      "reflex___state____state.components___fly_to_location____fly_to_location_state": {
+        "center": {
+          "lat": 51.505,
+          "lng": -0.09
+        },
+        "location_found": null,
+        "zoom": 13,
+        "zoom_levels_changed": false
+      },
+      "reflex___state____state.components___components____grid_state": {
+        "columns": [
+          {
+            "field": "name",
+            "pinned": "left",
+            "filter": "agTextColumnFilter"
+          },
+          {
+            "header_name": "Inventory",
+            "children": [
+              {
+                "field": "quantity",
+                "editable": true,
+                "cell_data_type": "number",
+                "value_formatter": "params.value + ' units'"
+              },
+              {
+                "field": "category"
+              }
+            ]
+          }
+        ],
+        "edit": "{}",
+        "filter_event": "{}",
+        "query": "",
+        "ready": false,
+        "rows": [
+          {
+            "id": "a",
+            "name": "Alpha",
+            "quantity": 3,
+            "category": "Tools"
+          },
+          {
+            "id": "b",
+            "name": "Beta",
+            "quantity": 1,
+            "category": "Tools"
+          },
+          {
+            "id": "c",
+            "name": "Gamma",
+            "quantity": 4,
+            "category": "Parts"
+          },
+          {
+            "id": "d",
+            "name": "Delta",
+            "quantity": 2,
+            "category": "Parts"
+          }
+        ],
+        "selected": "[]",
+        "theme": "quartz"
+      },
+      "reflex___state____state.components___map_controls____controls_state": {},
+      "reflex___state____state.components___formatter_demo___formatters____row_click_counter_state": {
+        "button_colors": {},
+        "last_click": {},
+        "row_clicks": {}
+      },
+      "reflex___state____state.components___vector_layers____vector_layers_state": {
+        "center": {
+          "lat": 51.505,
+          "lng": -0.09
+        },
+        "zoom": 13
+      }
+    },
+    "resource_templates": [
+      "reflex://event/{event_name}",
+      "reflex://state/events/{state_name}",
+      "reflex://state/vars/{state_name}",
+      "reflex://state/vars/{state_name}/{var_name}",
+      "state-resource://components___components____agent_state/summary/{label}"
+    ],
+    "summary": {
+      "label": "local-label",
+      "count": 0
+    }
+  }
+}

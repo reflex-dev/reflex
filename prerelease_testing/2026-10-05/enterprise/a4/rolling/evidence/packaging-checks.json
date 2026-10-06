@@ -1,0 +1,15 @@
+{
+  "driver_checks": {
+    "compare.py": {
+      "AST_equal_to_executed_copy": true,
+      "formatting_only_after_execution": true
+    },
+    "finalize.py": {
+      "AST_equal_to_executed_copy": true,
+      "formatting_only_after_execution": true
+    }
+  },
+  "all_saved_python_syntax": "passed",
+  "focused_ruff_check": "passed",
+  "focused_ruff_format_check": "passed"
+}
