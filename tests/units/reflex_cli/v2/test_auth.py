@@ -13,7 +13,7 @@ from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationE
 from reflex_cli.v2.auth import token_fingerprint
 from reflex_cli.v2.deployments import hosting_cli
 
-from .utils import as_click_command
+from .utils import api_error, as_click_command, fake_client
 
 hosting_cli = as_click_command(hosting_cli)
 
@@ -48,6 +48,70 @@ def test_token_fingerprint_is_stable_and_hides_the_token():
     assert token_fingerprint(token) != token_fingerprint(token + "x")
     assert token not in token_fingerprint(token)
     assert token_fingerprint("") == ""
+
+
+@pytest.mark.parametrize(
+    ("source", "guidance"),
+    [
+        (hosting.TokenSource.ENVIRONMENT, "Replace REFLEX_ACCESS_TOKEN"),
+        (hosting.TokenSource.OPTION, "Replace the --token value"),
+        (hosting.TokenSource.CONFIG, "Run `reflex login`"),
+    ],
+)
+@pytest.mark.parametrize("status_code", [401, 403])
+def test_initial_token_rejection_has_recovery_guidance(
+    mocker: MockFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    source: hosting.TokenSource,
+    guidance: str,
+    status_code: int,
+):
+    """Initial auth rejection explains recovery without prompting or leaking tokens.
+
+    Args:
+        mocker: The pytest mock fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+        source: Where the rejected token comes from.
+        guidance: The expected source-specific recovery instruction.
+        status_code: The authentication response status.
+    """
+    stored_token = (
+        "expired-token" if source is hosting.TokenSource.CONFIG else "saved-token"
+    )
+    config = json.dumps({"access_token": stored_token})
+    constants.Hosting.HOSTING_JSON.write_text(config)
+    monkeypatch.delenv("REFLEX_ACCESS_TOKEN", raising=False)
+    args = ["apps", "list", "--json", "--no-interactive"]
+    if source is hosting.TokenSource.ENVIRONMENT:
+        monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "expired-token")
+    elif source is hosting.TokenSource.OPTION:
+        args.extend(["--token", "expired-token"])
+    client = fake_client()
+    error = api_error(status_code, "Token has expired")
+    client.api.auth.me.side_effect = error
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client.api)
+    browser = mocker.patch("reflex_cli.utils.hosting._authenticate_on_browser")
+
+    result = runner.invoke(hosting_cli, args)
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    browser.assert_not_called()
+    client.api.close.assert_called_once()
+    errors = _messages(caplog, logging.ERROR)
+    assert len(errors) == 1
+    assert source.value in errors[0]
+    assert error.request_id in errors[0]
+    assert guidance in errors[0]
+    assert "reflex login" in errors[0]
+    assert "expired-token" not in errors[0]
+    assert "saved-token" not in errors[0]
+    if source is hosting.TokenSource.CONFIG:
+        assert hosting.stored_access_token() == ""
+    else:
+        assert constants.Hosting.HOSTING_JSON.read_text() == config
 
 
 def test_whoami_reports_identity_and_token_source(mocker: MockFixture):

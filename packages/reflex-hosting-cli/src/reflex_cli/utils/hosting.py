@@ -466,7 +466,7 @@ def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
 
 
 def rejected_token_message(source: TokenSource, err: TokenValidationError) -> str:
-    """Describe a token the control plane would not validate.
+    """Describe a rejected token and how to replace it for its source.
 
     Args:
         source: Where the token was loaded from.
@@ -475,9 +475,21 @@ def rejected_token_message(source: TokenSource, err: TokenValidationError) -> st
     Returns:
         The message to report.
     """
+    if source is TokenSource.ENVIRONMENT:
+        recovery = (
+            "Replace REFLEX_ACCESS_TOKEN with a valid token, or unset it and run "
+            "`reflex login` to authenticate."
+        )
+    elif source is TokenSource.OPTION:
+        recovery = (
+            "Replace the --token value with a valid token, or omit --token and run "
+            "`reflex login` to authenticate."
+        )
+    else:
+        recovery = "Run `reflex login` to authenticate."
     return (
         f"The access token from the {source.value} was rejected: {err} "
-        f"(auth request id: {err.request_id})"
+        f"(auth request id: {err.request_id}). {recovery}"
     )
 
 
