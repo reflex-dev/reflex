@@ -250,6 +250,60 @@ def test_whoami_surfaces_the_auth_request_id(
     errors = _messages(caplog, logging.ERROR)
     assert any("req-123" in message for message in errors)
     assert any("REFLEX_ACCESS_TOKEN" in message for message in errors)
+    assert any("reflex login" in message for message in errors)
+
+
+@pytest.mark.parametrize("failure", ["server error", "request failed", "timeout"])
+@pytest.mark.parametrize(
+    "source",
+    [
+        hosting.TokenSource.ENVIRONMENT,
+        hosting.TokenSource.OPTION,
+        hosting.TokenSource.CONFIG,
+    ],
+)
+def test_whoami_temporary_validation_failure_suggests_retry(
+    mocker: MockFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    source: hosting.TokenSource,
+    failure: str,
+):
+    """Temporary validation failures suggest retrying without changing credentials.
+
+    Args:
+        mocker: The pytest mock fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+        source: Where the token comes from.
+        failure: The temporary validation error message.
+    """
+    config = json.dumps({"access_token": "saved-token"})
+    constants.Hosting.HOSTING_JSON.write_text(config)
+    monkeypatch.delenv("REFLEX_ACCESS_TOKEN", raising=False)
+    args = ["whoami", "--json"]
+    if source is hosting.TokenSource.ENVIRONMENT:
+        monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "explicit-token")
+    elif source is hosting.TokenSource.OPTION:
+        args.extend(["--token", "explicit-token"])
+    mocker.patch(
+        "reflex_cli.utils.hosting.validate_token",
+        side_effect=TokenValidationError(failure, request_id="req-temporary"),
+    )
+    browser = mocker.patch("reflex_cli.utils.hosting._authenticate_on_browser")
+
+    result = runner.invoke(hosting_cli, args)
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    assert constants.Hosting.HOSTING_JSON.read_text() == config
+    browser.assert_not_called()
+    assert _messages(caplog, logging.ERROR) == [
+        (
+            f"Unable to validate the access token from the {source.value}: "
+            f"{failure} (auth request id: req-temporary). Please try again later."
+        )
+    ]
 
 
 def test_token_print_writes_the_raw_token_to_stdout(mocker: MockFixture):

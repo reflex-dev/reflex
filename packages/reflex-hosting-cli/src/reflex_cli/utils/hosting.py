@@ -465,7 +465,7 @@ def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
     return "", TokenSource.NONE
 
 
-def rejected_token_message(source: TokenSource, err: TokenValidationError) -> str:
+def rejected_token_message(source: TokenSource, err: TokenAccessDeniedError) -> str:
     """Describe a rejected token and how to replace it for its source.
 
     Args:
