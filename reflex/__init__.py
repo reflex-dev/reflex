@@ -89,12 +89,16 @@ import sys
 from reflex_base.utils import lazy_loader
 
 if sys.version_info < (3, 11):
-    import logging
+    # Python 3.10 reaches end of life in October 2026; 0.11.0 requires 3.11+.
+    from reflex_base.utils import console
 
-    logging.getLogger(__name__).warning(
-        "Reflex support for Python 3.10 is deprecated and will be removed in a future release. Please upgrade to Python 3.11 or higher for continued support."
+    console.deprecate(
+        feature_name="Support for Python 3.10",
+        reason="Upgrade to Python 3.11 or newer.",
+        deprecation_version="0.10.0",
+        removal_version="0.11.0",
     )
-    del logging
+    del console
 del sys
 
 from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402

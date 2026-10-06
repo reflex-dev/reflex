@@ -1,6 +1,6 @@
 # Installation
 
-~3 minutes · Requires Python 3.10+.
+~3 minutes · Requires Python 3.10+. Python 3.10 is deprecated and support ends in Reflex 0.11.0, so use Python 3.11 or newer.
 
 ```md alert info
 # Reading this as an AI agent or coding assistant?
