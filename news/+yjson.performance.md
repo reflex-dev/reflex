@@ -1,0 +1,1 @@
+Install `reflex[yjson]` (CPython 3.11+ on Linux x86_64) to serialize websocket state updates and compiled state with a native encoder, about 2.4× faster than the stdlib. On other platforms the extra installs nothing and the stdlib encoder is used.

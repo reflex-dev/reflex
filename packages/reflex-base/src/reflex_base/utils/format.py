@@ -15,6 +15,11 @@ from rich.markup import escape as escape_markup
 from reflex_base import constants
 from reflex_base.utils import exceptions
 
+try:
+    import yjson  # pyright: ignore[reportMissingImports]
+except ImportError:  # the optional reflex[yjson] extra
+    yjson = None
+
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
     from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
@@ -698,6 +703,7 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
 
 
 _serialize: Callable[[Any], Any] | None = None
+_classify: Callable[[type], Any] | None = None
 
 
 def _get_serialize() -> Callable[[Any], Any]:
@@ -710,11 +716,12 @@ def _get_serialize() -> Callable[[Any], Any]:
     Returns:
         The ``serializers.serialize`` callable.
     """
-    global _serialize
+    global _serialize, _classify
     if _serialize is None:
         from reflex_base.utils import serializers
 
         _serialize = serializers.serialize
+        _classify = serializers._native_plan
     return _serialize
 
 
@@ -737,8 +744,17 @@ def _get_json_encoder(separators: tuple[str, str] | None) -> json.JSONEncoder:
     )
 
 
-def json_dumps(obj: Any, separators: tuple[str, str] | None = None, **kwargs) -> str:
+_COMPACT_SEPARATORS = (",", ":")
+
+
+def json_dumps(
+    obj: Any, separators: tuple[str, str] | None = _COMPACT_SEPARATORS, **kwargs
+) -> str:
     """Takes an object and returns a jsonified string.
+
+    Compact output is written by yjson when the ``reflex[yjson]`` extra is
+    installed. It matches the stdlib's output, except that it escapes lone
+    surrogates and writes the shortest float exponent (``1e-7``, not ``1e-07``).
 
     Args:
         obj: The object to be serialized.
@@ -748,6 +764,17 @@ def json_dumps(obj: Any, separators: tuple[str, str] | None = None, **kwargs) ->
     Returns:
         A string
     """
+    if (
+        yjson is not None
+        and separators == _COMPACT_SEPARATORS
+        and kwargs.keys() <= {"default"}
+    ):
+        serialize = _get_serialize()
+        default = kwargs.get("default") or serialize
+        # The registry-aware plan only stands in for the stock serializer; a
+        # caller's own default sees every value.
+        classify = _classify if default is serialize else None
+        return yjson.dumps_socket(obj, default=default, classify=classify).decode()
     if not kwargs and (separators is None or isinstance(separators, tuple)):
         return _get_json_encoder(separators).encode(obj)
 

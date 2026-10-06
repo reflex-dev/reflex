@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import decimal
 import json
@@ -9,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from reflex_base.utils import serializers as base_serializers
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import LiteralVar
 from reflex_components_core.core.colors import Color
@@ -578,3 +580,83 @@ def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool
     """
     v = LiteralVar.create(value)
     assert str(v) == expected
+
+
+@dataclasses.dataclass
+class _PlanRow:
+    """A dataclass with a private field, which Reflex serializes too."""
+
+    name: str
+    _rank: int
+
+
+@dataclasses.dataclass
+class _PlanRegistered:
+    """A dataclass with its own registered serializer."""
+
+    name: str
+
+
+@serializers.serializer
+def _serialize_plan_registered(value: _PlanRegistered) -> str:
+    return f"registered {value.name}"
+
+
+class _PlanModel(Base):
+    """A plain pydantic model."""
+
+    name: str
+
+
+class _PlanOverriddenModel(Base):
+    """A pydantic model with its own model_dump."""
+
+    name: str
+
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        return {"custom": self.name}
+
+
+def test_native_plan_follows_the_registry() -> None:
+    """Plans stand in for the serializer `serialize` would pick, and only for it."""
+    plan = base_serializers._native_plan
+    assert plan(_PlanRow) == ("name", "_rank")
+    assert plan(datetime.datetime) is str
+    assert plan(datetime.date) is str
+    assert plan(datetime.timedelta) is str
+    dump = plan(_PlanModel)
+    assert callable(dump)
+    assert dump(_PlanModel(name="a")) == {"name": "a"}
+    assert plan(_PlanRegistered) is None
+    assert plan(_PlanOverriddenModel) is None
+    assert plan(Enum) is None
+    assert plan(object) is None
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        _PlanRow("a", 1),
+        _PlanRegistered("b"),
+        _PlanModel(name="c"),
+        _PlanOverriddenModel(name="d"),
+        datetime.datetime(2024, 1, 2, 3, 4, 5, 6),
+        datetime.datetime(
+            2024, 1, 2, tzinfo=datetime.timezone(datetime.timedelta(hours=-3))
+        ),
+        datetime.date(999, 1, 2),
+        datetime.time(1, 2, 3),
+        datetime.timedelta(days=2, seconds=3),
+    ],
+)
+def test_native_plan_matches_serialize(
+    value: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """With yjson installed, json_dumps writes the same bytes with and without plans."""
+    pytest.importorskip("yjson")
+    from reflex_base.utils import format
+
+    payload = {"value": value, "list": [value, value]}
+    with_plans = json_dumps(payload)
+    monkeypatch.setattr(format, "_classify", None)
+    assert with_plans == json_dumps(payload)

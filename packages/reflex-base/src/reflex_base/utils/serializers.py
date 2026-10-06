@@ -163,6 +163,21 @@ def serializer(
 
 
 @functools.lru_cache
+def _dataclass_field_names(type_: type) -> tuple[str, ...] | None:
+    """Get the field names a dataclass type serializes to.
+
+    Args:
+        type_: The type to get the field names for.
+
+    Returns:
+        The field names, or None if the type is not a dataclass.
+    """
+    if not dataclasses.is_dataclass(type_):
+        return None
+    return tuple(field.name for field in dataclasses.fields(type_))
+
+
+@functools.lru_cache
 def _dataclass_serializer(type_: type) -> Serializer | None:
     """Get the fallback serializer of a dataclass type.
 
@@ -175,9 +190,8 @@ def _dataclass_serializer(type_: type) -> Serializer | None:
     Returns:
         The serializer for instances of the type, or None if it is not a dataclass.
     """
-    if not dataclasses.is_dataclass(type_):
+    if (names := _dataclass_field_names(type_)) is None:
         return None
-    names = tuple(field.name for field in dataclasses.fields(type_))
 
     def serialize_dataclass(value: Any) -> dict[str, Any]:
         return {name: getattr(value, name) for name in names}
@@ -232,6 +246,37 @@ def serialize(
     if get_type:
         return serialized, get_serializer_type(type_)
     return serialized
+
+
+# Serializers whose result a native encoder can produce from a plan instead:
+# the plan's result encodes to exactly what the serializer's result does.
+_NATIVE_SERIALIZER_PLANS: dict[Callable[[Any], Any], Callable[[Any], Any]] = {}
+
+
+def _native_plan(type_: type) -> tuple[str, ...] | Callable[[Any], Any] | None:
+    """Describe how a native encoder can serialize a type exactly like ``serialize``.
+
+    Used as yjson's ``classify`` hook. It follows the registry, so a serializer
+    registered for the type (or a base) keeps going through ``serialize``.
+
+    Args:
+        type_: The type of a value the encoder cannot write natively.
+
+    Returns:
+        The field names to write as an object (dataclasses), a callable that
+        returns the serialized value, or None to call ``serialize``.
+    """
+    serializer = get_serializer(type_)
+    if serializer is None:
+        return _dataclass_field_names(type_)
+    if (plan := _NATIVE_SERIALIZER_PLANS.get(serializer)) is not None:
+        return plan
+    if (
+        serializer is globals().get("serialize_base_model")
+        and type_.model_dump is BaseModel.model_dump  # pyright: ignore[reportAttributeAccessIssue,reportPossiblyUnboundVariable]
+    ):
+        return type_.__pydantic_serializer__.to_python  # pyright: ignore[reportAttributeAccessIssue]
+    return None
 
 
 def _find_optional_base(
@@ -448,6 +493,9 @@ def serialize_datetime(dt: date | datetime | time | timedelta) -> str:
         The serialized datetime.
     """
     return str(dt)
+
+
+_NATIVE_SERIALIZER_PLANS[serialize_datetime] = str
 
 
 @serializer(to=str)
