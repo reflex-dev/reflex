@@ -8,7 +8,6 @@ from collections.abc import Callable
 from http import HTTPStatus
 from threading import local
 from typing import TypeVar
-from urllib.parse import urlsplit
 
 from reflex_build_sdk import APIStatusError, ConflictError
 from reflex_build_sdk.transports import Request, Response, Transport
@@ -20,12 +19,13 @@ _SCALING_RETRY_DELAY = 15
 _DEPLOYMENTS_PATH = "deployments"
 
 
-def _is_scaling_conflict(error: APIStatusError, path: str) -> bool:
+def _is_scaling_conflict(error: APIStatusError, path: str, *, url: str) -> bool:
     """Identify a refusal that guarantees a write was blocked by scaling.
 
     Args:
         error: The SDK's typed refusal.
         path: The expected endpoint below ``/api/v1/``.
+        url: The endpoint's full URL on the configured backend.
 
     Returns:
         Whether this request was explicitly refused before applying its write.
@@ -33,7 +33,7 @@ def _is_scaling_conflict(error: APIStatusError, path: str) -> bool:
     if (
         error.status_code != HTTPStatus.CONFLICT
         or error.request.method != "POST"
-        or urlsplit(error.request.url).path != f"/api/v1/{path}"
+        or error.request.url != url
     ):
         return False
     if path == _DEPLOYMENTS_PATH:
@@ -47,13 +47,14 @@ def _is_scaling_conflict(error: APIStatusError, path: str) -> bool:
 
 
 def _retry_scaling_conflicts(
-    operation: Callable[[], _T], *, path: str, action: str, attempts: int
+    operation: Callable[[], _T], *, path: str, url: str, action: str, attempts: int
 ) -> _T:
     """Retry only writes the server explicitly refused because of scaling.
 
     Args:
         operation: The SDK operation to attempt.
         path: The expected endpoint below ``/api/v1/``.
+        url: The endpoint's full URL on the configured backend.
         action: The action described in progress messages.
         attempts: The maximum number of calls, including the initial attempt.
 
@@ -64,7 +65,7 @@ def _retry_scaling_conflicts(
         APIStatusError: If scaling persists or the refusal is unrelated.
     """
     return _ScalingRetryBudget(attempts=attempts).run(
-        operation, path=path, action=action
+        operation, path=path, url=url, action=action
     )
 
 
@@ -80,12 +81,15 @@ class _ScalingRetryBudget:
         self._retries = attempts - 1
         self._used = 0
 
-    def run(self, operation: Callable[[], _T], *, path: str, action: str) -> _T:
+    def run(
+        self, operation: Callable[[], _T], *, path: str, url: str, action: str
+    ) -> _T:
         """Retry a refused operation within the remaining scaling wait budget.
 
         Args:
             operation: The operation to attempt.
             path: The expected endpoint below ``/api/v1/``.
+            url: The endpoint's full URL on the configured backend.
             action: The action described in progress messages.
 
         Returns:
@@ -98,7 +102,9 @@ class _ScalingRetryBudget:
             try:
                 return operation()
             except APIStatusError as ex:
-                if self._used >= self._retries or not _is_scaling_conflict(ex, path):
+                if self._used >= self._retries or not _is_scaling_conflict(
+                    ex, path, url=url
+                ):
                     raise
             self._used += 1
             logger.info(
@@ -157,6 +163,7 @@ class _DeploymentRetryTransport:
         return submission[1].run(
             lambda: self._send_submission(request),
             path=_DEPLOYMENTS_PATH,
+            url=self._url,
             action="deployment",
         )
 
@@ -187,7 +194,7 @@ class _DeploymentRetryTransport:
             response=response,
             detail=detail,
         )
-        if _is_scaling_conflict(error, _DEPLOYMENTS_PATH):
+        if _is_scaling_conflict(error, _DEPLOYMENTS_PATH, url=self._url):
             raise error
         return response
 

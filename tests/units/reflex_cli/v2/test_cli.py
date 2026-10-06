@@ -1194,8 +1194,13 @@ def _scaling_deploy_recorder(
     return recorder, client
 
 
-def _bounds_scaling_refusal() -> APIStatusError:
+def _bounds_scaling_refusal(
+    base_url: str = "https://build.reflex.dev",
+) -> APIStatusError:
     """Build a refused bounds update because the app is being scaled.
+
+    Args:
+        base_url: The configured backend URL, including any path prefix.
 
     Returns:
         The SDK exception for the bounds scaling conflict.
@@ -1206,6 +1211,7 @@ def _bounds_scaling_refusal() -> APIStatusError:
         code="instance_bounds_scale_conflict",
         method="POST",
         path=f"apps/{_APP_ID}/instance_bounds",
+        base_url=base_url,
     )
 
 
@@ -1236,10 +1242,14 @@ def _unknown_deploy_outcome(failure: str, refusal: APIStatusError) -> BaseExcept
 
 
 @pytest.mark.parametrize("max_instances", [None, 8])
+@pytest.mark.parametrize(
+    "backend_url", ["https://build.reflex.dev", "https://build.reflex.dev/proxy"]
+)
 def test_deploy_retries_instance_bounds_scaling_conflict(
     mocker: MockerFixture,
     mock_export_fn: MagicMock,
     max_instances: int | None,
+    backend_url: str,
 ):
     """A refused scaling operation waits and retries without exporting again.
 
@@ -1247,9 +1257,14 @@ def test_deploy_retries_instance_bounds_scaling_conflict(
         mocker: The pytest-mock fixture.
         mock_export_fn: The mocked build exporter.
         max_instances: An explicit maximum, or None to preserve the latest value.
+        backend_url: The configured backend URL, including any path prefix.
     """
     recorder, client = _scaling_deploy_recorder(mocker)
-    client.api.apps.set_instance_bounds.side_effect = [_bounds_scaling_refusal(), None]
+    client.api.base_url = backend_url
+    client.api.apps.set_instance_bounds.side_effect = [
+        _bounds_scaling_refusal(backend_url),
+        None,
+    ]
     client.api.apps.get.side_effect = [app(max_instances=4), app(max_instances=6)]
 
     cli.deploy(
@@ -1322,13 +1337,17 @@ def test_deploy_exhausts_bounds_scaling_conflicts_without_another_sleep(
     ("field", "value"),
     [
         ("status", 400),
-        ("status", 503),
         ("code", "unrelated_conflict"),
         ("code", ""),
         ("method", "GET"),
         ("path", "deployments/check"),
         ("path", f"apps/{uuid.UUID(int=999)}/instance_bounds"),
+        ("base_url", "https://other.example"),
+        ("base_url", "https://build.reflex.dev/other-proxy"),
     ],
+)
+@pytest.mark.parametrize(
+    "backend_url", ["https://build.reflex.dev", "https://build.reflex.dev/proxy"]
 )
 def test_deploy_does_not_retry_other_bounds_refusals(
     mocker: MockerFixture,
@@ -1336,6 +1355,7 @@ def test_deploy_does_not_retry_other_bounds_refusals(
     previous_conflict: bool,
     field: str,
     value: str | int,
+    backend_url: str,
     caplog: pytest.LogCaptureFixture,
 ):
     """Only the exact refused scaling operation permits a retry.
@@ -1346,16 +1366,19 @@ def test_deploy_does_not_retry_other_bounds_refusals(
         previous_conflict: Whether a retryable refusal preceded the final error.
         field: The response or request field that does not match.
         value: The nonmatching field value.
+        backend_url: The configured backend URL, including any path prefix.
         caplog: The captured log messages.
     """
-    recorder, _ = _scaling_deploy_recorder(mocker)
-    refusal = _bounds_scaling_refusal()
+    recorder, client = _scaling_deploy_recorder(mocker)
+    client.api.base_url = backend_url
+    refusal = _bounds_scaling_refusal(backend_url)
     other_refusal = api_error(
         value if field == "status" and isinstance(value, int) else 409,
         refusal.detail,
         code=str(value) if field == "code" else refusal.code,
         method=str(value) if field == "method" else "POST",
         path=str(value) if field == "path" else f"apps/{_APP_ID}/instance_bounds",
+        base_url=str(value) if field == "base_url" else backend_url,
     )
     recorder.bounds.side_effect = (
         [refusal, other_refusal] if previous_conflict else [other_refusal]
@@ -1449,6 +1472,62 @@ def test_deploy_does_not_retry_unknown_bounds_outcomes(
     assert any(
         "may or may not have been applied" in message
         for message in _log_messages(caplog, logging.WARNING)
+    )
+
+
+@pytest.mark.parametrize("previous_conflict", [False, True])
+@pytest.mark.parametrize("during_write", [False, True])
+@pytest.mark.parametrize("status_code", [500, 502, 503, 504])
+def test_deploy_bounds_server_error_warns_only_after_write(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+    previous_conflict: bool,
+    during_write: bool,
+    status_code: int,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Only a failed write has an uncertain outcome, and neither failure retries.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The mocked build exporter.
+        previous_conflict: Whether a scaling refusal preceded the server error.
+        during_write: Whether the error came from the write or preliminary read.
+        status_code: The server error returned by the API.
+        caplog: The captured log messages.
+    """
+    recorder, client = _scaling_deploy_recorder(mocker)
+    error = api_error(
+        status_code,
+        "unavailable",
+        method="POST" if during_write else "GET",
+        path=f"apps/{_APP_ID}/instance_bounds" if during_write else f"apps/{_APP_ID}",
+    )
+    if during_write:
+        recorder.bounds.side_effect = (
+            [_bounds_scaling_refusal(), error] if previous_conflict else [error]
+        )
+    else:
+        client.api.apps.get.side_effect = [app(), error] if previous_conflict else error
+        recorder.bounds.side_effect = _bounds_scaling_refusal()
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            min_instances=2,
+        )
+
+    assert recorder.bounds.call_count == int(previous_conflict) + during_write
+    assert recorder.sleep.call_count == int(previous_conflict)
+    recorder.submit.assert_not_called()
+    assert (
+        any(
+            "may or may not have been applied" in message
+            for message in _log_messages(caplog, logging.WARNING)
+        )
+        == during_write
     )
 
 

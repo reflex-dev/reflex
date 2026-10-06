@@ -60,15 +60,21 @@ from tests.units.reflex_cli.sdk import api_error, fake_client
 _client = fake_client
 
 
+@pytest.mark.parametrize("base_path", ["", "/proxy", "/nested/proxy/"])
 def test_upload_client_retries_submission_without_uploading_again(
-    mocker: MockerFixture, tmp_path: Path
+    mocker: MockerFixture, tmp_path: Path, base_path: str
 ):
     """Scaling retries reuse the uploaded build and close their HTTP transport.
 
     Args:
         mocker: The pytest-mock fixture.
         tmp_path: The directory for the build archives.
+        base_path: The backend URL's optional path prefix.
     """
+    mocker.patch.object(
+        constants.Hosting, "HOSTING_SERVICE", f"https://build.example{base_path}"
+    )
+    deployments_path = f"{base_path.rstrip('/')}/api/v1/deployments"
     mock_api = MockAPI()
     transport = MockTransport(mock_api)
     mocker.patch(
@@ -87,7 +93,7 @@ def test_upload_client_retries_submission_without_uploading_again(
         mock_api.add("PUT", f"/{archive.name}", reply(200))
     mock_api.add(
         "POST",
-        "/api/v1/deployments/reserve",
+        f"{deployments_path}/reserve",
         reply(
             200,
             json={
@@ -106,7 +112,7 @@ def test_upload_client_retries_submission_without_uploading_again(
     )
     mock_api.add(
         "POST",
-        "/api/v1/deployments",
+        deployments_path,
         reply(
             409,
             headers={"x-reflex-error-code": "app_busy"},
@@ -124,11 +130,14 @@ def test_upload_client_retries_submission_without_uploading_again(
 
     assert str(result) == deployment_id
     paths = [urlsplit(request.url).path for request in mock_api.requests]
-    assert paths.count("/api/v1/deployments/reserve") == 1
+    assert paths.count(f"{deployments_path}/reserve") == 1
     assert paths.count("/backend.zip") == paths.count("/frontend.zip") == 1
     submits = mock_api.requests[-2:]
-    assert paths[-2:] == ["/api/v1/deployments"] * 2
-    assert submits[0] is submits[1]
+    assert paths[-2:] == [deployments_path] * 2
+    assert [request.method for request in submits] == ["POST"] * 2
+    assert submits[0].url == submits[1].url
+    assert submits[0].headers["X-Request-ID"] == submits[1].headers["X-Request-ID"]
+    assert submits[0].content == submits[1].content
     assert isinstance(submits[0].content, bytes)
     assert parse_qs(submits[0].content.decode())["stored_build_id"] == [deployment_id]
     sleep.assert_called_once_with(15)
@@ -926,6 +935,37 @@ def test_set_instance_bounds_preserves_scaling_refusal():
 
     assert raised.value is error
     client.api.apps.set_instance_bounds.assert_called_once()
+
+
+@pytest.mark.parametrize("status_code", [500, 502, 503, 504])
+def test_set_instance_bounds_preserves_server_errors(
+    status_code: int, caplog: pytest.LogCaptureFixture
+):
+    """A server error cannot confirm whether the bounds write took effect.
+
+    Args:
+        status_code: The server error returned after the write.
+        caplog: The captured log messages.
+    """
+    client = _client()
+    error = api_error(
+        status_code,
+        "unavailable",
+        method="POST",
+        path="apps/app-1/instance_bounds",
+    )
+    client.api.apps.set_instance_bounds.side_effect = error
+
+    with pytest.raises(type(error)) as raised:
+        set_instance_bounds("app-1", client, min_instances=2)
+
+    assert raised.value is error
+    client.api.apps.set_instance_bounds.assert_called_once()
+    assert any(
+        record.levelno == logging.WARNING
+        and "may or may not have been applied" in record.getMessage()
+        for record in caplog.records
+    )
 
 
 @pytest.mark.parametrize(

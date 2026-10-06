@@ -1113,6 +1113,7 @@ def deploy(
                         client=authenticated_client,
                     ),
                     path=f"apps/{app.id}/instance_bounds",
+                    url=f"{authenticated_client.api.base_url}/api/v1/apps/{app.id}/instance_bounds",
                     action="the instance bounds update",
                     attempts=8,
                 )

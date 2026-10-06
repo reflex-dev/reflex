@@ -46,7 +46,9 @@ def fake_client(**identity: Any) -> FakeClient:
         "tier": "Pro",
     }
     fields.update(identity)
-    return FakeClient(api=MagicMock(), me=Me(**fields))
+    return FakeClient(
+        api=MagicMock(base_url="https://build.reflex.dev"), me=Me(**fields)
+    )
 
 
 def patch_upload_client(mocker: Any, client: FakeClient) -> None:
@@ -71,6 +73,7 @@ def api_error(
     code: str = "",
     method: str = "GET",
     path: str = "test",
+    base_url: str = "https://build.reflex.dev",
 ) -> APIStatusError:
     """Build the error the SDK raises for a refused request.
 
@@ -80,13 +83,14 @@ def api_error(
         code: The machine-readable refusal code.
         method: The failed request's method.
         path: The failed request's path below ``/api/v1/``.
+        base_url: The configured backend URL, including any path prefix.
 
     Returns:
         The error, to raise from a mocked call.
     """
     request = Request(
         method=method,
-        url=f"https://build.reflex.dev/api/v1/{path}",
+        url=f"{base_url.rstrip('/')}/api/v1/{path}",
         headers={"X-Request-ID": uuid.uuid4().hex},
     )
     response = Response(

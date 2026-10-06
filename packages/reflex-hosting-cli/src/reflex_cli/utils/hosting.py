@@ -1247,7 +1247,8 @@ def set_instance_bounds(
         a non-retryable refusal (validation or unsupported platform).
 
     Raises:
-        APIStatusError: If scaling refused the write, so deploy can retry it.
+        APIStatusError: If scaling refused the write or a server error left its
+            outcome unknown.
         APIConnectionError: If contact is lost while reading or updating bounds.
         APIResponseValidationError: If the response could not be decoded.
 
@@ -1264,13 +1265,15 @@ def set_instance_bounds(
                 if max_instances is None
                 else max_instances,
             )
-        except (APIStatusError, MissingTokenError):
+        except MissingTokenError:
             raise
-        except BaseException:
-            # Only an unanswered write is uncertain. A failed preliminary read
-            # or an interrupted wait after a refusal cannot have changed bounds.
+        except BaseException as ex:
+            if isinstance(ex, APIStatusError) and ex.status_code < 500:
+                raise
+            # A server error can follow a committed write. A failed preliminary
+            # read or interrupted wait after a refusal cannot have changed bounds.
             logger.warning(
-                f"Lost contact while setting the instance bounds of "
+                f"Could not confirm the instance bounds of "
                 f"'{current.name}'; they may or may not have been applied. "
                 "Check the app in the Reflex Cloud dashboard before relying "
                 "on its scaling."
@@ -1279,8 +1282,13 @@ def set_instance_bounds(
     except (APIConnectionError, APIResponseValidationError):
         raise
     except ReflexBuildError as ex:
-        if isinstance(ex, APIStatusError) and _is_scaling_conflict(
-            ex, f"apps/{app_id}/instance_bounds"
+        if isinstance(ex, APIStatusError) and (
+            ex.status_code >= 500
+            or _is_scaling_conflict(
+                ex,
+                f"apps/{app_id}/instance_bounds",
+                url=f"{client.api.base_url}/api/v1/apps/{app_id}/instance_bounds",
+            )
         ):
             raise
         return f"set instance bounds failed: {error_message(ex)}"

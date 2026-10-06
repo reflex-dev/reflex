@@ -124,7 +124,10 @@ def test_deployment_retry_does_not_upload_archives_again(mocker, tmp_path: Path)
     assert sum(request.url == f"{_URL}/reserve" for request in requests) == 1
     assert sum(request.method == "PUT" for request in requests) == 2
     assert len(submissions) == 2
-    assert submissions[0] is submissions[1]
+    assert (
+        submissions[0].headers["X-Request-ID"] == submissions[1].headers["X-Request-ID"]
+    )
+    assert submissions[0].content == submissions[1].content
     assert isinstance(submissions[0].content, bytes)
     assert parse_qs(submissions[0].content.decode())["stored_build_id"] == [
         str(deployment_id)
@@ -189,7 +192,8 @@ def test_deployment_retry_budget_survives_sdk_retries(
         client._request("POST", "deployments", str, form={"stored_build_id": "build"})
 
     assert len(submissions) == 14
-    assert all(request is submissions[0] for request in submissions)
+    assert len({request.headers["X-Request-ID"] for request in submissions}) == 1
+    assert all(request.content == submissions[0].content for request in submissions)
     assert sleep.call_args_list.count(call(15)) == 11
     assert len(sleep.call_args_list) == 13
     assert caplog.messages[-1].endswith("(scaling retry 11/11).")
@@ -328,6 +332,7 @@ def test_deployment_retry_leaves_unrelated_responses_to_sdk(
     [
         replace(_request(), url=f"{_URL}/reserve"),
         replace(_request(), url="https://storage.test/api/v1/deployments"),
+        replace(_request(), url="https://build.reflex.dev/proxy/api/v1/deployments"),
         replace(_request(), url=f"{_URL}?upload=true"),
         replace(_request(), method="PUT"),
         replace(_request(), content=iter([b"archive"])),
@@ -415,7 +420,11 @@ def test_bounds_retry_uses_typed_scaling_refusal(mocker):
 
     assert (
         _retry_scaling_conflicts(
-            operation, path=path, action="instance bounds", attempts=8
+            operation,
+            path=path,
+            url=f"https://build.reflex.dev/api/v1/{path}",
+            action="instance bounds",
+            attempts=8,
         )
         == "updated"
     )
