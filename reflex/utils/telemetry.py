@@ -36,7 +36,6 @@ from reflex.utils.prerequisites import (
 
 logger = logging.getLogger(__name__)
 
-UTC = UTC
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
 
 
