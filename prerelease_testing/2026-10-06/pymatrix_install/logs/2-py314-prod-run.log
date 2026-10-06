@@ -1,0 +1,175 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:3387
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='pyapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3387', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'loglevel', 'app_name', 'plugins',
+'api_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.14.6 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/pymatrix_install-py314/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3387
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3387
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3387 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 3387 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 3387 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/utils/types.py:707: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  if hasattr(cls, "__fields__") and name in cls.__fields__:
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/utils/types.py:586: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  hasattr(cls, "__fields__")
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/utils/types.py:587: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  and field_name in cls.__fields__
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/utils/types.py:588: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  and hasattr(cls.__fields__[field_name], "annotation")
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/utils/types.py:589: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  and not isinstance(cls.__fields__[field_name].annotation, (str, ForwardRef))
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/utils/types.py:591: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  return cls.__fields__[field_name].annotation
+Debug: [timing] Compile pages: 0.06s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 17/16 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/pymatrix_install/pyapp314/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/pymatrix_install/pyapp314/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 433 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             3.33 kB │ 
+gzip:  0.63 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-DU00_R_U.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-BH4Lz19y.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_other_._index-CLu_yuUa.js               0.92 kB │ 
+gzip:  0.53 kB
+Debug: build/client/assets/_index-Bf5Y7SK7.js                       4.07 kB │ 
+gzip:  1.17 kB
+Debug: build/client/assets/pyapp-B_fl04iv.js                        6.52 kB │ 
+gzip:  0.95 kB
+Debug: build/client/assets/emotion-react.browser.esm-Ne-RHRfi.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-A5GO1DrZ.js             37.34 kB │ 
+gzip: 12.91 kB
+Debug: build/client/assets/components-Bl0Za3ky.js                  86.82 kB │ 
+gzip: 28.73 kB
+Debug: build/client/assets/link-Dsng1qiQ.js                       122.49 kB │ 
+gzip: 36.35 kB
+Debug: build/client/assets/entry.client-vyiK-JEh.js               210.95 kB │ 
+gzip: 66.24 kB
+Debug: build/client/assets/root-2_n1Vtdy.js                       307.79 kB │ 
+gzip: 86.67 kB
+Debug: 
+Debug: ✓ built in 1.32s
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 27 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.78 kB │ 
+gzip:  0.31 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-DU00_R_U.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     61.68 kB │ 
+gzip: 17.09 kB
+Debug: 
+Debug: ✓ built in 495ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /other -> build/client/other/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+Debug: Copying .web/build/client/other/index.html to 
+.web/build/client/other.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/pymatrix_install/pyapp314/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/pymatrix_install/pyapp314/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3387/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 18030)
+[INFO] Listening at: http://0.0.0.0:3387
+[INFO] Spawning worker-1 with PID: 18079
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3387
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3387
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:3387
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

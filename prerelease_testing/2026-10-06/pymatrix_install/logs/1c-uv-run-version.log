@@ -1,0 +1,3 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Resolving despite existing lockfile due to change in pre-release mode: `allow` vs. `if-necessary-or-explicit`
+0.10.0a1

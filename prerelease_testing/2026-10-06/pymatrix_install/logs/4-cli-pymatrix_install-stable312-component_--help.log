@@ -1,0 +1,12 @@
+Usage: reflex component [OPTIONS] COMMAND [ARGS]...
+
+  CLI for creating custom components.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  build    Build a custom component.
+  init     Initialize a custom component.
+  install  Install package from this local custom component in editable...
+  share    Collect more details on the published package for gallery.

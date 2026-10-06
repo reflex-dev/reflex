@@ -1,0 +1,280 @@
+{
+ "label": "fullalpha-dev",
+ "url": "http://localhost:3382",
+ "form_data": {
+  "named_input": "named",
+  "name_input": "foo",
+  "empty_input": "",
+  "native_input": "native",
+  "memo_input": "typed!",
+  "bool_input": true,
+  "radio_unset": null
+ },
+ "checks": [
+  {
+   "name": "home renders",
+   "ok": true,
+   "detail": null,
+   "s": 0.04
+  },
+  {
+   "name": "state event roundtrip (count=2)",
+   "ok": true,
+   "detail": null,
+   "s": 0.14
+  },
+  {
+   "name": "rx.toast shows",
+   "ok": true,
+   "detail": null,
+   "s": 0.07
+  },
+  {
+   "name": "rx.icon svg",
+   "ok": true,
+   "detail": null,
+   "s": 0.01
+  },
+  {
+   "name": "rx.moment text",
+   "ok": true,
+   "detail": "ok: got '2026-10-06'",
+   "s": 0.0
+  },
+  {
+   "name": "rx.code_block",
+   "ok": true,
+   "detail": null,
+   "s": 0.0
+  },
+  {
+   "name": "rx.markdown h1",
+   "ok": true,
+   "detail": null,
+   "s": 0.0
+  },
+  {
+   "name": "client nav to /charts",
+   "ok": true,
+   "detail": null,
+   "s": 0.23
+  },
+  {
+   "name": "rx.plotly renders",
+   "ok": true,
+   "detail": null,
+   "s": 2.97
+  },
+  {
+   "name": "plotly title text",
+   "ok": true,
+   "detail": "plotly title",
+   "s": 0.01
+  },
+  {
+   "name": "rx.recharts surface",
+   "ok": true,
+   "detail": null,
+   "s": 0.01
+  },
+  {
+   "name": "rx.data_editor canvas",
+   "ok": true,
+   "detail": null,
+   "s": 0.01
+  },
+  {
+   "name": "data_editor edit -> on_cell_edited",
+   "ok": true,
+   "detail": "0,0=gamma",
+   "s": 2.84
+  },
+  {
+   "name": "client nav to /upload",
+   "ok": true,
+   "detail": null,
+   "s": 0.09
+  },
+  {
+   "name": "rx.upload roundtrip",
+   "ok": true,
+   "detail": "hello-upload.txt:17",
+   "s": 0.15
+  },
+  {
+   "name": "client nav to /form",
+   "ok": true,
+   "detail": null,
+   "s": 0.1
+  },
+  {
+   "name": "form submits",
+   "ok": true,
+   "detail": "{\"named_input\":\"named\",\"name_input\":\"foo\",\"empty_input\":\"\",\"native_input\":\"native\",\"memo_input\":\"typed!\",\"bool_input\":true,\"radio_unset\":null}",
+   "s": 0.58
+  },
+  {
+   "name": "#7227 form id excluded",
+   "ok": true,
+   "detail": "ok: form_id=None",
+   "s": 0.0
+  },
+  {
+   "name": "#7227 wrapper id excluded",
+   "ok": true,
+   "detail": "ok: form_content_wrapper=None",
+   "s": 0.0
+  },
+  {
+   "name": "#7227 non-control box id excluded",
+   "ok": true,
+   "detail": "ok: plain_box=None",
+   "s": 0.0
+  },
+  {
+   "name": "#7227 submit button id excluded",
+   "ok": true,
+   "detail": "ok: submit=None",
+   "s": 0.0
+  },
+  {
+   "name": "#7227 empty_input == ''",
+   "ok": true,
+   "detail": "ok: empty_input=''",
+   "s": 0.0
+  },
+  {
+   "name": "#7227 radio_unset is None",
+   "ok": true,
+   "detail": "ok: radio_unset=None",
+   "s": 0.0
+  },
+  {
+   "name": "#7227 native_input == 'native'",
+   "ok": true,
+   "detail": "ok: native_input='native'",
+   "s": 0.0
+  },
+  {
+   "name": "memoized controlled input submitted",
+   "ok": true,
+   "detail": "ok: memo_input='typed!'",
+   "s": 0.0
+  },
+  {
+   "name": "name_input / named_input / bool_input",
+   "ok": true,
+   "detail": "ok: {'named_input': 'named', 'name_input': 'foo', 'empty_input': '', 'native_input': 'native', 'memo_input': 'typed!', 'bool_input': True, 'radio_unset': None}",
+   "s": 0.0
+  },
+  {
+   "name": "reload keeps state (count=2)",
+   "ok": true,
+   "detail": null,
+   "s": 0.03
+  }
+ ],
+ "all_ok": true,
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "tab": "t1",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "tab": "t1",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "ws": [
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3382/?token=jBghB3kWDreT",
+   "sent": 0,
+   "recv": 1,
+   "first_recv": [
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:8382/_event/?token=a74ab129-e6e4-46af-fd4a-1a1141ef77ac&EIO=4&transport=websocket",
+   "sent": 11,
+   "recv": 13,
+   "first_recv": [
+    "0{\"sid\":\"1n1kYFKo-AyvU3C6AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"FkGB-8EDv8euCgk7AAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8382\",\"origin\":\"http://localhost:3382\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3382/?token=jBghB3kWDreT",
+   "sent": 0,
+   "recv": 1,
+   "first_recv": [
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": false
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:8382/_event/?token=a74ab129-e6e4-46af-fd4a-1a1141ef77ac&EIO=4&transport=websocket",
+   "sent": 1,
+   "recv": 4,
+   "first_recv": [
+    "0{\"sid\":\"5IHcipSwDm-i9DzJAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"U3mXQGgSwkFgAbeYAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8382\",\"origin\":\"http://localhost:3382\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": false
+  }
+ ]
+}

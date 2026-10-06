@@ -1,0 +1,34 @@
+{
+  "url": "http://localhost:3392/",
+  "title": "404 - Not Found",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [
+    "expect_text: 'Welcome to Reflex'",
+    "goto: 'http://localhost:3392/does-not-exist'",
+    "wait: 1000",
+    "screenshot: '/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/out/1c-uvproj/404.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [
+    {
+      "url": "http://localhost:3392/does-not-exist",
+      "status": 404
+    }
+  ],
+  "body_text": "404: Page not found\nBuilt with Reflex"
+}

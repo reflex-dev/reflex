@@ -1,0 +1,2 @@
+{"bool_input": true, "empty_input": "", "form_content_wrapper": "on", "form_id": "on", "name_input": "foo", "submit": ""}
+non-control ids submitted: ['form_content_wrapper', 'form_id', 'submit']

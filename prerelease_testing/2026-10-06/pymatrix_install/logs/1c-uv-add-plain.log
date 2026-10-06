@@ -1,0 +1,12 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using CPython 3.14.6
+Creating virtual environment at: .venv
+  × No solution found when resolving dependencies:
+  ╰─▶ Because there is no version of reflex-base==0.10.0a1 and
+      reflex>=0.10.0a1 depends on reflex-base==0.10.0a1, we can conclude that
+      reflex>=0.10.0a1 cannot be used.
+      And because your project depends on reflex==0.10.0a1, we can conclude
+      that your project's requirements are unsatisfiable.
+
+hint: `reflex-base` was requested with a pre-release marker (e.g., reflex-base==0.10.0a1), but pre-releases weren't enabled (try: `--prerelease=allow`)
+hint: If you want to add the package regardless of the failed resolution, provide the `--frozen` flag to skip locking and syncing

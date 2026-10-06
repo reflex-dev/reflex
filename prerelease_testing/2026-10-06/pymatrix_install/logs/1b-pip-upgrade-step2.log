@@ -1,0 +1,55 @@
+Collecting reflex==0.10.0a1
+  Using cached reflex-0.10.0a1-py3-none-any.whl.metadata (6.9 kB)
+Requirement already satisfied: click>=8.2 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (8.5.0)
+Requirement already satisfied: granian>=2.7.4 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from granian[reload]>=2.7.4->reflex==0.10.0a1) (2.8.4)
+Requirement already satisfied: httpx<1.0,>=0.26 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.28.1)
+Requirement already satisfied: packaging<27,>=24.2 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (26.3)
+Requirement already satisfied: python-multipart<1.0,>=0.0.32 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.0.32)
+Requirement already satisfied: python-socketio<6.0,>=5.12.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (5.17.0)
+Requirement already satisfied: redis<8.0,>=6.4 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (7.4.1)
+Collecting reflex-base==0.10.0a1 (from reflex==0.10.0a1)
+  Using cached reflex_base-0.10.0a1-py3-none-any.whl.metadata (578 bytes)
+Requirement already satisfied: reflex-components-code>=0.9.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.6)
+Requirement already satisfied: reflex-components-core>=0.9.6 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.10.post1)
+Requirement already satisfied: reflex-components-dataeditor>=0.9.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.3.post1)
+Requirement already satisfied: reflex-components-gridjs>=0.9.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.2.post1)
+Requirement already satisfied: reflex-components-lucide>=0.9.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (1.0.4)
+Requirement already satisfied: reflex-components-markdown>=0.9.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.4.post1)
+Requirement already satisfied: reflex-components-moment>=0.9.4 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.4)
+Requirement already satisfied: reflex-components-plotly>=0.9.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.7)
+Requirement already satisfied: reflex-components-radix>=0.9.9 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.10.post1)
+Requirement already satisfied: reflex-components-react-player>=0.9.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.2)
+Requirement already satisfied: reflex-components-recharts>=0.9.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.4.post1)
+Requirement already satisfied: reflex-components-sonner>=0.9.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.9.4)
+Requirement already satisfied: reflex-hosting-cli>=0.1.71 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (0.1.72)
+Requirement already satisfied: rich<16,>=13 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (15.0.0)
+Requirement already satisfied: starlette>=1.3.1 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (1.7.0)
+Requirement already satisfied: typing-extensions>=4.13.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (4.16.0)
+Requirement already satisfied: wrapt<2.6,>=1.17.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex==0.10.0a1) (2.3.0)
+Requirement already satisfied: platformdirs<5.0,>=4.3.7 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from reflex-base==0.10.0a1->reflex==0.10.0a1) (4.12.3)
+Requirement already satisfied: anyio in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from httpx<1.0,>=0.26->reflex==0.10.0a1) (4.15.1)
+Requirement already satisfied: certifi in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from httpx<1.0,>=0.26->reflex==0.10.0a1) (2026.7.22)
+Requirement already satisfied: httpcore==1.* in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from httpx<1.0,>=0.26->reflex==0.10.0a1) (1.0.9)
+Requirement already satisfied: idna in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from httpx<1.0,>=0.26->reflex==0.10.0a1) (3.20)
+Requirement already satisfied: h11>=0.16 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from httpcore==1.*->httpx<1.0,>=0.26->reflex==0.10.0a1) (0.16.0)
+Requirement already satisfied: bidict>=0.21.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from python-socketio<6.0,>=5.12.0->reflex==0.10.0a1) (0.24.1)
+Requirement already satisfied: python-engineio>=4.13.2 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from python-socketio<6.0,>=5.12.0->reflex==0.10.0a1) (4.14.0)
+Requirement already satisfied: markdown-it-py>=2.2.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from rich<16,>=13->reflex==0.10.0a1) (4.2.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from rich<16,>=13->reflex==0.10.0a1) (2.21.0)
+Requirement already satisfied: watchfiles~=1.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from granian[reload]>=2.7.4->reflex==0.10.0a1) (1.3.0)
+Requirement already satisfied: mdurl~=0.1 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from markdown-it-py>=2.2.0->rich<16,>=13->reflex==0.10.0a1) (0.1.2)
+Requirement already satisfied: simple-websocket>=0.10.0 in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from python-engineio>=4.13.2->python-socketio<6.0,>=5.12.0->reflex==0.10.0a1) (1.1.0)
+Requirement already satisfied: wsproto in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pipupgrade312/lib/python3.12/site-packages (from simple-websocket>=0.10.0->python-engineio>=4.13.2->python-socketio<6.0,>=5.12.0->reflex==0.10.0a1) (1.3.2)
+Using cached reflex-0.10.0a1-py3-none-any.whl (307 kB)
+Using cached reflex_base-0.10.0a1-py3-none-any.whl (400 kB)
+Installing collected packages: reflex-base, reflex
+  Attempting uninstall: reflex-base
+    Found existing installation: reflex-base 0.9.12
+    Uninstalling reflex-base-0.9.12:
+      Successfully uninstalled reflex-base-0.9.12
+  Attempting uninstall: reflex
+    Found existing installation: reflex 0.9.12
+    Uninstalling reflex-0.9.12:
+      Successfully uninstalled reflex-0.9.12
+
+Successfully installed reflex-0.10.0a1 reflex-base-0.10.0a1

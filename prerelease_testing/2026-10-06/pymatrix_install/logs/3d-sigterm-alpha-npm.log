@@ -1,0 +1,26 @@
+### reflex 0.10.0a1 REFLEX_USE_NPM=1 app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/sigterm_alpha_npm
+frontend up; reflex CLI pid=31145; process group before SIGTERM:
+31145 30957 31145 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pippre312/bin/p
+32333 31145 31145 Sl   npm run dev
+32349 32333 31145 S    sh -c react-router dev --host
+32350 32349 31145 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/sigterm_al
+32358 31145 31145 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pippre312/bin/p
+--- kill -TERM 31145 (single process, no TTY)
+RESULT: reflex CLI STILL RUNNING 30s after SIGTERM
+listeners on 3393/8393 after 30s:
+node      32350 root   28u  IPv4 590082      0t0  TCP *:3393 (LISTEN)
+process group after 30s:
+31145 30957 31145 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pippre312/bin/p
+32333 31145 31145 Z    [npm run dev] <defunct>
+32350     1 31145 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/sigterm_al
+  thread 31145 wchan=futex_do_wait
+  thread 32330 wchan=anon_pipe_read
+--- cleanup: SIGKILL process group 31145
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/scripts/npm_sigterm_repro.sh: line 27: 31145 Killed                  REFLEX_USE_NPM=$USE_NPM REFLEX_TELEMETRY_ENABLED=false setsid "$VENV/bin/reflex" run --frontend-port "$FP" --backend-port "$BP" > "$LOG.server" 2>&1
+  ports free
+server log tail:
+  | ───────────────────────────── Starting Reflex App ──────────────────────────────
+  | Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+  | ───────────────────────────────── App Running ──────────────────────────────────
+  | App running at: http://localhost:3393/
+  | Backend running at: http://0.0.0.0:8393

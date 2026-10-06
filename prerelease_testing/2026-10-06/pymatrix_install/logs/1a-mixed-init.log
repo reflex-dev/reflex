@@ -1,0 +1,93 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/pymatrix_install-pipnopre312/lib/python3.12/site-packages/reflex_base/conf
+ig.py'
+Debug: Config: Config(app_name='', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'app_name', 'loglevel', 
+'_skip_plugins_checks'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/pymatrix_install-pipnopre312/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────── Initializing compapp ─────────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/pymatrix_install-pipnopre312/lib/python3.12/site-packages/reflex_base/.temp
+lates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/pymatrix_install/compapp/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 148138142040082981042699155098185370238.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.037 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating rxconfig.py
+Info: Initializing the app directory.
+Debug: Using template_name='blank' 
+template_dir=PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-
+a9166a939428/scratchpad/envs/pymatrix_install-pipnopre312/lib/python3.12/site-pa
+ckages/reflex_base/.templates/apps/blank') template_code_dir_name='code'.
+Debug: Creating .gitignore
+Debug: Fetching 
+https://raw.githubusercontent.com/reflex-dev/agent-skills/aditya/agentsmd/AGENTS
+.md
+Debug: Sending HTTPS request to 
+https://raw.githubusercontent.com/reflex-dev/agent-skills/aditya/agentsmd/AGENTS
+.md
+Debug: Received response from 
+https://raw.githubusercontent.com/reflex-dev/agent-skills/aditya/agentsmd/AGENTS
+.md in 0.402 seconds
+Debug: Creating AGENTS.md
+Debug: Creating CLAUDE.md
+Debug: Appending reflex== to requirements.txt
+Success: Initialized compapp using the blank template. Install dependencies from
+`requirements.txt` with `uv pip install -r requirements.txt` (or your preferred 
+installer) before running `uv run reflex run`.
+
+real	0m0.910s
+user	0m0.379s
+sys	0m0.055s

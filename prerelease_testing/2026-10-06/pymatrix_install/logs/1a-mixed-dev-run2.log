@@ -1,0 +1,126 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/pymatrix_install-pipnopre312/lib/python3.12/site-packages/reflex_base/conf
+ig.py'
+Debug: Config: Config(app_name='compapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'plugins', 'app_name', 'telemetry_enabled', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/pymatrix_install-pipnopre312/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3380
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8380
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3380 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3380 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3380 is not in use.
+Debug: Checking if Backend port: 8380 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8380 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8380 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.24s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@glideapps/glide-data-grid@6.0.3', '@radix-ui/react-form@0.1.16', 
+'@radix-ui/themes@3.3.0', 'lodash@4.18.1', 'lucide-react@1.26.0', 
+'moment-timezone@0.6.3', 'moment@2.30.1', 'plotly.js@3.7.0', 
+'react-debounce-input@3.3.0', 'react-dropzone@15.0.0', 
+'react-error-boundary@6.1.2', 'react-markdown@10.1.0', 'react-moment@2.0.2', 
+'react-plotly.js@4.1.0', 'react-responsive-carousel@3.2.23', 
+'react-syntax-highlighter@16.1.1', 'recharts@3.10.1', 'rehype-katex@7.0.1', 
+'rehype-raw@7.0.0', 'rehype-unwrap-images@1.0.0', 'remark-gfm@4.0.1', 
+'remark-math@6.0.0', 'sonner@2.0.8'],['@tailwindcss/postcss@4.3.0', 
+'@tailwindcss/typography@0.5.20', 
+'tailwindcss@4.3.0'],True,['/root/.bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/pymatrix_install/compapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/pymatrix_install/compapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.01s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpa
+d/apps/pymatrix_install/compapp/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/pymatrix_install/compapp/assets', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/pymatrix_install/compapp/CLAUDE.md', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/pymatrix_install/compapp/AGENTS.md', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/pymatrix_install/compapp/compapp', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/pymatrix_install/compapp/rxconfig.py']
+[INFO] Starting granian (main PID: 15704)
+[INFO] Listening at: http://0.0.0.0:8380
+[INFO] Spawning worker-1 with PID: 15723
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3380/
+App running at: http://localhost:3380/
+Backend running at: http://0.0.0.0:8380
+Debug:   ➜  Network: http://192.0.2.2:3380/  eth0
+Debug: 6:29:41 PM [vite] (ssr) connected.
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 1 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 1 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

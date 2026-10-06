@@ -1,0 +1,20 @@
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/typing_fixture/handlers_0_5.py
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/typing_fixture/handlers_0_5.py:62:13 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t']) (reportCallIssue)
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/typing_fixture/handlers_0_5.py:62:13 - error: "assert_type" mismatch: expected "EventCallback[*tuple[()]]" but received "Unknown" (reportAssertTypeFailure)
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/typing_fixture/handlers_0_5.py:68:13 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (int, str, bool, float, str) (reportCallIssue)
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/typing_fixture/handlers_0_5.py:68:13 - error: "assert_type" mismatch: expected "EventCallback[*tuple[()]]" but received "Unknown" (reportAssertTypeFailure)
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/typing_fixture/handlers_0_5.py:80:51 - error: Type "EventCallback[int, str, bool, float, str]" is not assignable to declared type "(int, str, bool, float, str) -> Any"
+    No overloaded function matches type "(int, str, bool, float, str) -> Any" (reportAssignmentType)
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/typing_fixture/handlers_0_5.py:88:34 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t']) (reportCallIssue)
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/typing_fixture/handlers_0_5.py:89:39 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (int, str, bool, float, str) (reportCallIssue)
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/typing_fixture/handlers_0_5.py:98:9 - error: Argument of type "Literal['not-an-int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not-an-int']" is not assignable to type "int | Var[int]"
+      "Literal['not-an-int']" is not assignable to "int"
+      "Literal['not-an-int']" is not assignable to "Var[int]" (reportArgumentType)
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/typing_fixture/handlers_0_5.py:99:1 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'], Literal['extra']) (reportCallIssue)
+9 errors, 0 warnings, 0 informations

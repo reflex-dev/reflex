@@ -1,0 +1,1008 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:3381
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/pymatrix_install-pipnopre312/lib/python3.12/site-packages/reflex_base/conf
+ig.py'
+Debug: Config: Config(app_name='compapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3381', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'api_url', 'plugins', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/pymatrix_install-pipnopre312/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3381
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3381
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3381 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 3381 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 3381 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.26s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@glideapps/glide-data-grid@6.0.3', '@radix-ui/react-form@0.1.16', 
+'@radix-ui/themes@3.3.0', 'lodash@4.18.1', 'lucide-react@1.26.0', 
+'moment-timezone@0.6.3', 'moment@2.30.1', 'plotly.js@3.7.0', 
+'react-debounce-input@3.3.0', 'react-dropzone@15.0.0', 
+'react-error-boundary@6.1.2', 'react-markdown@10.1.0', 'react-moment@2.0.2', 
+'react-plotly.js@4.1.0', 'react-responsive-carousel@3.2.23', 
+'react-syntax-highlighter@16.1.1', 'recharts@3.10.1', 'rehype-katex@7.0.1', 
+'rehype-raw@7.0.0', 'rehype-unwrap-images@1.0.0', 'remark-gfm@4.0.1', 
+'remark-math@6.0.0', 'sonner@2.0.8'],['@tailwindcss/postcss@4.3.0', 
+'@tailwindcss/typography@0.5.20', 
+'tailwindcss@4.3.0'],True,['/root/.bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/pymatrix_install/compapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/pymatrix_install/compapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 2232 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/assets/KaTeX_Size3-Regular-CTq5MqoE.woff             4.42 kB
+Debug: build/client/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2            4.92 kB
+Debug: build/client/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2            5.20 kB
+Debug: build/client/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2            5.46 kB
+Debug: build/client/assets/KaTeX_Size4-Regular-BF-4gkZK.woff             5.98 kB
+Debug: build/client/assets/KaTeX_Size2-Regular-oD1tc_U0.woff             6.18 kB
+Debug: build/client/assets/KaTeX_Size1-Regular-C195tn64.woff             6.49 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2      6.90 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2         6.91 kB
+Debug: build/client/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf              7.58 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff       7.65 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff          7.71 kB
+Debug: build/client/assets/KaTeX_Script-Regular-D3wIWfF6.woff2           9.64 kB
+Debug: build/client/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2       10.34 kB
+Debug: build/client/assets/KaTeX_Size4-Regular-DWFBv043.ttf             10.36 kB
+Debug: build/client/assets/KaTeX_Script-Regular-D5yQViql.woff           10.58 kB
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2         11.31 kB
+Debug: build/client/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2            11.34 kB
+Debug: build/client/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf             11.50 kB
+Debug: build/client/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2        12.02 kB
+Debug: build/client/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2          12.21 kB
+Debug: build/client/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf             12.22 kB
+Debug: build/client/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff        12.31 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf       12.34 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf          12.36 kB
+Debug: build/client/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff          13.20 kB
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff             13.29 kB
+Debug: build/client/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2      13.56 kB
+Debug: build/client/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff         14.11 kB
+Debug: build/client/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff           14.40 kB
+Debug: build/client/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff       16.02 kB
+Debug: build/client/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2         16.40 kB
+Debug: build/client/assets/KaTeX_Math-Italic-t53AETM-.woff2             16.44 kB
+Debug: build/client/assets/KaTeX_Script-Regular-C5JkGWo-.ttf            16.64 kB
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2         16.78 kB
+Debug: build/client/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2             16.98 kB
+Debug: build/client/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff          18.66 kB
+Debug: build/client/assets/KaTeX_Math-Italic-DA0__PXp.woff              18.74 kB
+Debug: build/client/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff          19.41 kB
+Debug: build/client/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf         19.43 kB
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CB_wures.ttf           19.57 kB
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf              19.58 kB
+Debug: build/client/assets/KaTeX_Main-Italic-BMLOBm91.woff              19.67 kB
+Debug: build/client/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf          22.36 kB
+Debug: build/client/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf            24.50 kB
+Debug: build/client/assets/KaTeX_Main-Bold-Cx986IdX.woff2               25.32 kB
+Debug: build/client/assets/KaTeX_Main-Regular-B22Nviop.woff2            26.27 kB
+Debug: build/client/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf        27.55 kB
+Debug: build/client/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2             28.07 kB
+Debug: build/client/assets/KaTeX_Main-Bold-Jm3AIy58.woff                29.91 kB
+Debug: build/client/assets/KaTeX_Main-Regular-Dr94JaBh.woff             30.77 kB
+Debug: build/client/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf           31.19 kB
+Debug: build/client/assets/KaTeX_Math-Italic-flOr_0UB.ttf               31.30 kB
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf           32.96 kB
+Debug: build/client/assets/KaTeX_AMS-Regular-DMm9YOAa.woff              33.51 kB
+Debug: build/client/assets/KaTeX_Main-Italic-3WenGoN9.ttf               33.58 kB
+Debug: build/client/assets/KaTeX_Main-Bold-waoOVXN0.ttf                 51.33 kB
+Debug: build/client/assets/KaTeX_Main-Regular-ypZvNtVU.ttf              53.58 kB
+Debug: build/client/assets/KaTeX_AMS-Regular-DRggAlZN.ttf               63.63 kB
+Debug: build/client/.vite/manifest.json                                102.08 kB
+│ gzip:    11.96 kB
+Debug: build/client/assets/compapp-B1RJWUge.css                         40.98 kB
+│ gzip:    10.82 kB
+Debug: build/client/assets/__reflex_global_styles-dsXFbQn_.css         695.10 kB
+│ gzip:    85.03 kB
+Debug: build/client/assets/emotion-memoize.esm-DsbkLwm0.js               0.11 kB
+│ gzip:     0.11 kB
+Debug: build/client/assets/csv-DeoZPBvg.js                               0.14 kB
+│ gzip:     0.14 kB
+Debug: build/client/assets/hsts-ex6XpwRW.js                              0.20 kB
+│ gzip:     0.18 kB
+Debug: build/client/assets/t4-vb-B7RueooY.js                             0.24 kB
+│ gzip:     0.19 kB
+Debug: build/client/assets/hpkp-CZL65u9s.js                              0.24 kB
+│ gzip:     0.21 kB
+Debug: build/client/assets/arff-DrptKHcu.js                              0.25 kB
+│ gzip:     0.22 kB
+Debug: build/client/assets/t4-cs-jOfVmhqK.js                             0.26 kB
+│ gzip:     0.19 kB
+Debug: build/client/assets/gcode-BXEcl5qa.js                             0.28 kB
+│ gzip:     0.24 kB
+Debug: build/client/assets/brainfuck-CIuPsdNI.js                         0.29 kB
+│ gzip:     0.20 kB
+Debug: build/client/assets/git-BASw3ufu.js                               0.29 kB
+│ gzip:     0.25 kB
+Debug: build/client/assets/reflex-env-NpNVwpNR.js                        0.30 kB
+│ gzip:     0.20 kB
+Debug: build/client/assets/jsonp-5kZSLV4l.js                             0.31 kB
+│ gzip:     0.24 kB
+Debug: build/client/assets/cilkc-BYcAZsFd.js                             0.32 kB
+│ gzip:     0.23 kB
+Debug: build/client/assets/nand2tetris-hdl-gURQffqi.js                   0.33 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/bnf-C0XyL7NM.js                               0.36 kB
+│ gzip:     0.24 kB
+Debug: build/client/assets/yang-0H42dP10.js                              0.36 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/cilkcpp-BbPbUNgF.js                           0.37 kB
+│ gzip:     0.24 kB
+Debug: build/client/assets/properties-DKg_-2lZ.js                        0.37 kB
+│ gzip:     0.24 kB
+Debug: build/client/assets/racket-DUkyhs4D.js                            0.39 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/prolog-DM-3k7xl.js                            0.41 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/editorconfig-XJ0zNcNf.js                      0.42 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/xml-doc-6UiyM74g.js                           0.42 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/false-D4D70b-Z.js                             0.43 kB
+│ gzip:     0.32 kB
+Debug: build/client/assets/ebnf-L8SoqwZ8.js                              0.44 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/ignore-C5N49Roq.js                            0.44 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/php-extras-DkhaYk2-.js                        0.44 kB
+│ gzip:     0.36 kB
+Debug: build/client/assets/tsx-CDH0lqx0.js                               0.47 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/tap-1l_zd01v.js                               0.49 kB
+│ gzip:     0.36 kB
+Debug: build/client/assets/_404_._index-DPEEedID.js                      0.49 kB
+│ gzip:     0.32 kB
+Debug: build/client/assets/go-module-BEI50IkE.js                         0.49 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/matlab-BQyvBoSn.js                            0.49 kB
+│ gzip:     0.37 kB
+Debug: build/client/assets/json5-BkFQEBcI.js                             0.51 kB
+│ gzip:     0.38 kB
+Debug: build/client/assets/json-B02E3pk2.js                              0.51 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/roboconf-Bn3ncXn_.js                          0.51 kB
+│ gzip:     0.32 kB
+Debug: build/client/assets/bbcode-D6OMWDTq.js                            0.52 kB
+│ gzip:     0.28 kB
+Debug: build/client/assets/hoon-CUqn1Uky.js                              0.55 kB
+│ gzip:     0.37 kB
+Debug: build/client/assets/etlua-BpZBXCLd.js                             0.56 kB
+│ gzip:     0.33 kB
+Debug: build/client/assets/linker-script-XTh_UVOA.js                     0.56 kB
+│ gzip:     0.38 kB
+Debug: build/client/assets/gedcom-C5YFAf6D.js                            0.58 kB
+│ gzip:     0.28 kB
+Debug: build/client/assets/r-CjN4PMnd.js                                 0.58 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/gettext-BaPu7_e8.js                           0.59 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/jexl-DbkIzZKC.js                              0.60 kB
+│ gzip:     0.36 kB
+Debug: build/client/assets/llvm-BML3FRzH.js                              0.61 kB
+│ gzip:     0.42 kB
+Debug: build/client/assets/processing-CElZPZIW.js                        0.61 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/ejs-C1IM4A91.js                               0.64 kB
+│ gzip:     0.37 kB
+Debug: build/client/assets/rego-DgqoaeAa.js                              0.64 kB
+│ gzip:     0.40 kB
+Debug: build/client/assets/lua-Dl7axvik.js                               0.66 kB
+│ gzip:     0.45 kB
+Debug: build/client/assets/diff-CnVbg4kZ.js                              0.66 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/erb-BkXjJY-E.js                               0.66 kB
+│ gzip:     0.38 kB
+Debug: build/client/assets/ini-_H0-Wnh8.js                               0.67 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/bison-GYDVC45D.js                             0.69 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/warpscript-BcDDSmPD.js                        0.69 kB
+│ gzip:     0.51 kB
+Debug: build/client/assets/birb-CR3Sl1o-.js                              0.69 kB
+│ gzip:     0.48 kB
+Debug: build/client/assets/n4js-CXMzGBd6.js                              0.69 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/t4-templating-xhBpS6bs.js                     0.70 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/smalltalk-lZkBJf_H.js                         0.71 kB
+│ gzip:     0.45 kB
+Debug: build/client/assets/classnames-CfLRLWYq.js                        0.75 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/awk-q4YWlkWR.js                               0.76 kB
+│ gzip:     0.49 kB
+Debug: build/client/assets/idris-DHAJW6jN.js                             0.76 kB
+│ gzip:     0.49 kB
+Debug: build/client/assets/nasm-BYyRWXsA.js                              0.76 kB
+│ gzip:     0.51 kB
+Debug: build/client/assets/solution-file-gE9JyDmu.js                     0.77 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/less-DZtXz-rP.js                              0.78 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/nginx-B19tPRFV.js                             0.79 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/objectivec-xZKNbhlf.js                        0.79 kB
+│ gzip:     0.52 kB
+Debug: build/client/assets/systemd-D1_5snoB.js                           0.79 kB
+│ gzip:     0.45 kB
+Debug: build/client/assets/agda-uS3zBbvL.js                              0.80 kB
+│ gzip:     0.53 kB
+Debug: build/client/assets/phpdoc-gy-c8ntd.js                            0.81 kB
+│ gzip:     0.50 kB
+Debug: build/client/assets/ichigojam-Di1Ns6X_.js                         0.82 kB
+│ gzip:     0.62 kB
+Debug: build/client/assets/jsstacktrace-DwWA-I7r.js                      0.83 kB
+│ gzip:     0.45 kB
+Debug: build/client/assets/erlang-DFlnBev6.js                            0.83 kB
+│ gzip:     0.50 kB
+Debug: build/client/assets/rip-B4Ycriad.js                               0.83 kB
+│ gzip:     0.46 kB
+Debug: build/client/assets/apl-D1-3En04.js                               0.83 kB
+│ gzip:     0.59 kB
+Debug: build/client/assets/clike-fRPTR8MY.js                             0.85 kB
+│ gzip:     0.55 kB
+Debug: build/client/assets/openqasm-D58R-1tG.js                          0.86 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/pcaxis-1DvWz8SL.js                            0.86 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/j-DQt7bR4l.js                                 0.88 kB
+│ gzip:     0.56 kB
+Debug: build/client/assets/oz-C41MtKuJ.js                                0.88 kB
+│ gzip:     0.58 kB
+Debug: build/client/assets/autoit-XLsjApYF.js                            0.89 kB
+│ gzip:     0.58 kB
+Debug: build/client/assets/firestore-security-rules-DSEutCgX.js          0.90 kB
+│ gzip:     0.49 kB
+Debug: build/client/assets/dns-zone-file-DIw4tGE3.js                     0.90 kB
+│ gzip:     0.55 kB
+Debug: build/client/assets/parigp-DdjG9MK8.js                            0.91 kB
+│ gzip:     0.55 kB
+Debug: build/client/assets/javadoclike-BBI20IT2.js                       0.91 kB
+│ gzip:     0.53 kB
+Debug: build/client/assets/dataweave-CZbfBwNi.js                         0.92 kB
+│ gzip:     0.56 kB
+Debug: build/client/assets/mel-6r1HqpkP.js                               0.92 kB
+│ gzip:     0.54 kB
+Debug: build/client/assets/reason-DOG5k0bo.js                            0.92 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/supercollider-BpgCy7pe.js                     0.92 kB
+│ gzip:     0.55 kB
+Debug: build/client/assets/wolfram-D2zPSWp1.js                           0.93 kB
+│ gzip:     0.58 kB
+Debug: build/client/assets/asm6502-CRL1W035.js                           0.93 kB
+│ gzip:     0.63 kB
+Debug: build/client/assets/bbj-CGdFgIN6.js                               0.93 kB
+│ gzip:     0.61 kB
+Debug: build/client/assets/monkey-es2e915U.js                            0.94 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/actionscript-Di0_WF3j.js                      0.95 kB
+│ gzip:     0.58 kB
+Debug: build/client/assets/abnf-40Fo_Vtj.js                              0.96 kB
+│ gzip:     0.53 kB
+Debug: build/client/assets/ada-CulH8oqI.js                               0.97 kB
+│ gzip:     0.61 kB
+Debug: build/client/assets/turtle-BajsPQ9K.js                            0.97 kB
+│ gzip:     0.54 kB
+Debug: build/client/assets/gdscript-DQmNHg50.js                          0.98 kB
+│ gzip:     0.63 kB
+Debug: build/client/assets/icon-Dzyu6qEV.js                              0.99 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/twig-Cm6NKYYx.js                              0.99 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/makefile-C7Vj606s.js                          1.00 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/eiffel-C7SR1lph.js                            1.01 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/toml-shH6cMOm.js                              1.02 kB
+│ gzip:     0.54 kB
+Debug: build/client/assets/flow-C5v-g1GE.js                              1.04 kB
+│ gzip:     0.56 kB
+Debug: build/client/assets/handlebars-D8NnLpv3.js                        1.04 kB
+│ gzip:     0.57 kB
+Debug: build/client/assets/excel-formula-BXhYwmBR.js                     1.06 kB
+│ gzip:     0.56 kB
+Debug: build/client/assets/sparql-B019SYfI.js                            1.06 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/avro-idl-9kRV7bUR.js                          1.06 kB
+│ gzip:     0.58 kB
+Debug: build/client/assets/keyman-CJcnrxrj.js                            1.07 kB
+│ gzip:     0.61 kB
+Debug: build/client/assets/neon-zwwbwoMR.js                              1.07 kB
+│ gzip:     0.52 kB
+Debug: build/client/assets/go-DdqKCDiW.js                                1.07 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/elm-CnpgxzWV.js                               1.07 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/julia-m-tue8zV.js                             1.07 kB
+│ gzip:     0.70 kB
+Debug: build/client/assets/gap-CtLis1Xu.js                               1.08 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/shell-session-8H-pu4k1.js                     1.08 kB
+│ gzip:     0.62 kB
+Debug: build/client/assets/cypher-Bp-c8qFh.js                            1.10 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/latex-euonHM-l.js                             1.10 kB
+│ gzip:     0.52 kB
+Debug: build/client/assets/protobuf-fo4fyLjb.js                          1.10 kB
+│ gzip:     0.59 kB
+Debug: build/client/assets/mizar-B6Z6M1Ed.js                             1.11 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/aql-vMdHpWig.js                               1.11 kB
+│ gzip:     0.70 kB
+Debug: build/client/assets/gn-wwd7v58L.js                                1.11 kB
+│ gzip:     0.59 kB
+Debug: build/client/assets/qore-DgjzkaeG.js                              1.11 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/brightscript-z9kOOoxM.js                      1.14 kB
+│ gzip:     0.63 kB
+Debug: build/client/assets/vhdl-CIWn_y0q.js                              1.14 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/bro-rdG3ka22.js                               1.17 kB
+│ gzip:     0.75 kB
+Debug: build/client/assets/solidity-CfloOxlk.js                          1.18 kB
+│ gzip:     0.73 kB
+Debug: build/client/assets/xojo-ByP3cRow.js                              1.18 kB
+│ gzip:     0.79 kB
+Debug: build/client/assets/magma-9lzosfcB.js                             1.19 kB
+│ gzip:     0.68 kB
+Debug: build/client/assets/sass-RhMvkm29.js                              1.19 kB
+│ gzip:     0.53 kB
+Debug: build/client/assets/squirrel-JxSDGXOY.js                          1.20 kB
+│ gzip:     0.68 kB
+Debug: build/client/assets/nim-CjyG8OP2.js                               1.20 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/glsl-Dk4NmT-a.js                              1.20 kB
+│ gzip:     0.63 kB
+Debug: build/client/assets/csp-D_cTitSG.js                               1.21 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/aspnet-CxyQ4lmG.js                            1.22 kB
+│ gzip:     0.61 kB
+Debug: build/client/assets/mata-Dc5rk9nS.js                              1.23 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/lolcode-CfMr6tZs.js                           1.23 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/ocaml-CGRmXfd0.js                             1.23 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/jq-BmCy6E6o.js                                1.23 kB
+│ gzip:     0.68 kB
+Debug: build/client/assets/uri-9IuvSt6-.js                               1.25 kB
+│ gzip:     0.57 kB
+Debug: build/client/assets/dot-Cte5oIpV.js                               1.25 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/markup-templating-DibuqcZb.js                 1.26 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/antlr4-XraleXvN.js                            1.26 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/wasm-CL-PBsLm.js                              1.27 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/wiki-CHhKCZC5.js                              1.27 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/django-CesTLwkR.js                            1.27 kB
+│ gzip:     0.66 kB
+Debug: build/client/assets/latte-G6qsBQV8.js                             1.28 kB
+│ gzip:     0.68 kB
+Debug: build/client/assets/rolldown-runtime-C0FnF6B9.js                  1.29 kB
+│ gzip:     0.71 kB
+Debug: build/client/assets/promql-Cyu0bSs-.js                            1.29 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/css-BLUnUyF9.js                               1.30 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/dhall-85OdaVgO.js                             1.30 kB
+│ gzip:     0.73 kB
+Debug: build/client/assets/peoplecode-BgBWHHHM.js                        1.31 kB
+│ gzip:     0.74 kB
+Debug: build/client/assets/fortran-CRREqS6m.js                           1.33 kB
+│ gzip:     0.85 kB
+Debug: build/client/assets/cfscript-DYN3co3R.js                          1.33 kB
+│ gzip:     0.77 kB
+Debug: build/client/assets/nix-BkfMGg2d.js                               1.33 kB
+│ gzip:     0.81 kB
+Debug: build/client/assets/chaiscript-B4SYpffq.js                        1.33 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/armasm-BrfBtT9v.js                            1.34 kB
+│ gzip:     0.84 kB
+Debug: build/client/assets/bicep-BgiflvoR.js                             1.34 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/lilypond-C-fbis9c.js                          1.34 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/tt2-C9zg_zGr.js                               1.35 kB
+│ gzip:     0.76 kB
+Debug: build/client/assets/velocity-DEtNylsn.js                          1.35 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/regex-Dv2vm_uO.js                             1.36 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/_upload_._index-Br2qvbC9.js                   1.38 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/preload-helper-DjzSQ1t3.js                    1.38 kB
+│ gzip:     0.75 kB
+Debug: build/client/assets/iecst-Dp4yaA1l.js                             1.38 kB
+│ gzip:     0.91 kB
+Debug: build/client/assets/pascaligo-DpmXB4fk.js                         1.39 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/bqn-CAmdIE_e.js                               1.39 kB
+│ gzip:     0.77 kB
+Debug: build/client/assets/wren-ZVk8-izA.js                              1.41 kB
+│ gzip:     0.71 kB
+Debug: build/client/assets/createLucideIcon-B2-_YjFe.js                  1.41 kB
+│ gzip:     0.79 kB
+Debug: build/client/assets/scss-BSDGjs1D.js                              1.42 kB
+│ gzip:     0.70 kB
+Debug: build/client/assets/crystal-DEFqqbPf.js                           1.42 kB
+│ gzip:     0.82 kB
+Debug: build/client/assets/smali-DHR2StmD.js                             1.42 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/typescript-DH3BS7WE.js                        1.42 kB
+│ gzip:     0.66 kB
+Debug: build/client/assets/hcl-BVMyo2BJ.js                               1.45 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/scala-BPAZ7eFr.js                             1.45 kB
+│ gzip:     0.79 kB
+Debug: build/client/assets/typoscript-L2xWg453.js                        1.46 kB
+│ gzip:     0.77 kB
+Debug: build/client/assets/gradle-BI7YSb4U.js                            1.49 kB
+│ gzip:     0.81 kB
+Debug: build/client/assets/_charts_._index-C7ntoQyu.js                   1.51 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/odin-Byl7CSB2.js                              1.51 kB
+│ gzip:     0.83 kB
+Debug: build/client/assets/parser-D0IaXfaJ.js                            1.55 kB
+│ gzip:     0.75 kB
+Debug: build/client/assets/coffeescript-BLCrGhZ-.js                      1.56 kB
+│ gzip:     0.74 kB
+Debug: build/client/assets/qml-B1wwhuwc.js                               1.56 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/robotframework-BZw9gX0w.js                    1.57 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/tcl-CEa2RNd5.js                               1.57 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/stan-Byqu5KZz.js                              1.57 kB
+│ gzip:     0.88 kB
+Debug: build/client/assets/jolie-hEXnyRVS.js                             1.58 kB
+│ gzip:     0.88 kB
+Debug: build/client/assets/sml-CGCKZ7_9.js                               1.59 kB
+│ gzip:     0.82 kB
+Debug: build/client/assets/kusto-De8KKPxY.js                             1.60 kB
+│ gzip:     0.95 kB
+Debug: build/client/assets/cue-nEhSTQ5F.js                               1.61 kB
+│ gzip:     0.79 kB
+Debug: build/client/assets/javastacktrace-BjbuPutP.js                    1.61 kB
+│ gzip:     0.66 kB
+Debug: build/client/assets/javadoc-BMcciXtq.js                           1.62 kB
+│ gzip:     0.74 kB
+Debug: build/client/assets/docker-C_eDFnUW.js                            1.62 kB
+│ gzip:     0.76 kB
+Debug: build/client/assets/rescript-Cla-WDKB.js                          1.62 kB
+│ gzip:     0.85 kB
+Debug: build/client/assets/cooklang-CudJKlCU.js                          1.64 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/jsdoc-BFmBExUm.js                             1.64 kB
+│ gzip:     0.78 kB
+Debug: build/client/assets/maxscript-C-5mgloj.js                         1.65 kB
+│ gzip:     0.90 kB
+Debug: build/client/assets/tremor-C12yT62p.js                            1.66 kB
+│ gzip:     0.88 kB
+Debug: build/client/assets/haxe-BgsZEpmn.js                              1.67 kB
+│ gzip:     0.86 kB
+Debug: build/client/assets/kumir-CtNudeVI.js                             1.69 kB
+│ gzip:     0.84 kB
+Debug: build/client/assets/dart-CPTJlmW-.js                              1.70 kB
+│ gzip:     0.90 kB
+Debug: build/client/assets/soy-BAg1LASu.js                               1.72 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/groovy-D84bb_Pu.js                            1.73 kB
+│ gzip:     0.96 kB
+Debug: build/client/assets/batch-ExsvRcTe.js                             1.74 kB
+│ gzip:     0.70 kB
+Debug: build/client/assets/bsl-CD2CmxFZ.js                               1.74 kB
+│ gzip:     0.81 kB
+Debug: build/client/assets/hlsl-ChZeZ3AP.js                              1.76 kB
+│ gzip:     0.96 kB
+Debug: build/client/assets/splunk-spl-BkLEGjpI.js                        1.77 kB
+│ gzip:     0.95 kB
+Debug: build/client/assets/q-Bk86XahR.js                                 1.77 kB
+│ gzip:     1.05 kB
+Debug: build/client/assets/io-6xqbEpcP.js                                1.77 kB
+│ gzip:     1.10 kB
+Debug: build/client/assets/asmatmel-BI-S8lDS.js                          1.80 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/stata-Cuoz51Oa.js                             1.83 kB
+│ gzip:     0.81 kB
+Debug: build/client/assets/vbnet-DnW-9VLb.js                             1.84 kB
+│ gzip:     1.11 kB
+Debug: build/client/assets/applescript-CMxJz5BX.js                       1.84 kB
+│ gzip:     1.01 kB
+Debug: build/client/assets/naniscript-00Efet83.js                        1.85 kB
+│ gzip:     0.82 kB
+Debug: build/client/assets/n1ql-D9ZVNH8B.js                              1.86 kB
+│ gzip:     1.15 kB
+Debug: build/client/assets/unrealscript-B-NggFno.js                      1.86 kB
+│ gzip:     0.98 kB
+Debug: build/client/assets/elixir-DLp7SwIK.js                            1.90 kB
+│ gzip:     0.91 kB
+Debug: build/client/assets/ftl-7vp2t82a.js                               1.94 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/http-D4oga4du.js                              1.94 kB
+│ gzip:     0.91 kB
+Debug: build/client/assets/concurnas-BBlql4Uj.js                         1.95 kB
+│ gzip:     0.99 kB
+Debug: build/client/assets/visual-basic-BwH6S-m8.js                      1.96 kB
+│ gzip:     1.13 kB
+Debug: build/client/assets/basic-s8kVRwOW.js                             1.97 kB
+│ gzip:     1.25 kB
+Debug: build/client/assets/pascal-DzYtueWJ.js                            1.97 kB
+│ gzip:     1.03 kB
+Debug: build/client/assets/v-CdiUaXS4.js                                 1.99 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/powerquery-CdxcVCeV.js                        2.02 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/livescript-Bc5OVJRm.js                        2.02 kB
+│ gzip:     0.98 kB
+Debug: build/client/assets/xeora-GPpeUQM_.js                             2.02 kB
+│ gzip:     0.66 kB
+Debug: build/client/assets/nevod-CzE30xVf.js                             2.03 kB
+│ gzip:     0.79 kB
+Debug: build/client/assets/c-CRrNz9ww.js                                 2.04 kB
+│ gzip:     1.08 kB
+Debug: build/client/assets/yaml-n53w1Kfi.js                              2.04 kB
+│ gzip:     0.91 kB
+Debug: build/client/assets/kotlin-CnfHkq1r.js                            2.05 kB
+│ gzip:     1.03 kB
+Debug: build/client/assets/vala-Y0JWgWko.js                              2.10 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/smarty-jCbhLjua.js                            2.10 kB
+│ gzip:     0.97 kB
+Debug: build/client/assets/moonscript-Diqag_n2.js                        2.11 kB
+│ gzip:     1.13 kB
+Debug: build/client/assets/qsharp-CN35MVTr.js                            2.11 kB
+│ gzip:     1.13 kB
+Debug: build/client/assets/icu-message-format-Dx59rolq.js                2.13 kB
+│ gzip:     0.87 kB
+Debug: build/client/assets/mermaid-Cke4m_Cz.js                           2.14 kB
+│ gzip:     0.96 kB
+Debug: build/client/assets/verilog-Ccu_Xk-I.js                           2.16 kB
+│ gzip:     1.14 kB
+Debug: build/client/assets/python-PcNiIBxw.js                            2.16 kB
+│ gzip:     1.14 kB
+Debug: build/client/assets/cil-B8_gfQ5d.js                               2.17 kB
+│ gzip:     1.17 kB
+Debug: build/client/assets/web-idl-L-ew2qx6.js                           2.19 kB
+│ gzip:     1.00 kB
+Debug: build/client/assets/liquid-DUPQG2s1.js                            2.21 kB
+│ gzip:     1.15 kB
+Debug: build/client/assets/powershell-CO2koXZw.js                        2.21 kB
+│ gzip:     1.31 kB
+Debug: build/client/assets/fsharp-1JtOXZmr.js                            2.21 kB
+│ gzip:     1.20 kB
+Debug: build/client/assets/apex-C-ebYwP5.js                              2.24 kB
+│ gzip:     1.23 kB
+Debug: build/client/assets/perl-Ci2iz3Xf.js                              2.30 kB
+│ gzip:     1.06 kB
+Debug: build/client/assets/d-dZkGcqeR.js                                 2.34 kB
+│ gzip:     1.35 kB
+Debug: build/client/assets/plant-uml-Dr2Y4irI.js                         2.34 kB
+│ gzip:     1.20 kB
+Debug: build/client/assets/haml-Btsvf1xP.js                              2.34 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/zig-JX-h6b9i.js                               2.38 kB
+│ gzip:     1.24 kB
+Debug: build/client/assets/_index-DWsMDbs8.js                            2.38 kB
+│ gzip:     1.03 kB
+Debug: build/client/assets/purescript-NMXprYIU.js                        2.41 kB
+│ gzip:     1.29 kB
+Debug: build/client/assets/uorazor-Cd-VrsLz.js                           2.45 kB
+│ gzip:     1.25 kB
+Debug: build/client/assets/rust-CYWeblTv.js                              2.54 kB
+│ gzip:     1.22 kB
+Debug: build/client/assets/log-CZXGB4zT.js                               2.56 kB
+│ gzip:     1.20 kB
+Debug: build/client/assets/purebasic-CVw9bj1Z.js                         2.57 kB
+│ gzip:     1.22 kB
+Debug: build/client/assets/jsx-Dil3HlnV.js                               2.58 kB
+│ gzip:     1.08 kB
+Debug: build/client/assets/graphql-yR0KZn6_.js                           2.59 kB
+│ gzip:     1.19 kB
+Debug: build/client/assets/js-extras-CCaD0dqp.js                         2.59 kB
+│ gzip:     1.10 kB
+Debug: build/client/assets/puppet-D28JRZD1.js                            2.60 kB
+│ gzip:     1.13 kB
+Debug: build/client/assets/lisp-Im1BsEoa.js                              2.64 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/al-DCOMDDak.js                                2.68 kB
+│ gzip:     1.34 kB
+Debug: build/client/assets/cpp-CyGsBBnP.js                               2.71 kB
+│ gzip:     1.29 kB
+Debug: build/client/assets/js-templates-CeGR5VtX.js                      2.73 kB
+│ gzip:     1.27 kB
+Debug: build/client/assets/_form_._index-zNpXQd9l.js                     2.73 kB
+│ gzip:     1.05 kB
+Debug: build/client/assets/cshtml-C16HFrCD.js                            2.81 kB
+│ gzip:     1.29 kB
+Debug: build/client/assets/plsql-Gdc5k5FM.js                             2.84 kB
+│ gzip:     1.59 kB
+Debug: build/client/assets/java-CpSgypM6.js                              2.88 kB
+│ gzip:     1.31 kB
+Debug: build/client/assets/markup-BS8zte1i.js                            2.94 kB
+│ gzip:     1.19 kB
+Debug: build/client/assets/swift-7bJ1Hzvg.js                             3.00 kB
+│ gzip:     1.35 kB
+Debug: build/client/assets/pug-DnLB3Az3.js                               3.00 kB
+│ gzip:     1.10 kB
+Debug: build/client/assets/haskell-fbSFjs_d.js                           3.03 kB
+│ gzip:     1.60 kB
+Debug: build/client/assets/mongodb-Cdk4-KN7.js                           3.08 kB
+│ gzip:     1.62 kB
+Debug: build/client/assets/coq-CK0VuwP0.js                               3.10 kB
+│ gzip:     1.68 kB
+Debug: build/client/assets/clojure-Cal39ug-.js                           3.11 kB
+│ gzip:     1.55 kB
+Debug: build/client/assets/arturo-CXbgK3GJ.js                            3.20 kB
+│ gzip:     1.66 kB
+Debug: build/client/assets/psl-C4ZUpXFx.js                               3.24 kB
+│ gzip:     1.70 kB
+Debug: build/client/assets/sql-DL4klaVE.js                               3.32 kB
+│ gzip:     1.91 kB
+Debug: build/client/assets/css-extras-BUKTif8p.js                        3.37 kB
+│ gzip:     1.57 kB
+Debug: build/client/assets/inform7-hBjdaCQN.js                           3.40 kB
+│ gzip:     1.54 kB
+Debug: build/client/assets/dax-CKB8QRdy.js                               3.49 kB
+│ gzip:     1.70 kB
+Debug: build/client/assets/pure-BJm2LNYT.js                              3.51 kB
+│ gzip:     1.74 kB
+Debug: build/client/assets/wgsl-DESs6Ww8.js                              3.51 kB
+│ gzip:     1.54 kB
+Debug: build/client/assets/textile-B81OdZgL.js                           3.53 kB
+│ gzip:     1.24 kB
+Debug: build/client/assets/rest-Jn9jSZ2s.js                              3.60 kB
+│ gzip:     1.12 kB
+Debug: build/client/assets/data-grid-overlay-editor-CNs-uCio.js          3.60 kB
+│ gzip:     1.78 kB
+Debug: build/client/assets/ruby-BLixtv7a.js                              3.68 kB
+│ gzip:     1.57 kB
+Debug: build/client/assets/stylus-ChgJAoS8.js                            3.80 kB
+│ gzip:     1.67 kB
+Debug: build/client/assets/nsis-BAiVBhPp.js                              3.83 kB
+│ gzip:     2.12 kB
+Debug: build/client/assets/react-dom-CvX0TCLz.js                         3.89 kB
+│ gzip:     1.41 kB
+Debug: build/client/assets/arduino-DKanMJeL.js                           4.03 kB
+│ gzip:     1.99 kB
+Debug: build/client/assets/scheme-DEQeAjll.js                            4.03 kB
+│ gzip:     1.68 kB
+Debug: build/client/assets/xquery-BLvdQa--.js                            4.03 kB
+│ gzip:     1.75 kB
+Debug: build/client/assets/renpy-DroUj61n.js                             4.35 kB
+│ gzip:     2.03 kB
+Debug: build/client/assets/asciidoc-DDXwstOS.js                          4.51 kB
+│ gzip:     1.67 kB
+Debug: build/client/assets/metafont-CgGUclsg.js                          4.57 kB
+│ gzip:     2.08 kB
+Debug: build/client/assets/javascript-Dr8kdvK2.js                        4.76 kB
+│ gzip:     1.77 kB
+Debug: build/client/assets/markdown-CPItr4R5.js                          5.09 kB
+│ gzip:     1.96 kB
+Debug: build/client/assets/avisynth-CHXSu3lG.js                          5.15 kB
+│ gzip:     2.71 kB
+Debug: build/client/assets/cobol-DOV3u-Ty.js                             5.15 kB
+│ gzip:     2.46 kB
+Debug: build/client/assets/dist-CXkRkGNF.js                              5.72 kB
+│ gzip:     2.88 kB
+Debug: build/client/assets/keepalived-fDo2-RHG.js                        5.74 kB
+│ gzip:     2.27 kB
+Debug: build/client/assets/dist-DGyi8Ke2.js                              5.94 kB
+│ gzip:     2.32 kB
+Debug: build/client/assets/bash-4sOSYtlG.js                              6.22 kB
+│ gzip:     3.09 kB
+Debug: build/client/assets/php-CkjG6d3p.js                               6.45 kB
+│ gzip:     2.08 kB
+Debug: build/client/assets/csharp-ukjrnEW1.js                            6.49 kB
+│ gzip:     2.57 kB
+Debug: build/client/assets/sas-BI7KPfej.js                               7.54 kB
+│ gzip:     3.10 kB
+Debug: build/client/assets/react-DiVRNtpo.js                             7.87 kB
+│ gzip:     3.00 kB
+Debug: build/client/assets/abap-C1aVpbp_.js                              7.98 kB
+│ gzip:     3.61 kB
+Debug: build/client/assets/apacheconf-D72xpb2t.js                        8.25 kB
+│ gzip:     3.59 kB
+Debug: build/client/assets/gml-CHoFsbXW.js                               8.29 kB
+│ gzip:     3.82 kB
+Debug: build/client/assets/autohotkey-NKYlqafD.js                        8.82 kB
+│ gzip:     4.07 kB
+Debug: build/client/assets/factor-CTBqOjKA.js                            9.03 kB
+│ gzip:     3.52 kB
+Debug: build/client/assets/core-Bk0hxcbg.js                              9.08 kB
+│ gzip:     4.07 kB
+Debug: build/client/assets/gherkin-ClajUNSI.js                           9.89 kB
+│ gzip:     5.40 kB
+Debug: build/client/assets/opencl-pWwQV-e0.js                           10.02 kB
+│ gzip:     4.29 kB
+Debug: build/client/assets/cmake-CjNjy5sG.js                            10.54 kB
+│ gzip:     4.15 kB
+Debug: build/client/assets/vim-ChHP2Qq7.js                              14.27 kB
+│ gzip:     5.96 kB
+Debug: build/client/assets/number-overlay-editor-CJog_XyV.js            16.08 kB
+│ gzip:     6.09 kB
+Debug: build/client/assets/click-outside-container-v1JevJCb.js          17.60 kB
+│ gzip:     6.12 kB
+Debug: build/client/assets/emotion-react.browser.esm-CWrMUPBf.js        20.72 kB
+│ gzip:     8.15 kB
+Debug: build/client/assets/index.dom-Dys6eciT.js                        21.21 kB
+│ gzip:     7.42 kB
+Debug: build/client/assets/errorBoundaries-ByI1_A_M.js                  32.25 kB
+│ gzip:    11.31 kB
+Debug: build/client/assets/sqf-Dv6VzqAn.js                              33.49 kB
+│ gzip:    11.17 kB
+Debug: build/client/assets/radio-group-D44EDKKB.js                      42.59 kB
+│ gzip:    12.19 kB
+Debug: build/client/assets/moment-jpDxJPcl.js                           60.36 kB
+│ gzip:    19.67 kB
+Debug: build/client/assets/components-CgLK7DGW.js                       78.37 kB
+│ gzip:    25.77 kB
+Debug: build/client/assets/text-field-jnnoLeUe.js                      131.21 kB
+│ gzip:    38.14 kB
+Debug: build/client/assets/entry.client-BHluJ2VV.js                    211.06 kB
+│ gzip:    66.24 kB
+Debug: build/client/assets/root-CHRSLPKl.js                            343.64 kB
+│ gzip:    83.61 kB
+Debug: build/client/assets/compapp-CkDdnI-s.js                       2,044.58 kB
+│ gzip:   429.59 kB
+Debug: build/client/assets/dist-rpyIJdFs.js                          4,652.04 kB
+│ gzip: 1,391.85 kB
+Debug: 
+Debug: [plugin builtin:vite-reporter] 
+Debug: (!) Some chunks are larger than 500 kB after minification. Consider:
+Debug: - Using dynamic import() to code-split the application
+Debug: - Use build.rolldownOptions.output.codeSplitting to improve chunking: 
+https://rolldown.rs/reference/OutputOptions.codeSplitting
+Debug: - Adjust chunk size limit for this warning via 
+build.chunkSizeWarningLimit.
+Debug: [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mnode_modules/recharts/es6/index.js is
+dynamically imported by app_components/compapp/compapp.jsx but also statically 
+imported by app_components/compapp/compapp.jsx, dynamic import will not move 
+module into another chunk.
+Debug: 
+Debug: [33m[INEFFECTIVE_DYNAMIC_IMPORT] 
+[0mnode_modules/@glideapps/glide-data-grid/dist/esm/index.js is dynamically 
+imported by app_components/compapp/compapp.jsx but also statically imported by 
+app_components/compapp/compapp.jsx, utils/helpers/dataeditor.js, dynamic import 
+will not move module into another chunk.
+Debug: 
+Debug: ✓ built in 6.42s
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 33 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 61 assets cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-dsXFbQn_.css
+Debug: build/client/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2
+Debug: build/client/assets/KaTeX_AMS-Regular-DMm9YOAa.woff
+Debug: build/client/assets/KaTeX_AMS-Regular-DRggAlZN.ttf
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf
+Debug: build/client/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2
+Debug: build/client/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CB_wures.ttf
+Debug: build/client/assets/KaTeX_Main-Bold-Cx986IdX.woff2
+Debug: build/client/assets/KaTeX_Main-Bold-Jm3AIy58.woff
+Debug: build/client/assets/KaTeX_Main-Bold-waoOVXN0.ttf
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2
+Debug: build/client/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf
+Debug: build/client/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2
+Debug: build/client/assets/KaTeX_Main-Italic-BMLOBm91.woff
+Debug: build/client/assets/KaTeX_Main-Italic-3WenGoN9.ttf
+Debug: build/client/assets/KaTeX_Main-Regular-B22Nviop.woff2
+Debug: build/client/assets/KaTeX_Main-Regular-Dr94JaBh.woff
+Debug: build/client/assets/KaTeX_Main-Regular-ypZvNtVU.ttf
+Debug: build/client/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2
+Debug: build/client/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff
+Debug: build/client/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf
+Debug: build/client/assets/KaTeX_Math-Italic-t53AETM-.woff2
+Debug: build/client/assets/KaTeX_Math-Italic-DA0__PXp.woff
+Debug: build/client/assets/KaTeX_Math-Italic-flOr_0UB.ttf
+Debug: build/client/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2
+Debug: build/client/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff
+Debug: build/client/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf
+Debug: build/client/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2
+Debug: build/client/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff
+Debug: build/client/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf
+Debug: build/client/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2
+Debug: build/client/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff
+Debug: build/client/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf
+Debug: build/client/assets/KaTeX_Script-Regular-D3wIWfF6.woff2
+Debug: build/client/assets/KaTeX_Script-Regular-D5yQViql.woff
+Debug: build/client/assets/KaTeX_Script-Regular-C5JkGWo-.ttf
+Debug: build/client/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2
+Debug: build/client/assets/KaTeX_Size1-Regular-C195tn64.woff
+Debug: build/client/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf
+Debug: build/client/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2
+Debug: build/client/assets/KaTeX_Size2-Regular-oD1tc_U0.woff
+Debug: build/client/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf
+Debug: build/client/assets/KaTeX_Size3-Regular-CTq5MqoE.woff
+Debug: build/client/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf
+Debug: build/client/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2
+Debug: build/client/assets/KaTeX_Size4-Regular-BF-4gkZK.woff
+Debug: build/client/assets/KaTeX_Size4-Regular-DWFBv043.ttf
+Debug: build/client/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2
+Debug: build/client/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff
+Debug: build/client/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf
+Debug: build/server/assets/server-build-B1RJWUge.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/assets/KaTeX_Size3-Regular-CTq5MqoE.woff           4.42 kB
+Debug: build/server/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2          4.92 kB
+Debug: build/server/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2          5.20 kB
+Debug: build/server/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2          5.46 kB
+Debug: build/server/assets/KaTeX_Size4-Regular-BF-4gkZK.woff           5.98 kB
+Debug: build/server/assets/KaTeX_Size2-Regular-oD1tc_U0.woff           6.18 kB
+Debug: build/server/assets/KaTeX_Size1-Regular-C195tn64.woff           6.49 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2    6.90 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2       6.91 kB
+Debug: build/server/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf            7.58 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff     7.65 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff        7.71 kB
+Debug: build/server/assets/KaTeX_Script-Regular-D3wIWfF6.woff2         9.64 kB
+Debug: build/server/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2     10.34 kB
+Debug: build/server/assets/KaTeX_Size4-Regular-DWFBv043.ttf           10.36 kB
+Debug: build/server/assets/KaTeX_Script-Regular-D5yQViql.woff         10.58 kB
+Debug: build/server/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2       11.31 kB
+Debug: build/server/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2          11.34 kB
+Debug: build/server/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf           11.50 kB
+Debug: build/server/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2      12.02 kB
+Debug: build/server/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2        12.21 kB
+Debug: build/server/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf           12.22 kB
+Debug: build/server/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff      12.31 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf     12.34 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf        12.36 kB
+Debug: build/server/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff        13.20 kB
+Debug: build/server/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff           13.29 kB
+Debug: build/server/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2    13.56 kB
+Debug: build/server/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff       14.11 kB
+Debug: build/server/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff         14.40 kB
+Debug: build/server/.vite/manifest.json                               15.26 kB │
+gzip:  1.70 kB
+Debug: build/server/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff     16.02 kB
+Debug: build/server/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2       16.40 kB
+Debug: build/server/assets/KaTeX_Math-Italic-t53AETM-.woff2           16.44 kB
+Debug: build/server/assets/KaTeX_Script-Regular-C5JkGWo-.ttf          16.64 kB
+Debug: build/server/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2       16.78 kB
+Debug: build/server/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2           16.98 kB
+Debug: build/server/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff        18.66 kB
+Debug: build/server/assets/KaTeX_Math-Italic-DA0__PXp.woff            18.74 kB
+Debug: build/server/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff        19.41 kB
+Debug: build/server/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf       19.43 kB
+Debug: build/server/assets/KaTeX_Fraktur-Regular-CB_wures.ttf         19.57 kB
+Debug: build/server/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf            19.58 kB
+Debug: build/server/assets/KaTeX_Main-Italic-BMLOBm91.woff            19.67 kB
+Debug: build/server/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf        22.36 kB
+Debug: build/server/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf          24.50 kB
+Debug: build/server/assets/KaTeX_Main-Bold-Cx986IdX.woff2             25.32 kB
+Debug: build/server/assets/KaTeX_Main-Regular-B22Nviop.woff2          26.27 kB
+Debug: build/server/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf      27.55 kB
+Debug: build/server/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2           28.07 kB
+Debug: build/server/assets/KaTeX_Main-Bold-Jm3AIy58.woff              29.91 kB
+Debug: build/server/assets/KaTeX_Main-Regular-Dr94JaBh.woff           30.77 kB
+Debug: build/server/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf         31.19 kB
+Debug: build/server/assets/KaTeX_Math-Italic-flOr_0UB.ttf             31.30 kB
+Debug: build/server/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf         32.96 kB
+Debug: build/server/assets/KaTeX_AMS-Regular-DMm9YOAa.woff            33.51 kB
+Debug: build/server/assets/KaTeX_Main-Italic-3WenGoN9.ttf             33.58 kB
+Debug: build/server/assets/KaTeX_Main-Bold-waoOVXN0.ttf               51.33 kB
+Debug: build/server/assets/KaTeX_Main-Regular-ypZvNtVU.ttf            53.58 kB
+Debug: build/server/assets/KaTeX_AMS-Regular-DRggAlZN.ttf             63.63 kB
+Debug: build/server/assets/server-build-B1RJWUge.css                  40.98 kB │
+gzip: 10.82 kB
+Debug: build/server/assets/__reflex_global_styles-dsXFbQn_.css       695.10 kB │
+gzip: 85.03 kB
+Debug: build/server/assets/reflex-env-NpNVwpNR.js                      0.30 kB │
+gzip:  0.20 kB
+Debug: build/server/index.js                                          88.95 kB │
+gzip: 21.21 kB
+Debug: 
+Debug: ✓ built in 889ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /charts -> build/client/charts/index.html
+Debug: Prerender (html): /upload -> build/client/upload/index.html
+Debug: Prerender (html): /form -> build/client/form/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:08
+Debug: Copying .web/build/client/form/index.html to .web/build/client/form.html
+Debug: Copying .web/build/client/upload/index.html to 
+.web/build/client/upload.html
+Debug: Copying .web/build/client/charts/index.html to 
+.web/build/client/charts.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/pymatrix_install/compapp/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/pymatrix_install/compapp/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3381/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 31359)
+[INFO] Listening at: http://0.0.0.0:3381
+[INFO] Spawning worker-1 with PID: 31600
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

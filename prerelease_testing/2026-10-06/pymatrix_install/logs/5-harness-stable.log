@@ -1,0 +1,172 @@
+───────────────────────────── Initializing appone ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [20439]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:43335 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:45213/
+
+INFO:     127.0.0.1:47560 - "WebSocket /_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:47568 - "WebSocket /_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [20439]
+───────────────────────────── Initializing apptwo ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [20439]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:42163 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:42675/
+
+INFO:     127.0.0.1:49004 - "WebSocket /_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:49006 - "WebSocket /_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [20439]
+───────────────────────────── Initializing appone ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [20439]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:41149 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:44031/
+
+INFO:     127.0.0.1:37120 - "WebSocket /_event/?token=e0f43348-af37-46fd-a4a7-16c1cdc26a73&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:37134 - "WebSocket /_event/?token=e0f43348-af37-46fd-a4a7-16c1cdc26a73&EIO=4&transport=websocket" [accepted]
+───────────────────────────── Initializing apptwo ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [20439]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:46511 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:39495/
+
+INFO:     127.0.0.1:40822 - "WebSocket /_event/?token=0fc82ed0-acae-4c61-e911-db390383060e&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:40836 - "WebSocket /_event/?token=0fc82ed0-acae-4c61-e911-db390383060e&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:45514 - "WebSocket /_event/?token=ba5d4306-4433-460a-9051-247a1d4db4e1&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [20439]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [20439]
+{
+ "ports": {
+  "seq_one": {
+   "frontend": "http://localhost:45213/",
+   "backend": 43335
+  },
+  "seq_two": {
+   "frontend": "http://localhost:42675/",
+   "backend": 42163
+  },
+  "sim_one": {
+   "frontend": "http://localhost:44031/",
+   "backend": 41149
+  },
+  "sim_two": {
+   "frontend": "http://localhost:39495/",
+   "backend": 46511
+  }
+ },
+ "attrs": {
+  "seq_one": {
+   "app_instance": "App",
+   "has_poll_for_clients": false,
+   "has_app_state_manager": false,
+   "has_token_manager": true,
+   "has_poll_for_value": true,
+   "pages": [
+    "404",
+    "index",
+    "only-one"
+   ]
+  },
+  "seq_two": {
+   "app_instance": "App",
+   "has_poll_for_clients": false,
+   "has_app_state_manager": false,
+   "has_token_manager": true,
+   "has_poll_for_value": true,
+   "pages": [
+    "404",
+    "index"
+   ]
+  },
+  "sim_two": {
+   "app_instance": "App",
+   "has_poll_for_clients": false,
+   "has_app_state_manager": false,
+   "has_token_manager": true,
+   "has_poll_for_value": true,
+   "pages": [
+    "404",
+    "index"
+   ]
+  }
+ }
+}
+PASS seq_one: app one title
+PASS seq_one: app one event roundtrip
+PASS seq_one: app one memo renders -- memo:from-one
+PASS seq_one: app one ComponentState
+PASS seq_one: /only-one served
+PASS seq_two: app two title
+PASS seq_two: app two event roundtrip
+PASS seq_two: no app-one states in app-two hydration/deltas -- 6 frames, no app-one state names
+PASS seq_two: app one's page not served by app two -- 404: Page not found
+PASS seq_two: app two compiled output has no app-one artifacts -- no app-one artifacts in app two .web sources
+PASS sim_one: app one title
+PASS sim_one: app one event roundtrip
+PASS sim_one: app one memo renders -- memo:from-one
+PASS sim_one: app one ComponentState
+PASS sim_one: /only-one served
+PASS sim_two: app two title
+PASS sim_two: app two event roundtrip
+PASS sim_two: no app-one states in app-two hydration/deltas -- 6 frames, no app-one state names
+PASS sim_two: app one's page not served by app two -- 404: Page not found
+PASS sim_two: app two compiled output has no app-one artifacts -- no app-one artifacts in app two .web sources
+PASS sim: app one still works (event + ComponentState) after app two started
+console: {
+"seq_one": [
+"error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+"error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+"error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+"error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+"error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+"error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+"error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+"error: WebSocket connection to 'ws://127.0.0.1:43

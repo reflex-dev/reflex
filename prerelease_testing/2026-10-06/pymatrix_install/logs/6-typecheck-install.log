@@ -1,0 +1,13 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/pymatrix_install-typecheck
+Resolved 4 packages in 3.93s
+Downloading pyright (5.9MiB)
+Downloading ty (13.5MiB)
+ Downloaded pyright
+ Downloaded ty
+Prepared 3 packages in 13.96s
+Installed 4 packages in 120ms
+ + nodeenv==1.11.0
+ + pyright==1.1.414
+ + ty==0.0.84
+ + typing-extensions==4.16.0

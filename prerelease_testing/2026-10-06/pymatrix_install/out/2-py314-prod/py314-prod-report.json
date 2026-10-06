@@ -1,0 +1,198 @@
+{
+ "label": "py314-prod",
+ "values": {
+  "init.l_opt": "null",
+  "init.d_nested": "{\"k\":[\"v1\",\"v2\"]}",
+  "init.ann": "5",
+  "init.point": "{\"x\":1,\"y\":2,\"tags\":[\"t\"]}",
+  "init.pm": "{\"name\":\"pm\",\"tags\":[\"a\"],\"when\":null}",
+  "init.lit": "\"a\"",
+  "init.color": "\"red\"",
+  "init.when": "\"2026-10-06 12:30:00\"",
+  "init.fld": "[\"f1\"]",
+  "init.uni": "1",
+  "init.tup": "[1,\"one\"]",
+  "init.td": "{\"a\":1,\"b\":\"bee\"}",
+  "init.o_str": "none",
+  "init.cond-list": "no list",
+  "init.rows": [
+   "0->0"
+  ],
+  "init.f_summary": "None|fut|5|green|2030",
+  "init.greeting": "hello",
+  "mut.l_opt": "[7]",
+  "mut.d_nested": "{\"k\":[\"v1\",\"v2\",\"v3\"]}",
+  "mut.ann": "6",
+  "mut.point": "{\"x\":11,\"y\":2,\"tags\":[\"t\",\"t2\"]}",
+  "mut.pm": "{\"name\":\"pm\",\"tags\":[\"a\",\"b\"],\"when\":\"2026-01-01 00:00:00\"}",
+  "mut.lit": "\"b\"",
+  "mut.color": "\"green\"",
+  "mut.when": "\"2026-10-07 12:30:00\"",
+  "mut.fld": "[\"f1\",\"f2\"]",
+  "mut.uni": "\"two\"",
+  "mut.tup": "[2,\"two\"]",
+  "mut.td": "{\"a\":2,\"b\":\"bee2\"}",
+  "mut.rows": [
+   "0->0",
+   "1->1"
+  ],
+  "mut.fld-items": [
+   "f1",
+   "f2"
+  ]
+ },
+ "checks": [
+  {
+   "name": "renders",
+   "ok": true,
+   "detail": null,
+   "s": 0.04
+  },
+  {
+   "name": "backend python version",
+   "ok": true,
+   "detail": "ok: 3.14.6",
+   "s": 0.02
+  },
+  {
+   "name": "init Optional list None -> cond false",
+   "ok": true,
+   "detail": "ok: {'init.l_opt': 'null', 'init.d_nested': '{\"k\":[\"v1\",\"v2\"]}', 'init.ann': '5', 'init.point': '{\"x\":1,\"y\":2,\"tags\":[\"t\"]}', 'init.pm': '{\"name\":\"pm\",\"tags\":[\"a\"],\"when\":null}', 'init.lit': '\"a\"', 'init.color': '\"red\"', 'init.when': '\"2026-10-06 12:30:00\"', 'init.fld': '[\"f1\"]', 'init.uni': '1', 'init.tup': '[1,\"one\"]', 'init.td': '{\"a\":1,\"b\":\"bee\"}', 'init.o_str': 'none', 'init.cond-list': 'no list', 'init.rows': ['0->0'], 'init.f_summary': 'None|fut|5|green|2030', 'init.greeting': 'hello'}",
+   "s": 0.0
+  },
+  {
+   "name": "init dataclass/pydantic/enum/datetime",
+   "ok": true,
+   "detail": "ok: {'init.point': '{\"x\":1,\"y\":2,\"tags\":[\"t\"]}', 'init.pm': '{\"name\":\"pm\",\"tags\":[\"a\"],\"when\":null}', 'init.color': '\"red\"', 'init.when': '\"2026-10-06 12:30:00\"'}",
+   "s": 0.0
+  },
+  {
+   "name": "init future-annotations state",
+   "ok": true,
+   "detail": "ok: None|fut|5|green|2030",
+   "s": 0.0
+  },
+  {
+   "name": "mutate every shape (incl. in-place dataclass/pydantic/list mutations)",
+   "ok": true,
+   "detail": "ok: {'mut.l_opt': '[7]', 'mut.d_nested': '{\"k\":[\"v1\",\"v2\",\"v3\"]}', 'mut.ann': '6', 'mut.point': '{\"x\":11,\"y\":2,\"tags\":[\"t\",\"t2\"]}', 'mut.pm': '{\"name\":\"pm\",\"tags\":[\"a\",\"b\"],\"when\":\"2026-01-01 00:00:00\"}', 'mut.lit': '\"b\"', 'mut.color': '\"green\"', 'mut.when': '\"2026-10-07 12:30:00\"', 'mut.fld': '[\"f1\",\"f2\"]', 'mut.uni': '\"two\"', 'mut.tup': '[2,\"two\"]', 'mut.td': '{\"a\":2,\"b\":\"bee2\"}', 'mut.rows': ['0->0', '1->1'], 'mut.fld-items': ['f1', 'f2']}",
+   "s": 0.1
+  },
+  {
+   "name": "background task with async with self",
+   "ok": true,
+   "detail": null,
+   "s": 0.64
+  },
+  {
+   "name": "ABC mixin state event",
+   "ok": true,
+   "detail": null,
+   "s": 0.06
+  },
+  {
+   "name": "postponed-annotation state event",
+   "ok": true,
+   "detail": null,
+   "s": 0.07
+  },
+  {
+   "name": "reset Optional back to None",
+   "ok": true,
+   "detail": null,
+   "s": 0.07
+  },
+  {
+   "name": "client nav keeps state",
+   "ok": true,
+   "detail": null,
+   "s": 0.04
+  },
+  {
+   "name": "reload on /other keeps state",
+   "ok": true,
+   "detail": null,
+   "s": 0.02
+  },
+  {
+   "name": "second tab gets its own fresh state",
+   "ok": true,
+   "detail": null,
+   "s": 0.05
+  },
+  {
+   "name": "first tab still has its state",
+   "ok": true,
+   "detail": null,
+   "s": 0.0
+  }
+ ],
+ "all_ok": true,
+ "anomalies": {
+  "console_errors": [
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   }
+  ],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "bad_responses_raw": []
+ },
+ "console_all": [
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "ws": [
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3387/_event/?token=35294016-1c66-4e77-98de-c97d464fc575&EIO=4&transport=websocket",
+   "sent": 8,
+   "recv": 14,
+   "first_recv": [
+    "0{\"sid\":\"fR811YoiuaXZzktkAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"aYrTqTgF---ck7cZAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3387\",\"origin\":\"http://localhost:3387\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3387/_event/?token=35294016-1c66-4e77-98de-c97d464fc575&EIO=4&transport=websocket",
+   "sent": 1,
+   "recv": 4,
+   "first_recv": [
+    "0{\"sid\":\"IpjYiG225rLSNbvcAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"ymbaq15TPhxnEVCdAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3387\",\"origin\":\"http://localhost:3387\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": false
+  },
+  {
+   "tab": "t2",
+   "url": "ws://localhost:3387/_event/?token=7b117af1-882d-4638-b5ec-299f766de5a4&EIO=4&transport=websocket",
+   "sent": 1,
+   "recv": 4,
+   "first_recv": [
+    "0{\"sid\":\"uSftmWk_CFU7U63wAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Y3_2tbZupeBqhcHeAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3387\",\"origin\":\"http://localhost:3387\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": false
+  }
+ ]
+}

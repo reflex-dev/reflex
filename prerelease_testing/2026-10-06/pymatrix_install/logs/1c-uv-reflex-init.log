@@ -1,0 +1,6 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+───────────────────────────── Initializing uvproj ──────────────────────────────
+Info: Initializing the web directory.
+Info: Initializing the app directory.
+Success: Initialized uvproj using the blank template. Run `uv run reflex run` to
+start the app.

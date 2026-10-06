@@ -1,0 +1,19 @@
+### reflex 0.10.0a1 REFLEX_USE_NPM=0 app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/sigterm_alpha_bun
+frontend up; reflex CLI pid=3977; process group before SIGTERM:
+ 3977  3698  3977 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pippre312/bin/p
+ 4074  3977  3977 S    /root/.bun/bin/bun run dev
+ 4075  4074  3977 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/pymatrix_install/sigterm_al
+ 4147  3977  3977 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-pippre312/bin/p
+--- kill -TERM 3977 (single process, no TTY)
+RESULT: reflex CLI exited
+listeners on 3393/8393 after 30s:
+  (none)
+process group after 30s:
+--- cleanup: SIGKILL process group 3977
+  ports free
+server log tail:
+  | Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+  | ───────────────────────────────── App Running ──────────────────────────────────
+  | App running at: http://localhost:3393/
+  | Backend running at: http://0.0.0.0:8393
+  | Info: Reflex app stopped.

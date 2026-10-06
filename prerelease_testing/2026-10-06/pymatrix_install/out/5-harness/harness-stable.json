@@ -1,0 +1,302 @@
+{
+ "reflex_file": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harnessstable312/lib/python3.12/site-packages/reflex/__init__.py",
+ "checks": [
+  {
+   "name": "seq_one: app one title",
+   "ok": true,
+   "detail": null,
+   "s": 0.1
+  },
+  {
+   "name": "seq_one: app one event roundtrip",
+   "ok": true,
+   "detail": null,
+   "s": 0.2
+  },
+  {
+   "name": "seq_one: app one memo renders",
+   "ok": true,
+   "detail": "memo:from-one",
+   "s": 0.0
+  },
+  {
+   "name": "seq_one: app one ComponentState",
+   "ok": true,
+   "detail": null,
+   "s": 0.1
+  },
+  {
+   "name": "seq_one: /only-one served",
+   "ok": true,
+   "detail": null,
+   "s": 0.8
+  },
+  {
+   "name": "seq_two: app two title",
+   "ok": true,
+   "detail": null,
+   "s": 0.0
+  },
+  {
+   "name": "seq_two: app two event roundtrip",
+   "ok": true,
+   "detail": null,
+   "s": 0.1
+  },
+  {
+   "name": "seq_two: no app-one states in app-two hydration/deltas",
+   "ok": true,
+   "detail": "6 frames, no app-one state names",
+   "s": 0.0
+  },
+  {
+   "name": "seq_two: app one's page not served by app two",
+   "ok": true,
+   "detail": "404: Page not found",
+   "s": 2.3
+  },
+  {
+   "name": "seq_two: app two compiled output has no app-one artifacts",
+   "ok": true,
+   "detail": "no app-one artifacts in app two .web sources",
+   "s": 0.1
+  },
+  {
+   "name": "sim_one: app one title",
+   "ok": true,
+   "detail": null,
+   "s": 0.0
+  },
+  {
+   "name": "sim_one: app one event roundtrip",
+   "ok": true,
+   "detail": null,
+   "s": 0.1
+  },
+  {
+   "name": "sim_one: app one memo renders",
+   "ok": true,
+   "detail": "memo:from-one",
+   "s": 0.0
+  },
+  {
+   "name": "sim_one: app one ComponentState",
+   "ok": true,
+   "detail": null,
+   "s": 0.1
+  },
+  {
+   "name": "sim_one: /only-one served",
+   "ok": true,
+   "detail": null,
+   "s": 0.8
+  },
+  {
+   "name": "sim_two: app two title",
+   "ok": true,
+   "detail": null,
+   "s": 0.0
+  },
+  {
+   "name": "sim_two: app two event roundtrip",
+   "ok": true,
+   "detail": null,
+   "s": 0.1
+  },
+  {
+   "name": "sim_two: no app-one states in app-two hydration/deltas",
+   "ok": true,
+   "detail": "6 frames, no app-one state names",
+   "s": 0.0
+  },
+  {
+   "name": "sim_two: app one's page not served by app two",
+   "ok": true,
+   "detail": "404: Page not found",
+   "s": 2.5
+  },
+  {
+   "name": "sim_two: app two compiled output has no app-one artifacts",
+   "ok": true,
+   "detail": "no app-one artifacts in app two .web sources",
+   "s": 0.1
+  },
+  {
+   "name": "sim: app one still works (event + ComponentState) after app two started",
+   "ok": true,
+   "detail": null,
+   "s": 1.3
+  }
+ ],
+ "ports": {
+  "seq_one": {
+   "frontend": "http://localhost:45213/",
+   "backend": 43335
+  },
+  "seq_two": {
+   "frontend": "http://localhost:42675/",
+   "backend": 42163
+  },
+  "sim_one": {
+   "frontend": "http://localhost:44031/",
+   "backend": 41149
+  },
+  "sim_two": {
+   "frontend": "http://localhost:39495/",
+   "backend": 46511
+  }
+ },
+ "frames": {
+  "seq_one": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"YY0VptdKZ-gu13E2AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"aZIiOAPcxcJmuSHxAAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:43335\",\"origin\":\"http://localhost:45213\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ZP5HwoBKGt+Z9YqadWaTLg==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:43335\",\"origin\":\"http://localhost:45213\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"ZP5HwoBKGt+Z9YqadWaTLg==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:45213\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:45213/index\",\"full_raw_path\":\"http://localhost:45213/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"12b15b45-ec92-4e8d-d529-27c15a26ebb9\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"aZIiOAPcxcJmuSHxAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:45213\",\"origin\":\"http://localhost:45213\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:45213/\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___istate___dynamic____one_counter_n1\":{\"value_rx_state_\":0},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.appone___appone____one_state\":{\"count_rx_state_\":0},\"reflex___state____state.reflex___state____update_vars_internal_state\":{}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.appone___appone____one_state\":{\"count_rx_state_\":1}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.appone___appone____one_state\":{\"count_rx_state_\":2}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____one_counter_n1\":{\"value_rx_state_\":1}}}]",
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"wmJEHexPWPm6yIPjAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"L3rMyy0c4K4qhuvcAAAD\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:43335\",\"origin\":\"http://localhost:45213\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"w3CS1N06/sUlozdvzqlF5w==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:43335\",\"origin\":\"http://localhost:45213\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"w3CS1N06/sUlozdvzqlF5w==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:45213\",\"path\":\"/only-one\",\"raw_path\":\"/only-one\",\"full_path\":\"http://localhost:45213/only-one\",\"full_raw_path\":\"http://localhost:45213/only-one\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/only-one\",\"rx_router_session_rx_state_\":{\"client_token\":\"12b15b45-ec92-4e8d-d529-27c15a26ebb9\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"L3rMyy0c4K4qhuvcAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:45213\",\"origin\":\"http://localhost:45213\",\"path\":\"/only-one\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:45213/only-one\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___istate___dynamic____one_counter_n1\":{\"value_rx_state_\":1},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.appone___appone____one_state\":{\"count_rx_state_\":2},\"reflex___state____state.reflex___state____update_vars_internal_state\":{}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  ],
+  "seq_two": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"gbwYt2N9zSqLpuKlAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"sboW5yLsJl34LqeBAAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:42163\",\"origin\":\"http://localhost:42675\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"a5ERN4pg2Y+Mehnx513tcw==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:42163\",\"origin\":\"http://localhost:42675\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"a5ERN4pg2Y+Mehnx513tcw==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:42675\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:42675/index\",\"full_raw_path\":\"http://localhost:42675/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"c4de4f89-845b-460a-e44a-6c99bb9117bc\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"sboW5yLsJl34LqeBAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:42675\",\"origin\":\"http://localhost:42675\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:42675/\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.apptwo___apptwo____two_state\":{\"name_rx_state_\":\"two\"}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.apptwo___apptwo____two_state\":{\"name_rx_state_\":\"renamed\"}}}]",
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"vd_bFEmTYBP_MhNEAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"24j2ujcOilD82ck_AAAD\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:42163\",\"origin\":\"http://localhost:42675\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"AXc9dLUsLnDWOkfiI6sZVg==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:42163\",\"origin\":\"http://localhost:42675\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"AXc9dLUsLnDWOkfiI6sZVg==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:42675\",\"path\":\"/404\",\"raw_path\":\"/only-one\",\"full_path\":\"http://localhost:42675/404\",\"full_raw_path\":\"http://localhost:42675/only-one\",\"params\":{\"splat\":[\"only-one\"]}},\"rx_router_route_id_rx_state_\":\"/404\",\"rx_router_session_rx_state_\":{\"client_token\":\"c4de4f89-845b-460a-e44a-6c99bb9117bc\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"24j2ujcOilD82ck_AAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:42675\",\"origin\":\"http://localhost:42675\",\"path\":\"/only-one\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:42675/only-one\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.apptwo___apptwo____two_state\":{\"name_rx_state_\":\"renamed\"}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  ],
+  "sim_one": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"Z6RRgmiCtR7-XzrkAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"SiMvKP0KWY2pqHwxAAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:41149\",\"origin\":\"http://localhost:44031\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"3pkMOWs3eAQ2xGQQKssLBg==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:41149\",\"origin\":\"http://localhost:44031\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"3pkMOWs3eAQ2xGQQKssLBg==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:44031\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:44031/index\",\"full_raw_path\":\"http://localhost:44031/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"e0f43348-af37-46fd-a4a7-16c1cdc26a73\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"SiMvKP0KWY2pqHwxAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:44031\",\"origin\":\"http://localhost:44031\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:44031/\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___istate___dynamic____one_counter_n1\":{\"value_rx_state_\":0},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.appone___appone____one_state\":{\"count_rx_state_\":0}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.appone___appone____one_state\":{\"count_rx_state_\":1}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.appone___appone____one_state\":{\"count_rx_state_\":2}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____one_counter_n1\":{\"value_rx_state_\":1}}}]",
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"LX6YLCgJMLYdGExLAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"LkUuTiHaMv9cESedAAAD\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:41149\",\"origin\":\"http://localhost:44031\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"jtN5B/mCfmX0snFM9GUw6Q==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:41149\",\"origin\":\"http://localhost:44031\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"jtN5B/mCfmX0snFM9GUw6Q==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:44031\",\"path\":\"/only-one\",\"raw_path\":\"/only-one\",\"full_path\":\"http://localhost:44031/only-one\",\"full_raw_path\":\"http://localhost:44031/only-one\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/only-one\",\"rx_router_session_rx_state_\":{\"client_token\":\"e0f43348-af37-46fd-a4a7-16c1cdc26a73\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"LkUuTiHaMv9cESedAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:44031\",\"origin\":\"http://localhost:44031\",\"path\":\"/only-one\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:44031/only-one\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___istate___dynamic____one_counter_n1\":{\"value_rx_state_\":1},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.appone___appone____one_state\":{\"count_rx_state_\":2}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  ],
+  "sim_two": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"44p5Vc4Kkmm5KVPGAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"2fudcH2fj61pJuLTAAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:46511\",\"origin\":\"http://localhost:39495\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Nh4WxZOilOgEJ6Uz2SOh+g==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:46511\",\"origin\":\"http://localhost:39495\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"Nh4WxZOilOgEJ6Uz2SOh+g==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:39495\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:39495/index\",\"full_raw_path\":\"http://localhost:39495/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"0fc82ed0-acae-4c61-e911-db390383060e\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"2fudcH2fj61pJuLTAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:39495\",\"origin\":\"http://localhost:39495\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:39495/\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.apptwo___apptwo____two_state\":{\"name_rx_state_\":\"two\"},\"reflex___state____state.reflex___state____update_vars_internal_state\":{}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.apptwo___apptwo____two_state\":{\"name_rx_state_\":\"renamed\"}}}]",
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"spJ8ScUGjYKYh1HKAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"UNkKeS1qzMJfWGskAAAD\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:46511\",\"origin\":\"http://localhost:39495\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"64sM7z2zDCUoS5n0QKVXgQ==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:46511\",\"origin\":\"http://localhost:39495\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"64sM7z2zDCUoS5n0QKVXgQ==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:39495\",\"path\":\"/404\",\"raw_path\":\"/only-one\",\"full_path\":\"http://localhost:39495/404\",\"full_raw_path\":\"http://localhost:39495/only-one\",\"params\":{\"splat\":[\"only-one\"]}},\"rx_router_route_id_rx_state_\":\"/404\",\"rx_router_session_rx_state_\":{\"client_token\":\"0fc82ed0-acae-4c61-e911-db390383060e\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"UNkKeS1qzMJfWGskAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:39495\",\"origin\":\"http://localhost:39495\",\"path\":\"/only-one\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:39495/only-one\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.apptwo___apptwo____two_state\":{\"name_rx_state_\":\"renamed\"},\"reflex___state____state.reflex___state____update_vars_internal_state\":{}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  ],
+  "sim_one_again": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"AC7jrzubtgHld3GLAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"4HzZPHSVOl6lUrHmAAAF\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:41149\",\"origin\":\"http://localhost:44031\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"QZniu9Pb/pwoPXb5KWJxKA==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:41149\",\"origin\":\"http://localhost:44031\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"QZniu9Pb/pwoPXb5KWJxKA==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:44031\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:44031/index\",\"full_raw_path\":\"http://localhost:44031/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"ba5d4306-4433-460a-9051-247a1d4db4e1\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"4HzZPHSVOl6lUrHmAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:44031\",\"origin\":\"http://localhost:44031\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:44031/\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___istate___dynamic____one_counter_n1\":{\"value_rx_state_\":0},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.appone___appone____one_state\":{\"count_rx_state_\":0}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.appone___appone____one_state\":{\"count_rx_state_\":1}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____one_counter_n1\":{\"value_rx_state_\":1}}}]"
+  ]
+ },
+ "attrs": {
+  "seq_one": {
+   "app_instance": "App",
+   "has_poll_for_clients": false,
+   "has_app_state_manager": false,
+   "has_token_manager": true,
+   "has_poll_for_value": true,
+   "pages": [
+    "404",
+    "index",
+    "only-one"
+   ]
+  },
+  "seq_two": {
+   "app_instance": "App",
+   "has_poll_for_clients": false,
+   "has_app_state_manager": false,
+   "has_token_manager": true,
+   "has_poll_for_value": true,
+   "pages": [
+    "404",
+    "index"
+   ]
+  },
+  "sim_two": {
+   "app_instance": "App",
+   "has_poll_for_clients": false,
+   "has_app_state_manager": false,
+   "has_token_manager": true,
+   "has_poll_for_value": true,
+   "pages": [
+    "404",
+    "index"
+   ]
+  }
+ },
+ "console": {
+  "seq_one": [
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:43335/_event/?token=12b15b45-ec92-4e8d-d529-27c15a26ebb9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  "seq_two": [
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:42163/_event/?token=c4de4f89-845b-460a-e44a-6c99bb9117bc&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  "sim_one": [
+   "error: WebSocket connection to 'ws://127.0.0.1:41149/_event/?token=e0f43348-af37-46fd-a4a7-16c1cdc26a73&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  "sim_two": [
+   "error: WebSocket connection to 'ws://127.0.0.1:46511/_event/?token=0fc82ed0-acae-4c61-e911-db390383060e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "error: WebSocket connection to 'ws://127.0.0.1:46511/_event/?token=0fc82ed0-acae-4c61-e911-db390383060e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  "sim_one_again": [
+   "error: WebSocket connection to 'ws://127.0.0.1:41149/_event/?token=ba5d4306-4433-460a-9051-247a1d4db4e1&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ]
+ }
+}

@@ -1,0 +1,503 @@
+{
+ "label": "tmpl-alpha-dev",
+ "checks": [
+  {
+   "name": "direct load /",
+   "ok": true,
+   "detail": "ok: Welcome, Admin  12  6  4,200  Users  40.0%  increase from last month  $12,000  Revenue  -20.0%  decrease from last month",
+   "s": 3.38
+  },
+  {
+   "name": "direct load /table",
+   "ok": true,
+   "detail": "ok: Table Sort By: Name Export  Name  \t  Payment  \t  Date  \t  Status   Item 1\t$13.7\t2023-10-04\t Pending Item 2\t$770.09\t2023-",
+   "s": 2.15
+  },
+  {
+   "name": "direct load /profile",
+   "ok": true,
+   "detail": "ok: Personal information  Update your personal information.  Name  Email  Update Notifications  Manage your notification set",
+   "s": 2.04
+  },
+  {
+   "name": "direct load /settings",
+   "ok": true,
+   "detail": "ok: Settings Primary color Secondary color Radius large Scaling 100%",
+   "s": 1.98
+  },
+  {
+   "name": "direct load /about",
+   "ok": true,
+   "detail": "ok: Welcome to Reflex!  This is the base Reflex template - installed when you run reflex init.  If you want to use a differe",
+   "s": 2.9
+  },
+  {
+   "name": "table page renders rows + search/sort interaction",
+   "ok": true,
+   "detail": "ok: rows=12 first_row='Item 1\\t$13.7\\t2023-10-04\\t\\nPending'",
+   "s": 2.51
+  },
+  {
+   "name": "client nav via sidebar link",
+   "ok": false,
+   "detail": "TimeoutError: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"a[href='/about']:visible\").first\n",
+   "s": 31.17
+  }
+ ],
+ "all_ok": false,
+ "anomalies": {
+  "console_errors": [
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "t1",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [
+   "t1 GET https://flag.vercel.app/s/US.svg net::ERR_TUNNEL_CONNECTION_FAILED",
+   "t1 GET https://flag.vercel.app/s/CA.svg net::ERR_TUNNEL_CONNECTION_FAILED",
+   "t1 GET https://flag.vercel.app/s/FR.svg net::ERR_TUNNEL_CONNECTION_FAILED",
+   "t1 GET https://flag.vercel.app/s/DE.svg net::ERR_TUNNEL_CONNECTION_FAILED",
+   "t1 GET https://flag.vercel.app/s/ES.svg net::ERR_TUNNEL_CONNECTION_FAILED",
+   "t1 GET https://flag.vercel.app/s/US.svg net::ERR_TUNNEL_CONNECTION_FAILED",
+   "t1 GET https://flag.vercel.app/s/CA.svg net::ERR_TUNNEL_CONNECTION_FAILED",
+   "t1 GET https://flag.vercel.app/s/FR.svg net::ERR_TUNNEL_CONNECTION_FAILED",
+   "t1 GET https://flag.vercel.app/s/DE.svg net::ERR_TUNNEL_CONNECTION_FAILED",
+   "t1 GET https://flag.vercel.app/s/ES.svg net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "bad_responses": [],
+  "bad_responses_raw": []
+ },
+ "console_all": [
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "tab": "t1",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "tab": "t1",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "tab": "t1",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "tab": "t1",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "tab": "t1",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "tab": "t1",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "tab": "t1",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "tab": "t1",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "tab": "t1",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "tab": "t1",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "ws": [
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3391/?token=EcZB-AAjG1LV",
+   "sent": 0,
+   "recv": 1,
+   "first_recv": [
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:8391/_event/?token=d76663ba-f2be-4e1c-b520-dc02d2c4ebbe&EIO=4&transport=websocket",
+   "sent": 2,
+   "recv": 6,
+   "first_recv": [
+    "0{\"sid\":\"3wHJUfZZTEQp68pQAAAc\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"MRy4Mxe9IarCEBUJAAAd\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8391\",\"origin\":\"http://localhost:3391\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3391/?token=EcZB-AAjG1LV",
+   "sent": 0,
+   "recv": 1,
+   "first_recv": [
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:8391/_event/?token=d76663ba-f2be-4e1c-b520-dc02d2c4ebbe&EIO=4&transport=websocket",
+   "sent": 2,
+   "recv": 6,
+   "first_recv": [
+    "0{\"sid\":\"ZvBOWEnEmneWiEYKAAAe\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"sJBJ9POgRDe5p1LjAAAf\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8391\",\"origin\":\"http://localhost:3391\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3391/?token=EcZB-AAjG1LV",
+   "sent": 0,
+   "recv": 1,
+   "first_recv": [
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:8391/_event/?token=d76663ba-f2be-4e1c-b520-dc02d2c4ebbe&EIO=4&transport=websocket",
+   "sent": 2,
+   "recv": 4,
+   "first_recv": [
+    "0{\"sid\":\"TtjTvomOwpvYKN90AAAg\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"wYEonFBglngsGTCnAAAh\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8391\",\"origin\":\"http://localhost:3391\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3391/?token=EcZB-AAjG1LV",
+   "sent": 0,
+   "recv": 1,
+   "first_recv": [
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:8391/_event/?token=d76663ba-f2be-4e1c-b520-dc02d2c4ebbe&EIO=4&transport=websocket",
+   "sent": 2,
+   "recv": 4,
+   "first_recv": [
+    "0{\"sid\":\"kjbFqF74bO0HDy3WAAAi\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"xhBeMREAOzfTfmndAAAj\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8391\",\"origin\":\"http://localhost:3391\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3391/?token=EcZB-AAjG1LV",
+   "sent": 0,
+   "recv": 1,
+   "first_recv": [
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:8391/_event/?token=d76663ba-f2be-4e1c-b520-dc02d2c4ebbe&EIO=4&transport=websocket",
+   "sent": 2,
+   "recv": 4,
+   "first_recv": [
+    "0{\"sid\":\"wRIvSU5Ik-VJQZD_AAAk\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"cHJg50VpjX6kMHxlAAAl\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8391\",\"origin\":\"http://localhost:3391\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3391/?token=EcZB-AAjG1LV",
+   "sent": 0,
+   "recv": 1,
+   "first_recv": [
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:8391/_event/?token=d76663ba-f2be-4e1c-b520-dc02d2c4ebbe&EIO=4&transport=websocket",
+   "sent": 3,
+   "recv": 7,
+   "first_recv": [
+    "0{\"sid\":\"wLg4lEJxf75p3KvFAAAm\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"kxwoGnOwrn9y4Qj-AAAn\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8391\",\"origin\":\"http://localhost:3391\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+   ],
+   "closed": true
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:3391/?token=EcZB-AAjG1LV",
+   "sent": 1,
+   "recv": 1,
+   "first_recv": [
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": false
+  },
+  {
+   "tab": "t1",
+   "url": "ws://localhost:8391/_event/?token=d76663ba-f2be-4e1c-b520-dc02d2c4ebbe&EIO=4&transport=websocket",
+   "sent": 2,
+   "recv": 6,
+   "first_recv": [
+    "0{\"sid\":\"8wU-BG-Tf7Zs7tx3AAAo\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"ppJ3TIB3qAVgpTI4AAAp\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8391\",\"origin\":\"http://localhost:3391\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleW",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+   ],
+   "closed": false
+  }
+ ]
+}

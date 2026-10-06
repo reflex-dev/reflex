@@ -1,0 +1,247 @@
+error[type-assertion-failure]: Argument does not have asserted type `EventCallback[()]`
+  --> handlers_0_5.py:62:1
+   |
+62 | assert_type(Shop.h5(1, "a", True, 1.5, "t"), EventCallback[()])
+   | ^^^^^^^^^^^^-------------------------------^^^^^^^^^^^^^^^^^^^^
+   |             |
+   |             Inferred type is `Unknown`
+info: `EventCallback[()]` and `Unknown` are not equivalent types
+
+error[no-matching-overload]: No overload matches arguments
+  --> handlers_0_5.py:62:13
+   |
+62 | assert_type(Shop.h5(1, "a", True, 1.5, "t"), EventCallback[()])
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+info: First overload defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2865:5
+     |
+2865 | /     @overload
+2866 | |     def __call__(
+2867 | |         self: "EventCallback[Unpack[Q]]",
+2868 | |     ) -> "EventCallback[Unpack[Q]]": ...
+     | |________________________________________^ First overload defined here
+info: Possible overloads for bound method `__call__`:
+info:   [*Q](self: EventCallback[*tuple[*Q]]) -> EventCallback[*tuple[*Q]]
+info:   [V](self: EventCallback[V], value: V | Var[V]) -> EventCallback[()]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V]) -> EventCallback[V2]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[()]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V]) -> EventCallback[V2, V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[()]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V]) -> EventCallback[V2, V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[()]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V]) -> EventCallback[*tuple[V2, V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[*tuple[V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[*tuple[V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[*tuple[V5, *Q]]
+info: Overload implementation defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2964:9
+     |
+2964 |     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[type-assertion-failure]: Argument does not have asserted type `EventCallback[()]`
+  --> handlers_0_5.py:68:1
+   |
+68 | assert_type(Shop.h5(Shop.qty, Shop.name, Shop.enabled, Shop.price, Shop.tag), EventCallback[()])
+   | ^^^^^^^^^^^^----------------------------------------------------------------^^^^^^^^^^^^^^^^^^^^
+   |             |
+   |             Inferred type is `Unknown`
+info: `EventCallback[()]` and `Unknown` are not equivalent types
+
+error[no-matching-overload]: No overload matches arguments
+  --> handlers_0_5.py:68:13
+   |
+68 | assert_type(Shop.h5(Shop.qty, Shop.name, Shop.enabled, Shop.price, Shop.tag), EventCallback[()])
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+info: First overload defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2865:5
+     |
+2865 | /     @overload
+2866 | |     def __call__(
+2867 | |         self: "EventCallback[Unpack[Q]]",
+2868 | |     ) -> "EventCallback[Unpack[Q]]": ...
+     | |________________________________________^ First overload defined here
+info: Possible overloads for bound method `__call__`:
+info:   [*Q](self: EventCallback[*tuple[*Q]]) -> EventCallback[*tuple[*Q]]
+info:   [V](self: EventCallback[V], value: V | Var[V]) -> EventCallback[()]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V]) -> EventCallback[V2]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[()]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V]) -> EventCallback[V2, V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[()]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V]) -> EventCallback[V2, V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[()]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V]) -> EventCallback[*tuple[V2, V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[*tuple[V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[*tuple[V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[*tuple[V5, *Q]]
+info: Overload implementation defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2964:9
+     |
+2964 |     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[invalid-assignment]: Object of type `EventCallback[()]` is not assignable to `() -> Any`
+  --> handlers_0_5.py:75:25
+   |
+75 | c0: Callable[[], Any] = Shop.h0
+   |     -----------------   ^^^^^^^ Incompatible value of type `EventCallback[()]`
+   |     |
+   |     Declared type
+info: type `EventCallback[()]` has inferred callable type `Overload[]`
+
+error[invalid-assignment]: Object of type `EventCallback[int, str, bool, float, str]` is not assignable to `(int, str, bool, float, str, /) -> Any`
+  --> handlers_0_5.py:80:51
+   |
+80 | c5: Callable[[int, str, bool, float, str], Any] = Shop.h5
+   |     -------------------------------------------   ^^^^^^^ Incompatible value of type `EventCallback[int, str, bool, float, str]`
+   |     |
+   |     Declared type
+info: type `EventCallback[int, str, bool, float, str]` has inferred callable type `Overload[]`
+
+error[no-matching-overload]: No overload matches arguments
+  --> handlers_0_5.py:88:34
+   |
+88 |         rx.button("h5", on_click=Shop.h5(1, "a", True, 1.5, "t")),
+   |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+info: First overload defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2865:5
+     |
+2865 | /     @overload
+2866 | |     def __call__(
+2867 | |         self: "EventCallback[Unpack[Q]]",
+2868 | |     ) -> "EventCallback[Unpack[Q]]": ...
+     | |________________________________________^ First overload defined here
+info: Possible overloads for bound method `__call__`:
+info:   [*Q](self: EventCallback[*tuple[*Q]]) -> EventCallback[*tuple[*Q]]
+info:   [V](self: EventCallback[V], value: V | Var[V]) -> EventCallback[()]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V]) -> EventCallback[V2]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[()]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V]) -> EventCallback[V2, V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[()]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V]) -> EventCallback[V2, V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[()]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V]) -> EventCallback[*tuple[V2, V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[*tuple[V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[*tuple[V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[*tuple[V5, *Q]]
+info: Overload implementation defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2964:9
+     |
+2964 |     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[no-matching-overload]: No overload matches arguments
+  --> handlers_0_5.py:89:39
+   |
+89 |         rx.button("h5 vars", on_click=Shop.h5(Shop.qty, Shop.name, Shop.enabled, Shop.price, Shop.tag)),
+   |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+info: First overload defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2865:5
+     |
+2865 | /     @overload
+2866 | |     def __call__(
+2867 | |         self: "EventCallback[Unpack[Q]]",
+2868 | |     ) -> "EventCallback[Unpack[Q]]": ...
+     | |________________________________________^ First overload defined here
+info: Possible overloads for bound method `__call__`:
+info:   [*Q](self: EventCallback[*tuple[*Q]]) -> EventCallback[*tuple[*Q]]
+info:   [V](self: EventCallback[V], value: V | Var[V]) -> EventCallback[()]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V]) -> EventCallback[V2]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[()]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V]) -> EventCallback[V2, V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[()]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V]) -> EventCallback[V2, V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[()]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V]) -> EventCallback[*tuple[V2, V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[*tuple[V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[*tuple[V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[*tuple[V5, *Q]]
+info: Overload implementation defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2964:9
+     |
+2964 |     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[no-matching-overload]: No overload matches arguments
+  --> handlers_0_5.py:98:1
+   |
+98 | Shop.h2("not-an-int", "a")  # expect-error
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+info: First overload defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2865:5
+     |
+2865 | /     @overload
+2866 | |     def __call__(
+2867 | |         self: "EventCallback[Unpack[Q]]",
+2868 | |     ) -> "EventCallback[Unpack[Q]]": ...
+     | |________________________________________^ First overload defined here
+info: Possible overloads for bound method `__call__`:
+info:   [*Q](self: EventCallback[*tuple[*Q]]) -> EventCallback[*tuple[*Q]]
+info:   [V](self: EventCallback[V], value: V | Var[V]) -> EventCallback[()]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V]) -> EventCallback[V2]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[()]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V]) -> EventCallback[V2, V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[()]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V]) -> EventCallback[V2, V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[()]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V]) -> EventCallback[*tuple[V2, V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[*tuple[V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[*tuple[V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[*tuple[V5, *Q]]
+info: Overload implementation defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2964:9
+     |
+2964 |     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[no-matching-overload]: No overload matches arguments
+  --> handlers_0_5.py:99:1
+   |
+99 | Shop.h5(1, "a", True, 1.5, "t", "extra")  # expect-error
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+info: First overload defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2865:5
+     |
+2865 | /     @overload
+2866 | |     def __call__(
+2867 | |         self: "EventCallback[Unpack[Q]]",
+2868 | |     ) -> "EventCallback[Unpack[Q]]": ...
+     | |________________________________________^ First overload defined here
+info: Possible overloads for bound method `__call__`:
+info:   [*Q](self: EventCallback[*tuple[*Q]]) -> EventCallback[*tuple[*Q]]
+info:   [V](self: EventCallback[V], value: V | Var[V]) -> EventCallback[()]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V]) -> EventCallback[V2]
+info:   [V, V2](self: EventCallback[V, V2], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[()]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V]) -> EventCallback[V2, V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3]
+info:   [V, V2, V3](self: EventCallback[V, V2, V3], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[()]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V]) -> EventCallback[V2, V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[V3, V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[V4]
+info:   [V, V2, V3, V4](self: EventCallback[V, V2, V3, V4], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[()]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V]) -> EventCallback[*tuple[V2, V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2]) -> EventCallback[*tuple[V3, V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3]) -> EventCallback[*tuple[V4, V5, *Q]]
+info:   [V, V2, V3, V4, V5, *Q](self: EventCallback[*tuple[V, V2, V3, V4, V5, *Q]], value: V | Var[V], value2: V2 | Var[V2], value3: V3 | Var[V3], value4: V4 | Var[V4]) -> EventCallback[*tuple[V5, *Q]]
+info: Overload implementation defined here
+    --> /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-py314/lib/python3.14/site-packages/reflex_base/event/__init__.py:2964:9
+     |
+2964 |     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Found 10 diagnostics

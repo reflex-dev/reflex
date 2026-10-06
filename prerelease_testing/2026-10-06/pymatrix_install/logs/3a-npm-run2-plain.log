@@ -1,0 +1,9 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Info: Preferring npm because reflex.lock/ has package-lock.json and no bun.lock.
+Run once with REFLEX_USE_NPM=0 to switch this project back to bun.
+Info: Preferring npm because reflex.lock/ has package-lock.json and no bun.lock.
+Run once with REFLEX_USE_NPM=0 to switch this project back to bun.
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3388/
+Backend running at: http://0.0.0.0:8388

@@ -1,0 +1,13 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/pymatrix_install-uvnopre312
+  × No solution found when resolving dependencies:
+  ╰─▶ Because there is no version of reflex-base==0.10.0a1 and
+      reflex>=0.10.0a1 depends on reflex-base==0.10.0a1, we can conclude that
+      reflex>=0.10.0a1 cannot be used.
+      And because you require reflex==0.10.0a1, we can conclude that your
+      requirements are unsatisfiable.
+
+hint: `reflex-base` was requested with a pre-release marker (e.g., reflex-base==0.10.0a1), but pre-releases weren't enabled (try: `--prerelease=allow`)
+real	0m0.092s
+user	0m0.056s
+sys	0m0.022s
