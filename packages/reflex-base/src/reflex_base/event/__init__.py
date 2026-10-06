@@ -9,7 +9,7 @@ import types
 import warnings
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
-from functools import lru_cache, partial
+from functools import cached_property, lru_cache, partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -56,6 +56,7 @@ from reflex_base.utils.types import (
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var, _owner_state
 from reflex_base.vars.function import (
+    ENCODE_URI_COMPONENT,
     ArgsFunctionOperation,
     ArgsFunctionOperationBuilder,
     BuilderFunctionVar,
@@ -610,16 +611,27 @@ class EventHandler(EventActionsMixin):
         """
         return Annotated[cls, args_spec]
 
-    @property
+    @cached_property
     def is_background(self) -> bool:
         """Whether the event handler is a background task.
+
+        Read on the first access, so the function has to be marked before then.
 
         Returns:
             True if the event handler is marked as a background task.
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
-    @property
+    @cached_property
+    def _is_coroutine_function(self) -> bool:
+        """Whether the handler function is a coroutine function.
+
+        Returns:
+            True if calling the handler function returns a coroutine.
+        """
+        return inspect.iscoroutinefunction(self.fn)
+
+    @cached_property
     def supersedes(self) -> bool:
         """Whether a newer invocation supersedes an older one.
 
@@ -635,6 +647,7 @@ class EventHandler(EventActionsMixin):
         Cancellation is cooperative: a handler that never yields to the event
         loop runs to completion, and only its not-yet-started chained events
         are skipped.
+        Read on the first access, so the function has to be marked before then.
 
         Returns:
             True if the event handler is marked as superseding.
@@ -1852,10 +1865,13 @@ def download(
             )
 
             # If it's a data: URI, use it as is, otherwise convert the Var to JSON in a data: URI.
+            # The JSON is percent-encoded: a raw `#` would end the URL there and
+            # `%XX` sequences would be decoded, corrupting the downloaded file.
             url = cond(
                 is_data_url,
                 data.to(str),
-                f"data:{mime_type}," + data.to_string(),
+                f"data:{mime_type},"
+                + ENCODE_URI_COMPONENT.call(data.to_string()).to(str),
             )
         elif isinstance(data, bytes):
             if mime_type is None:
@@ -2851,34 +2867,99 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
         self: "EventCallback[Unpack[Q]]",
     ) -> "EventCallback[Unpack[Q]]": ...
 
+    # Handlers of up to four arguments get an overload per arity instead of a `self`
+    # that leaves the rest to `Unpack[Q]`, which ty does not bind to the receiver
+    # (astral-sh/ty#4657). This mitigates that ty bug. The `Unpack[Q]` overloads only
+    # cover longer handlers, so that each receiver matches one overload per number of
+    # values, and a wrong value is reported as such rather than as no overload matching.
     @overload
     def __call__(
-        self: "EventCallback[V, Unpack[Q]]", value: V | Var[V]
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[V]", value: V | Var[V]
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, Unpack[Q]]",
-        value: V | Var[V],
-        value2: V2 | Var[V2],
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[V, V2]", value: V | Var[V]
+    ) -> "EventCallback[V2]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, Unpack[Q]]",
+        self: "EventCallback[V, V2]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[V3]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, Unpack[Q]]",
+        self: "EventCallback[V, V2, V3, V4]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3, V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[V3, V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+    ) -> "EventCallback[V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3, V4, V5, Unpack[Q]]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+    ) -> "EventCallback[V3, V4, V5, Unpack[Q]]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+    ) -> "EventCallback[V4, V5, Unpack[Q]]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+    ) -> "EventCallback[V5, Unpack[Q]]": ...
 
     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.

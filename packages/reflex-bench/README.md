@@ -19,6 +19,7 @@ $ uv run reflex-bench compare base.json head.json --format md
 $ uv run reflex-bench doctor
 $ uv run reflex-bench export result.json --to bmf
 $ uv run reflex-bench budgets check result.json
+$ uv run reflex-bench noise ../bench-data/runs/<profile_id> --format md
 $ uv run reflex-bench subjects list
 ```
 
@@ -34,11 +35,13 @@ $ uv run reflex-bench subjects list
 | `doctor` | Machine checks that affect measurement noise, with fix hints. |
 | `export FILE --to md\|bmf [-o OUT]` | Pull request markdown or [Bencher Metric Format](https://bencher.dev/docs/reference/bencher-metric-format/). |
 | `budgets check FILE [--budgets BUDGETS]` | Checks a result against the metric maxima of `budgets.json` ([Size budgets](#size-budgets)). |
+| `noise PATH... [--kind daily] [--min-runs 10] [--format term\|md\|json]` | The per-metric noise table of stored results ([Noise table](#noise-table)). |
 | `subjects list` | The cached [subject](#subjects) venvs: spec, Python, key, size and last use. |
 | `subjects prune [--older-than 30d]` | Deletes venvs not used for that long (`30d`, `12h`, `90m`), leftovers of interrupted builds and git worktrees no venv uses. |
 
 `FILTER` is a glob on the benchmark id (`lifecycle.*`, `*.warm`). Suites are named
-selections: `smoke`, `pr`, `daily`, `selftest` and `all` (every benchmark except
+selections: `smoke`, `pr`, `daily`, `macro` (the timings the CodSpeed macro
+runner measures, see [CI](#ci)), `selftest` and `all` (every benchmark except
 the self-tests). Self-tests only run when asked for, with `--suite selftest` or a
 filter starting with `selftest`.
 
@@ -64,11 +67,13 @@ the result's `policy` block):
 | `--keep` | | Keeps each benchmark's work directory. |
 | `--kind` | `local` or `ci` | The run kind recorded in the result (`pr`, `daily`, `backfill`, `aa`). |
 
-Exit codes: `0` ok, `1` harness error (including usage errors, every benchmark
-failing, or nothing to compare), `2` regression with `--fail-on regression`, `3`
-inconclusive result with `--fail-on-inconclusive`. A benchmark that fails or
-times out is reported with its status and does not stop the run; when comparing,
-one that fails or times out in head but not in base (or is new) is a regression.
+Exit codes: `0` ok, `1` harness error (including usage errors and every benchmark
+failing), `2` regression with `--fail-on regression`, `3` inconclusive result
+with `--fail-on-inconclusive`, `4` nothing to compare (no metric has samples on
+both sides with matching series keys, and no benchmark started failing). A
+benchmark that fails or times out is reported with its status and does not stop
+the run; when comparing, one that fails or times out in head but not in base (or
+is new) is a regression.
 Ctrl-C during `run` exits with `130` after saving the benchmarks that finished,
 marked with `"interrupted": true`; the benchmark in progress is left out, and `--save-as` keeps the old baseline.
 
@@ -678,7 +683,7 @@ harness exits are killed. A `Browser` belongs to one instance and arm; during
 
 | Id | Suites | What one sample measures |
 | --- | --- | --- |
-| `browser.dev.ready` | pr, daily | `reflex run` start to `process_ready` (tier 1), `http_ready` (tier 2) and `interactive_ready` (tier 3), seconds since the spawn; also `nav_to_interactive` (in the page) and `fcp` |
+| `browser.dev.ready` | pr, daily, macro | `reflex run` start to `process_ready` (tier 1), `http_ready` (tier 2) and `interactive_ready` (tier 3), seconds since the spawn; also `nav_to_interactive` (in the page) and `fcp` |
 | `browser.preview.ready` | daily (reflex 0.9.8+) | the same with `--env preview` |
 | `browser.prod.ready` | daily | the same with `--env prod`, frontend build included |
 | `browser.prod.pageload[cpu=1\|4]` | daily | loading `/` of one prod server in a fresh context (cold cache), CPU throttled 4 times with `cpu=4`, read as soon as the page is interactive: `fcp`, `lcp` (the same paint on the playground), `interactive`, `tbt` (long tasks' time beyond 50 ms before interactive), `ws_bytes`, `transfer_bytes` (wire bytes, headers included; both exact: the same page transfers the same bytes) |
@@ -927,6 +932,93 @@ The cache is keyed by the subject's commit (its spec, slugged and suffixed with
 a hash of the spec, when the commit is unknown).
 
 The machine profile id is `<os>-<arch>-<cpu model>-py<major.minor>`, for example
-`linux-x86_64-ryzen-9-7950x-py3.12`; `REFLEX_BENCH_PROFILE` overrides it (other
-characters than letters, digits, `.`, `_` and `-` become `-`). Results from
-different profiles are never compared.
+`linux-x86_64-ryzen-9-7950x-py3.12` (Linux on arm64 names no model, so the
+core's implementer and part numbers do: `linux-arm64-neoverse-n2-py3.12`, or
+each core type with its count on a host that mixes them:
+`linux-arm64-4x-implementer-0x41-part-0xd05-4x-cortex-a76-py3.12`);
+`REFLEX_BENCH_PROFILE` overrides it (other characters than letters, digits, `.`,
+`_` and `-` become `-`). Results from different profiles are never compared.
+
+## CI
+
+Two workflows run the harness on a schedule, each through the same `reflex-bench`
+commands as a local run, and a third cancels macro runs stuck in the queue. None
+of them blocks a merge (the only one that runs on pull requests,
+`macro_benchmarks.yml`, is `ADVISORY` in `tests/units/test_workflow_gates.py`),
+and none uploads to CodSpeed: its walltime instrument times its own benchmark
+loop, while most of these metrics (readiness tiers, edit-to-DOM latency,
+percentiles, throughput) are not the duration of one call.
+
+| Workflow | Runner | When | What |
+| --- | --- | --- | --- |
+| `macro_benchmarks.yml` | CodSpeed macro runner (arm64, Cortex-A72) | daily at 03:17 UTC, manually, and on a pull request labeled `run-benchmarks` | `--suite macro`: timings and latency that need a quiet machine |
+| `benchmarks_daily.yml` | `ubuntu-24.04-arm` | daily at 04:43 UTC and manually | `--suite daily` in six shards (`lifecycle`, `memory`, `events`, `hmr`, `browser`, and `exact` for `wire.*` and `size.*`): trends of everything else, exact and memory metrics included |
+| `macro_watchdog.yml` | `ubuntu-latest` | every 15 minutes | cancels macro runs whose job waited more than 30 minutes for a runner |
+
+The `macro` suite is `lifecycle.compile.warm`, `.incremental` and
+`lifecycle.run.prod.ready`, `browser.dev.ready`, `hmr.render.leaf` and
+`hmr.handler` (each on the playground) and `lifecycle.import`, with at least 6
+timed runs per instance (`--min-runs 6 --max-runs 10 --min-time 10`). The event
+benchmarks are not in it: on the macro runner their setup probe got no answer
+within its 2 s window, so they run on the standard runner only. Exact metrics
+(`wire.*`, `size.*`) and memory never run there: they are as good on a standard
+runner. Both jobs install the harness with `uv sync --no-dev --group bench
+--extra db` on Python 3.12 (the `dev` group builds libsass from source on
+arm64) and cache only the Playwright browser; `REFLEX_BENCH_HOME` is a fresh
+temporary directory, so every cache a measured phase reads is the harness's own.
+
+**Budget.** The macro runner has 500 billed minutes a month and bills the whole
+job, setup included: `30 * J_daily + 10 * J_label <= 400`, so a job gets at most
+10 minutes and 100 minutes stay free for re-runs, backfills and gate checks.
+When a job outgrows that, the `macro` suite shrinks first, then the schedule
+moves to every second day. The measured numbers are in the comment at the top of
+`macro_benchmarks.yml`. A spent budget does not fail a job, it leaves it queued:
+the job holds the `codspeed-macro` concurrency group (shared by every workflow on
+the macro runner) until the watchdog cancels its run. The group never cancels the
+job holding it, since a cancelled job still bills its minutes; at most one more
+job waits, and GitHub cancels that one when a newer job arrives.
+
+**Pull request runs.** A maintainer adds the `run-benchmarks` label to a pull
+request from a branch of this repository (never a fork: the runner is
+self-hosted). To run again, remove and re-add the label; a push does not re-run
+it. The job summary compares the result with the newest daily result of the
+same machine profile, warn-only, and the result is uploaded as the `macro`
+artifact. Pull request results never enter the history.
+
+**History.** Scheduled and manual runs on `main` append each result to the
+orphan branch `benchmark-data`, from a separate job that alone may write to the
+repository and never runs pull request code:
+
+```
+README.md
+runs/<profile_id>/<YYYY-MM-DDTHH-MM>_<kind>_<short sha>_<run id>_<stem>.json
+backfill/<profile_id>/<reflex version>.json
+```
+
+`kind` is `daily` (schedule) or `ci` (manual), `stem` the job's result file
+(`macro`, or the shard name). `.github/actions/bench_history` writes them.
+
+### Noise table
+
+`reflex-bench noise PATH...` reads result files (a directory: every `*.json`
+directly in it), keeps the complete ones of `--kind` (default `daily`), and
+groups the `ok` entries by series key and metric, so a different machine
+profile, fixture or benchmark version never pools. Per series: `runs`, the
+`median` of the run medians, `within cv` (the median of each run's CV: the
+noise between samples of one job), `between cv` (the robust CV of the run
+medians, `1.4826 * MAD / median`: the noise from one job to the next), `max
+step` (the largest relative change between consecutive runs, by start time) and
+a class: `exact` for deterministic metrics, `noisy` below `--min-runs` runs,
+`track` with no threshold when the `median` is 0 (no `between cv`, e.g.
+`full_reloads`), else a threshold of `max(3 %, 3 * between cv)` rounded up to a
+whole percent makes it a `gate-candidate` up to 10 % and `track` above. These
+constants are provisional: the regression gate makes the final choice by
+replaying the history. `--format json` writes `{"schema": "reflex-bench-noise/1",
+"generated_from": [...], "series": [...]}` with values in SI base units and
+fractions for CVs.
+
+```console
+$ git fetch origin benchmark-data
+$ git worktree add ../bench-data benchmark-data
+$ uv run reflex-bench noise ../bench-data/runs/<profile_id> --kind daily --format md
+```
