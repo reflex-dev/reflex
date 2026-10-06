@@ -1,0 +1,67 @@
+{
+  "campaign_commit": "08f29b1d278dd9380ecaebdd0b028c17d7abab1b",
+  "created": [
+    {
+      "finding": 4,
+      "repo": "reflex-dev/reflex",
+      "title": "Large State trees overflow React mutation traversal and render a blank page",
+      "body_file": "4-large-state-tree.md",
+      "create_exit_code": 0,
+      "url": "https://github.com/reflex-dev/reflex/issues/7429"
+    },
+    {
+      "finding": 5,
+      "repo": "reflex-dev/reflex",
+      "title": "code_block(use_transformers=True) emits an empty Shiki transformer list",
+      "body_file": "5-shiki-transformers.md",
+      "create_exit_code": 0,
+      "url": "https://github.com/reflex-dev/reflex/issues/7430"
+    },
+    {
+      "finding": 6,
+      "repo": "reflex-dev/reflex",
+      "title": "Primitive Progress wrapper omits numeric props from Root and ARIA value",
+      "body_file": "6-progress-aria.md",
+      "create_exit_code": 0,
+      "url": "https://github.com/reflex-dev/reflex/issues/7431"
+    },
+    {
+      "finding": 7,
+      "repo": "reflex-dev/reflex-examples",
+      "title": "Overkey Reset leaves the client-state input populated",
+      "body_file": "7-overkey-reset.md",
+      "create_exit_code": 0,
+      "url": "https://github.com/reflex-dev/reflex-examples/issues/324"
+    },
+    {
+      "finding": 8,
+      "repo": "reflex-dev/reflex",
+      "title": "Hosting CLI initial expired-token rejection omits login guidance",
+      "body_file": "8-hosting-expiry-guidance.md",
+      "create_exit_code": 0,
+      "url": "https://github.com/reflex-dev/reflex/issues/7432"
+    }
+  ],
+  "existing_references": [
+    {
+      "finding": 1,
+      "url": "https://github.com/reflex-dev/reflex-enterprise/pull/242"
+    },
+    {
+      "finding": 2,
+      "url": "https://github.com/reflex-dev/reflex-enterprise/pull/243"
+    },
+    {
+      "finding": 3,
+      "url": "https://github.com/reflex-dev/reflex-enterprise/issues/244",
+      "note": "User-supplied followup. PR 243 also addresses the original backend_vars logout error; issue 244 tracks remaining auth compatibility."
+    }
+  ],
+  "ignored": [
+    9,
+    10
+  ],
+  "not_requested": [
+    11
+  ]
+}

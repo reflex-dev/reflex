@@ -6,6 +6,9 @@ scopes and logout with enterprise 0.9.7a2. The same enterprise wheel works with
 Reflex 0.9.12. [Numbered findings and exact repros](FINDINGS.md) distinguish these
 regressions from older defects and unresolved limits.
 
+[Issue triage](issue-triage/README.md) records the user-supplied enterprise
+references, filed issues for findings 4–8, and the instruction to ignore 9–10.
+
 All 14 announced alphas have published PyPI wheels and sdists. Their downloaded
 bytes match PyPI SHA256 digests. Wheel and sdist `.pyi` names/content match;
 monorepo alpha stub names match the release source manifest. No checked-out

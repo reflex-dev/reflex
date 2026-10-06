@@ -1,5 +1,9 @@
 # Findings requiring followup
 
+User-directed disposition is recorded in [issue triage](issue-triage/README.md):
+findings 1–3 link to the supplied enterprise references, 4–8 have filed issues,
+and 9–10 are ignored as requested. The original evidence remains below.
+
 ## Confirmed release regressions
 
 1. **P1 — Enterprise `rxe.field` no longer becomes a State Var.** With
@@ -146,9 +150,9 @@ wheel pairs after release-owner fixes; do not install a patched checkout to
 claim prerelease validation. Findings 4–7 need followup with their existing
 artifacts and classifications. A visually successful grid or progress test is
 insufficient when console/ARIA checks fail. Hosting initial-auth wording and the
-migration link need separate documentation/output decisions.
-Finding 10 requires separate migration/backfill guidance or release-owner
-followup; no schema workaround or framework fix was applied during testing.
+migration link have separate dispositions in the issue-triage record.
+Findings 9 and 10 are ignored at the user's direction; no issues were filed for
+them. Their evidence is retained without applying a workaround or framework fix.
 
 The data-editor changelog head is stable 0.9.3 and its PyPI files are yanked for
 an incorrect minimum-base requirement; it is not one of this batch's announced
@@ -168,6 +172,8 @@ campaign-added block and preserved unrelated contents; cleanup evidence is
 saved. This is an installer side effect relevant to future isolation setup,
 not a framework patch made during the campaign.
 
-No framework fixes, external issue creation, real deployments, account changes
-or production IdP operations were performed. Findings remain reproducible for
-subsequent agents. See cluster reports for precise evidence and untested areas.
+No framework fixes, real deployments, account changes or production IdP
+operations were performed. The initial testing did not create external issues;
+the later user-directed filing of findings 4–8 is recorded under `issue-triage/`.
+Findings remain reproducible for subsequent agents. See cluster reports for
+precise evidence and untested areas.

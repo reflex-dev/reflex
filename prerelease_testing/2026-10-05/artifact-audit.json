@@ -1,16 +1,16 @@
 {
-  "file_count": 607,
-  "bytes": 9991688,
+  "file_count": 614,
+  "bytes": 10011455,
   "suffixes": {
     "": 10,
     ".css": 3,
     ".html": 8,
     ".http": 1,
     ".ico": 2,
-    ".json": 142,
+    ".json": 143,
     ".jsonl": 40,
     ".log": 132,
-    ".md": 32,
+    ".md": 38,
     ".pickle": 13,
     ".png": 46,
     ".py": 125,
@@ -19,7 +19,7 @@
     ".txt": 49
   },
   "validation_counts": {
-    "json_documents": 142,
+    "json_documents": 143,
     "python_syntax": 125,
     "jsonl_records": 69,
     "jsonl_files": 40
