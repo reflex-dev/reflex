@@ -23,14 +23,13 @@ import types
 from collections.abc import Callable, Coroutine, Sequence
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, TypeVar
 
 from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.types import ASGIApp
-from typing_extensions import Self
 
 import reflex
 import reflex.reflex

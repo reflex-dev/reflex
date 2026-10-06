@@ -1128,9 +1128,9 @@ async def test_wake_in_is_queryable_and_waits(session_factory):
     assert row is not None
     assert row.next_step == "finish"
     assert row.wake_at is not None
-    assert row.wake_at > datetime.datetime.now(
-        datetime.timezone.utc
-    ) - datetime.timedelta(seconds=1)
+    assert row.wake_at > datetime.datetime.now(datetime.UTC) - datetime.timedelta(
+        seconds=1
+    )
     await wait_until(status_is(Delayed, key, "done"))
     finished = next(e for e in EVENTS if e.startswith(f"finish:{key}:"))
     assert float(finished.rsplit(":", 1)[1]) - started >= 1
@@ -1214,7 +1214,7 @@ async def insert_due(
         key: The row's key.
         claimed_until: Lease expiry relative to now; negative means already expired.
     """
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     async with factory() as session, session.begin():
         await session.execute(
             insert(Chain).values(
@@ -1683,7 +1683,7 @@ async def test_an_interval_keeps_its_grid_and_skips_what_was_missed(session_fact
     # One run, not one per missed minute, and the next is on the original grid.
     assert row.ticks == 1
     assert row.wake_at == anchor + 10 * minute
-    assert row.wake_at > datetime.datetime.now(datetime.timezone.utc)
+    assert row.wake_at > datetime.datetime.now(datetime.UTC)
 
 
 async def test_a_cron_schedule_sets_the_next_time_it_names(session_factory):
@@ -1694,8 +1694,8 @@ async def test_a_cron_schedule_sets_the_next_time_it_names(session_factory):
     row = await Repeating.by(Repeating.key == key).get()
     assert row is not None
     assert row.wake_at is not None
-    wake_at = row.wake_at.astimezone(datetime.timezone.utc)
-    now = datetime.datetime.now(datetime.timezone.utc)
+    wake_at = row.wake_at.astimezone(datetime.UTC)
+    now = datetime.datetime.now(datetime.UTC)
     assert (wake_at.minute, wake_at.second) == (0, 0)
     assert now < wake_at <= now + datetime.timedelta(hours=1)
 
@@ -2479,7 +2479,7 @@ async def test_a_run_keyed_by_more_than_json_holds_commits_and_is_recorded(
 async def test_a_fan_out_joins_up_when_its_keys_are_more_than_json_holds(
     session_factory,
 ):
-    start = datetime.datetime.now(datetime.timezone.utc)
+    start = datetime.datetime.now(datetime.UTC)
     await Window(at=start).start(Window.split)
 
     async def gathered() -> bool:
@@ -3047,7 +3047,7 @@ async def test_a_second_event_cannot_take_a_wait_that_already_holds_one(
     # Due now rather than at its timeout, so it is not left behind every run
     # with a nearer deadline while it already has what it was waiting for.
     assert row.wake_at is not None
-    assert row.wake_at < datetime.datetime.now(datetime.timezone.utc) + LEASE
+    assert row.wake_at < datetime.datetime.now(datetime.UTC) + LEASE
 
     assert await step_row(RaceReview, pk) == "ok"
     assert await status_is(RaceReview, key, "decided:approve:manager")()
@@ -3175,7 +3175,7 @@ async def test_start_gives_the_row_the_key_the_database_made(session_factory):
 async def test_a_customer_at_its_limit_does_not_hide_another_customers_work(
     session_factory,
 ):
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     async with session_factory() as session, session.begin():
         for index in range(claim.GROUPS_PER_PASS):
             # A customer running all it may, with more waiting behind it, and
@@ -3245,7 +3245,7 @@ async def test_a_claim_moved_on_before_it_ran_gives_its_lease_back(session_facto
 
 
 async def test_a_group_of_rows_with_no_group_is_held_to_its_limit_too(session_factory):
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     spec = Crowded.__workflow_limit__
     assert spec is not None
     async with session_factory() as session, session.begin():

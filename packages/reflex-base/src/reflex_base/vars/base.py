@@ -28,6 +28,7 @@ from typing import (
     Final,
     Generic,
     Literal,
+    LiteralString,
     NoReturn,
     ParamSpec,
     Protocol,
@@ -39,7 +40,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import LiteralString, dataclass_transform, override
+from typing_extensions import dataclass_transform, override
 
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks

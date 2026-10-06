@@ -344,7 +344,7 @@ class StateManagerDisk(StateManager):
                         self._purge_token(token)
                 await run_in_thread(self._purge_expired_states)
                 await self._process_write_queue_delay()
-            except asyncio.CancelledError:  # noqa: PERF203
+            except asyncio.CancelledError:
                 await self._flush_write_queue()
                 raise
             except Exception as e:

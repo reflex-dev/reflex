@@ -6,7 +6,6 @@ import collections
 import dataclasses
 import json
 import logging
-import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
@@ -1064,8 +1063,7 @@ def compile_unevaluated_page(
         )
 
     except Exception as e:
-        if sys.version_info >= (3, 11):
-            e.add_note(f"Happened while evaluating page {route!r}")
+        e.add_note(f"Happened while evaluating page {route!r}")
         raise
     else:
         return component
