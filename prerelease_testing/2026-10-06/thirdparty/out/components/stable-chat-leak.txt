@@ -1,0 +1,5 @@
+fresh /chat shows INITIAL-GREETING: True
+fresh /chat-initial shows INITIAL-GREETING: True
+session B /chat-initial sees session A's /chat-initial message: True
+session B /chat sees session A's /chat message: True
+session B /chat sees session A's /chat-initial message: True

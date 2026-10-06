@@ -1,0 +1,205 @@
+{
+ "from reflex.constants import CustomComponents": {
+  "ok": false,
+  "exc": "builtins.ImportError",
+  "msg": "cannot import name 'CustomComponents' from 'reflex.constants' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex/constants/__init__.py)",
+  "mentions_get_fields": false,
+  "where": "<string>:1"
+ },
+ "from reflex_base.constants import CustomComponents": {
+  "ok": false,
+  "exc": "builtins.ImportError",
+  "msg": "cannot import name 'CustomComponents' from 'reflex_base.constants' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/constants/__init__.py)",
+  "mentions_get_fields": false,
+  "where": "<string>:1"
+ },
+ "rx.constants.CustomComponents": {
+  "ok": false,
+  "exc": "builtins.AttributeError",
+  "msg": "module 'reflex.constants' has no attribute 'CustomComponents'",
+  "mentions_get_fields": false,
+  "where": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty/probes/removed_names_probe.py:58"
+ },
+ "Child.backend_vars": {
+  "ok": false,
+  "exc": "builtins.AttributeError",
+  "msg": "type object 'Child' has no attribute 'backend_vars'",
+  "mentions_get_fields": false,
+  "where": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty/probes/removed_names_probe.py:59"
+ },
+ "Child.inherited_vars": {
+  "ok": false,
+  "exc": "builtins.AttributeError",
+  "msg": "type object 'Child' has no attribute 'inherited_vars'",
+  "mentions_get_fields": false,
+  "where": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty/probes/removed_names_probe.py:60"
+ },
+ "Child.inherited_backend_vars": {
+  "ok": false,
+  "exc": "builtins.AttributeError",
+  "msg": "type object 'Child' has no attribute 'inherited_backend_vars'",
+  "mentions_get_fields": false,
+  "where": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty/probes/removed_names_probe.py:61"
+ },
+ "Child.get_skip_vars()": {
+  "ok": false,
+  "exc": "builtins.AttributeError",
+  "msg": "type object 'Child' has no attribute 'get_skip_vars'",
+  "mentions_get_fields": false,
+  "where": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty/probes/removed_names_probe.py:62"
+ },
+ "Child.base_vars": {
+  "ok": true,
+  "value": "['d']",
+  "type": "list"
+ },
+ "Child.vars": {
+  "ok": true,
+  "value": "['a', 'c', 'd', 'is_hydrated', 'router', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']",
+  "type": "list"
+ },
+ "Child.computed_vars": {
+  "ok": true,
+  "value": "[]",
+  "type": "list"
+ },
+ "Child.event_handlers": {
+  "ok": true,
+  "value": "['setvar']",
+  "type": "list"
+ },
+ "Child.get_fields() keys": {
+  "ok": true,
+  "value": "['_b', '_e', '_reflex_internal_links', 'a', 'd', 'is_hydrated', 'router_data', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']",
+  "type": "list"
+ },
+ "Child.__fields__ keys": {
+  "ok": true,
+  "value": "['_b', '_e', '_reflex_internal_links', 'a', 'd', 'is_hydrated', 'router_data', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']",
+  "type": "list"
+ },
+ "Child.get_fields()['_e'] backend attr": {
+  "ok": true,
+  "value": "True",
+  "type": "bool"
+ },
+ "Child.get_fields()['a'] owner attr": {
+  "ok": true,
+  "value": "<class '__main__.Parent'>",
+  "type": "BaseStateMeta"
+ },
+ "instance(Child)": {
+  "ok": true,
+  "value": "'Child'",
+  "type": "str"
+ },
+ "instance._backend_vars": {
+  "ok": true,
+  "value": "None",
+  "type": "NoneType"
+ },
+ "instance._e": {
+  "ok": true,
+  "value": "MutableProxy([])",
+  "type": "MutableProxy"
+ },
+ "instance._b (inherited backend)": {
+  "ok": true,
+  "value": "2",
+  "type": "int"
+ },
+ "instance.get_value('_e')": {
+  "ok": true,
+  "value": "[]",
+  "type": "list"
+ },
+ "instance.get_value('a')": {
+  "ok": true,
+  "value": "1",
+  "type": "int"
+ },
+ "instance.dict() keys": {
+  "ok": true,
+  "value": "['reflex___state____state.__main______parent.__main______child']",
+  "type": "list"
+ },
+ "reflex_base.utils.types.is_backend_base_variable": {
+  "ok": false,
+  "exc": "builtins.ImportError",
+  "msg": "cannot import name 'is_backend_base_variable' from 'reflex_base.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/utils/types.py)",
+  "mentions_get_fields": false,
+  "where": "<string>:1"
+ },
+ "reflex.utils.types.is_backend_base_variable": {
+  "ok": false,
+  "exc": "builtins.ImportError",
+  "msg": "cannot import name 'is_backend_base_variable' from 'reflex.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex/utils/types.py)",
+  "mentions_get_fields": false,
+  "where": "<string>:1"
+ },
+ "reflex_base.utils.types.RESERVED_BACKEND_VAR_NAMES": {
+  "ok": false,
+  "exc": "builtins.ImportError",
+  "msg": "cannot import name 'RESERVED_BACKEND_VAR_NAMES' from 'reflex_base.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/utils/types.py)",
+  "mentions_get_fields": false,
+  "where": "<string>:1"
+ },
+ "reflex.utils.types.RESERVED_BACKEND_VAR_NAMES": {
+  "ok": false,
+  "exc": "builtins.ImportError",
+  "msg": "cannot import name 'RESERVED_BACKEND_VAR_NAMES' from 'reflex.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex/utils/types.py)",
+  "mentions_get_fields": false,
+  "where": "<string>:1"
+ },
+ "reflex.istate.proxy.is_mutable_type": {
+  "ok": true,
+  "value": "<functools._lru_cache_wrapper object at 0x7f05c6dcdb10>",
+  "type": "_lru_cache_wrapper"
+ },
+ "reflex_base.utils.types.is_mutable_type": {
+  "ok": true,
+  "value": "<functools._lru_cache_wrapper object at 0x7f05c6dcdb10>",
+  "type": "_lru_cache_wrapper"
+ },
+ "is_mutable_type(list)": {
+  "ok": true,
+  "value": "True",
+  "type": "bool"
+ },
+ "PageContext.get() outside": {
+  "ok": false,
+  "exc": "builtins.LookupError",
+  "msg": "<ContextVar name='PageContext' at 0x7f05c5b7dad0>",
+  "mentions_get_fields": false,
+  "where": "reflex_base/context/base.py:47"
+ },
+ "CompileContext.get() outside": {
+  "ok": false,
+  "exc": "builtins.LookupError",
+  "msg": "<ContextVar name='CompileContext' at 0x7f05c5b7d990>",
+  "mentions_get_fields": false,
+  "where": "reflex_base/context/base.py:47"
+ },
+ "PageContext.get() outside caught as RuntimeError (old style)": {
+  "ok": false,
+  "exc": "builtins.LookupError",
+  "msg": "<ContextVar name='PageContext' at 0x7f05c5b7dad0>",
+  "mentions_get_fields": false,
+  "where": "reflex_base/context/base.py:47"
+ },
+ "Child._b class-level": {
+  "ok": true,
+  "value": "Field(default=2, is_var=True, annotated_type=<class 'int'>)",
+  "type": "Field"
+ },
+ "Child._e class-level": {
+  "ok": true,
+  "value": "Field(default_factory=functools.partial(<function deepcopy at 0x7f05c76f2ac0>, []), is_var=True, annotated_type=list[int])",
+  "type": "Field"
+ },
+ "Child.a class-level": {
+  "ok": true,
+  "value": "Var.__init_subclass__.<locals>.NumberCastedVar(_js_expr='reflex___state____state____main______parent.a_rx_state_', _var_type=<class 'int'>, _var_data=None, _original=Var(_js_expr='reflex___state____state____main______parent.a_rx_state_', _var_type=<class 'int'>, _var_data=VarData(field_dependencies=",
+  "type": "NumberCastedVar"
+ }
+}

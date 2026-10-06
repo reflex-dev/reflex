@@ -1,0 +1,40 @@
+DeprecationWarning: state_auto_setters has been deprecated in version 0.9.0. 
+auto setters will be removed; use explicit event handlers instead. It will be 
+completely removed in 1.0. (rxconfig.py:3)
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n1.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+Instantiating components directly is not supported. Use `Calendar.create` method
+instead.
+[tp_components] page /dynoselect failed to build: EventFnArgMismatchError: Event on_open_auto_focus only provides 0 arguments, but <function Dynoselect.get_component.<locals>.<lambda> at 0x7fc410ac5080> requires at least 1 arguments to be passed to the event handler.
+See https://reflex.dev/docs/events/event-arguments/
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n2.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n3.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 53/52 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n1.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+[tp_components] page /dynoselect failed to build: EventFnArgMismatchError: Event on_open_auto_focus only provides 0 arguments, but <function Dynoselect.get_component.<locals>.<lambda> at 0x7fc41eea3920> requires at least 1 arguments to be passed to the event handler.
+See https://reflex.dev/docs/events/event-arguments/
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n2.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n3.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+App running at: http://localhost:3115/
+Backend running at: http://0.0.0.0:8115
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

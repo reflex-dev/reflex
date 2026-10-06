@@ -1,0 +1,7 @@
+delta after plain='bad': {"plain_rx_state_": "bad", "plain_check_rx_state_": "fixed"}
+  backend plain now: 'fixed-by-cv'
+  next delta (after _clean, no further change): {}
+delta after tok='bad': {"tok_rx_state_": "bad", "tok_check_rx_state_": "cleared"}
+  backend tok now: ''
+  next delta (after _clean, no further change): {}
+  dict(): 
