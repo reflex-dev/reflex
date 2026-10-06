@@ -1,4 +1,4 @@
-"""The database tables of the playground and their seeding at backend start."""
+"""The database tables of the playground and their seeding when the app loads."""
 
 import reflex as rx
 
@@ -22,9 +22,10 @@ class Product(rx.Model, table=True):
 def seed_database():
     """Create the tables and fill an empty product table with the seed rows.
 
-    Runs at backend start as a lifespan task, before the backend answers. The
-    rows go in with one ``executemany`` in one transaction, and ``INSERT OR
-    IGNORE`` keeps two workers seeding at once from inserting a row twice.
+    Runs when ``playground.py`` loads. A table that has rows stays as it is, so
+    loading the app again (a hot reload, another worker) inserts nothing. The rows
+    go in with one ``executemany`` in one transaction, and ``INSERT OR IGNORE``
+    keeps two processes seeding at once from inserting a row twice.
     """
     rx.Model.create_all()
     with rx.session() as session:

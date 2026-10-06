@@ -1,6 +1,7 @@
 """Reflex configuration of the playground app."""
 
 import os
+from pathlib import Path
 
 import reflex as rx
 
@@ -16,6 +17,7 @@ if os.environ.get("PLAYGROUND_TAILWIND", "1") == "1":
 
 config = rx.Config(
     app_name="playground",
-    db_url="sqlite:///playground.db",
+    # An absolute path, so every working directory uses the same database file.
+    db_url=f"sqlite:///{Path(__file__).resolve().parent / 'playground.db'}",
     plugins=plugins,
 )

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import importlib.util
 import json
+from pathlib import Path
 from types import ModuleType
 
 from reflex_bench.fixtures import playground_dir
@@ -12,14 +14,17 @@ from reflex_bench.fixtures import playground_dir
 SEED_DIGEST = "sha256:d194fce71a52b5c9d9282c2d5d44e6a8bc91676f24f44a1479e98fe17b17d700"
 
 
-def _seed_module() -> ModuleType:
-    """Load the playground's seed module by path; it imports only the stdlib.
+def _load(path: Path, name: str) -> ModuleType:
+    """Load a module of the playground by path.
+
+    Args:
+        path: The module's file.
+        name: The name to load it under.
 
     Returns:
         The module.
     """
-    path = playground_dir() / "playground" / "seed.py"
-    spec = importlib.util.spec_from_file_location("playground_seed", path)
+    spec = importlib.util.spec_from_file_location(name, path)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -41,7 +46,7 @@ def _digest(rows: list[dict[str, object]]) -> str:
 
 
 def test_seed_rows_are_deterministic():
-    seed = _seed_module()
+    seed = _load(playground_dir() / "playground" / "seed.py", "playground_seed")
     first, second = seed.product_rows(), seed.product_rows()
     assert first == second
     assert len(first) == seed.PRODUCT_COUNT
@@ -52,9 +57,16 @@ def test_seed_rows_are_deterministic():
 
 def test_seed_module_imports_only_the_stdlib():
     source = (playground_dir() / "playground" / "seed.py").read_text(encoding="utf-8")
-    imports = {
-        line.split()[1].split(".")[0]
-        for line in source.splitlines()
-        if line.startswith(("import ", "from "))
-    }
+    imports = set()
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            imports.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            imports.add((node.module or "").split(".")[0])
     assert imports == {"random"}
+
+
+def test_database_lives_next_to_rxconfig():
+    rxconfig = _load(playground_dir() / "rxconfig.py", "playground_rxconfig")
+    path = rxconfig.config.db_url.removeprefix("sqlite:///")
+    assert Path(path) == playground_dir().resolve() / "playground.db"

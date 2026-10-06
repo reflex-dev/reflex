@@ -284,9 +284,9 @@ One invocation drives several fixtures, so the document-level `fixture` stays
   line in its `.content-hash` (see its README for the element ids and hot reload
   targets benchmarks rely on). `materialize_playground(dest)` copies it without
   build output. It has 21 pages (about 3000 component instances, 16 states)
-  and a sqlite table: a lifespan task seeds 2000 fixed rows into an empty table
-  at every backend start, in one transaction, so each staged copy creates its
-  `playground.db` once. It needs `sqlmodel`, `alembic` and `plotly`, which
+  and a sqlite table: loading the app seeds 2000 fixed rows into an empty table,
+  in one transaction, so each staged copy creates its `playground.db` once. It
+  needs `sqlmodel`, `alembic` and `plotly`, which
   `SUBJECT_REQUIREMENTS` installs into subject venvs; the workspace gets them
   from the `dev` group.
 - **Generated apps**, `reflex_bench.fixtures.generate`: `GenParams(pages,

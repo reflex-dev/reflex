@@ -30,7 +30,7 @@ app = rx.App(stylesheets=["/playground.css"], api_transformer=add_stats_route)
 # Reflex 0.9 takes the theme from RadixThemesPlugin (rxconfig.py).
 if not hasattr(rx.plugins, "RadixThemesPlugin"):
     app.theme = rx.theme(accent_color="violet")
-app.register_lifespan_task(seed_database)
+seed_database()
 
 app.add_page(index, title="Reflex playground")
 app.add_page(counter, route="/counter", title="Counter")

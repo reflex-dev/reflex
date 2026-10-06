@@ -18,9 +18,9 @@ group has the packages below).
   `sqlmodel` and `alembic` into the `db` extra; 0.8.23 has them either way) and
   `plotly`, which `rx.plotly` imports when it renders. The macro benchmarks install
   the same packages into every subject venv (`SUBJECT_REQUIREMENTS` of reflex-bench).
-- **Database.** `rxconfig.py` sets `db_url` to `sqlite:///playground.db`. At backend
-  start a lifespan task creates the table and, when it is empty, inserts 2000
-  products in one transaction. `playground/seed.py` builds them from a fixed
+- **Database.** `rxconfig.py` sets `db_url` to `playground.db` next to it, as an
+  absolute path. When `playground.py` loads, it creates the table and, when the
+  table is empty, inserts 2000 products in one transaction. `playground/seed.py` builds them from a fixed
   `random.Random` seed, so every machine gets the same rows. The app runs without
   migrations, so reflex warns that the database is not initialized; reflex 0.9.2
   and later also warn that `rx.Model` is deprecated. `playground.db` stays out of
