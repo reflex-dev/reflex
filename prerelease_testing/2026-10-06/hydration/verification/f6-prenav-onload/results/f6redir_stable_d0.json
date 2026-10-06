@@ -1,0 +1,36 @@
+[
+ {
+  "click_delay_ms": 0,
+  "run": 0,
+  "t_interactive": 291,
+  "t_ws_created": 285,
+  "t_ws_open": 295,
+  "t_click": 460,
+  "t_connect_sent": 297,
+  "connect_after_click": false,
+  "boot_router_pathname": null,
+  "trace": [
+   "redirect_load",
+   "other_load#1 path=/other",
+   "item_load id=2"
+  ],
+  "final_path": "/items/2"
+ },
+ {
+  "click_delay_ms": 0,
+  "run": 1,
+  "t_interactive": 425,
+  "t_ws_created": 415,
+  "t_ws_open": 433,
+  "t_click": 610,
+  "t_connect_sent": 434,
+  "connect_after_click": false,
+  "boot_router_pathname": null,
+  "trace": [
+   "redirect_load",
+   "other_load#1 path=/other",
+   "item_load id=2"
+  ],
+  "final_path": "/items/2"
+ }
+]

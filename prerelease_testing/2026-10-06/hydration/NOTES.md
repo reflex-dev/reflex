@@ -262,3 +262,151 @@ Both versions reproduced 2/2. The page ends on the right URL and hydrated on bot
 * The server logs' tracebacks resolve framework frames under `.../scratchpad/envs/alpha/lib/python3.12/site-packages/reflex_base/...` and `.../envs/stable/...` respectively (e.g. `logs/alpha-prod-1.trimmed.log`). Apps were run from `$SB/apps/hydration/run/<name>`, never from the checkout.
 * The archived `hydapp.py` and `mini_writeback.py` have a venv guard (`assert "/envs/alpha/" in rx.__file__ or "/envs/stable/" in rx.__file__`). It was added after the runs, is functionally neutral, and should be adjusted if your venv paths differ. The drivers never import reflex.
 * `results/<mode>/*.raw.json` (console, page errors, HTTP errors, websocket frames) are kept for s1, s1b, s10, s11 and s13. The 4–7 MB s5 raw captures were reduced to `results/s5_storm_summary.json`.
+
+## VERIFICATION — F1/F6
+
+Independent verifier, 2026-10-06. I did not read the explorer's transcript, only the artifacts in this folder.
+* Venvs: the shared read-only `$SB/envs/alpha` (reflex 0.10.0a1) and `$SB/envs/stable` (0.9.12). Drivers ran with `$SB/envs/driver`.
+* Work dir: `$SB/apps/verify_hydration_0`.
+* Ports: alpha prod 3720, stable prod 3721, alpha dev 3722/8722. Upgrade-delay proxies: 3722→3720 and 3723→3721.
+* My files are in `verification/`:
+  * `scripts/`: `vsrv.sh` start/stop, `proxy.sh`, `summ.py`.
+  * `f1-client-storage-defaults/{apps,drivers,results,logs}`.
+  * `f6-prenav-onload/{drivers,results,logs}`.
+* Line numbers below refer to the published files under `$SB/envs/<venv>/lib/python3.12/site-packages/`.
+
+### F1: CONFIRMED, regression, but the trigger is narrower than "first page load"
+
+**The written repro works as written.** The only changes were my ports and dirs.
+
+| run | localStorage / cookie after the visit | displayed theme |
+|---|---|---|
+| alpha prod, fresh | `mini_theme=light`, `mini_consent=unset` | `light` |
+| alpha prod, restarted with `MINI_THEME_DEFAULT=dark`, returning visitor | stays `light` | **`light`** (fresh visitor: `dark`) |
+| alpha dev, fresh (2/2) | `mini_theme=light`, `mini_consent=unset` | `light` |
+| 0.9.12 prod, fresh | nothing | `light` |
+| 0.9.12 prod, restarted with dark, returning visitor | nothing | `dark` |
+
+The returning visitor's CONNECT on alpha carries `vars={theme:'light', consent:'unset'}`. The persisted defaults come back to the backend as if the user had set them. Results: `f1-client-storage-defaults/results/f1_mini_*.json` and `mini_*_state1.json`.
+
+**Frames.** `drivers/f1_check.py` decodes the received socket.io deltas.
+* Alpha's first delta has root `reflex___state____state` = the five `rx_router_*` vars only. `is_hydrated_rx_state_` is **absent**.
+* The user state is in the same delta in full: `consent`, `theme`, `visitor_id`.
+* A second delta then carries `is_hydrated_rx_state_: true`.
+* 0.9.12's `hydrate` delta root carries `is_hydrated_rx_state_: false`, plus every state with every storage var. Its frontend therefore skips the write.
+
+**My own minimal apps** (`apps/f1plain`, `apps/f1combo`; alpha prod, 2/2 identical each):
+
+| state shape | sent in full on boot? | defaults written to browser? |
+|---|---|---|
+| `f1plain.Prefs`: ONE state with `LocalStorage("light")`, `Cookie("unset")`, `SessionStorage("x")`, no factory/env | no; the state is not in the delta at all | **no** (nothing written) |
+| `Plain`: storage only, deterministic | no | no |
+| `WithUuid`: storage + `default_factory=uuid` in the same state | yes | **yes**: LS, sync-LS, SS, and the cookie with a real `max_age` expiry |
+| `ChildStorage`: storage-only substate whose parent has a uuid factory | no (only the parent is sent) | no; the trigger is per state, not inherited |
+| `ChildStorageUuid`: storage + uuid on a substate, deterministic parent | yes | **yes** |
+| `WithClockVar`: storage + a cached `@rx.var` returning `time.time_ns()`, no factory | yes | **yes**; computed vars trigger it too |
+| `WithSet`: storage + `set[str]` default | no, in this setup | no. In this run the backend serialized the set in the same order as the compiled default (why was not investigated), so whether `set[str]` triggers it in other deployments is untested |
+
+0.9.12 with the same `f1combo` app writes nothing.
+
+**Returning visitor after a source-level release with new defaults** (`apps/f1combo_v2`, which changes every default; same browser storage as the v1 visit):
+* Alpha shows the v1 values for every triggered state: `wu-light`, `wu-sync-default`, `cu-light`, `wt-light`, cookies `wu-unset`/`cu-unset`.
+* Untriggered states (`Plain`, `ChildStorage`) show v2.
+* A fresh visitor sees v2.
+* 0.9.12 shows v2 for everyone.
+
+**`sync=True` across two tabs** (`drivers/f1_sync_tabs.py`, `results/f1_sync_tabs_*.json`):
+* Opening a second tab normally fires no storage events on either version. Alpha's second tab rewrites the value tab A's boot already persisted, and 0.9.12 writes nothing.
+* Race: tab B2's socket is held 2.5 s while tab A changes the synced var.
+  * Alpha, 2/2: B2's full-sent boot delta rewrites the stale mount-time value. Tab A gets storage event `sync-from-tabA → wu-sync-v2` and sends `update_vars_internal`, so its backend value is reverted. About 10 ms later it is restored by B2's queued storage event.
+  * The result is a transient revert plus 2 extra round trips; it converges.
+  * 0.9.12: no events, no revert.
+
+**Mechanism** (published sources; confirms the explorer):
+* `reflex/state.py:2339-2345`: `hydrate_and_load` resets client storage and applies browser `vars`. Then it sets `is_hydrated=False`, with the comment that the frontend must skip storage writes for this delta.
+* `:2348-2351`: snapshot, then `_diff_against_initial_state`.
+* `:2497-2501`: a state whose per-state hash differs is sent in full, including the reset defaults.
+* `:2503-2509`: for hash-matched states, vars that serialize equal to the default are dropped. That includes the root's `is_hydrated_rx_state_` (False == default).
+* The root stays in the delta because the router vars changed.
+* `reflex_base/.templates/web/utils/state.js:1045-1060` (`applyClientStorageDelta`) returns early only if `is_hydrated_rx_state_ !== undefined && !is_hydrated_rx_state_`. Otherwise `:1061-1090` writes every cookie/LS/SS var in the delta.
+* It is called for every delta at `:896`.
+* Safe paths: a whole-list hash mismatch returns the full delta (`state.py:2490-2492`), and reconnects send no hashes (`initialEvents(first)` in the compiled `.web/utils/context.jsx`). Both keep `is_hydrated:false`, so the bug is specific to "root diffed + some storage state sent in full".
+* 0.9.12 for comparison: `reflex/state.py:2935-2951` (`hydrate` emits the full dict with `is_hydrated=False`), and stable `state.js:903` has the same skip check.
+* PR #7064's description and changelog promise only "send only values that differ from compiled defaults". Nothing documents writing storage.
+* `main` (`origin/main`, 62a56ba7f) still has the same code.
+
+**Harm assessment: not cosmetic.**
+1. **Stale defaults for returning visitors.** Once written, a default is indistinguishable from a user choice, because it comes back in `vars` on every boot. A new release that changes a default no longer reaches anyone who visited once. localStorage never expires.
+2. **Cookies and storage the user never caused.** They are set on the first visit, and a `max_age` cookie gets a real expiry, refreshed on each boot that sends the state in full. That is a consent/compliance concern, and those cookies ride on every HTTP request.
+3. **The effect outlives a fix.** Browsers that visited an affected release keep the values.
+
+The trigger is per state class: client-storage vars plus any default or cached computed var that serializes differently in the compiling process and the backend worker. Examples are a uuid/datetime `default_factory`, an import-time pid/env/time default, a time- or DB-dependent computed var, or a build env that differs from the runtime env. Apps whose storage lives on small storage-only states are unaffected.
+
+**Relation to thirdparty I-2** (a computed var's storage rewrite during hydration never reaches the browser). It is the complementary symptom of the same #7064 change:
+* F1: the boot delta is accidentally written (too much is persisted).
+* I-2: a deliberate write made during the boot snapshot is dropped. The snapshot plus `_clean()` happen in one event, and 0.9.12's separate `update_vars_internal` delta used to carry such writes.
+* A fix should handle both together. Keeping `is_hydrated:false` in the root of the diffed boot delta fixes F1. On its own, though, that makes the boot delta never written, so I-2 needs a follow-up delta of storage vars that changed during hydration.
+* Conversely, F1's accidental write can mask I-2 for states that are sent in full.
+
+**Rerun:**
+```
+SB=...; V=$SB/apps/verify_hydration_0; mkdir -p $V/src $V/drivers $V/scripts $V/logs $V/results $V/run
+cp -r verification/f1-client-storage-defaults/apps/{f1plain,f1combo} $V/src/
+mkdir -p $V/src/v2 && cp -r verification/f1-client-storage-defaults/apps/f1combo_v2 $V/src/v2/f1combo
+cp verification/scripts/* $V/scripts/; cp verification/f1-client-storage-defaults/drivers/* verification/f6-prenav-onload/drivers/* $V/drivers/
+cp drivers/waitsrv.py drivers/prenav_test.py $V/drivers/      # explorer's helpers
+NP="env NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1"; DRV=$SB/envs/driver/bin/python
+$V/scripts/vsrv.sh start f1combo-alpha alpha prod $V/src/f1combo 3720 3720
+$NP $DRV $V/drivers/waitsrv.py 580 http://localhost:3720/ http://localhost:3720/ping
+$NP $DRV $V/drivers/f1_check.py http://localhost:3720/ - /tmp/v1.json out.json pl-ls,wu-ls,wu-sync,cs-ls,cu-ls,ws-ls,wt-ls
+$V/scripts/vsrv.sh stop f1combo-alpha; $V/scripts/vsrv.sh start f1combo-alpha alpha prod $V/src/v2/f1combo 3720 3720   # "new release"
+$NP $DRV $V/drivers/f1_check.py http://localhost:3720/ /tmp/v1.json - returning.json pl-ls,wu-ls,wu-sync,cs-ls,cu-ls,wt-ls
+$NP $DRV $V/drivers/f1_sync_tabs.py http://localhost:3720/ sync.json 2500
+# same with stable on 3721; f1plain the same way (ids theme,consent,tab)
+```
+
+### F6: behavior CONFIRMED; not a clean regression (pre-existing race, different symptom); low severity
+
+**The explorer's driver reproduces** (`prenav_test.py`, 2 s `route_web_socket` hold, prod; `f6-prenav-onload/results/prenav_*.json`, `logs/hyd-*-1.hydtrace.log`):
+* Alpha, 4/4: `slow_load run1 step1` runs, then `other_load#1`, and `#slow-progress-other=1` lands on `/other`. Also `item_load id=1` (`path=/items/1`), then `id=2`.
+* 0.9.12: the new page's on_load runs twice in 3/4 runs and once in 1/4. The old page's on_load never runs.
+
+**The mount-time auth claim is confirmed.**
+* `state.js:703-708`: `bootAuth()` builds the boot event through `withRouterData`, which reads `locationRef.current` at call time (`:529-558`, `:534`).
+* `:728`: it is assigned once as a value, `socket.current.auth = bootAuth(true)`.
+* `ensureSocketConnected()` → `connect()` returns early when the socket exists (`:687-692`). `reconnect()` is a no-op while `wait_connect` (`:740-752`). Nothing refreshes `auth` before the CONNECT.
+* The location effect (`:1284-1318`) dispatches `is_hydrated:false` and queues `on_load_internal` for the new route. That event is sent after the CONNECT.
+* The bundled socket.io-client 4.8.4 evaluates a function-valued `auth` at `onopen()` (`.web/node_modules/socket.io-client/build/esm/socket.js:405-414`), so a lazy auth is possible.
+* Caveat for the fix: a lazy auth alone would make both the boot chain and the queued navigation `on_load_internal` name the new page. That reintroduces 0.9.12's double run unless the redundant queued `on_load_internal` is dropped (or not queued before the first connect).
+
+**Realism without the Playwright hold.**
+* `drivers/upgrade_delay_proxy.py` delays only `GET /_event` websocket upgrades by D ms. HTML, JS and /ping are not delayed.
+* The app was built with `REFLEX_API_URL` pointing at the proxy.
+* `drivers/f6_natural.py` clicks `#nav-item2` 0 ms or 300 ms after React attached the link's props (a human-like reaction time). It timestamps the WebSocket open, the `40` CONNECT and the click in-page.
+* "In window" means the CONNECT was sent after the click.
+
+| D (upgrade delay) | alpha, click 0 ms | alpha, click 300 ms | 0.9.12, click 0 ms | 0.9.12, click 300 ms |
+|---|---|---|---|---|
+| 0 | 0/3 | 0/3 | 0/2 | 0/2 |
+| 100 | 0/2 | 0/2 | n/a | n/a |
+| 300 | 2/2 | 0/2 | 2/2 | 0/2 |
+| 500 | 2/2 | 2/2 | 2/2 | 2/2 |
+| 800 | 2/2 | 2/2 | n/a | n/a |
+
+* **The smallest delay that triggers it is about 300 ms for an immediate (bot-speed) click, and about 500 ms for a click 300 ms after the page became interactive.**
+* At D=0 the warm socket's CONNECT goes out at about 210–330 ms, before the link is even interactive (about 250–410 ms). Both versions have the same window. Load average was about 6 on 4 CPUs, so numbers are ±50 ms.
+* Inside the window:
+  * Alpha's CONNECT names `/items/1` and the trace is `item_load id=1`, then `id=2`. The backend sequence is identical to a user who clicks just after the CONNECT; only the timing differs: the left page's on_load runs, and its deltas land, after the user is on the new page.
+  * 0.9.12 runs `item_load id=2` twice (5 of 6 in-window runs; once in the 6th).
+* **Alpha-only, user-visible: a navigation hijack.** Start on `/redir` (on_load returns `rx.redirect("/other")`) and click `/items/2` at D=800.
+  * Alpha, 2/2: trace `redirect_load, item_load id=2, other_load#1`, final URL **`/other`**. The user reached `/items/2`, its on_load ran, and then the stale redirect bounced them away.
+  * 0.9.12, 2/2: `item_load id=2` twice, final URL `/items/2`.
+  * At D=0 both versions redirect first and then honour the click, with final `/items/2`.
+  * An auth-guard on_load on the page being left behaves the same way.
+
+**Classification.**
+* The race window (a client-side navigation between React interactivity and the CONNECT) is pre-existing, with the same thresholds on 0.9.12, and 0.9.12 already misbehaves in it (a double on_load of the new page, which is harmful for non-idempotent on_loads).
+* Alpha trades that for the old page's on_load running late. Its first deltas land on the new page, and its redirect can hijack the navigation.
+* This is a new symptom inside a pre-existing race, not a regression from correct behavior.
+* Low severity: it needs a websocket accept at least 300–500 ms slower than the page becoming interactive (cold start, scale-from-zero, an overloaded backend or LB) plus a click inside that window. The final state is consistent apart from the redirect case.
+* Worth fixing together with the 0.9.12 double run.

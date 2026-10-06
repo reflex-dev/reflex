@@ -1,0 +1,4 @@
+API_URL=http://localhost:8722
+[INFO] Listening at: http://0.0.0.0:8722
+[INFO] Started worker-1
+[ERROR] Unexpected exit from worker-1

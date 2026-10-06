@@ -1,0 +1,28 @@
+{
+ "A_hydrated": true,
+ "ls_after_A": null,
+ "B_hydrated": true,
+ "p1_A_storage_events": [],
+ "p1_A_sync_frames": [
+  "in: 42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3721\",\"origin\":\"http://localhost:3721\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.3"
+ ],
+ "p1_A_shown": "wu-sync-v2",
+ "p1_B_shown": "wu-sync-v2",
+ "p1_ls": null,
+ "p2_B2_connected_before_A_change": false,
+ "p2_ls_after_A_click": "sync-from-tabA",
+ "p2_A_shown_after_click": "sync-from-tabA",
+ "p2_B2_hydrated": true,
+ "p2_A_storage_events": [],
+ "p2_A_shown_final": "sync-from-tabA",
+ "p2_B2_shown_final": "sync-from-tabA",
+ "p2_ls_final": "sync-from-tabA",
+ "p2_A_sync_frames": [
+  "in: 42/_event,[\"event\",{\"delta\":{\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_sync_rx_state_\":\"sync-from-tabA\"}}}]"
+ ],
+ "p2_B2_sync_frames": [
+  "out: 42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.f1combo___f1combo____with_uuid.wu_sync_rx_state_\":\"sync-from-tabA\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "in: 42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3721\",\"origin\":\"http://localhost:3721\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.3",
+  "in: 42/_event,[\"event\",{\"delta\":{\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_sync_rx_state_\":\"sync-from-tabA\"}}}]"
+ ]
+}

@@ -1,0 +1,153 @@
+{
+ "url": "http://localhost:3721/",
+ "hydrated": true,
+ "shown": {
+  "theme": "dark",
+  "consent": "unset",
+  "vid": "937105081e984c14bd30aa632d729712"
+ },
+ "localStorage": {
+  "theme": "system"
+ },
+ "sessionStorage": {},
+ "cookies": [],
+ "frames": [
+  {
+   "dir": "in",
+   "t": 0.272,
+   "kind": "other",
+   "len": 108
+  },
+  {
+   "dir": "out",
+   "t": 0.288,
+   "kind": "connect",
+   "len": 10
+  },
+  {
+   "dir": "in",
+   "t": 0.289,
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_router_data": null,
+   "boot_vars": null,
+   "n_hashes": 0
+  },
+  {
+   "dir": "out",
+   "t": 0.289,
+   "kind": "event",
+   "len": 106,
+   "name": "reflex___state____state.hydrate",
+   "router_data": {
+    "pathname": "/",
+    "asPath": "/"
+   },
+   "payload": null
+  },
+  {
+   "dir": "out",
+   "t": 0.289,
+   "kind": "event",
+   "len": 156,
+   "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+   "router_data": {
+    "pathname": "/",
+    "asPath": "/"
+   },
+   "payload": null
+  },
+  {
+   "dir": "in",
+   "t": 0.289,
+   "kind": "event",
+   "len": 2268,
+   "delta": {
+    "reflex___state____state": {
+     "is_hydrated_rx_state_": false,
+     "rx_router_headers_rx_state_": {
+      "host": "localhost:3721",
+      "origin": "http://localhost:3721",
+      "upgrade": "websocket",
+      "connection": "Upgrade",
+      "cookie": "",
+      "pragma": "no-cache",
+      "cache_control": "no-cache",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+      "sec_websocket_version": "13",
+      "sec_websocket_key": "36FDbkpVhcRhB3rnVKmgjA==",
+      "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+      "accept_encoding": "gzip, deflate, br, zstd",
+      "accept_language": "en-US,en;q=0.9",
+      "raw_headers": {
+       "accept-encoding": "gzip, deflate, br, zstd",
+       "accept-language": "en-US,en;q=0.9",
+       "asgi-scope-client": "127.0.0.1",
+       "cache-control": "no-cache",
+       "connection": "Upgrade",
+       "host": "localhost:3721",
+       "origin": "http://localhost:3721",
+       "pragma": "no-cache",
+       "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+       "sec-websocket-key": "36FDbkpVhcRhB3rnVKmgjA==",
+       "sec-websocket-protocol": "0.9.12",
+       "sec-websocket-version": "13",
+       "upgrade": "websocket",
+       "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+      }
+     },
+     "rx_router_page_rx_state_": {
+      "host": "http://localhost:3721",
+      "path": "/index",
+      "raw_path": "/",
+      "full_path": "http://localhost:3721/index",
+      "full_raw_path": "http://localhost:3721/",
+      "params": {}
+     },
+     "rx_router_route_id_rx_state_": "/index",
+     "rx_router_session_rx_state_": {
+      "client_token": "8242a8cd-3c36-476c-c881-2dd96a03fb03",
+      "client_ip": "127.0.0.1",
+      "session_id": "xfJsU3ZIqWQQeYnHAAAD"
+     },
+     "rx_router_url_rx_state_": {
+      "scheme": "http",
+      "netloc": "localhost:3721",
+      "origin": "http://localhost:3721",
+      "path": "/",
+      "query": "",
+      "query_parameters": {},
+      "fragment": "",
+      "href": "http://localhost:3721/"
+     }
+    },
+    "reflex___state____state.mini_writeback___mini_writeback____state": {
+     "consent_rx_state_": "unset",
+     "theme_rx_state_": "dark",
+     "visitor_id_rx_state_": "937105081e984c14bd30aa632d729712"
+    },
+    "reflex___state____state.reflex___state____update_vars_internal_state": {},
+    "reflex___state____state.reflex___istate___shared____shared_state_base_internal": {},
+    "reflex___state____state.reflex___state____frontend_event_exception_state": {},
+    "reflex___state____state.reflex___state____on_load_internal_state": {}
+   },
+   "root_has_is_hydrated": true,
+   "root_is_hydrated": false
+  },
+  {
+   "dir": "in",
+   "t": 0.289,
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": {
+     "is_hydrated_rx_state_": true
+    }
+   },
+   "root_has_is_hydrated": true,
+   "root_is_hydrated": true
+  }
+ ],
+ "console_err_warn": []
+}

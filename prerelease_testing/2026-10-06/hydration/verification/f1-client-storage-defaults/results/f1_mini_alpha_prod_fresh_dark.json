@@ -1,0 +1,138 @@
+{
+ "url": "http://localhost:3720/",
+ "hydrated": true,
+ "shown": {
+  "theme": "dark",
+  "consent": "unset",
+  "vid": "7fb7f1a4d91e42e09c0c59389b3a6a99"
+ },
+ "localStorage": {
+  "mini_theme": "dark",
+  "theme": "system"
+ },
+ "sessionStorage": {},
+ "cookies": [
+  {
+   "name": "mini_consent",
+   "value": "unset",
+   "expires": 1791313806.06092
+  }
+ ],
+ "frames": [
+  {
+   "dir": "in",
+   "t": 0.128,
+   "kind": "other",
+   "len": 108
+  },
+  {
+   "dir": "out",
+   "t": 0.159,
+   "kind": "connect",
+   "len": 271,
+   "boot": "reflex___state____state.hydrate_and_load",
+   "boot_router_data": {
+    "pathname": "/",
+    "asPath": "/"
+   },
+   "boot_vars": null,
+   "n_hashes": 7
+  },
+  {
+   "dir": "in",
+   "t": 0.165,
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_router_data": null,
+   "boot_vars": null,
+   "n_hashes": 0
+  },
+  {
+   "dir": "in",
+   "t": 0.17,
+   "kind": "event",
+   "len": 1934,
+   "delta": {
+    "reflex___state____state": {
+     "rx_router_headers_rx_state_": {
+      "host": "localhost:3720",
+      "origin": "http://localhost:3720",
+      "upgrade": "websocket",
+      "connection": "Upgrade",
+      "cookie": "",
+      "pragma": "no-cache",
+      "cache_control": "no-cache",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+      "sec_websocket_version": "13",
+      "sec_websocket_key": "RTzHxAFKNtK69YMZbeJGaw==",
+      "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+      "accept_encoding": "gzip, deflate, br, zstd",
+      "accept_language": "en-US,en;q=0.9",
+      "raw_headers": {
+       "accept-encoding": "gzip, deflate, br, zstd",
+       "accept-language": "en-US,en;q=0.9",
+       "asgi-scope-client": "127.0.0.1",
+       "cache-control": "no-cache",
+       "connection": "Upgrade",
+       "host": "localhost:3720",
+       "origin": "http://localhost:3720",
+       "pragma": "no-cache",
+       "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+       "sec-websocket-key": "RTzHxAFKNtK69YMZbeJGaw==",
+       "sec-websocket-protocol": "0.10.0a1",
+       "sec-websocket-version": "13",
+       "upgrade": "websocket",
+       "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+      }
+     },
+     "rx_router_page_rx_state_": {
+      "host": "http://localhost:3720",
+      "path": "/index",
+      "raw_path": "/",
+      "full_path": "http://localhost:3720/index",
+      "full_raw_path": "http://localhost:3720/",
+      "params": {}
+     },
+     "rx_router_route_id_rx_state_": "/index",
+     "rx_router_session_rx_state_": {
+      "client_token": "d8926f49-fb11-49dd-84c2-22588811edc3",
+      "client_ip": "127.0.0.1",
+      "session_id": "KnuCfLERJ9VXMwNzAAAF"
+     },
+     "rx_router_url_rx_state_": {
+      "scheme": "http",
+      "netloc": "localhost:3720",
+      "origin": "http://localhost:3720",
+      "path": "/",
+      "query": "",
+      "query_parameters": {},
+      "fragment": "",
+      "href": "http://localhost:3720/"
+     }
+    },
+    "reflex___state____state.mini_writeback___mini_writeback____state": {
+     "consent_rx_state_": "unset",
+     "theme_rx_state_": "dark",
+     "visitor_id_rx_state_": "7fb7f1a4d91e42e09c0c59389b3a6a99"
+    }
+   },
+   "root_has_is_hydrated": false,
+   "root_is_hydrated": null
+  },
+  {
+   "dir": "in",
+   "t": 0.17,
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": {
+     "is_hydrated_rx_state_": true
+    }
+   },
+   "root_has_is_hydrated": true,
+   "root_is_hydrated": true
+  }
+ ],
+ "console_err_warn": []
+}

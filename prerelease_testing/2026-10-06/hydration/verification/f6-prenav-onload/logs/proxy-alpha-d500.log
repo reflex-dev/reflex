@@ -1,0 +1,5 @@
+upgrade-delay proxy 3722 -> 3720, /_event upgrade delay 500ms
+1791311130.057 delaying ws upgrade 500ms: b'GET /_event/?token=126dad3b-95db-4570-f3b5-6505fd3c9a5f&EIO=4&transport=websocke'
+1791311132.623 delaying ws upgrade 500ms: b'GET /_event/?token=36fbbc07-6505-4a82-9c3f-01d2cc15948b&EIO=4&transport=websocke'
+1791311134.988 delaying ws upgrade 500ms: b'GET /_event/?token=7bf05156-dbec-44a8-8394-c7c155ac49b2&EIO=4&transport=websocke'
+1791311137.333 delaying ws upgrade 500ms: b'GET /_event/?token=48d4f6c3-1231-4de5-faaa-16d8452048f5&EIO=4&transport=websocke'

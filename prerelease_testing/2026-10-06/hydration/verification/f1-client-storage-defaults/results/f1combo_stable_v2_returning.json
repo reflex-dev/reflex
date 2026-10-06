@@ -1,0 +1,198 @@
+{
+ "url": "http://localhost:3721/",
+ "hydrated": true,
+ "shown": {
+  "pl-ls": "pl-dark-v2",
+  "wu-ls": "wu-dark-v2",
+  "wu-sync": "wu-sync-v2",
+  "cs-ls": "cs-dark-v2",
+  "cu-ls": "cu-dark-v2",
+  "wt-ls": "wt-dark-v2"
+ },
+ "localStorage": {
+  "theme": "system"
+ },
+ "sessionStorage": {},
+ "cookies": [],
+ "frames": [
+  {
+   "dir": "in",
+   "t": 0.155,
+   "kind": "other",
+   "len": 108
+  },
+  {
+   "dir": "out",
+   "t": 0.155,
+   "kind": "connect",
+   "len": 10
+  },
+  {
+   "dir": "in",
+   "t": 0.161,
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_router_data": null,
+   "boot_vars": null,
+   "n_hashes": 0
+  },
+  {
+   "dir": "out",
+   "t": 0.162,
+   "kind": "event",
+   "len": 106,
+   "name": "reflex___state____state.hydrate",
+   "router_data": {
+    "pathname": "/",
+    "asPath": "/"
+   },
+   "payload": null
+  },
+  {
+   "dir": "out",
+   "t": 0.162,
+   "kind": "event",
+   "len": 156,
+   "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+   "router_data": {
+    "pathname": "/",
+    "asPath": "/"
+   },
+   "payload": null
+  },
+  {
+   "dir": "in",
+   "t": 0.166,
+   "kind": "event",
+   "len": 3375,
+   "delta": {
+    "reflex___state____state": {
+     "is_hydrated_rx_state_": false,
+     "rx_router_headers_rx_state_": {
+      "host": "localhost:3721",
+      "origin": "http://localhost:3721",
+      "upgrade": "websocket",
+      "connection": "Upgrade",
+      "cookie": "",
+      "pragma": "no-cache",
+      "cache_control": "no-cache",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+      "sec_websocket_version": "13",
+      "sec_websocket_key": "1HevORKKrfqxzgsCKq8yPg==",
+      "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+      "accept_encoding": "gzip, deflate, br, zstd",
+      "accept_language": "en-US,en;q=0.9",
+      "raw_headers": {
+       "accept-encoding": "gzip, deflate, br, zstd",
+       "accept-language": "en-US,en;q=0.9",
+       "asgi-scope-client": "127.0.0.1",
+       "cache-control": "no-cache",
+       "connection": "Upgrade",
+       "host": "localhost:3721",
+       "origin": "http://localhost:3721",
+       "pragma": "no-cache",
+       "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+       "sec-websocket-key": "1HevORKKrfqxzgsCKq8yPg==",
+       "sec-websocket-protocol": "0.9.12",
+       "sec-websocket-version": "13",
+       "upgrade": "websocket",
+       "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+      }
+     },
+     "rx_router_page_rx_state_": {
+      "host": "http://localhost:3721",
+      "path": "/index",
+      "raw_path": "/",
+      "full_path": "http://localhost:3721/index",
+      "full_raw_path": "http://localhost:3721/",
+      "params": {}
+     },
+     "rx_router_route_id_rx_state_": "/index",
+     "rx_router_session_rx_state_": {
+      "client_token": "b84e4916-235b-44eb-eb99-9ad5d760f256",
+      "client_ip": "127.0.0.1",
+      "session_id": "pARvKsL1fbjVhxTmAAAB"
+     },
+     "rx_router_url_rx_state_": {
+      "scheme": "http",
+      "netloc": "localhost:3721",
+      "origin": "http://localhost:3721",
+      "path": "/",
+      "query": "",
+      "query_parameters": {},
+      "fragment": "",
+      "href": "http://localhost:3721/"
+     }
+    },
+    "reflex___state____state.reflex___istate___shared____shared_state_base_internal": {},
+    "reflex___state____state.f1combo___f1combo____plain": {
+     "pl_ck_rx_state_": "pl-unset",
+     "pl_ls_rx_state_": "pl-dark-v2",
+     "pl_ss_rx_state_": "pl-x"
+    },
+    "reflex___state____state.reflex___state____on_load_internal_state": {},
+    "reflex___state____state.f1combo___f1combo____with_set": {
+     "ws_ls_rx_state_": "ws-light",
+     "ws_tags_rx_state_": [
+      "gamma",
+      "alpha",
+      "beta",
+      "epsilon",
+      "delta",
+      "eta",
+      "zeta"
+     ]
+    },
+    "reflex___state____state.f1combo___f1combo____with_clock_var": {
+     "wt_ls_rx_state_": "wt-dark-v2",
+     "wt_stamp_rx_state_": "1791310614573238577"
+    },
+    "reflex___state____state.f1combo___f1combo____parent_plain": {
+     "pp_n_rx_state_": 0
+    },
+    "reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid": {
+     "cu_ck_rx_state_": "cu-ck-v2",
+     "cu_id_rx_state_": "8e830bca119a4112aaa079bf999960e8",
+     "cu_ls_rx_state_": "cu-dark-v2",
+     "cu_ss_rx_state_": "cu-x"
+    },
+    "reflex___state____state.reflex___state____update_vars_internal_state": {},
+    "reflex___state____state.f1combo___f1combo____parent_uuid": {
+     "pu_id_rx_state_": "c9740dc2eb824d20b45449807675fe12"
+    },
+    "reflex___state____state.f1combo___f1combo____parent_uuid.f1combo___f1combo____child_storage": {
+     "cs_ck_rx_state_": "cs-unset",
+     "cs_ls_rx_state_": "cs-dark-v2",
+     "cs_ss_rx_state_": "cs-x"
+    },
+    "reflex___state____state.reflex___state____frontend_event_exception_state": {},
+    "reflex___state____state.f1combo___f1combo____with_uuid": {
+     "wu_ck_rx_state_": "wu-ck-v2",
+     "wu_id_rx_state_": "e3fc0973fa204a1ea5c61b43e6992299",
+     "wu_ls_rx_state_": "wu-dark-v2",
+     "wu_ss_rx_state_": "wu-x",
+     "wu_sync_rx_state_": "wu-sync-v2"
+    }
+   },
+   "root_has_is_hydrated": true,
+   "root_is_hydrated": false
+  },
+  {
+   "dir": "in",
+   "t": 0.166,
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": {
+     "is_hydrated_rx_state_": true
+    }
+   },
+   "root_has_is_hydrated": true,
+   "root_is_hydrated": true
+  }
+ ],
+ "console_err_warn": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}

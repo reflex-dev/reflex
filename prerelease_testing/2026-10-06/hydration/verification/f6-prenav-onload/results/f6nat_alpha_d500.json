@@ -1,0 +1,62 @@
+[
+ {
+  "click_delay_ms": 0,
+  "run": 0,
+  "t_interactive": 371,
+  "t_ws_created": 232,
+  "t_ws_open": 798,
+  "t_click": 436,
+  "t_connect_sent": 799,
+  "connect_after_click": true,
+  "boot_router_pathname": "/items/1",
+  "trace": [
+   "item_load id=1",
+   "item_load id=2"
+  ]
+ },
+ {
+  "click_delay_ms": 0,
+  "run": 1,
+  "t_interactive": 470,
+  "t_ws_created": 149,
+  "t_ws_open": 739,
+  "t_click": 612,
+  "t_connect_sent": 741,
+  "connect_after_click": true,
+  "boot_router_pathname": "/items/1",
+  "trace": [
+   "item_load id=1",
+   "item_load id=2"
+  ]
+ },
+ {
+  "click_delay_ms": 300,
+  "run": 0,
+  "t_interactive": 257,
+  "t_ws_created": 130,
+  "t_ws_open": 635,
+  "t_click": 607,
+  "t_connect_sent": 636,
+  "connect_after_click": true,
+  "boot_router_pathname": "/items/1",
+  "trace": [
+   "item_load id=1",
+   "item_load id=2"
+  ]
+ },
+ {
+  "click_delay_ms": 300,
+  "run": 1,
+  "t_interactive": 295,
+  "t_ws_created": 184,
+  "t_ws_open": 712,
+  "t_click": 663,
+  "t_connect_sent": 716,
+  "connect_after_click": true,
+  "boot_router_pathname": "/items/1",
+  "trace": [
+   "item_load id=1",
+   "item_load id=2"
+  ]
+ }
+]

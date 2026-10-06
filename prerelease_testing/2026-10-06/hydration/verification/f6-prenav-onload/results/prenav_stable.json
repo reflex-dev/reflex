@@ -1,0 +1,83 @@
+{
+ "label": "stable-prod",
+ "hold_ms": 2000,
+ "runs": {
+  "slow_to_other": [
+   {
+    "url": "http://localhost:3721/other",
+    "connected_before_nav": false,
+    "hyd_after": "H:yes",
+    "trace": [
+     "other_load#1 path=/other",
+     "other_load#2 path=/other"
+    ],
+    "sent": [
+     "40/_event,",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]"
+    ],
+    "console_errors": [],
+    "#other-count": "2",
+    "#slow-progress-other": "0"
+   },
+   {
+    "url": "http://localhost:3721/other",
+    "connected_before_nav": false,
+    "hyd_after": "H:yes",
+    "trace": [
+     "other_load#1 path=/other",
+     "other_load#2 path=/other"
+    ],
+    "sent": [
+     "40/_event,",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]"
+    ],
+    "console_errors": [],
+    "#other-count": "2",
+    "#slow-progress-other": "0"
+   }
+  ],
+  "item1_to_item2": [
+   {
+    "url": "http://localhost:3721/items/2",
+    "connected_before_nav": false,
+    "hyd_after": "H:yes",
+    "trace": [
+     "item_load id=2"
+    ],
+    "sent": [
+     "40/_event,",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/items/2\",\"asPath\":\"/items/2\",\"query\":{\"id\":\"2\"}}}]",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/items/2\",\"asPath\":\"/items/2\",\"q",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/items/2\",\"asPath\":\"/items/2\",\"q"
+    ],
+    "console_errors": [
+     "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "#item-trace": "[\"id=2|path=/items/2|url=http://localhost:3721/items/2\"]"
+   },
+   {
+    "url": "http://localhost:3721/items/2",
+    "connected_before_nav": false,
+    "hyd_after": "H:yes",
+    "trace": [
+     "item_load id=2",
+     "item_load id=2"
+    ],
+    "sent": [
+     "40/_event,",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/items/2\",\"asPath\":\"/items/2\",\"query\":{\"id\":\"2\"}}}]",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/items/2\",\"asPath\":\"/items/2\",\"q",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/items/2\",\"asPath\":\"/items/2\",\"q"
+    ],
+    "console_errors": [
+     "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "#item-trace": "[\"id=2|path=/items/2|url=http://localhost:3721/items/2\",\"id=2|path=/items/2|url=http://localhost:3721/items/2\"]"
+   }
+  ]
+ }
+}
