@@ -1,0 +1,1083 @@
+{
+ "tag": "up-cold",
+ "results": [
+  {
+   "name": "initial: 'No files selected', QA extras rendered",
+   "status": "pass",
+   "detail": "selected=['No files selected'] disk=['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']",
+   "t": 2.6
+  },
+  {
+   "name": "select 2 files -> names rendered (rx.selected_files)",
+   "status": "pass",
+   "detail": "['hello.txt', 'h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt']",
+   "t": 2.711
+  },
+  {
+   "name": "re-select replaces the selection",
+   "status": "pass",
+   "detail": "['after cancel.txt']",
+   "t": 2.737
+  },
+  {
+   "name": "Clear (rx.clear_selected_files) empties the selection",
+   "status": "pass",
+   "detail": "['No files selected']",
+   "t": 2.784
+  },
+  {
+   "name": "drag & drop onto the dropzone selects files",
+   "status": "pass",
+   "detail": "['dropped_one.txt', 'dropped two.txt']",
+   "t": 2.794
+  },
+  {
+   "name": "dropped files upload and land on disk (this run's bytes)",
+   "status": "pass",
+   "detail": "['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']",
+   "t": 3.083
+  },
+  {
+   "name": "hostile names sanitized into the upload dir (no traversal), content intact",
+   "status": "pass",
+   "detail": "{\"saved\": {\"../x_traversal.txt\": true, \"..\\\\..\\\\win_traversal.txt\": true, \"/abs/root_abs.txt\": true, \"sub/dir/nested.txt\": true}, \"escaped_outside\": [], \"disk\": [\"after cancel.txt\", \"big12mb.bin\", \"dropped two.txt\", \"dropped_one.txt\", \"h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt\", \"nested.txt\", \"root_abs.txt\", \"win_traversal.txt\", \"x_traversal.txt\"]}",
+   "t": 3.347
+  },
+  {
+   "name": "unicode+spaces+parens filename roundtrip",
+   "status": "pass",
+   "detail": "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+   "t": 3.347
+  },
+  {
+   "name": "12 MB binary upload: sha256 matches",
+   "status": "pass",
+   "detail": "0.79s size=12582912",
+   "t": 4.158
+  },
+  {
+   "name": "progress bar at 100 after a completed upload",
+   "status": "pass",
+   "detail": "aria-valuenow=100 uploading_text=0",
+   "t": 4.177
+  },
+  {
+   "name": "throttled upload shows 'Uploading... cancel'",
+   "status": "pass",
+   "detail": "",
+   "t": 4.428
+  },
+  {
+   "name": "progress advances during the throttled upload",
+   "status": "pass",
+   "detail": "['10', '20']",
+   "t": 7.439
+  },
+  {
+   "name": "event sent DURING an in-flight upload is processed before the upload ends (#7357)",
+   "status": "pass",
+   "detail": "pings 0->1 latency=0.06s upload_still_in_flight=True",
+   "t": 7.572
+  },
+  {
+   "name": "cancel hides 'Uploading...' and no file is saved",
+   "status": "pass",
+   "detail": "uploading_hidden=True slow6mb_on_disk=False progress=21",
+   "t": 9.647
+  },
+  {
+   "name": "upload after cancel works",
+   "status": "pass",
+   "detail": "['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']",
+   "t": 9.96
+  },
+  {
+   "name": "events still processed after cancel",
+   "status": "pass",
+   "detail": "2",
+   "t": 10.028
+  },
+  {
+   "name": "reload: state kept (pings counter survives)",
+   "status": "pass",
+   "detail": "2",
+   "t": 13.452
+  },
+  {
+   "name": "fresh context lists every uploaded file",
+   "status": "pass",
+   "detail": "['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']",
+   "t": 14.046
+  },
+  {
+   "name": "rendered /_upload links serve the exact bytes (spaces, unicode, nested, 12 MB)",
+   "status": "pass",
+   "detail": "{\"dropped two.txt\": [200, \"http://localhost:8182/_upload/dropped two.txt\", true], \"h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt\": [200, \"http://localhost:8182/_upload/h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt\", true], \"nested.txt\": [200, \"http://localhost:8182/_upload/nested.txt\", true], \"big12mb.bin\": [200, \"http://localhost:8182/_upload/big12mb.bin\", true]}",
+   "t": 15.489
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 15.616
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 15.617
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 1.846,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 2.063,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 2.152,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 2.357,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 7.625,
+   "type": "log",
+   "text": "Upload error: Upload aborted"
+  },
+  {
+   "page": "main",
+   "t": 11.039,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 11.083,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 11.171,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 11.258,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 11.267,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "fresh",
+   "t": 13.603,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "fresh",
+   "t": 13.758,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "fresh",
+   "t": 13.794,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "fresh",
+   "t": 13.908,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [
+  {
+   "page": "main",
+   "t": 7.637,
+   "url": "http://localhost:8182/_upload",
+   "failure": "net::ERR_ABORTED"
+  }
+ ],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 2.152,
+   "dir": "open",
+   "payload": "ws://localhost:8182/_event/?token=2eb3c3d8-c09e-4114-a5c9-0bd7775c9040&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 2.152,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"KJh9iSqGhqQnrEwkAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 2.422,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3278cfcc0b51b272\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"a963c44b9e310edc\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 2.428,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"5DZC8TNsiSXB3qclAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 2.431,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"yS7WdJsLENUnpHTBOz3Bug==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"yS7WdJsLENUnpHTBOz3Bug==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3182\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3182/index\",\"full_raw_path\":\"http://localhost:3182/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"2eb3c3d8-c09e-4114-a5c9-0bd7775c9040\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"5DZC8TNsiSXB3qclAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3182\",\"origin\":\"http://localhost:3182\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3182/\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.432,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.888,
+   "dir": "out",
+   "len": 201,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":378,\"total\":378,\"progress\":1}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.89,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":false,\"upload_progress_rx_state_\":100}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.16,
+   "dir": "out",
+   "len": 201,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":982,\"total\":982,\"progress\":1}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.161,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":false,\"upload_progress_rx_state_\":100}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.485,
+   "dir": "out",
+   "len": 211,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":12583114,\"total\":12583114,\"progress\":1}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.486,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":false,\"upload_progress_rx_state_\":100}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.323,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":49152,\"total\":6291658,\"progress\":0.0078122491718399184}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.333,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":1}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.423,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":81920,\"total\":6291658,\"progress\":0.013020415286399864}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.431,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":1}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.524,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":131072,\"total\":6291658,\"progress\":0.020832664458239784}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.531,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":2}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.625,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":163840,\"total\":6291658,\"progress\":0.02604083057279973}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.634,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":3}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.725,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":212992,\"total\":6291658,\"progress\":0.03385307974463965}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.735,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":3}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.825,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":245760,\"total\":6291658,\"progress\":0.039061245859199595}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.836,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":4}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.927,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":278528,\"total\":6291658,\"progress\":0.04426941197375954}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.936,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":4}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.027,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":327680,\"total\":6291658,\"progress\":0.05208166114559946}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.036,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":5}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.128,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":360448,\"total\":6291658,\"progress\":0.0572898272601594}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.139,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":6}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.228,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":409600,\"total\":6291658,\"progress\":0.06510207643199932}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.236,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":7}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.328,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":442368,\"total\":6291658,\"progress\":0.07031024254655927}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.337,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":7}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.429,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":491520,\"total\":6291658,\"progress\":0.07812249171839919}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.441,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":8}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.53,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":524288,\"total\":6291658,\"progress\":0.08333065783295913}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.537,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":8}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.642,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":557056,\"total\":6291658,\"progress\":0.08853882394751908}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.648,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":9}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.738,
+   "dir": "out",
+   "len": 224,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":606208,\"total\":6291658,\"progress\":0.096351073119359}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.745,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":10}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.838,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":638976,\"total\":6291658,\"progress\":0.10155923923391895}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.845,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":10}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.938,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":688128,\"total\":6291658,\"progress\":0.10937148840575886}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.947,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":11}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.039,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":720896,\"total\":6291658,\"progress\":0.1145796545203188}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.046,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":11}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.14,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":753664,\"total\":6291658,\"progress\":0.11978782063487875}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.145,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":12}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.24,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":802816,\"total\":6291658,\"progress\":0.12760006980671867}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.248,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":13}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.341,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":835584,\"total\":6291658,\"progress\":0.13280823592127863}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.356,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":13}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.442,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":884736,\"total\":6291658,\"progress\":0.14062048509311853}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.452,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":14}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.542,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":917504,\"total\":6291658,\"progress\":0.1458286512076785}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.551,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":15}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.643,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":966656,\"total\":6291658,\"progress\":0.1536409003795184}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.655,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":15}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.744,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":999424,\"total\":6291658,\"progress\":0.15884906649407834}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.755,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":16}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.845,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1032192,\"total\":6291658,\"progress\":0.1640572326086383}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.852,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":16}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.946,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1081344,\"total\":6291658,\"progress\":0.1718694817804782}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.954,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":17}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.047,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1114112,\"total\":6291658,\"progress\":0.17707764789503816}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.053,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":18}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.147,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1163264,\"total\":6291658,\"progress\":0.18488989706687808}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.156,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":18}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.248,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1196032,\"total\":6291658,\"progress\":0.19009806318143802}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.258,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":19}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.35,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1245184,\"total\":6291658,\"progress\":0.19791031235327794}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.357,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":20}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.452,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1277952,\"total\":6291658,\"progress\":0.2031184784678379}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.466,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":20}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.547,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.55,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1310720,\"total\":6291658,\"progress\":0.20832664458239783}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.554,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":1}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.558,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":true,\"upload_progress_rx_state_\":21}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.611,
+   "dir": "out",
+   "len": 171,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.cancel_upload\",\"payload\":{\"upload_id\":\"upload1\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.62,
+   "dir": "in",
+   "len": 115,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.625,
+   "dir": "in",
+   "len": 172,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => refs[\\\"__upload_controllers_upload1\\\"]?.abort())\",\"callback\":null}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 9.767,
+   "dir": "out",
+   "len": 201,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":213,\"total\":213,\"progress\":1}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.77,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":false,\"upload_progress_rx_state_\":100}}}]"
+  },
+  {
+   "page": "main",
+   "t": 10.009,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 10.02,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":2}}}]"
+  },
+  {
+   "page": "main",
+   "t": 11.04,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 11.041,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 11.254,
+   "dir": "open",
+   "payload": "ws://localhost:8182/_event/?token=2eb3c3d8-c09e-4114-a5c9-0bd7775c9040&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 11.266,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"-RDJlOiECsTYRgvuAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 11.302,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3278cfcc0b51b272\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"a963c44b9e310edc\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 11.318,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"s2A6y5oBEFq2sJyMAAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 11.319,
+   "dir": "in",
+   "len": 1859,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"J1vqfz95Apn69wslgRLcbQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"J1vqfz95Apn69wslgRLcbQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3182\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3182/index\",\"full_raw_path\":\"http://localhost:3182/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"2eb3c3d8-c09e-4114-a5c9-0bd7775c9040\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"s2A6y5oBEFq2sJyMAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3182\",\"origin\":\"http://localhost:3182\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3182/\"}},\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":2,\"upload_progress_rx_state_\":100}}}]"
+  },
+  {
+   "page": "main",
+   "t": 11.319,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "fresh",
+   "t": 13.79,
+   "dir": "open",
+   "payload": "ws://localhost:8182/_event/?token=7285c604-2a2d-4381-c660-b6ffc7196431&EIO=4&transport=websocket"
+  },
+  {
+   "page": "fresh",
+   "t": 13.794,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"D_fL-xoTecJt5Ls7AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "fresh",
+   "t": 13.948,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3278cfcc0b51b272\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"a963c44b9e310edc\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "fresh",
+   "t": 13.954,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"caFPw5VRg6vwhfgsAAAF\"}"
+  },
+  {
+   "page": "fresh",
+   "t": 13.956,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"QUY094N5MIGH+bYOc7Kzpw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"QUY094N5MIGH+bYOc7Kzpw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3182\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3182/index\",\"full_raw_path\":\"http://localhost:3182/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"7285c604-2a2d-4381-c660-b6ffc7196431\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"caFPw5VRg6vwhfgsAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3182\",\"origin\":\"http://localhost:3182\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3182/\"}}}}]"
+  },
+  {
+   "page": "fresh",
+   "t": 13.957,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "notes": {
+  "disk_at_start": [
+   "after cancel.txt",
+   "big12mb.bin",
+   "dropped two.txt",
+   "dropped_one.txt",
+   "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+   "nested.txt",
+   "root_abs.txt",
+   "win_traversal.txt",
+   "x_traversal.txt"
+  ],
+  "files_list_initial": [
+   [
+    "root_abs.txt",
+    "http://localhost:8182/_upload/root_abs.txt"
+   ],
+   [
+    "win_traversal.txt",
+    "http://localhost:8182/_upload/win_traversal.txt"
+   ],
+   [
+    "dropped two.txt",
+    "http://localhost:8182/_upload/dropped two.txt"
+   ],
+   [
+    "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+    "http://localhost:8182/_upload/h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt"
+   ],
+   [
+    "x_traversal.txt",
+    "http://localhost:8182/_upload/x_traversal.txt"
+   ],
+   [
+    "dropped_one.txt",
+    "http://localhost:8182/_upload/dropped_one.txt"
+   ],
+   [
+    "nested.txt",
+    "http://localhost:8182/_upload/nested.txt"
+   ],
+   [
+    "big12mb.bin",
+    "http://localhost:8182/_upload/big12mb.bin"
+   ],
+   [
+    "after cancel.txt",
+    "http://localhost:8182/_upload/after cancel.txt"
+   ]
+  ],
+  "selected_after_upload": [
+   "dropped_one.txt",
+   "dropped two.txt"
+  ],
+  "selected_hostile": [
+   "../x_traversal.txt",
+   "..\\..\\win_traversal.txt",
+   "/abs/root_abs.txt",
+   "sub/dir/nested.txt",
+   "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt"
+  ],
+  "progress_after_big": "100",
+  "ping_latency_during_upload_s": 0.06,
+  "files_list_same_session": [
+   [
+    "root_abs.txt",
+    "http://localhost:8182/_upload/root_abs.txt"
+   ],
+   [
+    "win_traversal.txt",
+    "http://localhost:8182/_upload/win_traversal.txt"
+   ],
+   [
+    "dropped two.txt",
+    "http://localhost:8182/_upload/dropped two.txt"
+   ],
+   [
+    "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+    "http://localhost:8182/_upload/h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt"
+   ],
+   [
+    "x_traversal.txt",
+    "http://localhost:8182/_upload/x_traversal.txt"
+   ],
+   [
+    "dropped_one.txt",
+    "http://localhost:8182/_upload/dropped_one.txt"
+   ],
+   [
+    "nested.txt",
+    "http://localhost:8182/_upload/nested.txt"
+   ],
+   [
+    "big12mb.bin",
+    "http://localhost:8182/_upload/big12mb.bin"
+   ],
+   [
+    "after cancel.txt",
+    "http://localhost:8182/_upload/after cancel.txt"
+   ]
+  ],
+  "files_list_after_reload": [
+   [
+    "root_abs.txt",
+    "http://localhost:8182/_upload/root_abs.txt"
+   ],
+   [
+    "win_traversal.txt",
+    "http://localhost:8182/_upload/win_traversal.txt"
+   ],
+   [
+    "dropped two.txt",
+    "http://localhost:8182/_upload/dropped two.txt"
+   ],
+   [
+    "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+    "http://localhost:8182/_upload/h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt"
+   ],
+   [
+    "x_traversal.txt",
+    "http://localhost:8182/_upload/x_traversal.txt"
+   ],
+   [
+    "dropped_one.txt",
+    "http://localhost:8182/_upload/dropped_one.txt"
+   ],
+   [
+    "nested.txt",
+    "http://localhost:8182/_upload/nested.txt"
+   ],
+   [
+    "big12mb.bin",
+    "http://localhost:8182/_upload/big12mb.bin"
+   ],
+   [
+    "after cancel.txt",
+    "http://localhost:8182/_upload/after cancel.txt"
+   ]
+  ],
+  "pings_after_reload": 2,
+  "disk_final": [
+   "after cancel.txt",
+   "big12mb.bin",
+   "dropped two.txt",
+   "dropped_one.txt",
+   "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+   "nested.txt",
+   "root_abs.txt",
+   "win_traversal.txt",
+   "x_traversal.txt"
+  ]
+ }
+}

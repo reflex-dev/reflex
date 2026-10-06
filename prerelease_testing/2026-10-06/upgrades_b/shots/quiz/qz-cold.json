@@ -1,0 +1,726 @@
+{
+ "tag": "qz-cold",
+ "results": [
+  {
+   "name": "title + rx.code_block renders the snippet with syntax-highlight spans",
+   "status": "pass",
+   "detail": "title=Quiz - Reflex spans=28 colored=16 cls=",
+   "t": 7.831
+  },
+  {
+   "name": "questions render (4 radios, 5 checkboxes)",
+   "status": "pass",
+   "detail": "radios=4 checkboxes=5",
+   "t": 7.857
+  },
+  {
+   "name": "all correct -> redirect /result shows 100% and 3 check rows",
+   "status": "pass",
+   "detail": "path=/result score=100% rows=[['1', 'lucide-check css-bjcoli', '\"False\"', '\"False\"'], ['2', 'lucide-check css-bjcoli', '\"[10, 20, 30, 40]\"', '\"[10, 20, 30, 40]\"'], ['3', 'lucide-check css-bjcoli', '[false,false,true,true,true]', '[false,false,true,true,true]']]",
+   "t": 11.449
+  },
+  {
+   "name": "answers rendered via Var.to_string()",
+   "status": "pass",
+   "detail": "['\"False\"', '\"[10, 20, 30, 40]\"', '[false,false,true,true,true]']",
+   "t": 11.449
+  },
+  {
+   "name": "reload /result keeps the score (state per token)",
+   "status": "pass",
+   "detail": "100%",
+   "t": 12.711
+  },
+  {
+   "name": "Take Quiz Again -> / (client nav), checkboxes start unchecked",
+   "status": "pass",
+   "detail": "path=/ checked=0",
+   "t": 13.719
+  },
+  {
+   "name": "one wrong answer -> 66% and an x icon on row 1",
+   "status": "pass",
+   "detail": "score=66% rows=[['1', 'lucide-x css-tokvmb', '\"True\"', '\"False\"'], ['2', 'lucide-check css-bjcoli', '\"[10, 20, 30, 40]\"', '\"[10, 20, 30, 40]\"'], ['3', 'lucide-check css-bjcoli', '[false,false,true,true,true]', '[false,false,true,true,true]']]",
+   "t": 16.829
+  },
+  {
+   "name": "browser back -> / again (on_load reset answers server-side)",
+   "status": "pass",
+   "detail": "path=/ checked_checkboxes_dom=0",
+   "t": 17.921
+  },
+  {
+   "name": "submit right after back: on_load reset -> 0%",
+   "status": "pass",
+   "detail": "score=0% rows=[['1', 'lucide-x css-tokvmb', 'null', '\"False\"'], ['2', 'lucide-x css-tokvmb', 'null', '\"[10, 20, 30, 40]\"'], ['3', 'lucide-x css-tokvmb', '[false,false,false,false,false]', '[false,false,true,true,true]']]",
+   "t": 18.887
+  },
+  {
+   "name": "color mode button toggles theme (html class + radix-themes background)",
+   "status": "pass",
+   "detail": "['light', 'rgb(255, 255, 255)'] -> ['dark', 'rgb(17, 17, 16)']",
+   "t": 18.94
+  },
+  {
+   "name": "direct /result in a fresh session renders 0% and an empty table",
+   "status": "pass",
+   "detail": "score=0% rows=[] title=Quiz Results",
+   "t": 23.05
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"main\", \"t\": 8.791, \"type\": \"warning\", \"text\": \"Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.\"}, {\"page\": \"main\", \"t\": 9.021, \"type\": \"warning\", \"text\": \"Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.\"}, {\"page\": \"main\", \"t\": 9.449, \"type\": \"warning\", \"text\": \"Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.\"}, {\"page\": \"main\", \"t\": 14.394, \"type\": \"warning\", \"text\": \"Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.\"}, {\"page\": \"main\", \"t\": 14.672, \"type\": \"warning\", \"text\": \"Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.\"}, {\"page\": \"main\", \"t\": 14.915, \"type\": \"warning\", \"text\": \"Checkbox is changing fro",
+   "t": 23.508
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 23.508
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 3.623,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 4.321,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 4.414,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 4.61,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 8.791,
+   "type": "warning",
+   "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+  },
+  {
+   "page": "main",
+   "t": 9.021,
+   "type": "warning",
+   "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+  },
+  {
+   "page": "main",
+   "t": 9.449,
+   "type": "warning",
+   "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+  },
+  {
+   "page": "main",
+   "t": 11.52,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 11.615,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 11.784,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 11.955,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 11.988,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 14.394,
+   "type": "warning",
+   "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+  },
+  {
+   "page": "main",
+   "t": 14.672,
+   "type": "warning",
+   "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+  },
+  {
+   "page": "main",
+   "t": 14.915,
+   "type": "warning",
+   "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+  },
+  {
+   "page": "fresh",
+   "t": 19.185,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "fresh",
+   "t": 19.731,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "fresh",
+   "t": 19.912,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "fresh",
+   "t": 20.094,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 4.353,
+   "dir": "open",
+   "payload": "ws://localhost:8192/_event/?token=5d41c7a4-9509-4421-b1bc-354213fa0d1b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 4.361,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"Uqag2oc7EistrhdUAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 4.661,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"738e1de2c3499822\",\"b084fc0c68f7c73a\",\"e23fa6aa4a6deaee\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 4.673,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"rJBfVOgQt5rDORCnAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 4.675,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8192\",\"origin\":\"http://localhost:3192\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"9ERnVZ5PXVVVPhrS4vkeTg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8192\",\"origin\":\"http://localhost:3192\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"9ERnVZ5PXVVVPhrS4vkeTg==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3192\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3192/index\",\"full_raw_path\":\"http://localhost:3192/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"5d41c7a4-9509-4421-b1bc-354213fa0d1b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"rJBfVOgQt5rDORCnAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3192\",\"origin\":\"http://localhost:3192\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3192/\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.678,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.68,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[null,null,[false,false,false,false,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.681,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.027,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.set_answers\",\"payload\":{\"answer\":\"False\",\"index\":0},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.027,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"False\",null,[false,false,false,false,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.443,
+   "dir": "out",
+   "len": 181,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.set_answers\",\"payload\":{\"answer\":\"[10, 20, 30, 40]\",\"index\":1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.444,
+   "dir": "in",
+   "len": 161,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"False\",\"[10, 20, 30, 40]\",[false,false,false,false,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.791,
+   "dir": "out",
+   "len": 181,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.set_answers\",\"payload\":{\"answer\":true,\"index\":2,\"sub_index\":2},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.801,
+   "dir": "in",
+   "len": 160,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"False\",\"[10, 20, 30, 40]\",[false,false,true,false,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.026,
+   "dir": "out",
+   "len": 181,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.set_answers\",\"payload\":{\"answer\":true,\"index\":2,\"sub_index\":3},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.027,
+   "dir": "in",
+   "len": 159,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"False\",\"[10, 20, 30, 40]\",[false,false,true,true,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.45,
+   "dir": "out",
+   "len": 181,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.set_answers\",\"payload\":{\"answer\":true,\"index\":2,\"sub_index\":4},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.489,
+   "dir": "in",
+   "len": 158,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"False\",\"[10, 20, 30, 40]\",[false,false,true,true,true]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 10.32,
+   "dir": "out",
+   "len": 126,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.submit\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 10.32,
+   "dir": "in",
+   "len": 135,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"score_rx_state_\":100,\"percent_score_rx_state_\":\"100%\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 10.321,
+   "dir": "in",
+   "len": 146,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/result\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 10.387,
+   "dir": "out",
+   "len": 168,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/result\",\"asPath\":\"/result\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 10.393,
+   "dir": "in",
+   "len": 534,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3192\",\"origin\":\"http://localhost:3192\",\"path\":\"/result\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3192/result\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3192\",\"path\":\"/result\",\"raw_path\":\"/result\",\"full_path\":\"http://localhost:3192/result\",\"full_raw_path\":\"http://localhost:3192/result\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/result\",\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 11.521,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 11.521,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 11.955,
+   "dir": "open",
+   "payload": "ws://localhost:8192/_event/?token=5d41c7a4-9509-4421-b1bc-354213fa0d1b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 11.956,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"xBhlG8SWF45OIev_AAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 12.023,
+   "dir": "out",
+   "len": 283,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"738e1de2c3499822\",\"b084fc0c68f7c73a\",\"e23fa6aa4a6deaee\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/result\",\"asPath\":\"/result\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 12.03,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"IaU8AtRzO9UC370cAAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 12.03,
+   "dir": "in",
+   "len": 1963,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8192\",\"origin\":\"http://localhost:3192\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"khWrtG27UbEJrwIrHsoMMw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8192\",\"origin\":\"http://localhost:3192\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"khWrtG27UbEJrwIrHsoMMw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3192\",\"path\":\"/result\",\"raw_path\":\"/result\",\"full_path\":\"http://localhost:3192/result\",\"full_raw_path\":\"http://localhost:3192/result\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/result\",\"rx_router_session_rx_state_\":{\"client_token\":\"5d41c7a4-9509-4421-b1bc-354213fa0d1b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"IaU8AtRzO9UC370cAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3192\",\"origin\":\"http://localhost:3192\",\"path\":\"/result\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3192/result\"}},\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"False\",\"[10, 20, 30, 40]\",[false,false,true,true,true]],\"percent_score_rx_state_\":\"100%\",\"score_rx_state_\":100}}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.035,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.898,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.899,
+   "dir": "in",
+   "len": 508,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3192\",\"origin\":\"http://localhost:3192\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3192/\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3192\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3192/index\",\"full_raw_path\":\"http://localhost:3192/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.899,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[null,null,[false,false,false,false,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.899,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.762,
+   "dir": "out",
+   "len": 169,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.set_answers\",\"payload\":{\"answer\":\"True\",\"index\":0},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.765,
+   "dir": "in",
+   "len": 146,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"True\",null,[false,false,false,false,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 14.055,
+   "dir": "out",
+   "len": 181,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.set_answers\",\"payload\":{\"answer\":\"[10, 20, 30, 40]\",\"index\":1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 14.064,
+   "dir": "in",
+   "len": 160,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"True\",\"[10, 20, 30, 40]\",[false,false,false,false,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 14.406,
+   "dir": "out",
+   "len": 181,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.set_answers\",\"payload\":{\"answer\":true,\"index\":2,\"sub_index\":2},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 14.406,
+   "dir": "in",
+   "len": 159,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"True\",\"[10, 20, 30, 40]\",[false,false,true,false,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 14.673,
+   "dir": "out",
+   "len": 181,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.set_answers\",\"payload\":{\"answer\":true,\"index\":2,\"sub_index\":3},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 14.675,
+   "dir": "in",
+   "len": 158,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"True\",\"[10, 20, 30, 40]\",[false,false,true,true,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 14.915,
+   "dir": "out",
+   "len": 181,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.set_answers\",\"payload\":{\"answer\":true,\"index\":2,\"sub_index\":4},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 14.915,
+   "dir": "in",
+   "len": 157,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[\"True\",\"[10, 20, 30, 40]\",[false,false,true,true,true]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 15.9,
+   "dir": "out",
+   "len": 126,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.submit\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 15.903,
+   "dir": "in",
+   "len": 133,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"score_rx_state_\":66,\"percent_score_rx_state_\":\"66%\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 15.91,
+   "dir": "in",
+   "len": 146,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/result\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 15.924,
+   "dir": "out",
+   "len": 168,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/result\",\"asPath\":\"/result\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 15.933,
+   "dir": "in",
+   "len": 534,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3192\",\"origin\":\"http://localhost:3192\",\"path\":\"/result\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3192/result\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3192\",\"path\":\"/result\",\"raw_path\":\"/result\",\"full_path\":\"http://localhost:3192/result\",\"full_raw_path\":\"http://localhost:3192/result\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/result\",\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.886,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.887,
+   "dir": "in",
+   "len": 508,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3192\",\"origin\":\"http://localhost:3192\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3192/\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3192\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3192/index\",\"full_raw_path\":\"http://localhost:3192/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.887,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"answers_rx_state_\":[null,null,[false,false,false,false,false]]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.887,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 17.95,
+   "dir": "out",
+   "len": 126,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.quiz___quiz____state.submit\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 17.983,
+   "dir": "in",
+   "len": 131,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.quiz___quiz____state\":{\"score_rx_state_\":0,\"percent_score_rx_state_\":\"0%\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 17.983,
+   "dir": "in",
+   "len": 146,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/result\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 17.983,
+   "dir": "out",
+   "len": 168,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/result\",\"asPath\":\"/result\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 17.998,
+   "dir": "in",
+   "len": 534,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3192\",\"origin\":\"http://localhost:3192\",\"path\":\"/result\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3192/result\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3192\",\"path\":\"/result\",\"raw_path\":\"/result\",\"full_path\":\"http://localhost:3192/result\",\"full_raw_path\":\"http://localhost:3192/result\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/result\",\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "fresh",
+   "t": 19.907,
+   "dir": "open",
+   "payload": "ws://localhost:8192/_event/?token=7fd2fa4a-7616-4c1b-c1a3-aaf6b9ce747d&EIO=4&transport=websocket"
+  },
+  {
+   "page": "fresh",
+   "t": 19.912,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"mvLQUMFD9SmfDU-HAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "fresh",
+   "t": 20.148,
+   "dir": "out",
+   "len": 283,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"738e1de2c3499822\",\"b084fc0c68f7c73a\",\"e23fa6aa4a6deaee\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/result\",\"asPath\":\"/result\"}}}"
+  },
+  {
+   "page": "fresh",
+   "t": 20.155,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"E8l395aIXitvynfnAAAF\"}"
+  },
+  {
+   "page": "fresh",
+   "t": 20.159,
+   "dir": "in",
+   "len": 1781,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8192\",\"origin\":\"http://localhost:3192\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"OIH4PRSr+lM0yuQjdsl3Og==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8192\",\"origin\":\"http://localhost:3192\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"OIH4PRSr+lM0yuQjdsl3Og==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3192\",\"path\":\"/result\",\"raw_path\":\"/result\",\"full_path\":\"http://localhost:3192/result\",\"full_raw_path\":\"http://localhost:3192/result\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/result\",\"rx_router_session_rx_state_\":{\"client_token\":\"7fd2fa4a-7616-4c1b-c1a3-aaf6b9ce747d\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"E8l395aIXitvynfnAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3192\",\"origin\":\"http://localhost:3192\",\"path\":\"/result\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3192/result\"}}}}]"
+  },
+  {
+   "page": "fresh",
+   "t": 20.164,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "notes": {
+  "code_block": {
+   "text": "a = [10, 20]\nb = a\nb += [30, 40]\nprint(a)",
+   "cls": "",
+   "spans": 28,
+   "colored": 16
+  },
+  "results_all_correct": [
+   [
+    "1",
+    "lucide-check css-bjcoli",
+    "\"False\"",
+    "\"False\""
+   ],
+   [
+    "2",
+    "lucide-check css-bjcoli",
+    "\"[10, 20, 30, 40]\"",
+    "\"[10, 20, 30, 40]\""
+   ],
+   [
+    "3",
+    "lucide-check css-bjcoli",
+    "[false,false,true,true,true]",
+    "[false,false,true,true,true]"
+   ]
+  ],
+  "results_one_wrong": [
+   [
+    "1",
+    "lucide-x css-tokvmb",
+    "\"True\"",
+    "\"False\""
+   ],
+   [
+    "2",
+    "lucide-check css-bjcoli",
+    "\"[10, 20, 30, 40]\"",
+    "\"[10, 20, 30, 40]\""
+   ],
+   [
+    "3",
+    "lucide-check css-bjcoli",
+    "[false,false,true,true,true]",
+    "[false,false,true,true,true]"
+   ]
+  ],
+  "checked_after_back": 0,
+  "results_after_back_submit": [
+   "0%",
+   [
+    [
+     "1",
+     "lucide-x css-tokvmb",
+     "null",
+     "\"False\""
+    ],
+    [
+     "2",
+     "lucide-x css-tokvmb",
+     "null",
+     "\"[10, 20, 30, 40]\""
+    ],
+    [
+     "3",
+     "lucide-x css-tokvmb",
+     "[false,false,false,false,false]",
+     "[false,false,true,true,true]"
+    ]
+   ]
+  ]
+ }
+}

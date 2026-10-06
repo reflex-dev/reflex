@@ -1,0 +1,243 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:3185
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrades_b/upload-012/rxconfig.py'
+Debug: Config: UploadConfig(app_name='upload', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3185', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'api_url', 'telemetry_enabled', 'plugins', 'app_name', 
+'loglevel', 'env'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/stable/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3185
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3185
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3185 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 3185 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 3185 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.06s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.2 (744846f84)
+Debug: 
+Debug: Checked 230 installs across 253 packages (no changes) [15.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', '@emotion/react@11.14.0', 'postcss@8.5.26', 'vite@8.2.2', 
+'autoprefixer@10.5.4', '@react-router/fs-routes@8.4.0', 'postcss-import@17.0.0',
+'@react-router/dev@8.4.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss@8.5.26
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-dom@19.2.8', '@react-router/node@8.4.0', 'react-helmet@6.1.0', 
+'isbot@5.2.2', 'socket.io-client@4.8.3', 'mergician@v2.0.2', 
+'react-error-boundary@6.1.2', 'react-dropzone@15.0.0', 'react-router@8.4.0', 
+'universal-cookie@8.1.2', 'lucide-react@1.26.0', '@radix-ui/themes@3.3.0', 
+'sonner@2.0.8', 'react@19.2.8']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: 
+Debug: installed react-dom@19.2.8
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-helmet@6.1.0
+Debug: installed isbot@5.2.2
+Debug: installed socket.io-client@4.8.3
+Debug: installed mergician@2.0.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-dropzone@15.0.0
+Debug: installed react-router@8.4.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed sonner@2.0.8
+Debug: installed react@19.2.8
+Debug: 
+Debug: [8.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/upgrades_b/upload-012/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/upgrades_b/upload-012/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 440 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             2.72 kB │ 
+gzip:  0.57 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-BgeWDlL6.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-DEKlLv-N.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/emotion-react.browser.esm-BUuhssUM.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-C2delMrB.js             36.83 kB │ 
+gzip: 12.81 kB
+Debug: build/client/assets/_index-btA4YkDn.js                      65.71 kB │ 
+gzip: 18.06 kB
+Debug: build/client/assets/components-DzQT6F3y.js                  86.48 kB │ 
+gzip: 28.62 kB
+Debug: build/client/assets/progress-CPFnXTPC.js                   126.41 kB │ 
+gzip: 37.51 kB
+Debug: build/client/assets/entry.client-dNVOKTyN.js               182.39 kB │ 
+gzip: 57.72 kB
+Debug: build/client/assets/root-CksIhdwq.js                       302.71 kB │ 
+gzip: 85.08 kB
+Debug: 
+Debug: ✓ built in 2.12s
+Debug: vite v8.2.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 26 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.77 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-BgeWDlL6.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     49.82 kB │ 
+gzip: 15.31 kB
+Debug: 
+Debug: ✓ built in 582ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/upgrades_b/upload-012/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/upgrades_b/upload-012/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3185/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 16313)
+[INFO] Listening at: http://0.0.0.0:3185
+[INFO] Spawning worker-1 with PID: 16557
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Got progress {'loaded': 388, 'total': 388, 'progress': 1}
+Got progress {'loaded': 1007, 'total': 1007, 'progress': 1}
+Got progress {'loaded': 12583114, 'total': 12583114, 'progress': 1}
+Got progress {'loaded': 49152, 'total': 6291658, 'progress': 0.0078122491718399184}
+Got progress {'loaded': 81920, 'total': 6291658, 'progress': 0.013020415286399864}
+Got progress {'loaded': 131072, 'total': 6291658, 'progress': 0.020832664458239784}
+Got progress {'loaded': 163840, 'total': 6291658, 'progress': 0.02604083057279973}
+Got progress {'loaded': 212992, 'total': 6291658, 'progress': 0.03385307974463965}
+Got progress {'loaded': 245760, 'total': 6291658, 'progress': 0.039061245859199595}
+Got progress {'loaded': 278528, 'total': 6291658, 'progress': 0.04426941197375954}
+Got progress {'loaded': 327680, 'total': 6291658, 'progress': 0.05208166114559946}
+Got progress {'loaded': 360448, 'total': 6291658, 'progress': 0.0572898272601594}
+Got progress {'loaded': 409600, 'total': 6291658, 'progress': 0.06510207643199932}
+Got progress {'loaded': 442368, 'total': 6291658, 'progress': 0.07031024254655927}
+Got progress {'loaded': 491520, 'total': 6291658, 'progress': 0.07812249171839919}
+Got progress {'loaded': 524288, 'total': 6291658, 'progress': 0.08333065783295913}
+Got progress {'loaded': 557056, 'total': 6291658, 'progress': 0.08853882394751908}
+Got progress {'loaded': 606208, 'total': 6291658, 'progress': 0.096351073119359}
+Got progress {'loaded': 638976, 'total': 6291658, 'progress': 0.10155923923391895}
+Got progress {'loaded': 688128, 'total': 6291658, 'progress': 0.10937148840575886}
+Got progress {'loaded': 720896, 'total': 6291658, 'progress': 0.1145796545203188}
+Got progress {'loaded': 770048, 'total': 6291658, 'progress': 0.12239190369215873}
+Got progress {'loaded': 802816, 'total': 6291658, 'progress': 0.12760006980671867}
+Got progress {'loaded': 835584, 'total': 6291658, 'progress': 0.13280823592127863}
+Got progress {'loaded': 884736, 'total': 6291658, 'progress': 0.14062048509311853}
+Got progress {'loaded': 917504, 'total': 6291658, 'progress': 0.1458286512076785}
+Got progress {'loaded': 966656, 'total': 6291658, 'progress': 0.1536409003795184}
+Got progress {'loaded': 999424, 'total': 6291658, 'progress': 0.15884906649407834}
+Got progress {'loaded': 1032192, 'total': 6291658, 'progress': 0.1640572326086383}
+Got progress {'loaded': 1081344, 'total': 6291658, 'progress': 0.1718694817804782}
+Got progress {'loaded': 1114112, 'total': 6291658, 'progress': 0.17707764789503816}
+Got progress {'loaded': 1163264, 'total': 6291658, 'progress': 0.18488989706687808}
+Got progress {'loaded': 1196032, 'total': 6291658, 'progress': 0.19009806318143802}
+Got progress {'loaded': 1228800, 'total': 6291658, 'progress': 0.19530622929599797}
+Got progress {'loaded': 1277952, 'total': 6291658, 'progress': 0.2031184784678379}
+Got progress {'loaded': 1310720, 'total': 6291658, 'progress': 0.20832664458239783}
+Got progress {'loaded': 1359872, 'total': 6291658, 'progress': 0.21613889375423775}
+Got progress {'loaded': 218, 'total': 218, 'progress': 1}
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 2 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 2 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

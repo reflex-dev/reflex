@@ -1,0 +1,401 @@
+{
+ "tag": "lc-hotedit-0912",
+ "results": [
+  {
+   "name": "baseline greeting with State.who=QA",
+   "status": "pass",
+   "detail": "Hello QA!",
+   "t": 5.277
+  },
+  {
+   "name": "edit hello.jsx -> running page shows the change (State.who kept)",
+   "status": "pass",
+   "detail": "after 0.52s, full_reload=False, text=Howdy QA!",
+   "t": 5.801
+  },
+  {
+   "name": "revert hello.jsx -> page shows the original again",
+   "status": "pass",
+   "detail": "after 1.08s full_reload=False",
+   "t": 6.942
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 7.212
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 7.212
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 3.446,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 3.844,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 3.943,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 4.102,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 5.632,
+   "type": "debug",
+   "text": "[vite] hot updated: /public/external/local_component/hello/hello.jsx?v=0ebba69a"
+  },
+  {
+   "page": "main",
+   "t": 5.638,
+   "type": "debug",
+   "text": "[vite] hot updated: /public/external/local_component/hello/hello.jsx?v=0ebba69a"
+  },
+  {
+   "page": "main",
+   "t": 6.103,
+   "type": "debug",
+   "text": "[vite] invalidate /app_components/local_component/local_component.jsx: Could not Fast Refresh (export removed)"
+  },
+  {
+   "page": "main",
+   "t": 6.104,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/local_component/local_component.jsx"
+  },
+  {
+   "page": "main",
+   "t": 6.136,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/local_component/local_component.jsx"
+  },
+  {
+   "page": "main",
+   "t": 6.137,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "page": "main",
+   "t": 6.138,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "page": "main",
+   "t": 6.164,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "page": "main",
+   "t": 6.563,
+   "type": "debug",
+   "text": "[vite] hot updated: /public/external/local_component/hello/hello.jsx?v=0ebba69a"
+  },
+  {
+   "page": "main",
+   "t": 6.645,
+   "type": "debug",
+   "text": "[vite] hot updated: /public/external/local_component/hello/hello.jsx?v=d0664f8f"
+  },
+  {
+   "page": "main",
+   "t": 6.655,
+   "type": "debug",
+   "text": "[vite] hot updated: /public/external/local_component/hello/hello.jsx?v=0ebba69a"
+  },
+  {
+   "page": "main",
+   "t": 6.655,
+   "type": "debug",
+   "text": "[vite] hot updated: /public/external/local_component/hello/hello.jsx?v=d0664f8f"
+  },
+  {
+   "page": "main",
+   "t": 6.701,
+   "type": "debug",
+   "text": "[vite] invalidate /app_components/local_component/local_component.jsx: Could not Fast Refresh (export removed)"
+  },
+  {
+   "page": "main",
+   "t": 6.701,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/local_component/local_component.jsx"
+  },
+  {
+   "page": "main",
+   "t": 6.704,
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/local_component/local_component.jsx"
+  },
+  {
+   "page": "main",
+   "t": 6.722,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "page": "main",
+   "t": 6.727,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  },
+  {
+   "page": "main",
+   "t": 6.73,
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/_index.jsx"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 4.198,
+   "dir": "open",
+   "payload": "ws://localhost:8196/_event/?token=5ce0e780-3bdf-4a32-ec5f-b5892951085d&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 4.208,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"uTqMGPApTXtuLmyvAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 4.208,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 4.235,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"a_D_v0uD0q6ot27bAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 4.236,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.236,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.249,
+   "dir": "in",
+   "len": 2233,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8196\",\"origin\":\"http://localhost:3196\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"2wg91GqVusie2FR8roBExQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8196\",\"origin\":\"http://localhost:3196\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"2wg91GqVusie2FR8roBExQ==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3196\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3196/index\",\"full_raw_path\":\"http://localhost:3196/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"5ce0e780-3bdf-4a32-ec5f-b5892951085d\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"a_D_v0uD0q6ot27bAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3196\",\"origin\":\"http://localhost:3196\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3196/\"}},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.local_component___local_component____state\":{\"open_rx_state_\":false,\"saved_value_rx_state_\":\"\",\"who_rx_state_\":\"world\"},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.25,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.408,
+   "dir": "out",
+   "len": 184,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.local_component___local_component____state.handle_open_change\",\"payload\":{\"open\":true},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.987,
+   "dir": "in",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.local_component___local_component____state\":{\"saved_value_rx_state_\":\"world\",\"open_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.209,
+   "dir": "out",
+   "len": 172,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.local_component___local_component____state.set_who\",\"payload\":{\"who\":\"QA\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.212,
+   "dir": "in",
+   "len": 123,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.local_component___local_component____state\":{\"who_rx_state_\":\"QA\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.247,
+   "dir": "out",
+   "len": 192,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.local_component___local_component____state.handle_submit\",\"payload\":{\"form_data\":{\"who\":\"QA\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.27,
+   "dir": "in",
+   "len": 175,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.local_component___local_component____state\":{\"saved_value_rx_state_\":\"QA\",\"open_rx_state_\":false,\"who_rx_state_\":\"QA\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.403,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 5.404,
+   "dir": "open",
+   "payload": "ws://localhost:8196/_event/?token=5ce0e780-3bdf-4a32-ec5f-b5892951085d&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 5.724,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"4FqJoHN_TGv1IrQFAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 5.724,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 5.724,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"iQvpQLgMzbMD7-oiAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 5.724,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.724,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.728,
+   "dir": "in",
+   "len": 2232,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8196\",\"origin\":\"http://localhost:3196\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"10eT0u+JgPjaY4gT1Q7FGw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8196\",\"origin\":\"http://localhost:3196\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"10eT0u+JgPjaY4gT1Q7FGw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3196\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3196/index\",\"full_raw_path\":\"http://localhost:3196/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"5ce0e780-3bdf-4a32-ec5f-b5892951085d\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"iQvpQLgMzbMD7-oiAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3196\",\"origin\":\"http://localhost:3196\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3196/\"}},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.local_component___local_component____state\":{\"open_rx_state_\":false,\"saved_value_rx_state_\":\"QA\",\"who_rx_state_\":\"QA\"},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.728,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.095,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 6.095,
+   "dir": "open",
+   "payload": "ws://localhost:8196/_event/?token=5ce0e780-3bdf-4a32-ec5f-b5892951085d&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 6.618,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"VeX8kt4Y1CqqiwFHAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 6.618,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 6.622,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"jw6qKlqA7YtRJGZeAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 6.623,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.623,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.627,
+   "dir": "in",
+   "len": 2232,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8196\",\"origin\":\"http://localhost:3196\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"2/xbHRlg9s9XfgnFhJe5gA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8196\",\"origin\":\"http://localhost:3196\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"2/xbHRlg9s9XfgnFhJe5gA==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3196\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3196/index\",\"full_raw_path\":\"http://localhost:3196/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"5ce0e780-3bdf-4a32-ec5f-b5892951085d\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jw6qKlqA7YtRJGZeAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3196\",\"origin\":\"http://localhost:3196\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3196/\"}},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.local_component___local_component____state\":{\"open_rx_state_\":false,\"saved_value_rx_state_\":\"QA\",\"who_rx_state_\":\"QA\"},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.642,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "notes": {
+  "edit": {
+   "seconds": 0.52,
+   "full_reload": false
+  },
+  "revert": {
+   "seconds": 1.08
+  }
+ }
+}

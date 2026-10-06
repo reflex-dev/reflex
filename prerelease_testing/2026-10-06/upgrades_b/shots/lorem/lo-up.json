@@ -1,0 +1,1128 @@
+{
+ "tag": "lo-up",
+ "results": [
+  {
+   "name": "A: page loads with no tasks",
+   "status": "pass",
+   "detail": "[]",
+   "t": 3.296
+  },
+  {
+   "name": "B: 3 task cards appear (task_ids newest first)",
+   "status": "pass",
+   "detail": "[{'id': '2', 'len': 20, 'toggle': '\u23ef\ufe0f', 'now': '1', 'max': '7'}, {'id': '1', 'len': 14, 'toggle': '\u23ef\ufe0f', 'now': '1', 'max': '7'}, {'id': '0', 'len': 22, 'toggle': '\u23ef\ufe0f', 'now': '1', 'max': '10'}]",
+   "t": 4.259
+  },
+  {
+   "name": "C: all 3 stream concurrently (text grows over 2 s)",
+   "status": "pass",
+   "detail": "{'2': 20, '1': 14, '0': 22} -> {'2': 114, '1': 116, '0': 101}",
+   "t": 6.286
+  },
+  {
+   "name": "D: all 3 run to completion (\ud83d\udd04, progress == max)",
+   "status": "pass",
+   "detail": "[{'id': '2', 'len': 149, 'toggle': '\ud83d\udd04', 'now': '7', 'max': '7'}, {'id': '1', 'len': 156, 'toggle': '\ud83d\udd04', 'now': '7', 'max': '7'}, {'id': '0', 'len': 220, 'toggle': '\ud83d\udd04', 'now': '10', 'max': '10'}]",
+   "t": 8.467
+  },
+  {
+   "name": "E: restart a completed task resets and streams again",
+   "status": "pass",
+   "detail": "{'id': '1', 'len': 156, 'toggle': '\ud83d\udd04', 'now': '7', 'max': '7'} -> {'id': '1', 'len': 39, 'toggle': '\u23ef\ufe0f', 'now': '2', 'max': '8'}",
+   "t": 9.897
+  },
+  {
+   "name": "F: paused task stops streaming",
+   "status": "pass",
+   "detail": "{'id': '1', 'len': 39, 'toggle': '\u23ef\ufe0f', 'now': '2', 'max': '8'} -> {'id': '1', 'len': 39, 'toggle': '\u23ef\ufe0f', 'now': '2', 'max': '8'}",
+   "t": 13.121
+  },
+  {
+   "name": "G: resumed task streams again",
+   "status": "pass",
+   "detail": "39 -> 113",
+   "t": 14.646
+  },
+  {
+   "name": "G2: resumed task completes",
+   "status": "pass",
+   "detail": "{'id': '1', 'len': 182, 'toggle': '\ud83d\udd04', 'now': '8', 'max': '8'}",
+   "t": 16.334
+  },
+  {
+   "name": "H: kill removes the card",
+   "status": "pass",
+   "detail": "['2', '1']",
+   "t": 16.349
+  },
+  {
+   "name": "I: after reload mid-stream the running bg tasks keep streaming into the tab",
+   "status": "pass",
+   "detail": "before reload {'4': 44, '3': 78, '2': 149, '1': 182}; {'4': 70, '3': 78, '2': 149, '1': 182} -> {'4': 130, '3': 175, '2': 149, '1': 182}",
+   "t": 20.034
+  },
+  {
+   "name": "I2: streams started before the reload complete (progress == max)",
+   "status": "pass",
+   "detail": "{'4': ('9', '9'), '3': ('9', '9'), '2': ('7', '7'), '1': ('8', '8')}",
+   "t": 21.275
+  },
+  {
+   "name": "J: 2nd tab has its own token and an empty task list",
+   "status": "pass",
+   "detail": "tok1=f99a3424-933c-465c-e06f-3753568a08d2 tok2=fcea0e36-1cb9-4bac-e251-a69b8a62ab92 tasks=[]",
+   "t": 23.088
+  },
+  {
+   "name": "J2: 2nd tab streams its own task; tab 1 unaffected",
+   "status": "pass",
+   "detail": "tab2=[{'id': '0', 'len': 98, 'toggle': '\u23ef\ufe0f', 'now': '4', 'max': '7'}] tab1_count=4",
+   "t": 25.282
+  },
+  {
+   "name": "K: duplicated-token tab gets a new_token and its own (empty) state",
+   "status": "pass",
+   "detail": "tok3=3f378b67-4aa5-470d-b9bb-aa247e95b7e6 same_as_tab1=False tasks=[]",
+   "t": 28.257
+  },
+  {
+   "name": "K2: tab 1 still works after the duplicate connected",
+   "status": "pass",
+   "detail": "5 tasks, tok=True",
+   "t": 30.425
+  },
+  {
+   "name": "K3: duplicated tab shows none of tab 1's tasks afterwards",
+   "status": "pass",
+   "detail": "[]",
+   "t": 30.43
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 31.28
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 31.28
+  }
+ ],
+ "console": [
+  {
+   "page": "tab1",
+   "t": 1.839,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "tab1",
+   "t": 1.997,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "tab1",
+   "t": 2.044,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "tab1",
+   "t": 2.176,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "tab1",
+   "t": 18.127,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "tab1",
+   "t": 18.212,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "tab1",
+   "t": 18.298,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "tab1",
+   "t": 18.363,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "tab1",
+   "t": 18.367,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "tab2",
+   "t": 21.503,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "tab2",
+   "t": 21.672,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "tab2",
+   "t": 21.723,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "tab2",
+   "t": 21.898,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "dup",
+   "t": 25.513,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "dup",
+   "t": 25.793,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "dup",
+   "t": 25.829,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "dup",
+   "t": 26.086,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "tab1",
+   "t": 2.043,
+   "dir": "open",
+   "payload": "ws://localhost:8186/_event/?token=f99a3424-933c-465c-e06f-3753568a08d2&EIO=4&transport=websocket"
+  },
+  {
+   "page": "tab1",
+   "t": 2.044,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"jzvtFQ-VsNRKKF2vAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "tab1",
+   "t": 2.22,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"bc0936c1bd4529aa\",\"b084fc0c68f7c73a\",\"458c7fa65d057130\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "tab1",
+   "t": 2.226,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"v3Su3re8y2MFds6oAAAB\"}"
+  },
+  {
+   "page": "tab1",
+   "t": 2.229,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8186\",\"origin\":\"http://localhost:3186\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"jHV/xdmOx7AidzWYwxniQQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8186\",\"origin\":\"http://localhost:3186\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"jHV/xdmOx7AidzWYwxniQQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3186\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3186/index\",\"full_raw_path\":\"http://localhost:3186/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"f99a3424-933c-465c-e06f-3753568a08d2\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"v3Su3re8y2MFds6oAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3186\",\"origin\":\"http://localhost:3186\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3186/\"}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 2.231,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 3.321,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.stream_text\",\"payload\":{\"task_id\":-1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 3.328,
+   "dir": "in",
+   "len": 130,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"end_at_rx_state_\":{\"0\":10}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 3.328,
+   "dir": "in",
+   "len": 133,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"0\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 3.498,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.stream_text\",\"payload\":{\"task_id\":-1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 3.512,
+   "dir": "in",
+   "len": 136,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"end_at_rx_state_\":{\"0\":10,\"1\":7}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 3.512,
+   "dir": "in",
+   "len": 142,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"0\":true,\"1\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 3.67,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.stream_text\",\"payload\":{\"task_id\":-1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 3.677,
+   "dir": "in",
+   "len": 142,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"end_at_rx_state_\":{\"0\":10,\"1\":7,\"2\":7}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 3.679,
+   "dir": "in",
+   "len": 151,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"0\":true,\"1\":true,\"2\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 3.828,
+   "dir": "in",
+   "len": 205,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae \"},\"progress_rx_state_\":{\"0\":1},\"task_ids_rx_state_\":[0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 4.003,
+   "dir": "in",
+   "len": 235,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae \",\"1\":\"non cumque sit \"},\"progress_rx_state_\":{\"0\":1,\"1\":1},\"task_ids_rx_state_\":[1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 4.184,
+   "dir": "in",
+   "len": 271,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae \",\"1\":\"non cumque sit \",\"2\":\"atque eaque expedita \"},\"progress_rx_state_\":{\"0\":1,\"1\":1,\"2\":1},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 4.339,
+   "dir": "in",
+   "len": 295,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt \",\"1\":\"non cumque sit \",\"2\":\"atque eaque expedita \"},\"progress_rx_state_\":{\"0\":2,\"1\":1,\"2\":1},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 4.51,
+   "dir": "in",
+   "len": 316,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt \",\"1\":\"non cumque sit quidem impedit dolor \",\"2\":\"atque eaque expedita \"},\"progress_rx_state_\":{\"0\":2,\"1\":2,\"2\":1},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 4.679,
+   "dir": "in",
+   "len": 342,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt \",\"1\":\"non cumque sit quidem impedit dolor \",\"2\":\"atque eaque expedita doloremque velit incidunt \"},\"progress_rx_state_\":{\"0\":2,\"1\":2,\"2\":2},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 4.834,
+   "dir": "in",
+   "len": 360,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit \",\"1\":\"non cumque sit quidem impedit dolor \",\"2\":\"atque eaque expedita doloremque velit incidunt \"},\"progress_rx_state_\":{\"0\":3,\"1\":2,\"2\":2},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 5.011,
+   "dir": "in",
+   "len": 389,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam \",\"2\":\"atque eaque expedita doloremque velit incidunt \"},\"progress_rx_state_\":{\"0\":3,\"1\":3,\"2\":2},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 5.184,
+   "dir": "in",
+   "len": 416,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus \"},\"progress_rx_state_\":{\"0\":3,\"1\":3,\"2\":3},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 5.333,
+   "dir": "in",
+   "len": 432,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus \"},\"progress_rx_state_\":{\"0\":4,\"1\":3,\"2\":3},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 5.508,
+   "dir": "in",
+   "len": 462,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus \"},\"progress_rx_state_\":{\"0\":4,\"1\":4,\"2\":3},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 5.692,
+   "dir": "in",
+   "len": 477,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem \"},\"progress_rx_state_\":{\"0\":4,\"1\":4,\"2\":4},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 5.84,
+   "dir": "in",
+   "len": 498,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem \"},\"progress_rx_state_\":{\"0\":5,\"1\":4,\"2\":4},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 6.009,
+   "dir": "in",
+   "len": 520,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem \"},\"progress_rx_state_\":{\"0\":5,\"1\":5,\"2\":4},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 6.197,
+   "dir": "in",
+   "len": 546,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto \"},\"progress_rx_state_\":{\"0\":5,\"1\":5,\"2\":5},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 6.4,
+   "dir": "in",
+   "len": 571,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto \"},\"progress_rx_state_\":{\"0\":6,\"1\":5,\"2\":5},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 6.52,
+   "dir": "in",
+   "len": 586,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus vero quam illo \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto \"},\"progress_rx_state_\":{\"0\":6,\"1\":6,\"2\":5},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 6.704,
+   "dir": "in",
+   "len": 606,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus vero quam illo \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam \"},\"progress_rx_state_\":{\"0\":6,\"1\":6,\"2\":6},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 6.847,
+   "dir": "in",
+   "len": 627,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus vero quam illo \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam \"},\"progress_rx_state_\":{\"0\":7,\"1\":6,\"2\":6},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 7.022,
+   "dir": "in",
+   "len": 652,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus vero quam illo voluptatem ratione nihil \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam \"},\"progress_rx_state_\":{\"0\":7,\"1\":7,\"2\":6},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 7.028,
+   "dir": "in",
+   "len": 142,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"0\":true,\"2\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 7.201,
+   "dir": "in",
+   "len": 667,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus vero quam illo voluptatem ratione nihil \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":7,\"1\":7,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 7.206,
+   "dir": "in",
+   "len": 133,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"0\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 7.349,
+   "dir": "in",
+   "len": 696,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus vero quam illo voluptatem ratione nihil \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":8,\"1\":7,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 7.846,
+   "dir": "in",
+   "len": 723,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus vero quam illo voluptatem ratione nihil \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":9,\"1\":7,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 8.357,
+   "dir": "in",
+   "len": 741,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem vero facere sunt \",\"1\":\"non cumque sit quidem impedit dolor ratione laudantium quibusdam aspernatur exercitationem eum voluptatum a possimus vero quam illo voluptatem ratione nihil \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":10,\"1\":7,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 8.357,
+   "dir": "in",
+   "len": 125,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 8.472,
+   "dir": "out",
+   "len": 180,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.toggle_running\",\"payload\":{\"task_id\":1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 8.488,
+   "dir": "in",
+   "len": 624,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem vero facere sunt \",\"1\":\"\",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":10,\"1\":0,\"2\":7},\"end_at_rx_state_\":{\"0\":10,\"1\":8,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 8.488,
+   "dir": "in",
+   "len": 133,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"1\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 8.984,
+   "dir": "in",
+   "len": 609,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem vero facere sunt \",\"1\":\"vitae obcaecati quisquam \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":10,\"1\":1,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 9.482,
+   "dir": "in",
+   "len": 624,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem vero facere sunt \",\"1\":\"vitae obcaecati quisquam quam amet quae \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":10,\"1\":2,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 9.908,
+   "dir": "out",
+   "len": 180,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.toggle_running\",\"payload\":{\"task_id\":1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 9.914,
+   "dir": "in",
+   "len": 134,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"1\":false}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 13.125,
+   "dir": "out",
+   "len": 180,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.toggle_running\",\"payload\":{\"task_id\":1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 13.134,
+   "dir": "in",
+   "len": 133,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"1\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 13.634,
+   "dir": "in",
+   "len": 652,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem vero facere sunt \",\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":10,\"1\":3,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 14.136,
+   "dir": "in",
+   "len": 678,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem vero facere sunt \",\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":10,\"1\":4,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 14.642,
+   "dir": "in",
+   "len": 698,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem vero facere sunt \",\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":10,\"1\":5,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 15.145,
+   "dir": "in",
+   "len": 718,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem vero facere sunt \",\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":10,\"1\":6,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 15.655,
+   "dir": "in",
+   "len": 741,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem vero facere sunt \",\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":10,\"1\":7,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.158,
+   "dir": "in",
+   "len": 767,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"a voluptate recusandae voluptates aperiam sunt magni id suscipit iusto omnis aut iusto corporis neque aliquam nisi repudiandae cupiditate quo quasi beatae voluptatem doloremque amet laboriosam voluptatem vero facere sunt \",\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7},\"task_ids_rx_state_\":[2,1,0]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.164,
+   "dir": "in",
+   "len": 125,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.343,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.kill\",\"payload\":{\"task_id\":0},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.343,
+   "dir": "in",
+   "len": 518,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \"},\"running_rx_state_\":{},\"task_ids_rx_state_\":[2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.471,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.stream_text\",\"payload\":{\"task_id\":-1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.477,
+   "dir": "in",
+   "len": 148,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"end_at_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.484,
+   "dir": "in",
+   "len": 133,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"3\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.666,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.stream_text\",\"payload\":{\"task_id\":-1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.681,
+   "dir": "in",
+   "len": 154,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"end_at_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9,\"4\":9}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.683,
+   "dir": "in",
+   "len": 142,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"3\":true,\"4\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 16.975,
+   "dir": "in",
+   "len": 581,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":1},\"task_ids_rx_state_\":[3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 17.173,
+   "dir": "in",
+   "len": 621,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto \",\"4\":\"amet illo exercitationem \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":1,\"4\":1},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 17.497,
+   "dir": "in",
+   "len": 642,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque \",\"4\":\"amet illo exercitationem \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":2,\"4\":1},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 17.685,
+   "dir": "in",
+   "len": 662,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque \",\"4\":\"amet illo exercitationem sed eveniet commodi \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":2,\"4\":2},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 18.007,
+   "dir": "in",
+   "len": 691,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque \",\"4\":\"amet illo exercitationem sed eveniet commodi \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":3,\"4\":2},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 18.129,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "tab1",
+   "t": 18.129,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "tab1",
+   "t": 18.354,
+   "dir": "open",
+   "payload": "ws://localhost:8186/_event/?token=f99a3424-933c-465c-e06f-3753568a08d2&EIO=4&transport=websocket"
+  },
+  {
+   "page": "tab1",
+   "t": 18.364,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"ST_cJGae9ia_E6xOAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "tab1",
+   "t": 18.404,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"bc0936c1bd4529aa\",\"b084fc0c68f7c73a\",\"458c7fa65d057130\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "tab1",
+   "t": 18.405,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Upk-8cm0yLULDHuFAAAD\"}"
+  },
+  {
+   "page": "tab1",
+   "t": 18.414,
+   "dir": "in",
+   "len": 2532,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8186\",\"origin\":\"http://localhost:3186\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ulolCFMhRYkpYMVVUyEUmA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8186\",\"origin\":\"http://localhost:3186\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"ulolCFMhRYkpYMVVUyEUmA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3186\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3186/index\",\"full_raw_path\":\"http://localhost:3186/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"f99a3424-933c-465c-e06f-3753568a08d2\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Upk-8cm0yLULDHuFAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3186\",\"origin\":\"http://localhost:3186\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3186/\"}},\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"end_at_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9,\"4\":9},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":3,\"4\":3},\"running_rx_state_\":{\"3\":true,\"4\":true},\"task_ids_rx_state_\":[4,3,2,1],\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui \"}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 18.414,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 18.494,
+   "dir": "in",
+   "len": 744,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":4,\"4\":3},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 18.685,
+   "dir": "in",
+   "len": 768,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":4,\"4\":4},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 19.007,
+   "dir": "in",
+   "len": 787,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":5,\"4\":4},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 19.191,
+   "dir": "in",
+   "len": 808,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":5,\"4\":5},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 19.504,
+   "dir": "in",
+   "len": 833,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":6,\"4\":5},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 19.698,
+   "dir": "in",
+   "len": 848,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":6,\"4\":6},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 20.017,
+   "dir": "in",
+   "len": 874,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":7,\"4\":6},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 20.19,
+   "dir": "in",
+   "len": 892,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste minima quia autem \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":7,\"4\":7},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 20.511,
+   "dir": "in",
+   "len": 914,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates aliquid excepturi sit \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste minima quia autem \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":8,\"4\":7},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 20.698,
+   "dir": "in",
+   "len": 943,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates aliquid excepturi sit \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste minima quia autem excepturi ducimus cupiditate \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":8,\"4\":8},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 21.023,
+   "dir": "in",
+   "len": 971,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates aliquid excepturi sit mollitia dolore repudiandae \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste minima quia autem excepturi ducimus cupiditate \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9,\"4\":8},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 21.028,
+   "dir": "in",
+   "len": 133,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"4\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 21.207,
+   "dir": "in",
+   "len": 991,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates aliquid excepturi sit mollitia dolore repudiandae \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste minima quia autem excepturi ducimus cupiditate quae alias pariatur \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9,\"4\":9},\"task_ids_rx_state_\":[4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 21.215,
+   "dir": "in",
+   "len": 125,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{}}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 21.723,
+   "dir": "open",
+   "payload": "ws://localhost:8186/_event/?token=fcea0e36-1cb9-4bac-e251-a69b8a62ab92&EIO=4&transport=websocket"
+  },
+  {
+   "page": "tab2",
+   "t": 21.723,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"yK3bSqn1BmAQK3xGAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "tab2",
+   "t": 21.941,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"bc0936c1bd4529aa\",\"b084fc0c68f7c73a\",\"458c7fa65d057130\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "tab2",
+   "t": 21.953,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"0Y1eICXlu1dF3BvXAAAF\"}"
+  },
+  {
+   "page": "tab2",
+   "t": 21.971,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8186\",\"origin\":\"http://localhost:3186\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UPHkvTRAYZA6Pc9tJcluoQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8186\",\"origin\":\"http://localhost:3186\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UPHkvTRAYZA6Pc9tJcluoQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3186\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3186/index\",\"full_raw_path\":\"http://localhost:3186/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"fcea0e36-1cb9-4bac-e251-a69b8a62ab92\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"0Y1eICXlu1dF3BvXAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3186\",\"origin\":\"http://localhost:3186\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3186/\"}}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 21.971,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 23.121,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.stream_text\",\"payload\":{\"task_id\":-1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 23.127,
+   "dir": "in",
+   "len": 129,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"end_at_rx_state_\":{\"0\":7}}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 23.128,
+   "dir": "in",
+   "len": 133,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"0\":true}}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 23.649,
+   "dir": "in",
+   "len": 206,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"nam voluptates quisquam \"},\"progress_rx_state_\":{\"0\":1},\"task_ids_rx_state_\":[0]}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 24.128,
+   "dir": "in",
+   "len": 233,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"nam voluptates quisquam voluptates similique totam \"},\"progress_rx_state_\":{\"0\":2},\"task_ids_rx_state_\":[0]}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 24.654,
+   "dir": "in",
+   "len": 255,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"nam voluptates quisquam voluptates similique totam sapiente quae debitis \"},\"progress_rx_state_\":{\"0\":3},\"task_ids_rx_state_\":[0]}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 25.2,
+   "dir": "in",
+   "len": 281,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"nam voluptates quisquam voluptates similique totam sapiente quae debitis adipisci harum voluptatum \"},\"progress_rx_state_\":{\"0\":4},\"task_ids_rx_state_\":[0]}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 25.736,
+   "dir": "in",
+   "len": 311,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"nam voluptates quisquam voluptates similique totam sapiente quae debitis adipisci harum voluptatum reprehenderit voluptate animi \"},\"progress_rx_state_\":{\"0\":5},\"task_ids_rx_state_\":[0]}}}]"
+  },
+  {
+   "page": "dup",
+   "t": 25.798,
+   "dir": "open",
+   "payload": "ws://localhost:8186/_event/?token=f99a3424-933c-465c-e06f-3753568a08d2&EIO=4&transport=websocket"
+  },
+  {
+   "page": "dup",
+   "t": 25.832,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"x6o6fArLmzCvrg9PAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "dup",
+   "t": 26.184,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"bc0936c1bd4529aa\",\"b084fc0c68f7c73a\",\"458c7fa65d057130\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "dup",
+   "t": 26.222,
+   "dir": "in",
+   "len": 62,
+   "payload": "42/_event,[\"new_token\",\"3f378b67-4aa5-470d-b9bb-aa247e95b7e6\"]"
+  },
+  {
+   "page": "dup",
+   "t": 26.223,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"E_VgS3j7onQyMPpBAAAH\"}"
+  },
+  {
+   "page": "dup",
+   "t": 26.223,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8186\",\"origin\":\"http://localhost:3186\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"qgiarwaGOUWRcwXUQGX/wQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8186\",\"origin\":\"http://localhost:3186\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"qgiarwaGOUWRcwXUQGX/wQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3186\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3186/index\",\"full_raw_path\":\"http://localhost:3186/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"3f378b67-4aa5-470d-b9bb-aa247e95b7e6\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"E_VgS3j7onQyMPpBAAAH\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3186\",\"origin\":\"http://localhost:3186\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3186/\"}}}}]"
+  },
+  {
+   "page": "dup",
+   "t": 26.223,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 26.223,
+   "dir": "in",
+   "len": 329,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"nam voluptates quisquam voluptates similique totam sapiente quae debitis adipisci harum voluptatum reprehenderit voluptate animi id deserunt earum \"},\"progress_rx_state_\":{\"0\":6},\"task_ids_rx_state_\":[0]}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 26.726,
+   "dir": "in",
+   "len": 355,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"0\":\"nam voluptates quisquam voluptates similique totam sapiente quae debitis adipisci harum voluptatum reprehenderit voluptate animi id deserunt earum quidem cupiditate dolores \"},\"progress_rx_state_\":{\"0\":7},\"task_ids_rx_state_\":[0]}}}]"
+  },
+  {
+   "page": "tab2",
+   "t": 26.726,
+   "dir": "in",
+   "len": 125,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 28.283,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lorem_stream___lorem_stream____lorem_state.stream_text\",\"payload\":{\"task_id\":-1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 28.293,
+   "dir": "in",
+   "len": 160,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"end_at_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9,\"4\":9,\"5\":7}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 28.295,
+   "dir": "in",
+   "len": 133,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"running_rx_state_\":{\"5\":true}}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 28.794,
+   "dir": "in",
+   "len": 1020,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates aliquid excepturi sit mollitia dolore repudiandae \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste minima quia autem excepturi ducimus cupiditate quae alias pariatur \",\"5\":\"ea sint omnis \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9,\"4\":9,\"5\":1},\"task_ids_rx_state_\":[5,4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 29.292,
+   "dir": "in",
+   "len": 1040,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates aliquid excepturi sit mollitia dolore repudiandae \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste minima quia autem excepturi ducimus cupiditate quae alias pariatur \",\"5\":\"ea sint omnis quibusdam sit minus \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9,\"4\":9,\"5\":2},\"task_ids_rx_state_\":[5,4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 29.796,
+   "dir": "in",
+   "len": 1062,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates aliquid excepturi sit mollitia dolore repudiandae \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste minima quia autem excepturi ducimus cupiditate quae alias pariatur \",\"5\":\"ea sint omnis quibusdam sit minus porro quia distinctio \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9,\"4\":9,\"5\":3},\"task_ids_rx_state_\":[5,4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 30.302,
+   "dir": "in",
+   "len": 1082,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates aliquid excepturi sit mollitia dolore repudiandae \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste minima quia autem excepturi ducimus cupiditate quae alias pariatur \",\"5\":\"ea sint omnis quibusdam sit minus porro quia distinctio nemo eligendi error \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9,\"4\":9,\"5\":4},\"task_ids_rx_state_\":[5,4,3,2,1]}}}]"
+  },
+  {
+   "page": "tab1",
+   "t": 30.802,
+   "dir": "in",
+   "len": 1101,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lorem_stream___lorem_stream____lorem_state\":{\"text_rx_state_\":{\"1\":\"vitae obcaecati quisquam quam amet quae sed reprehenderit quibusdam temporibus pariatur ipsam saepe veniam labore doloribus nemo quae veniam similique dolor veniam molestias voluptas \",\"2\":\"atque eaque expedita doloremque velit incidunt voluptatum doloribus minus harum quia rem deleniti atque architecto a officiis quisquam ut et repellat \",\"3\":\"labore recusandae architecto officiis natus atque pariatur voluptatibus itaque distinctio velit provident inventore est modi exercitationem animi hic quibusdam odit voluptates aliquid excepturi sit mollitia dolore repudiandae \",\"4\":\"amet illo exercitationem sed eveniet commodi beatae necessitatibus qui repellat eaque possimus iusto itaque eveniet hic dolor iste minima quia autem excepturi ducimus cupiditate quae alias pariatur \",\"5\":\"ea sint omnis quibusdam sit minus porro quia distinctio nemo eligendi error odio itaque maxime \"},\"progress_rx_state_\":{\"0\":10,\"1\":8,\"2\":7,\"3\":9,\"4\":9,\"5\":5},\"task_ids_rx_state_\":[5,4,3,2,1]}}}]"
+  }
+ ],
+ "notes": {
+  "after_reload_tasks": [
+   {
+    "id": "4",
+    "len": 70,
+    "toggle": "\u23ef\ufe0f",
+    "now": "3",
+    "max": "9"
+   },
+   {
+    "id": "3",
+    "len": 78,
+    "toggle": "\u23ef\ufe0f",
+    "now": "3",
+    "max": "9"
+   },
+   {
+    "id": "2",
+    "len": 149,
+    "toggle": "\ud83d\udd04",
+    "now": "7",
+    "max": "7"
+   },
+   {
+    "id": "1",
+    "len": 182,
+    "toggle": "\ud83d\udd04",
+    "now": "8",
+    "max": "8"
+   }
+  ],
+  "dup_tab": {
+   "tok1": "f99a3424-933c-465c-e06f-3753568a08d2",
+   "tok3": "3f378b67-4aa5-470d-b9bb-aa247e95b7e6",
+   "tasks": []
+  }
+ }
+}

@@ -1,0 +1,2055 @@
+{
+ "tag": "mc-0912",
+ "results": [
+  {
+   "name": "two concurrent throttled uploads (C, D) both land intact",
+   "status": "pass",
+   "detail": "{'mc_c.bin': True, 'mc_d.bin': True}",
+   "t": 21.73
+  },
+  {
+   "name": "disconnected uploader A leaves no partial file",
+   "status": "pass",
+   "detail": "False",
+   "t": 21.73
+  },
+  {
+   "name": "pinger B: every ping processed (none lost) while others upload / disconnect",
+   "status": "pass",
+   "detail": "pings 0->24 max_latency=0.624s latencies=[0.624, 0.062, 0.04, 0.077, 0.094, 0.044, 0.092, 0.084, 0.075, 0.055, 0.083, 0.082, 0.087, 0.087, 0.077, 0.077, 0.082, 0.072, 0.079, 0.089, 0.08, 0.082, 0.072, 0.079]",
+   "t": 21.736
+  },
+  {
+   "name": "uploader C UI returns to idle (no 'Uploading...')",
+   "status": "pass",
+   "detail": "100",
+   "t": 21.743
+  },
+  {
+   "name": "uploader C can still send events after its upload",
+   "status": "pass",
+   "detail": "1",
+   "t": 21.87
+  },
+  {
+   "name": "uploader D UI returns to idle (no 'Uploading...')",
+   "status": "pass",
+   "detail": "100",
+   "t": 21.875
+  },
+  {
+   "name": "uploader D can still send events after its upload",
+   "status": "pass",
+   "detail": "1",
+   "t": 22.003
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 22.162
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 22.162
+  }
+ ],
+ "console": [
+  {
+   "page": "B-pinger",
+   "t": 2.064,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "B-pinger",
+   "t": 2.41,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "B-pinger",
+   "t": 2.45,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "B-pinger",
+   "t": 2.659,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "C-upl",
+   "t": 3.951,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "C-upl",
+   "t": 4.248,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "C-upl",
+   "t": 4.35,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "C-upl",
+   "t": 4.439,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "D-upl",
+   "t": 5.602,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "D-upl",
+   "t": 5.842,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "D-upl",
+   "t": 5.918,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "D-upl",
+   "t": 6.053,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.294,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.478,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.526,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.65,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.97,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "B-pinger",
+   "t": 2.743,
+   "dir": "open",
+   "payload": "ws://localhost:8184/_event/?token=2de7e098-4886-4b12-9124-5901adfe1105&EIO=4&transport=websocket"
+  },
+  {
+   "page": "B-pinger",
+   "t": 2.749,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"kzgGEqnneQLy9q_QAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "B-pinger",
+   "t": 2.749,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "B-pinger",
+   "t": 2.767,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"M7JQ8Lpll5tCcapVAAAB\"}"
+  },
+  {
+   "page": "B-pinger",
+   "t": 2.767,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 2.767,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 2.769,
+   "dir": "in",
+   "len": 2407,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8184\",\"origin\":\"http://localhost:3184\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"/0nxsGFXasFxx9VHqX/S/w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8184\",\"origin\":\"http://localhost:3184\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"/0nxsGFXasFxx9VHqX/S/w==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3184\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3184/index\",\"full_raw_path\":\"http://localhost:3184/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"2de7e098-4886-4b12-9124-5901adfe1105\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"M7JQ8Lpll5tCcapVAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3184\",\"origin\":\"http://localhost:3184\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3184/\"}},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.upload___upload____state\":{\"files_rx_state_\":[\"root_abs.txt\",\"win_traversal.txt\",\"dropped two.txt\",\"h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt\",\"x_traversal.txt\",\"dropped_one.txt\",\"nested.txt\",\"big12mb.bin\",\"after cancel.txt\"],\"is_uploading_rx_state_\":false,\"pings_rx_state_\":0,\"upload_progress_rx_state_\":0},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 2.769,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 4.504,
+   "dir": "open",
+   "payload": "ws://localhost:8184/_event/?token=6deae21c-ae60-4cc2-b07e-b55cfe6bbe12&EIO=4&transport=websocket"
+  },
+  {
+   "page": "C-upl",
+   "t": 4.509,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"xXn9eQzrnDniXAXxAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "C-upl",
+   "t": 4.51,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "C-upl",
+   "t": 4.515,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"bmafd5cZRc7Um29KAAAD\"}"
+  },
+  {
+   "page": "C-upl",
+   "t": 4.515,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 4.517,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 4.568,
+   "dir": "in",
+   "len": 2407,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8184\",\"origin\":\"http://localhost:3184\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Rlnls8s65wJbZw8yUlNUKw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8184\",\"origin\":\"http://localhost:3184\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"Rlnls8s65wJbZw8yUlNUKw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3184\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3184/index\",\"full_raw_path\":\"http://localhost:3184/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"6deae21c-ae60-4cc2-b07e-b55cfe6bbe12\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"bmafd5cZRc7Um29KAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3184\",\"origin\":\"http://localhost:3184\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3184/\"}},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.upload___upload____state\":{\"files_rx_state_\":[\"root_abs.txt\",\"win_traversal.txt\",\"dropped two.txt\",\"h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt\",\"x_traversal.txt\",\"dropped_one.txt\",\"nested.txt\",\"big12mb.bin\",\"after cancel.txt\"],\"is_uploading_rx_state_\":false,\"pings_rx_state_\":0,\"upload_progress_rx_state_\":0},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 4.568,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 6.129,
+   "dir": "open",
+   "payload": "ws://localhost:8184/_event/?token=7d7723cd-d793-4208-fe05-83172c4a0cb1&EIO=4&transport=websocket"
+  },
+  {
+   "page": "D-upl",
+   "t": 6.139,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"G9dQpuL3I_4VN52HAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "D-upl",
+   "t": 6.139,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "D-upl",
+   "t": 6.148,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"F2ZXeumW514OtD1pAAAF\"}"
+  },
+  {
+   "page": "D-upl",
+   "t": 6.149,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 6.149,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 6.186,
+   "dir": "in",
+   "len": 2407,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8184\",\"origin\":\"http://localhost:3184\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"uzhF0ZOZ6cIFAkfrRaoL5A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8184\",\"origin\":\"http://localhost:3184\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"uzhF0ZOZ6cIFAkfrRaoL5A==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3184\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3184/index\",\"full_raw_path\":\"http://localhost:3184/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"7d7723cd-d793-4208-fe05-83172c4a0cb1\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"F2ZXeumW514OtD1pAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3184\",\"origin\":\"http://localhost:3184\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3184/\"}},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.upload___upload____state\":{\"files_rx_state_\":[\"root_abs.txt\",\"win_traversal.txt\",\"dropped two.txt\",\"h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt\",\"x_traversal.txt\",\"dropped_one.txt\",\"nested.txt\",\"big12mb.bin\",\"after cancel.txt\"],\"is_uploading_rx_state_\":false,\"pings_rx_state_\":0,\"upload_progress_rx_state_\":0},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 6.187,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.711,
+   "dir": "open",
+   "payload": "ws://localhost:8184/_event/?token=6774633e-3971-4bcd-9bfc-1b423ab0e166&EIO=4&transport=websocket"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.721,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"SMcK1OZZYeTT5CsMAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.722,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.729,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"0yC3AB4gJI8SZ-O2AAAH\"}"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.729,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.73,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.734,
+   "dir": "in",
+   "len": 2407,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8184\",\"origin\":\"http://localhost:3184\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"cGmeHI+VtlXnIW9ukW4oTQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8184\",\"origin\":\"http://localhost:3184\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"cGmeHI+VtlXnIW9ukW4oTQ==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3184\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3184/index\",\"full_raw_path\":\"http://localhost:3184/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"6774633e-3971-4bcd-9bfc-1b423ab0e166\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"0yC3AB4gJI8SZ-O2AAAH\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3184\",\"origin\":\"http://localhost:3184\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3184/\"}},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.upload___upload____state\":{\"files_rx_state_\":[\"root_abs.txt\",\"win_traversal.txt\",\"dropped two.txt\",\"h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt\",\"x_traversal.txt\",\"dropped_one.txt\",\"nested.txt\",\"big12mb.bin\",\"after cancel.txt\"],\"is_uploading_rx_state_\":false,\"pings_rx_state_\":0,\"upload_progress_rx_state_\":0},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 7.734,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 9.531,
+   "dir": "out",
+   "len": 223,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":114688,\"total\":3145927,\"progress\":0.03645602711061}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 9.557,
+   "dir": "out",
+   "len": 223,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":114688,\"total\":3145927,\"progress\":0.03645602711061}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 9.569,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 9.599,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":32768,\"total\":6291659,\"progress\":0.005208165286770945}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 9.624,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":212992,\"total\":3145927,\"progress\":0.06770405034827573}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 9.656,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":212992,\"total\":3145927,\"progress\":0.06770405034827573}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 9.699,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":65536,\"total\":6291659,\"progress\":0.01041633057354189}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 9.725,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":311296,\"total\":3145927,\"progress\":0.09895207358594144}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 9.758,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":311296,\"total\":3145927,\"progress\":0.09895207358594144}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 9.801,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":98304,\"total\":6291659,\"progress\":0.015624495860312837}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 9.825,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":425984,\"total\":3145927,\"progress\":0.13540810069655146}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 9.859,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":425984,\"total\":3145927,\"progress\":0.13540810069655146}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 9.902,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":131072,\"total\":6291659,\"progress\":0.02083266114708378}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 9.926,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":524288,\"total\":3145927,\"progress\":0.16665612393421717}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 9.961,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":524288,\"total\":3145927,\"progress\":0.16665612393421717}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.026,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":622592,\"total\":3145927,\"progress\":0.19790414717188287}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.061,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":638976,\"total\":3145927,\"progress\":0.20311215104482716}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.077,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":4,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 10.106,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":1}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.107,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":4,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.107,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":7,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.107,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":7,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.107,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":1,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.107,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":1,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.107,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":2,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.107,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":2,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.11,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":10,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.11,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":14,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.11,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":17,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.118,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":10,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.118,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":20,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.12,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":180224,\"total\":6291659,\"progress\":0.0286449090772402}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.128,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":14,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.131,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":720896,\"total\":3145927,\"progress\":0.2291521704095486}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.131,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":3,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.146,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":23,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.151,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":17,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.152,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":20,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.164,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":720896,\"total\":3145927,\"progress\":0.2291521704095486}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.169,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":23,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.21,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":212992,\"total\":6291659,\"progress\":0.033853074364011145}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.217,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":3,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.229,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":819200,\"total\":3145927,\"progress\":0.26040019364721434}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.234,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":26,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.262,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":819200,\"total\":3145927,\"progress\":0.26040019364721434}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.27,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":26,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.308,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":245760,\"total\":6291659,\"progress\":0.03906123965078209}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.318,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":4,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.334,
+   "dir": "out",
+   "len": 223,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":917504,\"total\":3145927,\"progress\":0.29164821688488}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.343,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":29,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.365,
+   "dir": "out",
+   "len": 223,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":917504,\"total\":3145927,\"progress\":0.29164821688488}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.366,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":29,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.408,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":278528,\"total\":6291659,\"progress\":0.044269404937553034}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.416,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":4,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.432,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1015808,\"total\":3145927,\"progress\":0.32289624012254575}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.437,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":32,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.463,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1032192,\"total\":3145927,\"progress\":0.32810424399549004}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.469,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":33,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.509,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":311296,\"total\":6291659,\"progress\":0.04947757022432398}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.517,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":5,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.542,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1114112,\"total\":3145927,\"progress\":0.3541442633602115}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.564,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":35,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.565,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1130496,\"total\":3145927,\"progress\":0.3593522672331558}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.576,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":36,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 10.602,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 10.609,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":2}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.638,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1212416,\"total\":3145927,\"progress\":0.38539228659787717}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.644,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":39,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.665,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1212416,\"total\":3145927,\"progress\":0.38539228659787717}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.672,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":39,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.71,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":360448,\"total\":6291659,\"progress\":0.0572898181544804}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.717,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":6,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.741,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1310720,\"total\":3145927,\"progress\":0.4166403098355429}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.746,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":42,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.766,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1310720,\"total\":3145927,\"progress\":0.4166403098355429}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.773,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":42,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.81,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":393216,\"total\":6291659,\"progress\":0.06249798344125135}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.82,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":6,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.84,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1409024,\"total\":3145927,\"progress\":0.44788833307320863}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.848,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":45,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.866,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1409024,\"total\":3145927,\"progress\":0.44788833307320863}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.877,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":45,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.911,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":425984,\"total\":6291659,\"progress\":0.06770614872802229}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 10.918,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":7,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.94,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1507328,\"total\":3145927,\"progress\":0.47913635631087437}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 10.946,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":48,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.967,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1507328,\"total\":3145927,\"progress\":0.47913635631087437}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 10.974,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":48,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.011,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":458752,\"total\":6291659,\"progress\":0.07291431401479323}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.021,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":7,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.045,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1605632,\"total\":3145927,\"progress\":0.5103843795485401}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.047,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":51,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 11.054,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 11.065,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":3}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.072,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1605632,\"total\":3145927,\"progress\":0.5103843795485401}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.076,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":51,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.142,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1720320,\"total\":3145927,\"progress\":0.5468404066591501}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.146,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":55,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.174,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1703936,\"total\":3145927,\"progress\":0.5416324027862058}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.186,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":54,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.212,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":507904,\"total\":6291659,\"progress\":0.08072656194494965}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.244,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":8,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.244,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1802240,\"total\":3145927,\"progress\":0.5728804260238715}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.252,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":57,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.273,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1818624,\"total\":3145927,\"progress\":0.5780884298968157}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.278,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":58,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.32,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":540672,\"total\":6291659,\"progress\":0.0859347272317206}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.329,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":9,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.342,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1900544,\"total\":3145927,\"progress\":0.6041284492615372}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.347,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":60,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.373,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1916928,\"total\":3145927,\"progress\":0.6093364531344815}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.376,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":61,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.417,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":573440,\"total\":6291659,\"progress\":0.09114289251849154}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.426,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":9,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.443,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1998848,\"total\":3145927,\"progress\":0.6353764724992029}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.447,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":64,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.476,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2015232,\"total\":3145927,\"progress\":0.6405844763721472}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.482,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":64,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 11.497,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 11.51,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":4}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.544,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2097152,\"total\":3145927,\"progress\":0.6666244957368687}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.547,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":67,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.576,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2129920,\"total\":3145927,\"progress\":0.6770405034827572}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.58,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":68,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.619,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":622592,\"total\":6291659,\"progress\":0.09895514044864796}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.634,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":10,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.644,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2211840,\"total\":3145927,\"progress\":0.7030805228474787}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.651,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":70,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.676,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2228224,\"total\":3145927,\"progress\":0.708288526720423}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.681,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":71,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.72,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":655360,\"total\":6291659,\"progress\":0.1041633057354189}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.728,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":10,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.745,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2310144,\"total\":3145927,\"progress\":0.7343285460851444}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.75,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":73,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.777,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2326528,\"total\":3145927,\"progress\":0.7395365499580887}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.786,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":74,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.82,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":688128,\"total\":6291659,\"progress\":0.10937147102218986}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.831,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":11,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.846,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2408448,\"total\":3145927,\"progress\":0.7655765693228102}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.854,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":77,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.879,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2424832,\"total\":3145927,\"progress\":0.7707845731957543}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.891,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":77,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.922,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":720896,\"total\":6291659,\"progress\":0.1145796363089608}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 11.936,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":11,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.946,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2506752,\"total\":3145927,\"progress\":0.7968245925604758}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 11.953,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":80,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 11.98,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.981,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2523136,\"total\":3145927,\"progress\":0.8020325964334201}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 11.993,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":80,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 12.002,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":5}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.022,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":753664,\"total\":6291659,\"progress\":0.11978780159573174}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.031,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":12,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.047,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2605056,\"total\":3145927,\"progress\":0.8280726157981415}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.054,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":83,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.08,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2621440,\"total\":3145927,\"progress\":0.8332806196710858}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.087,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":83,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.148,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2703360,\"total\":3145927,\"progress\":0.8593206390358072}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.155,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":86,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.182,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2719744,\"total\":3145927,\"progress\":0.8645286429087515}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.194,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":86,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.224,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":802816,\"total\":6291659,\"progress\":0.12760004952588816}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.233,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":13,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.249,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2818048,\"total\":3145927,\"progress\":0.8957766661464173}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.253,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":90,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.282,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2818048,\"total\":3145927,\"progress\":0.8957766661464173}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.288,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":90,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.323,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":835584,\"total\":6291659,\"progress\":0.13280821481265911}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.335,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":13,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.349,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2916352,\"total\":3145927,\"progress\":0.927024689384083}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.354,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":93,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.382,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":2916352,\"total\":3145927,\"progress\":0.927024689384083}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.39,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":93,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.424,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":868352,\"total\":6291659,\"progress\":0.13801638009943004}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.448,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":14,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.45,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":3014656,\"total\":3145927,\"progress\":0.9582727126217487}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.474,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":96,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.483,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":3014656,\"total\":3145927,\"progress\":0.9582727126217487}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.49,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":96,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 12.502,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 12.518,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":6}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.526,
+   "dir": "out",
+   "len": 224,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":901120,\"total\":6291659,\"progress\":0.143224545386201}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.539,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":14,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.551,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":3112960,\"total\":3145927,\"progress\":0.9895207358594144}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.558,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":99,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.584,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":3112960,\"total\":3145927,\"progress\":0.9895207358594144}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.591,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":99,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.608,
+   "dir": "out",
+   "len": 209,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":3145927,\"total\":3145927,\"progress\":1}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 12.619,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":100,\"is_uploading_rx_state_\":false}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.647,
+   "dir": "out",
+   "len": 209,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":3145927,\"total\":3145927,\"progress\":1}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 12.659,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":100,\"is_uploading_rx_state_\":false}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.728,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":950272,\"total\":6291659,\"progress\":0.15103679331635742}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.739,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":15,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.828,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":983040,\"total\":6291659,\"progress\":0.15624495860312837}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "A-upl-disconnect",
+   "t": 12.837,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":16,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 13.013,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 13.025,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":7}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 13.512,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 13.524,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":8}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 13.995,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 14.008,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":9}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 14.5,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 14.511,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":10}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 14.943,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 14.957,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":11}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 15.43,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 15.439,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":12}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 15.917,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 15.926,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":13}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 16.412,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 16.422,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":14}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 16.895,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 16.908,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":15}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 17.377,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 17.388,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":16}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 17.863,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 17.872,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":17}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 18.343,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 18.355,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":18}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 18.827,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 18.838,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":19}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 19.327,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 19.338,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":20}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 19.811,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 19.825,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":21}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 20.298,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 20.305,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":22}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 20.778,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 20.791,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":23}}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 21.26,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "B-pinger",
+   "t": 21.272,
+   "dir": "in",
+   "len": 105,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":24}}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 21.76,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "C-upl",
+   "t": 21.772,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":1}}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 21.893,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "D-upl",
+   "t": 21.905,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":1}}}]"
+  }
+ ],
+ "notes": {
+  "ping_latencies_s": [
+   0.624,
+   0.062,
+   0.04,
+   0.077,
+   0.094,
+   0.044,
+   0.092,
+   0.084,
+   0.075,
+   0.055,
+   0.083,
+   0.082,
+   0.087,
+   0.087,
+   0.077,
+   0.077,
+   0.082,
+   0.072,
+   0.079,
+   0.089,
+   0.08,
+   0.082,
+   0.072,
+   0.079
+  ],
+  "a_closed_at_s": 3.61,
+  "uploads_done_at_s": 12.37
+ }
+}

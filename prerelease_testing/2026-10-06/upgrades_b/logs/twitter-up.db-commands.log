@@ -1,0 +1,6 @@
+### migrate
+rc=0
+### makemigrations
+rc=0
+alembic_version [('79336c1da3d1',)]
+users (7,) tweets (9,) follows (5,)

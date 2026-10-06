@@ -1,0 +1,22 @@
+14,16c14,16
+<     "react": "19.2.8",
+<     "react-dom": "19.2.8",
+<     "react-error-boundary": "6.1.2",
+---
+>     "react": "19.3.0",
+>     "react-dom": "19.3.0",
+>     "react-error-boundary": "6.1.6",
+19c19
+<     "socket.io-client": "4.8.3",
+---
+>     "socket.io-client": "4.8.4",
+27,28c27,28
+<     "autoprefixer": "10.5.4",
+<     "postcss": "8.5.26",
+---
+>     "autoprefixer": "10.6.1",
+>     "postcss": "8.5.29",
+30c30
+<     "vite": "8.2.2"
+---
+>     "vite": "8.3.2"

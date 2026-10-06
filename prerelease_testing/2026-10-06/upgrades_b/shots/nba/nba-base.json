@@ -1,0 +1,495 @@
+{
+ "tag": "nba-base",
+ "results": [
+  {
+   "name": "grid: gridjs table renders the DataFrame (9 columns, 10 rows, summary)",
+   "status": "pass",
+   "detail": "headers=['Name', 'Team', 'Number', 'Position', 'Age', 'Height', 'Weight', 'College', 'Salary'] summary=Showing 1 to 10 of 320 results",
+   "t": 7.405
+  },
+  {
+   "name": "plots: scatter + histogram render with data",
+   "status": "pass",
+   "detail": "[(None, 6, 640), (None, 1, 12), ('qa-literal-title', 1, 12), ('qa-state-title', 1, 12)]",
+   "t": 7.405
+  },
+  {
+   "name": "titles: px figure titles render (scatter / histogram)",
+   "status": "pass",
+   "detail": "[('NBA Age/Salary plot', {'text': 'NBA Age/Salary plot'}), ('Age/Salary Distribution', {'text': 'Age/Salary Distribution'})]",
+   "t": 7.405
+  },
+  {
+   "name": "#7226: literal string layout title renders (QA plot)",
+   "status": "anomaly",
+   "detail": "layout.title='QA literal layout title' rendered=None",
+   "t": 7.405
+  },
+  {
+   "name": "#7226: state-driven string layout title renders (QA plot)",
+   "status": "anomaly",
+   "detail": "layout.title='QA All players' rendered=None",
+   "t": 7.405
+  },
+  {
+   "name": "grid: search filters rows",
+   "status": "pass",
+   "detail": "Showing 1 to 10 of 46 results",
+   "t": 7.768
+  },
+  {
+   "name": "grid: pagination Next changes the page",
+   "status": "pass",
+   "detail": "Showing 11 to 20 of 320 results",
+   "t": 8.115
+  },
+  {
+   "name": "filter position=PG recomputes scatter + histogram (server-side computed vars)",
+   "status": "pass",
+   "detail": "points [640, 12] -> [132, 6], scatter traces 6 -> 2 names=['PG', 'Overall Trendline']",
+   "t": 8.607
+  },
+  {
+   "name": "#7226: state-driven layout title follows the filter (QA plot)",
+   "status": "anomaly",
+   "detail": "layout.title='QA PG players' rendered=None",
+   "t": 8.607
+  },
+  {
+   "name": "filter college=Kentucky narrows the figures",
+   "status": "pass",
+   "detail": "132 -> 22",
+   "t": 9.189
+  },
+  {
+   "name": "range sliders commit (on_value_commit) -> badges update",
+   "status": "pass",
+   "detail": "['2015-2016 season', 'Min Age: 18', 'Max Age: 50', 'Min Sal: 0M', 'Max Sal: 25M'] -> ['2015-2016 season', 'Min Age: 26', 'Max Age: 50', 'Min Sal: 0M', 'Max Sal: 25M'] -> ['2015-2016 season', 'Min Age: 26', 'Max Age: 50', 'Min Sal: 7M', 'Max Sal: 25M']",
+   "t": 9.835
+  },
+  {
+   "name": "reload: figures + titles re-render",
+   "status": "pass",
+   "detail": "[(6, 276, 'NBA Age/Salary plot'), (1, 8, 'Age/Salary Distribution'), (1, 8, None), (1, 8, None)]",
+   "t": 16.826
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 17.025
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 17.025
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 2.029,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 2.671,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 2.724,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 2.836,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 14.386,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 14.463,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 14.51,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 14.555,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 14.557,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 2.906,
+   "dir": "open",
+   "payload": "ws://localhost:8190/_event/?token=55e541b1-f1e6-4dad-d25e-0a79c166301b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 2.916,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"-AV8uIv-QynY9E17AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 2.917,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 2.932,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"hOaqtGcZxQjFGmSIAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 2.933,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.933,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.112,
+   "dir": "in",
+   "len": 56717,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8190\",\"origin\":\"http://localhost:3190\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"LceCGiBs+02MOdubbvivKg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8190\",\"origin\":\"http://localhost:3190\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"LceCGiBs+02MOdubbvivKg==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3190\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3190/index\",\"full_raw_path\":\"http://localhost:3190/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"55e541b1-f1e6-4dad-d25e-0a79c166301b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"hOaqtGcZxQjFGmSIAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3190\",\"origin\":\"http://localhost:3190\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3190/\"}},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.nba___views___table____state\":{\"age_rx_state_\":[18,50],\"college_rx_state_\":\"All\",\"df_rx_state_\":{\"columns\":[\"Name\",\"Team\",\"Number\",\"Position\",\"Age\",\"Height\",\"Weight\",\"College\",\"Salary\"],\"data\":[[\"Marcus Holland\",\"Jazz\",41,\"C\",21,\"6-5\",244,\"\",12276970.0],[\"Avery Crowder\",\"Jazz\",26,\"C\",26,\"6-8\",224,\"\",13657798.0],[\"RJ Turner\",\"Celtics\",36,\"SG\",31,\"6-3\",175,\"Kentucky\",7092701.0],[\"John Mickey\",\"Lakers\",36,\"SF\",36,\"6-1\",244,\"Kentucky\",9063062.0],[\"Jordan Thomas\",\"Lakers\",36,\"C\",38,\"6-7\",257,\"Michigan State\",7676703.0],[\"Amir Saric\",\"Spurs\",23,\"SF\",26,\"6-11\",269,\"North Carolina\",7345929.0],[\"Terry Saric\",\"Nets\",46,\"PG\",28,\"6-1\",235,\"Michigan State\",8340928.0],[\"Dario Rozier\",\"Jazz\",2,\"C\",36,\"7-5\",258,\"UCLA\",14001506.0],[\"Terry Crowder\",\"Lakers\",17,\"PG\",41,\"6-0\",263,\"Arizona\",13955120.0],[\"Evan Paul\",\"Spurs\",18,\"PG\",40,\"7-0\",290,\"Kentucky\",14739885.0],[\"Terry Bradley\",\"Heat\",49,\"SF\",23,\"6-6\",220,\"UCLA\",2117835.0],[\"Terry Olynyk\",\"Suns\",8,\"PG\",36,\"7-11\",223,\"Arizona\",21243789.0],[\"RJ Holland\",\"Lakers\",11,\"PF\",26,\"6-0\",232,\"Kentucky\",6453370.0],[\"Avery Holland\",\"Jazz\",34,\"SF\",38,\"7-2\",258,\"North Carolina\",157882"
+  },
+  {
+   "page": "main",
+   "t": 3.112,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.336,
+   "dir": "out",
+   "len": 168,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_position\",\"payload\":{\"position\":\"PG\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.376,
+   "dir": "in",
+   "len": 22918,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"qa_layout_rx_state_\":{\"title\":\"QA PG players\"},\"hist_fig_rx_state_\":{\"data\":[{\"bingroup\":\"x\",\"histfunc\":\"sum\",\"hovertemplate\":\"Age=%{x}<br>sum of Salary=%{y}<extra></extra>\",\"legendgroup\":\"\",\"marker\":{\"color\":\"#636efa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"\",\"orientation\":\"v\",\"showlegend\":false,\"x\":{\"dtype\":\"i1\",\"bdata\":\"HCkoJBgjIRYiGxkfJSQpKSkeKRkaFSYUKCIVHCEYIR0TIRMpISgUHhodJh8hFhwcGicmIiIUHSgTGh8gIBMoHSMf\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAAHDRX0EAAAAABp5qQQAAAKA1HWxBAAAA0HhCdEEAAAAAgBcJQQAAAAA1REJBAAAAQLSiZ0EAAACw3zZ2QQAAABBYmXFBAAAAgMFHcEEAAACwIShxQQAAAECodV1BAAAAsISUc0EAAABQMtBwQQAAAECPJ2JBAAAAgOEqUkEAAADgdcJtQQAAAKD8eGNBAAAAgKKnXkEAAABgoOpgQQAAAAA7xzlBAAAAcKZwdkEAAABgU25xQQAAAJDrRHNBAAAAAJ8/T0EAAACQSVV2QQAAAIA1vmJBAAAAwMk9Z0EAAADgeS9lQQAAALCAK3JBAAAAEK7PdkEAAABA0Hh2QQAAAIBFq2VBAAAAQIuObUEAAABA18JtQQAAAACIYSRBAAAA4J2wZUEAAADg2nhyQQAAAEBdeGhBAAAAAPkBUEEAAAAA5M0VQQAAAADAA1tBAAAAgFSVQEEAAACg5t1kQQAAAECj51VBAAAA4CdndkEAAAAAqf5jQQAAAACzvEtBAAAA8LRyckEAAACAb+RYQQAAAOBuCGFBAAAAQOGkZ0EAAAAA4u1fQQAAAGAHbnBBAAAAIFPvckEAAAAgyg1rQQAAAIBn6m9BAAAAAN05W0EAAADAlHhmQQAAACAQsWBBAAAAYNzCakEAAADgm39kQQAAAABQUypBAAAAwC85X0EAAACA7ehMQQAAAICWIlxB\"},\"yaxis\":\"y\",\"type\":\"histogram\"}],\"layout\":{\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorba"
+  },
+  {
+   "page": "main",
+   "t": 8.911,
+   "dir": "out",
+   "len": 172,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_college\",\"payload\":{\"college\":\"Kentucky\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.985,
+   "dir": "in",
+   "len": 16375,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"college_rx_state_\":\"Kentucky\",\"scat_fig_rx_state_\":{\"data\":[{\"customdata\":[[\"Evan Paul\"],[\"Isaiah Bradley\"],[\"RJ Olynyk\"],[\"RJ Turner\"],[\"Marcus Bradley\"],[\"Isaiah Mickey\"],[\"Marcus Holland\"],[\"Jonas Smart\"],[\"Dario Mickey\"],[\"Terry Paul\"],[\"Dario Olynyk\"]],\"hovertemplate\":\"Position=PG<br>Age=%{x}<br>Salary=%{y}<br>Name=%{customdata[0]}<extra></extra>\",\"legendgroup\":\"PG\",\"marker\":{\"color\":\"#636efa\",\"symbol\":\"circle\"},\"mode\":\"markers\",\"name\":\"PG\",\"orientation\":\"v\",\"showlegend\":true,\"x\":{\"dtype\":\"i1\",\"bdata\":\"KCkVFBghFBYiFBo=\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAoDUdbEEAAACAoqdeQQAAAHCmcHZBAAAAkOtEc0EAAACwgCtyQQAAABCuz3ZBAAAAQF14aEEAAADgJ2d2QQAAAEDhpGdBAAAAYAducEEAAAAA3TlbQQ==\"},\"yaxis\":\"y\",\"type\":\"scatter\"},{\"hovertemplate\":\"<b>LOWESS trendline</b><br><br>Age=%{x}<br>Salary=%{y} <b>(trend)</b><extra></extra>\",\"legendgroup\":\"Overall Trendline\",\"line\":{\"color\":\"#EF553B\"},\"mode\":\"lines\",\"name\":\"Overall Trendline\",\"showlegend\":true,\"x\":{\"dtype\":\"i1\",\"bdata\":\"FBQUFRYYGiEiKCk=\"},\"y\":{\"dtype\":\"f8\",\"bdata\":\"zrycieVlcUHOvJyJ5WVxQc68nInlZXFBkpTNGmbCckE8oHjDOrhzQShERkCTnG9BNCLyCJx/X0FaODe54ZlpQXt3IkexSWlBBah3MkjAZkEbpeQgkQ1mQQ==\"},\"type\":\"scatter\",\"xaxis\":\"x\",\"yaxis\":\"y\"}],\"layout\":{\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorb"
+  },
+  {
+   "page": "main",
+   "t": 9.216,
+   "dir": "out",
+   "len": 161,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_age\",\"payload\":{\"age\":[26,50]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.411,
+   "dir": "in",
+   "len": 15529,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"age_rx_state_\":[26,50],\"scat_fig_rx_state_\":{\"data\":[{\"customdata\":[[\"Evan Paul\"],[\"Isaiah Bradley\"],[\"Isaiah Mickey\"],[\"Dario Mickey\"]],\"hovertemplate\":\"Position=PG<br>Age=%{x}<br>Salary=%{y}<br>Name=%{customdata[0]}<extra></extra>\",\"legendgroup\":\"PG\",\"marker\":{\"color\":\"#636efa\",\"symbol\":\"circle\"},\"mode\":\"markers\",\"name\":\"PG\",\"orientation\":\"v\",\"showlegend\":true,\"x\":{\"dtype\":\"i1\",\"bdata\":\"KCkhIg==\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAoDUdbEEAAACAoqdeQQAAABCuz3ZBAAAAQOGkZ0E=\"},\"yaxis\":\"y\",\"type\":\"scatter\"},{\"hovertemplate\":\"<b>LOWESS trendline</b><br><br>Age=%{x}<br>Salary=%{y} <b>(trend)</b><extra></extra>\",\"legendgroup\":\"Overall Trendline\",\"line\":{\"color\":\"#EF553B\"},\"mode\":\"lines\",\"name\":\"Overall Trendline\",\"showlegend\":true,\"x\":{\"dtype\":\"i1\",\"bdata\":\"ISIoKQ==\"},\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAEK7PdkEAAABA4aRnQQAAAKA1HWxBAAAAgKKnXkE=\"},\"type\":\"scatter\",\"xaxis\":\"x\",\"yaxis\":\"y\"}],\"layout\":{\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.88888"
+  },
+  {
+   "page": "main",
+   "t": 9.578,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_salary\",\"payload\":{\"salary\":[7500002,25000000]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.68,
+   "dir": "in",
+   "len": 15543,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"salary_rx_state_\":[7500002,25000000],\"scat_fig_rx_state_\":{\"data\":[{\"customdata\":[[\"Evan Paul\"],[\"Isaiah Bradley\"],[\"Isaiah Mickey\"],[\"Dario Mickey\"]],\"hovertemplate\":\"Position=PG<br>Age=%{x}<br>Salary=%{y}<br>Name=%{customdata[0]}<extra></extra>\",\"legendgroup\":\"PG\",\"marker\":{\"color\":\"#636efa\",\"symbol\":\"circle\"},\"mode\":\"markers\",\"name\":\"PG\",\"orientation\":\"v\",\"showlegend\":true,\"x\":{\"dtype\":\"i1\",\"bdata\":\"KCkhIg==\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAoDUdbEEAAACAoqdeQQAAABCuz3ZBAAAAQOGkZ0E=\"},\"yaxis\":\"y\",\"type\":\"scatter\"},{\"hovertemplate\":\"<b>LOWESS trendline</b><br><br>Age=%{x}<br>Salary=%{y} <b>(trend)</b><extra></extra>\",\"legendgroup\":\"Overall Trendline\",\"line\":{\"color\":\"#EF553B\"},\"mode\":\"lines\",\"name\":\"Overall Trendline\",\"showlegend\":true,\"x\":{\"dtype\":\"i1\",\"bdata\":\"ISIoKQ==\"},\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAEK7PdkEAAABA4aRnQQAAAKA1HWxBAAAAgKKnXkE=\"},\"type\":\"scatter\",\"xaxis\":\"x\",\"yaxis\":\"y\"}],\"layout\":{\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9"
+  },
+  {
+   "page": "main",
+   "t": 11.573,
+   "dir": "out",
+   "len": 169,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_position\",\"payload\":{\"position\":\"All\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 11.679,
+   "dir": "in",
+   "len": 18771,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"qa_layout_rx_state_\":{\"title\":\"QA All players\"},\"hist_fig_rx_state_\":{\"data\":[{\"bingroup\":\"x\",\"histfunc\":\"sum\",\"hovertemplate\":\"Age=%{x}<br>sum of Salary=%{y}<extra></extra>\",\"legendgroup\":\"\",\"marker\":{\"color\":\"#636efa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"\",\"orientation\":\"v\",\"showlegend\":false,\"x\":{\"dtype\":\"i1\",\"bdata\":\"JCghHBwcHyklJSEpIiQcHyIgJQ==\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAwFJJYUEAAACgNR1sQQAAAMDy029BAAAAAGeUbUEAAAAANvVlQQAAAOB/ZmZBAAAAIOI8Y0EAAACAoqdeQQAAAGDwU2RBAAAAYFJpZ0EAAAAQrs92QQAAAOCiRWpBAAAA0IgkdkEAAABgX+RzQQAAAIBjNXVBAAAAMD2zdkEAAABA4aRnQQAAAAAATWdBAAAAgJl1akE=\"},\"yaxis\":\"y\",\"type\":\"histogram\"}],\"layout\":{\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth"
+  },
+  {
+   "page": "main",
+   "t": 11.874,
+   "dir": "out",
+   "len": 167,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_college\",\"payload\":{\"college\":\"All\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 11.904,
+   "dir": "in",
+   "len": 32943,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"college_rx_state_\":\"All\",\"scat_fig_rx_state_\":{\"data\":[{\"customdata\":[[\"John Mickey\"],[\"Avery Holland\"],[\"Dario Johnson\"],[\"Kelly Paul\"],[\"Chris Crowder\"],[\"Avery Olynyk\"],[\"Chris Smart\"],[\"Terry Johnson\"],[\"Evan Olynyk\"],[\"RJ Hunter\"],[\"Terry Zeller\"],[\"Tyler Paul\"],[\"John Hunter\"],[\"Isaiah Jerebko\"],[\"Jonas Crowder\"],[\"Amir Jerebko\"],[\"Jonas Hunter\"],[\"Tyler Zeller\"],[\"Isaiah Hunter\"],[\"Kelly Holland\"],[\"Tyler Paul\"],[\"Tyler Jerebko\"],[\"Marcus Paul\"],[\"Dario Bradley\"],[\"Avery Jerebko\"],[\"Terry Smart\"],[\"Marcus Jerebko\"],[\"Kelly Thomas\"],[\"Chris Smart\"],[\"Chris Holland\"],[\"Tyler Holland\"]],\"hovertemplate\":\"Position=SF<br>Age=%{x}<br>Salary=%{y}<br>Name=%{customdata[0]}<extra></extra>\",\"legendgroup\":\"SF\",\"marker\":{\"color\":\"#636efa\",\"symbol\":\"circle\"},\"mode\":\"markers\",\"name\":\"SF\",\"orientation\":\"v\",\"showlegend\":true,\"x\":{\"dtype\":\"i1\",\"bdata\":\"JCYnISQnHyIjHCAlJSAhJikiKRwgHSMnJyEnJyghHg==\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAwFJJYUEAAABAFR1uQQAAAND9VnBBAAAAYMWOZ0EAAADgn0twQQAAADDhOXFBAAAA4Bj8cEEAAAAAyvZfQQAAAHDgknFBAAAA4H9mZkEAAABgMGhyQQAAAGDwU2RBAAAAYFJpZ0EAAAAguC1jQQAAAKCQ8HBBAAAAYP9hckEAAADAGzdvQQAAANCIJHZBAAAAQFdpXkEAAABAk+B0QQAAALCKgHFBAAAAoAdPbkEAAAAgerlmQQAAAKBvBGZBAAAA4JOmdEEAAABgt/hiQQAAAGBAtWxBAAAAUN10cEEAAABwpuxwQQAAAEDUKGdBAAAAwCQgX0E=\"},\"yaxis\":\"y\",\"type\":\"scatter\"},{\"customdata\":[[\"Jordan Thomas\"],[\"Dario Rozier\"],[\"Avery Zeller\"],[\"Marcus Holland\"],[\"Terry Mickey\"],[\"Jae Crowder\"],[\"Marcus Mickey\"],[\"Jonas Crowder\"],[\"Avery Smart\"],[\"Isaiah Crowder\"],[\"Chris Rozier\"],[\"Chris Crowder\"],[\"Isaiah Thomas\"],[\"Dario Rozier\"],[\"Jordan Smart\"],[\"John Hunter\"],[\"Tyler Thomas\"],[\"Terry Crowder\"],[\"Amir Rozier\"],[\"Kelly Turner\"],[\"Kelly Paul\"],[\"Dario Johnson\"]],\"hovertemplate\":\"Position=C<br>Age=%{x}<br>Salary=%{y}<br>Name=%{customdata[0]}<extra></extra>\",\"legendgroup\":\"C\",\"marker\":{\"color\":\"#EF553B\",\"symbol\":\"diamond\"},\"mode\":\"markers\",\"name\":\"C\",\"orientation\":\"v\",\"showlegend\":true,\"x\":{\"dtype\":\"i1\",\"bdata\":\"JiQpJyEbHCQpHhsbHB4mJhwpJyMjIQ==\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAwMdIXUEAAABArLRqQQAAAKA1tnFBAAAAQDiVdkEAAADA8tNvQQAAAKBNWHFBAAAAIJO0YUEAAADgJNlyQQAAAEBC/mVBAAAAwAgiZ0EAAAAg96xpQQAAAECC/WBBAAAAsOLsdEEAAADgBQpgQQAAAADYsl1BAAAAIJ/KbkEAAADAxHZoQQAAAMB6+mpBAAAA4OE9aEEAAACgzMFuQQAAAMBLXF9BAAAA8H9sdkE=\"},\"yaxis\":\"y\",\"type\":\"scatter\"},{\"customdata\":[[\"Terry Saric\"],[\"Terry Crowder\"],[\"Evan Paul\"],[\"Terry Olynyk\"],[\"Marcus Bradley\"],[\"Isaiah Zeller\"],[\"John Bradley\"],[\"John Bradley\"],[\"Jonas Smart\"],[\"Marcus Zeller\"],[\"Chris Bradley\"],[\"RJ Mickey\"],[\"Jae Jerebko\"],[\"Isaiah Bradley\"],[\"John Hunter\"],[\"Jordan Holland\"],[\"Jordan Paul\"],[\"John Bradley\"],[\"Isaiah Mickey\"],[\"John Thomas\"],[\"Terry Turner\"],[\"Chris Holland\"],[\"Tyler Paul\"],[\"Chris Jerebko\"],[\"Avery Turner\"],[\"Isaiah Crowder\"],[\"Dario Mickey\"],[\"Jordan Olynyk\"],[\"Marcus Crowder\"],[\"Terry Mickey\"],[\"John Turner\"],[\"Isaiah Johnson\"],[\"Isaiah Olynyk\"],[\"John Paul\"]],\"hovertemplate\":\"Posit"
+  },
+  {
+   "page": "main",
+   "t": 14.387,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 14.391,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 14.591,
+   "dir": "open",
+   "payload": "ws://localhost:8190/_event/?token=55e541b1-f1e6-4dad-d25e-0a79c166301b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 14.598,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"_b4m6xvTvdwRQ9cWAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 14.598,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 14.607,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"ppjfJUKUvIBoJ4Z8AAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 14.607,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 14.607,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 14.625,
+   "dir": "in",
+   "len": 35138,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8190\",\"origin\":\"http://localhost:3190\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"GMeA33M1hpRNYonXMBN/Ww==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8190\",\"origin\":\"http://localhost:3190\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"GMeA33M1hpRNYonXMBN/Ww==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3190\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3190/index\",\"full_raw_path\":\"http://localhost:3190/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"55e541b1-f1e6-4dad-d25e-0a79c166301b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ppjfJUKUvIBoJ4Z8AAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3190\",\"origin\":\"http://localhost:3190\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3190/\"}},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.nba___views___table____state\":{\"age_rx_state_\":[26,50],\"college_rx_state_\":\"All\",\"df_rx_state_\":{\"columns\":[\"Name\",\"Team\",\"Number\",\"Position\",\"Age\",\"Height\",\"Weight\",\"College\",\"Salary\"],\"data\":[[\"John Mickey\",\"Lakers\",36,\"SF\",36,\"6-1\",244,\"Kentucky\",9063062.0],[\"Jordan Thomas\",\"Lakers\",36,\"C\",38,\"6-7\",257,\"Michigan State\",7676703.0],[\"Terry Saric\",\"Nets\",46,\"PG\",28,\"6-1\",235,\"Michigan State\",8340928.0],[\"Dario Rozier\",\"Jazz\",2,\"C\",36,\"7-5\",258,\"UCLA\",14001506.0],[\"Terry Crowder\",\"Lakers\",17,\"PG\",41,\"6-0\",263,\"Arizona\",13955120.0],[\"Evan Paul\",\"Spurs\",18,\"PG\",40,\"7-0\",290,\"Kentucky\",14739885.0],[\"Terry Olynyk\",\"Suns\",8,\"PG\",36,\"7-11\",223,\"Arizona\",21243789.0],[\"Avery Holland\",\"Jazz\",34,\"SF\",38,\"7-2\",258,\"North Carolina\",15788202.0],[\"Isaiah Bradley\",\"Spurs\",55,\"SG\",31,\"7-6\",220,\"\",15296092.0],[\"Isaiah Smart\",\"Suns\",30,\"PF\",35,\"6-3\",237,\"Arizona\",13127504.0],[\"Avery Zeller\",\"Suns\",41,\"C\",41,\"7-8\",216,\"Kansas\",18572122.0],[\"Dario Johnson\",\"Celtics\",30,\"SF\",39,\"6-10\",185,\"Michigan State\",17133533.0],[\"John Holland\",\"Celtics\",9,\"SG\",33,\"6-9\",275,\"UCLA\",15842985.0],[\"Marcus Holland\",\"Bulls\",1,\"C\",39,\"6-8\",265,"
+  },
+  {
+   "page": "main",
+   "t": 14.625,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "notes": {
+  "plots_initial": [
+   {
+    "id": null,
+    "traces": 6,
+    "points": 640,
+    "layout_title": {
+     "text": "NBA Age/Salary plot"
+    },
+    "rendered_title": "NBA Age/Salary plot",
+    "names": [
+     "C",
+     "SG",
+     "SF",
+     "PG",
+     "PF",
+     "Overall Trendline"
+    ]
+   },
+   {
+    "id": null,
+    "traces": 1,
+    "points": 12,
+    "layout_title": {
+     "text": "Age/Salary Distribution"
+    },
+    "rendered_title": "Age/Salary Distribution",
+    "names": [
+     ""
+    ]
+   },
+   {
+    "id": "qa-literal-title",
+    "traces": 1,
+    "points": 12,
+    "layout_title": "QA literal layout title",
+    "rendered_title": null,
+    "names": [
+     ""
+    ]
+   },
+   {
+    "id": "qa-state-title",
+    "traces": 1,
+    "points": 12,
+    "layout_title": "QA All players",
+    "rendered_title": null,
+    "names": [
+     ""
+    ]
+   }
+  ],
+  "qa_titles_initial": {
+   "literal": [
+    "QA literal layout title",
+    null
+   ],
+   "state": [
+    "QA All players",
+    null
+   ]
+  },
+  "qa_titles_after_pg": [
+   "QA PG players",
+   null
+  ],
+  "plots_after_filters": [
+   {
+    "id": null,
+    "traces": 2,
+    "points": 8,
+    "layout_title": {
+     "text": "NBA Age/Salary plot"
+    },
+    "rendered_title": "NBA Age/Salary plot",
+    "names": [
+     "PG",
+     "Overall Trendline"
+    ]
+   },
+   {
+    "id": null,
+    "traces": 1,
+    "points": 3,
+    "layout_title": {
+     "text": "Age/Salary Distribution"
+    },
+    "rendered_title": "Age/Salary Distribution",
+    "names": [
+     ""
+    ]
+   },
+   {
+    "id": "qa-literal-title",
+    "traces": 1,
+    "points": 3,
+    "layout_title": "QA literal layout title",
+    "rendered_title": null,
+    "names": [
+     ""
+    ]
+   },
+   {
+    "id": "qa-state-title",
+    "traces": 1,
+    "points": 3,
+    "layout_title": "QA PG players",
+    "rendered_title": null,
+    "names": [
+     ""
+    ]
+   }
+  ],
+  "plots_after_reset_selects": [
+   [
+    6,
+    276
+   ],
+   [
+    1,
+    8
+   ],
+   [
+    1,
+    8
+   ],
+   [
+    1,
+    8
+   ]
+  ],
+  "badges_after_reload": [
+   "2015-2016 season",
+   "Min Age: 26",
+   "Max Age: 50",
+   "Min Sal: 7M",
+   "Max Sal: 25M"
+  ]
+ }
+}

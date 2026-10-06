@@ -1,0 +1,40 @@
+--- run/upload.py.orig	2026-10-06 18:14:50.393402617 +0000
++++ upload/upload/upload.py	2026-10-06 18:14:50.419388323 +0000
+@@ -1,3 +1,4 @@
++import os
+ from pathlib import Path
+ from typing import List
+ 
+@@ -13,6 +14,13 @@
+     # Progress visuals
+     upload_progress: int
+ 
++    # QA ADD (only rendered with QA_UPLOAD_EXTRAS=1): event latency probe during an in-flight upload
++    pings: int = 0
++
++    @rx.event
++    def ping(self):
++        self.pings += 1
++
+     @rx.var
+     def files(self) -> list[str]:
+         """Get the string representation of the uploaded files."""
+@@ -93,6 +101,18 @@
+                 ),
+             ),
+         ),
++        *(
++            [
++                # QA ADD: clear the selection + ping counter (QA_UPLOAD_EXTRAS=1 only)
++                rx.hstack(
++                    rx.button("Clear", on_click=rx.clear_selected_files(upload_id), id="qa-clear"),
++                    rx.button("Ping", on_click=State.ping, id="qa-ping"),
++                    rx.text("pings: ", State.pings, id="qa-pings"),
++                )
++            ]
++            if os.environ.get("QA_UPLOAD_EXTRAS") == "1"
++            else []
++        ),
+         rx.heading("Files:"),
+         rx.cond(
+             State.is_uploading,

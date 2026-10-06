@@ -1,0 +1,7 @@
+.states
+assets/external/
+*.db
+*.py[cod]
+.web
+__pycache__/
+reflex.db

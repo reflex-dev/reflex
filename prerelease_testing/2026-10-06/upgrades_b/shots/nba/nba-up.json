@@ -1,0 +1,481 @@
+{
+ "tag": "nba-up",
+ "results": [
+  {
+   "name": "grid: gridjs table renders the DataFrame (9 columns, 10 rows, summary)",
+   "status": "pass",
+   "detail": "headers=['Name', 'Team', 'Number', 'Position', 'Age', 'Height', 'Weight', 'College', 'Salary'] summary=Showing 1 to 10 of 320 results",
+   "t": 8.827
+  },
+  {
+   "name": "plots: scatter + histogram render with data",
+   "status": "pass",
+   "detail": "[(None, 6, 640), (None, 1, 12), ('qa-literal-title', 1, 12), ('qa-state-title', 1, 12)]",
+   "t": 8.827
+  },
+  {
+   "name": "titles: px figure titles render (scatter / histogram)",
+   "status": "pass",
+   "detail": "[('NBA Age/Salary plot', {'text': 'NBA Age/Salary plot'}), ('Age/Salary Distribution', {'text': 'Age/Salary Distribution'})]",
+   "t": 8.827
+  },
+  {
+   "name": "#7226: literal string layout title renders (QA plot)",
+   "status": "pass",
+   "detail": "layout.title={'text': 'QA literal layout title'} rendered='QA literal layout title'",
+   "t": 8.827
+  },
+  {
+   "name": "#7226: state-driven string layout title renders (QA plot)",
+   "status": "pass",
+   "detail": "layout.title={'text': 'QA All players'} rendered='QA All players'",
+   "t": 8.827
+  },
+  {
+   "name": "grid: search filters rows",
+   "status": "pass",
+   "detail": "Showing 1 to 10 of 46 results",
+   "t": 9.197
+  },
+  {
+   "name": "grid: pagination Next changes the page",
+   "status": "pass",
+   "detail": "Showing 11 to 20 of 320 results",
+   "t": 9.532
+  },
+  {
+   "name": "filter position=PG recomputes scatter + histogram (server-side computed vars)",
+   "status": "pass",
+   "detail": "points [640, 12] -> [132, 6], scatter traces 6 -> 2 names=['PG', 'Overall Trendline']",
+   "t": 10.026
+  },
+  {
+   "name": "#7226: state-driven layout title follows the filter (QA plot)",
+   "status": "pass",
+   "detail": "layout.title={'text': 'QA PG players'} rendered='QA PG players'",
+   "t": 10.026
+  },
+  {
+   "name": "filter college=Kentucky narrows the figures",
+   "status": "pass",
+   "detail": "132 -> 22",
+   "t": 10.598
+  },
+  {
+   "name": "range sliders commit (on_value_commit) -> badges update",
+   "status": "pass",
+   "detail": "['2015-2016 season', 'Min Age: 18', 'Max Age: 50', 'Min Sal: 0M', 'Max Sal: 25M'] -> ['2015-2016 season', 'Min Age: 26', 'Max Age: 50', 'Min Sal: 0M', 'Max Sal: 25M'] -> ['2015-2016 season', 'Min Age: 26', 'Max Age: 50', 'Min Sal: 7M', 'Max Sal: 25M']",
+   "t": 11.164
+  },
+  {
+   "name": "reload: figures + titles re-render",
+   "status": "pass",
+   "detail": "[(6, 276, 'NBA Age/Salary plot'), (1, 8, 'Age/Salary Distribution'), (1, 8, 'QA literal layout title'), (1, 8, 'QA All players')]",
+   "t": 18.409
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 18.609
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 18.609
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 1.98,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 2.566,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 2.608,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 2.771,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 15.753,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 15.836,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 15.906,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 15.937,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 15.939,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 2.607,
+   "dir": "open",
+   "payload": "ws://localhost:8190/_event/?token=64a86564-0a23-4518-d567-6ec85a3c1524&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 2.627,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"CKyseM5uwPxv6zJRAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 2.83,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d6d327097d99e86f\",\"b084fc0c68f7c73a\",\"1d07a6f12099fb36\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 3.09,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Q0TE7-ixc-rVpXk0AAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 3.091,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8190\",\"origin\":\"http://localhost:3190\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"nlvrLVzhmN0nLV/VU4TKMA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8190\",\"origin\":\"http://localhost:3190\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"nlvrLVzhmN0nLV/VU4TKMA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3190\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3190/index\",\"full_raw_path\":\"http://localhost:3190/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"64a86564-0a23-4518-d567-6ec85a3c1524\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Q0TE7-ixc-rVpXk0AAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3190\",\"origin\":\"http://localhost:3190\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3190/\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.091,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.753,
+   "dir": "out",
+   "len": 168,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_position\",\"payload\":{\"position\":\"PG\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.809,
+   "dir": "in",
+   "len": 22918,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"qa_layout_rx_state_\":{\"title\":\"QA PG players\"},\"position_rx_state_\":\"PG\",\"df_rx_state_\":{\"columns\":[\"Name\",\"Team\",\"Number\",\"Position\",\"Age\",\"Height\",\"Weight\",\"College\",\"Salary\"],\"data\":[[\"Terry Saric\",\"Nets\",46,\"PG\",28,\"6-1\",235,\"Michigan State\",8340928.0],[\"Terry Crowder\",\"Lakers\",17,\"PG\",41,\"6-0\",263,\"Arizona\",13955120.0],[\"Evan Paul\",\"Spurs\",18,\"PG\",40,\"7-0\",290,\"Kentucky\",14739885.0],[\"Terry Olynyk\",\"Suns\",8,\"PG\",36,\"7-11\",223,\"Arizona\",21243789.0],[\"Avery Hunter\",\"Lakers\",13,\"PG\",24,\"6-5\",246,\"\",205552.0],[\"Terry Holland\",\"Heat\",10,\"PG\",35,\"7-5\",223,\"Kansas\",2394218.0],[\"Marcus Bradley\",\"Nets\",35,\"PG\",33,\"6-6\",212,\"Kansas\",12391842.0],[\"RJ Mickey\",\"Spurs\",15,\"PG\",22,\"7-10\",233,\"UCLA\",23293435.0],[\"Isaiah Zeller\",\"Heat\",14,\"PG\",34,\"7-1\",231,\"Kansas\",18453889.0],[\"John Bradley\",\"Spurs\",3,\"PG\",27,\"6-11\",197,\"Kansas\",17071128.0],[\"Jae Paul\",\"Spurs\",17,\"PG\",25,\"6-1\",244,\"\",17990171.0],[\"John Bradley\",\"Spurs\",43,\"PG\",31,\"7-11\",188,\"UCLA\",7722657.0],[\"Jonas Smart\",\"Lakers\",25,\"PG\",37,\"6-5\",288,\"Kansas\",20531275.0],[\"Marcus Zeller\",\"Jazz\",1,\"PG\",36,\"6-11\",180,\"\",17629989.0],[\"Chris Bradley\",\"Bulls\",2,\"PG\",41,\"7-9\",232,\"\",9518202.0],[\"Jonas Holland\",\"Suns\",33,\"PG\",41,\"6-1\",179,\"North Carolina\",4762502.0],[\"RJ Mickey\",\"Heat\",1,\"PG\",41,\"7-0\",172,\"Arizona\",15602607.0],[\"Jae Jerebko\",\"Heat\",42,\"PG\",30,\"6-7\",174,\"Arizona\",10209253.0],[\"Isaiah Bradley\",\"Bulls\",25,\"PG\",41,\"7-11\",184,\"Kentucky\",8035978.0],[\"Kelly Crowder\",\"Celtics\",45,\"PG\",25,\"7-8\",287,\"Kansas\",8869123.0],[\"Dario Rozier\",\"Celtics\",40,\"PG\",26,\"7-0\",218,\"\",1689403.0],[\"RJ Olynyk\",\"Bulls\",15,\"PG\",21,\"6-7\",240,\"Kentucky\",23530087.0],[\"John Hunter\",\"Bulls\",26,\"PG\",38,\"6-11\",238,\"Arizona\",18277686.0],[\"RJ Turner\",\"Lakers\",41,\"PG\",20,\"6-0\",230,\"Kentucky\",20205241.0],[\"Terry Crowder\",\"Jazz\",6,\"PG\",40,\"6-10\",238,\"\",4095806.0],[\"Jordan Holland\",\"Lakers\",6,\"PG\",34,\"6-4\",186,\"Duke\",23418009.0],[\"Terry Smart\",\"Celtics\",38,\"PG\",21,\"6-10\",270,\"North Carolina\",9826732.0],[\"Jordan Paul\",\"Suns\",41,\"PG\",28,\"6-6\",219,\"UCLA\",12185166.0],[\"John Bradley\",\"Celtics\",39,\"PG\",33,\"6-7\",267,\"Michigan State\",11107279.0],[\"Marcus Bradley\",\"Heat\",11,\"PG\",24,\"7-10\",211,\"Kentucky\",19052555.0],[\"Isaiah Mickey\",\"Celtics\",24,\"PG\",33,\"6-11\",253,\"Kentucky\",23919329.0],[\"John Thomas\",\"Nets\",12,\"PG\",29,\"6-6\",286,\"Arizona\",23563524.0],[\"Jonas Johnson\",\"Celtics\",50,\"PG\",19,\"7-8\",268,\"\",11360812.0],[\"Terry Turner\",\"Nets\",10,\"PG\",33,\"7-9\",199,\"UCLA\",15496282.0],[\"Avery Holland\",\"Suns\",38,\"PG\",19,\"6-6\",259,\"Arizona\",15603386.0],[\"Dario Olynyk\",\"Heat\",50,\"PG\",41,\"6-4\",278,\"UCLA\",667844.0],[\"Chris Holland\",\"Nets\",42,\"PG\",33,\"7-8\",253,\"Michigan State\",11371759.0],[\"Tyler Paul\",\"Heat\",17,\"PG\",40,\"7-6\",256,\"Duke\",19369390.0],[\"Marcus Holland\",\"Suns\",54,\"PG\",20,\"6-9\",285,\"Kentucky\",12829418.0],[\"Chris Hunter\",\"Bulls\",49,\"PG\",30,\"6-3\",285,\"North Carolina\",4196324.0],[\"Terry Rozier\",\"Bulls\",44,\"PG\",26,\"7-2\",239,\"Arizona\",357241.0],[\"Tyler Saric\",\"Heat\",18,\"PG\""
+  },
+  {
+   "page": "main",
+   "t": 10.326,
+   "dir": "out",
+   "len": 172,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_college\",\"payload\":{\"college\":\"Kentucky\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 10.499,
+   "dir": "in",
+   "len": 16375,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"hist_fig_rx_state_\":{\"data\":[{\"bingroup\":\"x\",\"histfunc\":\"sum\",\"hovertemplate\":\"Age=%{x}<br>sum of Salary=%{y}<extra></extra>\",\"legendgroup\":\"\",\"marker\":{\"color\":\"#636efa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"\",\"orientation\":\"v\",\"showlegend\":false,\"x\":{\"dtype\":\"i1\",\"bdata\":\"KCkVFBghFBYiFBo=\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAoDUdbEEAAACAoqdeQQAAAHCmcHZBAAAAkOtEc0EAAACwgCtyQQAAABCuz3ZBAAAAQF14aEEAAADgJ2d2QQAAAEDhpGdBAAAAYAducEEAAAAA3TlbQQ==\"},\"yaxis\":\"y\",\"type\":\"histogram\"}],\"layout\":{\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolargl\":[{\"type\":\"scatterpolargl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"bar\":[{\"error_x\":{\"color\":\"#"
+  },
+  {
+   "page": "main",
+   "t": 10.624,
+   "dir": "out",
+   "len": 161,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_age\",\"payload\":{\"age\":[26,50]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 10.745,
+   "dir": "in",
+   "len": 15529,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"hist_fig_rx_state_\":{\"data\":[{\"bingroup\":\"x\",\"histfunc\":\"sum\",\"hovertemplate\":\"Age=%{x}<br>sum of Salary=%{y}<extra></extra>\",\"legendgroup\":\"\",\"marker\":{\"color\":\"#636efa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"\",\"orientation\":\"v\",\"showlegend\":false,\"x\":{\"dtype\":\"i1\",\"bdata\":\"KCkhIg==\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAoDUdbEEAAACAoqdeQQAAABCuz3ZBAAAAQOGkZ0E=\"},\"yaxis\":\"y\",\"type\":\"histogram\"}],\"layout\":{\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolargl\":[{\"type\":\"scatterpolargl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"bar\":[{\"error_x\":{\"color\":\"#2a3f5f\"},\"error_y\":{\"color\":\"#2a3f5f\"},\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0"
+  },
+  {
+   "page": "main",
+   "t": 10.903,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_salary\",\"payload\":{\"salary\":[7500002,25000000]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 11.002,
+   "dir": "in",
+   "len": 15543,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"hist_fig_rx_state_\":{\"data\":[{\"bingroup\":\"x\",\"histfunc\":\"sum\",\"hovertemplate\":\"Age=%{x}<br>sum of Salary=%{y}<extra></extra>\",\"legendgroup\":\"\",\"marker\":{\"color\":\"#636efa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"\",\"orientation\":\"v\",\"showlegend\":false,\"x\":{\"dtype\":\"i1\",\"bdata\":\"KCkhIg==\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAoDUdbEEAAACAoqdeQQAAABCuz3ZBAAAAQOGkZ0E=\"},\"yaxis\":\"y\",\"type\":\"histogram\"}],\"layout\":{\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolargl\":[{\"type\":\"scatterpolargl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"bar\":[{\"error_x\":{\"color\":\"#2a3f5f\"},\"error_y\":{\"color\":\"#2a3f5f\"},\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0"
+  },
+  {
+   "page": "main",
+   "t": 12.953,
+   "dir": "out",
+   "len": 169,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_position\",\"payload\":{\"position\":\"All\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.068,
+   "dir": "in",
+   "len": 18771,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"qa_layout_rx_state_\":{\"title\":\"QA All players\"},\"position_rx_state_\":\"All\",\"df_rx_state_\":{\"columns\":[\"Name\",\"Team\",\"Number\",\"Position\",\"Age\",\"Height\",\"Weight\",\"College\",\"Salary\"],\"data\":[[\"John Mickey\",\"Lakers\",36,\"SF\",36,\"6-1\",244,\"Kentucky\",9063062.0],[\"Evan Paul\",\"Spurs\",18,\"PG\",40,\"7-0\",290,\"Kentucky\",14739885.0],[\"Terry Mickey\",\"Celtics\",48,\"C\",33,\"7-9\",234,\"Kentucky\",16686998.0],[\"Jonas Jerebko\",\"Suns\",25,\"PF\",28,\"7-8\",255,\"Kentucky\",15508280.0],[\"Jonas Hunter\",\"Celtics\",0,\"SG\",28,\"7-4\",210,\"Kentucky\",11512240.0],[\"RJ Hunter\",\"Spurs\",14,\"SF\",28,\"6-9\",233,\"Kentucky\",11744255.0],[\"Dario Turner\",\"Celtics\",38,\"PF\",31,\"6-3\",173,\"Kentucky\",10086161.0],[\"Isaiah Bradley\",\"Bulls\",25,\"PG\",41,\"7-11\",184,\"Kentucky\",8035978.0],[\"Tyler Paul\",\"Suns\",18,\"SF\",37,\"7-5\",202,\"Kentucky\",10657667.0],[\"John Hunter\",\"Heat\",9,\"SF\",37,\"6-5\",178,\"Kentucky\",12274323.0],[\"Isaiah Mickey\",\"Celtics\",24,\"PG\",33,\"6-11\",253,\"Kentucky\",23919329.0],[\"Chris Mickey\",\"Spurs\",30,\"SG\",41,\"6-0\",225,\"Kentucky\",13774103.0],[\"Tyler Zeller\",\"Celtics\",0,\"SF\",34,\"6-7\",258,\"Kentucky\",23218317.0],[\"Kelly Saric\",\"Heat\",29,\"PF\",36,\"6-5\",244,\"Kentucky\",20858358.0],[\"Tyler Olynyk\",\"Heat\",50,\"PF\",28,\"6-10\",220,\"Kentucky\",22238776.0],[\"RJ Turner\",\"Lakers\",42,\"SG\",31,\"6-7\",278,\"Kentucky\",23802835.0],[\"Dario Mickey\",\"Suns\",39,\"PG\",34,\"7-0\",201,\"Kentucky\",12396298.0],[\"Dario Jerebko\",\"Nets\",52,\"SG\",32,\"6-8\",207,\"Kentucky\",12216320.0],[\"Avery Hunter\",\"Bulls\",31,\"SG\",37,\"7-10\",284,\"Kentucky\",13872332.0]]},\"hist_fig_rx_state_\":{\"data\":[{\"bingroup\":\"x\",\"histfunc\":\"sum\",\"hovertemplate\":\"Age=%{x}<br>sum of Salary=%{y}<extra></extra>\",\"legendgroup\":\"\",\"marker\":{\"color\":\"#636efa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"\",\"orientation\":\"v\",\"showlegend\":false,\"x\":{\"dtype\":\"i1\",\"bdata\":\"JCghHBwcHyklJSEpIiQcHyIgJQ==\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAwFJJYUEAAACgNR1sQQAAAMDy029BAAAAAGeUbUEAAAAANvVlQQAAAOB/ZmZBAAAAIOI8Y0EAAACAoqdeQQAAAGDwU2RBAAAAYFJpZ0EAAAAQrs92QQAAAOCiRWpBAAAA0IgkdkEAAABgX+RzQQAAAIBjNXVBAAAAMD2zdkEAAABA4aRnQQAAAAAATWdBAAAAgJl1akE=\"},\"yaxis\":\"y\",\"type\":\"histogram\"}],\"layout\":{\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,"
+  },
+  {
+   "page": "main",
+   "t": 13.23,
+   "dir": "out",
+   "len": 167,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.nba___views___table____state.set_college\",\"payload\":{\"college\":\"All\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 13.293,
+   "dir": "in",
+   "len": 32943,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.nba___views___table____state\":{\"hist_fig_rx_state_\":{\"data\":[{\"bingroup\":\"x\",\"histfunc\":\"sum\",\"hovertemplate\":\"Age=%{x}<br>sum of Salary=%{y}<extra></extra>\",\"legendgroup\":\"\",\"marker\":{\"color\":\"#636efa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"\",\"orientation\":\"v\",\"showlegend\":false,\"x\":{\"dtype\":\"i1\",\"bdata\":\"JCYcJCkoJCYfIyknISchISkhGyQcJygiGxsfHyUkIhweKRwpHiMcHykkICYlJRsgHx4iKBwhIRsmISkdKSkeKSIcHiQhKRwnICEoHRsdIycjGxwnHygcHiYfHRscJiclHCknIycmIiMbJBwhIiAmJSMnIR4dISgjKBsnHyAnICImJSAoISYdHiUd\"},\"xaxis\":\"x\",\"y\":{\"dtype\":\"f8\",\"bdata\":\"AAAAwFJJYUEAAADAx0hdQQAAAABw0V9BAAAAQKy0akEAAAAABp5qQQAAAKA1HWxBAAAA0HhCdEEAAABAFR1uQQAAAIDLLG1BAAAAAOoJaUEAAACgNbZxQQAAAND9VnBBAAAAINU3bkEAAABAOJV2QQAAAGDFjmdBAAAAwPLTb0EAAACAbLJkQQAAAEC0omdBAAAAoE1YcUEAAADgn0twQQAAACCTtGFBAAAAMOE5cUEAAAAg40tyQQAAABBYmXFBAAAAgMFHcEEAAACATUViQQAAAECodV1BAAAA4Bj8cEEAAACwhJRzQQAAAFAy0HBBAAAAAMr2X0EAAAAAZ5RtQQAAAJCU83NBAAAAQI8nYkEAAAAANvVlQQAAAOB1wm1BAAAAoPx4Y0EAAABw4JJxQQAAAOB/ZmZBAAAAIOI8Y0EAAACAoqdeQQAAAOAk2XJBAAAAYDBockEAAABgU25xQQAAAGDwU2RBAAAAYFJpZ0EAAABgjEFgQQAAACC4LWNBAAAAgMundEEAAADgPmtpQQAAAJBJVXZBAAAAYLuYa0EAAADAyT1nQQAAAOB5L2VBAAAAoJDwcEEAAADwd4V0QQAAAGD/YXJBAAAAEK7PdkEAAADAGzdvQQAAAEDQeHZBAAAA4KJFakEAAABgAyhtQQAAALBHWHFBAAAAQEL+ZUEAAADQiCR2QQAAABBBf3VBAAAAwAgiZ0EAAABgX+RzQQAAAECLjm1BAAAAQFdpXkEAAABAk+B0QQAAACD9F3BBAAAAsIqAcUEAAADgnbBlQQAAAODaeHJBAAAAoAdPbkEAAAAg96xpQQAAAGD6PGhBAAAAIHq5ZkEAAAAAEcRsQQAAAKCX9m9BAAAAQIL9YEEAAACw4ux0QQAAAGBXo3VBAAAAoObdZEEAAABA9YNpQQAAAIBjNXVBAAAA4AUKYEEAAAAA2LJdQQAAADA9s3ZBAAAAYCE7a0EAAABAME1qQQAAAACp/mNBAAAAIJ/KbkEAAACgbwRmQQAAAMD8YmtBAAAAwMR2aEEAAADAevpqQQAAAODhPWhBAAAAoMzBbkEAAADgk6Z0QQAAAOBuCGFBAAAAQOGkZ0EAAADAS1xfQQAAACDOyXZBAAAAQDQecUEAAACAYedjQQAAAGC3+GJBAAAAAOLtX0EAAAAAAE1nQQAAAGARmXBBAAAAgJl1akEAAABwRrR1QQAAAGBAtWxBAAAA8H9sdkEAAAAA7FtiQQAAACBT73JBAAAAYECJbkEAAAAgyg1rQQAAAICaq2dBAAAAgHMYZ0EAAACASr9vQQAAAFDddHBBAAAAwJR4ZkEAAAAgELFgQQAAAFDpJ3FBAAAAYNzCakEAAACQljx2QQAAAIBnRW5BAAAAAHJVZEEAAACACAR1QQAAAHCm7HBBAAAAQNQoZ0EAAADglD1iQQAAAMAvOV9BAAAAwCQgX0EAAAAQhpp2QQAAAPBCA3RB\"},\"yaxis\":\"y\",\"type\":\"histogram\"}],\"layout\":{\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\""
+  },
+  {
+   "page": "main",
+   "t": 15.755,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 15.756,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 15.937,
+   "dir": "open",
+   "payload": "ws://localhost:8190/_event/?token=64a86564-0a23-4518-d567-6ec85a3c1524&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 15.937,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"_yjKS9uILZ7BZLttAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 15.989,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d6d327097d99e86f\",\"b084fc0c68f7c73a\",\"1d07a6f12099fb36\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 16.006,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Xp0fajGm6eBUBTEEAAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 16.01,
+   "dir": "in",
+   "len": 34702,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8190\",\"origin\":\"http://localhost:3190\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"qILRke/a1Rcb/pfw+wdYjg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8190\",\"origin\":\"http://localhost:3190\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"qILRke/a1Rcb/pfw+wdYjg==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3190\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3190/index\",\"full_raw_path\":\"http://localhost:3190/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"64a86564-0a23-4518-d567-6ec85a3c1524\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Xp0fajGm6eBUBTEEAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3190\",\"origin\":\"http://localhost:3190\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3190/\"}},\"reflex___state____state.nba___views___table____state\":{\"age_rx_state_\":[26,50],\"df_rx_state_\":{\"columns\":[\"Name\",\"Team\",\"Number\",\"Position\",\"Age\",\"Height\",\"Weight\",\"College\",\"Salary\"],\"data\":[[\"John Mickey\",\"Lakers\",36,\"SF\",36,\"6-1\",244,\"Kentucky\",9063062.0],[\"Jordan Thomas\",\"Lakers\",36,\"C\",38,\"6-7\",257,\"Michigan State\",7676703.0],[\"Terry Saric\",\"Nets\",46,\"PG\",28,\"6-1\",235,\"Michigan State\",8340928.0],[\"Dario Rozier\",\"Jazz\",2,\"C\",36,\"7-5\",258,\"UCLA\",14001506.0],[\"Terry Crowder\",\"Lakers\",17,\"PG\",41,\"6-0\",263,\"Arizona\",13955120.0],[\"Evan Paul\",\"Spurs\",18,\"PG\",40,\"7-0\",290,\"Kentucky\",14739885.0],[\"Terry Olynyk\",\"Suns\",8,\"PG\",36,\"7-11\",223,\"Arizona\",21243789.0],[\"Avery Holland\",\"Jazz\",34,\"SF\",38,\"7-2\",258,\"North Carolina\",15788202.0],[\"Isaiah Bradley\",\"Spurs\",55,\"SG\",31,\"7-6\",220,\"\",15296092.0],[\"Isaiah Smart\",\"Suns\",30,\"PF\",35,\"6-3\",237,\"Arizona\",13127504.0],[\"Avery Zeller\",\"Suns\",41,\"C\",41,\"7-8\",216,\"Kansas\",18572122.0],[\"Dario Johnson\",\"Celtics\",30,\"SF\",39,\"6-10\",185,\"Michigan State\",17133533.0],[\"John Holland\",\"Celtics\",9,\"SG\",33,\"6-9\",275,\"UCLA\",15842985.0],[\"Marcus Holland\",\"Bulls\",1,\"C\",39,\"6-8\",265,\"UCLA\",23679876.0],[\"Kelly Paul\",\"Bulls\",3,\"SF\",33,\"7-8\",186,\"North Carolina\",12351019.0],[\"Terry Mickey\",\"Celtics\",48,\"C\",33,\"7"
+  },
+  {
+   "page": "main",
+   "t": 16.01,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "notes": {
+  "plots_initial": [
+   {
+    "id": null,
+    "traces": 6,
+    "points": 640,
+    "layout_title": {
+     "text": "NBA Age/Salary plot"
+    },
+    "rendered_title": "NBA Age/Salary plot",
+    "names": [
+     "C",
+     "SG",
+     "SF",
+     "PG",
+     "PF",
+     "Overall Trendline"
+    ]
+   },
+   {
+    "id": null,
+    "traces": 1,
+    "points": 12,
+    "layout_title": {
+     "text": "Age/Salary Distribution"
+    },
+    "rendered_title": "Age/Salary Distribution",
+    "names": [
+     ""
+    ]
+   },
+   {
+    "id": "qa-literal-title",
+    "traces": 1,
+    "points": 12,
+    "layout_title": {
+     "text": "QA literal layout title"
+    },
+    "rendered_title": "QA literal layout title",
+    "names": [
+     ""
+    ]
+   },
+   {
+    "id": "qa-state-title",
+    "traces": 1,
+    "points": 12,
+    "layout_title": {
+     "text": "QA All players"
+    },
+    "rendered_title": "QA All players",
+    "names": [
+     ""
+    ]
+   }
+  ],
+  "qa_titles_initial": {
+   "literal": [
+    {
+     "text": "QA literal layout title"
+    },
+    "QA literal layout title"
+   ],
+   "state": [
+    {
+     "text": "QA All players"
+    },
+    "QA All players"
+   ]
+  },
+  "qa_titles_after_pg": [
+   {
+    "text": "QA PG players"
+   },
+   "QA PG players"
+  ],
+  "plots_after_filters": [
+   {
+    "id": null,
+    "traces": 2,
+    "points": 8,
+    "layout_title": {
+     "text": "NBA Age/Salary plot"
+    },
+    "rendered_title": "NBA Age/Salary plot",
+    "names": [
+     "PG",
+     "Overall Trendline"
+    ]
+   },
+   {
+    "id": null,
+    "traces": 1,
+    "points": 3,
+    "layout_title": {
+     "text": "Age/Salary Distribution"
+    },
+    "rendered_title": "Age/Salary Distribution",
+    "names": [
+     ""
+    ]
+   },
+   {
+    "id": "qa-literal-title",
+    "traces": 1,
+    "points": 3,
+    "layout_title": {
+     "text": "QA literal layout title"
+    },
+    "rendered_title": "QA literal layout title",
+    "names": [
+     ""
+    ]
+   },
+   {
+    "id": "qa-state-title",
+    "traces": 1,
+    "points": 3,
+    "layout_title": {
+     "text": "QA PG players"
+    },
+    "rendered_title": "QA PG players",
+    "names": [
+     ""
+    ]
+   }
+  ],
+  "plots_after_reset_selects": [
+   [
+    6,
+    276
+   ],
+   [
+    1,
+    8
+   ],
+   [
+    1,
+    8
+   ],
+   [
+    1,
+    8
+   ]
+  ],
+  "badges_after_reload": [
+   "2015-2016 season",
+   "Min Age: 26",
+   "Max Age: 50",
+   "Min Sal: 7M",
+   "Max Sal: 25M"
+  ]
+ }
+}

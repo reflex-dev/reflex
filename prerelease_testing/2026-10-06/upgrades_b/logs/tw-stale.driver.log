@@ -1,0 +1,35 @@
+[PASS   ] A: dave signs up on the old version: /
+[PASS   ] A: dave tweets + follows alice: [['dave', 'dave pre-upgrade tw-stale'], ['bob', 'bob tweet tw-base']]
+A_before {'marker': 'old-tab-1791309748739', 'path': '/', 'on_home': True, 'on_login': False, 'avatar': 'da', 'token': 'c7151c3b-ba4a-48fc-d013-ec41af168433', 'feed': [['dave', 'dave pre-upgrade tw-stale'], ['bob', 'bob tweet tw-base'], ['alice', 'alice tweet two tw-base'], ['alice', 'alice tweet one tw-base']], 'following': [], 'toasts': [], 'body_tail': 'PySocial\nHome\nFollowers\nSign out\nHome\nDA\nTweet\nDA\n\n@dave\n\ndave pre-upgrade tw-stale\n\nBO\n\n@bob\n\nbob tweet tw-base\n\nAL\n\n@alice\n\nalice tweet two tw-base\n\nAL\n\n@alice\n\nalice tweet one tw-base\n\nAL\n\nalice\n\nFollowing'}
+READY; waiting for 'down'
+B_server_down {'marker': 'old-tab-1791309748739', 'path': '/', 'on_home': True, 'on_login': False, 'avatar': 'da', 'token': 'c7151c3b-ba4a-48fc-d013-ec41af168433', 'feed': [['dave', 'dave pre-upgrade tw-stale'], ['bob', 'bob tweet tw-base'], ['alice', 'alice tweet two tw-base'], ['alice', 'alice tweet one tw-base']], 'following': [], 'toasts': ['Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:8180/_event'], 'body_tail': 'nect to server: websocket error.\nCheck if server is reachable at ws://localhost:8180/_event\nPySocial\nHome\nFollowers\nSign out\nHome\nDA\nTweet\nDA\n\n@dave\n\ndave pre-upgrade tw-stale\n\nBO\n\n@bob\n\nbob tweet tw-base\n\nAL\n\n@alice\n\nalice tweet two tw-base\n\nAL\n\n@alice\n\nalice tweet one tw-base\n\nAL\n\nalice\n\nFollowing'}
+waiting for 'up'
+C_after_up {'marker': None, 'path': '/login', 'on_home': False, 'on_login': True, 'avatar': None, 'token': 'c7151c3b-ba4a-48fc-d013-ec41af168433', 'feed': [], 'following': None, 'toasts': [], 'body_tail': "Welcome to PySocial!\nSign in or sign up to get started.\n\nSee the source code for this demo app here.\n\nLog in\n\nDon't have an account yet? Sign up here."}
+[PASS   ] C: did the old tab reload itself after the new server came up?: marker=gone (page reloaded)
+[FAIL   ] C: dave still logged in after upgrade WITHOUT re-login (same token): {'marker': None, 'path': '/login', 'on_home': False, 'on_login': True, 'avatar': None, 'token': 'c7151c3b-ba4a-48fc-d013-ec41af168433', 'feed': [], 'following': None, 'toasts': [], 'body_tail': "Welcome to PySocial!\nSign in or sign up to get started.\n\nSee the source code for this demo app here.\n\nLog in\n\nDon't have an account yet? Sign up here."}
+[FAIL   ] D: the tab posts a tweet through the new backend: []
+D_interact {'marker': None, 'path': '/login', 'on_home': False, 'on_login': True, 'avatar': None, 'token': 'c7151c3b-ba4a-48fc-d013-ec41af168433', 'feed': [], 'following': None, 'toasts': [], 'body_tail': "Welcome to PySocial!\nSign in or sign up to get started.\n\nSee the source code for this demo app here.\n\nLog in\n\nDon't have an account yet? Sign up here."}
+E_after_manual_reload {'marker': None, 'path': '/login', 'on_home': False, 'on_login': True, 'avatar': None, 'token': 'c7151c3b-ba4a-48fc-d013-ec41af168433', 'feed': [], 'following': None, 'toasts': [], 'body_tail': "Welcome to PySocial!\nSign in or sign up to get started.\n\nSee the source code for this demo app here.\n\nLog in\n\nDon't have an account yet? Sign up here."}
+[FAIL   ] E: manual reload keeps dave's session: None
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrades_b/scripts/stale_tab_twitter.py", line 96, in <module>
+    page.get_by_role("button", name="Sign out").click()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 18032, in click
+    self._sync(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_locator.py", line 165, in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 594, in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_role("button", name="Sign out")
+

@@ -1,0 +1,24 @@
+14,17c14,17
+<     "react": "19.2.8",
+<     "react-dom": "19.2.8",
+<     "react-dropzone": "15.0.0",
+<     "react-error-boundary": "6.1.2",
+---
+>     "react": "19.3.0",
+>     "react-dom": "19.3.0",
+>     "react-dropzone": "17.0.0",
+>     "react-error-boundary": "6.1.6",
+20c20
+<     "socket.io-client": "4.8.3",
+---
+>     "socket.io-client": "4.8.4",
+28,29c28,29
+<     "autoprefixer": "10.5.4",
+<     "postcss": "8.5.26",
+---
+>     "autoprefixer": "10.6.1",
+>     "postcss": "8.5.29",
+31c31
+<     "vite": "8.2.2"
+---
+>     "vite": "8.3.2"

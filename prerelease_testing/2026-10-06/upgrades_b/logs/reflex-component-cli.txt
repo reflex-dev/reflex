@@ -1,0 +1,36 @@
+=== stable: reflex component --help
+Usage: reflex component [OPTIONS] COMMAND [ARGS]...
+
+  CLI for creating custom components.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  build    Build a custom component.
+  init     Initialize a custom component.
+  install  Install package from this local custom component in editable...
+  share    Collect more details on the published package for gallery.
+rc=0
+=== stable: reflex component init
+────────────────────── Initializing reflex-qa-lib project ──────────────────────
+Info: Populating pyproject.toml with package name: reflex-qa-lib
+Info: Initializing the component directory: custom_components/reflex_qa_lib
+Info: Creating app for testing: qa_lib_demo
+─────────────────────────── Initializing qa_lib_demo ───────────────────────────
+Info: Initializing the web directory.
+Info: Initializing the app directory.
+Success: Initialized qa_lib_demo using the blank template. Install dependencies 
+rc=1
+=== alpha: reflex component --help
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+rc=2
+=== alpha: reflex component init
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+rc=2

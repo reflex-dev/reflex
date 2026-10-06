@@ -1,0 +1,13 @@
+.web/backend/bundled_libraries.json
+.web/backend/stateful_pages.json
+README.md
+assets/external/local_component/hello/hello.jsx
+assets/favicon.ico
+local_component/__init__.py
+local_component/hello.jsx
+local_component/hello.py
+local_component/local_component.py
+reflex.lock/bun.lock
+reflex.lock/package.json
+requirements.txt
+rxconfig.py

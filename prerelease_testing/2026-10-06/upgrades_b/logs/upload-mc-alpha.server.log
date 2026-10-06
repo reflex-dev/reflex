@@ -1,0 +1,220 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrades_b/upload/rxconfig.py'
+Debug: Config: UploadConfig(app_name='upload', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'env', 'loglevel', 'app_name', 'telemetry_enabled', 
+'plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/upgrades_b-upload/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3182
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8182
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3182 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3182 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3182 is not in use.
+Debug: Checking if Backend port: 8182 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8182 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8182 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.04s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-dropzone@17.0.0', 
+'react-error-boundary@6.1.6', 'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/upgrades_b/upload/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/upgrades_b/upload/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.01s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpa
+d/apps/upgrades_b/upload/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrades_b/upload/assets', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrades_b/upload/upload', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrades_b/upload/rxconfig.py']
+[INFO] Starting granian (main PID: 2313)
+[INFO] Listening at: http://0.0.0.0:8182
+[INFO] Spawning worker-1 with PID: 2357
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3182/
+App running at: http://localhost:3182/
+Backend running at: http://0.0.0.0:8182
+Debug:   ➜  Network: http://192.0.2.2:3182/  eth0
+Debug: 6:43:50 PM [vite] (ssr) connected.
+Got progress {'loaded': 114688, 'total': 3145927, 'progress': 0.03645602711061}
+Got progress {'loaded': 114688, 'total': 3145927, 'progress': 0.03645602711061}
+Got progress {'loaded': 212992, 'total': 3145927, 'progress': 0.06770405034827573}
+Got progress {'loaded': 212992, 'total': 3145927, 'progress': 0.06770405034827573}
+Got progress {'loaded': 294912, 'total': 3145927, 'progress': 0.09374406971299716}
+Got progress {'loaded': 262144, 'total': 3145927, 'progress': 0.08332806196710858}
+Got progress {'loaded': 16384, 'total': 6291659, 'progress': 0.0026040826433854727}
+Got progress {'loaded': 442368, 'total': 3145927, 'progress': 0.14061610456949572}
+Got progress {'loaded': 360448, 'total': 3145927, 'progress': 0.1145760852047743}
+Got progress {'loaded': 49152, 'total': 6291659, 'progress': 0.0078122479301564185}
+Got progress {'loaded': 540672, 'total': 3145927, 'progress': 0.17186412780716145}
+Got progress {'loaded': 442368, 'total': 3145927, 'progress': 0.14061610456949572}
+Got progress {'loaded': 81920, 'total': 6291659, 'progress': 0.013020413216927363}
+Got progress {'loaded': 655360, 'total': 3145927, 'progress': 0.20832015491777145}
+Got progress {'loaded': 557056, 'total': 3145927, 'progress': 0.17707213168010574}
+Got progress {'loaded': 720896, 'total': 3145927, 'progress': 0.2291521704095486}
+Got progress {'loaded': 114688, 'total': 6291659, 'progress': 0.018228578503698308}
+Got progress {'loaded': 819200, 'total': 3145927, 'progress': 0.26040019364721434}
+Got progress {'loaded': 638976, 'total': 3145927, 'progress': 0.20311215104482716}
+Got progress {'loaded': 770048, 'total': 3145927, 'progress': 0.24477618202838147}
+Got progress {'loaded': 163840, 'total': 6291659, 'progress': 0.026040826433854726}
+Got progress {'loaded': 917504, 'total': 3145927, 'progress': 0.29164821688488}
+Got progress {'loaded': 835584, 'total': 3145927, 'progress': 0.26560819752015863}
+Got progress {'loaded': 196608, 'total': 6291659, 'progress': 0.031248991720625674}
+Got progress {'loaded': 999424, 'total': 3145927, 'progress': 0.31768823624960146}
+Got progress {'loaded': 933888, 'total': 3145927, 'progress': 0.2968562207578243}
+Got progress {'loaded': 229376, 'total': 6291659, 'progress': 0.036457157007396615}
+Got progress {'loaded': 1114112, 'total': 3145927, 'progress': 0.3541442633602115}
+Got progress {'loaded': 1032192, 'total': 3145927, 'progress': 0.32810424399549004}
+Got progress {'loaded': 1212416, 'total': 3145927, 'progress': 0.38539228659787717}
+Got progress {'loaded': 1130496, 'total': 3145927, 'progress': 0.3593522672331558}
+Got progress {'loaded': 278528, 'total': 6291659, 'progress': 0.044269404937553034}
+Got progress {'loaded': 1310720, 'total': 3145927, 'progress': 0.4166403098355429}
+Got progress {'loaded': 1228800, 'total': 3145927, 'progress': 0.39060029047082145}
+Got progress {'loaded': 311296, 'total': 6291659, 'progress': 0.04947757022432398}
+Got progress {'loaded': 1409024, 'total': 3145927, 'progress': 0.44788833307320863}
+Got progress {'loaded': 1343488, 'total': 3145927, 'progress': 0.4270563175814315}
+Got progress {'loaded': 344064, 'total': 6291659, 'progress': 0.05468573551109493}
+Got progress {'loaded': 1507328, 'total': 3145927, 'progress': 0.47913635631087437}
+Got progress {'loaded': 1441792, 'total': 3145927, 'progress': 0.4583043408190972}
+Got progress {'loaded': 376832, 'total': 6291659, 'progress': 0.05989390079786587}
+Got progress {'loaded': 1605632, 'total': 3145927, 'progress': 0.5103843795485401}
+Got progress {'loaded': 1540096, 'total': 3145927, 'progress': 0.48955236405676295}
+Got progress {'loaded': 1622016, 'total': 3145927, 'progress': 0.5155923834214844}
+Got progress {'loaded': 1687552, 'total': 3145927, 'progress': 0.5364243989132615}
+Got progress {'loaded': 425984, 'total': 6291659, 'progress': 0.06770614872802229}
+Got progress {'loaded': 1835008, 'total': 3145927, 'progress': 0.58329643376976}
+Got progress {'loaded': 1753088, 'total': 3145927, 'progress': 0.5572564144050386}
+Got progress {'loaded': 458752, 'total': 6291659, 'progress': 0.07291431401479323}
+Got progress {'loaded': 1933312, 'total': 3145927, 'progress': 0.6145444570074258}
+Got progress {'loaded': 1851392, 'total': 3145927, 'progress': 0.5885044376427043}
+Got progress {'loaded': 491520, 'total': 6291659, 'progress': 0.07812247930156418}
+Got progress {'loaded': 1998848, 'total': 3145927, 'progress': 0.6353764724992029}
+Got progress {'loaded': 1933312, 'total': 3145927, 'progress': 0.6145444570074258}
+Got progress {'loaded': 524288, 'total': 6291659, 'progress': 0.08333064458833513}
+Got progress {'loaded': 2031616, 'total': 3145927, 'progress': 0.6457924802450915}
+Got progress {'loaded': 2097152, 'total': 3145927, 'progress': 0.6666244957368687}
+Got progress {'loaded': 2228224, 'total': 3145927, 'progress': 0.708288526720423}
+Got progress {'loaded': 2162688, 'total': 3145927, 'progress': 0.6874565112286458}
+Got progress {'loaded': 589824, 'total': 6291659, 'progress': 0.09374697516187702}
+Got progress {'loaded': 622592, 'total': 6291659, 'progress': 0.09895514044864796}
+Got progress {'loaded': 2260992, 'total': 3145927, 'progress': 0.7187045344663116}
+Got progress {'loaded': 2326528, 'total': 3145927, 'progress': 0.7395365499580887}
+Got progress {'loaded': 2424832, 'total': 3145927, 'progress': 0.7707845731957543}
+Got progress {'loaded': 2359296, 'total': 3145927, 'progress': 0.7499525577039773}
+Got progress {'loaded': 2457600, 'total': 3145927, 'progress': 0.7812005809416429}
+Got progress {'loaded': 2523136, 'total': 3145927, 'progress': 0.8020325964334201}
+Got progress {'loaded': 671744, 'total': 6291659, 'progress': 0.10676738837880438}
+Got progress {'loaded': 2621440, 'total': 3145927, 'progress': 0.8332806196710858}
+Got progress {'loaded': 2555904, 'total': 3145927, 'progress': 0.8124486041793086}
+Got progress {'loaded': 704512, 'total': 6291659, 'progress': 0.11197555366557532}
+Got progress {'loaded': 2736128, 'total': 3145927, 'progress': 0.8697366467816958}
+Got progress {'loaded': 2654208, 'total': 3145927, 'progress': 0.8436966274169744}
+Got progress {'loaded': 737280, 'total': 6291659, 'progress': 0.11718371895234628}
+Got progress {'loaded': 2752512, 'total': 3145927, 'progress': 0.8749446506546401}
+Got progress {'loaded': 2818048, 'total': 3145927, 'progress': 0.8957766661464173}
+Got progress {'loaded': 770048, 'total': 6291659, 'progress': 0.12239188423911722}
+Got progress {'loaded': 2916352, 'total': 3145927, 'progress': 0.927024689384083}
+Got progress {'loaded': 2850816, 'total': 3145927, 'progress': 0.9061926738923058}
+Got progress {'loaded': 3014656, 'total': 3145927, 'progress': 0.9582727126217487}
+Got progress {'loaded': 2949120, 'total': 3145927, 'progress': 0.9374406971299716}
+Got progress {'loaded': 819200, 'total': 6291659, 'progress': 0.13020413216927362}
+Got progress {'loaded': 3112960, 'total': 3145927, 'progress': 0.9895207358594144}
+Got progress {'loaded': 3047424, 'total': 3145927, 'progress': 0.9686887203676373}
+Got progress {'loaded': 851968, 'total': 6291659, 'progress': 0.13541229745604458}
+Got progress {'loaded': 3145927, 'total': 3145927, 'progress': 1}
+Got progress {'loaded': 3145927, 'total': 3145927, 'progress': 1}
+Got progress {'loaded': 884736, 'total': 6291659, 'progress': 0.14062046274281553}
+Got progress {'loaded': 917504, 'total': 6291659, 'progress': 0.14582862802958646}
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 2 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 2 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

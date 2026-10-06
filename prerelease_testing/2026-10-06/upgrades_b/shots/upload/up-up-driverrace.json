@@ -1,0 +1,1125 @@
+{
+ "tag": "up-up",
+ "results": [
+  {
+   "name": "initial: 'No files selected', QA extras rendered",
+   "status": "pass",
+   "detail": "selected=['No files selected'] disk=['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']",
+   "t": 1.802
+  },
+  {
+   "name": "select 2 files -> names rendered (rx.selected_files)",
+   "status": "pass",
+   "detail": "['hello.txt', 'h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt']",
+   "t": 1.886
+  },
+  {
+   "name": "re-select replaces the selection",
+   "status": "pass",
+   "detail": "['after cancel.txt']",
+   "t": 1.91
+  },
+  {
+   "name": "Clear (rx.clear_selected_files) empties the selection",
+   "status": "pass",
+   "detail": "['No files selected']",
+   "t": 1.942
+  },
+  {
+   "name": "drag & drop onto the dropzone selects files",
+   "status": "pass",
+   "detail": "['dropped_one.txt', 'dropped two.txt']",
+   "t": 1.952
+  },
+  {
+   "name": "dropped files upload and land on disk",
+   "status": "pass",
+   "detail": "['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']",
+   "t": 2.036
+  },
+  {
+   "name": "hostile names sanitized into the upload dir (no traversal), content intact",
+   "status": "fail",
+   "detail": "{\"saved\": {\"../x_traversal.txt\": false, \"..\\\\..\\\\win_traversal.txt\": false, \"/abs/root_abs.txt\": false, \"sub/dir/nested.txt\": false}, \"escaped_outside\": [], \"disk\": [\"after cancel.txt\", \"big12mb.bin\", \"dropped two.txt\", \"dropped_one.txt\", \"h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt\", \"nested.txt\", \"root_abs.txt\", \"win_traversal.txt\", \"x_traversal.txt\"]}",
+   "t": 2.1
+  },
+  {
+   "name": "unicode+spaces+parens filename roundtrip",
+   "status": "fail",
+   "detail": "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+   "t": 2.1
+  },
+  {
+   "name": "12 MB binary upload: sha256 matches",
+   "status": "pass",
+   "detail": "0.57s size=12582912",
+   "t": 2.703
+  },
+  {
+   "name": "progress bar at 100 after a completed upload",
+   "status": "pass",
+   "detail": "aria-valuenow=100 uploading_text=0",
+   "t": 2.716
+  },
+  {
+   "name": "throttled upload shows 'Uploading... cancel'",
+   "status": "pass",
+   "detail": "",
+   "t": 2.972
+  },
+  {
+   "name": "progress advances during the throttled upload",
+   "status": "pass",
+   "detail": "['10', '20']",
+   "t": 5.999
+  },
+  {
+   "name": "event sent DURING an in-flight upload is processed before the upload ends (#7357)",
+   "status": "pass",
+   "detail": "pings 0->1 latency=0.26s upload_still_in_flight=True",
+   "t": 6.327
+  },
+  {
+   "name": "cancel hides 'Uploading...' and no file is saved",
+   "status": "pass",
+   "detail": "uploading_hidden=True slow6mb_on_disk=False progress=23",
+   "t": 8.416
+  },
+  {
+   "name": "upload after cancel works",
+   "status": "pass",
+   "detail": "['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']",
+   "t": 8.533
+  },
+  {
+   "name": "events still processed after cancel",
+   "status": "pass",
+   "detail": "2",
+   "t": 8.8
+  },
+  {
+   "name": "reload: state kept (pings counter survives)",
+   "status": "pass",
+   "detail": "2",
+   "t": 12.283
+  },
+  {
+   "name": "fresh context lists every uploaded file",
+   "status": "pass",
+   "detail": "['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']",
+   "t": 13.156
+  },
+  {
+   "name": "rendered /_upload links serve the exact bytes (spaces, unicode, nested, 12 MB)",
+   "status": "pass",
+   "detail": "{\"dropped two.txt\": [200, \"http://localhost:8182/_upload/dropped two.txt\", true], \"h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt\": [200, \"http://localhost:8182/_upload/h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt\", true], \"nested.txt\": [200, \"http://localhost:8182/_upload/nested.txt\", true], \"big12mb.bin\": [200, \"http://localhost:8182/_upload/big12mb.bin\", true]}",
+   "t": 14.757
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 14.873
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 14.873
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 1.349,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 1.493,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 1.541,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 1.65,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 6.411,
+   "type": "log",
+   "text": "Upload error: Upload aborted"
+  },
+  {
+   "page": "main",
+   "t": 9.815,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 9.951,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 10.018,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 10.126,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 10.127,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "fresh",
+   "t": 12.519,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "fresh",
+   "t": 12.755,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "fresh",
+   "t": 12.812,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "fresh",
+   "t": 13.016,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [
+  {
+   "page": "main",
+   "t": 6.415,
+   "url": "http://localhost:8182/_upload",
+   "failure": "net::ERR_ABORTED"
+  }
+ ],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 1.541,
+   "dir": "open",
+   "payload": "ws://localhost:8182/_event/?token=c1ee1c79-cec7-49ef-d336-fe0ddc9dd38b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 1.541,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"S-cxYExSnOe5d505AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 1.69,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3278cfcc0b51b272\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"a963c44b9e310edc\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 1.7,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"SoCDCuhpkn3FgeagAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 1.702,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"THGm6idkOFehKvPPH+LCuA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"THGm6idkOFehKvPPH+LCuA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3182\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3182/index\",\"full_raw_path\":\"http://localhost:3182/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"c1ee1c79-cec7-49ef-d336-fe0ddc9dd38b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"SoCDCuhpkn3FgeagAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3182\",\"origin\":\"http://localhost:3182\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3182/\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.702,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.047,
+   "dir": "out",
+   "len": 201,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":362,\"total\":362,\"progress\":1}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.049,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":100,\"is_uploading_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.113,
+   "dir": "out",
+   "len": 201,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":972,\"total\":972,\"progress\":1}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.114,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":100,\"is_uploading_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.245,
+   "dir": "out",
+   "len": 211,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":12583114,\"total\":12583114,\"progress\":1}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.246,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":100,\"is_uploading_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.866,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":49152,\"total\":6291658,\"progress\":0.0078122491718399184}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.874,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":1,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.967,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":81920,\"total\":6291658,\"progress\":0.013020415286399864}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.973,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":1,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.067,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":131072,\"total\":6291658,\"progress\":0.020832664458239784}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.075,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":2,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.168,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":163840,\"total\":6291658,\"progress\":0.02604083057279973}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.173,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":3,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.269,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":212992,\"total\":6291658,\"progress\":0.03385307974463965}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.281,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":3,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.369,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":245760,\"total\":6291658,\"progress\":0.039061245859199595}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.375,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":4,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.47,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":278528,\"total\":6291658,\"progress\":0.04426941197375954}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.476,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":4,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.571,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":327680,\"total\":6291658,\"progress\":0.05208166114559946}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.577,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":5,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.671,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":360448,\"total\":6291658,\"progress\":0.0572898272601594}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.681,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":6,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.772,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":409600,\"total\":6291658,\"progress\":0.06510207643199932}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.778,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":7,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.872,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":442368,\"total\":6291658,\"progress\":0.07031024254655927}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.88,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":7,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.973,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":491520,\"total\":6291658,\"progress\":0.07812249171839919}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.979,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":8,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.073,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":524288,\"total\":6291658,\"progress\":0.08333065783295913}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.081,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":8,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.174,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":557056,\"total\":6291658,\"progress\":0.08853882394751908}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.182,
+   "dir": "in",
+   "len": 144,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":9,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.275,
+   "dir": "out",
+   "len": 224,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":606208,\"total\":6291658,\"progress\":0.096351073119359}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.284,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":10,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.377,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":638976,\"total\":6291658,\"progress\":0.10155923923391895}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.386,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":10,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.487,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":688128,\"total\":6291658,\"progress\":0.10937148840575886}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.504,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":11,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.577,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":720896,\"total\":6291658,\"progress\":0.1145796545203188}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.588,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":11,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.678,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":770048,\"total\":6291658,\"progress\":0.12239190369215873}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.695,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":12,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.783,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":802816,\"total\":6291658,\"progress\":0.12760006980671867}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.786,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":13,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.879,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":835584,\"total\":6291658,\"progress\":0.13280823592127863}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.891,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":13,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.99,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":884736,\"total\":6291658,\"progress\":0.14062048509311853}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.0,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":14,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.087,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":917504,\"total\":6291658,\"progress\":0.1458286512076785}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.098,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":15,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.187,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":966656,\"total\":6291658,\"progress\":0.1536409003795184}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.199,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":15,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.288,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":999424,\"total\":6291658,\"progress\":0.15884906649407834}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.294,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":16,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.387,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1032192,\"total\":6291658,\"progress\":0.1640572326086383}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.399,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":16,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.488,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1081344,\"total\":6291658,\"progress\":0.1718694817804782}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.498,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":17,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.589,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1114112,\"total\":6291658,\"progress\":0.17707764789503816}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.594,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":18,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.689,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1163264,\"total\":6291658,\"progress\":0.18488989706687808}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.696,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":18,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.79,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1196032,\"total\":6291658,\"progress\":0.19009806318143802}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.795,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":19,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.89,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1228800,\"total\":6291658,\"progress\":0.19530622929599797}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.901,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":20,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.993,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1277952,\"total\":6291658,\"progress\":0.2031184784678379}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.001,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":20,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.095,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1310720,\"total\":6291658,\"progress\":0.20832664458239783}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.1,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":21,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.101,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.111,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":1}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.192,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1359872,\"total\":6291658,\"progress\":0.21613889375423775}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.201,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":22,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.292,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1392640,\"total\":6291658,\"progress\":0.2213470598687977}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.305,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":22,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.382,
+   "dir": "out",
+   "len": 171,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.cancel_upload\",\"payload\":{\"upload_id\":\"upload1\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.398,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":1425408,\"total\":6291658,\"progress\":0.22655522598335764}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.407,
+   "dir": "in",
+   "len": 115,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"is_uploading_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.411,
+   "dir": "in",
+   "len": 172,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => refs[\\\"__upload_controllers_upload1\\\"]?.abort())\",\"callback\":null}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 6.415,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":23,\"is_uploading_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.561,
+   "dir": "out",
+   "len": 201,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.on_upload_progress\",\"payload\":{\"prog\":{\"loaded\":211,\"total\":211,\"progress\":1}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.563,
+   "dir": "in",
+   "len": 147,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"upload_progress_rx_state_\":100,\"is_uploading_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.581,
+   "dir": "out",
+   "len": 128,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.upload___upload____state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.592,
+   "dir": "in",
+   "len": 104,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":2}}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.82,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 9.82,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 10.105,
+   "dir": "open",
+   "payload": "ws://localhost:8182/_event/?token=c1ee1c79-cec7-49ef-d336-fe0ddc9dd38b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 10.126,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"WcJZB7W7LnWHp94tAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 10.171,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3278cfcc0b51b272\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"a963c44b9e310edc\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 10.172,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"6fk2gxJGRCsy_sdCAAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 10.177,
+   "dir": "in",
+   "len": 1859,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"cTgPhyr81rr6CXEzKaDPnQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"cTgPhyr81rr6CXEzKaDPnQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3182\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3182/index\",\"full_raw_path\":\"http://localhost:3182/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"c1ee1c79-cec7-49ef-d336-fe0ddc9dd38b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"6fk2gxJGRCsy_sdCAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3182\",\"origin\":\"http://localhost:3182\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3182/\"}},\"reflex___state____state.upload___upload____state\":{\"pings_rx_state_\":2,\"upload_progress_rx_state_\":100}}}]"
+  },
+  {
+   "page": "main",
+   "t": 10.177,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "fresh",
+   "t": 12.811,
+   "dir": "open",
+   "payload": "ws://localhost:8182/_event/?token=7a307028-1258-4063-c433-ecb4c0954bc4&EIO=4&transport=websocket"
+  },
+  {
+   "page": "fresh",
+   "t": 12.816,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"nSdHZOeUu99EXMl1AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "fresh",
+   "t": 13.063,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3278cfcc0b51b272\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"a963c44b9e310edc\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "fresh",
+   "t": 13.071,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"nv4kH6O7N6LS4kICAAAF\"}"
+  },
+  {
+   "page": "fresh",
+   "t": 13.073,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"x8kwpdxC+kB40ar6rXNEyg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8182\",\"origin\":\"http://localhost:3182\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"x8kwpdxC+kB40ar6rXNEyg==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3182\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3182/index\",\"full_raw_path\":\"http://localhost:3182/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"7a307028-1258-4063-c433-ecb4c0954bc4\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"nv4kH6O7N6LS4kICAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3182\",\"origin\":\"http://localhost:3182\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3182/\"}}}}]"
+  },
+  {
+   "page": "fresh",
+   "t": 13.077,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "notes": {
+  "disk_at_start": [
+   "after cancel.txt",
+   "big12mb.bin",
+   "dropped two.txt",
+   "dropped_one.txt",
+   "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+   "nested.txt",
+   "root_abs.txt",
+   "win_traversal.txt",
+   "x_traversal.txt"
+  ],
+  "files_list_initial": [
+   [
+    "root_abs.txt",
+    "http://localhost:8182/_upload/root_abs.txt"
+   ],
+   [
+    "win_traversal.txt",
+    "http://localhost:8182/_upload/win_traversal.txt"
+   ],
+   [
+    "dropped two.txt",
+    "http://localhost:8182/_upload/dropped two.txt"
+   ],
+   [
+    "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+    "http://localhost:8182/_upload/h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt"
+   ],
+   [
+    "x_traversal.txt",
+    "http://localhost:8182/_upload/x_traversal.txt"
+   ],
+   [
+    "dropped_one.txt",
+    "http://localhost:8182/_upload/dropped_one.txt"
+   ],
+   [
+    "nested.txt",
+    "http://localhost:8182/_upload/nested.txt"
+   ],
+   [
+    "big12mb.bin",
+    "http://localhost:8182/_upload/big12mb.bin"
+   ],
+   [
+    "after cancel.txt",
+    "http://localhost:8182/_upload/after cancel.txt"
+   ]
+  ],
+  "selected_after_upload": [
+   "dropped_one.txt",
+   "dropped two.txt"
+  ],
+  "selected_hostile": [
+   "../x_traversal.txt",
+   "..\\..\\win_traversal.txt",
+   "/abs/root_abs.txt",
+   "sub/dir/nested.txt",
+   "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt"
+  ],
+  "progress_after_big": "100",
+  "ping_latency_during_upload_s": 0.26,
+  "files_list_same_session": [
+   [
+    "root_abs.txt",
+    "http://localhost:8182/_upload/root_abs.txt"
+   ],
+   [
+    "win_traversal.txt",
+    "http://localhost:8182/_upload/win_traversal.txt"
+   ],
+   [
+    "dropped two.txt",
+    "http://localhost:8182/_upload/dropped two.txt"
+   ],
+   [
+    "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+    "http://localhost:8182/_upload/h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt"
+   ],
+   [
+    "x_traversal.txt",
+    "http://localhost:8182/_upload/x_traversal.txt"
+   ],
+   [
+    "dropped_one.txt",
+    "http://localhost:8182/_upload/dropped_one.txt"
+   ],
+   [
+    "nested.txt",
+    "http://localhost:8182/_upload/nested.txt"
+   ],
+   [
+    "big12mb.bin",
+    "http://localhost:8182/_upload/big12mb.bin"
+   ],
+   [
+    "after cancel.txt",
+    "http://localhost:8182/_upload/after cancel.txt"
+   ]
+  ],
+  "files_list_after_reload": [
+   [
+    "root_abs.txt",
+    "http://localhost:8182/_upload/root_abs.txt"
+   ],
+   [
+    "win_traversal.txt",
+    "http://localhost:8182/_upload/win_traversal.txt"
+   ],
+   [
+    "dropped two.txt",
+    "http://localhost:8182/_upload/dropped two.txt"
+   ],
+   [
+    "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+    "http://localhost:8182/_upload/h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt"
+   ],
+   [
+    "x_traversal.txt",
+    "http://localhost:8182/_upload/x_traversal.txt"
+   ],
+   [
+    "dropped_one.txt",
+    "http://localhost:8182/_upload/dropped_one.txt"
+   ],
+   [
+    "nested.txt",
+    "http://localhost:8182/_upload/nested.txt"
+   ],
+   [
+    "big12mb.bin",
+    "http://localhost:8182/_upload/big12mb.bin"
+   ],
+   [
+    "after cancel.txt",
+    "http://localhost:8182/_upload/after cancel.txt"
+   ]
+  ],
+  "pings_after_reload": 2,
+  "disk_final": [
+   "after cancel.txt",
+   "big12mb.bin",
+   "dropped two.txt",
+   "dropped_one.txt",
+   "h\u00e9llo w\u00f6rld \u6d4b\u8bd5 \u0444\u0430\u0439\u043b (1).txt",
+   "nested.txt",
+   "root_abs.txt",
+   "win_traversal.txt",
+   "x_traversal.txt"
+  ]
+ }
+}
