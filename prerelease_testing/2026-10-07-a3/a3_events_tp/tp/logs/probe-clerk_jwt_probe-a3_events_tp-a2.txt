@@ -1,0 +1,7 @@
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_events_tp/tp/probe_run/clerk_jwt_probe.py:18: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import JsonWebKey, jwt
+ClerkState.jwt_public_keys -> Field Field(default_factory=functools.partial(<function deepcopy at 0x7f96337d2340>, []), is_var
+class-level _secret_key / _fetch_user: Field(default='sk_test_123', is_var=True, annotated_type=<class 'str'> | Field(default=False, is_var=True, annotated_type=<class 'bool'>)
+instance   _secret_key / _fetch_user: 'sk_test_123' | False
+RESULT set_clerk_session(valid RS256 JWT): is_signed_in=False user_id=None auth_error=None exc=TypeError: 'Field' object is not iterable

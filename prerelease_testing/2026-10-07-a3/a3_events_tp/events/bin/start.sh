@@ -13,6 +13,8 @@ case "$APP-$M" in
   evapp-prod) FP=8465; BP=8465; PX=8466;;
   mini-dev) FP=3470; BP=8470; PX=8472;;
   mini-prod) FP=8475; BP=8475; PX=8476;;
+  n024doc-dev) FP=3474; BP=8474; PX=8473;;
+  n024doc-prod) FP=8477; BP=8477; PX=8478;;
 esac
 RUN=$W/run/$L
 mkdir -p "$RUN" "$W/logs" "$W/pids"

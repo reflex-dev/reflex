@@ -1,0 +1,283 @@
+{
+ "steps": {
+  "work": {
+   "count": "count=1",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {}
+  },
+  "work_locked": {
+   "count": "count=2",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {}
+  },
+  "outside_modify": {
+   "count": "count=3",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "no-error"
+   }
+  },
+  "outside_readonly": {
+   "count": "count=3",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "outside_own_handler": {
+   "count": "count=3",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "inside_describe": {
+   "count": "count=4",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "fg_describe": {
+   "count": "count=5",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "own_bg_outside": {
+   "count": "count=5",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-write_own": {
+   "count": "count=5",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-append_own": {
+   "count": "count=5",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-write_inherited": {
+   "count": "count=6",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_call:write_inherited": "no-error own=0 items=0 count=6",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-own_write": {
+   "count": "count=6",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_call:own_write": "no-error own=0 items=0 count=6",
+    "outside_call:write_inherited": "no-error own=0 items=0 count=6",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-read_own": {
+   "count": "count=6",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_call:own_write": "no-error own=0 items=0 count=6",
+    "outside_call:read_own": "no-error own=0 items=0 count=6",
+    "outside_call:write_inherited": "no-error own=0 items=0 count=6",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-bump": {
+   "count": "count=7",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_call:bump": "no-error own=0 items=0 count=7",
+    "outside_call:own_write": "no-error own=0 items=0 count=6",
+    "outside_call:read_own": "no-error own=0 items=0 count=6",
+    "outside_call:write_inherited": "no-error own=0 items=0 count=6",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-peek": {
+   "count": "count=7",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_call:bump": "no-error own=0 items=0 count=7",
+    "outside_call:own_write": "no-error own=0 items=0 count=6",
+    "outside_call:peek": "no-error own=0 items=0 count=7",
+    "outside_call:read_own": "no-error own=0 items=0 count=6",
+    "outside_call:write_inherited": "no-error own=0 items=0 count=6",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "dw-own": {
+   "count": "count=7",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "direct_write:own": "ImmutableStateError own=0 count=7",
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_call:bump": "no-error own=0 items=0 count=7",
+    "outside_call:own_write": "no-error own=0 items=0 count=6",
+    "outside_call:peek": "no-error own=0 items=0 count=7",
+    "outside_call:read_own": "no-error own=0 items=0 count=6",
+    "outside_call:write_inherited": "no-error own=0 items=0 count=6",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "dw-inherited": {
+   "count": "count=8",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "direct_write:inherited": "no-error own=0 count=8",
+    "direct_write:own": "ImmutableStateError own=0 count=7",
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_call:bump": "no-error own=0 items=0 count=7",
+    "outside_call:own_write": "no-error own=0 items=0 count=6",
+    "outside_call:peek": "no-error own=0 items=0 count=7",
+    "outside_call:read_own": "no-error own=0 items=0 count=6",
+    "outside_call:write_inherited": "no-error own=0 items=0 count=6",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "dw-inherited_list": {
+   "count": "count=8",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "direct_write:inherited": "no-error own=0 count=8",
+    "direct_write:inherited_list": "ImmutableStateError own=0 count=8",
+    "direct_write:own": "ImmutableStateError own=0 count=7",
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_call:bump": "no-error own=0 items=0 count=7",
+    "outside_call:own_write": "no-error own=0 items=0 count=6",
+    "outside_call:peek": "no-error own=0 items=0 count=7",
+    "outside_call:read_own": "no-error own=0 items=0 count=6",
+    "outside_call:write_inherited": "no-error own=0 items=0 count=6",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  }
+ },
+ "console": [],
+ "page_errors": [],
+ "after_reload": {
+  "count": "count=8",
+  "exc": "exc=0",
+  "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+  "results": {
+   "direct_write:inherited": "no-error own=0 count=8",
+   "direct_write:inherited_list": "ImmutableStateError own=0 count=8",
+   "direct_write:own": "ImmutableStateError own=0 count=7",
+   "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "outside_call:append_own": "ImmutableStateError own=0 items=0 count=5",
+   "outside_call:bump": "no-error own=0 items=0 count=7",
+   "outside_call:own_write": "no-error own=0 items=0 count=6",
+   "outside_call:peek": "no-error own=0 items=0 count=7",
+   "outside_call:read_own": "no-error own=0 items=0 count=6",
+   "outside_call:write_inherited": "no-error own=0 items=0 count=6",
+   "outside_call:write_own": "ImmutableStateError own=0 items=0 count=5",
+   "outside_modify": "no-error",
+   "outside_own_handler": "no-error",
+   "outside_readonly": "ran"
+  }
+ },
+ "server_backend_exc": [],
+ "server_peek": [
+  "N024 1791408173.812 peek count=3 type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+  "N024 1791408209.794 peek count=7 type=Parent,cls=Parent,isinst_parent=True,kind=parent"
+ ],
+ "server_tracebacks": 0
+}

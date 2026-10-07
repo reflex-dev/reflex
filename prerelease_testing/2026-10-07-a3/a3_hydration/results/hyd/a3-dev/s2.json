@@ -1,0 +1,117 @@
+{
+ "tokens": [
+  "2a3dd14d-7cb7-47a2-bcc0-4b9bad060bde",
+  "2103a33d-4b89-4c8f-f279-90787a8e25b4"
+ ],
+ "a_shows": true,
+ "b_received_sync": true,
+ "a_received_js_write": true,
+ "b_counter_after_a_inc": "0",
+ "b_after_reload": "js-set-in-B",
+ "b_counter_after_close_a": "0",
+ "dup_token_initial_copy": "2103a33d-4b89-4c8f-f279-90787a8e25b4",
+ "dup_token_after": "634f80ad-958b-4282-bbed-16685ee7eb9b",
+ "b_token_after": "2103a33d-4b89-4c8f-f279-90787a8e25b4",
+ "dup_counter": "0",
+ "dup_counter_after_inc": "1",
+ "b_counter_after_dup_inc": "1",
+ "frames_dup": [
+  {
+   "t": 2.718,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 2.774,
+   "dir": "out",
+   "kind": "connect",
+   "len": 496,
+   "boot": "reflex___state____state.hydrate_and_load",
+   "boot_payload_keys": [
+    "hashes",
+    "vars"
+   ],
+   "boot_vars": {
+    "ls_sync_rx_state_": "js-set-in-B"
+   },
+   "n_hashes": 14
+  },
+  {
+   "t": 2.776,
+   "dir": "in",
+   "kind": "event",
+   "len": 62,
+   "sio_event": "new_token"
+  },
+  {
+   "t": 2.78,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 2.784,
+   "dir": "in",
+   "kind": "event",
+   "len": 2629,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_",
+     "rx_router_headers_rx_state_",
+     "rx_router_page_rx_state_",
+     "rx_router_route_id_rx_state_",
+     "rx_router_session_rx_state_",
+     "rx_router_url_rx_state_"
+    ],
+    "hydapp___hydapp____state": [
+     "ls_sync_rx_state_"
+    ],
+    "hydapp___hydapp____defaults": [
+     "created_rx_state_",
+     "env_val_rx_state_",
+     "fixed_dt_rx_state_",
+     "flt_rx_state_",
+     "items_rx_state_",
+     "mapping_rx_state_",
+     "pid_default_rx_state_",
+     "point_rx_state_",
+     "session_id_rx_state_",
+     "summary_rx_state_"
+    ],
+    "hydapp___hydapp____sub": [
+     "sub_ck_rx_state_",
+     "sub_ls_rx_state_",
+     "sub_saw_rx_state_",
+     "sub_ss_rx_state_",
+     "sub_uuid_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.784,
+   "dir": "in",
+   "kind": "event",
+   "len": 118,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "ls_sync_rx_state_"
+    ]
+   },
+   "events": []
+  }
+ ],
+ "new_ctx_counter": "0",
+ "new_ctx_ls_sync": "sync-default",
+ "status": "pass",
+ "duration_s": 5.9,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

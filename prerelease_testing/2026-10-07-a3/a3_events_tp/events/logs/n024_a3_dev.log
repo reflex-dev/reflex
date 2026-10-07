@@ -1,0 +1,23 @@
+───────────────────────────── Initializing n024doc ─────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized n024doc. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+VENV_GUARD ok venv=a3 reflex=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/lib/python3.12/site-packages/reflex/__init__.py
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 12/11 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+VENV_GUARD ok venv=a3 reflex=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/lib/python3.12/site-packages/reflex/__init__.py
+App running at: http://localhost:3474/
+Backend running at: http://0.0.0.0:8474
+N024 1791407842.541 N024_BACKEND_EXC ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state.
+N024 1791407852.358 peek count=1 type=StateProxy,cls=Parent,isinst_parent=True,kind=parent
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

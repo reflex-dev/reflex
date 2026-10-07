@@ -1,0 +1,1869 @@
+{
+ "label": "a3_prod",
+ "base": "http://localhost:8465",
+ "results": [
+  {
+   "name": "sup.slow_rapid_clicks",
+   "status": "pass",
+   "details": {
+    "final": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "expected": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "timeline": [
+     [
+      0.0,
+      "a0,b0"
+     ],
+     [
+      0.12,
+      "a0,b0,c0"
+     ],
+     [
+      1.09,
+      "a0,b0,c0,c1"
+     ],
+     [
+      2.06,
+      "a0,b0,c0,c1,c2"
+     ],
+     [
+      3.04,
+      "a0,b0,c0,c1,c2,c3"
+     ],
+     [
+      4.01,
+      "a0,b0,c0,c1,c2,c3,c4"
+     ],
+     [
+      5.1,
+      "a0,b0,c0,c1,c2,c3,c4,cdone"
+     ]
+    ]
+   },
+   "t": 10.481
+  },
+  {
+   "name": "t_sup_slow [console]",
+   "status": "anomaly",
+   "details": {
+    "console": [
+     {
+      "t": 0.89,
+      "tag": "sup-slow",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "loc": "http://localhost:8465/favicon.ico:0",
+      "url": "http://localhost:8465/sup/"
+     }
+    ],
+    "page_errors": []
+   },
+   "t": 10.502
+  },
+  {
+   "name": "sup.cancelled_unyielded_mutation",
+   "status": "anomaly",
+   "details": {
+    "final": "astart,aunflushed,bstart,bunflushed,bend",
+    "cancelled_handler_mutation_after_last_yield_visible": true,
+    "timeline": [
+     [
+      0.0,
+      "astart"
+     ],
+     [
+      0.11,
+      "astart,aunflushed,bstart"
+     ],
+     [
+      3.07,
+      "astart,aunflushed,bstart,bunflushed,bend"
+     ]
+    ]
+   },
+   "t": 17.227
+  },
+  {
+   "name": "sup.background_plus_supersedes",
+   "status": "pass",
+   "details": {
+    "final": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "expected": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "timeline": [
+     [
+      0.01,
+      "a0,b0"
+     ],
+     [
+      0.11,
+      "a0,b0,c0"
+     ],
+     [
+      1.08,
+      "a0,b0,c0,c1"
+     ],
+     [
+      2.06,
+      "a0,b0,c0,c1,c2"
+     ],
+     [
+      3.04,
+      "a0,b0,c0,c1,c2,c3"
+     ],
+     [
+      4.02,
+      "a0,b0,c0,c1,c2,c3,c4"
+     ],
+     [
+      5.09,
+      "a0,b0,c0,c1,c2,c3,c4,cdone"
+     ]
+    ]
+   },
+   "t": 26.983
+  },
+  {
+   "name": "sup.bg_cancel_while_holding_lock",
+   "status": "pass",
+   "details": {
+    "final": "ain,bin,bin2,ping-1,bdone,ping-2",
+    "a_in_kept": true,
+    "timeline": [
+     [
+      0.01,
+      "ain"
+     ],
+     [
+      1.75,
+      "ain,bin,bin2,ping-1,bdone"
+     ]
+    ]
+   },
+   "t": 34.602
+  },
+  {
+   "name": "sup.cpu_bound_non_yielding",
+   "status": "info",
+   "details": {
+    "final": "astart,aend,bstart,bend,cstart,cend",
+    "timeline": [
+     [
+      0.0,
+      ""
+     ],
+     [
+      1.29,
+      "astart,aend"
+     ],
+     [
+      2.85,
+      "astart,aend,bstart,bend"
+     ],
+     [
+      4.34,
+      "astart,aend,bstart,bend,cstart,cend"
+     ]
+    ]
+   },
+   "t": 43.602
+  },
+  {
+   "name": "sup.sync_generator_blocking_sleep",
+   "status": "info",
+   "details": {
+    "final": "a0,a1,b0,b1,b2,b3,bdone",
+    "timeline": [
+     [
+      0.02,
+      "a0"
+     ],
+     [
+      0.35,
+      "a0,a1"
+     ],
+     [
+      0.92,
+      "a0,a1,b0,b1"
+     ],
+     [
+      1.46,
+      "a0,a1,b0,b1,b2"
+     ],
+     [
+      2.12,
+      "a0,a1,b0,b1,b2,b3"
+     ],
+     [
+      2.67,
+      "a0,a1,b0,b1,b2,b3,bdone"
+     ]
+    ]
+   },
+   "t": 50.577
+  },
+  {
+   "name": "sup.chained_child_cancelled",
+   "status": "pass",
+   "details": {
+    "final": "a0,a1,b0,b1,b2,b3,bdone",
+    "parent_log": "aP,bP",
+    "b0_seconds_after_click": 0.12,
+    "child_a_cancelled": true,
+    "timeline": [
+     [
+      0.0,
+      "a0,a1"
+     ],
+     [
+      0.12,
+      "a0,a1,b0"
+     ],
+     [
+      1.03,
+      "a0,a1,b0,b1"
+     ],
+     [
+      2.06,
+      "a0,a1,b0,b1,b2"
+     ],
+     [
+      3.08,
+      "a0,a1,b0,b1,b2,b3"
+     ],
+     [
+      4.11,
+      "a0,a1,b0,b1,b2,b3,bdone"
+     ]
+    ]
+   },
+   "t": 60.489
+  },
+  {
+   "name": "sup.component_state_instances_independent",
+   "status": "pass",
+   "details": {
+    "A": "A0,A1,A2,Adone",
+    "B": "B0,B1,B2,Bdone",
+    "timeline": {
+     "cs-log-A": [
+      [
+       0.0,
+       "A0"
+      ],
+      [
+       0.69,
+       "A0,A1"
+      ],
+      [
+       1.71,
+       "A0,A1,A2"
+      ],
+      [
+       2.74,
+       "A0,A1,A2,Adone"
+      ]
+     ],
+     "cs-log-B": [
+      [
+       0.01,
+       ""
+      ],
+      [
+       2.75,
+       "B0"
+      ],
+      [
+       3.78,
+       "B0,B1"
+      ],
+      [
+       4.7,
+       "B0,B1,B2"
+      ],
+      [
+       5.75,
+       "B0,B1,B2,Bdone"
+      ]
+     ]
+    }
+   },
+   "t": 70.606
+  },
+  {
+   "name": "sup.component_state_self_supersede",
+   "status": "pass",
+   "details": {
+    "A": "A0,A0,A1,A2,Adone",
+    "expected": "A0,A0,A1,A2,Adone"
+   },
+   "t": 76.214
+  },
+  {
+   "name": "deco.late_marker_before_first_use",
+   "status": "pass",
+   "details": {
+    "final": "late:start,ping1,late:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      "late:start"
+     ],
+     [
+      0.12,
+      "late:start,ping1"
+     ],
+     [
+      1.33,
+      "late:start,ping1,late:end"
+     ]
+    ]
+   },
+   "t": 81.019
+  },
+  {
+   "name": "deco.late_marker_after_is_background_read",
+   "status": "fail",
+   "details": {
+    "final": "lateread:start,lateread:end,ping1",
+    "ran_as_background": false,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.01,
+      ""
+     ],
+     [
+      1.32,
+      "lateread:start,lateread:end,ping1"
+     ]
+    ]
+   },
+   "t": 84.534
+  },
+  {
+   "name": "deco.functools_wraps_inner",
+   "status": "pass",
+   "details": {
+    "final": "wrapinner:start,ping1,wrapinner:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      "wrapinner:start"
+     ],
+     [
+      0.11,
+      "wrapinner:start,ping1"
+     ],
+     [
+      1.3,
+      "wrapinner:start,ping1,wrapinner:end"
+     ]
+    ]
+   },
+   "t": 88.036
+  },
+  {
+   "name": "deco.functools_wraps_outer",
+   "status": "pass",
+   "details": {
+    "final": "wrapouter:start,ping1,wrapouter:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.01,
+      "wrapouter:start"
+     ],
+     [
+      0.11,
+      "wrapouter:start,ping1"
+     ],
+     [
+      1.31,
+      "wrapouter:start,ping1,wrapouter:end"
+     ]
+    ]
+   },
+   "t": 91.556
+  },
+  {
+   "name": "deco.trace_wrapper_executed",
+   "status": "info",
+   "details": {
+    "log": "wrapouter:start,ping1,wrapouter:end,trace=wrapped_inner/wrapped_outer"
+   },
+   "t": 91.715
+  },
+  {
+   "name": "deco.mixin_background_two_substates",
+   "status": "pass",
+   "details": {
+    "A": "A:start,pingA,A:end",
+    "B": "B:start,B:end",
+    "B_started_before_A_end": true,
+    "timeline": {
+     "mix-a-log": [
+      [
+       0.0,
+       "A:start"
+      ],
+      [
+       0.12,
+       "A:start,pingA"
+      ],
+      [
+       1.16,
+       "A:start,pingA,A:end"
+      ]
+     ],
+     "mix-b-log": [
+      [
+       0.01,
+       "B:start"
+      ],
+      [
+       1.38,
+       "B:start,B:end"
+      ]
+     ]
+    }
+   },
+   "t": 95.221
+  },
+  {
+   "name": "deco.pkg_redecorated_early",
+   "status": "pass",
+   "details": {
+    "added": "pkg:start,ping,pkg:end",
+    "new_backend_errors": 0
+   },
+   "t": 98.168
+  },
+  {
+   "name": "deco.pkg_redecorated_late",
+   "status": "pass",
+   "details": {
+    "added": "pkg:start,ping,pkg:end",
+    "new_backend_errors": 0
+   },
+   "t": 101.174
+  },
+  {
+   "name": "nested.match_list_branch",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "ws:match_list_branch:sent": 9
+    },
+    "order": "M1,M2",
+    "expected": "M1,M2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=0 frontend=0"
+   },
+   "t": 105.947
+  },
+  {
+   "name": "nested.deep50_nested_match",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "ws:deep50_nested_match:sent": 57
+    },
+    "order": "Z49,Z48,Z47,Z46,Z45,Z44,Z43,Z42,Z41,Z40,Z39,Z38,Z37,Z36,Z35,Z34,Z33,Z32,Z31,Z30,Z29,Z28,Z27,Z26,Z25,Z24,Z23,Z22,Z21,Z20,Z19,Z18,Z17,Z16,Z15,Z14,Z13,Z12,Z11,Z10,Z9,Z8,Z7,Z6,Z5,Z4,Z3,Z2,Z1,Z0",
+    "expected": "Z49,Z48,Z47,Z46,Z45,Z44,Z43,Z42,Z41,Z40,Z39,Z38,Z37,Z36,Z35,Z34,Z33,Z32,Z31,Z30,Z29,Z28,Z27,Z26,Z25,Z24,Z23,Z22,Z21,Z20,Z19,Z18,Z17,Z16,Z15,Z14,Z13,Z12,Z11,Z10,Z9,Z8,Z7,Z6,Z5,Z4,Z3,Z2,Z1,Z0",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=0 frontend=0"
+   },
+   "t": 112.2
+  },
+  {
+   "name": "nested.backend_failure_mid_list_flat",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "ws:backend_failure_mid_list_flat:sent": 11
+    },
+    "order": "P1,P2,P3",
+    "expected": "P1,P2,P3",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=1 frontend=0"
+   },
+   "t": 116.972
+  },
+  {
+   "name": "nested.backend_failure_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "ws:backend_failure_mid_nested_list:sent": 10
+    },
+    "order": "Q1,Q2",
+    "expected": "Q1,Q2",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=1 frontend=0",
+    "handler_counts_after": "backend=2 frontend=0"
+   },
+   "t": 122.08
+  },
+  {
+   "name": "nested.malformed_event_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "ws:malformed_event_mid_nested_list:sent": 10
+    },
+    "order": "W1,W2",
+    "expected": "W1,W2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=2 frontend=0",
+    "handler_counts_after": "backend=2 frontend=1"
+   },
+   "t": 127.116
+  },
+  {
+   "name": "nested.handler_returns_nested_list",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "ws:handler_returns_nested_list:sent": 8
+    },
+    "order": "",
+    "expected": "A,B,C,D",
+    "backend_exc_records": 1,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "TypeError: Your handler NestState.ret_nested must only return/yield: None, Events or other",
+    "handler_counts_before": "backend=2 frontend=1",
+    "handler_counts_after": "backend=3 frontend=1"
+   },
+   "t": 131.887
+  },
+  {
+   "name": "nested.handler_yields_nested_list",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "ws:handler_yields_nested_list:sent": 8
+    },
+    "order": "",
+    "expected": "Y1,Y2",
+    "backend_exc_records": 1,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "TypeError: Your handler NestState.yield_nested must only return/yield: None, Events or othe",
+    "handler_counts_before": "backend=3 frontend=1",
+    "handler_counts_after": "backend=4 frontend=1"
+   },
+   "t": 136.756
+  },
+  {
+   "name": "nested.handler_returns_flat_with_failing",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "ws:handler_returns_flat_with_failing:sent": 8
+    },
+    "order": "R1,R2",
+    "expected": "R1,R2",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=4 frontend=1",
+    "handler_counts_after": "backend=5 frontend=1"
+   },
+   "t": 141.524
+  },
+  {
+   "name": "nested.call_script_throws_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "ws:call_script_throws_mid_nested_list:sent": 10,
+     "console:call_script_throws_mid_nested_list:log": 1
+    },
+    "order": "C1,C2",
+    "expected": "C1,C2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=1",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 146.339
+  },
+  {
+   "name": "nested.call_script_callback_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "ws:call_script_callback_list:sent": 9
+    },
+    "order": "cbv,CB2",
+    "expected": "cbv,CB2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=2",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 151.17
+  },
+  {
+   "name": "nested.run_script_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "ws:run_script_mid_nested_list:sent": 9
+    },
+    "order": "RS1,RS2",
+    "expected": "RS1,RS2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=2",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 155.85
+  },
+  {
+   "name": "nested.prevent_default_inside_nested_list",
+   "status": "pass",
+   "details": {
+    "input_value": "y",
+    "expected_value": "y",
+    "order": "PDX,PDX2,PDX,PDX2",
+    "ordinary_after_ok": true
+   },
+   "t": 158.647
+  },
+  {
+   "name": "nested.issue7319_ctrl_b_shortcut",
+   "status": "pass",
+   "details": {
+    "order": "K1,K2",
+    "ordinary_after_ok": true
+   },
+   "t": 161.667
+  },
+  {
+   "name": "throttle.throttle200_supersedes_typing",
+   "status": "pass",
+   "details": {
+    "typing_seconds": 0.75,
+    "received": [
+     "a",
+     "abcdefg",
+     "abcdefghijklm",
+     "abcdefghijklmnopqrs"
+    ],
+    "applied": [
+     "abcdefghijklmnopqrs"
+    ],
+    "final_value_reached_backend": false,
+    "input_value": "abcdefghijklmnopqrst",
+    "timeline": {
+     "thr-received": [
+      [
+       0.02,
+       "a|abcdefg|abcdefghijklm|abcdefghijklmnopqrs"
+      ]
+     ],
+     "thr-applied": [
+      [
+       0.02,
+       ""
+      ],
+      [
+       0.37,
+       "abcdefghijklmnopqrs"
+      ]
+     ]
+    }
+   },
+   "t": 166.321
+  },
+  {
+   "name": "throttle.leading_edge_drops_final_value",
+   "status": "anomaly",
+   "details": {
+    "note": "throttle has no trailing call: the last keystrokes never reach the backend",
+    "last_received": "abcdefghijklmnopqrs",
+    "input_value": "abcdefghijklmnopqrst"
+   },
+   "t": 166.324
+  },
+  {
+   "name": "throttle.debounce300_supersedes_typing",
+   "status": "pass",
+   "details": {
+    "received": [
+     "abcdefghijklmnopqrst"
+    ]
+   },
+   "t": 168.576
+  },
+  {
+   "name": "temporal.sigstop_3s_socket_still_open",
+   "status": "pass",
+   "details": {
+    "hits": "T1,N1,T2,N2",
+    "expected": "T1,N1,T2,N2",
+    "stopped_pids": [
+     31545
+    ],
+    "note": "socket.io client still reports connected during a 3s stop, so temporal events are sent and delivered late"
+   },
+   "t": 172.868
+  },
+  {
+   "name": "temporal.proxy_drop_socket_closed",
+   "status": "pass",
+   "details": {
+    "hits_after_reconnect": "N3,N4",
+    "expected": "N3,N4",
+    "hits_while_down": "",
+    "client_ws_closed_after_s": 0.1,
+    "delivered_s_after_up": 0.47,
+    "temporal_after_reconnect": "N3,N4,T1",
+    "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_events_tp/events/out/a3_prod/a3_prod_temporal_proxy_down.png"
+   },
+   "t": 178.697
+  },
+  {
+   "name": "t_temporal_proxy_drop [console]",
+   "status": "anomaly",
+   "details": {
+    "console": [
+     {
+      "t": 173.995,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+      "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 174.204,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+      "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 174.612,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+      "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 174.858,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+      "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 175.215,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+      "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 175.326,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+      "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 175.664,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+      "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 176.224,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+      "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 176.546,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+      "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+      "url": "http://localhost:8465/throttle/"
+     }
+    ],
+    "page_errors": []
+   },
+   "t": 178.718
+  },
+  {
+   "name": "vars.initial",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 180.67
+  },
+  {
+   "name": "vars.initial.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 180.67
+  },
+  {
+   "name": "vars.step_neg3",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 181.562
+  },
+  {
+   "name": "vars.step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 181.562
+  },
+  {
+   "name": "vars.bounds_7_2_step_neg3",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 182.379
+  },
+  {
+   "name": "vars.bounds_7_2_step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 182.379
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step2",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 183.22
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step2.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 183.22
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step_neg3",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 184.035
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 184.035
+  },
+  {
+   "name": "vars.objkey_z",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 184.847
+  },
+  {
+   "name": "vars.objkey_z.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 184.847
+  },
+  {
+   "name": "vars.objkey_missing",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 185.634
+  },
+  {
+   "name": "vars.objkey_missing.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    },
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    }
+   },
+   "t": 185.634
+  },
+  {
+   "name": "vars.deep_equals_state_client_computed_cond_match",
+   "status": "pass",
+   "details": {
+    "initial": {
+     "v-deq-cs": "eq",
+     "v-deq-comp": "eq",
+     "v-deq-match": "M-eq"
+    },
+    "after_mutate_left": {
+     "v-deq-cs": "neq",
+     "v-deq-comp": "eq",
+     "v-deq-match": "M-neq",
+     "v-left": "{\"a\":[1,2,9],\"b\":[3]}"
+    },
+    "after_client_set": {
+     "v-deq-cs": "eq",
+     "v-csdict": "{\"a\":[1,2,9],\"b\":[3]}"
+    }
+   },
+   "t": 187.4
+  },
+  {
+   "name": "t_vars [console]",
+   "status": "anomaly",
+   "details": {
+    "console": [],
+    "page_errors": [
+     {
+      "t": 179.054,
+      "tag": "vars",
+      "error": "Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "url": "http://localhost:8465/vars/"
+     }
+    ]
+   },
+   "t": 187.505
+  },
+  {
+   "name": "typelog.counts",
+   "status": "info",
+   "details": {
+    "bump_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 20,
+     "bad_uncached": 0,
+     "nums_field": 0
+    },
+    "assign_inner_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 0,
+     "bad_uncached": 0,
+     "nums_field": 0
+    },
+    "assign_outer_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 0,
+     "bad_uncached": 0,
+     "nums_field": 20
+    },
+    "ui_nums": "\"notalist\"",
+    "ui_bad_outer": "\"x20\"",
+    "segments_found": [
+     true,
+     true,
+     true
+    ]
+   },
+   "t": 199.625
+  },
+  {
+   "name": "api.bg_get_state_get_var_value_sibling",
+   "status": "pass",
+   "details": {
+    "report": "out=ImmutableStateError in=10 in2=11 ; after=ImmutableStateError",
+    "in_lock_expected": "in=10 in2=11",
+    "ui_sibling_x": "11",
+    "outside_lock_get_var_value": "out=ImmutableStateError"
+   },
+   "t": 200.785
+  },
+  {
+   "name": "api.raw_setvar_events",
+   "status": "pass",
+   "details": {
+    "api-setvar-pub": {
+     "ok": true,
+     "new_backend_exc": 0,
+     "exc_tail": "",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-secret": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-missing": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-computed": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": " attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-raw-missing-handler": {
+     "ok": null,
+     "new_backend_exc": 0,
+     "exc_tail": " attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    }
+   },
+   "t": 208.15
+  },
+  {
+   "name": "api.raw_setvar_is_hydrated_false",
+   "status": "info",
+   "details": {
+    "new_backend_exc": 0,
+    "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+    "still_interactive": true,
+    "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_events_tp/events/out/a3_prod/a3_prod_setvar_is_hydrated.png"
+   },
+   "t": 209.822
+  },
+  {
+   "name": "api.reset_client_storage_substates",
+   "status": "pass",
+   "details": {
+    "before": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-default"
+    },
+    "mutated": {
+     "reset-ls": "ls-changed",
+     "reset-ck": "ck-changed",
+     "reset-plain": "plain-changed",
+     "reset-sub": "sub-changed",
+     "reset-cs-val": "cs-changed"
+    },
+    "storage_mutated": {
+     "ls": "ls-changed",
+     "cookie": "ev_ck=ck-changed"
+    },
+    "after_reset": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-changed"
+    },
+    "storage_after_reset": {
+     "ls": "ls-default",
+     "cookie": "ev_ck=ck-default"
+    },
+    "after_reload": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-changed"
+    }
+   },
+   "t": 213.533
+  },
+  {
+   "name": "api.dataclass_nested_inplace_mutation",
+   "status": "pass",
+   "details": {
+    "initial": [
+     "[]",
+     "[[1]]"
+    ],
+    "after_2_mutations": [
+     "[0,1]",
+     "[[1,7,7]]"
+    ],
+    "snapshot": {
+     "gv_type": "Box",
+     "gv": {
+      "name": "box",
+      "items": [
+       0,
+       1
+      ],
+      "nested": [
+       [
+        1,
+        7,
+        7
+       ]
+      ]
+     },
+     "dict_type": "Box",
+     "dict": {
+      "name": "box",
+      "items": [
+       0,
+       1
+      ],
+      "nested": [
+       [
+        1,
+        7,
+        7
+       ]
+      ]
+     }
+    },
+    "other_session": [
+     "[]",
+     "[[1]]"
+    ]
+   },
+   "t": 216.818
+  },
+  {
+   "name": "api.undeclared_attribute_assignment",
+   "status": "info",
+   "details": {
+    "report_after_assign": "assigned in_dict=False hasattr=True",
+    "backend_exc": 0,
+    "exc_tail": "",
+    "report_after_readback": "readback=42",
+    "undeclared_name_in_ws_delta": false
+   },
+   "t": 220.711
+  },
+  {
+   "name": "bind.instance_access_and_inheritance",
+   "status": "info",
+   "details": {
+    "bind-inherited-template": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-template-via-self": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-parent-via-self": {
+     "p_log_added": "bump:self=BindParent ; after_bump",
+     "p_count": "1",
+     "c_count": "1",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-bg-parent": {
+     "p_log_added": "bump:self=StateProxy",
+     "p_count": "2",
+     "c_count": "1",
+     "c_log": "bg_outside=ImmutableStateError",
+     "new_exc": 0,
+     "exc_tail": ""
+    }
+   },
+   "t": 228.217
+  },
+  {
+   "name": "bind.foreach_args_0_to_5_and_lambdas",
+   "status": "pass",
+   "details": {
+    "got": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ],
+    "expected": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ]
+   },
+   "t": 231.438
+  },
+  {
+   "name": "priv.dunder_attrs_in_handlers",
+   "status": "pass",
+   "details": {
+    "after_4_bumps": {
+     "count": "3",
+     "note": "count=3 last=3 limit=3 ver=v1",
+     "view": "view last=unset"
+    },
+    "private_only": {
+     "note": "count=3 last=3 limit=3 ver=v1",
+     "view": "view last=unset",
+     "recv_frames": 0,
+     "frames_mention_last_seen": false,
+     "frames_mention_privA_delta": false,
+     "frames": []
+    },
+    "readback": "readback last=P",
+    "view_after_readback": "view last=unset",
+    "mix_out_after_scratch": [
+     "scratch=SA limit=2",
+     "scratch=SB limit=2"
+    ],
+    "mix_out_after_read": [
+     "read=SA",
+     "read=SB"
+    ],
+    "field_dunder_view": "2",
+    "new_backend_exc": 0,
+    "exc_list": "",
+    "after_reload": {
+     "count": "3",
+     "note": "readback last=P",
+     "view": "view last=unset",
+     "mixA": "read=SA"
+    }
+   },
+   "t": 239.176
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 0.89,
+   "tag": "sup-slow",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "loc": "http://localhost:8465/favicon.ico:0",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 10.486,
+   "tag": "sup-slow",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 17.23,
+   "tag": "sup-partial",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 26.988,
+   "tag": "sup-bg",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 34.605,
+   "tag": "sup-lock",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 43.606,
+   "tag": "sup-cpu",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 50.581,
+   "tag": "sup-gen",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 60.495,
+   "tag": "sup-chain",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 76.223,
+   "tag": "sup-cs",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 101.311,
+   "tag": "deco",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/deco/"
+  },
+  {
+   "t": 105.954,
+   "tag": "match_list_branch",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 112.202,
+   "tag": "deep50_nested_match",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 116.984,
+   "tag": "backend_failure_mid_list_flat",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 122.094,
+   "tag": "backend_failure_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 127.124,
+   "tag": "malformed_event_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 131.895,
+   "tag": "handler_returns_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 136.762,
+   "tag": "handler_yields_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 141.529,
+   "tag": "handler_returns_flat_with_failing",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 143.319,
+   "tag": "call_script_throws_mid_nested_list",
+   "type": "log",
+   "text": "_call_script Error: cs-boom\n    at eval (eval at applyEvent (http://localhost:8465/assets/text-field-D5ZxRpqP.js:2:8302), <anonymous>:1:7)\n    at applyEvent (http://localhost:8465/assets/text-field-D5ZxRpqP.js:2:8302)\n    at processEvent (http://localhost:8465/assets/text-field-D5ZxRpqP.js:2:9931)\n    at processEvent (http://localhost:8465/assets/text-field-D5ZxRpqP.js:2:9987)\n    at async queueEvents (http://localhost:8465/assets/text-field-D5ZxRpqP.js:2:9655)",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 146.349,
+   "tag": "call_script_throws_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 151.176,
+   "tag": "call_script_callback_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 155.854,
+   "tag": "run_script_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 158.675,
+   "tag": "pd",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 161.67,
+   "tag": "ctrlb",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/nested/"
+  },
+  {
+   "t": 168.579,
+   "tag": "thr",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 172.871,
+   "tag": "temporal",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 173.995,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 174.204,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 174.612,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 174.858,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 175.215,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 175.326,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 175.664,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 176.224,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 176.546,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=f5a3cd7f-62da-4aca-acab-8154ee5420c9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 178.7,
+   "tag": "temporal-proxy",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 187.493,
+   "tag": "vars",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/vars/"
+  },
+  {
+   "t": 199.629,
+   "tag": "typelog",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/typelog/"
+  },
+  {
+   "t": 200.789,
+   "tag": "api-sib",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 209.826,
+   "tag": "api-setvar",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 212.364,
+   "tag": "api-reset",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 213.539,
+   "tag": "api-reset",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 216.825,
+   "tag": "api-dc-2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 216.851,
+   "tag": "api-dc",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 220.714,
+   "tag": "api-undecl",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 231.441,
+   "tag": "bind",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/bind/"
+  },
+  {
+   "t": 237.956,
+   "tag": "priv",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/priv/"
+  },
+  {
+   "t": 239.18,
+   "tag": "priv",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-D5ZxRpqP.js:1",
+   "url": "http://localhost:8465/priv/"
+  }
+ ],
+ "page_errors": [
+  {
+   "t": 179.054,
+   "tag": "vars",
+   "error": "Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+   "url": "http://localhost:8465/vars/"
+  }
+ ],
+ "failed_requests": [],
+ "http_errors": [],
+ "counters": {
+  "ws:sup-slow:recv": 17,
+  "console:sup-slow:error": 1,
+  "ws:sup-slow:sent": 9,
+  "console:sup-slow:log": 1,
+  "ws:sup-partial:recv": 12,
+  "ws:sup-partial:sent": 8,
+  "console:sup-partial:log": 1,
+  "ws:sup-bg:recv": 17,
+  "ws:sup-bg:sent": 9,
+  "console:sup-bg:log": 1,
+  "ws:sup-lock:recv": 14,
+  "ws:sup-lock:sent": 10,
+  "console:sup-lock:log": 1,
+  "ws:sup-cpu:recv": 12,
+  "ws:sup-cpu:sent": 9,
+  "console:sup-cpu:log": 1,
+  "ws:sup-gen:recv": 16,
+  "ws:sup-gen:sent": 8,
+  "console:sup-gen:log": 1,
+  "ws:sup-chain:recv": 18,
+  "ws:sup-chain:sent": 8,
+  "console:sup-chain:log": 1,
+  "ws:sup-cs:recv": 23,
+  "ws:sup-cs:sent": 11,
+  "console:sup-cs:log": 1,
+  "ws:deco:recv": 32,
+  "ws:deco:sent": 22,
+  "console:deco:log": 1,
+  "ws:match_list_branch:recv": 12,
+  "ws:match_list_branch:sent": 9,
+  "console:match_list_branch:log": 1,
+  "ws:deep50_nested_match:recv": 60,
+  "ws:deep50_nested_match:sent": 57,
+  "console:deep50_nested_match:log": 1,
+  "ws:backend_failure_mid_list_flat:recv": 14,
+  "ws:backend_failure_mid_list_flat:sent": 11,
+  "console:backend_failure_mid_list_flat:log": 1,
+  "ws:backend_failure_mid_nested_list:recv": 13,
+  "ws:backend_failure_mid_nested_list:sent": 10,
+  "console:backend_failure_mid_nested_list:log": 1,
+  "ws:malformed_event_mid_nested_list:recv": 12,
+  "ws:malformed_event_mid_nested_list:sent": 10,
+  "console:malformed_event_mid_nested_list:log": 1,
+  "ws:handler_returns_nested_list:recv": 11,
+  "ws:handler_returns_nested_list:sent": 8,
+  "console:handler_returns_nested_list:log": 1,
+  "ws:handler_yields_nested_list:recv": 11,
+  "ws:handler_yields_nested_list:sent": 8,
+  "console:handler_yields_nested_list:log": 1,
+  "ws:handler_returns_flat_with_failing:recv": 13,
+  "ws:handler_returns_flat_with_failing:sent": 8,
+  "console:handler_returns_flat_with_failing:log": 1,
+  "ws:call_script_throws_mid_nested_list:recv": 12,
+  "ws:call_script_throws_mid_nested_list:sent": 10,
+  "console:call_script_throws_mid_nested_list:log": 2,
+  "ws:call_script_callback_list:recv": 12,
+  "ws:call_script_callback_list:sent": 9,
+  "console:call_script_callback_list:log": 1,
+  "ws:run_script_mid_nested_list:recv": 12,
+  "ws:run_script_mid_nested_list:sent": 9,
+  "console:run_script_mid_nested_list:log": 1,
+  "ws:pd:recv": 12,
+  "ws:pd:sent": 9,
+  "console:pd:log": 1,
+  "ws:ctrlb:recv": 10,
+  "ws:ctrlb:sent": 7,
+  "console:ctrlb:log": 1,
+  "ws:thr:recv": 13,
+  "ws:thr:sent": 9,
+  "console:thr:log": 1,
+  "ws:temporal:recv": 11,
+  "ws:temporal:sent": 8,
+  "console:temporal:log": 1,
+  "ws:temporal-proxy:recv": 14,
+  "ws:temporal-proxy:sent": 8,
+  "console:temporal-proxy:error": 9,
+  "console:temporal-proxy:log": 1,
+  "ws:vars:recv": 15,
+  "pageerror:vars": 1,
+  "ws:vars:sent": 12,
+  "console:vars:log": 1,
+  "ws:typelog:recv": 65,
+  "ws:typelog:sent": 66,
+  "console:typelog:log": 1,
+  "ws:api-sib:recv": 7,
+  "ws:api-sib:sent": 3,
+  "console:api-sib:log": 1,
+  "ws:api-setvar:recv": 11,
+  "ws:api-setvar:sent": 9,
+  "console:api-setvar:log": 1,
+  "ws:api-reset:recv": 14,
+  "ws:api-reset:sent": 9,
+  "console:api-reset:log": 2,
+  "ws:api-dc:recv": 8,
+  "ws:api-dc:sent": 5,
+  "ws:api-dc-2:recv": 5,
+  "ws:api-dc-2:sent": 2,
+  "console:api-dc-2:log": 1,
+  "console:api-dc:log": 1,
+  "ws:api-undecl:recv": 7,
+  "ws:api-undecl:sent": 4,
+  "console:api-undecl:log": 1,
+  "ws:bind:recv": 24,
+  "ws:bind:sent": 19,
+  "console:bind:log": 1,
+  "ws:priv:recv": 21,
+  "ws:priv:sent": 17,
+  "console:priv:log": 2
+ },
+ "extra": {}
+}

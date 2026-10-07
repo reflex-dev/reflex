@@ -1,0 +1,99 @@
+{
+ "steps": {
+  "work": {
+   "count": "count=0",
+   "exc": "exc=1",
+   "seen": "",
+   "results": {}
+  },
+  "work_locked": {
+   "count": "count=1",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {}
+  },
+  "outside_modify": {
+   "count": "count=1",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "ImmutableStateError"
+   }
+  },
+  "outside_readonly": {
+   "count": "count=1",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "outside_own_handler": {
+   "count": "count=1",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "inside_describe": {
+   "count": "count=2",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "fg_describe": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "own_bg_outside": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  }
+ },
+ "console": [],
+ "page_errors": [],
+ "after_reload": {
+  "count": "count=3",
+  "exc": "exc=1",
+  "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+  "results": {
+   "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "outside_modify": "ImmutableStateError",
+   "outside_own_handler": "ImmutableStateError",
+   "outside_readonly": "ran"
+  }
+ },
+ "server_backend_exc": [
+  "N024_BACKEND_EXC ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state."
+ ],
+ "server_peek": [
+  "N024 1791407852.358 peek count=1 type=StateProxy,cls=Parent,isinst_parent=True,kind=parent"
+ ],
+ "server_tracebacks": 0
+}

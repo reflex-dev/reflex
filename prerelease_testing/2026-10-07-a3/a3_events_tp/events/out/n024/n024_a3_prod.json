@@ -1,0 +1,287 @@
+{
+ "steps": {
+  "work": {
+   "count": "count=0",
+   "exc": "exc=1",
+   "seen": "",
+   "results": {}
+  },
+  "work_locked": {
+   "count": "count=1",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {}
+  },
+  "outside_modify": {
+   "count": "count=1",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "ImmutableStateError"
+   }
+  },
+  "outside_readonly": {
+   "count": "count=1",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "outside_own_handler": {
+   "count": "count=1",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "inside_describe": {
+   "count": "count=2",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "fg_describe": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "own_bg_outside": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-write_own": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-append_own": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-write_inherited": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_inherited": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-own_write": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:own_write": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_inherited": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-read_own": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:own_write": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:read_own": "no-error own=0 items=0 count=3",
+    "outside_call:write_inherited": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-bump": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:bump": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:own_write": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:read_own": "no-error own=0 items=0 count=3",
+    "outside_call:write_inherited": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "oc-peek": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:bump": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:own_write": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:peek": "no-error own=0 items=0 count=3",
+    "outside_call:read_own": "no-error own=0 items=0 count=3",
+    "outside_call:write_inherited": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "dw-own": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "direct_write:own": "ImmutableStateError own=0 count=3",
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:bump": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:own_write": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:peek": "no-error own=0 items=0 count=3",
+    "outside_call:read_own": "no-error own=0 items=0 count=3",
+    "outside_call:write_inherited": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "dw-inherited": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "direct_write:inherited": "ImmutableStateError own=0 count=3",
+    "direct_write:own": "ImmutableStateError own=0 count=3",
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:bump": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:own_write": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:peek": "no-error own=0 items=0 count=3",
+    "outside_call:read_own": "no-error own=0 items=0 count=3",
+    "outside_call:write_inherited": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  },
+  "dw-inherited_list": {
+   "count": "count=3",
+   "exc": "exc=1",
+   "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "direct_write:inherited": "ImmutableStateError own=0 count=3",
+    "direct_write:inherited_list": "ImmutableStateError own=0 count=3",
+    "direct_write:own": "ImmutableStateError own=0 count=3",
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_call:append_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:bump": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:own_write": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:peek": "no-error own=0 items=0 count=3",
+    "outside_call:read_own": "no-error own=0 items=0 count=3",
+    "outside_call:write_inherited": "ImmutableStateError own=0 items=0 count=3",
+    "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+    "outside_modify": "ImmutableStateError",
+    "outside_own_handler": "ImmutableStateError",
+    "outside_readonly": "ran"
+   }
+  }
+ },
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "page_errors": [],
+ "after_reload": {
+  "count": "count=3",
+  "exc": "exc=1",
+  "seen": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+  "results": {
+   "direct_write:inherited": "ImmutableStateError own=0 count=3",
+   "direct_write:inherited_list": "ImmutableStateError own=0 count=3",
+   "direct_write:own": "ImmutableStateError own=0 count=3",
+   "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "inside_lock": "bump:type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+   "outside_call:append_own": "ImmutableStateError own=0 items=0 count=3",
+   "outside_call:bump": "ImmutableStateError own=0 items=0 count=3",
+   "outside_call:own_write": "ImmutableStateError own=0 items=0 count=3",
+   "outside_call:peek": "no-error own=0 items=0 count=3",
+   "outside_call:read_own": "no-error own=0 items=0 count=3",
+   "outside_call:write_inherited": "ImmutableStateError own=0 items=0 count=3",
+   "outside_call:write_own": "ImmutableStateError own=0 items=0 count=3",
+   "outside_modify": "ImmutableStateError",
+   "outside_own_handler": "ImmutableStateError",
+   "outside_readonly": "ran"
+  }
+ },
+ "server_backend_exc": [
+  "N024_BACKEND_EXC ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state."
+ ],
+ "server_peek": [
+  "N024 1791408435.669 peek count=1 type=StateProxy,cls=Parent,isinst_parent=True,kind=parent",
+  "N024 1791408471.706 peek count=3 type=StateProxy,cls=Parent,isinst_parent=True,kind=parent"
+ ],
+ "server_tracebacks": 0
+}

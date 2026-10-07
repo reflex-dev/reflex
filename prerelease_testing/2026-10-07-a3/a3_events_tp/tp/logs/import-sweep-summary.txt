@@ -1,0 +1,4 @@
+a2 ok: 20 / 22 not ok: {'reflex_chakra': "ImportError: cannot import name '_issubclass' from 'reflex.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0", 'reflex_ag_grid': "ModuleNotFoundError: No module named 'reflex.base'"}
+all ok: 20 / 22 not ok: {'reflex_chakra': "ImportError: cannot import name '_issubclass' from 'reflex.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0", 'reflex_ag_grid': "ModuleNotFoundError: No module named 'reflex.base'"}
+s912 ok: 20 / 22 not ok: {'reflex_chakra': "ImportError: cannot import name '_issubclass' from 'reflex.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0", 'reflex_ag_grid': "ModuleNotFoundError: No module named 'reflex.base'"}
+a2 == a3 (status + warning counts): True

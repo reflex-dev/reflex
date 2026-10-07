@@ -1,0 +1,152 @@
+{
+ "url": "http://localhost:3142/",
+ "hydrated": true,
+ "shown": {
+  "pl-ls": "pl-light",
+  "wu-ls": "wu-light",
+  "wu-sync": "wu-sync-default",
+  "cs-ls": "cs-light",
+  "cu-ls": "cu-light",
+  "ws-ls": "ws-light",
+  "wt-ls": "wt-light"
+ },
+ "localStorage": {
+  "theme": "system",
+  "last_compiled_theme": "system"
+ },
+ "sessionStorage": {},
+ "cookies": [],
+ "frames": [
+  {
+   "dir": "in",
+   "t": 1.121,
+   "kind": "other",
+   "len": 108
+  },
+  {
+   "dir": "out",
+   "t": 1.292,
+   "kind": "connect",
+   "len": 404,
+   "boot": "reflex___state____state.hydrate_and_load",
+   "boot_router_data": {
+    "pathname": "/",
+    "asPath": "/"
+   },
+   "boot_vars": null,
+   "n_hashes": 14
+  },
+  {
+   "dir": "in",
+   "t": 1.3,
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_router_data": null,
+   "boot_vars": null,
+   "n_hashes": 0
+  },
+  {
+   "dir": "in",
+   "t": 1.304,
+   "kind": "event",
+   "len": 2505,
+   "delta": {
+    "reflex___state____state": {
+     "rx_router_headers_rx_state_": {
+      "host": "localhost:8142",
+      "origin": "http://localhost:3142",
+      "upgrade": "websocket",
+      "connection": "Upgrade",
+      "cookie": "",
+      "pragma": "no-cache",
+      "cache_control": "no-cache",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+      "sec_websocket_version": "13",
+      "sec_websocket_key": "lLadG5JMoi5/RPRBiL2dFA==",
+      "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+      "accept_encoding": "gzip, deflate, br, zstd",
+      "accept_language": "en-US,en;q=0.9",
+      "raw_headers": {
+       "accept-encoding": "gzip, deflate, br, zstd",
+       "accept-language": "en-US,en;q=0.9",
+       "asgi-scope-client": "127.0.0.1",
+       "cache-control": "no-cache",
+       "connection": "Upgrade",
+       "host": "localhost:8142",
+       "origin": "http://localhost:3142",
+       "pragma": "no-cache",
+       "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+       "sec-websocket-key": "lLadG5JMoi5/RPRBiL2dFA==",
+       "sec-websocket-protocol": "0.10.0a3",
+       "sec-websocket-version": "13",
+       "upgrade": "websocket",
+       "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+      }
+     },
+     "rx_router_page_rx_state_": {
+      "host": "http://localhost:3142",
+      "path": "/index",
+      "raw_path": "/",
+      "full_path": "http://localhost:3142/index",
+      "full_raw_path": "http://localhost:3142/",
+      "params": {}
+     },
+     "rx_router_route_id_rx_state_": "/index",
+     "rx_router_session_rx_state_": {
+      "client_token": "824329f8-b2f1-4cc0-d56e-e034e23ca691",
+      "client_ip": "127.0.0.1",
+      "session_id": "1DfTLH3X5W88S36wAAAB"
+     },
+     "rx_router_url_rx_state_": {
+      "scheme": "http",
+      "netloc": "localhost:3142",
+      "origin": "http://localhost:3142",
+      "path": "/",
+      "query": "",
+      "query_parameters": {},
+      "fragment": "",
+      "href": "http://localhost:3142/"
+     },
+     "is_hydrated_rx_state_": false
+    },
+    "reflex___state____state.f1combo___f1combo____parent_uuid": {
+     "pu_id_rx_state_": "2dd5b06654c44d87b3f4e1a1e5c4197d"
+    },
+    "reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid": {
+     "cu_ck_rx_state_": "cu-unset",
+     "cu_id_rx_state_": "d057802089b34fea8190bdd0d92c51b3",
+     "cu_ls_rx_state_": "cu-light",
+     "cu_ss_rx_state_": "cu-x"
+    },
+    "reflex___state____state.f1combo___f1combo____with_clock_var": {
+     "wt_ls_rx_state_": "wt-light",
+     "wt_stamp_rx_state_": "1791408843640721312"
+    },
+    "reflex___state____state.f1combo___f1combo____with_uuid": {
+     "wu_ck_rx_state_": "wu-unset",
+     "wu_id_rx_state_": "4055175c984443c495b60a918e6247f3",
+     "wu_ls_rx_state_": "wu-light",
+     "wu_ss_rx_state_": "wu-x",
+     "wu_sync_rx_state_": "wu-sync-default"
+    }
+   },
+   "root_has_is_hydrated": true,
+   "root_is_hydrated": false
+  },
+  {
+   "dir": "in",
+   "t": 1.304,
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": {
+     "is_hydrated_rx_state_": true
+    }
+   },
+   "root_has_is_hydrated": true,
+   "root_is_hydrated": true
+  }
+ ],
+ "console_err_warn": []
+}

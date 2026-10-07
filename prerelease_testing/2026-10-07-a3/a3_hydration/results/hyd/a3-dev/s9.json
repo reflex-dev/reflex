@@ -1,0 +1,55 @@
+{
+ "direct_1": {
+  "trace": [
+   "id=1|path=/items/1|url=http://localhost:3147/items/1"
+  ],
+  "params": "{\"id\":\"1\"}"
+ },
+ "nav_2": {
+  "url": "http://localhost:3147/items/2",
+  "trace": [
+   "id=1|path=/items/1|url=http://localhost:3147/items/1",
+   "id=2|path=/items/2|url=http://localhost:3147/items/2"
+  ],
+  "params": "{\"id\":\"2\"}"
+ },
+ "back_1": {
+  "url": "http://localhost:3147/items/1",
+  "trace": [
+   "id=1|path=/items/1|url=http://localhost:3147/items/1",
+   "id=2|path=/items/2|url=http://localhost:3147/items/2",
+   "id=1|path=/items/1|url=http://localhost:3147/items/1"
+  ],
+  "params": "{\"id\":\"1\"}"
+ },
+ "fwd_2": {
+  "url": "http://localhost:3147/items/2",
+  "trace": [
+   "id=1|path=/items/1|url=http://localhost:3147/items/1",
+   "id=2|path=/items/2|url=http://localhost:3147/items/2",
+   "id=1|path=/items/1|url=http://localhost:3147/items/1",
+   "id=2|path=/items/2|url=http://localhost:3147/items/2"
+  ],
+  "params": "{\"id\":\"2\"}"
+ },
+ "docs_direct": [
+  "splat=['a', 'b']|path=/docs/a/b"
+ ],
+ "docs_root_nav": [
+  "splat=['a', 'b']|path=/docs/a/b",
+  "splat=None|path=/docs"
+ ],
+ "docs_root_direct": [
+  "splat=['a', 'b']|path=/docs/a/b",
+  "splat=None|path=/docs",
+  "splat=None|path=/docs"
+ ],
+ "status": "pass",
+ "duration_s": 4.5,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

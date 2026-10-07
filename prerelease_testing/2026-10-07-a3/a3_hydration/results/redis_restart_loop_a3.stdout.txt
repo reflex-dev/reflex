@@ -1,0 +1,5 @@
+{"round": 0, "counter_before": "1", "counter_after": "1", "token_same": true, "leftover_keys_after_stop": [], "stale_key_is_tab_token": false, "shutdown_panic_in_prev_log": false, "new_token_frames": []}
+{"round": 1, "counter_before": "2", "counter_after": "2", "token_same": true, "leftover_keys_after_stop": [], "stale_key_is_tab_token": false, "shutdown_panic_in_prev_log": false, "new_token_frames": []}
+{"round": 2, "counter_before": "3", "counter_after": "3", "token_same": true, "leftover_keys_after_stop": [], "stale_key_is_tab_token": false, "shutdown_panic_in_prev_log": false, "new_token_frames": []}
+{"round": 3, "counter_before": "4", "counter_after": "4", "token_same": true, "leftover_keys_after_stop": [], "stale_key_is_tab_token": false, "shutdown_panic_in_prev_log": false, "new_token_frames": []}
+{"round": 4, "counter_before": "5", "counter_after": "5", "token_same": true, "leftover_keys_after_stop": [], "stale_key_is_tab_token": false, "shutdown_panic_in_prev_log": false, "new_token_frames": []}

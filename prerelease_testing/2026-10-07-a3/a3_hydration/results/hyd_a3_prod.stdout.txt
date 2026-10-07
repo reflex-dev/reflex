@@ -1,0 +1,15 @@
+[a3-prod] s1: pass (1.5s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s1b: pass (2.9s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s2: pass (5.1s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s3: pass (2.3s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s4: anomaly (2.6s) {'status': 'anomaly', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s5: pass (24.5s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s6: pass (7.5s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s6b: pass (25.6s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s7: pass (9.5s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s8: pass (3.5s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s9: pass (3.9s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s10: anomaly (11.2s) {'status': 'anomaly', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s11: pass (9.9s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s12: pass (2.8s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-prod] s13: pass (4.1s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}

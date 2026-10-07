@@ -1,0 +1,15 @@
+[a3-dev] s1: pass (2.6s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s1b: pass (3.0s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s2: pass (5.9s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s3: pass (2.7s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s4: anomaly (2.8s) {'status': 'anomaly', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s5: pass (25.0s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s6: pass (8.2s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s6b: pass (23.9s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s7: pass (10.1s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s8: pass (4.0s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s9: pass (4.5s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s10: anomaly (11.9s) {'status': 'anomaly', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s11: pass (10.6s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s12: pass (3.0s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}
+[a3-dev] s13: pass (5.8s) {'status': 'pass', 'console_err_warn': 0, 'pageerrors': 0, 'failed': 0, 'http_errors': 0}

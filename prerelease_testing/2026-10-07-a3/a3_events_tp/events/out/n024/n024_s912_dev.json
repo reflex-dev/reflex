@@ -1,0 +1,97 @@
+{
+ "steps": {
+  "work": {
+   "count": "count=1",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {}
+  },
+  "work_locked": {
+   "count": "count=2",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {}
+  },
+  "outside_modify": {
+   "count": "count=3",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "no-error"
+   }
+  },
+  "outside_readonly": {
+   "count": "count=3",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "outside_own_handler": {
+   "count": "count=3",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "inside_describe": {
+   "count": "count=4",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "fg_describe": {
+   "count": "count=5",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  },
+  "own_bg_outside": {
+   "count": "count=5",
+   "exc": "exc=0",
+   "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+   "results": {
+    "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+    "outside_modify": "no-error",
+    "outside_own_handler": "no-error",
+    "outside_readonly": "ran"
+   }
+  }
+ },
+ "console": [],
+ "page_errors": [],
+ "after_reload": {
+  "count": "count=5",
+  "exc": "exc=0",
+  "seen": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent | own_bg_outside=ImmutableStateError",
+  "results": {
+   "foreground": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "inside_lock": "bump:type=Parent,cls=Parent,isinst_parent=True,kind=parent",
+   "outside_modify": "no-error",
+   "outside_own_handler": "no-error",
+   "outside_readonly": "ran"
+  }
+ },
+ "server_backend_exc": [],
+ "server_peek": [
+  "N024 1791407902.361 peek count=3 type=Parent,cls=Parent,isinst_parent=True,kind=parent"
+ ],
+ "server_tracebacks": 0
+}
