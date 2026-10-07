@@ -1,0 +1,52 @@
+{
+ "cmd": "$SB/envs/stable/bin/reflex run --json --frontend-port 3640 --backend-port 8640",
+ "reflex": "$SB/envs/stable/lib/python3.12/site-packages/reflex/__init__.py 0.9.12",
+ "ready_s": 3.23,
+ "top_pid": 18515,
+ "inner_pid": 18534,
+ "tree_before": {
+  "18515": "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0",
+  "18534": "/root/.bun/bin/bun run dev",
+  "18542": "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0",
+  "18535": "node $SB/apps/verify_upgrade/blank_s912/.web/node_modules/.bin/r"
+ },
+ "bytes_before_signal": 86584,
+ "still_running_after_s": 45.0,
+ "ping_while_hung": false,
+ "ports_bound_while_hung": [],
+ "tree_while_hung": {
+  "18515": "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0"
+ },
+ "leftover_after": {},
+ "ports_bound_after": [],
+ "rc": -9,
+ "killed_by_reader": true,
+ "sig": "INT",
+ "target": "group",
+ "json_mode": true,
+ "rate_bps": 0.0,
+ "pause": 4.0,
+ "sig2_at": null,
+ "inner_exit_s": 0.16,
+ "top_exit_s": 45.02,
+ "ping_down_s": 0.04,
+ "eof_s": 45.01,
+ "top_exit_minus_inner_exit_s": 44.86,
+ "bytes_total": 152262,
+ "ends_with_newline": true,
+ "truncated_tail": "",
+ "truncated_tail_len": 0,
+ "lines_complete": 1599,
+ "invalid_count": 1596,
+ "invalid_sample": [
+  "VUSEQ 0000001 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "VUSEQ 0000002 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "VUSEQ 0000003 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "VUSEQ 0000004 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "VUSEQ 0000005 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+ ],
+ "levels": {
+  "info": 3
+ },
+ "seq_printed_by_app": 1596
+}

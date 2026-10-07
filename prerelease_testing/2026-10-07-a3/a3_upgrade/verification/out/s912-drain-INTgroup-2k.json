@@ -1,0 +1,46 @@
+{
+ "cmd": "$SB/envs/stable/bin/reflex run --json --frontend-port 3640 --backend-port 8640",
+ "reflex": "$SB/envs/stable/lib/python3.12/site-packages/reflex/__init__.py 0.9.12",
+ "ready_s": 1.13,
+ "top_pid": 13231,
+ "inner_pid": 13265,
+ "tree_before": {
+  "13231": "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0",
+  "13265": "/root/.bun/bin/bun run dev",
+  "13273": "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0",
+  "13266": "node $SB/apps/verify_upgrade/blank_s912/.web/node_modules/.bin/r"
+ },
+ "bytes_before_signal": 112900,
+ "leftover_after": {},
+ "ports_bound_after": [],
+ "rc": 0,
+ "killed_by_reader": false,
+ "sig": "INT",
+ "target": "group",
+ "json_mode": true,
+ "rate_bps": 2000.0,
+ "pause": 4.0,
+ "sig2_at": null,
+ "inner_exit_s": 0.05,
+ "top_exit_s": 1.92,
+ "ping_down_s": 0.01,
+ "eof_s": 33.07,
+ "top_exit_minus_inner_exit_s": 1.87,
+ "bytes_total": 178577,
+ "ends_with_newline": true,
+ "truncated_tail": "",
+ "truncated_tail_len": 0,
+ "lines_complete": 1876,
+ "invalid_count": 1873,
+ "invalid_sample": [
+  "VUSEQ 0000001 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "VUSEQ 0000002 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "VUSEQ 0000003 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "VUSEQ 0000004 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "VUSEQ 0000005 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+ ],
+ "levels": {
+  "info": 3
+ },
+ "seq_printed_by_app": 1873
+}

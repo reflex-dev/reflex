@@ -1,0 +1,846 @@
+{
+ "tag": "guide-a3",
+ "results": [
+  {
+   "name": "/portable: get_fields()['_items'].default_value() + ClassVar render",
+   "status": "pass",
+   "detail": "a\n\nb\n\nhttps://example.com/api\n\nreflex 0.10.0a3",
+   "t": 5.31
+  },
+  {
+   "name": "/sample: guide sample 1 verbatim renders a, b and the ClassVar",
+   "status": "pass",
+   "detail": "a\n\nb\n\nhttps://example.com/api",
+   "t": 7.137
+  },
+  {
+   "name": "guide verbatim Child.work (self.bump() outside the lock)",
+   "status": "pass",
+   "detail": "{'result': '', 'c2': '0', 'c1': '0', 'c3': '0', 'p': '0', 'own': '0', 'before': '', 'count_before': '0'}",
+   "t": 12.853
+  },
+  {
+   "name": "guide verbatim fix Child3.work (async with self: self.bump()) increments Parent.count by 1",
+   "status": "pass",
+   "detail": "{'result': '', 'c2': '1', 'c1': '1', 'c3': '1', 'p': '1', 'own': '0', 'before': '', 'count_before': '0'}",
+   "t": 16.735
+  },
+  {
+   "name": "bg outside",
+   "status": "pass",
+   "detail": "{'result': 'outside: ImmutableStateError', 'c2': '1', 'c1': '1', 'c3': '1', 'p': '1', 'own': '0', 'before': '', 'count_before': '1'}",
+   "t": 20.621
+  },
+  {
+   "name": "bg inside",
+   "status": "pass",
+   "detail": "{'result': 'inside: ok', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'outside: ImmutableStateError', 'count_before': '1'}",
+   "t": 24.503
+  },
+  {
+   "name": "bg readonly",
+   "status": "pass",
+   "detail": "{'result': 'readonly outside: ran, returned 2', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'inside: ok', 'count_before': '2'}",
+   "t": 28.38
+  },
+  {
+   "name": "bg type",
+   "status": "pass",
+   "detail": "{'result': 'type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'readonly outside: ran, returned 2', 'count_before': '2'}",
+   "t": 32.25
+  },
+  {
+   "name": "bg own_outside",
+   "status": "pass",
+   "detail": "{'result': 'own outside: ImmutableStateError', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True', 'count_before': '2'}",
+   "t": 36.115
+  },
+  {
+   "name": "bg own_var_outside",
+   "status": "pass",
+   "detail": "{'result': 'own-var outside: ImmutableStateError', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'own outside: ImmutableStateError', 'count_before': '2'}",
+   "t": 39.998
+  },
+  {
+   "name": "bg direct_inherited",
+   "status": "pass",
+   "detail": "{'result': 'direct inherited write outside: ImmutableStateError', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'own-var outside: ImmutableStateError', 'count_before': '2'}",
+   "t": 43.882
+  },
+  {
+   "name": "bg direct_own",
+   "status": "pass",
+   "detail": "{'result': 'direct own write outside: ImmutableStateError', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'direct inherited write outside: ImmutableStateError', 'count_before': '2'}",
+   "t": 47.75
+  },
+  {
+   "name": "runtime type(self).level = 77: new sessions (level, worker pid)",
+   "status": "pass",
+   "detail": "{'tabA': ('20', '29543'), 'new_tabs': [('77', '29543')]}",
+   "t": 53.263
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 53.389
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 53.389
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 4.001,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 4.779,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 4.865,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 5.095,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 5.317,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 5.45,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 5.611,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 7.113,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 7.113,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 7.167,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 7.228,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 7.322,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 7.362,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 7.362,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 47.779,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 47.88,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 47.935,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 47.967,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 47.969,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "tab0",
+   "t": 50.739,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "tab0",
+   "t": 50.941,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "tab0",
+   "t": 50.976,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "tab0",
+   "t": 51.107,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "tab0",
+   "t": 53.249,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 4.861,
+   "dir": "open",
+   "payload": "ws://localhost:8642/_event/?token=7ed840f7-287a-4ef6-f5e7-39f97880d8d1&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 4.865,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"7XpY7AEKkQqYik01AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 5.176,
+   "dir": "out",
+   "len": 382,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"29a6b9e1d820bb7d\",\"b084fc0c68f7c73a\",\"d6b790cc50e55fbe\",\"ee0a50c258153c28\",\"bf21a9e8fbc5a384\",\"3c60b481f5d6e139\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/portable\",\"asPath\":\"/portable\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 5.181,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"GGdXZecwmAYGDZatAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 5.194,
+   "dir": "in",
+   "len": 1825,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8642\",\"origin\":\"http://localhost:3642\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"H4375QZp5N3SrL97gh68kQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8642\",\"origin\":\"http://localhost:3642\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"H4375QZp5N3SrL97gh68kQ==\",\"sec-websocket-protocol\":\"0.10.0a3\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3642\",\"path\":\"/portable\",\"raw_path\":\"/portable\",\"full_path\":\"http://localhost:3642/portable\",\"full_raw_path\":\"http://localhost:3642/portable\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/portable\",\"rx_router_session_rx_state_\":{\"client_token\":\"7ed840f7-287a-4ef6-f5e7-39f97880d8d1\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"GGdXZecwmAYGDZatAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3642\",\"origin\":\"http://localhost:3642\",\"path\":\"/portable\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3642/portable\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.195,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.334,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 5.334,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 7.113,
+   "dir": "open",
+   "payload": "ws://localhost:8642/_event/?token=7ed840f7-287a-4ef6-f5e7-39f97880d8d1&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 7.114,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"HGaAMBku3nvJiPCuAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 7.114,
+   "dir": "out",
+   "len": 378,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"29a6b9e1d820bb7d\",\"b084fc0c68f7c73a\",\"d6b790cc50e55fbe\",\"ee0a50c258153c28\",\"bf21a9e8fbc5a384\",\"3c60b481f5d6e139\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/sample\",\"asPath\":\"/sample\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 7.116,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"mS-He-wPShHtVSYzAAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 7.116,
+   "dir": "in",
+   "len": 1811,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8642\",\"origin\":\"http://localhost:3642\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"HsSAXAG0TBzTqSNa1f1aHg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8642\",\"origin\":\"http://localhost:3642\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"HsSAXAG0TBzTqSNa1f1aHg==\",\"sec-websocket-protocol\":\"0.10.0a3\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3642\",\"path\":\"/sample\",\"raw_path\":\"/sample\",\"full_path\":\"http://localhost:3642/sample\",\"full_raw_path\":\"http://localhost:3642/sample\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/sample\",\"rx_router_session_rx_state_\":{\"client_token\":\"7ed840f7-287a-4ef6-f5e7-39f97880d8d1\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"mS-He-wPShHtVSYzAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3642\",\"origin\":\"http://localhost:3642\",\"path\":\"/sample\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3642/sample\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.116,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.169,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 7.169,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 7.362,
+   "dir": "open",
+   "payload": "ws://localhost:8642/_event/?token=7ed840f7-287a-4ef6-f5e7-39f97880d8d1&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 7.362,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"igVJoeW_himk_uusAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 7.363,
+   "dir": "out",
+   "len": 370,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"29a6b9e1d820bb7d\",\"b084fc0c68f7c73a\",\"d6b790cc50e55fbe\",\"ee0a50c258153c28\",\"bf21a9e8fbc5a384\",\"3c60b481f5d6e139\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 7.363,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"cHrDMGXP0_KCbcfrAAAF\"}"
+  },
+  {
+   "page": "main",
+   "t": 7.363,
+   "dir": "in",
+   "len": 1783,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8642\",\"origin\":\"http://localhost:3642\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"QmUuRNtrPzmEC/q7a37Hdw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8642\",\"origin\":\"http://localhost:3642\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"QmUuRNtrPzmEC/q7a37Hdw==\",\"sec-websocket-protocol\":\"0.10.0a3\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3642\",\"path\":\"/bg\",\"raw_path\":\"/bg\",\"full_path\":\"http://localhost:3642/bg\",\"full_raw_path\":\"http://localhost:3642/bg\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/bg\",\"rx_router_session_rx_state_\":{\"client_token\":\"7ed840f7-287a-4ef6-f5e7-39f97880d8d1\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"cHrDMGXP0_KCbcfrAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3642\",\"origin\":\"http://localhost:3642\",\"path\":\"/bg\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3642/bg\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.363,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.979,
+   "dir": "out",
+   "len": 166,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child.work\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 11.985,
+   "dir": "in",
+   "len": 605,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state.\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 12.022,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.refresh\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 12.884,
+   "dir": "out",
+   "len": 167,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child3.work\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 15.886,
+   "dir": "in",
+   "len": 109,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____parent\":{\"count_rx_state_\":1}}}]"
+  },
+  {
+   "page": "main",
+   "t": 15.916,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.refresh\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 16.766,
+   "dir": "out",
+   "len": 175,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.work_outside\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 19.768,
+   "dir": "in",
+   "len": 169,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2\":{\"result_rx_state_\":\"outside: ImmutableStateError\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 19.8,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.refresh\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 20.651,
+   "dir": "out",
+   "len": 174,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.work_inside\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 23.654,
+   "dir": "in",
+   "len": 229,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____parent\":{\"count_rx_state_\":2},\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2\":{\"result_rx_state_\":\"inside: ok\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 23.682,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.refresh\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 24.534,
+   "dir": "out",
+   "len": 176,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.work_readonly\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 27.536,
+   "dir": "in",
+   "len": 174,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2\":{\"result_rx_state_\":\"readonly outside: ran, returned 2\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 27.565,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.refresh\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 28.397,
+   "dir": "out",
+   "len": 172,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.work_type\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 31.402,
+   "dir": "in",
+   "len": 314,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2\":{\"result_rx_state_\":\"type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True\",\"log_rx_state_\":[\"type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True\"]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 31.431,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.refresh\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 32.282,
+   "dir": "out",
+   "len": 179,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.work_own_outside\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 35.284,
+   "dir": "in",
+   "len": 173,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2\":{\"result_rx_state_\":\"own outside: ImmutableStateError\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 35.284,
+   "dir": "in",
+   "len": 1,
+   "payload": "2"
+  },
+  {
+   "page": "main",
+   "t": 35.284,
+   "dir": "out",
+   "len": 1,
+   "payload": "3"
+  },
+  {
+   "page": "main",
+   "t": 35.296,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.refresh\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 36.15,
+   "dir": "out",
+   "len": 183,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.work_own_var_outside\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 39.152,
+   "dir": "in",
+   "len": 177,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2\":{\"result_rx_state_\":\"own-var outside: ImmutableStateError\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 39.181,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.refresh\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 40.036,
+   "dir": "out",
+   "len": 184,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.work_direct_inherited\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 43.038,
+   "dir": "in",
+   "len": 192,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2\":{\"result_rx_state_\":\"direct inherited write outside: ImmutableStateError\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 43.065,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.refresh\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 43.913,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.work_direct_own\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 46.916,
+   "dir": "in",
+   "len": 186,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2\":{\"result_rx_state_\":\"direct own write outside: ImmutableStateError\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 46.933,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2.refresh\",\"router_data\":{\"pathname\":\"/bg\",\"asPath\":\"/bg\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 47.786,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 47.786,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 47.964,
+   "dir": "open",
+   "payload": "ws://localhost:8642/_event/?token=7ed840f7-287a-4ef6-f5e7-39f97880d8d1&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 47.969,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"QS5PZ1OOIp9bFCnyAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 48.007,
+   "dir": "out",
+   "len": 382,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"29a6b9e1d820bb7d\",\"b084fc0c68f7c73a\",\"d6b790cc50e55fbe\",\"ee0a50c258153c28\",\"bf21a9e8fbc5a384\",\"3c60b481f5d6e139\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/defaults\",\"asPath\":\"/defaults\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 48.012,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"AtokeL1OU4AfYhG8AAAH\"}"
+  },
+  {
+   "page": "main",
+   "t": 48.018,
+   "dir": "in",
+   "len": 2152,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8642\",\"origin\":\"http://localhost:3642\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"M82OeIPyA/dXUeq/WDUxMQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8642\",\"origin\":\"http://localhost:3642\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"M82OeIPyA/dXUeq/WDUxMQ==\",\"sec-websocket-protocol\":\"0.10.0a3\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3642\",\"path\":\"/defaults\",\"raw_path\":\"/defaults\",\"full_path\":\"http://localhost:3642/defaults\",\"full_raw_path\":\"http://localhost:3642/defaults\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/defaults\",\"rx_router_session_rx_state_\":{\"client_token\":\"7ed840f7-287a-4ef6-f5e7-39f97880d8d1\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"AtokeL1OU4AfYhG8AAAH\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3642\",\"origin\":\"http://localhost:3642\",\"path\":\"/defaults\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3642/defaults\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.guideapp___guideapp____parent\":{\"count_rx_state_\":2},\"reflex___state____state.guideapp___guideapp____parent.guideapp___guideapp____child2\":{\"log_rx_state_\":[\"type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True\"],\"result_rx_state_\":\"direct own write outside: ImmutableStateError\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 48.018,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 49.05,
+   "dir": "out",
+   "len": 153,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____defaults.reconf\",\"router_data\":{\"pathname\":\"/defaults\",\"asPath\":\"/defaults\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 50.553,
+   "dir": "in",
+   "len": 115,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____defaults\":{\"pid_rx_state_\":\"29543\"}}}]"
+  },
+  {
+   "page": "tab0",
+   "t": 50.975,
+   "dir": "open",
+   "payload": "ws://localhost:8642/_event/?token=d79c1c4c-0cf5-4415-fcfa-9c2b544d8292&EIO=4&transport=websocket"
+  },
+  {
+   "page": "tab0",
+   "t": 50.978,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"Be8-voV8sT6v-njEAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "tab0",
+   "t": 51.158,
+   "dir": "out",
+   "len": 382,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"29a6b9e1d820bb7d\",\"b084fc0c68f7c73a\",\"d6b790cc50e55fbe\",\"ee0a50c258153c28\",\"bf21a9e8fbc5a384\",\"3c60b481f5d6e139\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/defaults\",\"asPath\":\"/defaults\"}}}"
+  },
+  {
+   "page": "tab0",
+   "t": 51.166,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"WOmk6N4kpWC-bLBRAAAJ\"}"
+  },
+  {
+   "page": "tab0",
+   "t": 51.168,
+   "dir": "in",
+   "len": 1906,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8642\",\"origin\":\"http://localhost:3642\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CFjc5srH5oGbUlcBnCezGQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8642\",\"origin\":\"http://localhost:3642\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"CFjc5srH5oGbUlcBnCezGQ==\",\"sec-websocket-protocol\":\"0.10.0a3\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3642\",\"path\":\"/defaults\",\"raw_path\":\"/defaults\",\"full_path\":\"http://localhost:3642/defaults\",\"full_raw_path\":\"http://localhost:3642/defaults\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/defaults\",\"rx_router_session_rx_state_\":{\"client_token\":\"d79c1c4c-0cf5-4415-fcfa-9c2b544d8292\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"WOmk6N4kpWC-bLBRAAAJ\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3642\",\"origin\":\"http://localhost:3642\",\"path\":\"/defaults\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3642/defaults\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.guideapp___guideapp____defaults\":{\"level_rx_state_\":77}}}]"
+  },
+  {
+   "page": "tab0",
+   "t": 51.169,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "tab0",
+   "t": 52.233,
+   "dir": "out",
+   "len": 153,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.guideapp___guideapp____defaults.whoami\",\"router_data\":{\"pathname\":\"/defaults\",\"asPath\":\"/defaults\"}}]"
+  },
+  {
+   "page": "tab0",
+   "t": 53.236,
+   "dir": "in",
+   "len": 115,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.guideapp___guideapp____defaults\":{\"pid_rx_state_\":\"29543\"}}}]"
+  }
+ ],
+ "notes": {
+  "version": "reflex 0.10.0a3",
+  "verbatim": {
+   "result": "",
+   "c2": "0",
+   "c1": "0",
+   "c3": "0",
+   "p": "0",
+   "own": "0",
+   "before": "",
+   "count_before": "0"
+  },
+  "outside": {
+   "result": "outside: ImmutableStateError",
+   "c2": "1",
+   "c1": "1",
+   "c3": "1",
+   "p": "1",
+   "own": "0",
+   "before": "",
+   "count_before": "1"
+  },
+  "inside": {
+   "result": "inside: ok",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "outside: ImmutableStateError",
+   "count_before": "1"
+  },
+  "readonly": {
+   "result": "readonly outside: ran, returned 2",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "inside: ok",
+   "count_before": "2"
+  },
+  "type": {
+   "result": "type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "readonly outside: ran, returned 2",
+   "count_before": "2"
+  },
+  "own_outside": {
+   "result": "own outside: ImmutableStateError",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True",
+   "count_before": "2"
+  },
+  "own_var_outside": {
+   "result": "own-var outside: ImmutableStateError",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "own outside: ImmutableStateError",
+   "count_before": "2"
+  },
+  "direct_inherited": {
+   "result": "direct inherited write outside: ImmutableStateError",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "own-var outside: ImmutableStateError",
+   "count_before": "2"
+  },
+  "direct_own": {
+   "result": "direct own write outside: ImmutableStateError",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "direct inherited write outside: ImmutableStateError",
+   "count_before": "2"
+  },
+  "defaults": {
+   "tabA": [
+    "20",
+    "29543"
+   ],
+   "new_tabs": [
+    [
+     "77",
+     "29543"
+    ]
+   ]
+  }
+ }
+}

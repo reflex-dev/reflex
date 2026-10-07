@@ -1,0 +1,8 @@
+a3 timeout bg -s INT 12 (-k 30): exited rc=124 after 12.264169376 s (12 = INT honoured, ~42 = needed the KILL)
+  survivors:  listening: 
+a3 timeout fg -s INT 12 (-k 30): exited rc=137 after 42.010237941 s (12 = INT honoured, ~42 = needed the KILL)
+  survivors: 631 639 640 647  listening: 631 640 647 
+stable timeout fg -s INT 12 (-k 30): exited rc=137 after 42.011283465 s (12 = INT honoured, ~42 = needed the KILL)
+  survivors: 1696 1697  listening: 1697 
+stable timeout bg -s INT 12 (-k 30): exited rc=124 after 12.174007369 s (12 = INT honoured, ~42 = needed the KILL)
+  survivors:  listening: 

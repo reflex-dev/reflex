@@ -1,0 +1,63 @@
+{
+ "cmd": "$SB/envs/stable/bin/reflex run --json --frontend-port 3640 --backend-port 8640",
+ "reflex": "$SB/envs/stable/lib/python3.12/site-packages/reflex/__init__.py 0.9.12",
+ "ready_s": 1.68,
+ "top_pid": 20980,
+ "inner_pid": 21107,
+ "tree_before": {
+  "20980": "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0",
+  "21107": "/root/.bun/bin/bun run dev",
+  "21168": "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0",
+  "21108": "node $SB/apps/verify_upgrade/blank_s912/.web/node_modules/.bin/r"
+ },
+ "bytes_before_signal": 325,
+ "after_linger": {
+  "linger_s": 10.0,
+  "top_alive": false,
+  "ping": true,
+  "ports_bound": [
+   3640,
+   8640
+  ],
+  "session_procs": {
+   "21107": [
+    1,
+    "/root/.bun/bin/bun run dev"
+   ],
+   "21108": [
+    21107,
+    "node $SB/apps/verify_upgrade/blank_s912/.web/node_modules/.bin/r"
+   ],
+   "21168": [
+    1,
+    "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0"
+   ]
+  }
+ },
+ "leftover_after": {},
+ "ports_bound_after": [],
+ "rc": -9,
+ "killed_by_reader": false,
+ "sig": "KILL",
+ "target": "pid",
+ "json_mode": true,
+ "rate_bps": -1,
+ "pause": 0.0,
+ "sig2_at": null,
+ "inner_exit_s": 15.04,
+ "top_exit_s": 0.02,
+ "ping_down_s": 15.04,
+ "eof_s": 15.03,
+ "top_exit_minus_inner_exit_s": -15.01,
+ "bytes_total": 325,
+ "ends_with_newline": true,
+ "truncated_tail": "",
+ "truncated_tail_len": 0,
+ "lines_complete": 2,
+ "invalid_count": 0,
+ "invalid_sample": [],
+ "levels": {
+  "info": 2
+ },
+ "seq_printed_by_app": null
+}

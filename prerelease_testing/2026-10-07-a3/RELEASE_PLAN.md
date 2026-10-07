@@ -1,7 +1,7 @@
 # Release plan after the 0.10.0a3 re-verification (reflex / reflex-base 0.10.0a3 + reflex-enterprise 0.9.7a5)
 
-**Status: DRAFT** — written at 2026-10-07 ~22:25 UTC after every exploration item finished; three independent verifications
-(A3-06..A3-08, A3-09/A3-10, A3-11/A3-12) are still running and may change the triage below. Rubric (testing skill): fix before release =
+**Status: DRAFT** — written at 2026-10-07 ~22:25 UTC after every exploration item finished; the independent verifications of
+A3-06..A3-10 are in; A3-11/A3-12's is still running and may change the triage below. Rubric (testing skill): fix before release =
 confirmed regression vs the previous stable (0.9.12), security-relevant, significant user impact, or trivially small. Evidence:
 [FINDINGS.md](./FINDINGS.md). Supersedes [../2026-10-07/RELEASE_PLAN.md](../2026-10-07/RELEASE_PLAN.md) for everything it re-checked.
 
@@ -32,8 +32,10 @@ No upgrade regression 0.9.12 → a3 or a2 → a3; F-002/F-003/F-004 stay fixed; 
 - **A3-01** (LOW, regression vs a2; CONFIRMED) — trivially small arm: in `BaseStateMeta.__setattr__`, push the "kept default" undo entry
   before `_keep_client_storage` / `_accepts_default` can raise (so a rejected `mock.patch.object` / pytest-mock patch round-trips), and
   make `__delattr__` and the identity restore pop only an entry that the same patch pushed. The docs already promise the round trip.
-- **A3-06** (LOW, docs; verification running) — add "writing an inherited var outside `async with self` in a background task now raises
-  `ImmutableStateError`" to the upgrade guide's background-task section and the #7312 changelog entry (two independent clusters found it).
+- **A3-06** (LOW, docs; CONFIRMED by a verifier and found independently by two clusters) — add to the upgrade guide's background-task
+  section and the #7312 changelog entry: "Writing a var inherited from a parent state outside `async with self` — directly or through any
+  handler — now raises `ImmutableStateError`. On 0.9 it raised nothing: with the in-memory state manager the write landed without the lock,
+  with Redis it was silently lost."
 - **A3-03** (LOW, docs; NARROWED) — one sentence in base_vars.md / the #7495 changelog example: a named storage var's key is shared by every
   ComponentState instance; use a per-instance `name=` or an unnamed storage var for per-instance persistence.
 
@@ -44,8 +46,10 @@ No upgrade regression 0.9.12 → a3 or a2 → a3; F-002/F-003/F-004 stay fixed; 
   A3-11 is deferred).
 - A3-02 (LOW) `None` / non-str values assigned to a storage var drop storage (extend the N-005 fix; related to #7498).
 - A3-13 (LOW, perf, same as 0.9.12) storage-dependent computed vars evaluated twice per page load (second boot delta).
-- A3-07 (LOW, pre-existing) `reflex run --json` ignores a pid-only SIGINT.
-- A3-08 (LOW) #7428's drain cap ends the JSON stream mid-record.
+- A3-07 (LOW, pre-existing; CONFIRMED) `reflex run --json` ignores a pid-only SIGINT; under supervisord `stopsignal=INT` the stop SIGKILLs only
+  the supervisor and leaves the app serving as orphans that block the restart. Small fix: forward SIGINT like SIGTERM in `log.py:519`.
+- A3-08 (LOW; CONFIRMED, second trigger: a second Ctrl-C during the drain) #7428's drain cap ends the JSON stream mid-record (one
+  blocking write of the whole batch on a daemon thread); a consumer that stops reading blocks shutdown forever on every version.
 - A3-04 (LOW, pre-existing) class-default assign/restore is not thread-safe.
 - A3-05 — not new: add the render-crash symptom and the import-first workaround to reflex#7479.
 - N-006 remainder (silent `str()` / `%s` / `!s` paths, cryptic `id=` error) — part of the filed N-006 follow-up if not already.

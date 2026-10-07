@@ -1,0 +1,38 @@
+2026-10-07 21:43:58,426 INFO Set uid to user 0 succeeded
+2026-10-07 21:43:58,430 INFO RPC interface 'supervisor' initialized
+2026-10-07 21:43:58,430 CRIT Server 'inet_http_server' running without any HTTP authentication checking
+2026-10-07 21:43:58,430 INFO supervisord started with pid 9436
+2026-10-07 21:44:00,403 INFO spawned: 'json_INT_pidonly' with pid 9454
+2026-10-07 21:44:01,405 INFO success: json_INT_pidonly entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:44:02,061 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:44:04,061 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:44:06,061 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:44:08,061 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:44:10,061 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:44:12,061 WARN killing 'json_INT_pidonly' (9454) with SIGKILL
+2026-10-07 21:44:12,061 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:44:12,073 WARN stopped: json_INT_pidonly (terminated by SIGKILL)
+2026-10-07 21:44:18,248 INFO spawned: 'json_INT_group' with pid 10707
+2026-10-07 21:44:19,253 INFO success: json_INT_group entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:44:19,799 INFO waiting for json_INT_group to stop
+2026-10-07 21:44:19,989 INFO stopped: json_INT_group (exit status 0)
+2026-10-07 21:44:26,421 INFO spawned: 'json_TERM_default' with pid 11898
+2026-10-07 21:44:27,423 INFO success: json_TERM_default entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:44:28,233 INFO waiting for json_TERM_default to stop
+2026-10-07 21:44:30,233 INFO waiting for json_TERM_default to stop
+2026-10-07 21:44:32,233 INFO waiting for json_TERM_default to stop
+2026-10-07 21:44:34,233 INFO waiting for json_TERM_default to stop
+2026-10-07 21:44:36,233 INFO waiting for json_TERM_default to stop
+2026-10-07 21:44:38,233 WARN killing 'json_TERM_default' (11898) with SIGKILL
+2026-10-07 21:44:38,233 INFO waiting for json_TERM_default to stop
+2026-10-07 21:44:38,238 WARN stopped: json_TERM_default (terminated by SIGKILL)
+2026-10-07 21:44:44,137 INFO spawned: 'plain_INT_pidonly' with pid 13325
+2026-10-07 21:44:45,963 INFO success: plain_INT_pidonly entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:44:46,618 INFO waiting for plain_INT_pidonly to stop
+2026-10-07 21:44:48,618 INFO waiting for plain_INT_pidonly to stop
+2026-10-07 21:44:50,618 INFO waiting for plain_INT_pidonly to stop
+2026-10-07 21:44:52,618 INFO waiting for plain_INT_pidonly to stop
+2026-10-07 21:44:54,618 INFO waiting for plain_INT_pidonly to stop
+2026-10-07 21:44:56,618 WARN killing 'plain_INT_pidonly' (13325) with SIGKILL
+2026-10-07 21:44:56,618 INFO waiting for plain_INT_pidonly to stop
+2026-10-07 21:44:56,623 WARN stopped: plain_INT_pidonly (terminated by SIGKILL)

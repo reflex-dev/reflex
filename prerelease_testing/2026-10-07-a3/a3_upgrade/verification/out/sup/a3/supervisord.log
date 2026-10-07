@@ -1,0 +1,27 @@
+2026-10-07 21:41:24,237 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2026-10-07 21:43:00,658 INFO Set uid to user 0 succeeded
+2026-10-07 21:43:00,679 INFO RPC interface 'supervisor' initialized
+2026-10-07 21:43:00,679 CRIT Server 'inet_http_server' running without any HTTP authentication checking
+2026-10-07 21:43:00,679 INFO supervisord started with pid 4629
+2026-10-07 21:43:02,649 INFO spawned: 'json_INT_pidonly' with pid 4652
+2026-10-07 21:43:03,651 INFO success: json_INT_pidonly entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:43:04,812 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:43:06,812 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:43:08,812 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:43:10,812 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:43:12,812 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:43:14,811 WARN killing 'json_INT_pidonly' (4652) with SIGKILL
+2026-10-07 21:43:14,812 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:43:14,814 WARN stopped: json_INT_pidonly (terminated by SIGKILL)
+2026-10-07 21:43:21,933 INFO spawned: 'json_INT_group' with pid 6004
+2026-10-07 21:43:22,935 INFO success: json_INT_group entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:43:24,011 INFO waiting for json_INT_group to stop
+2026-10-07 21:43:24,283 INFO stopped: json_INT_group (exit status 0)
+2026-10-07 21:43:30,160 INFO spawned: 'json_TERM_default' with pid 6995
+2026-10-07 21:43:31,161 INFO success: json_TERM_default entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:43:32,576 INFO waiting for json_TERM_default to stop
+2026-10-07 21:43:33,016 INFO stopped: json_TERM_default (exit status 0)
+2026-10-07 21:43:38,858 INFO spawned: 'plain_INT_pidonly' with pid 8015
+2026-10-07 21:43:40,521 INFO success: plain_INT_pidonly entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:43:41,091 INFO waiting for plain_INT_pidonly to stop
+2026-10-07 21:43:41,290 INFO stopped: plain_INT_pidonly (exit status 0)

@@ -94,24 +94,50 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   (`reflex/state.py:807`, `reflex_base/registry.py` 192-221); `_reload_state_module` (322-331) reloads only the app package. Add the
   render-crash symptom and the import-first workaround to reflex#7479; no new issue.
 
-### A3-06: The upgrade guide misses that writing an INHERITED var outside `async with self` in a background task now raises `ImmutableStateError` (0.9.12 wrote it without the lock) (LOW, docs)
+### A3-06: The upgrade guide misses that writing an INHERITED var outside `async with self` in a background task now raises `ImmutableStateError` (0.9.12 wrote it without the lock) (LOW, docs; CONFIRMED by independent verifier, refined)
 - Item `a3_upgrade` (inbox 5). App `a3_upgrade/apps/guide`, `bin/seq_guide2.sh`: a Child background task doing `self.count += 100`
   (count declared on Parent) outside the lock: 0.9.12 14 → 114 with no error; a3 raises. A handler declared on the same state that
   writes the inherited var splits the same way. The guide covers only calling inherited handlers (N-024). The new behaviour is the
   safe one; the gap is documentation. 0.9.12 cause: `istate/proxy.py:322-329` skip-vars bypass + `state.py:1455`.
 - Independently reproduced by `a3_events_tp` (inbox 1, `events/src/n024doc` running the guide's own Parent/Child sample: 9/9 guide claims
   hold in dev and prod; `direct_write:inherited`, `outside_call:write_inherited` raise on a2/a3 and write silently on 0.9.12).
+- **Verification (`verify_upgrade`, own 3-level Base/Mid/Worker app): CONFIRMED with two refinements.** On 0.9.12 with **Redis** the unlocked
+  write raised nothing and was silently discarded (value stayed 1 in the UI and after reload) — so 0.10 turns a silent Redis-only data
+  loss into an error; with the memory manager it landed without the lock. In-place mutation of an inherited list outside the lock already
+  raised on 0.9.12 — the hole was attribute assignment only. Neither the guide, the a1–a3 changelog entries nor `background_events.md`
+  mention it (the latter always said writes outside the block raise, so 0.10 now matches its contract); the guide's "A handler declared on
+  the same state was already called through that proxy" is true but misleading. Suggested line: "Writing a var inherited from a parent
+  state outside `async with self` — directly or through any handler — now raises `ImmutableStateError`. On 0.9 it raised nothing: with
+  the in-memory state manager the write landed without the lock, with Redis it was silently lost." a3 code: `istate/proxy.py:389-415`.
 
-### A3-07: `reflex run --json` ignores SIGINT sent to its pid only; the server keeps running (LOW, pre-existing on 0.9.12 and a2)
+### A3-07: `reflex run --json` ignores SIGINT sent to its pid only; the server keeps running (LOW, pre-existing; CONFIRMED by independent verifier — worse under supervisord `stopsignal=INT`)
 - Item `a3_upgrade` (inbox 4). `kill -INT <pid>` of `reflex run --json`: still running after 60–210 s; plain `reflex run` exits in
   0.25 s; `--json` + SIGTERM exits in 2 s; Ctrl-C in a terminal (process-group SIGINT) works. `reflex_base/utils/log.py:519` forwards
   only SIGTERM, `:524` `except KeyboardInterrupt: continue`. Repro `a3_upgrade/bin/json_matrix.sh a3fast a3 INT-pid:100000`.
+- **Verification (`verify_upgrade`, own blank apps, strace, real supervisord 4.3.0): CONFIRMED.** SIGINT to the pid: still serving after
+  12–40 s; SIGTERM to the pid 0.29 s, SIGINT to the group 0.27 s, to every pid in the tree (systemd's default KillMode=control-group) 0.25 s;
+  plain `reflex run` 0.18 s. The supervisor catches SIGINT, polls `wait4(WNOHANG)` for 0.25 s and goes back to a blocking wait without
+  signalling the child. **supervisord `stopsignal=INT` with default stopasgroup/killasgroup**: stop waits 10.2 s, SIGKILLs only the
+  supervisor pid, and the inner reflex, backend worker, bun and node become orphans that keep serving; the next `supervisorctl start` fails
+  4× "Frontend port: 3640 is already in use" and goes FATAL (a2 identical; 0.9.12 also needs the SIGKILL but then nothing survives).
+  `stopasgroup=true` stops in 0.42 s, the default TERM config in 0.59 s. Affected: systemd KillMode=mixed/process with KillSignal=SIGINT,
+  `kill -INT <pid>`, `proc.send_signal(SIGINT)`, docker `--init` (tini) / PID-1 (simulated: hung 15 s), `timeout --foreground -s INT`.
+  NOT affected: GNU `timeout -s INT` (signals the group). Contradicts the 0.10.0a1 #7328 entry ("stops its frontend on SIGTERM and SIGINT
+  without a TTY") for `--json`. Code: `reflex_base/utils/log.py:519`, `:520-526`; entry `reflex/reflex.py:774-779`.
 
-### A3-08: #7428's 30 s drain cap ends `reflex run --json` mid-record: a very slow consumer gets a truncated last JSON line (LOW, new in a3 but strictly better than a2)
+### A3-08: #7428's 30 s drain cap ends `reflex run --json` mid-record: a very slow consumer gets a truncated last JSON line (LOW, new in a3 but strictly better than a2; CONFIRMED by independent verifier, second trigger found)
 - Item `a3_upgrade` (inbox 3). #7428 itself works: Ctrl-C/SIGTERM with a 40 lines/s consumer exits in 6.5–6.7 s, rc 0, 0 lines lost,
   0 invalid JSON (a2 lost 49–63 lines plus a truncated record). With a 6 lines/s consumer the cap fires at 30.4 s (as designed) and the
   stream ends in `{"timestamp": "...", "level"` with no newline (82 lines undelivered). A consumer parsing line by line sees one
   invalid record. Repro `a3_upgrade/bin/json_matrix.sh a3 a3 TERM-pid:6`.
+- **Verification (`verify_upgrade`, own JSON-lines reader + strace): CONFIRMED — reflex splits the record**: the converted ~135 KB batch goes
+  out in one blocking `write` on a daemon thread (`_OutputPump._write` `log.py:420-437` via `_write_all` `:365-374`, thread `:389`) and the
+  main thread calls `exit_group(0)` 30.07 s after the child exited, mid-write (2 KB/s reader: 144 B partial record, 356 lines lost; 40 KB/s:
+  clean in 3.3 s; a2: same partial record at its 5 s cap). **Second trigger:** a second Ctrl-C during the drain exits immediately (rc 1),
+  prints a plain-text `Aborted!` on stderr and leaves a 168 B partial record (a2 the same; `KeyboardInterrupt` is caught only around
+  `proc.wait()` `:520-526`). A consumer that stops reading entirely blocks shutdown forever on a3, a2 and 0.9.12 (the cap starts only after
+  the child exits; the `log.py:278` comment "even when a consumer blocks every write" overstates it). 0.9.12 never truncates but its
+  stream is not pure JSON (1873/1876 lines raw text).
 
 ### A3-09: After the #7493 boot reconcile signs a stale tab out, the tab stays on the protected page with blanked values instead of being redirected to /login (LOW, cosmetic; NARROWED by independent verifier — 0.9.12 only redirects when a race goes its way; enterprise-side)
 - Item `a3_ent_auth` (inbox 4). vauth on a3-ent, `vdrv.py stale … 3`: P3 ends on `('/vault', '')` 3/3 dev Redis, 2/3 prod, 3/3 memory;

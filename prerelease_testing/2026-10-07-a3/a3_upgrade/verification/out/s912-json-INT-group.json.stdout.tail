@@ -1,0 +1,3 @@
+{"timestamp": "2026-10-07T21:40:00.732901+00:00", "level": "info", "logger": "reflex.console", "message": "App running at: http://localhost:3640/", "pid": 384}
+{"timestamp": "2026-10-07T21:40:00.744064+00:00", "level": "info", "logger": "reflex.console", "message": "Backend running at: http://0.0.0.0:8640", "pid": 384}
+{"timestamp": "2026-10-07T21:40:03.137735+00:00", "level": "info", "logger": "reflex.utils.processes", "message": "Reflex app stopped.", "location": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/utils/processes.py:567", "pid": 384}

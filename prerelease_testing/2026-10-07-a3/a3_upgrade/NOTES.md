@@ -241,3 +241,114 @@ Server log: only `Warning: Frontend version 0.10.0a2 for session ... does not ma
 ## Cleanup
 Every server, redis, GitHub stub and Chromium started here was stopped (`bin/stop_app.sh` after each run, `bin/ports.sh` -> "no listeners on: 80 ports checked" after the last run).
 Venvs left in `$SB/envs/a3_upgrade-*` (scratch, not in the repo).
+
+## VERIFICATION
+Independent verifier `verify_upgrade` (2026-10-07 21:30–22:30 UTC). Own repros written first under `$SB/apps/verify_upgrade/` (blank apps made with
+`reflex init --template blank` per venv, own JSON-lines reader, own background-task app), then the explorer's scripts re-run on my ports.
+Venvs (read-only, shared): `$SB/envs/a3` (reflex/reflex-base 0.10.0a3), `$SB/envs/alpha2` (0.10.0a2), `$SB/envs/stable` (0.9.12), `$SB/envs/driver`;
+plus my own `$SB/envs/verify_upgrade-sup` (`supervisor==4.3.0` only). Ports 3640–3642 / 8640–8642 (+8649 redis, 8659 supervisord RPC).
+Every probe asserts its venv; apps assert `/scratchpad/envs/<venv>/` in `reflex.__file__`. Sources: `verification/probes/`, `verification/apps/`;
+outputs (trimmed): `verification/out/`. Published code read from `$SB/envs/a3/lib/python3.12/site-packages/reflex_base/utils/log.py`
+(sha256 228bf282…, reflex-base 0.10.0a3).
+
+Rerun setup: copy `verification/apps/<app>` to `$SB/apps/verify_upgrade/<app>` (blank_a3/blank_a2/blank_s912 = blank template + env-gated chatty
+lifespan thread printing `VUSEQ n` lines at `VU_CHATTY_RATE`/s and recording the last printed n in `VU_SEQ_FILE`; bgt_* = background-task app), copy
+`verification/probes/*` to `$SB/apps/verify_upgrade/`. Reader: `NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/python
+vu_reader.py --venv <a3|alpha2|stable> --app <appdir> --fp 3640 --bp 8640 --[no-]json --sig <INT|TERM|KILL> --target <pid|group|tree|child>
+[--pidns] [--chatty R --pause S --rate-bps B|0|-1 --freeze-after-inner-exit --sig2 T --linger L --strace F] --max-wait N --out out/<name>.json`.
+
+### A3-07 (`reflex run --json` ignores a pid-only SIGINT) — CONFIRMED, impact narrowed for some managers, extended for others
+| run (blank app, dev) | a3 | a2 | 0.9.12 |
+|---|---|---|---|
+| `--json`, SIGINT to pid only | still running at 40 s, /ping 200, 3640+8640 bound (3 runs: 40/20/12 s) | same (40 s) | still running 40 s; backend down, frontend 3640 bound |
+| `--json`, SIGTERM to pid | exit 0.29 s rc 0 | 0.26 s | still running 40 s (backend down) |
+| plain, SIGINT to pid | exit 0.18 s rc 0 | 0.24 s | still running 40 s (backend down) |
+| plain, SIGTERM to pid | — | — | still running 40 s |
+| `--json`, SIGINT to process group (terminal Ctrl-C, supervisord stopasgroup=true) | 0.27 s | — | 0.28 s |
+| `--json`, SIGINT to every pid of the tree (systemd KillMode=control-group, the default) | 0.25 s | — | — |
+| `--json`, SIGINT to the inner `python -m reflex run` only | 0.29 s | — | — |
+| `--json` as PID 1 of a new PID namespace (`unshare --pid --fork --mount-proc`, docker-stop-like) SIGINT / SIGTERM | hung 15 s / 0.25 s | — | — |
+- Not an environment quirk: `/proc/<pid>/status` shows SIGINT **caught** (not ignored) in the supervisor and the inner child
+  (`out/a3-json-INT-pid-2.json` `sig_dispositions`). strace of the supervisor (`out/a3-json-INT-pid-strace.strace`): `--- SIGINT {si_code=SI_USER} ---`,
+  0.25 s of `wait4(..., WNOHANG)` polling (CPython `Popen.wait`'s SIGINT grace), then a blocking `wait4` again; no `kill`/`tgkill` to the child.
+- Real supervisord 4.3.0 (`probes/vu_supervisord.sh`, `vu_supervisord_restart.sh`; `out/sup/`): a3 `--json` + `stopsignal=INT` (stopasgroup/killasgroup
+  default false): `supervisorctl stop` waits 10.2 s, SIGKILLs the supervisor pid only, and the inner `reflex run`, the backend worker, bun and node
+  survive as orphans (ppid 1), still serving (/ping "pong", frontend 200) 30 s later; `supervisorctl start` then fails 4× with
+  `Frontend port: 3640 is already in use` -> FATAL. Same on a2. `stopasgroup=true` 0.42 s clean; default `stopsignal=TERM` 0.59 s clean; plain + INT 0.32 s.
+  0.9.12 under the same INT config: 10.2 s + SIGKILL, but nothing survives and the restart works; 0.9.12 with the DEFAULT TERM config also needs the
+  10 s SIGKILL (a3 fixed that). So for `stopsignal=INT` the a3/a2 `--json` end state is worse than 0.9.12; for the default config a3 is better.
+- GNU `timeout -s INT 12 -k 30 reflex run --json` (`probes/vu_timeout.sh`, `out/timeout_matrix.txt`): **works** (exit at 12.26 s, nothing left) because
+  timeout also signals its process group; only `timeout --foreground` (child only) hangs, needs the KILL at 42 s and leaves the inner tree on the ports
+  (0.9.12 `--foreground`: also 42 s, leaves bun/node). The explorer's impact list item "`timeout -s INT`" is therefore wrong; `proc.send_signal(SIGINT)`,
+  `kill -INT <pid>`, supervisord `stopsignal=INT`, systemd `KillMode=mixed|process` + `KillSignal=SIGINT`, docker `STOPSIGNAL SIGINT` (and tini, which
+  forwards to its child only) are affected. systemd/docker were simulated (no systemd PID 1 / docker daemon here): the cgroup kill = `--target tree`,
+  docker's PID-1 delivery = `--pidns`; docker/systemd then escalate to SIGKILL of the whole namespace/cgroup after their timeout (10 s / 90 s).
+- SIGKILL of the top pid alone (any manager's escalation with killasgroup=false, `proc.kill()` after a wait timeout) leaves the server running on every
+  version (`out/*-KILL-pid.json` `after_linger`: a3/a2 `--json`, a3 plain, 0.9.12 json/plain all still answer /ping 10 s later) — pre-existing, context only.
+- Changelog context: 0.10.0a1's #7328 entry says "`reflex run` now stops its frontend on SIGTERM and SIGINT without a TTY"; that holds for plain
+  `reflex run` only, `--json` (#7350 supervisor) still ignores the pid-only SIGINT.
+- Code (published reflex-base 0.10.0a3): `reflex_base/utils/log.py:519` installs a forwarder for SIGTERM only; `:520-526` `proc.wait()` loop with
+  `except KeyboardInterrupt: continue` ("The child gets the same interrupt and shuts down on its own" — true only for group delivery). Entry:
+  `reflex/reflex.py:774-779` re-execs `python -m reflex run ...` under `supervise_output`. a2: identical at `log.py:487-493`.
+- Explorer rerun: `json_drain.py $SB/envs/a3 <copy of apps/jsondrain> 3641 8641 INT-pid 100000` with `QA_CHATTY_OFF=1 QA_EOF_CAP=40 QA_WAIT_CAP=20`
+  -> returncode TIMEOUT, 5 processes left in the session, ports bound (`out/explorer_rerun/a3fast-INT-pid-r100000.json`). Reproduced.
+
+### A3-08 (#7428 30 s cap ends the `--json` stream mid-record) — CONFIRMED, split is made by reflex; a second path found
+| slow reader (chatty 400 lines/s, reader paused 4 s, then reads at B bytes/s) | a3 | a2 |
+|---|---|---|
+| SIGTERM pid, 2 KB/s | child exit 1.93 s, supervisor exit +30.07 s, last 144 B = half record, 356 lines lost | (5 s cap) |
+| SIGTERM pid, 2 KB/s, reader reads NOTHING after the child exits, then raw after the supervisor exited | +30.07 s, stream ends `{"timestamp": "…", "l` (52 B) | +5.04 s, same 52 B tail |
+| Ctrl-C (group SIGINT), 2 KB/s | +30.07 s, 144 B partial | — |
+| SIGTERM pid, 40 KB/s | drained in 3.27 s, ends with newline, 0 lost | 3.23 s, clean, 0 lost |
+| Ctrl-C, 2 KB/s, second Ctrl-C 10 s later (during the drain) | exits at once, rc 1, plain-text `Aborted!` on stderr, 168 B partial record | same (2nd INT at 3 s): rc 1, `Aborted!`, 52 B partial |
+| SIGTERM pid, 2 KB/s, second SIGTERM at 10 s | harmless: +30.11 s cap as usual | — |
+| consumer stops reading entirely (no read after the signal) | never exits (killed at 45 s and 90 s): inner child blocked in `write(1)` (`wchan=anon_pipe_write`), supervisor pump blocked in `write(1)`, main in `wait4`; the 30 s cap never starts because it starts only after the child exits | never exits (45 s) |
+- Who splits the record: reflex. With the reader frozen from the child's exit until the supervisor had exited, nothing the reader did could split a line,
+  and the stream still ended in half a record. strace (`out/a3-drain-TERM-2k-freeze.strace`): pump thread `write(1, …, 134848 <unfinished …>` at
+  22:00:17.27, main thread `exit_group(0)` at 22:00:47.45 (30.07 s after the child exit), `<… write resumed>) = ?`. `_OutputPump._write` hands the
+  whole converted batch (a 64 KiB read becomes ~135 KB of records) to one blocking `os.write` via `_write_all`; the pump is a daemon thread, so when
+  `supervise_output` returns at the wall deadline the process exits mid-syscall and the bytes already copied into the pipe stay there. a2 strace identical at 5 s.
+- Only at the cap? No: also when a second SIGINT arrives during the drain (`KeyboardInterrupt` is caught only around `proc.wait()`, not around
+  `pump.drain`, so it escapes `supervise_output`; click prints `Aborted!` as plain text, not a JSON record). Not seen at the 5 s active budget
+  (write time is excluded from it). Pre-existing on a2 for both paths.
+- 0.9.12 (no supervisor): Ctrl-C with a 2 KB/s reader exits in 1.9 s, every printed line delivered, no truncation, but 1873 of 1876 lines are not JSON
+  (app `print()` passes through raw) — not comparable; consumer that never reads also hangs (45 s).
+- Code: `reflex_base/utils/log.py:279` `_DRAIN_WALL_SECONDS = 30`, `:527-530` drain loop, `:365-374` `_write_all`, `:420-437` `_OutputPump._write`,
+  `:389` `daemon=True`, `:520-526` (KeyboardInterrupt only around `proc.wait()`). The `:278` comment "Stop shutdown after 30 seconds even when a consumer
+  blocks every write" overstates: a consumer that blocks every write blocks the child before it can exit.
+- Explorer rerun (`json_drain.py`, my ports 3641/8641): a3 TERM-pid r6 -> exit 30.64 s, last line `{"timestamp": "…", "level"<NO-NEWLINE-AT-EOF>`,
+  75 lost; a3 TERM-pid r40 -> 7.05 s, 0 invalid, 0 lost; a2 TERM-pid r6 -> 5.51 s, truncated record, 239 lost. Reproduced.
+
+### A3-06 (inherited-var writes outside `async with self` in background tasks) — CONFIRMED, with two refinements
+Own app `apps/bgt_*` (`Base(rx.State)`: count, items, inherited handler `inc`; `Mid(Base)`: level2; `Worker(Mid)`: own, status, handlers writing
+inherited/own vars; each background task catches the exception and reports it). `probes/vu_run_bg.sh <venv> <app> <tag> [redis]` + `vu_drive_bg.py`:
+| outside `async with self` | 0.9.12 memory | 0.9.12 Redis | a2 / a3 |
+|---|---|---|---|
+| `self.count += 10` (grandparent var) | ok, 1 -> 11 | **no error, write silently lost** (1 -> 1) | ImmutableStateError |
+| `self.level2 += 10` (parent var) | ok, 0 -> 10 | no error, lost | ImmutableStateError |
+| `self.own += 10` | ImmutableStateError | ImmutableStateError | ImmutableStateError |
+| `self.items.append("x")` (inherited list) | ImmutableStateError | ImmutableStateError | ImmutableStateError |
+| `self.inc()` (inherited handler, the guide's case) | ok, +1 | no error, lost | ImmutableStateError |
+| `self.own_handler_writes_inherited()` (handler declared on Worker writing count) | ok, +1000 | no error, lost | ImmutableStateError |
+| `self.own_handler_writes_own()` | ImmutableStateError | ImmutableStateError | ImmutableStateError |
+| control: same writes inside `async with self` | ok | ok | ok |
+(`out/bg/{s912-mem,s912-redis,s912-redis2,a3-mem,a2-mem}.json`; Redis confirmed by the state keys in redis-cli, `s912-redis2`.) No console errors.
+- Refinement 1: the 0.9.12 hole is attribute assignment only (`StateProxy.__setattr__` lets `get_skip_vars()` names through; `get_skip_vars()` starts
+  with `set(cls.inherited_vars)` — 0.9.12 `reflex/istate/proxy.py:322-329`, `reflex/state.py:1455-1456`); in-place mutation of an inherited list
+  outside the lock already raised on 0.9.12.
+- Refinement 2: on 0.9.12 the unlocked write only "worked" with the in-memory state manager (dev default). With Redis (the usual prod setup) it raised
+  nothing and was discarded (the proxy's wrapped state is a copy that `async with self` replaces). So 0.10's ImmutableStateError turns a silent
+  Redis-only data loss into an error; the new behaviour is the documented contract (`docs/events/background_events.md`: "Attempting to modify the state
+  from a background task outside of the context block will raise an `ImmutableStateError`", unchanged since 0.9).
+- Docs check at 555b667c1: `upgrading-to-0-10.md` covers inherited HANDLERS only ("A handler declared on the same state was already called through that
+  proxy" — true, but on 0.9.12 such a handler writing an inherited var also wrote without the lock); the a3 Breaking entry (#7312, handlers) and the a1
+  entries (#7312: shadowing, `get_skip_vars()` removed, "in-place changes to a mutable var inherited … are now sent to the client and persisted",
+  descriptors) and `background_events.md:198` never mention writing an inherited var; `git grep -i inherit 555b667c1 -- docs/` shows no other state/background-task hit (only the guide, `background_events.md:198`, mixins/code-structure pages about declaring inheritance).
+- a3 code: `reflex/istate/proxy.py:389-415` (`StateProxy.__setattr__`: only `_self_*`, lock held, or `BaseState.__slots__` pass).
+- Explorer rerun (`apps/guide/app` + `scripts/drive_guide.py` on 3642/8642): 0.9.12 `direct inherited write outside: no error` 14 -> 114, `own outside: no
+  error`, `own-var outside: ImmutableStateError`; a3: all ImmutableStateError, 15 pass / 0 fail (`out/explorer_rerun/guide-{stable,a3}.json`). Reproduced.
+
+### Cleanup
+All servers, supervisord, redis and Chromium instances I started were stopped; final check: no process with cwd under `$SB/apps/verify_upgrade/`, no
+listener on 3640–3659 / 8640–8659. One self-inflicted hiccup: an early cleanup loop in `vu_timeout.sh` matched its own shell and left 4 orphans for ~1 min;
+killed by hand, script fixed (the rerun in `out/timeout_matrix.txt` is from the fixed script).

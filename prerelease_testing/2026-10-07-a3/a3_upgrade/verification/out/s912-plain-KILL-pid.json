@@ -1,0 +1,67 @@
+{
+ "cmd": "$SB/envs/stable/bin/reflex run --frontend-port 3640 --backend-port 8640",
+ "reflex": "$SB/envs/stable/lib/python3.12/site-packages/reflex/__init__.py 0.9.12",
+ "ready_s": 1.22,
+ "top_pid": 21436,
+ "inner_pid": 21455,
+ "tree_before": {
+  "21436": "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0",
+  "21455": "/root/.bun/bin/bun run dev",
+  "21463": "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0",
+  "21456": "node $SB/apps/verify_upgrade/blank_s912/.web/node_modules/.bin/r"
+ },
+ "bytes_before_signal": 644,
+ "after_linger": {
+  "linger_s": 10.0,
+  "top_alive": false,
+  "ping": true,
+  "ports_bound": [
+   3640,
+   8640
+  ],
+  "session_procs": {
+   "21455": [
+    1,
+    "/root/.bun/bin/bun run dev"
+   ],
+   "21456": [
+    21455,
+    "node $SB/apps/verify_upgrade/blank_s912/.web/node_modules/.bin/r"
+   ],
+   "21463": [
+    1,
+    "$SB/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0"
+   ]
+  }
+ },
+ "leftover_after": {},
+ "ports_bound_after": [],
+ "rc": -9,
+ "killed_by_reader": false,
+ "sig": "KILL",
+ "target": "pid",
+ "json_mode": false,
+ "rate_bps": -1,
+ "pause": 0.0,
+ "sig2_at": null,
+ "inner_exit_s": 15.05,
+ "top_exit_s": 0.04,
+ "ping_down_s": 15.06,
+ "eof_s": 15.04,
+ "top_exit_minus_inner_exit_s": -15.01,
+ "bytes_total": 644,
+ "ends_with_newline": true,
+ "truncated_tail": "",
+ "truncated_tail_len": 0,
+ "lines_complete": 5,
+ "invalid_count": 5,
+ "invalid_sample": [
+  "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Starting Reflex App \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
+  "Compiling: \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 100% 18/17 0:00:00",
+  "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 App Running \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\ufffd",
+  "App running at: http://localhost:3640/",
+  "Backend running at: http://0.0.0.0:8640"
+ ],
+ "levels": {},
+ "seq_printed_by_app": null
+}

@@ -1,0 +1,24 @@
+2026-10-07 21:49:42,586 INFO Set uid to user 0 succeeded
+2026-10-07 21:49:42,592 INFO RPC interface 'supervisor' initialized
+2026-10-07 21:49:42,592 CRIT Server 'inet_http_server' running without any HTTP authentication checking
+2026-10-07 21:49:42,592 INFO supervisord started with pid 25849
+2026-10-07 21:49:44,594 INFO spawned: 'rx' with pid 25878
+2026-10-07 21:49:45,597 INFO success: rx entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:49:46,393 INFO waiting for rx to stop
+2026-10-07 21:49:48,393 INFO waiting for rx to stop
+2026-10-07 21:49:50,393 INFO waiting for rx to stop
+2026-10-07 21:49:52,393 INFO waiting for rx to stop
+2026-10-07 21:49:54,393 INFO waiting for rx to stop
+2026-10-07 21:49:56,393 WARN killing 'rx' (25878) with SIGKILL
+2026-10-07 21:49:56,393 INFO waiting for rx to stop
+2026-10-07 21:49:56,397 WARN stopped: rx (terminated by SIGKILL)
+2026-10-07 21:50:27,436 INFO spawned: 'rx' with pid 28384
+2026-10-07 21:50:28,437 INFO success: rx entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:50:43,739 INFO waiting for rx to stop
+2026-10-07 21:50:45,739 INFO waiting for rx to stop
+2026-10-07 21:50:47,739 INFO waiting for rx to stop
+2026-10-07 21:50:49,739 INFO waiting for rx to stop
+2026-10-07 21:50:51,739 INFO waiting for rx to stop
+2026-10-07 21:50:53,739 WARN killing 'rx' (28384) with SIGKILL
+2026-10-07 21:50:53,739 INFO waiting for rx to stop
+2026-10-07 21:50:53,744 WARN stopped: rx (terminated by SIGKILL)

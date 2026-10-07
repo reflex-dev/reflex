@@ -1,0 +1,190 @@
+{
+ "url": "http://localhost:3640/",
+ "steps": [
+  {
+   "case": "bg_locked_control",
+   "before": {
+    "count": "0",
+    "level2": "0",
+    "own": "0",
+    "items": "0",
+    "status": ""
+   },
+   "after": {
+    "count": "1",
+    "level2": "0",
+    "own": "0",
+    "items": "0",
+    "status": "locked_control=ok"
+   }
+  },
+  {
+   "case": "bg_write_inherited",
+   "before": {
+    "count": "1",
+    "level2": "0",
+    "own": "0",
+    "items": "0",
+    "status": "locked_control=ok"
+   },
+   "after": {
+    "count": "11",
+    "level2": "0",
+    "own": "0",
+    "items": "0",
+    "status": "write_inherited=ok"
+   }
+  },
+  {
+   "case": "bg_write_grandparent_via_mid",
+   "before": {
+    "count": "11",
+    "level2": "0",
+    "own": "0",
+    "items": "0",
+    "status": "write_inherited=ok"
+   },
+   "after": {
+    "count": "11",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "write_mid_var=ok"
+   }
+  },
+  {
+   "case": "bg_write_own",
+   "before": {
+    "count": "11",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "write_mid_var=ok"
+   },
+   "after": {
+    "count": "11",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "write_own=ImmutableStateError"
+   }
+  },
+  {
+   "case": "bg_append_inherited",
+   "before": {
+    "count": "11",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "write_own=ImmutableStateError"
+   },
+   "after": {
+    "count": "11",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "append_inherited=ImmutableStateError"
+   }
+  },
+  {
+   "case": "bg_call_inherited_handler",
+   "before": {
+    "count": "11",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "append_inherited=ImmutableStateError"
+   },
+   "after": {
+    "count": "12",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "call_inherited_handler=ok"
+   }
+  },
+  {
+   "case": "bg_call_own_handler_inherited",
+   "before": {
+    "count": "12",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "call_inherited_handler=ok"
+   },
+   "after": {
+    "count": "1012",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "own_handler_writes_inherited=ok"
+   }
+  },
+  {
+   "case": "bg_call_own_handler_own",
+   "before": {
+    "count": "1012",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "own_handler_writes_inherited=ok"
+   },
+   "after": {
+    "count": "1012",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "own_handler_writes_own=ImmutableStateError"
+   }
+  },
+  {
+   "case": "bg_locked_control",
+   "before": {
+    "count": "1012",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "own_handler_writes_own=ImmutableStateError"
+   },
+   "after": {
+    "count": "1013",
+    "level2": "10",
+    "own": "0",
+    "items": "0",
+    "status": "locked_control=ok"
+   }
+  }
+ ],
+ "console": [
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "log: Disconnect websocket on page navigation",
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+ ],
+ "initial": {
+  "count": "0",
+  "level2": "0",
+  "own": "0",
+  "items": "0",
+  "status": ""
+ },
+ "after_noop": {
+  "count": "1013",
+  "level2": "10",
+  "own": "0",
+  "items": "0",
+  "status": "locked_control=ok"
+ },
+ "after_reload": {
+  "count": "1013",
+  "level2": "10",
+  "own": "0",
+  "items": "2",
+  "status": "locked_control=ok"
+ }
+}

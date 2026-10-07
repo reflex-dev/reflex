@@ -1,0 +1,54 @@
+{
+ "cmd": "unshare --pid --fork --mount-proc $SB/envs/a3/bin/reflex run --json --frontend-port 3640 --backend-port 8640",
+ "reflex": "$SB/envs/a3/lib/python3.12/site-packages/reflex/__init__.py 0.10.0a3",
+ "ready_s": 1.13,
+ "top_pid": 1321,
+ "inner_pid": 1322,
+ "tree_before": {
+  "1321": "$SB/envs/a3/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-",
+  "1322": "$SB/envs/a3/bin/python -m reflex run --json --frontend-port 3640",
+  "1334": "/root/.bun/bin/bun run dev",
+  "1342": "$SB/envs/a3/bin/python -m reflex run --json --frontend-port 3640",
+  "1335": "node $SB/apps/verify_upgrade/blank_a3/.web/node_modules/.bin/rea"
+ },
+ "bytes_before_signal": 317,
+ "still_running_after_s": 15.0,
+ "ping_while_hung": true,
+ "ports_bound_while_hung": [
+  3640,
+  8640
+ ],
+ "tree_while_hung": {
+  "1321": "$SB/envs/a3/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-",
+  "1322": "$SB/envs/a3/bin/python -m reflex run --json --frontend-port 3640",
+  "1334": "/root/.bun/bin/bun run dev",
+  "1342": "$SB/envs/a3/bin/python -m reflex run --json --frontend-port 3640",
+  "1335": "node $SB/apps/verify_upgrade/blank_a3/.web/node_modules/.bin/rea"
+ },
+ "leftover_after": {},
+ "ports_bound_after": [],
+ "rc": -9,
+ "killed_by_reader": true,
+ "sig": "INT",
+ "target": "pid",
+ "json_mode": true,
+ "rate_bps": -1,
+ "pause": 0.0,
+ "sig2_at": null,
+ "inner_exit_s": 15.06,
+ "top_exit_s": 15.06,
+ "ping_down_s": 15.08,
+ "eof_s": 15.06,
+ "top_exit_minus_inner_exit_s": 0.0,
+ "bytes_total": 317,
+ "ends_with_newline": true,
+ "truncated_tail": "",
+ "truncated_tail_len": 0,
+ "lines_complete": 2,
+ "invalid_count": 0,
+ "invalid_sample": [],
+ "levels": {
+  "info": 2
+ },
+ "seq_printed_by_app": null
+}

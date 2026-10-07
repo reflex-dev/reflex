@@ -1,0 +1,23 @@
+2026-10-07 21:48:35,492 INFO Set uid to user 0 succeeded
+2026-10-07 21:48:35,497 INFO RPC interface 'supervisor' initialized
+2026-10-07 21:48:35,497 CRIT Server 'inet_http_server' running without any HTTP authentication checking
+2026-10-07 21:48:35,497 INFO supervisord started with pid 22507
+2026-10-07 21:48:37,460 INFO spawned: 'rx' with pid 22535
+2026-10-07 21:48:38,464 INFO success: rx entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:48:39,226 INFO waiting for rx to stop
+2026-10-07 21:48:41,226 INFO waiting for rx to stop
+2026-10-07 21:48:43,226 INFO waiting for rx to stop
+2026-10-07 21:48:45,226 INFO waiting for rx to stop
+2026-10-07 21:48:47,226 INFO waiting for rx to stop
+2026-10-07 21:48:49,225 WARN killing 'rx' (22535) with SIGKILL
+2026-10-07 21:48:49,226 INFO waiting for rx to stop
+2026-10-07 21:48:49,228 WARN stopped: rx (terminated by SIGKILL)
+2026-10-07 21:49:21,238 INFO spawned: 'rx' with pid 24665
+2026-10-07 21:49:21,831 WARN exited: rx (exit status 1; not expected)
+2026-10-07 21:49:22,835 INFO spawned: 'rx' with pid 24722
+2026-10-07 21:49:23,450 WARN exited: rx (exit status 1; not expected)
+2026-10-07 21:49:25,456 INFO spawned: 'rx' with pid 24780
+2026-10-07 21:49:26,249 WARN exited: rx (exit status 1; not expected)
+2026-10-07 21:49:29,253 INFO spawned: 'rx' with pid 24918
+2026-10-07 21:49:29,861 WARN exited: rx (exit status 1; not expected)
+2026-10-07 21:49:30,869 INFO gave up: rx entered FATAL state, too many start retries too quickly

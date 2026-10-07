@@ -1,0 +1,4 @@
+ Traceback (most recent call last):
+    self.bump()  # Raises ImmutableStateError on 0.10.
+    raise ImmutableStateError(msg)
+reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is 

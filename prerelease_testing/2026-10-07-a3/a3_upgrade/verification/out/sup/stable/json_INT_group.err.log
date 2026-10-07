@@ -1,0 +1,1 @@
+{"timestamp": "2026-10-07T21:44:19.810341+00:00", "level": "error", "logger": "_granian", "message": "Unexpected exit from worker-1", "location": "$SB/envs/stable/lib/python3.12/site-packages/granian/server/common.py:61", "pid": 10707}

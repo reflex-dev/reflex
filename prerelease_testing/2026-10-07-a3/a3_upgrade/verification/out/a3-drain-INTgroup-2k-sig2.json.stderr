@@ -1,0 +1,3 @@
+{"timestamp": "2026-10-07T22:04:00.769534+00:00", "level": "error", "logger": "_granian", "message": "Unexpected exit from worker-1", "location": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/lib/python3.12/site-packages/granian/server/common.py:61", "pid": 14084}
+
+Aborted!

@@ -1,0 +1,26 @@
+2026-10-07 21:45:02,927 INFO Set uid to user 0 succeeded
+2026-10-07 21:45:02,931 INFO RPC interface 'supervisor' initialized
+2026-10-07 21:45:02,931 CRIT Server 'inet_http_server' running without any HTTP authentication checking
+2026-10-07 21:45:02,932 INFO supervisord started with pid 14656
+2026-10-07 21:45:04,938 INFO spawned: 'json_INT_pidonly' with pid 14684
+2026-10-07 21:45:05,953 INFO success: json_INT_pidonly entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:45:07,059 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:45:09,059 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:45:11,059 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:45:13,059 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:45:15,059 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:45:17,058 WARN killing 'json_INT_pidonly' (14684) with SIGKILL
+2026-10-07 21:45:17,059 INFO waiting for json_INT_pidonly to stop
+2026-10-07 21:45:17,063 WARN stopped: json_INT_pidonly (terminated by SIGKILL)
+2026-10-07 21:45:24,318 INFO spawned: 'json_INT_group' with pid 16005
+2026-10-07 21:45:25,323 INFO success: json_INT_group entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:45:26,643 INFO waiting for json_INT_group to stop
+2026-10-07 21:45:26,938 INFO stopped: json_INT_group (exit status 0)
+2026-10-07 21:45:32,724 INFO spawned: 'json_TERM_default' with pid 16935
+2026-10-07 21:45:33,740 INFO success: json_TERM_default entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:45:34,731 INFO waiting for json_TERM_default to stop
+2026-10-07 21:45:35,043 INFO stopped: json_TERM_default (exit status 0)
+2026-10-07 21:45:40,739 INFO spawned: 'plain_INT_pidonly' with pid 17832
+2026-10-07 21:45:42,513 INFO success: plain_INT_pidonly entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-10-07 21:45:42,995 INFO waiting for plain_INT_pidonly to stop
+2026-10-07 21:45:43,273 INFO stopped: plain_INT_pidonly (exit status 0)

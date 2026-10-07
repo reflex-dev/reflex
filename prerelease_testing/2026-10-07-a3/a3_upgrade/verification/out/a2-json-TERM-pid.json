@@ -1,0 +1,41 @@
+{
+ "cmd": "$SB/envs/alpha2/bin/reflex run --json --frontend-port 3640 --backend-port 8640",
+ "reflex": "$SB/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py 0.10.0a2",
+ "ready_s": 1.14,
+ "top_pid": 27923,
+ "inner_pid": 27924,
+ "tree_before": {
+  "27923": "$SB/envs/alpha2/bin/python /tmp/claude-0/-home-user-reflex/bd1e0",
+  "27924": "$SB/envs/alpha2/bin/python -m reflex run --json --frontend-port ",
+  "27932": "/root/.bun/bin/bun run dev",
+  "27940": "$SB/envs/alpha2/bin/python -m reflex run --json --frontend-port ",
+  "27933": "node $SB/apps/verify_upgrade/blank_a2/.web/node_modules/.bin/rea"
+ },
+ "bytes_before_signal": 325,
+ "leftover_after": {},
+ "ports_bound_after": [],
+ "rc": 0,
+ "killed_by_reader": false,
+ "sig": "TERM",
+ "target": "pid",
+ "json_mode": true,
+ "rate_bps": -1,
+ "pause": 0.0,
+ "sig2_at": null,
+ "inner_exit_s": 0.22,
+ "top_exit_s": 0.26,
+ "ping_down_s": 0.08,
+ "eof_s": 0.25,
+ "top_exit_minus_inner_exit_s": 0.04,
+ "bytes_total": 642,
+ "ends_with_newline": true,
+ "truncated_tail": "",
+ "truncated_tail_len": 0,
+ "lines_complete": 3,
+ "invalid_count": 0,
+ "invalid_sample": [],
+ "levels": {
+  "info": 3
+ },
+ "seq_printed_by_app": null
+}

@@ -1,0 +1,39 @@
+{
+ "cmd": "run --json --frontend-port 3641 --backend-port 8641",
+ "venv": "$SB/envs/alpha2",
+ "chatty": true,
+ "signal": "TERM-pid",
+ "slow_rate": 6.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 3.24,
+  "pause_start": 6.25,
+  "signal": 10.25,
+  "signal_wall": "22:18:27.938Z",
+  "exit": 15.76,
+  "eof": 45.39
+ },
+ "signal_to_eof_s": 35.14,
+ "signal_to_exit_s": 5.51,
+ "returncode": 0,
+ "lines_total": 1061,
+ "lines_after_signal": 204,
+ "invalid_json": 1,
+ "invalid_samples": [
+  {
+   "t": 45.41,
+   "err": "Unterminated string starting at: line 1 column 99 (char 98)",
+   "line": "{\"timestamp\": \"2026-10-07T22:18:27.939404+00:00\", \"level\": \"info\", \"logger\": \"stdout\", \"message\": \"QA-SEQ 0001058 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 209]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": 0,
+ "seq_max_received": 1057,
+ "seq_written_at_signal": "1287",
+ "seq_written_final": "1296",
+ "lost_tail": 239,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T22:18:27.939404+00:00\", \"level\": \"info\", \"logger\": \"stdout\", \"message\": \"QA-SEQ 0001058 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx<NO-NEWLINE-AT-EOF>",
+ "last_non_seq_lines": [],
+ "leftover_after_exit": ""
+}

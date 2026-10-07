@@ -1,0 +1,35 @@
+{
+ "cmd": "run --json --frontend-port 3641 --backend-port 8641",
+ "venv": "$SB/envs/a3",
+ "chatty": false,
+ "signal": "INT-pid",
+ "slow_rate": 100000.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 2.04,
+  "pause_start": 5.06,
+  "signal": 9.07,
+  "signal_wall": "22:17:16.433Z",
+  "exit": 69.09
+ },
+ "signal_to_eof_s": NaN,
+ "signal_to_exit_s": 60.01,
+ "returncode": "TIMEOUT",
+ "lines_total": 2,
+ "lines_after_signal": 0,
+ "invalid_json": 0,
+ "invalid_samples": [],
+ "last_line_valid_json": true,
+ "seq_first": null,
+ "seq_max_received": null,
+ "seq_written_at_signal": null,
+ "seq_written_final": null,
+ "lost_tail": null,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T22:17:10.701646+00:00\", \"level\": \"info\", \"logger\": \"reflex.console\", \"message\": \"Backend running at: http://0.0.0.0:8641\", \"pid\": 27814}\n",
+ "last_non_seq_lines": [
+  "{\"timestamp\": \"2026-10-07T22:17:10.694700+00:00\", \"level\": \"info\", \"logger\": \"reflex.console\", \"message\": \"App running at: http://localhost:3641/\", \"pid\": 27814}\n",
+  "{\"timestamp\": \"2026-10-07T22:17:10.701646+00:00\", \"level\": \"info\", \"logger\": \"reflex.console\", \"message\": \"Backend running at: http://0.0.0.0:8641\", \"pid\": 27814}\n"
+ ],
+ "leftover_after_exit": "27813 Ssl  $SB/envs/a3/bin/python $SB/envs/a3/bin/reflex run --json --frontend-port 3641 --backend-port 8641\n27814 Sl   $SB/envs/a3/bin/python -m reflex run --json --frontend-port 3641 --backend-port 8641\n27822 S    /root/.bun/bin/bun run dev\n27823 Sl   node $SB/apps/verify_upgrade/explorer/jsondrain_a3/.web/node_modules/.bin/react-router dev --host\n27830 Sl   $SB/envs/a3/bin/python -m reflex run --json --frontend-port 3641 --backend-port 8641\n27823\n27814\n27830"
+}

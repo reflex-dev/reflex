@@ -1,0 +1,41 @@
+{
+ "cmd": "run --json --frontend-port 3641 --backend-port 8641",
+ "venv": "$SB/envs/a3",
+ "chatty": true,
+ "signal": "TERM-pid",
+ "slow_rate": 6.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 5.54,
+  "pause_start": 8.55,
+  "signal": 12.55,
+  "signal_wall": "22:15:39.834Z",
+  "exit": 43.19,
+  "eof": 74.76
+ },
+ "signal_to_eof_s": 62.21,
+ "signal_to_exit_s": 30.64,
+ "returncode": 0,
+ "lines_total": 1314,
+ "lines_after_signal": 365,
+ "invalid_json": 1,
+ "invalid_samples": [
+  {
+   "t": 74.78,
+   "err": "Expecting ':' delimiter: line 1 column 58 (char 57)",
+   "line": "{\"timestamp\": \"2026-10-07T22:15:39.835023+00:00\", \"level\"<NO-NEWLINE-AT-EOF> [len 76]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": 0,
+ "seq_max_received": 1310,
+ "seq_written_at_signal": "1379",
+ "seq_written_final": "1385",
+ "lost_tail": 75,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T22:15:39.835023+00:00\", \"level\"<NO-NEWLINE-AT-EOF>",
+ "last_non_seq_lines": [
+  "{\"timestamp\": \"2026-10-07T22:15:39.835023+00:00\", \"level\"<NO-NEWLINE-AT-EOF>"
+ ],
+ "leftover_after_exit": ""
+}
