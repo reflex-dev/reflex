@@ -1,0 +1,28 @@
+{
+ "path": "/stamp",
+ "n": 2,
+ "hydrated": [
+  true,
+  true
+ ],
+ "finals": [
+  "f2640b-1",
+  "f2640b-1"
+ ],
+ "ls_final": "f2640b-1",
+ "converged": true,
+ "storage_events": [
+  6,
+  5
+ ],
+ "uvi": [
+  6,
+  5
+ ],
+ "frames_total": 36,
+ "windows_5s": [
+  0,
+  0
+ ],
+ "storm": false
+}

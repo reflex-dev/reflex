@@ -169,3 +169,95 @@ app modules are fine at Python level (`adv7495.py` module_reload_reuse: bounded 
 ## Not covered
 - Disk store across real server restarts (`reflex run` wipes `.states` at start; covered at Python level with StateManagerDisk).
 - clse2e in prod (storage options are compiled the same way; core_a2/n005/csbox ran in prod+redis).
+
+## VERIFICATION
+
+Verifier: `verify_class_state` (independent re-run of findings 7, 8, 9, 11). Own repros were written from the inbox text
+BEFORE opening the explorer's scripts, then the explorer's scripts were re-run. All artifacts: `verification/`.
+
+### Environment (PyPI only; every probe asserts its venv; NEVER run them inside the checkout: first `mkdir -p $SB/apps/verify_class_state/run && cp -r prerelease_testing/2026-10-07-a3/a3_class_state/verification/{probes,e2e89} $SB/apps/verify_class_state/run/` and run from there)
+```
+SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+cd $SB && uv --no-config venv --python 3.12 $SB/envs/verify_class_state-a3
+cd $SB && uv --no-config pip install --python $SB/envs/verify_class_state-a3/bin/python --prerelease=allow \
+  'reflex[db,testing]==0.10.0a3' 'reflex-base==0.10.0a3' 'pydantic<2.14' pytest pytest-mock 'playwright==1.63.0'
+# same for verify_class_state-a2 ('reflex[db,testing]==0.10.0a2' 'reflex-base==0.10.0a2' + greenlet)
+# and verify_class_state-s912 ('reflex[db,testing]==0.9.12' + greenlet)
+```
+Resolved: reflex/reflex-base 0.10.0a3/0.10.0a3, 0.10.0a2/0.10.0a2, 0.9.12/0.9.12; pydantic 2.13.5, pytest 9.1.1,
+pytest-mock 3.16.0, selenium 4.50.0, uvicorn 0.54.0, Python 3.12. Ports used: 3600/3601/3605, 8600/8601/8605.
+
+### Finding 7 (undo stack pops "latest", not "what was saved") — CONFIRMED, scope narrowed
+Rerun: `cd $SB/apps/verify_class_state/run/probes; EXPECT_VENV=verify_class_state-<v> $SB/envs/verify_class_state-<v>/bin/python -I -m pytest -p no:cacheprovider -p no:randomly -rA -q -s test_v7_undo.py`
+(one state class per case, so cases cannot contaminate each other; `check_*` asserts a fresh instance starts at the configured 10).
+- a3: 4 failed / 16 passed. Controls pass (monkeypatch round trip, mock.patch.object round trip, rejected wrong-type value,
+  nested monkeypatch+mock). Failing: (a) `mock.patch.object(C, "limit", Other.y)` -> limit 0; (b) `mocker.patch.object(C, "_quota", rx.field(5))`
+  -> _quota 0; (c) `monkeypatch.setattr(C, "limit", 99); C.limit = 50` -> 99 after teardown; (d) `monkeypatch.delattr(C, "_quota")` -> 0 during
+  the test AND after teardown. `out/f7_own_a3.txt`.
+- Narrowing: `monkeypatch.setattr` with a Var / Field value does NOT lose the default (cases a2/b2 pass): pytest 9.1.1
+  `MonkeyPatch.setattr` appends its undo record only after `setattr` succeeds, while `unittest.mock._patch.__enter__` calls
+  `__exit__` (which assigns the saved Field back = one pop) when its `setattr` raises; pytest-mock goes through the same `__enter__`.
+  `probe_v7_paths.py` (`out/f7_paths_a3.txt`): of the rejection paths only Var and Field values skip `_keep_default`; wrong type,
+  raising factory, Literal/dict/dataclass/tuple mismatches all round-trip under mock.patch.object.
+- a2: (a)(b) keep 10 (by accident: a2's restore itself raises TypeError and changes nothing); (c) leaks 50 with a loud teardown
+  TypeError (N-039); (d) keeps 10 (a2 really deleted the descriptor and monkeypatch put it back). So vs a2: (a)(b)(d) regress, (c) is
+  "loud leak -> silent leak". `out/f7_own_a2.txt`. 0.9.12 ignores class assignments: nothing to compare (`out/f7_own_s912.txt`).
+- Explorer's `probes/undo_edge/test_undo_edge.py` re-run: a3 "4 failed, 4 passed", a2 "1 failed, 7 passed, 1 error" (exactly as
+  claimed); `adv7495.py` related cases re-run identically (`out/adv7495_rerun_{a3,a2,s912}.txt`).
+- Docs check: `docs/vars/base_vars.md` (555b667c1) defines restore as "undoes the most recent default assignment", so (c)/(d) follow the
+  literal text, but the same paragraph promises monkeypatch / mock.patch.object round trips, and the `__setattr__` docstring says "a failed
+  assignment is undone the same way and leaves the default as it was" — (a)/(b) contradict that. Side note confirmed: a plain str
+  assigned to a frontend `str` var declared with a non-storage `default_factory` CALLS that factory on a3 (a raising factory surfaces its
+  raw RuntimeError; a2 accepted the assignment) — `out/f7_paths_a3.txt` row `str_storage_decl_factory_raising`.
+- Code (reflex_base 0.10.0a3 wheel, `reflex_base/vars/base.py`): `BaseStateMeta.__setattr__` 4861-4924 — identity restore 4888-4890;
+  `_keep_client_storage` (4895) and `_accepts_default` (4896; raises for Var 4738-4743, Field 4744-4749) run before any `_keep_default`
+  (4903, 4918); `Field._restore_default` 4130-4133 pops the newest entry; `__delattr__` 4926-4939 pops instead of deleting.
+
+### Finding 8 (non-str default drops browser storage) — CONFIRMED
+Rerun: `EXPECT_VENV=verify_class_state-<v> $SB/envs/verify_class_state-<v>/bin/python -I $SB/apps/verify_class_state/run/probes/probe_v8_storage.py (from a neutral cwd)`
+- a3: `St.opt = None` (Optional[str]), `St.uni = 5` (Union[str,int]), `St.ck = None` (Optional[str] Cookie) are accepted silently; the
+  field default becomes None/int, `_compile_client_storage_recursive` keeps only the str-assigned control; a later `St.opt = "y"` does
+  not bring storage back; two `del St.opt` do. `_is_client_storage("opt_cached")` stays True after the drop when it was looked up
+  before (lru_cache), while the compiled frontend map omits it. a2 identical (and also drops the str control = N-005); 0.9.12 keeps
+  everything (it ignores class assignment). `out/f8_own_{a3,a2,s912}.txt`.
+- E2E (a3 dev, 3605/8605): copy `verification/e2e89` to `$SB/apps/verify_class_state/run/e2e89`, cd there (`EXPECT_VENV=verify_class_state-a3 REFLEX_TELEMETRY_ENABLED=false $SB/envs/verify_class_state-a3/bin/reflex run --frontend-port 3605 --backend-port 8605`,
+  then `NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/python drive_v89.py http://localhost:3605/ e2e89-a3-dev.json shot`):
+  after "set both", localStorage has `v_plain` but no `v_opt`; a second tab shows opt "" and plain "typed-plain". No console errors.
+  `out/e2e89-a3-dev.json`, `screenshots/e2e89-a3-dev-*.png`.
+- Realism: public code search finds 2 repos declaring `Optional[str]`/`str | None` storage vars, none assigning None through the class.
+  The docs only promise storage for "a plain string". Code: `reflex/istate/storage.py` 24-37 (`_with_value` wraps only `str`, line 34);
+  `reflex_base/vars/base.py` `_keep_client_storage` 4753-4780 returns the value unchanged, `_accepts_default` 4725-4750 accepts None;
+  `reflex/state.py` 1635-1656 (`_is_client_storage`, lru_cached) classifies by `field.default`.
+
+### Finding 9 (ComponentState instances share one named key) — NARROWED (docs caveat, not a code defect)
+Rerun: `EXPECT_VENV=verify_class_state-<v> $SB/envs/verify_class_state-<v>/bin/python -I $SB/apps/verify_class_state/run/probes/probe_v9_cs_keys.py (from a neutral cwd)`
+- a3: Box (named `box_pref`): instances with no assignment and with `cls.pref = initial` both compile to `box_pref`; an instance assigned
+  `rx.LocalStorage(initial, name=f"box_pref_{tag}")` gets its own key; an UNNAMED storage var gets a per-instance key (substate name).
+  0.9.12: all three Box instances use `box_pref` (assignment ignored). a2: assigned instances are not storage at all (N-005).
+- E2E (same e2e89 run): three Box instances, choose a/b/c -> localStorage holds one `v_box_pref = user-c`; after reload a and b show
+  "user-c". Confirms the symptom.
+- Why narrowed: the collision is inherent to a named key (the name IS the browser key) and exists on 0.9.12 for instances that assign
+  nothing; a3 keeps the name exactly as the #7495 entry promises. The actionable part is documentation: the a3 CHANGELOG #7495 entry
+  illustrates `cls.theme = initial` in `get_component` on `rx.LocalStorage("light", name="theme")` without saying that every instance
+  then shares that key, and `base_vars.md` says get_component configures defaults "independently for each component". browser_storage.md
+  only warns about two states sharing a Cookie name. reflex's own test (`tests/integration/tests_playwright/test_hydration_storage.py`)
+  uses a single instance. Not a regression vs a2 (a2 was worse: no storage) or 0.9.12.
+
+### Finding 11 (AppHarness second app + shared-module state) — REFUTED as a 0.10 regression (pre-existing, #7479 root cause)
+Rerun (one app at a time, pinned ports): `cd $SB/apps/verify_class_state/run/probes; EXPECT_VENV=verify_class_state-<v> V_PREIMPORT=<0|1> V_PORT_BASE=3600 V_OUT=<dir> REFLEX_TELEMETRY_ENABLED=false $SB/envs/verify_class_state-<v>/bin/python -I -m pytest -s -p no:cacheprovider -p no:randomly test_v11_two_apps.py`
+| venv | V_PREIMPORT | app one | app two |
+|---|---|---|---|
+| a3 | 0 | renders, both handlers work | error boundary `TypeError: ... '$$typeof' at exports.useContext`; context.jsx lacks the shared state |
+| a2 | 0 | ok | same crash |
+| 0.9.12 | 0 | ok | **same crash** |
+| a3 | 1 | ok | ok (renders, shared + local handlers work) |
+| 0.9.12 | 1 | ok | ok |
+- Explorer's own `harness/test_shared_state_harness.py` on 0.9.12 with `H_ASSIGN=0`: "2 failed, 1 passed", same `$$typeof` crash
+  (`logs/explorer-harness-s912-assign0.log`). The explorer's 0.9.12 "3 passed" came from `H_ASSIGN=1`: on 0.9.12 `SharedCfg.count = 10`
+  replaces the class attribute with a plain value, so the pages rendered static "10"/"dark-a" (even app A's bump did nothing in
+  `logs/adv/harness-a3_class_state-s912h.log`) and never referenced the shared StateContext.
+- Mechanism (identical in 0.9.12 and a3): `reflex/testing.py` 296-304 forks `AppHarness._base_registration_context` per app; a state class
+  registers into whichever context is active when its module is first imported (`reflex/state.py:807` -> `reflex_base/registry.py`
+  192-221; 0.9.12 `state.py:1101`, registry 184-213); `_reload_state_module` (322-331) reloads only the app package. A module first
+  imported inside app one never reaches app two's fork. Workaround: import the shared module in the test module (before the first
+  harness). Belongs in reflex#7479 (same root cause as its item 1; the render crash is the symptom when the page renders the state).

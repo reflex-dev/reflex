@@ -1,0 +1,50 @@
+{
+  "console": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  "1_initial": {
+    "opt": "",
+    "plain": "cfg-plain",
+    "box-a": "init-a",
+    "box-b": "init-b",
+    "box-c": "light"
+  },
+  "1_storage": {},
+  "2_after_clicks": {
+    "opt": "typed-opt",
+    "plain": "typed-plain",
+    "box-a": "user-a",
+    "box-b": "user-b",
+    "box-c": "user-c"
+  },
+  "2_storage": {
+    "v_box_pref": "user-c",
+    "v_plain": "typed-plain"
+  },
+  "3_after_reload": {
+    "opt": "typed-opt",
+    "plain": "typed-plain",
+    "box-a": "user-c",
+    "box-b": "user-c",
+    "box-c": "user-c"
+  },
+  "3_storage": {
+    "v_box_pref": "user-c",
+    "v_plain": "typed-plain"
+  },
+  "4_new_tab": {
+    "opt": "",
+    "plain": "typed-plain",
+    "box-a": "user-c",
+    "box-b": "user-c",
+    "box-c": "user-c"
+  }
+}

@@ -1,0 +1,21 @@
+{
+ "S": {
+  "observe_windows_5s": [],
+  "finals": {
+   "t0": "s5",
+   "t1": "s5"
+  },
+  "ls_final": "s5",
+  "storage_events_per_tab": {
+   "t0": 0,
+   "t1": 5
+  },
+  "uvi_per_tab": {
+   "t0": 0,
+   "t1": 4
+  },
+  "frames_total": 30,
+  "frames_in_quiet_2s": 0,
+  "converged": true
+ }
+}

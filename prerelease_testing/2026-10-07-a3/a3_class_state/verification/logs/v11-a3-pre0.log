@@ -1,0 +1,79 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_class_state/f11
+plugins: mock-3.16.0, platformdirs-4.12.3, anyio-4.15.1
+collected 2 items
+test_v11_two_apps.py ─────────────────────────── Initializing v11app_one ────────────────────────────
+INFO:     Started server process [3874]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8600 (Press CTRL+C to quit)
+INFO:     127.0.0.1:57822 - "WebSocket /_event/?token=c8a9f1ae-c408-468a-ffc7-f2eb042e37c5&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3874]
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+  ➜  Local:   http://localhost:3600/
+[verify_class_state-a3 pre=0] one: {"version": "verify_class_state-a3", "preimport": false, "app": "one", "pageerrors": [], "title_visible": true, "shared_text": "0", "local_text": "0", "shared_after_click": "1", "local_after_click": "1", "body_text": "app one\n\n1\n\ninc shared\n\n1\n\nhit local", "context_has_shared": true}
+.─────────────────────────── Initializing v11app_two ────────────────────────────
+INFO:     Started server process [3874]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8601 (Press CTRL+C to quit)
+INFO:     127.0.0.1:45660 - "WebSocket /_event/?token=90bba665-2b00-4043-ae5e-ed8b59d8f691&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3874]
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+  ➜  Local:   http://localhost:3601/
+[verify_class_state-a3 pre=0] two: {"version": "verify_class_state-a3", "preimport": false, "app": "two", "pageerrors": [], "title_visible": false, "shared_text": null, "local_text": null, "body_text": "An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nTypeError: Cannot read properties of undefined (reading '$$typeof')\nTypeError: Cannot read properties of undefined (reading '$$typeof')\n    at exports.useContext (http://local", "context_has_shared": false}
+F
+=================================== FAILURES ===================================
+____________________________ test_app[two-AppTwo-1] ____________________________
+label = 'two', source = <function AppTwo at 0x7f8421ae7a60>, offset = 1
+tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratc...ba9-a996-a9166a939428/scratchpad/apps/verify_class_state/f11/bt-a3-pre0'), _retention_count=3, _retention_policy='all')
+    @pytest.mark.parametrize(
+        ("label", "source", "offset"), [("one", AppOne, 0), ("two", AppTwo, 1)]
+    )
+    def test_app(label, source, offset, tmp_path_factory):
+        PinnedHarness.fport = PORT_BASE + offset
+        PinnedHarness.bport = PORT_BASE + 5000 + offset
+        with PinnedHarness.create(
+            root=tmp_path_factory.mktemp(f"v11_{label}"), app_source=source, app_name=f"v11app_{label}"
+        ) as harness:
+            res = _drive(harness, label)
+>       assert res["shared_text"] == "0", res
+E       AssertionError: {'version': 'verify_class_state-a3', 'preimport': False, 'app': 'two', 'console': ['log: 💿 Hey developer 👋. You can pr...re (http://localhost:3601/app_components/v11app_two/v11app_two.jsx:12:70)
+E             at Object.react_stack_bottom_fra"], ...}
+E       assert None == '0'
+test_v11_two_apps.py:161: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    reflex.app:app.py:135 [Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '$$typeof')
+TypeError: Cannot read properties of undefined (reading '$$typeof')
+    at exports.useContext (http://localhost:3601/node_modules/.vite/deps/react.js?v=a83b2b16:726:12)
+    at Bare (http://localhost:3601/app_components/v11app_two/v11app_two.jsx:12:70)
+    at Object.react_stack_bottom_frame (http://localhost:3601/node_modules/.vite/deps/react-dom_client.js?v=a83b2b16:14142:12)
+    at renderWithHooks (http://localhost:3601/node_modules/.vite/deps/react-dom_client.js?v=a83b2b16:4400:19)
+    at updateFunctionComponent (http://localhost:3601/node_modules/.vite/deps/react-dom_client.js?v=a83b2b16:5775:16)
+    at updateSimpleMemoComponent (http://localhost:3601/node_modules/.vite/deps/react-dom_client.js?v=a83b2b16:5633:11)
+    at updateMemoComponent (http://localhost:3601/node_modules/.vite/deps/react-dom_client.js?v=a83b2b16:5608:290)
+    at beginWork (http://localhost:3601/node_modules/.vite/deps/react-dom_client.js?v=a83b2b16:6461:21)
+    at runWithFiberInDEV (http://localhost:3601/node_modules/.vite/deps/react-dom_client.js?v=a83b2b16:944:66)
+    at performUnitOfWork (http://localhost:3601/node_modules/.vite/deps/react-dom_client.js?v=a83b2b16:9148:92)
+=========================== short test summary info ============================
+FAILED test_v11_two_apps.py::test_app[two-AppTwo-1] - AssertionError: {'versi...
+=================== 1 failed, 1 passed in 121.77s (0:02:01) ====================
+EXIT 1

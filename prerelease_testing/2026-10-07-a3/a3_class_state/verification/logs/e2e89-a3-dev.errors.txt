@@ -1,0 +1,4 @@
+'react-error-boundary@6.1.6', 'lucide-react@1.26.0', '@radix-ui/themes@3.3.0', 
+Debug: installed react-error-boundary@6.1.6
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143

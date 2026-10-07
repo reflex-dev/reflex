@@ -1,0 +1,62 @@
+### head
+API_URL=http://localhost:8142
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/config.py'
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8142', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'api_url', 'telemetry_enabled', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+### warnings/errors (deduped, with counts)
+      5 Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+      1 [ERROR] Unexpected exit from worker-1
+      1 DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+### HYDTRACE (first 400)
+### tail
+BOOTTRACE GD {"path": "/", "root_is_h": "-", "seen": {"note_len": "N:12:note-default"}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/onload", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/onload", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/onload", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE ONLOAD {"before_ck": "browser-old", "before_ls": "browser-old", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/onload", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/onload", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/onload", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/onload", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/onload", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE ONLOAD {"before_ck": "srvck-onload-1", "before_ls": "srv-onload-1", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/onload", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/onload", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "c375ebf2"}
+BOOTTRACE GD {"path": "/", "root_is_h": "-", "seen": {"note_len": "N:12:note-default"}, "st": "Prefs", "tok": "46dfa6d2"}
+BOOTTRACE GD {"path": "/", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "46dfa6d2"}
+BOOTTRACE GD {"path": "/", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "46dfa6d2"}
+BOOTTRACE GD {"path": "/", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "46dfa6d2"}
+BOOTTRACE GD {"seen": {"sub_combo": "subval+blue", "sub_ls": "subval"}, "st": "SubPrefs", "tok": "46dfa6d2"}
+BOOTTRACE GD {"path": "/", "root_is_h": "-", "seen": {"ck": "c1", "ck_combo": "c1|ckopt-default", "note": "hello", "note_len": "N:5:hello", "theme": "blue", "theme_upper": "T:BLUE"}, "st": "Prefs", "tok": "46dfa6d2"}
+BOOTTRACE GD {"path": "/", "root_is_h": "-", "seen": {}, "st": "Prefs", "tok": "46dfa6d2"}
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 1 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 1 items
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

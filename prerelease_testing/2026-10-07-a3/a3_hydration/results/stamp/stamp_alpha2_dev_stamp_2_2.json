@@ -1,0 +1,28 @@
+{
+ "path": "/stamp",
+ "n": 2,
+ "hydrated": [
+  true,
+  true
+ ],
+ "finals": [
+  "ead937-1",
+  "ead937-1"
+ ],
+ "ls_final": "ead937-1",
+ "converged": true,
+ "storage_events": [
+  5,
+  4
+ ],
+ "uvi": [
+  5,
+  4
+ ],
+ "frames_total": 32,
+ "windows_5s": [
+  0,
+  0
+ ],
+ "storm": false
+}

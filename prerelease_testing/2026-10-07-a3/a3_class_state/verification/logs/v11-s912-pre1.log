@@ -1,0 +1,44 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_class_state/f11
+plugins: mock-3.16.0, platformdirs-4.12.3, anyio-4.15.1
+collected 2 items
+test_v11_two_apps.py ─────────────────────────── Initializing v11app_one ────────────────────────────
+INFO:     Started server process [16930]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8600 (Press CTRL+C to quit)
+INFO:     127.0.0.1:47908 - "WebSocket /_event/?token=af65afa3-1e16-4ae9-d035-d0fe2a3d857b&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [16930]
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+  ➜  Local:   http://localhost:3600/
+[verify_class_state-s912 pre=1] one: {"version": "verify_class_state-s912", "preimport": true, "app": "one", "pageerrors": [], "title_visible": true, "shared_text": "0", "local_text": "0", "shared_after_click": "1", "local_after_click": "1", "body_text": "app one\n\n1\n\ninc shared\n\n1\n\nhit local", "context_has_shared": true}
+.─────────────────────────── Initializing v11app_two ────────────────────────────
+INFO:     Started server process [16930]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8601 (Press CTRL+C to quit)
+INFO:     127.0.0.1:55876 - "WebSocket /_event/?token=31bd1cf4-18f0-4f1e-86e1-93bd57d945c0&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [16930]
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+  ➜  Local:   http://localhost:3601/
+[verify_class_state-s912 pre=1] two: {"version": "verify_class_state-s912", "preimport": true, "app": "two", "pageerrors": [], "title_visible": true, "shared_text": "0", "local_text": "0", "shared_after_click": "1", "local_after_click": "1", "body_text": "app two\n\n1\n\ninc shared\n\n1\n\nhit local", "context_has_shared": true}
+.
+============================== 2 passed in 21.27s ==============================
+EXIT 0

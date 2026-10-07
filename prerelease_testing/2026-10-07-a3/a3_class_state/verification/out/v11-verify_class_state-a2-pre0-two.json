@@ -1,0 +1,18 @@
+{
+  "version": "verify_class_state-a2",
+  "preimport": false,
+  "app": "two",
+  "console": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "error: %o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading '$$typeof')\n    at exports.useContext (http://localhost:3601/node_modules/.vite/deps/react.js?v=379df3fe:726:12)\n    at Bare (http://localhost:3601/app_components/v11app_two/v11app_two.jsx:12:70)\n    at Object.react_stack_bottom_fra"
+  ],
+  "pageerrors": [],
+  "title_visible": false,
+  "shared_text": null,
+  "local_text": null,
+  "body_text": "An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nTypeError: Cannot read properties of undefined (reading '$$typeof')\nTypeError: Cannot read properties of undefined (reading '$$typeof')\n    at exports.useContext (http://local",
+  "context_has_shared": false
+}
