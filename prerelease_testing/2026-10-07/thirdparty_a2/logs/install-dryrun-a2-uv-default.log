@@ -1,0 +1,111 @@
+# uv --no-config pip install --dry-run --python $SB/envs/alpha2/bin/python <pkg>   (default prerelease strategy; against the shared alpha2 venv, reflex 0.10.0a2 + greenlet)
+=== reflex-local-auth==0.5.0
+Resolved 52 packages in 30ms
+Would install 2 packages
+ + bcrypt==5.0.0
+ + reflex-local-auth==0.5.0
+=== reflex-global-hotkey==1.2.3
+Resolved 42 packages in 115ms
+Would install 1 package
+ + reflex-global-hotkey==1.2.3
+=== reflex-google-auth==0.2.0
+Resolved 51 packages in 196ms
+Would install 10 packages
+ + cffi==2.1.1
+ + charset-normalizer==3.5.2
+ + cryptography==50.0.2
+ + google-auth==2.60.0
+ + pyasn1==0.6.4
+ + pyasn1-modules==0.4.2
+ + pycparser==3.0
+ + reflex-google-auth==0.2.0
+ + requests==2.34.2
+ + urllib3==2.8.0
+=== reflex-magic-link-auth==0.2.2
+Resolved 52 packages in 112ms
+Would install 2 packages
+ + bcrypt==5.0.0
+ + reflex-magic-link-auth==0.2.2
+=== reflex-intersection-observer==0.0.9
+Resolved 44 packages in 159ms
+Would install 2 packages
+ + jinja2==3.1.6
+ + reflex-intersection-observer==0.0.9
+=== reflex-audio-capture==0.1.1
+Resolved 42 packages in 121ms
+Would install 1 package
+ + reflex-audio-capture==0.1.1
+=== reflex-webcam==0.1.0
+Resolved 42 packages in 179ms
+Would install 1 package
+ + reflex-webcam==0.1.0
+=== reflex-simpleicons==0.0.6
+Resolved 42 packages in 183ms
+Would install 1 package
+ + reflex-simpleicons==0.0.6
+=== reflex-monaco==0.0.3
+Resolved 42 packages in 191ms
+Would install 1 package
+ + reflex-monaco==0.0.3
+=== reflex-calendar==0.0.6
+Resolved 42 packages in 149ms
+Would install 1 package
+ + reflex-calendar==0.0.6
+=== reflex-pyplot==0.2.1
+Resolved 12 packages in 224ms
+Would install 11 packages
+ + contourpy==1.4.0
+ + cycler==0.12.1
+ + fonttools==4.66.1
+ + kiwisolver==1.5.1
+ + matplotlib==3.11.2
+ + numpy==2.5.3
+ + pillow==12.3.0
+ + pyparsing==3.3.3
+ + python-dateutil==2.9.0.post0
+ + reflex-pyplot==0.2.1
+ + six==1.17.0
+=== reflex-chakra==0.8.2.post1
+Resolved 42 packages in 131ms
+Would install 1 package
+ + reflex-chakra==0.8.2.post1
+=== reflex-ag-grid==0.0.11
+Resolved 42 packages in 117ms
+Would install 1 package
+ + reflex-ag-grid==0.0.11
+=== reflex-google-recaptcha-v2==0.1.0.post1
+Resolved 42 packages in 117ms
+Would install 1 package
+ + reflex-google-recaptcha-v2==0.1.0.post1
+=== reflex-clerk==1.0.3
+Resolved 42 packages in 107ms
+Would install 1 package
+ + reflex-clerk==1.0.3
+=== reflex-motion==0.0.1
+Resolved 42 packages in 89ms
+Would install 1 package
+ + reflex-motion==0.0.1
+=== reflex-type-animation==0.0.1
+Resolved 42 packages in 98ms
+Would install 1 package
+ + reflex-type-animation==0.0.1
+=== reflex-image-zoom==0.0.2
+Resolved 42 packages in 130ms
+Would install 1 package
+ + reflex-image-zoom==0.0.2
+=== reflex-dynoselect==0.1.0
+Resolved 42 packages in 121ms
+Would install 1 package
+ + reflex-dynoselect==0.1.0
+=== reflex-color-picker==0.0.1
+Resolved 42 packages in 87ms
+Would install 1 package
+ + reflex-color-picker==0.0.1
+=== reflex-qrcode==0.0.1
+Resolved 42 packages in 123ms
+Would install 1 package
+ + reflex-qrcode==0.0.1
+=== reflex-chat==0.0.2a1
+Resolved 42 packages in 137ms
+Would install 1 package
+ + reflex-chat==0.0.2a1

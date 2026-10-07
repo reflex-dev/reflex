@@ -47,6 +47,9 @@ train) and 0.9.12.
 | F-016 ty 0-arg / 5-arg | LOW | **still broken** (ty 0.0.84/0.0.85 and pyright 1.1.414 identical to a1) | reverify_core |
 | F-017 redis restart token loss | LOW unknown | **not reproduced** (0/9 clean stops on a2, no pyo3 panic; 1/9 on 10-06 — flaky/unknown, not closable) | reverify_hydration |
 | F-018 React 19.3 console error | LOW | **still broken** (2/2) | reverify_core |
+| F-009 reflex-chat `initial_messages` leaks across sessions | MED pre-existing (package bug) | pending (`thirdparty_a2` re-run in progress) | thirdparty_a2 |
+| F-019 stale frontend across an upgrade gets no user-visible signal | LOW pre-existing | **still broken** (stale 0.9.12 prod tab against the a2 backend keeps working with only the server-side "Frontend version 0.9.12 ... does not match the backend version 0.10.0a2" warning) | upgrade_sweep |
+| F-020 upgrading under a running dev server breaks later hot reloads | LOW pre-existing, not actionable | not re-tested (every upgrade here stopped the server first) | upgrade_sweep |
 
 ## New findings on 0.10.0a2
 
@@ -170,7 +173,18 @@ Also from `dataeditor` (other session): named `rx.select` payloads submit correc
 ### N-016: An uncached computed var keeps showing the value it computed during hydration until the next full reload (LOW, regression unknown)
 - Cluster: `reverify_hydration`. cvstore variant (b): after reload, probe, no-op event and client nav, `check` still shows `cleared-by-uncached-cv` while the backend computes `value=''`; the per-client dedup record is not updated by the boot snapshot. 0.9.12 showed the correct value on the seeds where its write worked. Related open PR #7436 (not in this train). Evidence: `results/f003/a2-dev-seed0.summary.txt`, `frames/a2-dev-seed0-b.json`.
 
+`browser_cache_bundle` (other session) ran a pure read-only `@rx.var(cache=False)` control (external value read from a file outside the app; refresh and reload on stable/a1/a2, dev and prod, Chromium and WebKit): 40/40 pass. The staleness is therefore limited to the side-effectful pattern (a computed var writing to state during hydration); it is not a general uncached-var freshness regression (inbox `board/findings-inbox/browser_cache_bundle-3.md`).
+
 Also confirmed by `reverify_hydration` independently: N-005's ComponentState form (`cls.pref = "dark"` on an `rx.LocalStorage` var in `get_component` silently drops persistence; `probes/cs_storage_default_probe.py`, `src/csbox`).
+
+### N-017: Mutating nested dict entries through `dict.values()`/`items()` bypasses dirty tracking — rendered values and cached vars go stale (MEDIUM, pre-existing)
+- Cluster: `browser_cache_bundle` (other session, macOS, Chromium + WebKit), independently verified with a second fixture. A public handler running `for item in self.inventory.values(): item["stock"] -= 1` changes the backend (audit 9/19) but the rendered inventory and a cached total stay 10/20/30; after a reload the raw values are right but the cached total is still 30; reassigning the field fixes it. Key iteration plus indexed mutation (`self.inventory[k]["stock"] -= 1`) is the passing control. Identical on 0.9.12, a1 and a2. Root-cause guess: the published `reflex/istate/proxy.py` only wraps `get`/`setdefault` return values and `__getitem__`; the `values()`/`items()` views hand out unwrapped nested dicts. Evidence: `browser_cache_bundle/verify_inventory/` (`runs/{stable,alpha2}/results.json`, screenshots, server logs); inbox `board/findings-inbox/browser_cache_bundle-1.md`.
+
+### N-018: npm users still get a package reinstall on source-only hot reloads (`devDependencies: {}` vs absent key) (LOW, pre-existing)
+- Cluster: `browser_cache_bundle`. With npm, a label-only edit raises the install count 1→2 on stable, a1 and a2 although both lockfile hashes are unchanged; the only manifest difference is `devDependencies: {}` in the rendered `package.json` versus no key in the one on disk. Adding that empty object by hand stops the extra installs on both alphas (stable's byte comparison still reinstalls). Bun is unaffected. Root-cause guess: the `package.json` sync/compare in `reflex/utils/frontend_skeleton.py` and the install-cache invalidation in `reflex/utils/js_runtimes.py`. Evidence: `browser_cache_bundle/reload_cache/minimal_results/`, inbox `browser_cache_bundle-2.md`.
+
+### N-019: A background task that completes after session expiry sends only the root delta; untouched child/ComponentState values stay stale until the next foreground event (LOW, pre-existing)
+- Cluster: `statemgr_perf` (other session, macOS); independent verifier reproduces 8/8 (stable and a2 × memory and disk × Chromium and WebKit) with 8/8 foreground controls passing. A background handler that releases the lock for 8 s with a 5 s TTL reacquires an expired tree; its completion delta carries only the changed root state, so the page shows root=100 next to the pre-expiry child/component values (11/13/17) while `get_state` reports 0/0/0; the next foreground event rehydrates everything. Not tested on a1, prod or redis. Evidence: `statemgr_perf/verify_expiry/` (`report.json`, screenshots, frames), inbox `statemgr_perf-1.md`.
 
 ## Cluster summaries
 
@@ -200,3 +214,12 @@ wrapper, SSRM and infinite pages pass in dev and prod; pre-existing demo failure
 F-005 and F-006 fixed; F-007 and F-015 unchanged. Python 3.10 refused cleanly by uv and pip; 3.11 and 3.14
 state app 14/14 in dev and prod; #7210, #7259, the #7359 cross-app AppHarness fix, hosting-cli 0.2.0a1 +
 build-sdk 0.1.0a1 smoke (0.1.73a1 excluded at resolution time) all pass. New: N-001 (greenlet), N-002, N-003.
+
+### `upgrade_sweep` (form-designer, github-stats, clock, twitter, twitter+redis prod; stock smoke) — done
+No upgrade regression 0.9.12 → 0.10.0a2, in place or cold, dev and prod: every check that passes on 0.9.12 passes on a2; console and network signatures identical to 0.9.12 and to the 10-06 a1 run; client storage written under 0.9.12 is restored and nothing is written on first load (the #7460 positive control still catches the a1 bug); DB rows and alembic heads unchanged, `makemigrations` generates nothing; redis-pickled sessions survive; one-context clock stop/upgrade/restart clean; a1 → a2 in place clean; stock blank-app smoke clean with `.web/package.json` byte-identical to a1. Re-verified F-002, F-003, F-005, F-006 fixed; F-014, F-019 unchanged; N-001 reproduced independently on fresh 0.9.12 and a2 installs. Notes: `upgrade_sweep/NOTES.md`.
+
+### `browser_cache_bundle` (other session, macOS Chromium + WebKit) — done
+Production bundle and network payloads (cold home transfer +2.9 % stable→a2, generated JS +0.5 %, initial websocket payload 79 % smaller), gzip/ETag reuse, lazy route deferral, HMR/rebuild cache invalidation (87/88), nested-state matrix (607 checkpoints; the failures are N-017 plus stable-only inherited-background cases that both alphas pass), backend-only and mixed-version deployments (323 assertions), history/BFCache. No new 0.10 regression; N-017 (medium) and N-018 (low) are pre-existing; N-016 narrowed. Results: `board/results/browser_cache_bundle.md`.
+
+### `statemgr_perf` (other session, macOS) — done
+Expiry matrix 245/249 (the four failures are stable-only retained disk locks, i.e. the a2 disk-lock cleanup works), 1,200-session churn (a2 disk locks return to zero, stable retains 301), disk persistence boundary documented (a CLI restart wipes `.states` on both versions), duration parsing and App warnings, redis capped pool (no timeouts; 21 state saves in one EVAL vs 21 SETs on stable), performance (handler CPU 33→21 ms, click→DOM 36→23 ms, scalar reads 4.4–4.7× and writes 8.7–10.9× faster, no a2 median more than 20 % slower). One new low, N-019. Results: `board/results/statemgr_perf.md`.

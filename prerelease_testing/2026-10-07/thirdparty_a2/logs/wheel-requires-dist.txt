@@ -1,0 +1,110 @@
+== reflex_local_auth-0.5.0-py3-none-any.whl
+Requires-Python: >=3.10
+Requires-Dist: reflex[db]>=0.8.1
+Requires-Dist: bcrypt
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_global_hotkey-1.2.3-py3-none-any.whl
+Requires-Python: >=3.10
+Requires-Dist: reflex>=0.7.14
+== reflex_google_auth-0.2.0-py3-none-any.whl
+Requires-Python: >=3.10
+Requires-Dist: reflex>=0.7.0a2
+Requires-Dist: google-auth[requests]
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_magic_link_auth-0.2.2-py3-none-any.whl
+Requires-Python: >=3.10
+Requires-Dist: reflex[db]>=0.8.4
+Requires-Dist: bcrypt
+Requires-Dist: httpx
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_intersection_observer-0.0.9-py3-none-any.whl
+Requires-Python: >=3.10
+Requires-Dist: jinja2>=3.1.2
+Requires-Dist: reflex>=0.6.6
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_audio_capture-0.1.1-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex>=0.6.6
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_webcam-0.1.0-py3-none-any.whl
+Requires-Python: >=3.10
+Requires-Dist: reflex>=0.7.0
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_simpleicons-0.0.6-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex>=0.4.2
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_monaco-0.0.3-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex>=0.5.0
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_calendar-0.0.6-py3-none-any.whl
+Requires-Python: >=3.9
+Requires-Dist: reflex>=0.6.0
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_pyplot-0.2.1-py3-none-any.whl
+Requires-Python: >=3.10
+Requires-Dist: matplotlib
+== reflex_chakra-0.8.2.post1-py3-none-any.whl
+Requires-Python: >=3.10
+Requires-Dist: reflex>=0.8.0dev
+== reflex_ag_grid-0.0.11-py3-none-any.whl
+Requires-Python: >=3.10
+Requires-Dist: reflex>=0.6.3
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_google_recaptcha_v2-0.1.0.post1-py3-none-any.whl
+Requires-Python: >=3.10
+Requires-Dist: httpx>=0.25.1
+Requires-Dist: reflex>=0.6.8
+Requires-Dist: build; extra == "dev"
+Requires-Dist: twine; extra == "dev"
+== reflex_clerk-1.0.3-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex >=0.5.0
+Requires-Dist: build ; extra == 'dev'
+Requires-Dist: twine ; extra == 'dev'
+== reflex_motion-0.0.1-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex >=0.4.2
+Requires-Dist: build ; extra == 'dev'
+Requires-Dist: twine ; extra == 'dev'
+== reflex_type_animation-0.0.1-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex >=0.4.2
+Requires-Dist: build ; extra == 'dev'
+Requires-Dist: twine ; extra == 'dev'
+== reflex_image_zoom-0.0.2-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex >=0.4.2
+Requires-Dist: build ; extra == 'dev'
+Requires-Dist: twine ; extra == 'dev'
+== reflex_dynoselect-0.1.0-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex >=0.4.6
+Requires-Dist: build ; extra == 'dev'
+Requires-Dist: twine ; extra == 'dev'
+== reflex_color_picker-0.0.1-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex >=0.4.2
+Requires-Dist: build ; extra == 'dev'
+Requires-Dist: twine ; extra == 'dev'
+== reflex_qrcode-0.0.1-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex >=0.4.2
+Requires-Dist: build ; extra == 'dev'
+Requires-Dist: twine ; extra == 'dev'
+== reflex_chat-0.0.2a1-py3-none-any.whl
+Requires-Python: >=3.8
+Requires-Dist: reflex >=0.4.7
+Requires-Dist: build ; extra == 'dev'
+Requires-Dist: twine ; extra == 'dev'
