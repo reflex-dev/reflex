@@ -1,0 +1,43 @@
+reflex 0.10.0a2  REFLEX_ENV_MODE=<unset>
+BackendVarFormatError exists: True | subclass of VarTypeError: True
+--- formatting into a string
+f"{S._size}px"                                       -> BackendVarFormatError: Backend var 'S._size' exists only on the server and has no frontend value, so it cannot be used in the UI. Use a regular state var instead.
+"{}px".format(S._size)                               -> BackendVarFormatError: Backend var 'S._size' exists only on the server and has no frontend value, so it cannot be used in the UI. Use a regular state var instead.
+format(S._size)                                      -> BackendVarFormatError: Backend var 'S._size' exists only on the server and has no frontend value, so it cannot be used in the UI. Use a regular state var instead.
+f"{S._size!s}px"  (explicit str conversion)          -> OK "Field(default=16, is_var=True, annotated_type=<class 'int'>)px"
+str(S._size) + "px"                                  -> OK "Field(default=16, is_var=True, annotated_type=<class 'int'>)px"
+"%s px" % S._size                                    -> OK "Field(default=16, is_var=True, annotated_type=<class 'int'>) px"
+"x" + S._label                                       -> TypeError: can only concatenate str (not "Field") to str
+f"{S._nonvar}" (is_var=False field)                  -> BackendVarFormatError: Backend var 'S._nonvar' exists only on the server and has no frontend value, so it cannot be used in the UI. Use a regular state var instead.
+f"{Mix._m_be}" (mixin backend)                       -> BackendVarFormatError: Backend var 'Mix._m_be' exists only on the server and has no frontend value, so it cannot be used in the UI. Use a regular state var instead.
+f"{Mix.m_pub}" (mixin frontend)                      -> BackendVarFormatError: Var 'Mix.m_pub' is declared on a mixin state, which has no frontend vars. Access it through a state that includes the mixin instead.
+f"{S.m_pub}" (mixin frontend via user state)         -> OK '<reflex.Var>7481841637601971192</reflex.Var>reflex___state____state____main_____s.m_pub_rx_state_'
+f"{rx.field(3)}" (unbound field)                     -> BackendVarFormatError: Field(default=3, is_var=True, annotated_type=typing.Any) has no frontend var, so it cannot be used in the UI.
+   printed: Field(default=16, is_var=True, annotated_type=<class 'int'>)
+print(S._size) (uses str)                            -> OK None
+--- as a child / prop / style / control flow
+rx.text(S._label)  [child]                           -> ChildrenTypeError: Component Text received child Field(default='label', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).
+rx.text(f"w={S._size}")  [f-string child]            -> BackendVarFormatError: Backend var 'S._size' exists only on the server and has no frontend value, so it cannot be used in the UI. Use a regular state var instead.
+rx.box(width=S._size)  [prop]                        -> TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default=16, is_var=True, annotated_type=<class 'int'>).
+rx.icon('x', size=S._size)  [typed prop]             -> TypeError: Invalid var passed for prop Icon.size, expected type reflex_base.vars.base.Var[int], got value Field(default=16, is_var=True, annotated_type=<class 'int'>) of type <class 'reflex_base.vars.base.Field'>.
+rx.box(id=S._label)  [id prop]                       -> TypeError: expected string or bytes-like object, got 'Field'
+rx.box(style={"width": S._size})                     -> TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default=16, is_var=True, annotated_type=<class 'int'>).
+rx.box(class_name=[S._label])                        -> TypeError: Invalid class_name passed for prop Box.class_name, expected type str, got value Field(default='label', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>.
+rx.foreach(S._items, rx.text)                        -> TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default_factory=functools.partial(<function deepcopy at 0x7f9290adda80>, ['a', 'b']), is_var=True, annotated_type=list[str]).
+rx.cond(S._flag, 'y', 'n')                           -> TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default=True, is_var=True, annotated_type=<class 'bool'>).
+rx.match(S._label, ('label', rx.text('m')), rx.text('d')) -> TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='label', is_var=True, annotated_type=<class 'str'>).
+rx.Var.create(S._size)                               -> TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default=16, is_var=True, annotated_type=<class 'int'>).
+rx.button(on_click=S.takes(S._label))  [event arg]   -> EventHandlerTypeError: Arguments to event handlers must be Vars or JSON-serializable. Got Field(default='label', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>.
+rx.button(on_click=rx.console_log(S._label))         -> TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='label', is_var=True, annotated_type=<class 'str'>).
+rx.link('l', href=S._label)                          -> TypeError: Invalid var passed for prop ReactRouterLink.to, expected type reflex_base.vars.base.Var[str | reflex_components_core.react_router.dom.To], got value Field(default='label', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>.
+rx.button(S._label)  [button child]                  -> ChildrenTypeError: Component Button received child Field(default='label', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).
+--- documented fix: default_value()
+S._items.default_value()                             -> OK ['a', 'b']
+rx.foreach(S._items.default_value(), rx.text)        -> OK 'Array.prototype.map.call(["a", "b"] ?? [],((children_rx_state_,props_rx_state_)=>(jsx(RadixThemesText,{as:"p",key:props_rx_state_},children_rx_state_
+rx.text(f"{S._size.default_value()}px")              -> OK 'jsx(RadixThemesText,{as:"p"},"16px")'
+rx.box(width=f'{S._size.default_value()}px')         -> OK 'jsx(RadixThemesBox,{css:({ ["width"] : "16px" })},)'
+S._cfg.default_value() is fresh copy                 -> OK True
+--- instance-level (must be unaffected)
+f"{inst._size}px"                                    -> OK '16px'
+Expected field 'S.count' to receive type '<class 'int'>', but got Field(default=16, is_var=True, annotated_type=<class 'int'>) of type '<class 'reflex_base.vars.base.Field'>'.
+inst.count = S._size  (mistyped assignment of a Field) -> OK Field(default=16, is_var=True, annotated_type=<class 'int'>)

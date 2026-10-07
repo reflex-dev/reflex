@@ -1,0 +1,60 @@
+=== db-pip-3.12
+reflex 0.10.0a3 sqlmodel 0.0.48 sqlalchemy 2.1.4 greenlet 3.5.6
+OK: rx.Model subclass created, table m
+--- reflex db init
+Generating /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_preflight/dbcli-db-pip-3.12/alembic/env.py ...  done
+Generating /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_preflight/dbcli-db-pip-3.12/alembic.ini ...  done
+Please edit configuration/connection/logging settings in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_preflight/dbcli-db-pip-3.12/alembic.ini before proceeding.
+Generating /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_preflight/dbcli-db-pip-3.12/alembic/versions/d62ad5727ef9_.py ...  done
+exit=0
+--- reflex db makemigrations --message init
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+exit=0
+--- reflex db migrate
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+exit=0
+--- reflex db makemigrations --message noop
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+exit=0
+__pycache__
+d62ad5727ef9_.py
+[('alembic_version',), ('sqlite_autoindex_alembic_version_1',), ('note',)]
+=== db-uv-3.14
+reflex 0.10.0a3 sqlmodel 0.0.48 sqlalchemy 2.1.4 greenlet 3.5.6
+OK: rx.Model subclass created, table m
+--- reflex db init
+Generating /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_preflight/dbcli-db-uv-3.14/alembic/env.py ...  done
+Generating /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_preflight/dbcli-db-uv-3.14/alembic.ini ...  done
+Please edit configuration/connection/logging settings in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_preflight/dbcli-db-uv-3.14/alembic.ini before proceeding.
+Generating /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_preflight/dbcli-db-uv-3.14/alembic/versions/d20a43c24379_.py ...  done
+exit=0
+--- reflex db makemigrations --message init
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+exit=0
+--- reflex db migrate
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+exit=0
+--- reflex db makemigrations --message noop
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+exit=0
+__pycache__
+d20a43c24379_.py
+[('alembic_version',), ('sqlite_autoindex_alembic_version_1',), ('note',)]

@@ -1,0 +1,4 @@
+reflex 0.10.0a2
+plain   : is_client_storage=False default='dark' type(default)=str factory=None name=None
+storage : is_client_storage=True default='dark' type(default)=LocalStorage factory=None name='box_pref_dark'
+factory : is_client_storage=True default='dark' type(default)=LocalStorage factory=None name='box_pref_f_dark'

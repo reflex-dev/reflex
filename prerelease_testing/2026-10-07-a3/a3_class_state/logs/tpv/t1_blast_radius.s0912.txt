@@ -1,0 +1,9 @@
+reflex 0.9.12
+mixin: patch UsesA._v -> do UsesB / the mixin itself change?
+  mixin users: after teardown defaults = {'UsesA': 5, 'UsesB': 5, 'Mix': 5}
+substates: patch ChildA._v (declared on Parent) -> Parent / ChildB change?
+  substates: after teardown defaults = {'ChildA': 5, 'Parent': 5, 'ChildB': 5}
+substates: patch Parent._v -> children see it (inherit)?
+  parent patch: after teardown defaults = {'Parent': 5, 'ChildA': 5, 'ChildB': 5}
+ComponentState: patch generated state of component 1 -> template / component 2 change?
+  componentstate: after teardown defaults = {'BlastCS1_n1': 5, 'BlastCS1_n2': 5, 'BlastCS1': 5}

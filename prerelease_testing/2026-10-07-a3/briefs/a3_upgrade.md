@@ -13,9 +13,8 @@ Read first: ../CAMPAIGN_STATE.md, ../AGENT_BRIEF.md, ../../2026-10-07/upgrade_sw
    (disk prod and Redis prod), driving the same flows as the a2 pass; then a cold run (`rm -rf .web`). Diff .web/package.json.
    Redis-pickled 0.9.12 sessions must survive the upgrade (0.10 loads 0.9 state).
 2. a2 → a3 in place with pip (`pip install -U --pre reflex==0.10.0a3`) and uv (`uv pip install -U --prerelease=allow reflex==0.10.0a3`):
-   which reflex-base ends up installed? (reflex a3 declares `reflex-base >= 0.10.0a2`; pip's only-if-needed strategy may keep a2.)
-   If base stays at a2, demonstrate what the user loses (the #7495 storage-assignment and patch-restore fixes listed in reflex's own a3
-   changelog) with a 10-line script. Also `pip install --pre reflex==0.10.0a3` into a fresh venv and a fresh `reflex[db]` without
+   confirm reflex-base moves to 0.10.0a3 too (the published wheel pins `reflex-base==0.10.0a3`) and that nothing else moves
+   unexpectedly (freeze diff). Also `pip install --pre reflex==0.10.0a3` into a fresh venv and a fresh `reflex[db]` without
    `--pre` resolution checks (what does a stock `pip install reflex` give today?).
 3. Upgrade guide: run every code sample of upgrading-to-0-10.md on a3 (and the ones that claim to work on 0.9 on 0.9.12): the
    `default_value()` / `get_fields()[...]` recipes, ClassVar recipe, class-default assignment scope examples, background-task

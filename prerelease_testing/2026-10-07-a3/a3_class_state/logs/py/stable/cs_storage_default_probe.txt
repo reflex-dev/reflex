@@ -1,0 +1,4 @@
+reflex 0.9.12
+plain   : is_client_storage=True default='light' type(default)=LocalStorage factory=None name='box_pref'
+storage : is_client_storage=True default='light' type(default)=LocalStorage factory=None name='box_pref'
+factory : EXCEPTION ChildrenTypeError: Component Text received child <function Box.get_component.<locals>.<lambda> at 0x7faba6469b20> of type <class 'function'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).

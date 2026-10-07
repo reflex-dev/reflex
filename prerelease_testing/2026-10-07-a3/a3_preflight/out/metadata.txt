@@ -1,0 +1,45 @@
+== reflex-0.10.0a3-py3-none-any.whl
+Version: 0.10.0a3
+Requires-Python: <4.0,>=3.11
+Requires-Dist: click>=8.2
+Requires-Dist: granian[reload]>=2.7.4
+Requires-Dist: httpx<1.0,>=0.26
+Requires-Dist: packaging<27,>=24.2
+Requires-Dist: psutil<8.0,>=7.0.0; sys_platform == 'win32'
+Requires-Dist: python-multipart<1.0,>=0.0.32
+Requires-Dist: python-socketio<6.0,>=5.12.0
+Requires-Dist: redis<8.0,>=6.4
+Requires-Dist: reflex-base==0.10.0a3
+Requires-Dist: reflex-components-code>=0.10.0a2
+Requires-Dist: reflex-components-core>=0.10.0a2
+Requires-Dist: reflex-components-dataeditor>=0.10.0a1
+Requires-Dist: reflex-components-gridjs>=0.10.0a2
+Requires-Dist: reflex-components-lucide>=1.1.0a1
+Requires-Dist: reflex-components-markdown>=0.10.0a2
+Requires-Dist: reflex-components-moment>=0.10.0a2
+Requires-Dist: reflex-components-plotly>=0.10.0a2
+Requires-Dist: reflex-components-radix>=0.10.0a2
+Requires-Dist: reflex-components-react-player>=0.10.0a1
+Requires-Dist: reflex-components-recharts>=0.10.0a2
+Requires-Dist: reflex-components-sonner>=0.10.0a1
+Requires-Dist: reflex-hosting-cli!=0.1.73a1,>=0.2.0a1
+Requires-Dist: rich<16,>=13
+Requires-Dist: starlette>=1.3.1
+Requires-Dist: typing-extensions>=4.13.0
+Requires-Dist: wrapt<2.6,>=1.17.0
+Requires-Dist: alembic<2.0,>=1.15.2; extra == 'db'
+Requires-Dist: greenlet>=3.3; extra == 'db'
+Requires-Dist: pydantic<3.0,>=2.12.0; extra == 'db'
+Requires-Dist: sqlmodel>=0.0.24; extra == 'db'
+Requires-Dist: reflex-base[pydantic]; extra == 'pydantic'
+Requires-Dist: psutil<8.0,>=7.0.0; extra == 'testing'
+Requires-Dist: selenium<5.0,>=4.0.0; extra == 'testing'
+Requires-Dist: uvicorn<1.0,>=0.34.0; extra == 'testing'
+== reflex_base-0.10.0a3-py3-none-any.whl
+Version: 0.10.0a3
+Requires-Python: >=3.11
+Requires-Dist: packaging<27,>=24.2
+Requires-Dist: platformdirs<5.0,>=4.3.7
+Requires-Dist: rich<16,>=13
+Requires-Dist: typing-extensions>=4.13.0
+Requires-Dist: pydantic<3.0,>=2.12.0; extra == 'pydantic'

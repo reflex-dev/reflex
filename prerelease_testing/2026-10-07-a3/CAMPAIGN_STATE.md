@@ -55,9 +55,8 @@ in `../2026-10-07/RELEASE_PLAN.md` (filed as reflex#7476–#7490, #7498, #7499, 
 - **enterprise#273.** Risk: lambda `cell_renderer` / `value_formatter` / cell components invoked before `window.__reflex`
   exists (ReferenceError on first paint), dev vs prod, master-detail, `@rx.memo` grids, SSR/prerender of the grid markup.
 - **#7428** log draining: `reflex run --json` shutdown, `reflex run` Ctrl-C/SIGTERM taking up to 30 s, exit codes.
-- **Packaging:** reflex 0.10.0a3 declares `reflex-base >= 0.10.0a2` (source floor `>= 0.10.0a2.dev0`), but the #7495 fixes
-  that reflex's own a3 changelog lists live in reflex-base. A `pip install -U --pre reflex==0.10.0a3` over an a2 env keeps
-  reflex-base 0.10.0a2 (pip's only-if-needed strategy) → check what the published metadata says and what such a user gets.
+- **Packaging:** RESOLVED in pre-flight: the published reflex 0.10.0a3 wheel pins `reflex-base==0.10.0a3` exactly (the source
+  floor `>= 0.10.0a2.dev0` is rewritten at release), so any install or upgrade of reflex a3 brings reflex-base a3.
 
 ## Environment
 - SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad on the orchestrator's machine (any

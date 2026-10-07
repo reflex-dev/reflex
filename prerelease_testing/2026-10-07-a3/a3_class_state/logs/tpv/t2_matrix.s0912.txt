@@ -1,0 +1,290 @@
+reflex 0.9.12  (venv a3_class_state-s0912)
+
+== _slot = None            (unannotated)
+   Client() instance (not callable)             ok     inst reads None                   class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads None                   class reads type
+   'a-string'                                   ok     inst reads None                   class reads str
+   42                                           ok     inst reads None                   class reads int
+   'five' (for int-ish slots)                   ok     inst reads None                   class reads str
+   None                                         ok     inst reads None                   class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads None                   class reads int
+   [1] (list)                                   ok     inst reads None                   class reads list
+   CallableThing() (callable instance)          ok     inst reads None                   class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads None                   class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads None                   class reads function
+   lambda x: x (needs an argument)              ok     inst reads None                   class reads function
+   MagicMock()                                  ok     inst reads None                   class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads None                   class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads None                   class reads Client
+
+== _slot = 0               (unannotated)
+   Client() instance (not callable)             ok     inst reads 0                      class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads 0                      class reads type
+   'a-string'                                   ok     inst reads 0                      class reads str
+   42                                           ok     inst reads 0                      class reads int
+   'five' (for int-ish slots)                   ok     inst reads 0                      class reads str
+   None                                         ok     inst reads 0                      class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads 0                      class reads int
+   [1] (list)                                   ok     inst reads 0                      class reads list
+   CallableThing() (callable instance)          ok     inst reads 0                      class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads 0                      class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads 0                      class reads function
+   lambda x: x (needs an argument)              ok     inst reads 0                      class reads function
+   MagicMock()                                  ok     inst reads 0                      class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads 0                      class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads 0                      class reads Client
+
+== _slot = ''              (unannotated)
+   Client() instance (not callable)             ok     inst reads ''                     class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads ''                     class reads type
+   'a-string'                                   ok     inst reads ''                     class reads str
+   42                                           ok     inst reads ''                     class reads int
+   'five' (for int-ish slots)                   ok     inst reads ''                     class reads str
+   None                                         ok     inst reads ''                     class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads ''                     class reads int
+   [1] (list)                                   ok     inst reads ''                     class reads list
+   CallableThing() (callable instance)          ok     inst reads ''                     class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads ''                     class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads ''                     class reads function
+   lambda x: x (needs an argument)              ok     inst reads ''                     class reads function
+   MagicMock()                                  ok     inst reads ''                     class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads ''                     class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads ''                     class reads Client
+
+== _slot = False           (unannotated)
+   Client() instance (not callable)             ok     inst reads False                  class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads False                  class reads type
+   'a-string'                                   ok     inst reads False                  class reads str
+   42                                           ok     inst reads False                  class reads int
+   'five' (for int-ish slots)                   ok     inst reads False                  class reads str
+   None                                         ok     inst reads False                  class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads False                  class reads int
+   [1] (list)                                   ok     inst reads False                  class reads list
+   CallableThing() (callable instance)          ok     inst reads False                  class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads False                  class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads False                  class reads function
+   lambda x: x (needs an argument)              ok     inst reads False                  class reads function
+   MagicMock()                                  ok     inst reads False                  class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads False                  class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads False                  class reads Client
+
+== _slot = []              (unannotated)
+   Client() instance (not callable)             ok     inst reads []                     class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads []                     class reads type
+   'a-string'                                   ok     inst reads []                     class reads str
+   42                                           ok     inst reads []                     class reads int
+   'five' (for int-ish slots)                   ok     inst reads []                     class reads str
+   None                                         ok     inst reads []                     class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads []                     class reads int
+   [1] (list)                                   ok     inst reads []                     class reads list
+   CallableThing() (callable instance)          ok     inst reads []                     class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads []                     class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads []                     class reads function
+   lambda x: x (needs an argument)              ok     inst reads []                     class reads function
+   MagicMock()                                  ok     inst reads []                     class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads []                     class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads []                     class reads Client
+
+== _slot = {}              (unannotated)
+   Client() instance (not callable)             ok     inst reads {}                     class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads {}                     class reads type
+   'a-string'                                   ok     inst reads {}                     class reads str
+   42                                           ok     inst reads {}                     class reads int
+   'five' (for int-ish slots)                   ok     inst reads {}                     class reads str
+   None                                         ok     inst reads {}                     class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads {}                     class reads int
+   [1] (list)                                   ok     inst reads {}                     class reads list
+   CallableThing() (callable instance)          ok     inst reads {}                     class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads {}                     class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads {}                     class reads function
+   lambda x: x (needs an argument)              ok     inst reads {}                     class reads function
+   MagicMock()                                  ok     inst reads {}                     class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads {}                     class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads {}                     class reads Client
+
+== slot = None             (unannotated, PUBLIC)
+   Client() instance (not callable)             ok     inst reads None                   class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads None                   class reads type
+   'a-string'                                   ok     inst reads None                   class reads str
+   42                                           ok     inst reads None                   class reads int
+   'five' (for int-ish slots)                   ok     inst reads None                   class reads str
+   None                                         ok     inst reads None                   class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads None                   class reads int
+   [1] (list)                                   ok     inst reads None                   class reads list
+   CallableThing() (callable instance)          ok     inst reads None                   class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads None                   class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads None                   class reads function
+   lambda x: x (needs an argument)              ok     inst reads None                   class reads function
+   MagicMock()                                  ok     inst reads None                   class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads None                   class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads None                   class reads Client
+
+== _slot: str = ''
+   Client() instance (not callable)             ok     inst reads ''                     class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads ''                     class reads type
+   'a-string'                                   ok     inst reads ''                     class reads str
+   42                                           ok     inst reads ''                     class reads int
+   'five' (for int-ish slots)                   ok     inst reads ''                     class reads str
+   None                                         ok     inst reads ''                     class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads ''                     class reads int
+   [1] (list)                                   ok     inst reads ''                     class reads list
+   CallableThing() (callable instance)          ok     inst reads ''                     class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads ''                     class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads ''                     class reads function
+   lambda x: x (needs an argument)              ok     inst reads ''                     class reads function
+   MagicMock()                                  ok     inst reads ''                     class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads ''                     class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads ''                     class reads Client
+
+== _slot: int = 0
+   Client() instance (not callable)             ok     inst reads 0                      class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads 0                      class reads type
+   'a-string'                                   ok     inst reads 0                      class reads str
+   42                                           ok     inst reads 0                      class reads int
+   'five' (for int-ish slots)                   ok     inst reads 0                      class reads str
+   None                                         ok     inst reads 0                      class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads 0                      class reads int
+   [1] (list)                                   ok     inst reads 0                      class reads list
+   CallableThing() (callable instance)          ok     inst reads 0                      class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads 0                      class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads 0                      class reads function
+   lambda x: x (needs an argument)              ok     inst reads 0                      class reads function
+   MagicMock()                                  ok     inst reads 0                      class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads 0                      class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads 0                      class reads Client
+
+== _slot: Optional[Client] = None
+   Client() instance (not callable)             ok     inst reads None                   class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads None                   class reads type
+   'a-string'                                   ok     inst reads None                   class reads str
+   42                                           ok     inst reads None                   class reads int
+   'five' (for int-ish slots)                   ok     inst reads None                   class reads str
+   None                                         ok     inst reads None                   class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads None                   class reads int
+   [1] (list)                                   ok     inst reads None                   class reads list
+   CallableThing() (callable instance)          ok     inst reads None                   class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads None                   class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads None                   class reads function
+   lambda x: x (needs an argument)              ok     inst reads None                   class reads function
+   MagicMock()                                  ok     inst reads None                   class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads None                   class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads None                   class reads Client
+
+== _slot: Client | None = None
+   Client() instance (not callable)             ok     inst reads None                   class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads None                   class reads type
+   'a-string'                                   ok     inst reads None                   class reads str
+   42                                           ok     inst reads None                   class reads int
+   'five' (for int-ish slots)                   ok     inst reads None                   class reads str
+   None                                         ok     inst reads None                   class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads None                   class reads int
+   [1] (list)                                   ok     inst reads None                   class reads list
+   CallableThing() (callable instance)          ok     inst reads None                   class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads None                   class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads None                   class reads function
+   lambda x: x (needs an argument)              ok     inst reads None                   class reads function
+   MagicMock()                                  ok     inst reads None                   class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads None                   class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads None                   class reads Client
+
+== _slot: 'Client | None' = None   (string annotation)
+   Client() instance (not callable)             ok     inst reads None                   class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads None                   class reads type
+   'a-string'                                   ok     inst reads None                   class reads str
+   42                                           ok     inst reads None                   class reads int
+   'five' (for int-ish slots)                   ok     inst reads None                   class reads str
+   None                                         ok     inst reads None                   class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads None                   class reads int
+   [1] (list)                                   ok     inst reads None                   class reads list
+   CallableThing() (callable instance)          ok     inst reads None                   class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads None                   class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads None                   class reads function
+   lambda x: x (needs an argument)              ok     inst reads None                   class reads function
+   MagicMock()                                  ok     inst reads None                   class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads None                   class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads None                   class reads Client
+
+== _slot: Any = None
+   Client() instance (not callable)             ok     inst reads None                   class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads None                   class reads type
+   'a-string'                                   ok     inst reads None                   class reads str
+   42                                           ok     inst reads None                   class reads int
+   'five' (for int-ish slots)                   ok     inst reads None                   class reads str
+   None                                         ok     inst reads None                   class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads None                   class reads int
+   [1] (list)                                   ok     inst reads None                   class reads list
+   CallableThing() (callable instance)          ok     inst reads None                   class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads None                   class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads None                   class reads function
+   lambda x: x (needs an argument)              ok     inst reads None                   class reads function
+   MagicMock()                                  ok     inst reads None                   class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads None                   class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads None                   class reads Client
+
+== _slot: Callable[..., Any] | None = None
+   Client() instance (not callable)             ok     inst reads None                   class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads None                   class reads type
+   'a-string'                                   ok     inst reads None                   class reads str
+   42                                           ok     inst reads None                   class reads int
+   'five' (for int-ish slots)                   ok     inst reads None                   class reads str
+   None                                         ok     inst reads None                   class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads None                   class reads int
+   [1] (list)                                   ok     inst reads None                   class reads list
+   CallableThing() (callable instance)          ok     inst reads None                   class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads None                   class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads None                   class reads function
+   lambda x: x (needs an argument)              ok     inst reads None                   class reads function
+   MagicMock()                                  ok     inst reads None                   class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads None                   class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads None                   class reads Client
+
+== _slot: object = None
+   Client() instance (not callable)             ok     inst reads None                   class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads None                   class reads type
+   'a-string'                                   ok     inst reads None                   class reads str
+   42                                           ok     inst reads None                   class reads int
+   'five' (for int-ish slots)                   ok     inst reads None                   class reads str
+   None                                         ok     inst reads None                   class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads None                   class reads int
+   [1] (list)                                   ok     inst reads None                   class reads list
+   CallableThing() (callable instance)          ok     inst reads None                   class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads None                   class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads None                   class reads function
+   lambda x: x (needs an argument)              ok     inst reads None                   class reads function
+   MagicMock()                                  ok     inst reads None                   class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads None                   class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads None                   class reads Client
+
+== _slot: Client = None    (annotation excludes None)
+   Client() instance (not callable)             ok     inst reads None                   class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads None                   class reads type
+   'a-string'                                   ok     inst reads None                   class reads str
+   42                                           ok     inst reads None                   class reads int
+   'five' (for int-ish slots)                   ok     inst reads None                   class reads str
+   None                                         ok     inst reads None                   class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads None                   class reads int
+   [1] (list)                                   ok     inst reads None                   class reads list
+   CallableThing() (callable instance)          ok     inst reads None                   class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads None                   class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads None                   class reads function
+   lambda x: x (needs an argument)              ok     inst reads None                   class reads function
+   MagicMock()                                  ok     inst reads None                   class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads None                   class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads None                   class reads Client
+
+== _slot: httpx.Client | None = None
+   Client() instance (not callable)             ok     inst reads None                   class reads Client
+   Client class (callable, 0-arg ctor)          ok     inst reads None                   class reads type
+   'a-string'                                   ok     inst reads None                   class reads str
+   42                                           ok     inst reads None                   class reads int
+   'five' (for int-ish slots)                   ok     inst reads None                   class reads str
+   None                                         ok     inst reads None                   class reads NoneType
+   1 (int for bool/str slot)                    ok     inst reads None                   class reads int
+   [1] (list)                                   ok     inst reads None                   class reads list
+   CallableThing() (callable instance)          ok     inst reads None                   class reads CallableThing
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads None                   class reads function
+   lambda: 1 (0-arg function -> int)            ok     inst reads None                   class reads function
+   lambda x: x (needs an argument)              ok     inst reads None                   class reads function
+   MagicMock()                                  ok     inst reads None                   class reads MagicMock
+   MagicMock(spec=Client)                       ok     inst reads None                   class reads MagicMock
+   httpx.Client() (not callable)                ok     inst reads None                   class reads Client

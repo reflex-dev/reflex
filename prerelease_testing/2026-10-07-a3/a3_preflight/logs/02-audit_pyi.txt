@@ -1,0 +1,26 @@
+reflex==0.10.0a3 hatch-reflex-pyi==0.10.0a1 reflex-base==0.10.0a3 reflex-build-sdk==0.1.0a1 reflex-components-code==0.10.0a2 reflex-components-core==0.10.0a2 reflex-components-dataeditor==0.10.0a1 reflex-components-gridjs==0.10.0a2 reflex-components-lucide==1.1.0a1 reflex-components-markdown==0.10.0a2 reflex-components-moment==0.10.0a2 reflex-components-plotly==0.10.0a2 reflex-components-radix==0.10.0a2 reflex-components-react-player==0.10.0a1 reflex-components-recharts==0.10.0a2 reflex-components-sonner==0.10.0a1 reflex-docgen==0.10.0a2 reflex-hosting-cli==0.2.0a1 reflex-otel==0.2.0a1 reflex-release==0.2.0a1 
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+pyi packaging audit — 20 package(s)
+
+  OK reflex                          0.10.0a3     stubs=3 (manifest: 3)
+  OK hatch-reflex-pyi                0.10.0a1     stubs=0 (manifest: 0)
+  OK reflex-base                     0.10.0a3     stubs=0 (manifest: 0)
+  OK reflex-build-sdk                0.1.0a1      stubs=0 (manifest: 0)
+  OK reflex-components-code          0.10.0a2     stubs=2 (manifest: 2)
+  OK reflex-components-core          0.10.0a2     stubs=36 (manifest: 36)
+  OK reflex-components-dataeditor    0.10.0a1     stubs=1 (manifest: 1)
+  OK reflex-components-gridjs        0.10.0a2     stubs=1 (manifest: 1)
+  OK reflex-components-lucide        1.1.0a1      stubs=1 (manifest: 1)
+  OK reflex-components-markdown      0.10.0a2     stubs=1 (manifest: 1)
+  OK reflex-components-moment        0.10.0a2     stubs=1 (manifest: 1)
+  OK reflex-components-plotly        0.10.0a2     stubs=1 (manifest: 1)
+  OK reflex-components-radix         0.10.0a2     stubs=65 (manifest: 65)
+  OK reflex-components-react-player  0.10.0a1     stubs=3 (manifest: 3)
+  OK reflex-components-recharts      0.10.0a2     stubs=6 (manifest: 6)
+  OK reflex-components-sonner        0.10.0a1     stubs=1 (manifest: 1)
+  OK reflex-docgen                   0.10.0a2     stubs=0 (manifest: 0)
+  OK reflex-hosting-cli              0.2.0a1      stubs=0 (manifest: 0)
+  OK reflex-otel                     0.2.0a1      stubs=0 (manifest: 0)
+  OK reflex-release                  0.2.0a1      stubs=0 (manifest: 0)
+
+PASS: 122 stubs ship correctly in both wheel and sdist; no foreign stubs.

@@ -1,0 +1,8 @@
+py3.11/uv: reflex=0.10.0a3 reflex-base=0.10.0a3 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.0 import reflex.model OK
+py3.11/pip: reflex=0.10.0a3 reflex-base=0.10.0a3 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.0 import reflex.model OK
+py3.12/uv: reflex=0.10.0a3 reflex-base=0.10.0a3 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.0 import reflex.model OK
+py3.12/pip: reflex=0.10.0a3 reflex-base=0.10.0a3 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.0 import reflex.model OK
+py3.13/uv: reflex=0.10.0a3 reflex-base=0.10.0a3 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.0 import reflex.model OK
+py3.13/pip: reflex=0.10.0a3 reflex-base=0.10.0a3 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.0 import reflex.model OK
+py3.14/uv: reflex=0.10.0a3 reflex-base=0.10.0a3 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.0 import reflex.model OK
+py3.14/pip: reflex=0.10.0a3 reflex-base=0.10.0a3 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.0 import reflex.model OK

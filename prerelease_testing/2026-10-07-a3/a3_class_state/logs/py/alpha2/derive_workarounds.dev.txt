@@ -1,0 +1,3 @@
+ClassVar: class 'configured' | fresh 'configured' | pickled 'configured' | is field: False
+get_fields()['_backend'].default_value(): 'declared-default'
+rx.text(W._KEY): x(RadixThemesText,{as:"p"},"configured")

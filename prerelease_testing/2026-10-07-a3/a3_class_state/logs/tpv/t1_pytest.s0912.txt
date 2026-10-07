@@ -1,0 +1,65 @@
+F.F.F.F.F.F.F.F.....F.                                                   [100%]
+=================================== FAILURES ===================================
+E   AssertionError: assert 5 == 99
+     +  where 5 = Svc({'reflex___state____state.test_t1_pytest____svc': {'limit_rx_state_': 5, 'rxf_rx_state_': 5}})._limit
+     +    where Svc({'reflex___state____state.test_t1_pytest____svc': {'limit_rx_state_': 5, 'rxf_rx_state_': 5}}) = inst(Svc)
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/orig/tpv/probes/test_t1_pytest.py:61: AssertionError: assert 5 == 99
+E   AssertionError: assert 5 == 77
+     +  where 5 = Svc({'reflex___state____state.test_t1_pytest____svc': {'limit_rx_state_': 5, 'rxf_rx_state_': 5}})._limit
+     +    where Svc({'reflex___state____state.test_t1_pytest____svc': {'limit_rx_state_': 5, 'rxf_rx_state_': 5}}) = inst(Svc)
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/orig/tpv/probes/test_t1_pytest.py:72: AssertionError: assert 5 == 77
+E   AssertionError: assert 5 == 99
+     +  where 5 = Svc({'reflex___state____state.test_t1_pytest____svc': {'limit_rx_state_': 5, 'rxf_rx_state_': 5}}).limit
+     +    where Svc({'reflex___state____state.test_t1_pytest____svc': {'limit_rx_state_': 5, 'rxf_rx_state_': 5}}) = inst(Svc)
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/orig/tpv/probes/test_t1_pytest.py:82: AssertionError: assert 5 == 99
+E   AssertionError: assert 5 == 99
+     +  where 5 = Svc({'reflex___state____state.test_t1_pytest____svc': {'limit_rx_state_': 5, 'rxf_rx_state_': 5}}).rxf
+     +    where Svc({'reflex___state____state.test_t1_pytest____svc': {'limit_rx_state_': 5, 'rxf_rx_state_': 5}}) = inst(Svc)
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/orig/tpv/probes/test_t1_pytest.py:92: AssertionError: assert 5 == 99
+E   AssertionError: assert 'orig' == 'patched'
+      
+      - patched
+      + orig
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/orig/tpv/probes/test_t1_pytest.py:102: AssertionError: assert 'orig' == 'patched'
+E   AssertionError: assert 5 == 99
+     +  where 5 = UsesMixin({'reflex___state____state.test_t1_pytest____uses_mixin': {'mlimit_rx_state_': 5}})._mlimit
+     +    where UsesMixin({'reflex___state____state.test_t1_pytest____uses_mixin': {'mlimit_rx_state_': 5}}) = inst(UsesMixin)
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/orig/tpv/probes/test_t1_pytest.py:112: AssertionError: assert 5 == 99
+E   AssertionError: assert 5 == 99
+     +  where 5 = Child({'reflex___state____state.test_t1_pytest____parent.test_t1_pytest____child': {}})._plimit
+     +    where Child({'reflex___state____state.test_t1_pytest____parent.test_t1_pytest____child': {}}) = inst(Child)
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/orig/tpv/probes/test_t1_pytest.py:122: AssertionError: assert 5 == 99
+E   AssertionError: assert 'orig' == 'patched'
+      
+      - patched
+      + orig
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/orig/tpv/probes/test_t1_pytest.py:132: AssertionError: assert 'orig' == 'patched'
+E   AssertionError: assert 5 == 99
+     +  where 5 = Svc({'reflex___state____state.test_t1_pytest____svc': {'limit_rx_state_': 5, 'rxf_rx_state_': 5}})._limit
+     +    where Svc({'reflex___state____state.test_t1_pytest____svc': {'limit_rx_state_': 5, 'rxf_rx_state_': 5}}) = inst(Svc)
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/orig/tpv/probes/test_t1_pytest.py:162: AssertionError: assert 5 == 99
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_t1_pytest.py::test_02_sentinel_private_default_restored
+PASSED test_t1_pytest.py::test_04_sentinel_private_after_mock
+PASSED test_t1_pytest.py::test_06_sentinel_public_default_restored
+PASSED test_t1_pytest.py::test_08_sentinel_rx_field_default_restored
+PASSED test_t1_pytest.py::test_10_sentinel_after_pytest_mock
+PASSED test_t1_pytest.py::test_12_sentinel_mixin_default_restored
+PASSED test_t1_pytest.py::test_14_sentinel_parent_default_restored
+PASSED test_t1_pytest.py::test_21_method_restored
+PASSED test_t1_pytest.py::test_22_monkeypatch_classvar
+PASSED test_t1_pytest.py::test_23_classvar_restored
+PASSED test_t1_pytest.py::test_30_workaround_patch_field_default
+PASSED test_t1_pytest.py::test_31_sentinel_after_workaround
+PASSED test_t1_pytest.py::test_33_sentinel_after_original_value_restore
+FAILED test_t1_pytest.py::test_01_monkeypatch_private_var - AssertionError: a...
+FAILED test_t1_pytest.py::test_03_mock_patch_object_private_var - AssertionEr...
+FAILED test_t1_pytest.py::test_05_monkeypatch_public_var - AssertionError: as...
+FAILED test_t1_pytest.py::test_07_monkeypatch_rx_field_var - AssertionError: ...
+FAILED test_t1_pytest.py::test_09_pytest_mock_patch_object - AssertionError: ...
+FAILED test_t1_pytest.py::test_11_monkeypatch_mixin_var - AssertionError: ass...
+FAILED test_t1_pytest.py::test_13_monkeypatch_child_of_declaring_parent - Ass...
+FAILED test_t1_pytest.py::test_20_monkeypatch_method - AssertionError: assert...
+FAILED test_t1_pytest.py::test_32_workaround_reassign_original_value - Assert...
+9 failed, 13 passed in 0.28s

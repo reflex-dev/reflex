@@ -1,0 +1,3 @@
+object(): assigned
+callable: assigned
+user callable ran: []

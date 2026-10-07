@@ -1,0 +1,84 @@
+.EF                                                                      [100%]
+==================================== ERRORS ====================================
+_______________________ ERROR at teardown of test_patch ________________________
+
+cls = <class 'test_min.Svc'>, name = '_limit'
+value = Field(default=99, is_var=True, annotated_type=<class 'int'>)
+
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update a field's default while retaining its descriptor.
+    
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
+    
+        Args:
+            name: The class attribute being assigned.
+            value: Its new default value or zero-argument default factory.
+    
+        Raises:
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
+        """
+        declared = cls.__fields__.get(name)
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
+        default = value
+>       accepted = _accepts_default(declared, value)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../../../../envs/a3_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default=99, is_var=True, annotated_type=<class 'int'>)
+value = Field(default=99, is_var=True, annotated_type=<class 'int'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../../../envs/a3_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+=================================== FAILURES ===================================
+_____________________________ test_default_is_back _____________________________
+
+    def test_default_is_back():
+>       assert Svc.get_fields()["_limit"].default == 5
+E       AssertionError: assert 99 == 5
+E        +  where 99 = Field(default=99, is_var=True, annotated_type=<class 'int'>).default
+
+test_min.py:13: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_min.py::test_patch
+ERROR test_min.py::test_patch - TypeError: A Field cannot overwrite another f...
+FAILED test_min.py::test_default_is_back - AssertionError: assert 99 == 5
+1 failed, 1 passed, 1 error in 0.92s

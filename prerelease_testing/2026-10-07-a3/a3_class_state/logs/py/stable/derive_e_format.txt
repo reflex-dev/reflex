@@ -1,0 +1,42 @@
+reflex 0.9.12  REFLEX_ENV_MODE=<unset>
+BackendVarFormatError exists: False | subclass of VarTypeError: False
+--- formatting into a string
+f"{S._size}px"                                       -> OK '16px'
+"{}px".format(S._size)                               -> OK '16px'
+format(S._size)                                      -> OK '16'
+f"{S._size!s}px"  (explicit str conversion)          -> OK '16px'
+str(S._size) + "px"                                  -> OK '16px'
+"%s px" % S._size                                    -> OK '16 px'
+"x" + S._label                                       -> OK 'xlabel'
+f"{S._nonvar}" (is_var=False field)                  -> OK 'None'
+f"{Mix._m_be}" (mixin backend)                       -> OK 'mixin-backend'
+f"{Mix.m_pub}" (mixin frontend)                      -> OK 'mixin-frontend'
+f"{S.m_pub}" (mixin frontend via user state)         -> OK '<reflex.Var>-7925353649499134320</reflex.Var>reflex___state____state____main_____s.m_pub_rx_state_'
+f"{rx.field(3)}" (unbound field)                     -> OK 'Field(default=3, is_var=True, annotated_type=typing.Any)'
+   printed: 16
+print(S._size) (uses str)                            -> OK None
+--- as a child / prop / style / control flow
+rx.text(S._label)  [child]                           -> OK 'jsx(RadixThemesText,{as:"p"},"label")'
+rx.text(f"w={S._size}")  [f-string child]            -> OK 'jsx(RadixThemesText,{as:"p"},"w=16")'
+rx.box(width=S._size)  [prop]                        -> OK 'jsx(RadixThemesBox,{css:({ ["width"] : 16 })},)'
+rx.icon('x', size=S._size)  [typed prop]             -> OK 'jsx(LucideX,{size:16},)'
+rx.box(id=S._label)  [id prop]                       -> OK 'jsx(RadixThemesBox,{id:"label",ref:ref_label},)'
+rx.box(style={"width": S._size})                     -> OK 'jsx(RadixThemesBox,{css:({ ["width"] : 16 })},)'
+rx.box(class_name=[S._label])                        -> OK 'jsx(RadixThemesBox,{className:"label"},)'
+rx.foreach(S._items, rx.text)                        -> OK 'Array.prototype.map.call(["a", "b"] ?? [],((children_rx_state_,props_rx_state_)=>(jsx(RadixThemesText,{as:"p",key:props_rx_state_},children_rx_state_
+rx.cond(S._flag, 'y', 'n')                           -> OK 'jsx(Fragment,{},(true?(jsx(Fragment,{},jsx(RadixThemesText,{as:"p"},"y"))):(jsx(Fragment,{},jsx(RadixThemesText,{as:"p"},"n")))))'
+rx.match(S._label, ('label', rx.text('m')), rx.text('d')) -> OK 'jsx(Fragment,{},(() => {\n  switch (JSON.stringify("label")) {\n    case JSON.stringify("label"):\n      return jsx(RadixThemesText,{as:"p"},"m");\n 
+rx.Var.create(S._size)                               -> OK LiteralNumberVar(_js_expr='16', _var_type=<class 'int'>, _var_data=None, _var_value=16)
+rx.button(on_click=S.takes(S._label))  [event arg]   -> OK 'jsx(RadixThemesButton,{onClick:((_e) => (addEvents([(ReflexEvent("reflex___state____state.__main_____s.takes", ({ ["v"] : "label" }), ({  })))], [_e]
+rx.button(on_click=rx.console_log(S._label))         -> OK 'jsx(RadixThemesButton,{onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (console?.["log"]("label"))), ["callback"
+rx.link('l', href=S._label)                          -> OK 'jsx(RadixThemesLink,{asChild:true,css:({ ["&:hover"] : ({ ["color"] : "var(--accent-8)" }) })},jsx(ReactRouterLink,{to:"label"},"l"))'
+rx.button(S._label)  [button child]                  -> OK 'jsx(RadixThemesButton,{},"label")'
+--- documented fix: default_value()
+S._items.default_value()                             -> AttributeError: 'list' object has no attribute 'default_value'
+rx.foreach(S._items.default_value(), rx.text)        -> AttributeError: 'list' object has no attribute 'default_value'
+rx.text(f"{S._size.default_value()}px")              -> AttributeError: 'int' object has no attribute 'default_value'
+rx.box(width=f'{S._size.default_value()}px')         -> AttributeError: 'int' object has no attribute 'default_value'
+S._cfg.default_value() is fresh copy                 -> AttributeError: 'dict' object has no attribute 'default_value'
+--- instance-level (must be unaffected)
+f"{inst._size}px"                                    -> OK '16px'
+inst.count = S._size  (mistyped assignment of a Field) -> OK 16

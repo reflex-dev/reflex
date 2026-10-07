@@ -1,0 +1,7 @@
+reflex 0.10.0a2
+  Cfg._http = httpx.Client()   (assignment)                              -> None
+  inst = Cfg()  (construct instance)                                     -> 'Cfg'
+  inst()._http  (first read)                                             -> RAISES TypeError: cannot pickle '_thread.RLock' object
+  inst()._http is client (shared object?)                                -> RAISES TypeError: cannot pickle '_thread.RLock' object
+  Cfg._lock = threading.Lock()  (Any slot)                               -> None
+  inst()._lock  (first read)                                             -> RAISES TypeError: cannot pickle '_thread.lock' object

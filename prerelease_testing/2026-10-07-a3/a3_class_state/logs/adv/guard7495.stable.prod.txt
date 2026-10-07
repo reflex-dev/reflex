@@ -1,0 +1,26 @@
+reflex 0.9.12 REFLEX_ENV_MODE=prod
+own class mangled self.__own (GChild)                                          -> accepted -> 3
+mixin mangled self.__mxv (GMixin)                                              -> SetUndefinedStateVarError: The state variable '_GMixin__mxv' has not been defined in 'GChild'. All state variables must be declared befor
+base mangled self.__bv (GBase)                                                 -> accepted -> EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function GBase.base_write at 0x7fd7996b3d80>), client_handler_name='', args=())
+underscore class _GUnder self.__u                                              -> SetUndefinedStateVarError: The state variable '_GUnder__u' has not been defined in '_GUnder'. All state variables must be declared before
+double-underscore class __GDunderName self.__d                                 -> SetUndefinedStateVarError: The state variable '_GDunderName__d' has not been defined in '__GDunderName'. All state variables must be decl
+non-state Helper().poke(state) -> _Helper__h                                   -> SetUndefinedStateVarError: The state variable '_Helper__h' has not been defined in 'GChild'. All state variables must be declared before 
+non-state Helper.poke_static(state) -> _Helper__hs                             -> SetUndefinedStateVarError: The state variable '_Helper__hs' has not been defined in 'GChild'. All state variables must be declared before
+_sneaky__name = 1 (single _, '__' inside, undeclared)                          -> SetUndefinedStateVarError: The state variable '_sneaky__name' has not been defined in 'GChild'. All state variables must be declared befo
+_GChild__typo = 1 (own-prefix, undeclared; by design plain)                    -> accepted
+_GBase__x via setattr (base prefix)                                            -> SetUndefinedStateVarError: The state variable '_GBase__x' has not been defined in 'GChild'. All state variables must be declared before t
+_State__x via setattr (rx.State in MRO)                                        -> SetUndefinedStateVarError: The state variable '_State__x' has not been defined in 'GChild'. All state variables must be declared before t
+_BaseState__x via setattr (framework class in MRO)                             -> SetUndefinedStateVarError: The state variable '_BaseState__x' has not been defined in 'GChild'. All state variables must be declared befo
+_object__x via setattr                                                         -> SetUndefinedStateVarError: The state variable '_object__x' has not been defined in 'GChild'. All state variables must be declared before 
+_OtherState__x via setattr (unrelated state name)                              -> SetUndefinedStateVarError: The state variable '_OtherState__x' has not been defined in 'GChild'. All state variables must be declared bef
+__x via setattr (dunder-prefixed string)                                       -> accepted
+__x__ via setattr (dunder)                                                     -> accepted
+_typo_x (control, no __)                                                       -> SetUndefinedStateVarError: The state variable '_typo_x' has not been defined in 'GChild'. All state variables must be declared before the
+typo (control, public)                                                         -> SetUndefinedStateVarError: The state variable 'typo' has not been defined in 'GChild'. All state variables must be declared before they c
+_x__ (trailing __ only)                                                        -> SetUndefinedStateVarError: The state variable '_x__' has not been defined in 'GChild'. All state variables must be declared before they c
+ComponentState generated class GTmpl_n1 tmpl self.__t                          -> SetUndefinedStateVarError: The state variable '_GTmpl__t' has not been defined in 'GTmpl_n1'. All state variables must be declared before
+   local classes renamed to GLocal/GLocalSub, __original_name__='GLocal'/'GLocalSub'
+locally defined state self.__loc                                               -> accepted -> 9
+locally defined substate self.__locsub                                         -> accepted -> 10
+locally defined substate inherited self.__loc                                  -> accepted -> EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function make_local.<locals>.GLocal.w at 0x7fd797c84180>), client_handler_name='', args=())
+state whose __name__ was changed after creation, self.__r                      -> SetUndefinedStateVarError: The state variable '_GRenamed__r' has not been defined in 'GRenamedLater'. All state variables must be declare
