@@ -1,0 +1,296 @@
+{
+"scenario": "r1b_lit_reload",
+"measure": {
+"grids": {
+"w_lit": {
+"headers": [
+"L:make",
+"L:price",
+"L:double",
+"L:tip",
+"L:memo",
+"L:trace"
+],
+"cells": 24,
+"rows": 0,
+"badges": 8,
+"memo_badges": 4,
+"tip_texts": 4,
+"pinned_top_rows": 1,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"t-0: make=\"PINNED\" | price=$99 | double=198 | tip=\"XX\" | memo=memo:PINNED | trace=T:PINNED",
+"0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
+"1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
+"2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
+]
+},
+"w_lit_group": {
+"headers": [
+"Group",
+"Make",
+"sum(Price)"
+],
+"cells": 15,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 4,
+"cheap_cells": 0,
+"row_texts": [
+"0: ag-Grid-AutoColumn=US\n(2) | make= | price=3",
+"1: ag-Grid-AutoColumn= | make=Tesla | price=1",
+"2: ag-Grid-AutoColumn= | make=Ford | price=2",
+"3: ag-Grid-AutoColumn=JP\n(1) | make= | price=3",
+"4: ag-Grid-AutoColumn= | make=Toyota | price=3"
+]
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 131.90000000037253,
+"cellRenders": {
+"n": 4,
+"first_t": 202.70000000018626,
+"without_reflex": 0,
+"by_src": {
+"literal": 4
+}
+},
+"path": "/lit/",
+"heading": "entr lit"
+},
+"measure_plus4s": {
+"grids": {
+"w_lit": {
+"headers": [
+"L:make",
+"L:price",
+"L:double",
+"L:tip",
+"L:memo",
+"L:trace"
+],
+"cells": 24,
+"rows": 0,
+"badges": 8,
+"memo_badges": 4,
+"tip_texts": 4,
+"pinned_top_rows": 1,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"t-0: make=\"PINNED\" | price=$99 | double=198 | tip=\"XX\" | memo=memo:PINNED | trace=T:PINNED",
+"0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
+"1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
+"2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
+]
+},
+"w_lit_group": {
+"headers": [
+"Group",
+"Make",
+"sum(Price)"
+],
+"cells": 15,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 4,
+"cheap_cells": 0,
+"row_texts": [
+"0: ag-Grid-AutoColumn=US\n(2) | make= | price=3",
+"1: ag-Grid-AutoColumn= | make=Tesla | price=1",
+"2: ag-Grid-AutoColumn= | make=Ford | price=2",
+"3: ag-Grid-AutoColumn=JP\n(1) | make= | price=3",
+"4: ag-Grid-AutoColumn= | make=Toyota | price=3"
+]
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 131.90000000037253,
+"cellRenders": {
+"n": 4,
+"first_t": 202.70000000018626,
+"without_reflex": 0,
+"by_src": {
+"literal": 4
+}
+},
+"path": "/lit/",
+"heading": "entr lit"
+},
+"boot_frames": [
+{
+"t": 93.8,
+"dir": "ws_in",
+"len": 108,
+"head": "0{"
+},
+{
+"t": 131.6,
+"dir": "ws_out",
+"len": 298,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"event"
+],
+"auth_mentions_hydrate_and_load": true,
+"auth_event_name": "reflex___state____state.hydrate_and_load"
+},
+{
+"t": 178.4,
+"dir": "ws_in",
+"len": 40,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"sid"
+],
+"auth_mentions_hydrate_and_load": false
+},
+{
+"t": 228,
+"dir": "ws_in",
+"len": 1794,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_",
+"rx_router_headers_rx_state_",
+"rx_router_page_rx_state_",
+"rx_router_route_id_rx_state_",
+"rx_router_session_rx_state_",
+"rx_router_url_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 228.3,
+"dir": "ws_in",
+"len": 88,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_"
+]
+},
+"final": null,
+"events": null
+}
+],
+"timeline": [
+"     17.0ms grid counts (headers, cells) {}",
+"     52.0ms ws_open_call {\"url\": \"ws://localhost:3311/_event/?token=5960aacb-adb9-4e03-9d77-a4299ca8132f&EIO=4&transport=websocket\"}",
+"     87.7ms grid counts (headers, cells) {\"w_lit\": [0, 0, 0], \"w_lit_group\": [0, 0, 0]}",
+"     87.9ms ws_open {}",
+"     93.8ms ws_in {\"len\": 108}",
+"    131.6ms ws_out {\"len\": 298, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+"    131.9ms window.__reflex ASSIGNED (6 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3311/assets/root-SNpkM6XG.js:82:324 |     at El (http://localhost:3311/assets/entry.client-H-Leh00q.js:8:94941) |     at Uu (http://localhost:3311/assets/entry.client-H-Leh00q.js:8:118109) |     at Hu (http://localhost:3311/assets/entry.client",
+"    178.4ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+"    202.7ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    203.2ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    203.6ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    204.1ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    213.5ms grid counts (headers, cells) {\"w_lit\": [6, 24, 8], \"w_lit_group\": [3, 15, 0]}",
+"    228.0ms ws_in {\"len\": 1794, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    228.3ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}"
+],
+"console": [
+{
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"t": 0.009
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.3
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 0.3
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 0.3
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.302
+}
+],
+"pageerrors": [],
+"http_errors": [],
+"tooltip_after_hover": [
+"tooltip"
+]
+}

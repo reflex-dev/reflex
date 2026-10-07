@@ -1,0 +1,389 @@
+{
+"scenario": "r3b_detail_reload_expand",
+"measure": {
+"grids": {
+"w_dlit": {
+"headers": [
+"Id",
+"Name",
+"Count",
+"Value"
+],
+"cells": 8,
+"rows": 0,
+"badges": 2,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 4,
+"cheap_cells": 0,
+"row_texts": [
+"0: id=1 | name=A",
+"2: id=2 | name=B",
+"1: count=10 | value=T:x | count=5 | value=T:y"
+]
+},
+"w_dstate": {
+"headers": [
+"Id",
+"Name",
+"Count",
+"Value"
+],
+"cells": 8,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 4,
+"cheap_cells": 0,
+"row_texts": [
+"0: id=1 | name=A",
+"2: id=2 | name=B",
+"1: count=S:10 | value=v=x | count=S:5 | value=v=y"
+]
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 134,
+"cellRenders": {
+"n": 4,
+"first_t": 3401.5,
+"without_reflex": 0,
+"by_src": {
+"literal": 2,
+"state_js": 2
+}
+},
+"path": "/detail2/",
+"heading": "entr detail"
+},
+"measure_plus4s": {
+"grids": {
+"w_dlit": {
+"headers": [
+"Id",
+"Name",
+"Count",
+"Value"
+],
+"cells": 8,
+"rows": 0,
+"badges": 2,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 4,
+"cheap_cells": 0,
+"row_texts": [
+"0: id=1 | name=A",
+"2: id=2 | name=B",
+"1: count=10 | value=T:x | count=5 | value=T:y"
+]
+},
+"w_dstate": {
+"headers": [
+"Id",
+"Name",
+"Count",
+"Value"
+],
+"cells": 8,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 4,
+"cheap_cells": 0,
+"row_texts": [
+"0: id=1 | name=A",
+"2: id=2 | name=B",
+"1: count=S:10 | value=v=x | count=S:5 | value=v=y"
+]
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 134,
+"cellRenders": {
+"n": 4,
+"first_t": 3401.5,
+"without_reflex": 0,
+"by_src": {
+"literal": 2,
+"state_js": 2
+}
+},
+"path": "/detail2/",
+"heading": "entr detail"
+},
+"boot_frames": [
+{
+"t": 94,
+"dir": "ws_in",
+"len": 108,
+"head": "0{"
+},
+{
+"t": 133.8,
+"dir": "ws_out",
+"len": 306,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"event"
+],
+"auth_mentions_hydrate_and_load": true,
+"auth_event_name": "reflex___state____state.hydrate_and_load"
+},
+{
+"t": 168.8,
+"dir": "ws_in",
+"len": 40,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"sid"
+],
+"auth_mentions_hydrate_and_load": false
+},
+{
+"t": 209.4,
+"dir": "ws_in",
+"len": 1822,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_",
+"rx_router_headers_rx_state_",
+"rx_router_page_rx_state_",
+"rx_router_route_id_rx_state_",
+"rx_router_session_rx_state_",
+"rx_router_url_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 209.6,
+"dir": "ws_in",
+"len": 88,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_"
+]
+},
+"final": null,
+"events": null
+}
+],
+"timeline": [
+"     19.3ms grid counts (headers, cells) {}",
+"     52.8ms ws_open_call {\"url\": \"ws://localhost:3311/_event/?token=d7455fc9-61bf-4568-bcba-d070ee8a8310&EIO=4&transport=websocket\"}",
+"     90.2ms grid counts (headers, cells) {\"w_dlit\": [0, 0, 0], \"w_dstate\": [0, 0, 0]}",
+"     90.4ms ws_open {}",
+"     94.0ms ws_in {\"len\": 108}",
+"    133.8ms ws_out {\"len\": 306, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+"    134.0ms window.__reflex ASSIGNED (6 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3311/assets/root-SNpkM6XG.js:82:324 |     at El (http://localhost:3311/assets/entry.client-H-Leh00q.js:8:94941) |     at Uu (http://localhost:3311/assets/entry.client-H-Leh00q.js:8:118109) |     at Hu (http://localhost:3311/assets/entry.client",
+"    168.8ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+"    203.1ms grid counts (headers, cells) {\"w_dlit\": [2, 4, 0], \"w_dstate\": [2, 4, 0]}",
+"    209.4ms ws_in {\"len\": 1822, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    209.6ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
+"   3401.5ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   3401.8ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   3407.1ms grid counts (headers, cells) {\"w_dlit\": [4, 8, 2], \"w_dstate\": [2, 4, 0]}",
+"   3500.1ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"   3500.1ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"   3540.8ms grid counts (headers, cells) {\"w_dlit\": [4, 8, 2], \"w_dstate\": [4, 8, 0]}"
+],
+"console": [
+{
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"t": 0.003
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.299
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 0.299
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 0.3
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 0.3
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 0.3
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.3
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.3
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.3
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 0.3
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.301
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.374
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 3.374
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 3.375
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 3.376
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 3.376
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.376
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.376
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 5.968
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 5.968
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 5.968
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 5.968
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 5.968
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 5.969
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 5.969
+}
+],
+"pageerrors": [],
+"http_errors": [],
+"detail": {
+"w_dlit": {
+"detail_rows": 1,
+"detail_headers": [
+"Count",
+"Value"
+],
+"detail_cells": [
+"10",
+"T:x",
+"5",
+"T:y"
+],
+"detail_badges": 2
+},
+"w_dstate": {
+"detail_rows": 1,
+"detail_headers": [
+"Count",
+"Value"
+],
+"detail_cells": [
+"S:10",
+"v=x",
+"S:5",
+"v=y"
+],
+"detail_badges": 0
+}
+}
+}

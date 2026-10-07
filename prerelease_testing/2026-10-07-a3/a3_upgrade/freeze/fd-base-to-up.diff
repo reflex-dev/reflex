@@ -1,0 +1,37 @@
+27,41c27,42
+< reflex==0.9.12
+< reflex-base==0.9.12
+< reflex-components-code==0.9.6
+< reflex-components-core==0.9.10.post1
+< reflex-components-dataeditor==0.9.3.post1
+< reflex-components-gridjs==0.9.2.post1
+< reflex-components-lucide==1.0.4
+< reflex-components-markdown==0.9.4.post1
+< reflex-components-moment==0.9.4
+< reflex-components-plotly==0.9.7
+< reflex-components-radix==0.9.10.post1
+< reflex-components-react-player==0.9.2
+< reflex-components-recharts==0.9.4.post1
+< reflex-components-sonner==0.9.4
+< reflex-hosting-cli==0.1.72
+---
+> reflex==0.10.0a3
+> reflex-base==0.10.0a3
+> reflex-build-sdk==0.1.0a1
+> reflex-components-code==0.10.0a2
+> reflex-components-core==0.10.0a2
+> reflex-components-dataeditor==0.10.0a1
+> reflex-components-gridjs==0.10.0a2
+> reflex-components-lucide==1.1.0a1
+> reflex-components-markdown==0.10.0a2
+> reflex-components-moment==0.10.0a2
+> reflex-components-plotly==0.10.0a2
+> reflex-components-radix==0.10.0a2
+> reflex-components-react-player==0.10.0a1
+> reflex-components-recharts==0.10.0a2
+> reflex-components-sonner==0.10.0a1
+> reflex-hosting-cli==0.2.0a1
+51c52
+< wrapt==2.3.0
+---
+> wrapt==2.5.0

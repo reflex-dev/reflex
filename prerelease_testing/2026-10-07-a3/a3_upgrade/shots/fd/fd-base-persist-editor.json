@@ -1,0 +1,222 @@
+{
+ "tag": "fd-base-persist-editor",
+ "url": "http://localhost:3220",
+ "args": {
+  "url": "http://localhost:3220",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/shots/fd",
+  "tag": "fd-base-persist-editor",
+  "profile": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/profiles/fd",
+  "wait": 6.0,
+  "expect_text": [
+   "Existing Forms"
+  ],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": "/edit/form/"
+ },
+ "checks": [
+  {
+   "name": "text visible: 'Existing Forms'",
+   "status": "pass",
+   "detail": "Form Designer | Existing Forms | New Form | Form Name | Built with"
+  },
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "pass",
+   "detail": "[]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1"
+  },
+  "ss": {
+   "token": "b11dff0c-b92c-45b6-d189-bb9d41c220d7"
+  },
+  "cookie": ""
+ },
+ "body_text": "Form Designer\nExisting Forms\nNew Form\nForm Name\nBuilt with",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1"
+  },
+  "ss": {},
+  "cookie": "",
+  "t": 54,
+  "path": "/edit/form/"
+ },
+ "writes_idempotent_counts": {
+  "setItem _auth_token": 1
+ },
+ "writes_total": 3,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 676,
+   "path": "/edit/form/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "b11dff0c-b92c-45b6-d189-bb9d41c220d7",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1029,
+   "path": "/edit/form/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "_auth_token",
+   "value": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+   "prev": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+   "same": true,
+   "vlen": 36,
+   "t": 1151,
+   "path": "/edit/form/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 676,
+   "path": "/edit/form/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "b11dff0c-b92c-45b6-d189-bb9d41c220d7",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1029,
+   "path": "/edit/form/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "_auth_token",
+   "value": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+   "prev": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+   "same": true,
+   "vlen": 36,
+   "t": 1151,
+   "path": "/edit/form/"
+  }
+ ],
+ "ws": [
+  {
+   "t": 7.1,
+   "dir": "recv",
+   "data": "0{\"sid\":\"CTtKipwbrONiOpavAAAe\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 7.1,
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 7.1,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"4SAtZbOdBzNoPqWrAAAf\"}"
+  },
+  {
+   "t": 7.1,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "t": 7.1,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"e464b08e-5ea9-4bd4-96d4-4b2f395e05c1\"}},\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "t": 7.1,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "t": 7.1,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.redir\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "t": 7.1,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.redir\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  "... 9 more frames trimmed"
+ ],
+ "console": [
+  {
+   "t": 0.15,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 0.66,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 6.95,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 6.95,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [
+   "_auth_token",
+   "last_compiled_theme",
+   "theme"
+  ],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "_auth_token",
+   "last_compiled_theme",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 3,
+  "n_changing": 2,
+  "n_changing_app": 0,
+  "n_idempotent": 1,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {
+   "setItem _auth_token": 1
+  }
+ }
+}

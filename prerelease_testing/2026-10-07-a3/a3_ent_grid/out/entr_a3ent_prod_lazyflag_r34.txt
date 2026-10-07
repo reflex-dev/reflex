@@ -1,0 +1,42 @@
+server check ok: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3-ent/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a
+server versions: reflex=0.10.0a3 reflex-base=0.10.0a3 reflex-enterprise=0.9.7a5
+   w_dstate: expand failed: TimeoutError
+[r3 detail] {'w_dlit': {'missing': True, 'failed': None, 'body': 'An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might he'}, 'w_dstate': {'missing': True, 'failed': 'expand failed: TimeoutError', 'body': 'An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might he'}}
+[r3_detail_expand] grids(headers,cells,badges)={} probes={} counts={} reflexSetAt=145.40000000037253 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=238.2 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=379.2 delta substates=['reflex___state____state']
+   t=379.7 delta substates=['reflex___state____state']
+   t=3585 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", "payload_keys": ["component_stack", "info"]
+   console errors/warnings: 23; pageerrors: 0
+     error: Failed to load resource: the server responded with a status of 404 (Not Found)
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+   w_dstate: expand failed: TimeoutError
+[r3b detail after reload] {'w_dlit': {'missing': True, 'failed': None, 'body': 'An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might he'}, 'w_dstate': {'missing': True, 'failed': 'expand failed: TimeoutError', 'body': 'An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might he'}}
+[r3b_detail_reload_expand] grids(headers,cells,badges)={} probes={} counts={} reflexSetAt=51.39999999990687 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=133 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=198.6 delta substates=['reflex___state____state']
+   t=198.8 delta substates=['reflex___state____state']
+   t=3457.7 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", "payload_keys": ["component_stack", "info"]
+   console errors/warnings: 22; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************
+[r4_memo_full_load] grids(headers,cells,badges)={} probes={} counts={} reflexSetAt=153.79999999981374 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=258.8 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=389.6 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", "payload_keys": ["component_stack", "info"]
+   t=399.9 delta substates=['reflex___state____state']
+   t=400.6 delta substates=['reflex___state____state']
+   console errors/warnings: 8; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************

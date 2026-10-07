@@ -1,0 +1,44 @@
+### py311 init 20:26:31
+init rc=0 0 npmmirror lines
+
+reflex==0.10.0a3started reflex pid=2520 (20:26:33) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/smoke-py311-dev.server.log
+UP after 12s (frontend 200, backend /ping 200)
+[FAIL   ] unknown route answers 404: 200
+== smoke-py311-dev: {'pass': 6, 'fail': 1, 'anomaly': 0, 'skipped': 0}  console_total=13 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=17
+SHUTDOWN: main pid 2520 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+started reflex pid=3294 (20:27:08) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/smoke-py311-prod.server.log
+UP after 12s (frontend 200, backend /ping 200)
+prod /ping -> 200
+prod /sitemap.xml -> 200
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 6.629, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}]
+== smoke-py311-prod: {'pass': 6, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=3 unexpected_console=1 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=16
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+SHUTDOWN: main pid 3294 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- smoke-py311-dev server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- smoke-py311-prod server-log warnings:
+### py314 init 20:27:31
+init rc=0 0 npmmirror lines
+
+reflex==0.10.0a3started reflex pid=3895 (20:27:32) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/smoke-py314-dev.server.log
+UP after 8s (frontend 200, backend /ping 200)
+[FAIL   ] unknown route answers 404: 200
+== smoke-py314-dev: {'pass': 6, 'fail': 1, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=18
+SHUTDOWN: main pid 3895 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+started reflex pid=4487 (20:27:54) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/smoke-py314-prod.server.log
+UP after 9s (frontend 200, backend /ping 200)
+prod /ping -> 200
+prod /sitemap.xml -> 200
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 6.805, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}]
+== smoke-py314-prod: {'pass': 6, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=3 unexpected_console=1 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=17
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+SHUTDOWN: main pid 4487 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- smoke-py314-dev server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- smoke-py314-prod server-log warnings:
+py311 package.json == py314
+### smoke done 20:28:16

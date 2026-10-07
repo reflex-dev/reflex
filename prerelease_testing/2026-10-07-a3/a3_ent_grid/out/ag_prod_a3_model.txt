@@ -1,0 +1,54 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=a3_ent_grid-demo versions=0.10.0a3 0.9.7a5
+[NOTE] guard: 0.10.0a3 0.9.7a5
+[NOTE] db rows at start: 0
+[PASS] ssrm: logged-out initial data request made: ['http://localhost:3316/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=Dde-3G9RH1GHqlWbAA
+[PASS] ssrm: datasource URL carries endpoint_kwargs (state, sid) + SSRM params: {'startRow': '0', 'endRow': '50', 'sortModel': '[]', 'filterModel': '{}', 'rowGroupCols': '[]', 'groupKeys': '[]', 'valueCols': '[]', 'pivotMode': 'false', 'pivotCols': '[]', 'state': 'reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n', 'sid': 'Dde-3G9RH1GHqlWbAABT'}
+[PASS] ssrm: logged out shows no rows: 0
+[PASS] ssrm: Generate Friends inserted 50 rows into sqlite: {'before': 0, 'after': 50}
+[NOTE] ssrm rows right after generate (demo only calls setRowCount, no SSRM refresh): 0
+[PASS] ssrm: login (backend var) survives reload: Logout button shown after reload
+[FAIL] ssrm: rows render on reload right after generate (row_count_cached interval=10s): TimeoutError('Page.wait_for_function: Timeout 15000ms exceeded.')
+[NOTE] ssrm datasource responses so far: [(3.96, 200, '[] ... []'), (6.66, 200, '{"rowData": [], "rowCount": 0} ... {"rowData": [], "rowCount": 0}'), (7.52, 200, '{"rowData": [{"name": "Traci Wells", "years_known": 11, "has_a_dog": true, "age": 21, "owes_me": fal ... false, "met": "2009-06-10 09:24:41.787440"}], "rowCount": 0}'), (11.45, 200, '{"rowData": [{"name": "Traci Wells", "years_known": 11, "has_a_dog": true, "age": 21, "owes_me": fal ... false, "met": "2009-06-10 09:24:41.787440"}], "rowCount": 0}')]
+[PASS] ssrm: rows render on reload >10s after generate: 
+[PASS] ssrm: rows rendered after generate: 22
+[PASS] ssrm: sort asc request carries sortModel(age): ['[{"sort":"asc","type":"default","colId":"age"}]']
+[PASS] ssrm: sort asc first row has min age from db: {'first_rows': [19, 20, 20, 20, 21, 21, 21, 23], 'db_min': 19}
+[PASS] ssrm: sort desc first row has max age: {'first_rows': [80, 79, 77, 77, 73, 69, 67, 67], 'db_max': 80}
+[PASS] ssrm: filter request carries filterModel(name): ['{"name":{"filterType":"text","type":"contains","filter":"Trac"}}']
+[FAIL] ssrm: filtered rows all match and count matches db: {'sub': 'Trac', 'shown': 22, 'blank_rows': 21, 'db_matches': 1, 'sample': ['Traci Wells', '', '', '', '']}
+[PASS] ssrm: editing a cell updates sqlite: {'id': '1', 'db_name': 'QA Edited SSRM'}
+[PASS] ssrm: edited value visible after refresh: ['QA Edited SSRM', 'Juan Quinn', 'Bradley Hunt', 'Mr. Micheal Baker MD', 'Hector Rasmussen']
+[PASS] ssrm: selection -> selected_items computed var renders 2 badges: ['QA Edited SSRM', 'Juan Quinn']
+[PASS] ssrm: enable_advanced_filter switch shows advanced filter bar: 1
+[PASS] ssrm: logout refreshes grid to empty: 0
+[PASS] infinite(workaround): data requests return rows: {'reqs': ['http://localhost:3316/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2'], 'rows': 23}
+[PASS] infinite: sort asc by age matches db: {'first': [19, 20, 20, 20, 21, 21, 21, 23], 'db_min': 19}
+[FAIL] infinite: text filter matches db: {'sub': 'Torr', 'shown': 23, 'blank_rows': 22, 'db': 1}
+[PASS] infinite: numeric cell edit updates sqlite: {'id': '1', 'db_age': 77}
+[NOTE] add dialog: met field value submitted = '2020-01-02T03:04:05'
+[FAIL] infinite: add dialog inserts row: {'before': 50, 'after': 50, 'row': None}
+[FAIL] infinite: add dialog closes after submit: 1
+[PASS] infinite: delete_selected removes the 2 selected rows from sqlite: {'before': 50, 'after': 48, 'ids': ['1', '2'], 'gone': ['1', '2']}
+[PASS] /model: data endpoint has no HTTP errors: []
+[PASS] /model: grid shows db rows (db has 48): 23
+[PASS] /model-auth: data endpoint has no HTTP errors: []
+[PASS] /model-auth: grid shows db rows (db has 48): 22
+[NOTE] db rows at end: 48
+{
+ "checks_failed": [
+  "ssrm: rows render on reload right after generate (row_count_cached interval=10s)",
+  "ssrm: filtered rows all match and count matches db",
+  "infinite: text filter matches db",
+  "infinite: add dialog inserts row",
+  "infinite: add dialog closes after submit"
+ ],
+ "n_checks": 29,
+ "console_total": 56,
+ "console_benign": 42,
+ "console_errors": 0,
+ "console_warnings": 1,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}
+  console_warnings: {"t": 105.81, "ctx": "auth", "type": "warning", "text": "AG Grid: warning #129 Visit https://www.ag-grid.com/react-data-grid/errors/129?_version_=36.2.0&feature=headerCheckbox&rowModel=infinite \n  Alternatively register the ValidationModule to see the full message in the console.", "url": "http://localhost:3316/model-auth/", "location": {"url": "http://localhost:3316/assets/ag-theme-quartz-BRAdbr

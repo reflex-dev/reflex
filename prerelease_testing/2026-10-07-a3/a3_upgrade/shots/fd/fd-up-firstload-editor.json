@@ -1,0 +1,221 @@
+{
+ "tag": "fd-up-firstload-editor",
+ "url": "http://localhost:3220",
+ "args": {
+  "url": "http://localhost:3220",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/shots/fd",
+  "tag": "fd-up-firstload-editor",
+  "profile": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/profiles/fd",
+  "wait": 6.0,
+  "expect_text": [
+   "Existing Forms"
+  ],
+  "keep": [
+   "_auth_token=e464b08e-5ea9-4bd4-96d4-4b2f395e05c1"
+  ],
+  "forbid_writes": true,
+  "reload": false,
+  "path": "/edit/form/"
+ },
+ "checks": [
+  {
+   "name": "text visible: 'Existing Forms'",
+   "status": "pass",
+   "detail": "Form Designer | Existing Forms | New Form | Form Name | Built with"
+  },
+  {
+   "name": "kept _auth_token",
+   "status": "pass",
+   "detail": "start='e464b08e-5ea9-4bd4-96d4-4b2f395e05c1' end='e464b08e-5ea9-4bd4-96d4-4b2f395e05c1'"
+  },
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "pass",
+   "detail": "[]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1"
+  },
+  "ss": {
+   "token": "21a67f58-47d3-4888-f83f-5a0e0ff57c6d"
+  },
+  "cookie": ""
+ },
+ "body_text": "Form Designer\nExisting Forms\nNew Form\nForm Name\nBuilt with",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1"
+  },
+  "ss": {},
+  "cookie": "",
+  "t": 66,
+  "path": "/edit/form/"
+ },
+ "writes_idempotent_counts": {
+  "setItem _auth_token": 1
+ },
+ "writes_total": 3,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 7665,
+   "path": "/edit/form/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "21a67f58-47d3-4888-f83f-5a0e0ff57c6d",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 8589,
+   "path": "/edit/form/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "_auth_token",
+   "value": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+   "prev": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+   "same": true,
+   "vlen": 36,
+   "t": 8995,
+   "path": "/edit/form/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 7665,
+   "path": "/edit/form/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "21a67f58-47d3-4888-f83f-5a0e0ff57c6d",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 8589,
+   "path": "/edit/form/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "_auth_token",
+   "value": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+   "prev": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+   "same": true,
+   "vlen": 36,
+   "t": 8995,
+   "path": "/edit/form/"
+  }
+ ],
+ "ws": [
+  {
+   "t": 13.81,
+   "dir": "recv",
+   "data": "0{\"sid\":\"R5TcRj4V6jKKRSxrAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  "{\"t\": 13.81, \"dir\": \"sent\", \"data\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\\\":\\\"e464b08e-5ea9-4bd4-96d4-4b2f395e05c1\\\"},\\\"hashes\\\":[\\\"7f02077446d480d6\\\",\\\"0b97b0aeacae1d37\\\",\\\"72c4c6e4d5ca6372\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"ce9ce44eccafc12e\\\",\\\"b0b4835a001a4843\\\",\\\"dc444275bfc30eb3\\\",...",
+  {
+   "t": 13.81,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"9bsP6YjlWZGSHZ6HAAAB\"}"
+  },
+  "{\"t\": 13.81, \"dir\": \"recv\", \"data\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8220\\\",\\\"origin\\\":\\\"http://localhost:3220\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_k...",
+  {
+   "t": 13.81,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"auth_token_rx_state_\":\"e464b08e-5ea9-4bd4-96d4-4b2f395e05c1\",\"authenticated_user_rx_state_\":{\"enabled\":true,\"id\":1,\"username\":\"qa_admin\"},\"is_authenticated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "t": 13.81,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 13.81,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":null,\"name\":\"\",\"fields\":[],\"responses\":[],\"user\":null}}}}]"
+  },
+  {
+   "t": 13.81,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  "... 4 more frames trimmed"
+ ],
+ "console": [
+  {
+   "t": 5.88,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 7.78,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 13.81,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 13.81,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [
+   "_auth_token",
+   "last_compiled_theme",
+   "theme"
+  ],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "_auth_token",
+   "last_compiled_theme",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 3,
+  "n_changing": 2,
+  "n_changing_app": 0,
+  "n_idempotent": 1,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {
+   "setItem _auth_token": 1
+  }
+ }
+}

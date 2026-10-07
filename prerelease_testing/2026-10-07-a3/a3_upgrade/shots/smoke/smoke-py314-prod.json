@@ -1,0 +1,121 @@
+{
+ "tag": "smoke-py314-prod",
+ "results": [
+  {
+   "name": "GET / 200",
+   "status": "pass",
+   "detail": "200",
+   "t": 0.965
+  },
+  {
+   "name": "welcome page renders",
+   "status": "pass",
+   "detail": "Welcome to Reflex!\n\nGet started by editing app/app.py\n\nCheck out our docs!\nBuilt with Reflex",
+   "t": 1.03
+  },
+  {
+   "name": "colour-mode button toggles",
+   "status": "pass",
+   "detail": "'light light' -> 'dark dark'",
+   "t": 4.574
+  },
+  {
+   "name": "colour mode survives reload",
+   "status": "pass",
+   "detail": "'dark dark'",
+   "t": 6.771
+  },
+  {
+   "name": "unknown route answers 404",
+   "status": "pass",
+   "detail": "404",
+   "t": 6.851
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"main\", \"t\": 6.805, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}]",
+   "t": 6.993
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 6.993
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 4.622,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 6.778,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 6.805,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 0.966,
+   "dir": "open",
+   "payload": "ws://localhost:3236/_event/?token=73c440e8-ac6c-4789-db09-f130fc58d2bc&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 1.003,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"uMa6HQgsw_HHzWljAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 3.031,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"aa05309e87fa25d9\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 3.032,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"cajgWSvbVKvodrFCAAAB\"}"
+  },
+  "{\"page\": \"main\", \"t\": 3.032, \"dir\": \"in\", \"len\": 1784, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3236\\\",\\\"origin\\\":\\\"http://localhost:3236\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_vers...",
+  {
+   "page": "main",
+   "t": 3.032,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.622,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 4.623,
+   "dir": "close",
+   "payload": ""
+  },
+  "... 9 more frames trimmed"
+ ],
+ "notes": {}
+}

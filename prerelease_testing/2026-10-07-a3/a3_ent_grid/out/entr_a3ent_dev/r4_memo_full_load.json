@@ -1,0 +1,269 @@
+{
+"scenario": "r4_memo_full_load",
+"measure": {
+"grids": {
+"w_memo_lam": {
+"headers": [
+"S:make",
+"S:price",
+"S:double",
+"S:tip",
+"S:memo",
+"S:trace"
+],
+"cells": 18,
+"rows": 0,
+"badges": 6,
+"memo_badges": 3,
+"tip_texts": 3,
+"pinned_top_rows": 0,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
+"1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
+"2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
+]
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 1481.8000000002794,
+"cellRenders": {
+"n": 6,
+"first_t": 1635.3000000002794,
+"without_reflex": 0,
+"by_src": {
+"literal": 6
+}
+},
+"path": "/memo2",
+"heading": "entr memo"
+},
+"measure_plus4s": {
+"grids": {
+"w_memo_lam": {
+"headers": [
+"S:make",
+"S:price",
+"S:double",
+"S:tip",
+"S:memo",
+"S:trace"
+],
+"cells": 18,
+"rows": 0,
+"badges": 6,
+"memo_badges": 3,
+"tip_texts": 3,
+"pinned_top_rows": 0,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
+"1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
+"2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
+]
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 1481.8000000002794,
+"cellRenders": {
+"n": 6,
+"first_t": 1635.3000000002794,
+"without_reflex": 0,
+"by_src": {
+"literal": 6
+}
+},
+"path": "/memo2",
+"heading": "entr memo"
+},
+"boot_frames": [
+{
+"t": 1337.2,
+"dir": "ws_in",
+"len": 108,
+"head": "0{"
+},
+{
+"t": 1481,
+"dir": "ws_out",
+"len": 300,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"event"
+],
+"auth_mentions_hydrate_and_load": true,
+"auth_event_name": "reflex___state____state.hydrate_and_load"
+},
+{
+"t": 1488.8,
+"dir": "ws_in",
+"len": 40,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"sid"
+],
+"auth_mentions_hydrate_and_load": false
+},
+{
+"t": 1490.4,
+"dir": "ws_in",
+"len": 1804,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_",
+"rx_router_headers_rx_state_",
+"rx_router_page_rx_state_",
+"rx_router_route_id_rx_state_",
+"rx_router_session_rx_state_",
+"rx_router_url_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 1490.9,
+"dir": "ws_in",
+"len": 88,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_"
+]
+},
+"final": null,
+"events": null
+}
+],
+"timeline": [
+"     35.4ms grid counts (headers, cells) {}",
+"   1329.4ms ws_open_call {\"url\": \"ws://localhost:8312/_event/?token=6d348943-e797-46d7-f76c-a3428fc4bbd0&EIO=4&transport=websocket\"}",
+"   1336.0ms ws_open {}",
+"   1337.2ms ws_in {\"len\": 108}",
+"   1481.0ms ws_out {\"len\": 300, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+"   1481.8ms window.__reflex ASSIGNED (6 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3312/app/root.jsx:28:21 |     at Object.react_stack_bottom_frame (http://localhost:3312/node_modules/.vite/deps/react-dom_client.js?v=f600aead:14178:13) |     at runWithFiberInDEV (http://localhost:3312/node_modules/.vite/deps/react-dom_client",
+"   1488.8ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+"   1490.4ms ws_in {\"len\": 1804, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+"   1490.9ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
+"   1579.9ms grid counts (headers, cells) {\"w_memo_lam\": [0, 0, 0]}",
+"   1635.3ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   1635.3ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   1637.1ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   1639.2ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   1640.9ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   1640.9ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   1672.1ms grid counts (headers, cells) {\"w_memo_lam\": [6, 18, 6]}"
+],
+"console": [
+{
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"t": 0.354
+},
+{
+"type": "debug",
+"text": "[vite] connecting...",
+"t": 1.284
+},
+{
+"type": "debug",
+"text": "[vite] connected.",
+"t": 1.352
+},
+{
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"t": 1.555
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 1.556
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 1.556
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 1.556
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 1.556
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 1.557
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 1.557
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 1.557
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 1.561
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 1.561
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 1.561
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 1.562
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 1.562
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 1.562
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 1.562
+},
+{
+"type": "warning",
+"text": "AG Grid: warning #306 As of v36.2, `tooltipField` is deprecated. Use `tooltip` with a callback instead. \nSee https://www.ag-grid.com/react-data-grid/errors/306?_version_=36.2.0&version=36.2&name=tooltipField&message=Use+%60tooltip%60+with+a+callback+instead.",
+"t": 4.596
+}
+],
+"pageerrors": [],
+"http_errors": []
+}

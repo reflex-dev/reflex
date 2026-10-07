@@ -1,0 +1,545 @@
+{
+ "tag": "fd-base-full",
+ "results": [
+  {
+   "name": "home: renders link + README markdown",
+   "status": "pass",
+   "detail": "version shown=0.9.12",
+   "t": 23.719
+  },
+  {
+   "name": "home: importlib version text matches installed reflex",
+   "status": "pass",
+   "detail": "0.9.12 vs 0.9.12",
+   "t": 23.719
+  },
+  {
+   "name": "register: success message then redirect to /login",
+   "status": "pass",
+   "detail": "http://localhost:3220/login",
+   "t": 28.731
+  },
+  {
+   "name": "login: auto-redirects away from /login (pre-existing FAIL on 0.9.x)",
+   "status": "anomaly",
+   "detail": "http://localhost:3220/login",
+   "t": 34.494
+  },
+  {
+   "name": "login: LocalStorage _auth_token written",
+   "status": "pass",
+   "detail": "len=36",
+   "t": 35.355
+  },
+  {
+   "name": "login: protected /edit/form/ renders",
+   "status": "pass",
+   "detail": "",
+   "t": 38.539
+  },
+  {
+   "name": "create form: debounced name input creates form + redirect",
+   "status": "pass",
+   "detail": "http://localhost:3220/edit/form/1",
+   "t": 40.125
+  },
+  {
+   "name": "add field favorite_food (text)",
+   "status": "pass",
+   "detail": "options=[]",
+   "t": 41.645
+  },
+  {
+   "name": "add field age (number, required)",
+   "status": "pass",
+   "detail": "options=[]",
+   "t": 43.681
+  },
+  {
+   "name": "add field color (radio)",
+   "status": "pass",
+   "detail": "options=['Red', 'Blue']",
+   "t": 50.223
+  },
+  {
+   "name": "add field color: rx.call_script focused newest option input",
+   "status": "pass",
+   "detail": "",
+   "t": 50.223
+  },
+  {
+   "name": "add field size (select)",
+   "status": "pass",
+   "detail": "options=['Small', 'Large']",
+   "t": 58.137
+  },
+  {
+   "name": "add field size: rx.call_script focused newest option input",
+   "status": "pass",
+   "detail": "",
+   "t": 58.137
+  },
+  {
+   "name": "editor lists 4 fields after reload",
+   "status": "pass",
+   "detail": "['What is your favorite food? (favorite_food)', 'How old are you? (age)', 'Favorite color (color)', 'Shirt size (size)']",
+   "t": 61.933
+  },
+  {
+   "name": "entry page /form/<id>: renders (pre-existing FormMessage crash unless FD_FIX)",
+   "status": "pass",
+   "detail": "rendered",
+   "t": 65.757
+  },
+  {
+   "name": "logout: protected page bounces to /login",
+   "status": "pass",
+   "detail": "http://localhost:3220/login",
+   "t": 71.336
+  },
+  {
+   "name": "re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x)",
+   "status": "anomaly",
+   "detail": "http://localhost:3220/login",
+   "t": 75.67
+  },
+  {
+   "name": "re-login works (left logged in for next run)",
+   "status": "pass",
+   "detail": "",
+   "t": 76.313
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 76.933
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 76.933
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 16.389,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 18.546,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 18.769,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 19.022,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 24.268,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 24.622,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 25.281,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 25.455,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 25.456,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 26.141,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 26.141,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 28.109,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 28.109,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 28.74,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 28.765,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 29.054,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 29.34,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 29.426,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 29.426,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 30.492,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 35.766,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 36.075,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 36.726,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 36.819,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 37.151,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 58.156,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 58.594,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 59.112,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 59.294,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 59.345,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 62.065,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 62.198,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 62.566,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 65.571,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 65.571,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 66.036,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 66.038,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 66.124,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 66.138,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 66.138,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 70.718,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 70.796,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 71.08,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 71.105,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 71.105,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 71.351,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 71.563,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "main",
+   "t": 71.569,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 71.716,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 71.72,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 71.721,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 72.379,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 75.696,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 75.94,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 76.003,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 76.059,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 76.059,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 19.195,
+   "dir": "open",
+   "payload": "ws://localhost:8220/_event/?token=e464b08e-5ea9-4bd4-96d4-4b2f395e05c1&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 19.22,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"nT96-ZwwlsoD6i2mAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 19.22,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 19.232,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"UbXAscONciJ6HMxXAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 19.232,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 19.232,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  "{\"page\": \"main\", \"t\": 19.258, \"dir\": \"in\", \"len\": 4200, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"field_id_rx_state_\\\":\\\"\\\",\\\"form_id_rx_state_\\\":\\\"\\\",\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8220\\\",\\\"origin\\\":\\\"http://localhost:3220\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/...",
+  {
+   "page": "main",
+   "t": 19.297,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  "... 347 more frames trimmed"
+ ],
+ "notes": {
+  "mode": "full",
+  "url": "http://localhost:3220/",
+  "md_h1": [
+   "Form Designer",
+   "form-designer"
+  ],
+  "auth_token_after_login": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+  "fields_after_add": [
+   "What is your favorite food? (favorite_food)",
+   "How old are you? (age)",
+   "Favorite color (color)",
+   "Shirt size (size)"
+  ],
+  "form_id": "1",
+  "final_local_storage": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1"
+  },
+  "final_cookies": []
+ }
+}

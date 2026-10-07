@@ -63,6 +63,27 @@ Statement-by-statement (a3 = 0.10.0a3 dev unless noted; 0.9 claims checked on 0.
 
 N-002 (missing changelog entry for #7462): the a3 CHANGELOG has it under Breaking Changes, linking the tables.md section -> FIXED.
 
+### End-to-end (`apps/guide/app`, driver `scripts/drive_guide.py`, sequence `bin/seq_guide.sh`; results `shots/guide/guide-*.json`, logs `logs/guide-*.server.log`)
+Rerun: `$W/bin/seq_guide.sh` (a3 dev, 0.9.12 dev, a2 dev on 3214/8214 with the shared read-only venvs, then a3 prod + Redis 8209 on 3214).
+Pages: `/sample` = guide sample 1 verbatim (registered on 0.10 only), `/portable` = the `get_fields()` recipe, `/bg` = section 3's Parent/Child
+verbatim (`Child.work` with `self.bump()` outside the lock; `Child3.work` = the documented fix) plus instrumented variants, `/defaults` = a handler
+doing `type(self).level = 77` (the section 2 warning), then N fresh browser contexts read `level` and the serving worker pid.
+
+| check | a3 dev | a3 prod + Redis (9 workers) | a2 dev | 0.9.12 dev |
+|---|---|---|---|---|
+| `/sample` verbatim renders a, b + ClassVar URL | pass | pass | pass | n/a (AttributeError at import, as the guide says) |
+| `/portable` `get_fields()["_items"].default_value()` | pass | pass | pass | pass |
+| verbatim `Child.work` (`self.bump()` outside the lock) | `ImmutableStateError` traceback in the server log ("[Reflex Backend Exception]"), count unchanged | same | same | **no error, count 0 -> 1** (unlocked write) |
+| documented fix (`async with self: self.bump()`) | +1 | +1 | +1 | +1 ("works on both versions": true) |
+| read-only inherited handler outside the lock | runs, returns the value | same | same | runs |
+| `type(self)` / `self.__class__` / `isinstance(self, Parent)` inside the lock | `StateProxy` / `Child2` / True | same | same | same (0.9.12 too) |
+| handler declared on the SAME state, writing an inherited var, outside the lock | `ImmutableStateError` | same | same | **no error, +10** -> see O-3 |
+| runtime `type(self).level = 77` | the clicking tab keeps 20 (value already stored), new sessions on the same (only) worker see 77 | clicking tab on worker 646; 8 new sessions served by workers 632-644 all see **20** | like a3 dev | new sessions 20 (0.9 ignores class assignment) |
+
+All four guide runs: no unexpected console errors, no failed requests (the prod console "404" is the browser's own `/favicon.ico` fetch, the guide app has no favicon: known-benign).
+Self-hosting statement "When redis is configured, the server runs `2 * cpu_count + 1` worker processes": true (4 CPUs -> granian spawns worker-1..9, `logs/guide-a3-prod-pstree.txt`);
+granian itself warns on that start: `[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. ... Consider using 4 workers` (O-4).
+
 Guide links: the anchors it uses exist in the a3 tree (`docs/vars/base_vars.md` "## Changing Defaults", `docs/hosting/self-hosting.md` "## Production Mode",
 `docs/database/tables.md` "### Datetimes and SQLModel upgrades", `docs/state_structure/component_state.md` "## Passing Props"); the guide is routed
 under `docs/changelog/upgrading/` with a sidebar entry; `docs/events/background_events.md` links to it. reflex.dev itself is blocked by the sandbox proxy.
@@ -89,3 +110,10 @@ drops `--json`, `QA_CHATTY_OFF=1` disables the printer, `QA_EOF_CAP`/`QA_WAIT_CA
 | SIGINT to the pid only, plain `reflex run` (no --json) | exit 0.25 s rc 0 | exit 0.2 s rc 0 | (queued) |
 
 `Unexpected exit from worker-1` (`_granian`, level error) on stderr whenever the whole group gets SIGINT: known-benign, same on 0.9.12/a2 (a2-pass events/ent_auth reports).
+
+## Item 4c: `reflex init --template blank` + run on Python 3.11 and 3.14 (`bin/seq_smoke.sh`, `shots/smoke/`, `logs/smoke-*`, `freeze/smoke-py31{1,4}.txt`)
+venvs `$SB/envs/a3_upgrade-py311` (3.11.17) / `-py314` (3.14.6): `uv pip install --prerelease=allow reflex==0.10.0a3` (identical graphs: reflex/reflex-base 0.10.0a3,
+granian 2.8.4, starlette 1.7.0, no pydantic). `reflex init --template blank` rc 0 with no npmmirror fallback, `requirements.txt` = `reflex==0.10.0a3`; dev (3236/8236) and
+prod (3236) both: welcome page, colour-mode toggle survives reload, no console errors, no failed requests; prod `/ping` 200, `/sitemap.xml` 200, `/nope` 404.
+Dev answers unknown routes with 200 (react-router dev server SPA fallback; 0.9.12 dev does the same: `curl /nope` on the 0.9.12 form-designer dev server -> 200), not an issue.
+The generated `.web/package.json` is identical on 3.11 and 3.14. SIGTERM: "exited after SIGTERM in ~2-3 s, all ports free" every time.

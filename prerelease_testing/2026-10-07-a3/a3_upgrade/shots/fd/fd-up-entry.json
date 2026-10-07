@@ -1,0 +1,339 @@
+{
+ "tag": "fd-up-entry",
+ "results": [
+  {
+   "name": "home: renders link + README markdown",
+   "status": "pass",
+   "detail": "version shown=0.10.0a3",
+   "t": 6.744
+  },
+  {
+   "name": "home: importlib version text matches installed reflex",
+   "status": "pass",
+   "detail": "0.10.0a3 vs 0.10.0a3",
+   "t": 6.744
+  },
+  {
+   "name": "auth survives (LocalStorage token): /edit/form/ renders WITHOUT login",
+   "status": "pass",
+   "detail": "",
+   "t": 8.626
+  },
+  {
+   "name": "existing form listed in 'Existing Forms' select (on_mount load)",
+   "status": "pass",
+   "detail": "",
+   "t": 9.021
+  },
+  {
+   "name": "persisted form name",
+   "status": "pass",
+   "detail": "Upgrade Survey",
+   "t": 9.871
+  },
+  {
+   "name": "persisted fields listed",
+   "status": "pass",
+   "detail": "['What is your favorite food? (favorite_food)', 'How old are you? (age)', 'Favorite color (color)', 'Shirt size (size)', 'Your email (fd-up-up) (email_fd-up-up)']",
+   "t": 11.533
+  },
+  {
+   "name": "entry page renders (FD_FIX_FIELD_NAME=1)",
+   "status": "pass",
+   "detail": "",
+   "t": 16.884
+  },
+  {
+   "name": "required field missing: submit blocked (toast or native validation)",
+   "status": "pass",
+   "detail": "toast=\"Required field 'How old are you?' is missing a response\" url=http://localhost:3220/form/1",
+   "t": 17.82
+  },
+  {
+   "name": "entry submits -> /form/success",
+   "status": "pass",
+   "detail": "",
+   "t": 19.441
+  },
+  {
+   "name": "rx.Cookie client_token set in browser",
+   "status": "pass",
+   "detail": "1997b540-4942-462a-fb17-834428feb73e",
+   "t": 19.456
+  },
+  {
+   "name": "responses page renders",
+   "status": "pass",
+   "detail": "",
+   "t": 23.037
+  },
+  {
+   "name": "responses page lists submitted entries",
+   "status": "pass",
+   "detail": "2 responses: ['pizza-fd-base-entry', 'pizza-fd-up-entry']",
+   "t": 25.052
+  },
+  {
+   "name": "rx.moment renders response timestamps",
+   "status": "pass",
+   "detail": "[['2026-10-07T20:30:53.000Z', 'Wed Oct 07 2026 20:30:53 GMT+0000'], ['2026-10-07T20:33:13.000Z', 'Wed Oct 07 2026 20:33:13 GMT+0000']]",
+   "t": 25.071
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"main\", \"t\": 23.011, \"type\": \"error\", \"text\": \"In HTML, %s cannot be a descendant of <%s>.\\nThis will cause a hydration error.%s <button> button \\n\\n  ...\\n    <Collapsible data-orientation=\\\"vertical\\\" data-state=\\\"closed\\\" __scopeCollapsible={{...}} className=\\\"AccordionI...\\\" ...>\\n      <CollapsibleProvider scope={{...}} disabled={undefined} contentId=\\\"radix-_r_3_\\\" open={false} ...>\\n        <Primitive.div data-state=\\\"closed\\\" data-disabled={undefined} data-orientation=\\\"vertical\\\" ...>\\n          <div data-state=\\\"closed\\\" data-disabled={undefined} data-orientation=\\\"vertical\\\" className=\\\"AccordionI...\\\" ...>\\n            <EmotionCssPropInternal className=\\\"AccordionH...\\\" css={{display:\\\"flex\\\", ...}} ...>\\n              <Insertion>\\n              <AccordionHeader className=\\\"AccordionH...\\\">\\n                <Primitive.h3 data-orientation=\\\"vertical\\\" data-state=\\\"closed\\\" data-disabled={undefined} ...>\\n                  <h3 data-orientation=\\\"vertical\\\" data-state=\\\"closed\\\" data-disabled={undefined} className=\\\"AccordionH...\\\" ...>\\n                    <EmotionCssPropInternal className=\\\"AccordionT...\\\" css={{color:\\\"var...\\\", ...}} ...>\\n                      <Insertion>\\n                      <AccordionTrigger className=\\\"AccordionT...\\\">\\n                        <AccordionCollectionItemSlot scope={undefined}>\\n                          <AccordionCollectionItemSlot.Slot data-radix-collection-item=\\\"\\\" ref={function}>\\n                            <Col",
+   "t": 26.242
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 26.242
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 2.715,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 3.219,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 3.276,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 3.437,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 7.159,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 7.63,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 8.213,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 8.314,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 8.315,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 11.779,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 12.849,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 13.456,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 16.47,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 16.471,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 19.479,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 19.765,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 19.928,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 23.005,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 23.005,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 23.011,
+   "type": "error",
+   "text": "In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s <button> button \n\n  ...\n    <Collapsible data-orientation=\"vertical\" data-state=\"closed\" __scopeCollapsible={{...}} className=\"AccordionI...\" ...>\n      <CollapsibleProvider scope={{...}} disabled={undefined} contentId=\"radix-_r_3_\" open={false} ...>\n        <Primitive.div data-state=\"closed\" data-disabled={undefined} data-orientation=\"vertical\" ...>\n          <div data-state=\"closed\" data-disabled={undefined} data-orientation=\"vertical\" className=\"AccordionI...\" ...>\n            <EmotionCssPropInternal className=\"AccordionH...\" css={{display:\"flex\", ...}} ...>\n              <Insertion>\n              <AccordionHeader className=\"AccordionH...\">\n                <Primitive.h3 data-orientation=\"vertical\" data-state=\"closed\" data-disabled={undefined} ...>\n                  <h3 data-orientation=\"vertical\" data-state=\"closed\" data-disabled={undefined} className=\"AccordionH...\" ...>\n                    <EmotionCssPropInternal className=\"AccordionT...\" css={{color:\"var...\", ...}} ...>\n                      <Insertion>\n                      <AccordionTrigger className=\"AccordionT...\">\n                        <AccordionCollectionItemSlot scope={undefined}>\n                          <AccordionCollectionItemSlot.Slot data-radix-collection-item=\"\" ref={function}>\n                            <CollapsibleTrigger aria-disabled={undefined} data-orientation=\"vertical\" id=\"radix-_r_2_\" ...>\n                              <Primitive.button type=\"button\" aria-controls={undefined} aria-expanded={false} ...>\n>                               <button\n>                                 type=\"button\"\n>                                 aria-controls={undefined}\n>                                 aria-expanded={false}\n>                                 data-state=\"closed\"\n>                                 data-disabled={undefined}\n>                                 disabled={undefined}\n>                                 aria-disabled={undefined}\n>                                 data-orientation=\"vertical\"\n>                                 id=\"radix-_r_2_\"\n>                                 className=\"AccordionTrigger css-1tld8rm\"\n>                                 data-radix-collection-item=\"\"\n>                                 onClick={function handleEvent}\n>                                 ref={function}\n>                               >\n                                  ...\n                                    <EmotionCssPropInternal color=\"tomato\" css={{...}} onClick={function} ...>\n                                      <Insertion>\n                                      <Button color=\"tomato\" onClick={function} aria-describedby={undefined} ...>\n                                        <BaseButton color=\"tomato\" onClick={function} aria-describedby={undefined} ...>\n>                                         <button\n>                                           data-disabled={undefined}\n>                                           data-accent-color=\"tomato\"\n>                                           data-radius={undefined}\n>                                           onClick={function}\n>                                           aria-describedby={undefined}\n>                                           data-state=\"closed\"\n>                                           onPointerMove={function handleEvent}\n>                                           onPointerLeave={function handleEvent}\n>                                           onPointerDown={function handleEvent}\n>                                           onFocus={function handleEvent}\n>                                           onBlur={function handleEvent}\n>                                           data-radix-popper-side={undefined}\n>                                           data-radix-popper-align={undefined}\n>                                           style={undefined}\n>                                           ref={function}\n>                                           className=\"rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Button c...\"\n>                                           disabled={undefined}\n>                                         >\n                                  ...\n            ...\n"
+  },
+  {
+   "page": "main",
+   "t": 23.011,
+   "type": "error",
+   "text": "<%s> cannot contain a nested %s.\nSee this log for the ancestor stack trace. button <button>"
+  },
+  {
+   "page": "main",
+   "t": 23.012,
+   "type": "error",
+   "text": "Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toString()}. true collapsible collapsible true collapsible"
+  },
+  {
+   "page": "main",
+   "t": 23.012,
+   "type": "error",
+   "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+  },
+  {
+   "page": "main",
+   "t": 23.012,
+   "type": "error",
+   "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+  },
+  {
+   "page": "main",
+   "t": 23.012,
+   "type": "error",
+   "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 3.275,
+   "dir": "open",
+   "payload": "ws://localhost:8220/_event/?token=1997b540-4942-462a-fb17-834428feb73e&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 3.329,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"KO3d0wv4B-pZ-vGcAAAR\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  "{\"page\": \"main\", \"t\": 3.485, \"dir\": \"out\", \"len\": 569, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\\\":\\\"e464b08e-5ea9-4bd4-96d4-4b2f395e05c1\\\"},\\\"hashes\\\":[\\\"7f02077446d480d6\\\",\\\"0b97b0aeacae1d37\\\",\\\"72c4c6e4d5ca6372\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"ce9ce44eccafc12e\\\",\\\"b0b4835a00...",
+  {
+   "page": "main",
+   "t": 3.486,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"meMbnK3HWX9BTzGRAAAS\"}"
+  },
+  "{\"page\": \"main\", \"t\": 3.502, \"dir\": \"in\", \"len\": 2176, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8220\\\",\\\"origin\\\":\\\"http://localhost:3220\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_vers...",
+  "{\"page\": \"main\", \"t\": 3.502, \"dir\": \"in\", \"len\": 480, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":true},\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\\\":{\\\"auth_token_rx_state_\\\":\\\"e464b08e-5ea9-4bd4-96d4-4b2f395e05c1\\\",\\\"authenticated_user_rx_state_\\\":{\\\"enabled\\\":true,\\\"id\\\":1,\\\"username\\\":\\\"qa_admin\\\"},\\\"is_authenticated_rx_state_\\\":true},\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth...",
+  {
+   "page": "main",
+   "t": 7.258,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 7.258,
+   "dir": "close",
+   "payload": ""
+  },
+  "... 57 more frames trimmed"
+ ],
+ "notes": {
+  "mode": "entry",
+  "url": "http://localhost:3220/",
+  "md_h1": [
+   "Form Designer",
+   "form-designer"
+  ],
+  "auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+  "fields_listed": [
+   "What is your favorite food? (favorite_food)",
+   "How old are you? (age)",
+   "Favorite color (color)",
+   "Shirt size (size)",
+   "Your email (fd-up-up) (email_fd-up-up)"
+  ],
+  "form_id": "1",
+  "required_submit_toast": "Required field 'How old are you?' is missing a response",
+  "client_token_cookie": "1997b540-4942-462a-fb17-834428feb73e",
+  "responses_text": "Form Designer\n< Edit\nUpgrade Survey\n\n1cf429de-e9f8-4644-996b-4c03780b642e\n\nWed Oct 07 2026 20:30:53 GMT+0000\n\nWhat is your favorite food?\n\npizza-fd-base-entry\n\nHow old are you?\n\n42\n\nFavorite color\n\nBlue\n\nShirt size\n\nLarge\n\n1997b540-4942-462a-fb17-834428feb73e\n\nWed Oct 07 2026 20:33:13 GMT+0000\n\nWhat is your favorite food?\n\npizza-fd-up-entry\n\nHow old are you?\n\n42\n\nFavorite color\n\nBlue\n\nShirt size\n\nLarge",
+  "responses_values": [
+   "pizza-fd-base-entry",
+   "pizza-fd-up-entry"
+  ],
+  "moment_times": [
+   [
+    "2026-10-07T20:30:53.000Z",
+    "Wed Oct 07 2026 20:30:53 GMT+0000"
+   ],
+   [
+    "2026-10-07T20:33:13.000Z",
+    "Wed Oct 07 2026 20:33:13 GMT+0000"
+   ]
+  ],
+  "final_local_storage": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1"
+  },
+  "final_cookies": [
+   {
+    "name": "reflex___state____state.form_designer___pages___form_entry____form_entry_state.client_token_rx_state_",
+    "value": "1997b540-4942-462a-fb17-834428feb73e",
+    "domain": "localhost",
+    "path": "/",
+    "expires": -1,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+   }
+  ]
+ }
+}

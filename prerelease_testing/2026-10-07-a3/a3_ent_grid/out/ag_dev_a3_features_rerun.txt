@@ -1,0 +1,39 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=a3_ent_grid-demo versions=0.10.0a3 0.9.7a5
+[NOTE] guard: 0.10.0a3 0.9.7a5
+[PASS] pivot: pivot headers by sport (virtualised) with sum(Gold) value columns: Biathlon | Cross Country Skiing | Cycling | Diving | Gymnastics | Short-Track Speed Skating | Speed Skating | Group | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold)
+[PASS] pivot: rows grouped by country: ['United States', 'Australia', 'Canada', 'Norway', 'China', 'Zimbabwe']
+[PASS] pivot: pivot panel + columns side bar visible: 
+[FAIL] row_id_key: getRowId uses data.uid: []
+[FAIL] pinned rows (new names pinned_top_row_data/pinned_bottom_row_data): {'top': [], 'bottom': []}
+[FAIL] pinned rows (legacy aliases pinned_row_top_data/pinned_row_bottom_data): {'top': [], 'bottom': []}
+[FAIL] suppress_overlays=['noRows'] hides the no-rows overlay (default grid shows it): {'default': [], 'suppressed': []}
+[FAIL] value_formatter string renders 'N units': []
+[FAIL] custom JS cell renderer (rx.badge via ArgsFunctionOperation) renders: []
+[PASS] row_id_key: prepending a row keeps stable ids: ['u-4', 'u-1', 'u-2', 'u-3']
+[PASS] row_id_key: immutable State update bumps u-2 in place: {'u-4': '4 units', 'u-1': '1 units', 'u-2': '12 units', 'u-3': '3 units'}
+[PASS] select cell editor edit -> on_cell_value_changed node_id == row_id_key uid -> State: {'edits': 'edits: u-1:status->doing', 'badge': 'S:doing'}
+[PASS] clipboard (ClipboardModule): Ctrl+C copies cell, Ctrl+V pastes + fires on_cell_value_changed: {'clipboard': '10', 'b': ['10', '20', '10'], 'log': 'clip: 2:b=10'}
+[FAIL] memo grid: column defs from State.fields.foreach: []
+[PASS] memo grid: on_cell_clicked inside @rx.memo reaches State: clicked: name=beta
+[PASS] memo grid: toggling State field list adds Status column: ['Name', 'Qty', 'Status']
+[PASS] ComponentState grids: instance A grows independently of B: {'a': 'rows: 3', 'b': 'rows: 1', 'rows_a': 3, 'rows_b': 1}
+[PASS] ComponentState grids: state survives reload: 3
+{
+ "checks_failed": [
+  "row_id_key: getRowId uses data.uid",
+  "pinned rows (new names pinned_top_row_data/pinned_bottom_row_data)",
+  "pinned rows (legacy aliases pinned_row_top_data/pinned_row_bottom_data)",
+  "suppress_overlays=['noRows'] hides the no-rows overlay (default grid shows it)",
+  "value_formatter string renders 'N units'",
+  "custom JS cell renderer (rx.badge via ArgsFunctionOperation) renders",
+  "memo grid: column defs from State.fields.foreach"
+ ],
+ "n_checks": 18,
+ "console_total": 188,
+ "console_benign": 184,
+ "console_errors": 0,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}

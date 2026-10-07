@@ -1,0 +1,191 @@
+{
+ "tag": "fd-up-prod-up",
+ "results": [
+  {
+   "name": "home: renders link + README markdown",
+   "status": "pass",
+   "detail": "version shown=0.10.0a3",
+   "t": 5.5
+  },
+  {
+   "name": "home: importlib version text matches installed reflex",
+   "status": "pass",
+   "detail": "0.10.0a3 vs 0.10.0a3",
+   "t": 5.5
+  },
+  {
+   "name": "auth survives (LocalStorage token): /edit/form/ renders WITHOUT login",
+   "status": "pass",
+   "detail": "",
+   "t": 6.234
+  },
+  {
+   "name": "existing form listed in 'Existing Forms' select (on_mount load)",
+   "status": "pass",
+   "detail": "",
+   "t": 6.683
+  },
+  {
+   "name": "persisted form name",
+   "status": "pass",
+   "detail": "Upgrade Survey",
+   "t": 7.49
+  },
+  {
+   "name": "persisted fields listed",
+   "status": "pass",
+   "detail": "['What is your favorite food? (favorite_food)', 'How old are you? (age)', 'Favorite color (color)', 'Shirt size (size)', 'Your email (fd-up-up) (email_fd-up-up)']",
+   "t": 9.02
+  },
+  {
+   "name": "add another field (email) after upgrade",
+   "status": "pass",
+   "detail": "",
+   "t": 13.288
+  },
+  {
+   "name": "entry page /form/<id>: renders (pre-existing FormMessage crash unless FD_FIX)",
+   "status": "pass",
+   "detail": "rendered",
+   "t": 17.26
+  },
+  {
+   "name": "logout: protected page bounces to /login",
+   "status": "pass",
+   "detail": "http://localhost:3220/login",
+   "t": 20.22
+  },
+  {
+   "name": "re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x)",
+   "status": "anomaly",
+   "detail": "http://localhost:3220/login/",
+   "t": 23.845
+  },
+  {
+   "name": "re-login works (left logged in for next run)",
+   "status": "pass",
+   "detail": "",
+   "t": 24.081
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 24.374
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 24.374
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 5.678,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 13.349,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 17.293,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 20.075,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 20.227,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 20.461,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 23.862,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 5.196,
+   "dir": "open",
+   "payload": "ws://localhost:3220/_event/?token=a4b84bcd-414d-4402-dfe6-106bea3ef0c6&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 5.282,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"731IwdqVYlyW5SxCAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  "{\"page\": \"main\", \"t\": 5.282, \"dir\": \"out\", \"len\": 569, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\\\":\\\"e464b08e-5ea9-4bd4-96d4-4b2f395e05c1\\\"},\\\"hashes\\\":[\\\"7f02077446d480d6\\\",\\\"0b97b0aeacae1d37\\\",\\\"72c4c6e4d5ca6372\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"ce9ce44eccafc12e\\\",\\\"b0b4835a00...",
+  {
+   "page": "main",
+   "t": 5.282,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"aperjs5derJ_vTJ_AAAB\"}"
+  },
+  "{\"page\": \"main\", \"t\": 5.283, \"dir\": \"in\", \"len\": 2176, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3220\\\",\\\"origin\\\":\\\"http://localhost:3220\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_vers...",
+  "{\"page\": \"main\", \"t\": 5.283, \"dir\": \"in\", \"len\": 480, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":true},\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\\\":{\\\"auth_token_rx_state_\\\":\\\"e464b08e-5ea9-4bd4-96d4-4b2f395e05c1\\\",\\\"authenticated_user_rx_state_\\\":{\\\"username\\\":\\\"qa_admin\\\",\\\"id\\\":1,\\\"enabled\\\":true},\\\"is_authenticated_rx_state_\\\":true},\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth...",
+  {
+   "page": "main",
+   "t": 5.68,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 5.738,
+   "dir": "close",
+   "payload": ""
+  },
+  "... 116 more frames trimmed"
+ ],
+ "notes": {
+  "mode": "up",
+  "url": "http://localhost:3220/",
+  "md_h1": [
+   "Form Designer",
+   "form-designer"
+  ],
+  "auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+  "fields_listed": [
+   "What is your favorite food? (favorite_food)",
+   "How old are you? (age)",
+   "Favorite color (color)",
+   "Shirt size (size)",
+   "Your email (fd-up-up) (email_fd-up-up)"
+  ],
+  "form_id": "1",
+  "final_local_storage": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1"
+  },
+  "final_cookies": []
+ }
+}

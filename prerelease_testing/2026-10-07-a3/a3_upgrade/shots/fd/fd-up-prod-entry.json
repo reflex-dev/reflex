@@ -1,0 +1,213 @@
+{
+ "tag": "fd-up-prod-entry",
+ "results": [
+  {
+   "name": "home: renders link + README markdown",
+   "status": "pass",
+   "detail": "version shown=0.10.0a3",
+   "t": 2.129
+  },
+  {
+   "name": "home: importlib version text matches installed reflex",
+   "status": "pass",
+   "detail": "0.10.0a3 vs 0.10.0a3",
+   "t": 2.129
+  },
+  {
+   "name": "auth survives (LocalStorage token): /edit/form/ renders WITHOUT login",
+   "status": "pass",
+   "detail": "",
+   "t": 2.903
+  },
+  {
+   "name": "existing form listed in 'Existing Forms' select (on_mount load)",
+   "status": "pass",
+   "detail": "",
+   "t": 3.069
+  },
+  {
+   "name": "persisted form name",
+   "status": "pass",
+   "detail": "Upgrade Survey",
+   "t": 3.43
+  },
+  {
+   "name": "persisted fields listed",
+   "status": "pass",
+   "detail": "['What is your favorite food? (favorite_food)', 'How old are you? (age)', 'Favorite color (color)', 'Shirt size (size)', 'Your email (fd-up-up) (email_fd-up-up)', 'Your email (fd-up-prod-up) (email_fd-up-prod-up)']",
+   "t": 4.97
+  },
+  {
+   "name": "entry page renders (FD_FIX_FIELD_NAME=1)",
+   "status": "pass",
+   "detail": "",
+   "t": 10.558
+  },
+  {
+   "name": "required field missing: submit blocked (toast or native validation)",
+   "status": "pass",
+   "detail": "toast=\"Required field 'How old are you?' is missing a response\" url=http://localhost:3220/form/1",
+   "t": 11.437
+  },
+  {
+   "name": "entry submits -> /form/success",
+   "status": "pass",
+   "detail": "",
+   "t": 12.873
+  },
+  {
+   "name": "rx.Cookie client_token set in browser",
+   "status": "pass",
+   "detail": "053a1746-0e47-4466-92ad-4a82334163c5",
+   "t": 12.901
+  },
+  {
+   "name": "responses page renders",
+   "status": "pass",
+   "detail": "",
+   "t": 16.758
+  },
+  {
+   "name": "responses page lists submitted entries",
+   "status": "pass",
+   "detail": "3 responses: ['pizza-fd-base-entry', 'pizza-fd-up-entry', 'pizza-fd-up-prod-entry']",
+   "t": 19.181
+  },
+  {
+   "name": "rx.moment renders response timestamps",
+   "status": "pass",
+   "detail": "[['2026-10-07T20:30:53.000Z', 'Wed Oct 07 2026 20:30:53 GMT+0000'], ['2026-10-07T20:33:13.000Z', 'Wed Oct 07 2026 20:33:13 GMT+0000'], ['2026-10-07T20:34:37.000Z', 'Wed Oct 07 2026 20:34:37 GMT+0000']]",
+   "t": 19.192
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 19.755
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 19.755
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 2.307,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 5.994,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 12.967,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 1.896,
+   "dir": "open",
+   "payload": "ws://localhost:3220/_event/?token=053a1746-0e47-4466-92ad-4a82334163c5&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 1.991,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"0sPbr0AMFUOzm2s-AAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  "{\"page\": \"main\", \"t\": 1.991, \"dir\": \"out\", \"len\": 569, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\\\":\\\"e464b08e-5ea9-4bd4-96d4-4b2f395e05c1\\\"},\\\"hashes\\\":[\\\"7f02077446d480d6\\\",\\\"0b97b0aeacae1d37\\\",\\\"72c4c6e4d5ca6372\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"ce9ce44eccafc12e\\\",\\\"b0b4835a00...",
+  {
+   "page": "main",
+   "t": 1.992,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"EajRrCQvuju0sRtSAAAP\"}"
+  },
+  "{\"page\": \"main\", \"t\": 1.992, \"dir\": \"in\", \"len\": 2176, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3220\\\",\\\"origin\\\":\\\"http://localhost:3220\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_vers...",
+  "{\"page\": \"main\", \"t\": 1.992, \"dir\": \"in\", \"len\": 480, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":true},\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\\\":{\\\"auth_token_rx_state_\\\":\\\"e464b08e-5ea9-4bd4-96d4-4b2f395e05c1\\\",\\\"authenticated_user_rx_state_\\\":{\\\"username\\\":\\\"qa_admin\\\",\\\"id\\\":1,\\\"enabled\\\":true},\\\"is_authenticated_rx_state_\\\":true},\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth...",
+  {
+   "page": "main",
+   "t": 2.309,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 2.362,
+   "dir": "close",
+   "payload": ""
+  },
+  "... 54 more frames trimmed"
+ ],
+ "notes": {
+  "mode": "entry",
+  "url": "http://localhost:3220/",
+  "md_h1": [
+   "Form Designer",
+   "form-designer"
+  ],
+  "auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1",
+  "fields_listed": [
+   "What is your favorite food? (favorite_food)",
+   "How old are you? (age)",
+   "Favorite color (color)",
+   "Shirt size (size)",
+   "Your email (fd-up-up) (email_fd-up-up)",
+   "Your email (fd-up-prod-up) (email_fd-up-prod-up)"
+  ],
+  "form_id": "1",
+  "required_submit_toast": "Required field 'How old are you?' is missing a response",
+  "client_token_cookie": "053a1746-0e47-4466-92ad-4a82334163c5",
+  "responses_text": "Form Designer\n< Edit\nUpgrade Survey\n\n1cf429de-e9f8-4644-996b-4c03780b642e\n\nWed Oct 07 2026 20:30:53 GMT+0000\n\nWhat is your favorite food?\n\npizza-fd-base-entry\n\nHow old are you?\n\n42\n\nFavorite color\n\nBlue\n\nShirt size\n\nLarge\n\n1997b540-4942-462a-fb17-834428feb73e\n\nWed Oct 07 2026 20:33:13 GMT+0000\n\nWhat is your favorite food?\n\npizza-fd-up-entry\n\nHow old are you?\n\n42\n\nFavorite color\n\nBlue\n\nShirt size\n\nLarge\n\n053a1746-0e47-4466-92ad-4a82334163c5\n\nWed Oct 07 2026 20:34:37 GMT+0000\n\nWhat is your favorite food?\n\npizza-fd-up-prod-entry\n\nHow old are you?\n\n42\n\nFavorite color\n\nBlue\n\nShirt size\n\nLarge\n\nBuilt with Reflex",
+  "responses_values": [
+   "pizza-fd-base-entry",
+   "pizza-fd-up-entry",
+   "pizza-fd-up-prod-entry"
+  ],
+  "moment_times": [
+   [
+    "2026-10-07T20:30:53.000Z",
+    "Wed Oct 07 2026 20:30:53 GMT+0000"
+   ],
+   [
+    "2026-10-07T20:33:13.000Z",
+    "Wed Oct 07 2026 20:33:13 GMT+0000"
+   ],
+   [
+    "2026-10-07T20:34:37.000Z",
+    "Wed Oct 07 2026 20:34:37 GMT+0000"
+   ]
+  ],
+  "final_local_storage": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "e464b08e-5ea9-4bd4-96d4-4b2f395e05c1"
+  },
+  "final_cookies": [
+   {
+    "name": "reflex___state____state.form_designer___pages___form_entry____form_entry_state.client_token_rx_state_",
+    "value": "053a1746-0e47-4466-92ad-4a82334163c5",
+    "domain": "localhost",
+    "path": "/",
+    "expires": -1,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+   }
+  ]
+ }
+}

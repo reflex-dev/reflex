@@ -56,6 +56,21 @@ class Child(Parent):
 class Child2(Parent):
     result: str = ""
     log: list[str] = []
+    own: int = 0
+
+    @rx.event
+    def own_var_bump(self):
+        self.own += 1
+
+    @rx.event(background=True)
+    async def work_own_var_outside(self):
+        try:
+            self.own_var_bump()
+            outcome = "no error"
+        except Exception as e:  # noqa: BLE001
+            outcome = type(e).__name__
+        async with self:
+            self.result = f"own-var outside: {outcome}"
 
     @rx.event
     def peek(self):
@@ -143,6 +158,8 @@ def bg():
         rx.button("readonly", on_click=Child2.work_readonly, id="b_readonly"),
         rx.button("type", on_click=Child2.work_type, id="b_type"),
         rx.button("own outside", on_click=Child2.work_own_outside, id="b_own"),
+        rx.button("own var outside", on_click=Child2.work_own_var_outside, id="b_own_var"),
+        rx.text("own: ", rx.text.span(Child2.own, id="own")),
         rx.button("refresh", on_click=Child2.refresh, id="b_refresh"),
     )
 

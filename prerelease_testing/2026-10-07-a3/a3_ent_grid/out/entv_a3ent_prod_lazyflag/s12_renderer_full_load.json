@@ -1,0 +1,171 @@
+{
+"scenario": "s12_renderer_full_load",
+"measure": {
+"grids": {},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 178.70000000018626,
+"cellRenders": {
+"n": 0,
+"first_t": null,
+"without_reflex": 0,
+"by_src": {}
+},
+"path": "/renderer/",
+"heading": null
+},
+"measure_plus4s": {
+"grids": {},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 178.70000000018626,
+"cellRenders": {
+"n": 0,
+"first_t": null,
+"without_reflex": 0,
+"by_src": {}
+},
+"path": "/renderer/",
+"heading": null
+},
+"boot_frames": [
+{
+"t": 238.7,
+"dir": "ws_in",
+"len": 108,
+"head": "0{"
+},
+{
+"t": 309.7,
+"dir": "ws_out",
+"len": 346,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"event"
+],
+"auth_mentions_hydrate_and_load": true,
+"auth_event_name": "reflex___state____state.hydrate_and_load"
+},
+{
+"t": 351.4,
+"dir": "ws_in",
+"len": 40,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"sid"
+],
+"auth_mentions_hydrate_and_load": false
+},
+{
+"t": 445.3,
+"dir": "ws_out",
+"len": 5673,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"event_name": "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception",
+"payload_keys": [
+"component_stack",
+"info"
+]
+},
+{
+"t": 464.3,
+"dir": "ws_in",
+"len": 1829,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_",
+"rx_router_headers_rx_state_",
+"rx_router_page_rx_state_",
+"rx_router_route_id_rx_state_",
+"rx_router_session_rx_state_",
+"rx_router_url_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 465.2,
+"dir": "ws_in",
+"len": 88,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_"
+]
+},
+"final": null,
+"events": null
+}
+],
+"timeline": [
+"     32.3ms grid counts (headers, cells) {}",
+"     98.5ms grid counts (headers, cells) {\"w_renderer\": [0, 0, 0]}",
+"    178.7ms window.__reflex ASSIGNED (4 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3313/assets/root-B-2nJY7k.js:27:290",
+"    197.8ms ws_open_call {\"url\": \"ws://localhost:3313/_event/?token=07a6b074-5733-41c9-a3b7-a8f546ae1744&EIO=4&transport=websocket\"}",
+"    232.6ms ws_open {}",
+"    238.7ms ws_in {\"len\": 108}",
+"    309.7ms ws_out {\"len\": 346, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+"    351.4ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+"    445.3ms ws_out {\"len\": 5673, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"event_name\": \"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\", \"payload_keys\": [\"component_stack\", \"info\"]}",
+"    448.0ms grid counts (headers, cells) {}",
+"    464.3ms ws_in {\"len\": 1829, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    465.2ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}"
+],
+"console": [
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.446
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 0.447
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 0.447
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 0.447
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 0.447
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.447
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.448
+},
+{
+"type": "error",
+"text": "Error: Minified React error #130; visit https://react.dev/errors/130?args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.\n    at qi (http://localhost:3313/assets/entry.client-DzUM-MIw.js:8:30773)\n    at _ (http://localhost:3313/assets/entry.client-DzUM-MIw.js:8:43957)\n    at http://localhost:3313/assets/entry.client-DzUM-MIw.js:8:44814\n    at R (http://localhost:3313/assets/entry.client-DzUM-MIw.js:8:68338)\n    at ",
+"t": 0.449
+}
+],
+"pageerrors": [],
+"http_errors": [],
+"badges": 0
+}

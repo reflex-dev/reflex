@@ -1,0 +1,323 @@
+[start.sh] 2026-10-07T20:15:52Z venv=a3-ent (reflex=0.10.0a3 reflex-base=0.10.0a3 reflex-enterprise=0.9.7a5 reflex_from=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3-ent/lib/python3.12/site-packages/reflex/__init__.py) app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_ent_grid/runs/entr_a3ent_lazy mode=prod fp=3314 bp=3314 extra=REFLEX_FRONTEND_LAZY_BUNDLED_LIBRARIES=true
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Debug: Overriding config value frontend_lazy_bundled_libraries with env var 
+FRONTEND_LAZY_BUNDLED_LIBRARIES=true
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3-ent/lib/python3.12/site-packages/reflex_enterprise/config.py:22)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3-ent/lib/python3.12/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='entr', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3314', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=True, state_manager_mode=<StateManagerMode.DISK:
+'disk'>, redis_lock_expiration=10000, redis_lock_warning_threshold=1000, 
+redis_token_expiration=3600, _non_default_attributes={'app_name', 
+'telemetry_enabled', 'api_url', 'frontend_lazy_bundled_libraries', 'loglevel', 
+'disable_plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a3 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/a3-ent/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3314
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3314
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3314 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 3314 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 3314 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3-ent/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.65s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 22/21 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'ag-charts-enterprise@14.2.0', 
+'ag-grid-community@36.2.0', 'ag-grid-enterprise@36.2.0', 'ag-grid-react@36.2.0',
+'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_ent_grid/runs/entr_a3ent_lazy/reflex.lock/bun.lock
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_ent_grid/runs/entr_a3ent_lazy/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.01s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 450 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                               5.43 kB │ 
+Debug: 
+Debug: [plugin builtin:vite-reporter] 
+Debug: (!) Some chunks are larger than 500 kB after minification. Consider:
+Debug: - Using dynamic import() to code-split the application
+Debug: - Use build.rolldownOptions.output.codeSplitting to improve chunking: 
+https://rolldown.rs/reference/OutputOptions.codeSplitting
+Debug: - Adjust chunk size limit for this warning via 
+build.chunkSizeWarningLimit.
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/entr/entr.jsx:35:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m35 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/entr/entr.jsx:42:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m42 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: ✓ built in 2.17s
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 36 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 2 assets cleaned from React Router server build.
+Debug: build/server/assets/server-build-hRwrdUgk.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.93 kB │ 
+Debug: build/server/assets/server-build-hRwrdUgk.css            403.96 kB │ 
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+Debug: build/server/assets/reflex-env-D3K15OC-.js                 0.30 kB │ 
+Debug: build/server/index.js                                     84.10 kB │ 
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/entr/entr.jsx:35:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m35 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/entr/entr.jsx:42:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m42 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mapp_components/entr/entr.jsx is 
+dynamically imported by app/root.jsx but also statically imported by 
+app/routes/[detail2]._index.jsx, app/routes/[lit]._index.jsx, 
+app/routes/[memo2]._index.jsx, app/routes/[var]._index.jsx, dynamic import will 
+not move module into another chunk.
+Debug: 
+Debug: ✓ built in 544ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /detail2 -> build/client/detail2/index.html
+Debug: Prerender (html): /memo2 -> build/client/memo2/index.html
+Debug: Prerender (html): /other -> build/client/other/index.html
+Debug: Prerender (html): /lit -> build/client/lit/index.html
+Debug: Prerender (html): /var -> build/client/var/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:04
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/a3_ent_grid/runs/entr_a3ent_lazy/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/a3_ent_grid/runs/entr_a3ent_lazy/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3314/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 15454)
+[INFO] Listening at: http://0.0.0.0:3314
+[INFO] Spawning worker-1 with PID: 15728
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.entr___entr___v_state due to unpicklable object. This 
+state will not be persisted. Pickle error: Can't pickle local object 
+'lambda_cols.<locals>.<lambda>'. Consider `pip install 'dill>=0.3.8'` for more 
+exotic serialization support.")
+[Reflex Frontend Exception]
+ Error: Minified React error #130; visit 
+https://react.dev/errors/130?args[]=undefined&args[]= for the full message or 
+use the non-minified dev environment for full errors and additional helpful 
+warnings.
+Error: Minified React error #130; visit 
+https://react.dev/errors/130?args[]=undefined&args[]= for the full message or 
+use the non-minified dev environment for full errors and additional helpful 
+warnings.
+    at qi (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:30773)
+    at _ (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:43957)
+    at http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:44814
+    at R (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:68338)
+    at Xc (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:71932)
+    at _l (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:82740)
+    at Zd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:127857)
+    at Jd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:126940)
+    at qd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:126779)
+    at Fd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:123515)
+[Reflex Frontend Exception]
+ Error: Minified React error #130; visit 
+https://react.dev/errors/130?args[]=undefined&args[]= for the full message or 
+use the non-minified dev environment for full errors and additional helpful 
+warnings.
+Error: Minified React error #130; visit 
+https://react.dev/errors/130?args[]=undefined&args[]= for the full message or 
+use the non-minified dev environment for full errors and additional helpful 
+warnings.
+    at qi (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:30773)
+    at _ (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:43957)
+    at http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:44814
+    at R (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:68338)
+    at Xc (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:71932)
+    at _l (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:82740)
+    at Zd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:127857)
+    at Jd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:126940)
+    at qd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:126779)
+    at Fd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:123515)
+[Reflex Frontend Exception]
+ Error: Minified React error #130; visit 
+https://react.dev/errors/130?args[]=undefined&args[]= for the full message or 
+use the non-minified dev environment for full errors and additional helpful 
+warnings.
+Error: Minified React error #130; visit 
+https://react.dev/errors/130?args[]=undefined&args[]= for the full message or 
+use the non-minified dev environment for full errors and additional helpful 
+warnings.
+    at qi (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:30773)
+    at _ (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:43957)
+    at http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:44814
+    at R (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:68338)
+    at Xc (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:71932)
+    at _l (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:82740)
+    at Zd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:127857)
+    at Jd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:126940)
+    at qd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:126779)
+    at Fd (http://localhost:3314/assets/entry.client-DzUM-MIw.js:8:123515)
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.entr___entr___v_state due to unpicklable object. This 
+state will not be persisted. Pickle error: Can't pickle local object 
+'lambda_cols.<locals>.<lambda>'. Consider `pip install 'dill>=0.3.8'` for more 
+exotic serialization support.")
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

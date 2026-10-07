@@ -419,17 +419,24 @@ def run_entv(r: Runner, only: set[str] | None):
 
 def expand_first(r: Runner, wids: list[str]) -> dict:
     """Expand the first master row of each master/detail grid and describe its detail grid."""
+    failed = {}
     for wid in wids:
-        r.page.locator(f"#{wid} .ag-group-contracted").first.click()
-    time.sleep(2.5)
-    return r.page.evaluate("""(ids) => Object.fromEntries(ids.map((id) => {
+        try:
+            r.page.locator(f"#{wid} .ag-group-contracted").first.click(timeout=8000)
+        except Exception as e:  # noqa: BLE001  (e.g. the page crashed into the error boundary)
+            failed[wid] = f"expand failed: {type(e).__name__}"
+            print(f"   {wid}: {failed[wid]}", flush=True)
+        time.sleep(1.0)
+    time.sleep(1.5)
+    return r.page.evaluate("""([ids, failed]) => Object.fromEntries(ids.map((id) => {
         const el = document.getElementById(id);
+        if (!el) return [id, {missing: true, failed: failed[id] || null, body: document.body.innerText.slice(0, 120)}];
         const det = el.querySelector(".ag-details-row");
         return [id, {detail_rows: el.querySelectorAll(".ag-details-row").length,
                      detail_headers: det ? Array.from(det.querySelectorAll(".ag-header-cell")).map((e) => e.innerText.trim()) : null,
                      detail_cells: det ? Array.from(det.querySelectorAll(".ag-cell")).map((e) => e.innerText.trim()) : null,
-                     detail_badges: det ? det.querySelectorAll(".rt-Badge").length : null}];
-    }))""", wids)
+                     detail_badges: det ? det.querySelectorAll(".rt-Badge").length : null, failed: failed[id] || null}];
+    }))""", [wids, failed])
 
 
 def run_entr(r: Runner, only: set[str] | None):

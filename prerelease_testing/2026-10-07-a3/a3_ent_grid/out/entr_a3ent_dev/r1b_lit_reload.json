@@ -1,0 +1,394 @@
+{
+"scenario": "r1b_lit_reload",
+"measure": {
+"grids": {
+"w_lit": {
+"headers": [
+"L:make",
+"L:price",
+"L:double",
+"L:tip",
+"L:memo",
+"L:trace"
+],
+"cells": 24,
+"rows": 0,
+"badges": 8,
+"memo_badges": 4,
+"tip_texts": 4,
+"pinned_top_rows": 1,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"t-0: make=\"PINNED\" | price=$99 | double=198 | tip=\"XX\" | memo=memo:PINNED | trace=T:PINNED",
+"0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
+"1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
+"2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
+]
+},
+"w_lit_group": {
+"headers": [
+"Group",
+"Make",
+"sum(Price)"
+],
+"cells": 15,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 4,
+"cheap_cells": 0,
+"row_texts": [
+"0: ag-Grid-AutoColumn=US\n(2) | make= | price=3",
+"1: ag-Grid-AutoColumn= | make=Tesla | price=1",
+"2: ag-Grid-AutoColumn= | make=Ford | price=2",
+"3: ag-Grid-AutoColumn=JP\n(1) | make= | price=3",
+"4: ag-Grid-AutoColumn= | make=Toyota | price=3"
+]
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 614.6000000000931,
+"cellRenders": {
+"n": 8,
+"first_t": 758.1000000000931,
+"without_reflex": 0,
+"by_src": {
+"literal": 8
+}
+},
+"path": "/lit",
+"heading": "entr lit"
+},
+"measure_plus4s": {
+"grids": {
+"w_lit": {
+"headers": [
+"L:make",
+"L:price",
+"L:double",
+"L:tip",
+"L:memo",
+"L:trace"
+],
+"cells": 24,
+"rows": 0,
+"badges": 8,
+"memo_badges": 4,
+"tip_texts": 4,
+"pinned_top_rows": 1,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"t-0: make=\"PINNED\" | price=$99 | double=198 | tip=\"XX\" | memo=memo:PINNED | trace=T:PINNED",
+"0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
+"1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
+"2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
+]
+},
+"w_lit_group": {
+"headers": [
+"Group",
+"Make",
+"sum(Price)"
+],
+"cells": 15,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 4,
+"cheap_cells": 0,
+"row_texts": [
+"0: ag-Grid-AutoColumn=US\n(2) | make= | price=3",
+"1: ag-Grid-AutoColumn= | make=Tesla | price=1",
+"2: ag-Grid-AutoColumn= | make=Ford | price=2",
+"3: ag-Grid-AutoColumn=JP\n(1) | make= | price=3",
+"4: ag-Grid-AutoColumn= | make=Toyota | price=3"
+]
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 614.6000000000931,
+"cellRenders": {
+"n": 8,
+"first_t": 758.1000000000931,
+"without_reflex": 0,
+"by_src": {
+"literal": 8
+}
+},
+"path": "/lit",
+"heading": "entr lit"
+},
+"boot_frames": [
+{
+"t": 583.1,
+"dir": "ws_in",
+"len": 108,
+"head": "0{"
+},
+{
+"t": 614.3,
+"dir": "ws_out",
+"len": 296,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"event"
+],
+"auth_mentions_hydrate_and_load": true,
+"auth_event_name": "reflex___state____state.hydrate_and_load"
+},
+{
+"t": 625.3,
+"dir": "ws_in",
+"len": 40,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"sid"
+],
+"auth_mentions_hydrate_and_load": false
+},
+{
+"t": 695.9,
+"dir": "ws_in",
+"len": 1790,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_",
+"rx_router_headers_rx_state_",
+"rx_router_page_rx_state_",
+"rx_router_route_id_rx_state_",
+"rx_router_session_rx_state_",
+"rx_router_url_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 696.2,
+"dir": "ws_in",
+"len": 88,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_"
+]
+},
+"final": null,
+"events": null
+}
+],
+"timeline": [
+"     30.9ms grid counts (headers, cells) {}",
+"    532.6ms ws_open_call {\"url\": \"ws://localhost:8312/_event/?token=cb736b25-0e33-4d16-88fa-8637e5f6de9a&EIO=4&transport=websocket\"}",
+"    582.3ms ws_open {}",
+"    583.1ms ws_in {\"len\": 108}",
+"    614.3ms ws_out {\"len\": 296, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+"    614.6ms window.__reflex ASSIGNED (6 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3312/app/root.jsx:28:21 |     at Object.react_stack_bottom_frame (http://localhost:3312/node_modules/.vite/deps/react-dom_client.js?v=f600aead:14178:13) |     at runWithFiberInDEV (http://localhost:3312/node_modules/.vite/deps/react-dom_client",
+"    625.3ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+"    695.9ms ws_in {\"len\": 1790, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    696.2ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    758.1ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    758.2ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    760.0ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    760.0ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    761.3ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    761.3ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    768.1ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    768.1ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    787.2ms grid counts (headers, cells) {\"w_lit\": [6, 24, 8], \"w_lit_group\": [3, 15, 0]}"
+],
+"console": [
+{
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"t": 0.012
+},
+{
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"t": 0.087
+},
+{
+"type": "debug",
+"text": "[vite] connecting...",
+"t": 0.516
+},
+{
+"type": "debug",
+"text": "[vite] connected.",
+"t": 0.593
+},
+{
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"t": 0.795
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.796
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 0.797
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 0.797
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 0.797
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 0.797
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.797
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.797
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.798
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 0.798
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 0.8
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 0.801
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 0.801
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.801
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.801
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.802
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 0.802
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 0.802
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 0.802
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 0.802
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.802
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.802
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.803
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 0.803
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 0.803
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 0.803
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 0.804
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.804
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.804
+},
+{
+"type": "warning",
+"text": "AG Grid: warning #306 As of v36.2, `tooltipField` is deprecated. Use `tooltip` with a callback instead. \nSee https://www.ag-grid.com/react-data-grid/errors/306?_version_=36.2.0&version=36.2&name=tooltipField&message=Use+%60tooltip%60+with+a+callback+instead.",
+"t": 0.804
+}
+],
+"pageerrors": [],
+"http_errors": [],
+"tooltip_after_hover": [
+"tooltip"
+]
+}

@@ -1,0 +1,1364 @@
+{
+"name": "ag_features-a3_ent_grid-demo",
+"python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+"checks": [
+{
+"t": 11.79,
+"name": "master-detail[state-vars-grid]: expanding row 0 shows detail grid",
+"ok": true,
+"detail": "Count\nDescription\n10\nStock Level\n5\nOrders Today\n25\nTotal Sales"
+},
+{
+"t": 14.09,
+"name": "master-detail[static-objects-grid]: expanding row 0 shows detail grid",
+"ok": true,
+"detail": "Count\nDescription\n10\nStock Level\n5\nOrders Today\n25\nTotal Sales"
+},
+{
+"t": 20.3,
+"name": "tree: top-level groups are folders (combine hosts on)",
+"ok": true,
+"detail": [
+"Desktop",
+"Documents",
+"Pictures",
+"Videos",
+"Downloads"
+]
+},
+{
+"t": 21.33,
+"name": "tree: expanding Documents shows Work/Personal",
+"ok": true,
+"detail": [
+"Work",
+"Personal"
+]
+},
+{
+"t": 21.33,
+"name": "tree: aggregated size uses JS value_formatter (MB/KB)",
+"ok": true,
+"detail": "7.91 MB"
+},
+{
+"t": 24.1,
+"name": "tree: toggling Combine Hosts re-keys grid with hosts at top level",
+"ok": true,
+"detail": [
+"vali",
+"vidar"
+]
+},
+{
+"t": 25.73,
+"name": "tree: Save column state writes LocalStorage var",
+"ok": true,
+"detail": {
+"reflex___state____state.ag_grid___tree____grid_state.column_state_json_rx_state_": "[{\"colId\": \"ag-Grid-AutoColumn\", \"width\": 280, \"hide\": false, \"pinned\": null, \"sort\": null, \"sortType\": null, \"sortIndex"
+}
+},
+{
+"t": 25.73,
+"name": "tree: Load column state button enabled after save (computed var from LocalStorage)",
+"ok": true,
+"detail": true
+},
+{
+"t": 32.49,
+"name": "tree: Load column state still enabled after reload",
+"ok": true,
+"detail": ""
+},
+{
+"t": 41.75,
+"name": "pivot: pivot headers by sport (virtualised) with sum(Gold) value columns",
+"ok": false,
+"detail": ""
+},
+{
+"t": 41.76,
+"name": "pivot: rows grouped by country",
+"ok": false,
+"detail": []
+},
+{
+"t": 41.96,
+"name": "pivot: pivot panel + columns side bar visible",
+"ok": false,
+"detail": ""
+},
+{
+"t": 59.33,
+"name": "cell-selection: range drag fires on_cell_selection_changed(finished) -> toast",
+"ok": true,
+"detail": [
+"Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]",
+"Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]"
+]
+},
+{
+"t": 59.33,
+"name": "cell-selection: highlighted cells match reported range (3 rows x 2 cols)",
+"ok": true,
+"detail": 6
+},
+{
+"t": 74.06,
+"name": "fill-handle: handle visible on selected cell",
+"ok": true,
+"detail": {
+"x": 367,
+"y": 590,
+"width": 6,
+"height": 6
+}
+},
+{
+"t": 76.45,
+"name": "fill-handle: dragging fills rows 1-2 and fires on_cell_value_changed toasts",
+"ok": true,
+"detail": {
+"ages": [
+"23",
+"23",
+"23",
+"25"
+],
+"toasts": [
+"Updated age: 23",
+"Updated age: 23"
+]
+}
+},
+{
+"t": 80.75,
+"name": "fill-handle: filled values persisted in State across reload",
+"ok": true,
+"detail": {
+"before_reload": [
+"23",
+"23",
+"23",
+"25"
+],
+"after_reload": [
+"23",
+"23",
+"23",
+"25"
+]
+}
+},
+{
+"t": 84.9,
+"name": "clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event",
+"ok": false,
+"detail": {
+"golds": [
+"8",
+"6",
+"4",
+"1",
+"2"
+],
+"toasts": []
+}
+},
+{
+"t": 94.51,
+"name": "aligned: both grids show data",
+"ok": true,
+"detail": ""
+},
+{
+"t": 95.93,
+"name": "aligned: expanding Medals group in grid1 also expands grid2",
+"ok": true,
+"detail": {
+"before": [
+0,
+0
+],
+"after": [
+1,
+1
+]
+}
+},
+{
+"t": 98.24,
+"name": "aligned: resizing athlete column in grid1 resizes grid2",
+"ok": true,
+"detail": {
+"w1_before": 200,
+"w1_after": 318,
+"w2_after": 318
+}
+},
+{
+"t": 109.61,
+"name": "editable: edit fires on_cell_value_changed toast",
+"ok": true,
+"detail": [
+"Cell value changed: name = Johnny"
+]
+},
+{
+"t": 113.91,
+"name": "editable: edited value persisted in State across reload",
+"ok": true,
+"detail": [
+"Johnny",
+"Anna",
+"Mike"
+]
+},
+{
+"t": 121.54,
+"name": "state-grid: Load Columns sets header_name/headerName from State",
+"ok": true,
+"detail": [
+"",
+"DIR",
+"STR",
+"HZ"
+]
+},
+{
+"t": 123.77,
+"name": "state-grid: data loaded with JS value_formatter suffix",
+"ok": true,
+"detail": [
+{
+"idx": 0,
+"id": "0",
+"sel": "true",
+"val": "0.5 Hz"
+},
+{
+"idx": 1,
+"id": "1",
+"sel": "true",
+"val": "0.6 Hz"
+}
+]
+},
+{
+"t": 123.77,
+"name": "state-grid: on_row_data_updated event chain selected all rows (select_all_on_load)",
+"ok": true,
+"detail": [
+"true",
+"true",
+"true",
+"true",
+"true"
+]
+},
+{
+"t": 123.85,
+"name": "state-grid: chained set_select_all_on_load(False) reset the switch",
+"ok": true,
+"detail": "unchecked"
+},
+{
+"t": 125.24,
+"name": "state-grid: Clear Data empties grid",
+"ok": true,
+"detail": ""
+},
+{
+"t": 126.48,
+"name": "state-grid: Clear Columns removes headers",
+"ok": true,
+"detail": []
+},
+{
+"t": 135.76,
+"name": "selected-items: Select All -> on_selection_changed -> State count",
+"ok": true,
+"detail": "Selected Items (128)"
+},
+{
+"t": 140.17,
+"name": "selected-items: tags input 'n' -> upper-cased key -> select_rows_by_key(direction=N)",
+"ok": true,
+"detail": {
+"heading": "Selected Items (8)",
+"visible_selected_N_rows": 2
+}
+},
+{
+"t": 157.3,
+"name": "integrated-charts: chart range -> chart dialog with canvas",
+"ok": true,
+"detail": 1
+},
+{
+"t": 164.12,
+"name": "row_id_key: getRowId uses data.uid",
+"ok": false,
+"detail": []
+},
+{
+"t": 164.51,
+"name": "pinned rows (new names pinned_top_row_data/pinned_bottom_row_data)",
+"ok": false,
+"detail": {
+"top": [],
+"bottom": []
+}
+},
+{
+"t": 164.52,
+"name": "pinned rows (legacy aliases pinned_row_top_data/pinned_row_bottom_data)",
+"ok": false,
+"detail": {
+"top": [],
+"bottom": []
+}
+},
+{
+"t": 164.53,
+"name": "suppress_overlays=['noRows'] hides the no-rows overlay (default grid shows it)",
+"ok": false,
+"detail": {
+"default": [],
+"suppressed": []
+}
+},
+{
+"t": 164.54,
+"name": "value_formatter string renders 'N units'",
+"ok": false,
+"detail": []
+},
+{
+"t": 164.54,
+"name": "custom JS cell renderer (rx.badge via ArgsFunctionOperation) renders",
+"ok": false,
+"detail": []
+},
+{
+"t": 166.79,
+"name": "row_id_key: prepending a row keeps stable ids",
+"ok": true,
+"detail": [
+"u-4",
+"u-1",
+"u-2",
+"u-3"
+]
+},
+{
+"t": 168.02,
+"name": "row_id_key: immutable State update bumps u-2 in place",
+"ok": true,
+"detail": {
+"u-4": "4 units",
+"u-1": "1 units",
+"u-2": "12 units",
+"u-3": "3 units"
+}
+},
+{
+"t": 170.81,
+"name": "select cell editor edit -> on_cell_value_changed node_id == row_id_key uid -> State",
+"ok": true,
+"detail": {
+"edits": "edits: u-1:status->doing",
+"badge": "S:doing"
+}
+},
+{
+"t": 173.2,
+"name": "clipboard (ClipboardModule): Ctrl+C copies cell, Ctrl+V pastes + fires on_cell_value_changed",
+"ok": true,
+"detail": {
+"clipboard": "10",
+"b": [
+"10",
+"20",
+"10"
+],
+"log": "clip: 2:b=10"
+}
+},
+{
+"t": 180.37,
+"name": "memo grid: column defs from State.fields.foreach",
+"ok": false,
+"detail": []
+},
+{
+"t": 185.11,
+"name": "memo grid: on_cell_clicked inside @rx.memo reaches State",
+"ok": true,
+"detail": "clicked: name=beta"
+},
+{
+"t": 186.49,
+"name": "memo grid: toggling State field list adds Status column",
+"ok": true,
+"detail": [
+"Name",
+"Qty",
+"Status"
+]
+},
+{
+"t": 188.4,
+"name": "ComponentState grids: instance A grows independently of B",
+"ok": true,
+"detail": {
+"a": "rows: 3",
+"b": "rows: 1",
+"rows_a": 3,
+"rows_b": 1
+}
+},
+{
+"t": 194.62,
+"name": "ComponentState grids: state survives reload",
+"ok": true,
+"detail": 3
+}
+],
+"notes": [
+"guard: 0.10.0a3 0.9.7a5"
+],
+"summary": {
+"checks_failed": [
+"pivot: pivot headers by sport (virtualised) with sum(Gold) value columns",
+"pivot: rows grouped by country",
+"pivot: pivot panel + columns side bar visible",
+"clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event",
+"row_id_key: getRowId uses data.uid",
+"pinned rows (new names pinned_top_row_data/pinned_bottom_row_data)",
+"pinned rows (legacy aliases pinned_row_top_data/pinned_row_bottom_data)",
+"suppress_overlays=['noRows'] hides the no-rows overlay (default grid shows it)",
+"value_formatter string renders 'N units'",
+"custom JS cell renderer (rx.badge via ArgsFunctionOperation) renders",
+"memo grid: column defs from State.fields.foreach"
+],
+"n_checks": 47,
+"console_total": 430,
+"console_benign": 414,
+"console_errors": 0,
+"console_warnings": 0,
+"page_errors": 0,
+"failed_requests": 0,
+"http_errors": 0
+},
+"anomalies": {
+"console_errors": [],
+"console_warnings": [],
+"page_errors": [],
+"failed_requests": [],
+"http_errors": []
+},
+"console_all": [
+{
+"t": 1.51,
+"ctx": "master_detail",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/master-detail",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 5.28,
+"ctx": "master_detail",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 6.05,
+"ctx": "master_detail",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 6.19,
+"ctx": "master_detail",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/node_modules/.vite/deps/react-dom_client.js?v=83d6d72f",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 8.1,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.1,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.1,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.1,
+"ctx": "master_detail",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 8.15,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.54,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 9.55,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.06,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.06,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.06,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.06,
+"ctx": "master_detail",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.06,
+"ctx": "master_detail",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.06,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.06,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.06,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.06,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.07,
+"ctx": "master_detail",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.07,
+"ctx": "master_detail",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.07,
+"ctx": "master_detail",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.07,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.07,
+"ctx": "master_detail",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/master-detail",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+"... 370 more (full file in the scratch out dir)"
+]
+}

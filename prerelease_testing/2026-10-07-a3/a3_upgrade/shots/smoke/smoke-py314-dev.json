@@ -1,0 +1,187 @@
+{
+ "tag": "smoke-py314-dev",
+ "results": [
+  {
+   "name": "GET / 200",
+   "status": "pass",
+   "detail": "200",
+   "t": 2.954
+  },
+  {
+   "name": "welcome page renders",
+   "status": "pass",
+   "detail": "Welcome to Reflex!\n\nGet started by editing app/app.py\n\nCheck out our docs!",
+   "t": 3.35
+  },
+  {
+   "name": "colour-mode button toggles",
+   "status": "pass",
+   "detail": "'light light' -> 'dark dark'",
+   "t": 6.954
+  },
+  {
+   "name": "colour mode survives reload",
+   "status": "pass",
+   "detail": "'dark dark'",
+   "t": 9.12
+  },
+  {
+   "name": "unknown route answers 404",
+   "status": "fail",
+   "detail": "200",
+   "t": 9.218
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 9.312
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 9.312
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 2.689,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 2.898,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 2.957,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 3.34,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 7.006,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 7.072,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 7.109,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 9.117,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 9.117,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 9.126,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 9.166,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 9.203,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 9.219,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 9.219,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 2.959,
+   "dir": "open",
+   "payload": "ws://localhost:8236/_event/?token=26ce45d2-57ce-453a-9f4a-197046d3c71a&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 3.0,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"RY2dA3uuuws9EMGZAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 3.34,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"aa05309e87fa25d9\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 3.341,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"GcoC-8QiKHu-Yu-OAAAB\"}"
+  },
+  "{\"page\": \"main\", \"t\": 3.342, \"dir\": \"in\", \"len\": 1784, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8236\\\",\\\"origin\\\":\\\"http://localhost:3236\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_vers...",
+  {
+   "page": "main",
+   "t": 3.342,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 7.014,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 7.014,
+   "dir": "close",
+   "payload": ""
+  },
+  "... 10 more frames trimmed"
+ ],
+ "notes": {}
+}

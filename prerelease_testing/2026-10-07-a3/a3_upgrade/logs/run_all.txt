@@ -1,3 +1,9 @@
 === seq_guide start 20:21:49
 === seq_guide exit=0 20:26:22
 no listeners on: 80 ports checked
+=== seq_smoke start 20:26:31
+=== seq_smoke exit=0 20:28:16
+no listeners on: 80 ports checked
+=== seq_fd start 20:28:34
+=== seq_fd exit=0 20:35:56
+no listeners on: 80 ports checked
