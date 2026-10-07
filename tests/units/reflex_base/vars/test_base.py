@@ -738,6 +738,57 @@ def test_class_assignment_calls_declared_factory_only_for_frontend_strings():
     assert (state.items, state.label, state._label) == ([2], "assigned", "assigned")
 
 
+def test_failed_class_assignment_leaves_the_default_in_place():
+    """Cleaning up after a failed patch keeps the configured default.
+
+    A failed assignment adds an undo entry that restores what it left in
+    place, so the cleanup of a patching tool, which re-assigns the saved field
+    or deletes the attribute, does not undo an earlier assignment.
+    """
+
+    class ConfigState(BaseState):
+        _value: int = 0
+
+    class ChildState(ConfigState):
+        pass
+
+    ConfigState._value = 5
+    with (
+        pytest.raises(TypeError, match="Invalid default"),
+        mock.patch.object(ConfigState, "_value", "invalid"),
+    ):
+        pass
+    assert ConfigState()._value == 5
+
+    # Through a subclass the cleanup deletes the attribute instead.
+    with (
+        pytest.raises(TypeError, match="Invalid default"),
+        mock.patch.object(ChildState, "_value", "invalid"),
+    ):
+        pass
+    assert ChildState()._value == 5
+
+    def failing() -> int:
+        """Stand in for a factory that cannot run.
+
+        Raises:
+            RuntimeError: Always.
+        """
+        msg = "cannot run"
+        raise RuntimeError(msg)
+
+    with (
+        pytest.raises(TypeError, match="failed"),
+        mock.patch.object(ConfigState, "_value", failing),
+    ):
+        pass
+    assert ConfigState()._value == 5
+
+    # The successful assignment is still the one a later undo restores.
+    del ConfigState._value
+    assert ConfigState()._value == 0
+
+
 def test_class_assignment_delattr_restores_default():
     """Deleting a var through its class restores its previous default, keeping the field."""
 

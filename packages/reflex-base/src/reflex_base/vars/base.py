@@ -4132,6 +4132,15 @@ class Field(Generic[FIELD_TYPE]):
         if replaced := self.__dict__.get(_REPLACED_DEFAULTS_ATTR):
             self.default, self.default_factory = replaced.pop()
 
+    def _keep_default(self) -> None:
+        """Record a failed class assignment, which leaves the default in place.
+
+        A patching tool whose assignment failed still undoes it, by assigning
+        the saved field back or deleting the attribute; that then restores the
+        default that was in place rather than an earlier one.
+        """
+        self._assign_default(self.default, self.default_factory)
+
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
 
@@ -4860,7 +4869,9 @@ class BaseStateMeta(ABCMeta):
         a browser storage default, or of the value a frontend var's declared
         default factory produces, which is called once to find them. Assigning
         the field itself, or the Var read through the class, undoes the most
-        recent assignment, as patching tools do to restore what they saved.
+        recent assignment, as patching tools do to restore what they saved; a
+        failed assignment is undone the same way and leaves the default as it
+        was.
 
         Args:
             name: The class attribute being assigned.
@@ -4889,6 +4900,7 @@ class BaseStateMeta(ABCMeta):
             try:
                 default = value()
             except Exception as err:
+                declared._keep_default()
                 msg = f"Default factory for field '{name}' failed: {err}"
                 raise TypeError(msg) from err
             if inspect.iscoroutine(default):
@@ -4903,6 +4915,7 @@ class BaseStateMeta(ABCMeta):
             # and the browser supplies later values, so the value produced once
             # here is the default rather than the factory.
         if not accepted:
+            declared._keep_default()
             msg = (
                 f"Invalid default for field '{name}': expected "
                 f"{declared.outer_type_}, got {default!r} of type {type(default)}."
