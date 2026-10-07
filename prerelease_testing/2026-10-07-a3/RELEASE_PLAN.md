@@ -29,6 +29,7 @@ No upgrade regression 0.9.12 → a3 or a2 → a3; F-002/F-003/F-004 stay fixed; 
   stable" arm (0.9.12 storms 9/10), but #7493 reintroduced it in a release that had removed it, it burns server CPU indefinitely, and the
   fix is local to the boot echo (do not re-send a client-storage value the browser itself just sent, or have the frontend skip an echo of
   the value it sent at boot). **Maintainer decision:** fix in 0.10.0, or ship with 0.9.12 parity and file it with A3-12.
+  **Decided 10-07:** fix it — prototype on `claude/a3-11-storage-echo` (frontend only, also ends the A3-12 ping-pong); PR to follow.
 - **A3-01** (LOW, regression vs a2; CONFIRMED) — trivially small arm: in `BaseStateMeta.__setattr__`, push the "kept default" undo entry
   before `_keep_client_storage` / `_accepts_default` can raise (so a rejected `mock.patch.object` / pytest-mock patch round-trips), and
   make `__delattr__` and the identity restore pop only an entry that the same patch pushed. The docs already promise the round trip.
