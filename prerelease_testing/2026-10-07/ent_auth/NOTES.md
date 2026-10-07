@@ -1,6 +1,7 @@
 # Cluster `ent_auth` — enterprise OIDC / MCP / maps on reflex 0.10.0a2 + offline reflex-enterprise 0.9.7a4
 
 Status: COMPLETE (2026-10-07 ~12:40 UTC). Section "Results" at the end is the summary; issue write-ups follow it.
+Log files larger than 40 KB are stored gzipped in `logs/` (`foo.json` → `foo.json.gz`); the names below omit `.gz`.
 
 This cluster was resumed from a previous agent that was cut off by a spend limit. Its evidence
 (xtab cross-tab-logout matrix, first `drive_auth_redis.py` run) was kept in `logs/` and is analysed
@@ -274,3 +275,169 @@ still is not. So the enterprise delta filter only sees the user when `AuthUserSt
 loaded in the background task's state tree (`_userinfo_for_state` → "None when … the substate is not
 loaded"). `apps/entauth/` in DEST contains this patched version; the version used for every earlier run is
 `apps/entauth_original_entauth.py.txt` (identical except for `fill_loaded` + its button).
+
+MCP with the DEFAULT 9 prod workers (Redis), `check_mcp_anon.py http://localhost:8341 a2-prod-redis-9w`
+(`logs/mcp-anon-a2-prod-redis-9w.{out,json}`): identical to the 1-worker run — sessions, background tool,
+upload ticket (200), per-handler rate limit (3 then refused), 2×20 parallel bumps = exactly 40. MCP is
+not affected by the lazy-route problem above (its routes are registered at app build).
+
+## 9. Previous campaign's auth matrix (10-05 a4 drivers) on 0.10.0a2 + offline wheel
+
+`scripts/a4_matrix.sh ent_auth2-drv a2` (dev, memory state manager, as on 10-05; mock IdP on 8358; the
+servers ran from `ent_auth2-drv` = the alpha2 graph + playwright). Results under `apps/a4auth/logs/a2/`.
+
+| part | 0.10.0a2 | a1 (10-05 record) |
+|---|---|---|
+| full upstream auth app, 22 browser cases (`drive_auth.py`) | **22/22** | 22/22 |
+| focused public nav + 2 reloads (`recheck_reload.py`) | **3/3** | 3/3 |
+| `auth_min` default `AuthPlugin` (`drive_auth_min.py`) | **4/4** | 4/4 |
+| `auth_min` `AUTH_TEST_EXTRA_SCOPES=1` | **4/4** | 4/4 |
+| default-scope iframe pending replay (`recheck_iframe.py`) | **3/3** | 3/3 |
+| **total** | **36/36** | 36/36 |
+| MCP OAuth (`check_mcp_oauth.py`: discovery, registration, browser consent, PKCE, protected event, code replay, refresh rotation) | pass | pass |
+| anonymous MCP (`check_mcp.py`, components app backend-only :8346) | pass | pass |
+
+0 page errors, 0 HTTP errors in every matrix; console errors are only the mock IdP's (pico.css tunnel,
+favicon 404); failed requests are the known cookie-sync keepalive `ERR_ABORTED` (21/10/11, same order as
+10-05's 21/9/10) and 2 dev route-module aborts. No `Traceback` in any server log.
+Harness note: `reflex run --backend-only` refuses to start when `rxconfig.py` sets `frontend_port`
+("Cannot specify --frontend-port when not running frontend.") — same on 0.9.12, so the components
+rxconfig simply has no frontend_port.
+
+## 10. Maps (`apps/mapsapp`, `scripts/drive_maps.py <base> <label>`)
+
+Dev 3344/8344 and PROD 8345 (default 9 workers), both with Redis; baseline 0.9.12 + wheel dev.
+
+| check | a2 dev | a2 prod (9 workers) | 0.9.12 dev |
+|---|---|---|---|
+| 200 `circle_marker`s from `rx.foreach` over a State list | pass | pass | pass |
+| drag marker → `dragend` → State (`last_drag` = new lat/lng; marker stays where dropped; second drag) | pass | pass | pass |
+| no-arg `dragend` handler, marker `on_click` | pass | pass | pass |
+| background task rotates all 200 markers every 1 s for 8 s: tick 1..8 live, 8 distinct path geometries, always 200 paths, 0 long tasks | pass | pass | pass |
+| drag while the ticker runs; reload restores tick=16 + dragged position | pass | pass | pass |
+| `rxe.map.layers_control` renders | pass | pass | pass |
+| base layer switch OSM ↔ Topo and overlay circle toggle, driven from State (`rx.cond`) + reload | pass | pass | pass |
+| `on_layeradd` fires when a layer is added | **no** (no websocket event at all) | **no** | **no** |
+| geolocation denied (`permissions=[]`) → `on_locationerror` "code=1 … User denied Geolocation." | pass | pass | pass |
+| geolocation granted → `on_locationfound` 48.8566,2.3522 | pass | pass | pass |
+| total | 16/17 | 16/17 | 16/17 |
+
+Logs `logs/maps-{a2-dev-redis,a2-prod-redis,s912w-dev-redis}.{out,json}`, screenshots `*-maps-*.png`.
+Observations (all pre-existing, enterprise side):
+- `LayersControl.BaseLayer` / `.Overlay` are not exposed by `rxe.map` (`layers_control_base_layer` is
+  commented out, "will be implemented in a future update"). Using the importable classes
+  (`reflex_enterprise.components.map.controls.LayersControlBaseLayer`) compiles to
+  `const LayersControl.BaseLayer = ClientSide(...)` — invalid JS — and in dev EVERY route then 500s
+  (vite transform error, `logs/maps-dev-redis-a2.log` first start). Identical codegen on 0.9.12, 0.10.0a1,
+  0.10.0a2: `scripts/layers_dynimport_check.py` → `logs/layers-dynimport-check.out`. The original page is
+  kept as `apps/mapsapp_with_baselayers.py.txt`.
+- `on_layeradd` / `on_layerremove` (MapConsumer → Leaflet `layeradd`) never reach the backend
+  (`scripts/layeradd_debug.py`, `logs/layeradd-debug-a2-dev.out`): only `set_base` is sent.
+- `rxe.map(id=...)` does not set a DOM id on the Leaflet container (the id keys the JS map ref used by
+  `rxe.map.api(id)`), so page tests must select `.leaflet-container`.
+- External tiles are blocked by the sandbox proxy (ERR_TUNNEL_CONNECTION_FAILED) — tile `<img>` src
+  switching is what is asserted.
+- After the broken first start, the next dev start served `504 Outdated Optimize Dep` once (vite
+  dep-optimizer refresh after the failed scan) — normal vite dev behaviour, gone on reload.
+
+## Misc observations
+
+- `[ERROR] Unexpected exit from worker-1` is printed by granian on every Ctrl-C/SIGINT shutdown, on
+  0.9.12 as well — shutdown noise.
+- The previous agent's processes (pids in `pids.txt`) were already gone (machine restarted); all
+  ports in 3340-3359/8340-8359 were free at start.
+- `logs/` files larger than 40 KB are stored gzipped in this directory (`zcat`).
+
+## Results
+
+PASS
+- OIDC on Redis dev + prod(1 worker): login, protected events (sync/async auth checks), reload from Redis,
+  inherited-list background mutation persisted (#7312), public nav + reloads keep protected sync/async
+  computed vars (#252), logout via end_session, Bob after Alice with no leak in page/storage/Redis.
+- extra_scopes (offline_access, address) dev + prod: scope sent, refresh works.
+- #7460 × enterprise auth: no empty/default token hash written, no token cookie deleted on any protected
+  page load / reload / new tab (dev + prod).
+- MCP anonymous + OAuth on Redis dev, prod 1 worker, prod 9 workers; parallel sessions; background tool;
+  rate limits; uploads; consent/IdP deny; refresh/revoke.
+- 10-05 a4 auth matrix: 36/36 + both MCP checks.
+- Maps dev + prod: 16/17 (the one miss is pre-existing).
+- Proactive token refresh with 75 s tokens.
+
+FAIL / ANOMALY
+- REGRESSION (since 0.10.0a1, still in a2): cross-tab logout unreliable; boot hydration skips the
+  enterprise hash reconciliation (§2).
+- Pre-existing (0.9.12 identical): prod multi-worker cookie-sync 405 (§7); background-task deltas on
+  protected states withheld (§3, workaround: load AuthUserState in every `async with self`); expired /
+  revoked tokens keep authorizing until userinfo cache/refresh (§5); IdP key rotation breaks all logins
+  until app restart (§5); scope-denied MCP handler reports success (§6); maps LayersControl base/overlay
+  unusable + `on_layeradd` never fires (§10).
+
+## Not covered
+- Two-provider (`AUTH_MULTI=1`) variant; iframe flows only via the a4 drivers (dev).
+- Prod run of the a4 matrix (only the entauth suite ran in prod).
+- Redis restart mid-session (F-017 territory).
+
+## Issues (reproduction)
+
+Common setup for all repros (paths are hardcoded in the scripts: `W` in `scripts/common.py`,
+`scripts/*.sh`; to rerun elsewhere copy `apps/entauth`, `apps/mapsapp` and `scripts/` into
+`$SB/apps/ent_auth2/` or edit `W`):
+```sh
+SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad; W=$SB/apps/ent_auth2
+$W/scripts/infra.sh start                                   # redis :8349 + mock IdP :8358
+VENV=alpha2-ent APP_DIR=entauth $W/scripts/start_app.sh dev $W/logs/repro.log
+$W/scripts/wait_ready.sh http://localhost:3340/ http://localhost:8340 360
+cd $W/scripts; export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1; PY=$SB/envs/driver/bin/python
+# baselines: VENV=ent_auth2-s912w APP_DIR=entauth_s912 / VENV=ent_auth2-a1w APP_DIR=entauth_a1 (identical copies)
+```
+
+### I-1 (HIGH, REGRESSION since 0.10.0a1): logging out in one tab leaves the user's other open tabs signed in
+- `$PY xtab_probe.py http://localhost:3340 a2 5` → `TAB1_LOGGED_OUT 3 / 5` (a1: 2/6, 0.9.12: 6/6).
+- Deterministic: `$PY stale_hash_probe.py http://localhost:3340 a2 3` →
+  `CORRECTED {"anon_boot": [0, 3], "loggedin_boot": [0, 3], "live_update": [3, 3]}`; 0.9.12 gives
+  `[2, 2], [2, 2], [2, 2]`.
+- Manual: tab 1 → http://localhost:3340/list, "Login with Generic", pick alice. Tab 2 (same window) →
+  /dashboard, click "logout", "End session". Back in tab 1 wait 6 s, click "add": a `manual` item is
+  appended (protected event ran) and a reload of tab 1 still shows `alice`, although the browser has no
+  `_oidc_*` cookies and the IdP session is gone. On 0.9.12 tab 1 lands on /login.
+- Cause: #7064's single `hydrate_and_load` boot event applies client-storage vars, `_clean()`s and emits
+  `dict()`; enterprise `OIDCAuthState.get_delta` (`_handle_latest_access_token_hash_ls_in_delta`, which
+  turns a stale `latest_access_token_hash_ls` into `HTTPCookie.sync(reconcile_tokens_after_sync)`) is no
+  longer consulted at boot. 0.9.12's separate `update_vars_internal` went through `get_delta`. Same in prod.
+- Evidence: `logs/xtab-*.json[.gz]` (event timelines: compare `xtab-s912w-rep-0` with `xtab-a2-dev-redis-rep-0`),
+  `logs/stalehash-*.out`, `logs/drive-auth-a2-{dev,prod}-redis.out` (twotab/xtab "stayed").
+
+### I-2 (HIGH impact, NOT a regression): prod with Redis (9 granian workers) answers 405 on `/_reflex/cookies/sync`
+- `VENV=alpha2-ent APP_DIR=entauth APP_BP=8341 $W/scripts/start_app.sh prod $W/logs/p.log; $W/scripts/wait_ready.sh http://localhost:8341/ http://localhost:8341 600`
+- `for i in $(seq 18); do curl -s --noproxy '*' -o /dev/null -w '%{http_code} ' -X POST http://localhost:8341/_reflex/cookies/sync -H 'Content-Type: application/json' -d '{}'; done`
+  → mostly `405` (expected `400 No client token in request` from every worker).
+- `$PY prod_sync_probe.py http://localhost:8341 a2 4` → login shows Alice but 3/4 attempts sync=405 and
+  no `_oidc_*` cookies are stored (new tabs logged out, cross-tab sync impossible). 0.9.12 identical.
+- Cause: `HTTPCookie.ensure_handlers_registered()` adds the route lazily per process on first `HTTPCookie.sync()`.
+
+### I-3 (MEDIUM, NOT a regression): background tasks on protected states never update the page live
+- Log in, open /list, click "fill": `$PY bglive_probe.py http://localhost:3340 a2 direct,loaded`.
+  `direct`: progress stays 0, `item_count` shows its `-1` placeholder, items appear only after reload;
+  websocket deltas carry `{"items": [], "item_count": -1, "progress": 0}`. 0.9.12: same (and loses the list).
+  `loaded` (handler that calls `await self.get_state(AuthUserState)` inside every `async with self`) → live.
+
+### I-4 (MEDIUM, NOT a regression): IdP signing-key rotation breaks every new login until the app restarts
+- With the app running and one successful login done (JWKS fetched), restart the IdP:
+  `$W/scripts/infra.sh restart-oidc 3600`; log in from a fresh browser → back on "Sign in"; server log:
+  `InvalidKeyIdError: invalid_key_id: No key for kid` / "Tokens failed validation immediately after the
+  exchange; resetting session". (`scripts/expiry_matrix.sh alpha2-ent entauth a2 restart_provider`.)
+
+### I-5 (MEDIUM, NOT a regression): expired / revoked tokens keep authorizing protected events
+- `scripts/expiry_matrix.sh alpha2-ent entauth a2 expire_norefresh revoke` (30 s token, no refresh token;
+  IdP-side revocation): 40 s after expiry / right after revocation `reveal` (protected) still runs and a
+  reload stays logged in; only a token refresh attempt (or the 1800 s userinfo cache) notices. 0.9.12 identical.
+
+### I-6 (LOW, NOT a regression): MCP handler denied by its token-scope check reports success
+- `$SB/envs/ent_auth2-drv/bin/python check_mcp_oauth_redis.py http://localhost:8340 http://localhost:3340 a2`
+  → `mcp.scoped_write = {"is_error": false, "delta": {}}`, `scoped_writes` stays 0 (token has only
+  `profile:read`; handler requires `items:write`). Same on a1 (10-06 partial).
+
+### I-7 (LOW, NOT a regression): rxe.map layers/events gaps
+- `CI=true $SB/envs/<venv>/bin/python -I $W/scripts/layers_dynimport_check.py /envs/<venv>/` prints
+  `const LayersControl.BaseLayer = ClientSide(...)` (invalid JS) on 0.9.12/a1/a2; an app using those classes
+  500s on every route in dev. `on_layeradd` never fires (`$PY layeradd_debug.py http://localhost:3344` with mapsapp).
