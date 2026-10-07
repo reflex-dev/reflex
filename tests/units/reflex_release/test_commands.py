@@ -1827,6 +1827,24 @@ def test_plan_blocked_dependent_does_not_cancel_a_requested_sibling_release(
     }
 
 
+def test_plan_holds_back_a_blocked_dependent_before_applying_the_action(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """An action that does not apply to a held dependent cannot stop its sibling."""
+    write_lockstep(repo)
+    reloaded = dev_pin(repo, "third-party >= 9.9.9.dev1")
+    set_changelog(reloaded, "mypkg", "## 1.1.0a1\n\nOld.\n")
+    set_changelog(reloaded, "widget-core", "## 1.0.0\n\nOld.\n")
+    fragment(reloaded, "mypkg", "1.feature.md")
+    fragment(reloaded, "widget-core", "2.feature.md")
+
+    commands.cmd_plan(reloaded, "new-prerelease-minor", "")
+
+    assert {r["package"]: r["next"] for r in json.loads(outputs()["releases"])} == {
+        "widget-core": "1.1.0a1"
+    }
+
+
 def test_dependency_first_phases_materialize_and_publish_matching_versions(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:

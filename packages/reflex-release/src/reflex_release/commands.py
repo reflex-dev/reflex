@@ -256,13 +256,10 @@ def cmd_detect(config: Config, ref_name: str) -> None:
         fail("lockstep invariant violated; no package was published")
 
 
-def _drop_unpublishable_pins(
-    config: Config,
-    packages: list[str],
-    blocked: dict[str, list[PinUpgrade]],
-    explicit: bool,
-) -> tuple[list[str], list[str]]:
-    """Hold back packages whose dependency pins no published version satisfies.
+def _held_back(
+    blocked: dict[str, list[PinUpgrade]], planned: dict[str, str], explicit: bool
+) -> list[str]:
+    """Report the packages a plan held back over unsatisfiable dependency pins.
 
     Materialization lifts a ``*.dev`` (and, for a final version, a prerelease)
     dependency floor to the earliest published version that satisfies it. A
@@ -270,46 +267,39 @@ def _drop_unpublishable_pins(
     releasable yet — releasing it would either publish an uninstallable pin or
     stop at the publish-time gate with the changelog already bumped.
 
-    A package that needs a blocked lockstep partner is held back with it.
-
     Args:
-        config: The repository configuration.
-        packages: The selected packages.
-        blocked: The unsatisfiable pins of the planned packages, by package.
+        blocked: The unsatisfiable pins, by package.
+        planned: What is left of the plan.
         explicit: Whether the selection was made by hand. An explicit selection
             that cannot be released is an error; an auto-selected package is
             simply left out of the batch.
 
     Returns:
-        The releasable packages and the human-readable reasons the others were
-        held back.
+        The human-readable reasons, for the run summary.
     """
     reasons = describe_blockers(blocked)
+    listing = "\n".join(f"  {line}" for line in reasons)
     if explicit:
-        listing = "\n".join(f"  {line}" for line in reasons)
         fail(
             "the selected package(s) declare dependency pins that no published "
             f"version satisfies:\n{listing}\n\n{blocker_advice(blocked)}"
         )
-
     for line in reasons:
         notice(f"held back from this release — {line}")
-    remaining = [
-        package
-        for package in packages
-        if package not in blocked
-        and not any(partner in blocked for partner in config.lockstep_partners(package))
-    ]
-    if not remaining:
+    if not planned:
         fail(
             "every auto-selected package is held back by a dependency pin that "
-            "no published version satisfies:\n"
-            + "\n".join(f"  {line}" for line in reasons)
+            f"no published version satisfies:\n{listing}"
         )
-    return remaining, reasons
+    return reasons
 
 
-def _plan_versions(config: Config, packages: list[str], action: str) -> dict[str, str]:
+def _plan_versions(
+    config: Config,
+    packages: list[str],
+    action: str,
+    blocked: dict[str, list[PinUpgrade]],
+) -> tuple[dict[str, str], list[str]]:
     """Plan the next version of each selected package and of the partners it needs.
 
     Members of a lockstep group without ``publish-last`` advance together from
@@ -317,16 +307,27 @@ def _plan_versions(config: Config, packages: list[str], action: str) -> dict[str
     own baseline and needs every early member tagged at the new version; one not
     tagged there yet is planned at it too.
 
+    A blocked package is held back before its version is planned, so an action
+    that does not apply to it cannot stop its siblings. A package whose needed
+    partner is blocked is held back with the partner.
+
     Args:
         config: The repository configuration.
         packages: The selected packages.
         action: One of the keys in :data:`~reflex_release.versions.ACTIONS`.
+        blocked: The unsatisfiable pins of the selected packages and of their
+            lockstep partners, by package.
 
     Returns:
-        Package name to planned version, the selected packages first.
+        Package name to planned version, the selected packages first, and the
+        selected packages held back.
     """
     planned: dict[str, str] = {}
+    held: list[str] = []
     for package in packages:
+        if package in blocked:
+            held.append(package)
+            continue
         group = config.lockstep_group(package)
         members = (
             group.members
@@ -335,22 +336,30 @@ def _plan_versions(config: Config, packages: list[str], action: str) -> dict[str
         )
         known = [v for m in members if (v := current_version(config, m)) is not None]
         planned[package] = next_version(max(known, default=None), action, package)
-    for package in packages:
+    for package in list(planned):
         version = planned[package]
+        missing: list[str] = []
         for partner in config.lockstep_partners(package):
             if partner in planned:
                 continue
             tag = config.tag_for(partner, version)
             if tag_exists(config.root, tag):
                 notice(f"{package} v{version} reuses the published {tag}")
-                continue
+            else:
+                missing.append(partner)
+        if any(partner in blocked for partner in missing):
+            held.append(package)
+            del planned[package]
+            continue
+        for partner in missing:
             own = current_version(config, partner)
             if own is not None and own >= Version(version):
                 fail(
-                    f"{package} v{version} needs {tag}, but {partner} is already at v{own}"
+                    f"{package} v{version} needs {config.tag_for(partner, version)}, "
+                    f"but {partner} is already at v{own}"
                 )
             planned[partner] = version
-    return planned
+    return planned, held
 
 
 def cmd_plan(config: Config, action: str, selection: str) -> None:
@@ -362,7 +371,7 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
     those whose changelog is topped by an alpha (their fragments are already
     consumed). Lockstep partners the selection needs are planned with it (see
     :func:`_plan_versions`). A package whose dependency pins no published version
-    satisfies is not eligible either way (see :func:`_drop_unpublishable_pins`).
+    satisfies is not eligible either way (see :func:`_held_back`).
 
     Args:
         config: The repository configuration.
@@ -398,16 +407,18 @@ def cmd_plan(config: Config, action: str, selection: str) -> None:
             fail(f"no packages selected and no package has {source}")
         notice(f"no packages selected; auto-detected {', '.join(packages)}")
 
-    planned = _plan_versions(config, packages, action)
-    blocked = blocking_pins(
-        config, list(planned), allow_prereleases=action not in FINAL_ACTIONS
-    )
-    disqualified: list[str] = []
-    if blocked:
-        packages, disqualified = _drop_unpublishable_pins(
-            config, packages, blocked, explicit=how == "explicit"
+    candidates = list(
+        dict.fromkeys(
+            name
+            for package in packages
+            for name in (package, *config.lockstep_partners(package))
         )
-        planned = _plan_versions(config, packages, action)
+    )
+    blocked = blocking_pins(
+        config, candidates, allow_prereleases=action not in FINAL_ACTIONS
+    )
+    planned, held = _plan_versions(config, packages, action, blocked)
+    disqualified = _held_back(blocked, planned, how == "explicit") if held else []
     if errors := _lockstep_errors(config, planned):
         fail("\n".join(errors))
 
