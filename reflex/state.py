@@ -63,6 +63,7 @@ from reflex_base.vars.base import (
     Var,
     _inherited_value,
     _is_descriptor,
+    _private_prefixes,
     _slot_names,
     _validate_state_name,
     computed_var,
@@ -367,22 +368,23 @@ def _plain_private_prefixes(cls: type[BaseState]) -> tuple[str, ...]:
 
     Names starting with a double underscore, like dunders and computed var
     caches, are plain attributes, and so are private names a class of the
-    state mangles: Python rewrites ``__x`` in a class body to ``_Cls__x``,
-    from the name the class was defined with, stripped of leading underscores.
+    state mangles, from the name the class was defined with: a locally defined
+    state is renamed after its body is compiled.
 
     Args:
         cls: The state class.
 
     Returns:
-        The dunder prefix, then the mangling prefix of the class, each base and
-        each mixin.
+        The private prefixes of the class, each base and each mixin.
     """
-    return (
-        "__",
-        *(
-            f"_{klass.__dict__.get('__original_name__', klass.__name__).lstrip('_')}__"
+    return tuple(
+        dict.fromkeys(
+            prefix
             for klass in cls.__mro__
-        ),
+            for prefix in _private_prefixes(
+                klass.__dict__.get("__original_name__", klass.__name__)
+            )
+        )
     )
 
 
