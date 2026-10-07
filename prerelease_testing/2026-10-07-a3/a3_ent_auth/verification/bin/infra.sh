@@ -11,5 +11,6 @@ case $1 in
     redis-cli -p 8629 ping; curl -s --noproxy '*' http://localhost:8638/.well-known/openid-configuration | head -c 200; echo;;
   stop)
     [ -s $R/oidc.pid ] && kill $(cat $R/oidc.pid) 2>/dev/null; rm -f $R/oidc.pid
+    for q in $(lsof -t -iTCP:8638 -sTCP:LISTEN 2>/dev/null); do kill $q; done  # setsid may fork: kill by port too
     redis-cli -p 8629 shutdown nosave 2>/dev/null; rm -f $R/redis.pid; echo stopped-infra;;
 esac
