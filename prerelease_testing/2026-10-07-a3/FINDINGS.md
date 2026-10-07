@@ -27,7 +27,7 @@ Previous pass (a2 train): [../2026-10-07/FINDINGS.md](../2026-10-07/FINDINGS.md)
 |---|---|---|---|---|
 | N-001 greenlet missing from `reflex[db]` | HIGH, all fresh installs | **fixed**: fresh `reflex[db]==0.10.0a3` with uv and pip on 3.11–3.14 resolves greenlet 3.5.6 + SQLAlchemy 2.1.4 through the extra (8/8); `rx.Model`, `reflex db init/makemigrations/migrate` and prod CRUD work | `a3_preflight/logs/03-*`, `04-*`, `dbcli-prod.*` | a3_preflight |
 | N-025 prod AG Grid Var `column_defs` empty | HIGH regression | **fixed with reflex a3 + enterprise 0.9.7a5** (enterprise-side fix): verifier fixture entv s1–s13 render in prod and dev (state grid 2h/6c, memo grids, `/onload`, second context, detail grid Count/Value), aggrid_min 4/4, demo `probe_state_coldefs` 7/7 (a2 3/7). **Still broken with enterprise 0.9.7a4 on a3** (state grid 0h/0c, memo grids empty, detail headers []): users must upgrade reflex-enterprise together with reflex. a5 also fixes reflex a2 and keeps 0.9.12 working. Positive control on a2 + a4 still reproduced first | `a3_ent_grid/NOTES.md`, `out/` | a3_ent_grid |
-| N-032 OIDC cross-tab logout | HIGH regression | _pending_ | | a3_ent_auth |
+| N-032 OIDC cross-tab logout | HIGH regression | **fixed with reflex a3** (reflex-side #7493; a5 alone does not fix a2: 0/3): `away` (Back-button) signed out 3/3 in dev Redis, prod Redis (1 worker) and dev memory (a2 0/3); stale-hash probes 3/3/3 (a2 0/0/0); two-tab `xtab` 6/6, 6/6, 4/4 with every race healed; explorer probes 3/3/3 and 5/5 (a2 3/7); core `get_delta` override sees the boot value once in dev and prod, like 0.9.12. Positive control on a2 + a4 reproduced first. Side effect A3-09 | `a3_ent_auth/NOTES.md`, `logs/` | a3_ent_auth |
 | N-004 0.10 state unreadable by 0.9 | MEDIUM, decided: document | **behaves as documented** (#7494): 0.9.12 → a3 keeps sessions; a3 → 0.9.12 resets cleanly (fresh state, nothing logged) on Redis and disk; a2 ↔ a3 interchangeable (schema hash identical); a3 pickles hold only field values (no `_PREVIOUS_RELEASE_PICKLE_KEYS`, no undo stack) | `a3_class_state` pickle matrix, disk store, fleet e2e | a3_class_state |
 | N-005 plain default drops storage | MEDIUM | **fixed** for `str` values: 3 storage types × str/storage annotation × 6 assignment kinds keep storage, name and options; e2e dev + prod/Redis (9 workers) writes `ls_plain_key`, `lscs_key`, `ck_key`, n005 8/8 (a2 4/8). Gap: `None` / non-str values still drop storage (A3-02) | `a3_class_state/out/e2e/`, `logs/` | a3_class_state |
 | N-039 patch/restore of a var default | MEDIUM | **fixed**: monkeypatch / mock.patch.object / pytest-mock / substate / delattr round trips, 15 var kinds, 0 errors and 0 leaks on Python 3.11–3.14 (a2: 15/15 fail); edge cases in A3-01 | `a3_class_state/logs/` | a3_class_state |
@@ -110,7 +110,31 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   stream ends in `{"timestamp": "...", "level"` with no newline (82 lines undelivered). A consumer parsing line by line sees one
   invalid record. Repro `a3_upgrade/bin/json_matrix.sh a3 a3 TERM-pid:6`.
 
+### A3-09: After the #7493 boot reconcile signs a stale tab out, the tab stays on the protected page with blanked values instead of being redirected to /login (LOW, behaviour change vs 0.9.12; pending verification)
+- Item `a3_ent_auth` (inbox 4). vauth on a3-ent, `vdrv.py stale … 3`: P3 ends on `('/vault', '')` 3/3 dev Redis, 2/3 prod, 3/3 memory;
+  0.9.12 + a5 `('/login', None)` 3/3 (and 2/3 in `away`). a2 never signed the tab out at all (N-032). `hydrate_and_load` runs the page
+  guard during the boot chain, before the frontend's cookie sync and `reconcile_tokens_after_sync` reset the session; the reset does not
+  re-run the guard. Nothing protected is exposed (values blanked; the next protected event redirects to /login).
+
+### A3-10: Enterprise auth + Redis: client-side navigation erases a signed-in user's protected `rx.LocalStorage` / `rx.Cookie` values (MEDIUM, pre-existing on a2 + a4 and 0.9.12 + a5, enterprise; pending verification)
+- Item `a3_ent_auth` (inbox 3). App `a3_ent_auth/apps/vauthx` (default-protected state with `draft = rx.LocalStorage(name="vx_draft",
+  sync=True)`, `ck = rx.Cookie(name="vx_ck")`): sign in, "set draft", click the "vault2" link → localStorage `vx_draft` and cookie
+  `vx_ck` become "" (2/2 on a3, a2 and 0.9.12 with Redis); the next boot sends "" so the backend loses the value too. With the memory
+  manager the values survive. Suspected cause: `enforcement.filter_protected_delta` looks the user up via
+  `_get_state_from_cache(AuthUserState)`, which returns None for `update_vars_internal` under Redis, so the filter fails closed and the
+  frontend persists the "" placeholders. Repro: `bin/infra.sh start; bin/run_storx.sh a3-ent:vauthx_a3e:a3e-dev-redis-v2;
+  drivers/storx_table.py a3e-dev-redis-v2`.
+
 ## Cluster summaries
+
+### `a3_ent_auth` — done (positive controls on a2 + a4 / a5 reproduced first)
+N-032 fixed on a3 (+ a5) in dev Redis, prod Redis and dev memory; the boot now sends `hydrate_and_load`, then
+`reconcile_tokens_after_sync` when the hash differs. #7493 regression hunt clean in the auth flows: a fresh anonymous browser gets nothing
+written (a3, a2, 0.9.12); each signed-in boot writes the stored hash back once with the same value (as 0.9.12; a2 wrote nothing), 0
+cookie syncs, three idle tabs 0 events in 10 s; relogin alice → bob on the same tab clean in dev and prod; protected fields still withheld
+at boot; proactive refresh works; hydration-token probe flags equal 0.9.12. a4 auth matrix 36/36; MCP OAuth + anonymous identical to a2
+(N-037 unchanged); maps 16/17 dev and prod (on_layeradd, pre-existing). N-033 unchanged (fresh 9-worker prod: 27/27 cookie-sync POSTs
+405, 3/6 logins keep their token cookies). New: A3-09 (low), A3-10 (medium, pre-existing enterprise). Notes: `a3_ent_auth/NOTES.md`.
 
 ### `a3_upgrade` — done
 No upgrade regression 0.9.12 → a3 or a2 → a3: form-designer, github-stats, clock, twitter dev and twitter prod/Redis give exactly the
