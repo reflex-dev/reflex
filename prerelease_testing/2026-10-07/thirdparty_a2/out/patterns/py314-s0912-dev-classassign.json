@@ -1,0 +1,100 @@
+{
+ "checks": [
+  {
+   "name": "F-004 shown_1 keeps class-assigned backend default",
+   "ok": false,
+   "detail": "shown=label-const|16|A|cache=None"
+  },
+  {
+   "name": "F-004 shown_2_after_4.5s keeps class-assigned backend default",
+   "ok": false,
+   "detail": "shown=label-const|16|A|cache=None"
+  },
+  {
+   "name": "F-004 shown_new_client keeps class-assigned backend default",
+   "ok": false,
+   "detail": "shown=label-const|16|A|cache=None"
+  },
+  {
+   "name": "F-004 shown_new_client_after_4.5s keeps class-assigned backend default",
+   "ok": false,
+   "detail": "shown=label-const|16|A|cache=None"
+  }
+ ],
+ "anomalies": {
+  "console_nonbenign": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "ctx2",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "ctx2",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "ctx2",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "ctx2",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  }
+ ],
+ "failed_requests_all": [],
+ "bad_responses_all": [],
+ "ws": [],
+ "results": {
+  "shown_1": "shown=label-const|16|A|cache=None",
+  "shown_2_after_4.5s": "shown=label-const|16|A|cache=None",
+  "shown_new_client": "shown=label-const|16|A|cache=None",
+  "shown_new_client_after_4.5s": "shown=label-const|16|A|cache=None",
+  "classattr_report": "class-level: _LABEL='label-const' _SIZE=16 _OPTS={'a': 'A'} _CACHE='configured-at-import'",
+  "from_const": "label-const"
+ },
+ "label": "py314-s0912-dev"
+}

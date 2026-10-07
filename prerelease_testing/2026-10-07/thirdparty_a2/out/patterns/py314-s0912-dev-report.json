@@ -1,0 +1,350 @@
+{
+ "checks": [
+  {
+   "name": "computed-var reset of LocalStorage reaches browser",
+   "ok": false,
+   "detail": "tp_ls_cv='bad' ui='ls_cv=bad' cv='cv_check=cleared-in-computed-var'"
+  },
+  {
+   "name": "on_load reset (to default '') of LocalStorage reaches browser",
+   "ok": true,
+   "detail": "tp_ls_onload='' ui='ls_onload='"
+  },
+  {
+   "name": "on_load reset (to default '') of Cookie reaches browser",
+   "ok": true,
+   "detail": "cookie='tp_ck_onload=' ui='ck_onload='"
+  },
+  {
+   "name": "on_load set to non-default of LocalStorage reaches browser",
+   "ok": true,
+   "detail": "tp_ls_nd='fixed'"
+  },
+  {
+   "name": "event-handler reset (to default '') of LocalStorage reaches browser",
+   "ok": true,
+   "detail": "tp_ls_event=''"
+  },
+  {
+   "name": "mixin A independent counter + mixin computed var + backend var + background",
+   "ok": true,
+   "detail": "A count=12 doubled=24 hits=3"
+  },
+  {
+   "name": "mixin B independent counter + overridden computed var",
+   "ok": false,
+   "detail": "B count=1 doubled=2 hits=1"
+  },
+  {
+   "name": "inherited handler + get_state + setvar + dynamic type() state all respond",
+   "ok": false,
+   "detail": "{\"inherit items after pkg_add+add_twice\": \"items=z:base,x:base,y:base n=3\", \"inherit user_items\": \"user.items=z:base,x:base,y:base n=3\", \"inherit extra after add_twice\": \"extra=secret=pkg-secret n=3\", \"inherit note after touch_other\": \"note=other hits=1\", \"inherit remote\": \"remote=touched by UserState dyn_added=7\", \"inherit extra after read_values\": \"extra=get_value(items)=['z:base', 'x:base', 'y:base'] get_value(_secret)='pkg-secret'\", \"inherit extra after setvar\": \"extra=get_value(items)=['z:base', 'x:base', 'y:base'] get_value(_secret)='pkg-secret'\", \"inherit dyn after 2 bumps\": \"dyn=5\", \"inherit shadow\": \"shadow n/a on 0.9\", \"inherit items after clear via event_handlers\": \"items= n=0\"}"
+  },
+  {
+   "name": "class-level backend constants read as values",
+   "ok": true,
+   "detail": "class-level: _LABEL='label-const' _SIZE=16 _OPTS={'a': 'A'} _CACHE='configured-at-import'"
+  },
+  {
+   "name": "component built from class-level constant",
+   "ok": true,
+   "detail": "label-const"
+  },
+  {
+   "name": "instance-level constants + classmethod-assigned static",
+   "ok": false,
+   "detail": "shown=label-const|16|A|cache=None"
+  }
+ ],
+ "anomalies": {
+  "console_nonbenign": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "storage-seed",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "storage-seed",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "storage-seed",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "storage-seed",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "storage-reload",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "storage-reload",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "storage-reload",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "storage-reload",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "storage-reload",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "storage-event",
+   "page": "tab2",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "storage-event",
+   "page": "tab2",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "storage-event",
+   "page": "tab2",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "storage-event",
+   "page": "tab2",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "storage-event",
+   "page": "tab2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  },
+  {
+   "where": "mixins",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "mixins",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "mixins",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "mixins",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "mixins",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "inherit",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "inherit",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "inherit",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "inherit",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "inherit",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "classattr",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "classattr",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "classattr",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "classattr",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "classattr",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "background",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "background",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "background",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "background",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "background",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "background",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [],
+ "bad_responses_all": [],
+ "ws": [],
+ "observations": {
+  "storage #ls_cv": "ls_cv=bad",
+  "storage #cv_check": "cv_check=cleared-in-computed-var",
+  "storage #ls_onload": "ls_onload=",
+  "storage #ck_onload": "ck_onload=",
+  "storage #ls_nd": "ls_nd=fixed",
+  "storage #ls_event": "ls_event=bad",
+  "storage #store_log": "on_load(ls_onload='') | on_load(ls_onload='')",
+  "storage localStorage": "{\"tp_ls_onload\": \"\", \"tp_ls_nd\": \"fixed\", \"tp_ls_cv\": \"bad\", \"tp_ls_event\": \"bad\"}",
+  "storage cookie": "tp_ck_onload=",
+  "storage after reset_event localStorage": "{\"tp_ls_onload\": \"\", \"tp_ls_nd\": \"fixed\", \"tp_ls_cv\": \"bad\", \"tp_ls_event\": \"\"}",
+  "storage after reset_event #ls_event": "ls_event=",
+  "storage tab2 #ls_cv": "ls_cv=bad",
+  "storage tab2 #cv_check": "cv_check=cleared-in-computed-var",
+  "storage tab2 #ls_onload": "ls_onload=",
+  "storage tab2 #ck_onload": "ck_onload=",
+  "mixins A": "A count=12 doubled=24 hits=3",
+  "mixins B": "B count=1 doubled=2 hits=1",
+  "inherit items after pkg_add+add_twice": "items=z:base,x:base,y:base n=3",
+  "inherit user_items": "user.items=z:base,x:base,y:base n=3",
+  "inherit extra after add_twice": "extra=secret=pkg-secret n=3",
+  "inherit note after touch_other": "note=other hits=1",
+  "inherit remote": "remote=touched by UserState dyn_added=7",
+  "inherit extra after read_values": "extra=get_value(items)=['z:base', 'x:base', 'y:base'] get_value(_secret)='pkg-secret'",
+  "inherit extra after setvar": "extra=get_value(items)=['z:base', 'x:base', 'y:base'] get_value(_secret)='pkg-secret'",
+  "inherit dyn after 2 bumps": "dyn=5",
+  "inherit shadow": "shadow n/a on 0.9",
+  "inherit items after clear via event_handlers": "items= n=0",
+  "inherit fields report": "{\n \"backend_var_names(UserState)\": [\n  \"_backend_vars\",\n  \"_reflex_internal_links\",\n  \"_secret\",\n  \"_was_touched\"\n ],\n \"own_backend_var_names(PkgBaseState)\": [\n  \"_backend_vars\",\n  \"_secret\",\n  \"_was_touched\"\n ],\n \"own_backend_var_names(MixA)\": [\n  \"_backend_vars\",\n  \"_hits\",\n  \"_was_touched\"\n ],\n \"__fields__ type\": \"dict\",\n \"UserState.get_fields() keys\": [\n  \"_backend_vars\",\n  \"_reflex_internal_links\",\n  \"_secret\",\n  \"_was_touched\",\n  \"dirty_substates\",\n  \"dirty_vars\",\n  \"extra\",\n  \"is_hydrated\",\n  \"items\",\n  \"note\",\n  \"parent_state\",\n  \"router_data\",\n  \"rx_router_headers\",\n  \"rx_router_page\",\n  \"rx_router_route_id\",\n  \"rx_router_session\",\n  \"rx_router_url\",\n  \"substates\"\n ],\n \"MixA.event_handlers\": [\n  \"incr\",\n  \"set_count\",\n  \"set_label\",\n  \"setvar\",\n  \"slow_incr\"\n ],\n \"UserState.event_handlers\": [\n  \"add_twice\",\n  \"read_values\",\n  \"set_extra\",\n  \"setvar\",\n  \"touch_other\"\n ],\n \"PkgBaseState.event_handlers\": [\n  \"add\",\n  \"clear\",\n  \"set_items\",\n  \"set_note\",\n  \"setvar\"\n ],\n \"DynState.event_handlers\": [\n  \"bump\",\n  \"set_value\",\n  \"setvar\"\n ],\n \"PkgOtherState.dyn_added (class)\": \"NumberCastedVar\"\n}",
+  "classattr report": "class-level: _LABEL='label-const' _SIZE=16 _OPTS={'a': 'A'} _CACHE='configured-at-import'",
+  "classattr component": "label-const",
+  "classattr instance": "shown=label-const|16|A|cache=None",
+  "bg flags": "is_background before=False after-late-mark=True",
+  "bg status": "status=late_bg ran as background task"
+ }
+}
