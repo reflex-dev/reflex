@@ -1,0 +1,40 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+──────────────────────── Initializing google_auth_demo ─────────────────────────
+Info: Initializing the web directory.
+Success: Initialized google_auth_demo. Install dependencies from 
+`requirements.txt` with `uv pip install -r requirements.txt` (or your preferred 
+installer) before running `uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3_events_tp-all/lib/python3.12/site-packages/reflex_components_radix/plug
+in.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 22/21 0:00:00
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+App running at: http://localhost:3463/
+Backend running at: http://0.0.0.0:8463
+Error verifying token: MalformedError("Can't parse segment: b'i\\xb7'")
+Info: Reflex app stopped.

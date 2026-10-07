@@ -1,0 +1,113 @@
+{
+ "checks": [],
+ "anomalies": {
+  "console_nonbenign": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [],
+ "bad_responses_all": [],
+ "ws": [],
+ "label": "a3-local_auth",
+ "visits": [
+  {
+   "path": "/",
+   "url": "http://localhost:3463/",
+   "local": {
+    "theme": "system",
+    "last_compiled_theme": "system"
+   },
+   "session": {
+    "token": "3a56502a-3eb5-4745-a8fb-b9baa26224b6"
+   },
+   "cookie": ""
+  },
+  {
+   "path": "/login",
+   "url": "http://localhost:3463/login",
+   "local": {
+    "theme": "system",
+    "last_compiled_theme": "system"
+   },
+   "session": {
+    "token": "3a56502a-3eb5-4745-a8fb-b9baa26224b6",
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "cookie": ""
+  }
+ ],
+ "context_cookies": []
+}

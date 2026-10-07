@@ -1,0 +1,1073 @@
+{
+ "checks": [
+  {
+   "name": "/hotkey builds+renders",
+   "ok": true,
+   "detail": "/hotkey"
+  },
+  {
+   "name": "global_hotkey_watcher delivers keys + modifiers",
+   "ok": true,
+   "detail": "a,shift+Shift,shift+B,Escape"
+  },
+  {
+   "name": "/intersection builds+renders",
+   "ok": true,
+   "detail": "/intersection"
+  },
+  {
+   "name": "intersection_observer on_intersect/on_non_intersect",
+   "ok": true,
+   "detail": "before='seen=0 unseen=1' in='seen=1 unseen=1' out='seen=1 unseen=2'"
+  },
+  {
+   "name": "/audio builds+renders",
+   "ok": true,
+   "detail": "/audio"
+  },
+  {
+   "name": "audio capture start/stop -> on_data_available",
+   "ok": false,
+   "detail": "TIMEOUT(last=\"chunks=0 total=0 codec= started=false error={'isTrusted': False, 'data': {}}\")"
+  },
+  {
+   "name": "/webcam renders",
+   "ok": false,
+   "detail": "An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nReferenceError: muted is not defined\nReferenceError: muted is not defined\n    at Component (http://localhost:3463/app/routes/[webcam]._index.jsx?import:51:8)\n    at Object.react_stack_bottom_frame (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:14142:12)\n    at renderWithHooks (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:4400:19)\n    at updateFunctionComponent (http://localhost:3463/node_modules/.vite/deps/re"
+  },
+  {
+   "name": "/icons builds+renders",
+   "ok": true,
+   "detail": "/icons"
+  },
+  {
+   "name": "simpleicons render",
+   "ok": true,
+   "detail": "svg+img=3"
+  },
+  {
+   "name": "/monaco builds+renders",
+   "ok": true,
+   "detail": "/monaco"
+  },
+  {
+   "name": "monaco on_change -> state",
+   "ok": false,
+   "detail": "TimeoutError: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".monaco-editor\").first\n"
+  },
+  {
+   "name": "/calendar builds+renders",
+   "ok": true,
+   "detail": "/calendar"
+  },
+  {
+   "name": "react-calendar renders day tiles",
+   "ok": true,
+   "detail": "tiles=35"
+  },
+  {
+   "name": "calendar on_change -> state",
+   "ok": false,
+   "detail": "TIMEOUT(last='picked=')"
+  },
+  {
+   "name": "/pyplot builds+renders",
+   "ok": true,
+   "detail": "/pyplot"
+  },
+  {
+   "name": "pyplot renders PNG data URI and updates",
+   "ok": true,
+   "detail": "len1=10574 len2=9858"
+  },
+  {
+   "name": "/recaptcha builds+renders",
+   "ok": true,
+   "detail": "/recaptcha"
+  },
+  {
+   "name": "recaptcha widget mounted (iframe present or script attempted)",
+   "ok": true,
+   "detail": "['http://localhost:3463/recaptcha']"
+  },
+  {
+   "name": "/motion builds+renders",
+   "ok": true,
+   "detail": "/motion"
+  },
+  {
+   "name": "framer-motion div animates (style set)",
+   "ok": true,
+   "detail": "opacity: 1; transform: scale(1.5);"
+  },
+  {
+   "name": "/type-animation builds+renders",
+   "ok": true,
+   "detail": "/type-animation"
+  },
+  {
+   "name": "type animation types text",
+   "ok": true,
+   "detail": "Second line"
+  },
+  {
+   "name": "/image-zoom builds+renders",
+   "ok": true,
+   "detail": "/image-zoom"
+  },
+  {
+   "name": "image zoom opens modal",
+   "ok": true,
+   "detail": "modal-like elements=2"
+  },
+  {
+   "name": "/color-picker builds+renders",
+   "ok": true,
+   "detail": "/color-picker"
+  },
+  {
+   "name": "color picker on_change -> state",
+   "ok": true,
+   "detail": "#2878c9"
+  },
+  {
+   "name": "/qrcode builds+renders",
+   "ok": true,
+   "detail": "/qrcode"
+  },
+  {
+   "name": "qrcode re-renders on state change",
+   "ok": true,
+   "detail": "len1=15814 len2=11110"
+  },
+  {
+   "name": "/dynoselect builds",
+   "ok": false,
+   "detail": "VarTypeError: Unsupported Operand type(s) for []: ObjectCastedVar, Field"
+  },
+  {
+   "name": "/chat builds+renders",
+   "ok": true,
+   "detail": "/chat"
+  },
+  {
+   "name": "reflex-chat default process appends assistant reply",
+   "ok": true,
+   "detail": "TIMEOUT(last='home\\n/chat\\nBuilt with\\n\\nhello bot\\n\\nPass the process argument to connect the chat to a model.\\n\\nSend')"
+  },
+  {
+   "name": "/chat-initial builds+renders",
+   "ok": true,
+   "detail": "/chat-initial"
+  },
+  {
+   "name": "reflex-chat initial_messages rendered",
+   "ok": true,
+   "detail": "home\n/chat-initial\nBuilt with\n\nINITIAL-GREETING\n\nSend"
+  },
+  {
+   "name": "/clerk renders",
+   "ok": false,
+   "detail": "Application Error\nSyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'"
+  },
+  {
+   "name": "errors page",
+   "ok": true,
+   "detail": "1 errors"
+  }
+ ],
+ "anomalies": {
+  "console_nonbenign": [
+   {
+    "where": "/webcam",
+    "page": "main",
+    "type": "error",
+    "text": "%o\n\n%s\n\n%s\n ReferenceError: muted is not defined\n    at Component (http://localhost:3463/app/routes/[webcam]._index.jsx?import:51:8)\n    at Object.react_stack_bottom_frame (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:14142:12)\n    at renderWithHooks (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:4400:19)\n    at updateFunctionComponent (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:5775:16)\n    at beginWork (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:6391:20)\n    at runWithFiberInDEV (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:944:66)\n    at performUnitOfWork (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:9148:92)\n    at workLoopSync (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:9044:37)\n    at renderRootSync (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:9028:6)\n    at performWorkOnRoot (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:8715:27) The above error occurred in the <Component(webcam)> component. React will try to recreate this component tree from scratch using the error boundary you provided, C.",
+    "benign": false
+   },
+   {
+    "where": "/monaco",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   },
+   {
+    "where": "/monaco",
+    "page": "main",
+    "type": "error",
+    "text": "Monaco initialization: error: Event",
+    "benign": false
+   },
+   {
+    "where": "/monaco",
+    "page": "main",
+    "type": "error",
+    "text": "Monaco initialization: error: Event",
+    "benign": false
+   },
+   {
+    "where": "/recaptcha",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   },
+   {
+    "where": "/chat",
+    "page": "main",
+    "type": "error",
+    "text": "React has detected a change in the order of Hooks called by %s. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks\n\n   Previous render            Next render\n   ------------------------------------------------------\n%s   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n Foreach 1. useContext                 useContext\n2. useRef                     useRef\n3. undefined                  useContext\n",
+    "benign": false
+   },
+   {
+    "where": "/clerk",
+    "page": "main",
+    "type": "error",
+    "text": "Error loading route module `/app/routes/[clerk]._index.jsx`, reloading page...",
+    "benign": false
+   },
+   {
+    "where": "/clerk",
+    "page": "main",
+    "type": "error",
+    "text": "SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'",
+    "benign": false
+   },
+   {
+    "where": "/clerk",
+    "page": "main",
+    "type": "error",
+    "text": "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).",
+    "benign": false
+   },
+   {
+    "where": "/clerk",
+    "page": "main",
+    "type": "error",
+    "text": "SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'",
+    "benign": false
+   },
+   {
+    "where": "/clerk",
+    "page": "main",
+    "type": "error",
+    "text": "SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'",
+    "benign": false
+   }
+  ],
+  "page_errors": [
+   {
+    "where": "/audio",
+    "page": "main",
+    "error": "Failed to execute 'importScripts' on 'WorkerGlobalScope': The script at 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js' failed to load."
+   },
+   {
+    "where": "/audio",
+    "page": "main",
+    "error": "Cannot read properties of null (reading 'name')"
+   }
+  ],
+  "failed_requests": [
+   {
+    "where": "/audio",
+    "page": "main",
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "/monaco",
+    "page": "main",
+    "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/loader.js",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "/recaptcha",
+    "page": "main",
+    "url": "https://www.google.com/recaptcha/api.js?onload=onloadcallback&render=explicit",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "/hotkey",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/hotkey",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/hotkey",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/hotkey",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/intersection",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/intersection",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/intersection",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/intersection",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/intersection",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/audio",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/audio",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/audio",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/audio",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/audio",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/webcam",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/webcam",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/webcam",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/webcam",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/webcam",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/webcam",
+   "page": "main",
+   "type": "error",
+   "text": "%o\n\n%s\n\n%s\n ReferenceError: muted is not defined\n    at Component (http://localhost:3463/app/routes/[webcam]._index.jsx?import:51:8)\n    at Object.react_stack_bottom_frame (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:14142:12)\n    at renderWithHooks (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:4400:19)\n    at updateFunctionComponent (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:5775:16)\n    at beginWork (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:6391:20)\n    at runWithFiberInDEV (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:944:66)\n    at performUnitOfWork (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:9148:92)\n    at workLoopSync (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:9044:37)\n    at renderRootSync (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:9028:6)\n    at performWorkOnRoot (http://localhost:3463/node_modules/.vite/deps/react-dom_client.js?v=292d7233:8715:27) The above error occurred in the <Component(webcam)> component. React will try to recreate this component tree from scratch using the error boundary you provided, C.",
+   "benign": false
+  },
+  {
+   "where": "/icons",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/icons",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/icons",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/icons",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/icons",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/monaco",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/monaco",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/monaco",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/monaco",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/monaco",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/monaco",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "/monaco",
+   "page": "main",
+   "type": "error",
+   "text": "Monaco initialization: error: Event",
+   "benign": false
+  },
+  {
+   "where": "/monaco",
+   "page": "main",
+   "type": "error",
+   "text": "Monaco initialization: error: Event",
+   "benign": false
+  },
+  {
+   "where": "/calendar",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/calendar",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/calendar",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/calendar",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/calendar",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/pyplot",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/pyplot",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/pyplot",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/pyplot",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/pyplot",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/recaptcha",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/recaptcha",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/recaptcha",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/recaptcha",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/recaptcha",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/recaptcha",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "/motion",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/motion",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/motion",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/motion",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/motion",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/type-animation",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/type-animation",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/type-animation",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/type-animation",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/type-animation",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/image-zoom",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/image-zoom",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/image-zoom",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/image-zoom",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/image-zoom",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/color-picker",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/color-picker",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/color-picker",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/color-picker",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/color-picker",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/qrcode",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/qrcode",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/qrcode",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/qrcode",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/qrcode",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/dynoselect",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/dynoselect",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/dynoselect",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/dynoselect",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/dynoselect",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "error",
+   "text": "React has detected a change in the order of Hooks called by %s. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks\n\n   Previous render            Next render\n   ------------------------------------------------------\n%s   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n Foreach 1. useContext                 useContext\n2. useRef                     useRef\n3. undefined                  useContext\n",
+   "benign": false
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "log",
+   "text": "_call_script SyntaxError: missing ) after argument list\n    at applyEvent (http://localhost:3463/utils/state.js:491:32)\n    at processEvent (http://localhost:3463/utils/state.js:658:13)\n    at queueEvents (http://localhost:3463/utils/state.js:622:9)\n    at Socket.<anonymous> (http://localhost:3463/utils/state.js:899:9)\n    at Emitter.emit (http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:326:70)\n    at Socket.emitEvent (http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:2564:14)\n    at Socket.onevent (http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:2556:28)\n    at Socket.onpacket (http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:2531:10)\n    at Emitter.emit (http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:326:70)\n    at http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:3115:9",
+   "benign": false
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "log",
+   "text": "_call_script SyntaxError: missing ) after argument list\n    at applyEvent (http://localhost:3463/utils/state.js:491:32)\n    at processEvent (http://localhost:3463/utils/state.js:658:13)\n    at queueEvents (http://localhost:3463/utils/state.js:622:9)\n    at Socket.<anonymous> (http://localhost:3463/utils/state.js:899:9)\n    at Emitter.emit (http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:326:70)\n    at Socket.emitEvent (http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:2564:14)\n    at Socket.onevent (http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:2556:28)\n    at Socket.onpacket (http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:2531:10)\n    at Emitter.emit (http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:326:70)\n    at http://localhost:3463/node_modules/.vite/deps/socket__io-client.js?v=48d09225:3115:9",
+   "benign": false
+  },
+  {
+   "where": "/chat-initial",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/chat-initial",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/chat-initial",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/chat-initial",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/chat-initial",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/clerk",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/clerk",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "/clerk",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "/clerk",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "/clerk",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "/clerk",
+   "page": "main",
+   "type": "error",
+   "text": "Error loading route module `/app/routes/[clerk]._index.jsx`, reloading page...",
+   "benign": false
+  },
+  {
+   "where": "/clerk",
+   "page": "main",
+   "type": "error",
+   "text": "SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'",
+   "benign": false
+  },
+  {
+   "where": "/clerk",
+   "page": "main",
+   "type": "error",
+   "text": "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).",
+   "benign": false
+  },
+  {
+   "where": "/clerk",
+   "page": "main",
+   "type": "error",
+   "text": "SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'",
+   "benign": false
+  },
+  {
+   "where": "/clerk",
+   "page": "main",
+   "type": "error",
+   "text": "SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'",
+   "benign": false
+  },
+  {
+   "where": "errors",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "errors",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "errors",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "errors",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "errors",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "errors",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [
+  {
+   "where": "/audio",
+   "page": "main",
+   "url": "https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "/monaco",
+   "page": "main",
+   "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/loader.js",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "/recaptcha",
+   "page": "main",
+   "url": "https://www.google.com/recaptcha/api.js?onload=onloadcallback&render=explicit",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "bad_responses_all": [],
+ "ws": []
+}

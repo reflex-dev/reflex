@@ -1,0 +1,20 @@
+VENV_GUARD venv=a3-ent reflex 0.10.0a3 reflex-base 0.10.0a3 reflex-enterprise 0.9.7a5
+START venv=a3-ent app=vea_a3e mode=dev mgr=redis workers=default instrument=1 fix=0
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+[INFO] Started worker-1
+VEA_FILTER t=1791408942.480 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791408943.146 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791408944.693 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('draft-of-alice', ''), 'plain_rx_state_': ('plain-of-alice', ''), 'ck_rx_state_': ('ck-of-alice', ''), 'ss_rx_state_': ('ss-of-alice', '')}
+VEA_FILTER t=1791408948.838 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('draft-of-alice', ''), 'plain_rx_state_': ('plain-of-alice', ''), 'ck_rx_state_': ('ck-of-alice', ''), 'ss_rx_state_': ('ss-of-alice', '')}
+VEA_FILTER t=1791408952.321 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('draft-of-alice', ''), 'plain_rx_state_': ('plain-of-alice', ''), 'ck_rx_state_': ('ck-of-alice', ''), 'ss_rx_state_': ('ss-of-alice', '')}
+VEA_FILTER t=1791408956.925 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791408993.478 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791408994.167 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791408998.111 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('draft-of-alice', '')}
+VEA_FILTER t=1791408998.115 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', '')}
+VEA_FILTER t=1791409006.241 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409006.879 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409010.728 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('draft-of-alice', '')}
+VEA_FILTER t=1791409010.732 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', '')}
+[ERROR] Unexpected exit from worker-1

@@ -1,0 +1,81 @@
+DeprecationWarning: state_auto_setters has been deprecated in version 0.9.0. 
+auto setters will be removed; use explicit event handlers instead. It will be 
+completely removed in 1.0. (rxconfig.py:9)
+────────────────────────── Initializing tp_components ──────────────────────────
+Info: Initializing the web directory.
+Success: Initialized tp_components. Install dependencies from `requirements.txt`
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n1.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-all/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+Instantiating components directly is not supported. Use `Calendar.create` method
+instead.
+[tp_components] page /dynoselect failed to build: VarTypeError: Unsupported Operand type(s) for []: ObjectCastedVar, Field
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n2.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n3.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 47/46 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:05
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8467/
+Warning: Page hotkey is being redefined with the same component.
+Warning: Page intersection is being redefined with the same component.
+Warning: Page audio is being redefined with the same component.
+Warning: Page icons is being redefined with the same component.
+Warning: Page calendar is being redefined with the same component.
+Warning: Page pyplot is being redefined with the same component.
+Warning: Page recaptcha is being redefined with the same component.
+Warning: Page motion is being redefined with the same component.
+Warning: Page type-animation is being redefined with the same component.
+Warning: Page image-zoom is being redefined with the same component.
+Warning: Page color-picker is being redefined with the same component.
+Warning: Page qrcode is being redefined with the same component.
+Warning: Page dynoselect is being redefined with the same component.
+Warning: Page chat is being redefined with the same component.
+Warning: Page chat-initial is being redefined with the same component.
+Warning: Page index is being redefined with the same component.
+Warning: Page errors is being redefined with the same component.
+[Reflex Frontend Exception]
+ TypeError: e is not a function
+TypeError: e is not a function
+    at http://localhost:8467/assets/_audio_._index-BpnR2HUk.js:1:2546
+
+[Reflex Frontend Exception]
+ SyntaxError: missing ) after argument list
+SyntaxError: missing ) after argument list
+    at applyEvent (http://localhost:8467/assets/state-DQPqytfG.js:2:8321)
+    at processEvent (http://localhost:8467/assets/state-DQPqytfG.js:2:9931)
+    at queueEvents (http://localhost:8467/assets/state-DQPqytfG.js:2:9661)
+    at Socket.<anonymous> 
+(http://localhost:8467/assets/state-DQPqytfG.js:2:13196)
+    at Emitter.emit (http://localhost:8467/assets/state-DQPqytfG.js:1:5902)
+    at Socket.emitEvent (http://localhost:8467/assets/state-DQPqytfG.js:1:37560)
+    at Socket.onevent (http://localhost:8467/assets/state-DQPqytfG.js:1:37367)
+    at Socket.onpacket (http://localhost:8467/assets/state-DQPqytfG.js:1:37017)
+    at Emitter.emit (http://localhost:8467/assets/state-DQPqytfG.js:1:5902)
+    at http://localhost:8467/assets/state-DQPqytfG.js:1:43088
+
+[Reflex Frontend Exception]
+ SyntaxError: missing ) after argument list
+SyntaxError: missing ) after argument list
+    at applyEvent (http://localhost:8467/assets/state-DQPqytfG.js:2:8321)
+    at processEvent (http://localhost:8467/assets/state-DQPqytfG.js:2:9931)
+    at queueEvents (http://localhost:8467/assets/state-DQPqytfG.js:2:9661)
+    at Socket.<anonymous> 
+(http://localhost:8467/assets/state-DQPqytfG.js:2:13196)
+    at Emitter.emit (http://localhost:8467/assets/state-DQPqytfG.js:1:5902)
+    at Socket.emitEvent (http://localhost:8467/assets/state-DQPqytfG.js:1:37560)
+    at Socket.onevent (http://localhost:8467/assets/state-DQPqytfG.js:1:37367)
+    at Socket.onpacket (http://localhost:8467/assets/state-DQPqytfG.js:1:37017)
+    at Emitter.emit (http://localhost:8467/assets/state-DQPqytfG.js:1:5902)
+    at http://localhost:8467/assets/state-DQPqytfG.js:1:43088
+
+Info: Reflex app stopped.

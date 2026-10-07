@@ -1,0 +1,327 @@
+{
+ "result": {
+  "keys_before": [
+   "last_compiled_theme",
+   "theme"
+  ],
+  "after_reload": "{\"id_token\": \"abc.def.ghi\", \"access_token\": \"ya29.bogus\", \"scope\": \"openid email\"}",
+  "protected_unlocked": false,
+  "after_reload_index": "{\"id_token\": \"abc.def.ghi\", \"access_token\": \"ya29.bogus\", \"scope\": \"openid email\"}",
+  "after_client_nav": "{\"id_token\": \"abc.def.ghi\", \"access_token\": \"ya29.bogus\", \"scope\": \"openid email\"}",
+  "after_reload2": "{\"id_token\": \"abc.def.ghi\", \"access_token\": \"ya29.bogus\", \"scope\": \"openid email\"}"
+ },
+ "frames": [
+  {
+   "t": 1.747,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 1.902,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "0{\"sid\":\"Kh4-4Ij8PnGn1YzdAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 1.902,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 1.91,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"amhN5zkXBm-OleXDAAAB\"}"
+  },
+  {
+   "t": 1.91,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 1.91,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 2.325,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8145\",\"origin\":\"http://localhost:3145\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"8FfNTnKbWGCoIYj48hX0vQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8145\",\"origin\":\"http://localhost:3145\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"8FfNTnKbWGCoIYj48hX0vQ==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3145\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3145/index\",\"full_raw_path\":\"http://localhost:3145/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"a7b0efc3-ef80-4239-8ef1-f97912e75b49\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"amhN5zkXBm-OleXDAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3145\",\"origin\":\"http://localhost:3145\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3145/\"}},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.google_auth_demo___google_auth_demo____drive_state\":{\"app_data_rx_state_\":\"\",\"loading_rx_state_\":false},\"reflex___state____state.reflex_google_auth___state____google_auth_state\":{\"access_token_rx_state_\":\"\",\"client_id_rx_state_\":\"123456789012-dummyclientid.apps.googleusercontent.com\",\"id_token_rx_state_\":\"\",\"id_token_json_rx_state_\":\"\",\"refresh_token_rx_state_\":\"\",\"scopes_rx_state_\":[],\"token_is_valid_rx_state_\":false,\"token_response_json_rx_state_\":\"\",\"tokeninfo_rx_state_\":{},\"user_email_rx_state_\":\"\",\"user_name_rx_state_\":\"\"},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 2.326,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state\":{\"token_is_valid_rx_state_\":false},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 2.327,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 3.915,
+   "phase": "reload-protected",
+   "dir": "sent",
+   "data": "41/_event,"
+  },
+  {
+   "t": 4.075,
+   "phase": "reload-protected",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 4.108,
+   "phase": "reload-protected",
+   "dir": "recv",
+   "data": "0{\"sid\":\"bScgv0vloCtuyBI5AAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 4.108,
+   "phase": "reload-protected",
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 4.118,
+   "phase": "reload-protected",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"fI6C2lyhBW8rs8R_AAAD\"}"
+  },
+  {
+   "t": 4.118,
+   "phase": "reload-protected",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/protected\",\"asPath\":\"/protected\"}}]"
+  },
+  {
+   "t": 4.118,
+   "phase": "reload-protected",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state.token_response_json_rx_state_\":\"{\\\"id_token\\\": \\\"abc.def.ghi\\\", \\\"access_token\\\": \\\"ya29.bogus\\\", \\\"scope\\\": \\\"openid email\\\"}\"}},\"router_data\":{\"pathname\":\"/protected\",\"asPath\":\"/protected\"}}]"
+  },
+  {
+   "t": 4.118,
+   "phase": "reload-protected",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/protected\",\"asPath\":\"/protected\"}}]"
+  },
+  {
+   "t": 4.483,
+   "phase": "reload-protected",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8145\",\"origin\":\"http://localhost:3145\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"PUaGaAMt1hn8iQDCHuEKBg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8145\",\"origin\":\"http://localhost:3145\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"PUaGaAMt1hn8iQDCHuEKBg==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3145\",\"path\":\"/protected\",\"raw_path\":\"/protected\",\"full_path\":\"http://localhost:3145/protected\",\"full_raw_path\":\"http://localhost:3145/protected\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/protected\",\"rx_router_session_rx_state_\":{\"client_token\":\"a7b0efc3-ef80-4239-8ef1-f97912e75b49\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"fI6C2lyhBW8rs8R_AAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3145\",\"origin\":\"http://localhost:3145\",\"path\":\"/protected\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3145/protected\"}},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.google_auth_demo___google_auth_demo____drive_state\":{\"app_data_rx_state_\":\"\",\"loading_rx_state_\":false},\"reflex___state____state.reflex_google_auth___state____google_auth_state\":{\"access_token_rx_state_\":\"\",\"client_id_rx_state_\":\"123456789012-dummyclientid.apps.googleusercontent.com\",\"id_token_rx_state_\":\"\",\"id_token_json_rx_state_\":\"\",\"refresh_token_rx_state_\":\"\",\"scopes_rx_state_\":[],\"token_is_valid_rx_state_\":false,\"token_response_json_rx_state_\":\"\",\"tokeninfo_rx_state_\":{},\"user_email_rx_state_\":\"\",\"user_name_rx_state_\":\"\"},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 4.484,
+   "phase": "reload-protected",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 5.31,
+   "phase": "reload-protected",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state\":{\"token_response_json_rx_state_\":\"{\\\"id_token\\\": \\\"abc.def.ghi\\\", \\\"access_token\\\": \\\"ya29.bogus\\\", \\\"scope\\\": \\\"openid email\\\"}\",\"user_name_rx_state_\":\"\",\"access_token_rx_state_\":\"\",\"id_token_rx_state_\":\"\",\"user_email_rx_state_\":\"\",\"scopes_rx_state_\":[],\"tokeninfo_rx_state_\":{},\"id_token_json_rx_state_\":\"\"},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 5.312,
+   "phase": "reload-protected",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 5.35,
+   "phase": "reload-protected",
+   "dir": "sent",
+   "data": "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"warn\",\"message\":\"[GSI_LOGGER]: google.accounts.id.initialize() is called multiple times. This could cause unexpected behavior and only the last initialized instance will be used.\"}}}"
+  },
+  {
+   "t": 9.216,
+   "phase": "reload-index",
+   "dir": "sent",
+   "data": "41/_event,"
+  },
+  {
+   "t": 9.348,
+   "phase": "reload-index",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 9.401,
+   "phase": "reload-index",
+   "dir": "recv",
+   "data": "0{\"sid\":\"PFuWg62epkyjsUVOAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 9.404,
+   "phase": "reload-index",
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 9.417,
+   "phase": "reload-index",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"F5t01oiQLyNDHDgPAAAF\"}"
+  },
+  {
+   "t": 9.417,
+   "phase": "reload-index",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 9.417,
+   "phase": "reload-index",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state.token_response_json_rx_state_\":\"{\\\"id_token\\\": \\\"abc.def.ghi\\\", \\\"access_token\\\": \\\"ya29.bogus\\\", \\\"scope\\\": \\\"openid email\\\"}\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 9.417,
+   "phase": "reload-index",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 9.869,
+   "phase": "reload-index",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8145\",\"origin\":\"http://localhost:3145\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791409693637,\\\"i_b\\\":\\\"QfZt51ABI0dq5OqHZ969eE5Zc9jy1kfiEXnNw13Rqac\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791409693637}\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"aEGgzyaGTEEdkau2whow2g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791409693637,\\\"i_b\\\":\\\"QfZt51ABI0dq5OqHZ969eE5Zc9jy1kfiEXnNw13Rqac\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791409693637}\",\"host\":\"localhost:8145\",\"origin\":\"http://localhost:3145\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"aEGgzyaGTEEdkau2whow2g==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3145\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3145/index\",\"full_raw_path\":\"http://localhost:3145/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"a7b0efc3-ef80-4239-8ef1-f97912e75b49\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"F5t01oiQLyNDHDgPAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3145\",\"origin\":\"http://localhost:3145\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3145/\"}},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.google_auth_demo___google_auth_demo____drive_state\":{\"app_data_rx_state_\":\"\",\"loading_rx_state_\":false},\"reflex___state____state.reflex_google_auth___state____google_auth_state\":{\"access_token_rx_state_\":\"\",\"client_id_rx_state_\":\"123456789012-dummyclientid.apps.googleusercontent.com\",\"id_token_rx_state_\":\"\",\"id_token_json_rx_state_\":\"\",\"refresh_token_rx_state_\":\"\",\"scopes_rx_state_\":[],\"token_is_valid_rx_state_\":false,\"token_response_json_rx_state_\":\"\",\"tokeninfo_rx_state_\":{},\"user_email_rx_state_\":\"\",\"user_name_rx_state_\":\"\"},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 9.87,
+   "phase": "reload-index",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 10.307,
+   "phase": "reload-index",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state\":{\"token_response_json_rx_state_\":\"{\\\"id_token\\\": \\\"abc.def.ghi\\\", \\\"access_token\\\": \\\"ya29.bogus\\\", \\\"scope\\\": \\\"openid email\\\"}\",\"user_name_rx_state_\":\"\",\"access_token_rx_state_\":\"\",\"id_token_rx_state_\":\"\",\"user_email_rx_state_\":\"\",\"scopes_rx_state_\":[],\"tokeninfo_rx_state_\":{},\"id_token_json_rx_state_\":\"\"},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 10.307,
+   "phase": "reload-index",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 12.484,
+   "phase": "client-nav",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state.token_response_json_rx_state_\":\"{\\\"id_token\\\": \\\"abc.def.ghi\\\", \\\"access_token\\\": \\\"ya29.bogus\\\", \\\"scope\\\": \\\"openid email\\\"}\"}},\"router_data\":{\"pathname\":\"/protected\",\"asPath\":\"/protected\"}}]"
+  },
+  {
+   "t": 12.484,
+   "phase": "client-nav",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/protected\",\"asPath\":\"/protected\"}}]"
+  },
+  {
+   "t": 12.892,
+   "phase": "client-nav",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3145\",\"path\":\"/protected\",\"raw_path\":\"/protected\",\"full_path\":\"http://localhost:3145/protected\",\"full_raw_path\":\"http://localhost:3145/protected\",\"params\":{}},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3145\",\"origin\":\"http://localhost:3145\",\"path\":\"/protected\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3145/protected\"},\"rx_router_route_id_rx_state_\":\"/protected\"},\"reflex___state____state.reflex_google_auth___state____google_auth_state\":{\"token_response_json_rx_state_\":\"{\\\"id_token\\\": \\\"abc.def.ghi\\\", \\\"access_token\\\": \\\"ya29.bogus\\\", \\\"scope\\\": \\\"openid email\\\"}\",\"user_name_rx_state_\":\"\",\"access_token_rx_state_\":\"\",\"id_token_rx_state_\":\"\",\"user_email_rx_state_\":\"\",\"scopes_rx_state_\":[],\"tokeninfo_rx_state_\":{},\"id_token_json_rx_state_\":\"\"},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 12.895,
+   "phase": "client-nav",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 12.913,
+   "phase": "client-nav",
+   "dir": "sent",
+   "data": "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"warn\",\"message\":\"[GSI_LOGGER]: google.accounts.id.initialize() is called multiple times. This could cause unexpected behavior and only the last initialized instance will be used.\"}}}"
+  },
+  {
+   "t": 15.488,
+   "phase": "reload2",
+   "dir": "sent",
+   "data": "41/_event,"
+  },
+  {
+   "t": 15.623,
+   "phase": "reload2",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 15.646,
+   "phase": "reload2",
+   "dir": "recv",
+   "data": "0{\"sid\":\"5KrEKNUw4Ts0HK_3AAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 15.649,
+   "phase": "reload2",
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 15.652,
+   "phase": "reload2",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"YHHaU7Vjknb4fOyOAAAH\"}"
+  },
+  {
+   "t": 15.653,
+   "phase": "reload2",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/protected\",\"asPath\":\"/protected\"}}]"
+  },
+  {
+   "t": 15.653,
+   "phase": "reload2",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state.token_response_json_rx_state_\":\"{\\\"id_token\\\": \\\"abc.def.ghi\\\", \\\"access_token\\\": \\\"ya29.bogus\\\", \\\"scope\\\": \\\"openid email\\\"}\"}},\"router_data\":{\"pathname\":\"/protected\",\"asPath\":\"/protected\"}}]"
+  },
+  {
+   "t": 15.653,
+   "phase": "reload2",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/protected\",\"asPath\":\"/protected\"}}]"
+  },
+  {
+   "t": 15.941,
+   "phase": "reload2",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8145\",\"origin\":\"http://localhost:3145\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791409701213,\\\"i_b\\\":\\\"QfZt51ABI0dq5OqHZ969eE5Zc9jy1kfiEXnNw13Rqac\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791409701213}\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ccYSF0BcEKhDymx1wZPaHA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791409701213,\\\"i_b\\\":\\\"QfZt51ABI0dq5OqHZ969eE5Zc9jy1kfiEXnNw13Rqac\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791409701213}\",\"host\":\"localhost:8145\",\"origin\":\"http://localhost:3145\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"ccYSF0BcEKhDymx1wZPaHA==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3145\",\"path\":\"/protected\",\"raw_path\":\"/protected\",\"full_path\":\"http://localhost:3145/protected\",\"full_raw_path\":\"http://localhost:3145/protected\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/protected\",\"rx_router_session_rx_state_\":{\"client_token\":\"a7b0efc3-ef80-4239-8ef1-f97912e75b49\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"YHHaU7Vjknb4fOyOAAAH\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3145\",\"origin\":\"http://localhost:3145\",\"path\":\"/protected\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3145/protected\"}},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.google_auth_demo___google_auth_demo____drive_state\":{\"app_data_rx_state_\":\"\",\"loading_rx_state_\":false},\"reflex___state____state.reflex_google_auth___state____google_auth_state\":{\"access_token_rx_state_\":\"\",\"client_id_rx_state_\":\"123456789012-dummyclientid.apps.googleusercontent.com\",\"id_token_rx_state_\":\"\",\"id_token_json_rx_state_\":\"\",\"refresh_token_rx_state_\":\"\",\"scopes_rx_state_\":[],\"token_is_valid_rx_state_\":false,\"token_response_json_rx_state_\":\"\",\"tokeninfo_rx_state_\":{},\"user_email_rx_state_\":\"\",\"user_name_rx_state_\":\"\"},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 15.942,
+   "phase": "reload2",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 16.339,
+   "phase": "reload2",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state\":{\"token_response_json_rx_state_\":\"{\\\"id_token\\\": \\\"abc.def.ghi\\\", \\\"access_token\\\": \\\"ya29.bogus\\\", \\\"scope\\\": \\\"openid email\\\"}\",\"user_name_rx_state_\":\"\",\"access_token_rx_state_\":\"\",\"id_token_rx_state_\":\"\",\"user_email_rx_state_\":\"\",\"scopes_rx_state_\":[],\"tokeninfo_rx_state_\":{},\"id_token_json_rx_state_\":\"\"},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 16.343,
+   "phase": "reload2",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "t": 16.357,
+   "phase": "reload2",
+   "dir": "sent",
+   "data": "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"warn\",\"message\":\"[GSI_LOGGER]: google.accounts.id.initialize() is called multiple times. This could cause unexpected behavior and only the last initialized instance will be used.\"}}}"
+  }
+ ]
+}

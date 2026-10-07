@@ -1,0 +1,59 @@
+{
+ "checks": [
+  {
+   "name": "F-004 shown_1 keeps class-assigned backend default",
+   "ok": true,
+   "detail": "shown=label-const|16|A|cache='configured-at-import'"
+  },
+  {
+   "name": "F-004 shown_2_after_4.5s keeps class-assigned backend default",
+   "ok": true,
+   "detail": "shown=label-const|16|A|cache='configured-at-import'"
+  },
+  {
+   "name": "F-004 shown_new_client keeps class-assigned backend default",
+   "ok": true,
+   "detail": "shown=label-const|16|A|cache='configured-at-import'"
+  },
+  {
+   "name": "F-004 shown_new_client_after_4.5s keeps class-assigned backend default",
+   "ok": true,
+   "detail": "shown=label-const|16|A|cache='configured-at-import'"
+  }
+ ],
+ "anomalies": {
+  "console_nonbenign": [
+   {
+    "where": "start",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "benign": false
+   }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "start",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [],
+ "bad_responses_all": [],
+ "ws": [],
+ "results": {
+  "shown_1": "shown=label-const|16|A|cache='configured-at-import'",
+  "shown_2_after_4.5s": "shown=label-const|16|A|cache='configured-at-import'",
+  "shown_new_client": "shown=label-const|16|A|cache='configured-at-import'",
+  "shown_new_client_after_4.5s": "shown=label-const|16|A|cache='configured-at-import'",
+  "classattr_report": "class-level: _LABEL=Field(default='label-const', is_var=True, annotated_type=<class 'str'>) _SIZE=Field(default=16, is_var=True, annotated_type=<class 'int'>) _OPTS=Field(default_factory=functools.partial(<function deepcopy at 0x7f11cc7434c0>, {'a': 'A'}), is_var=True, annotated_type=collections.abc",
+  "from_const": "component-from-constant error: ChildrenTypeError: Component Text received child Field(default='label-const', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. A"
+ },
+ "label": "a3-prod"
+}

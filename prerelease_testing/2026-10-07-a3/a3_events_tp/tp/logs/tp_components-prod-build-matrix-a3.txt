@@ -1,0 +1,15 @@
+=== only clerk (skip monaco,webcam)
+SERVER DIED after 12s (http://localhost:8467/)
+Creating Production Build failed with exit code 1
+✗ Build failed in 3.00s
+Build failed with 1 error:
+[31m[MISSING_EXPORT] [0m"Event" is not exported by "utils/state.js".
+=== only monaco (skip clerk,webcam)
+SERVER DIED after 14s (http://localhost:8467/)
+Creating Production Build failed with exit code 1
+Error: Prerender: Request failed for /monaco/: Prerender (html): Received a 500 
+=== only webcam (skip clerk,monaco)
+SERVER DIED after 14s (http://localhost:8467/)
+Creating Production Build failed with exit code 1
+ReferenceError: muted is not defined
+Error: Prerender: Request failed for /webcam/: Prerender (html): Received a 500 

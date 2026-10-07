@@ -1,0 +1,11 @@
+PASS form renders in prod
+PASS submit without a solved captcha is rejected :: Enter your email to log in
+
+Captcha verification failed. Please try again.
+
+Send Magic Link
+Built with Reflex
+PASS stays on the login page :: http://localhost:8467/
+SUMMARY checks=3 failed=0 console_err/warn=1 pageerrors=0 failedreq=1 badresp=0
+  ANOMALY console_nonbenign: {"where": "start", "page": "main", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "benign": false}
+  ANOMALY failed_requests: {"where": "start", "page": "main", "url": "https://www.google.com/recaptcha/api.js?onload=onloadcallback&render=explicit", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}

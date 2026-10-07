@@ -1,0 +1,59 @@
+PASS index heading :: http://localhost:3154/
+PASS index shows Login link when anonymous
+PASS require_login redirects anonymous to /login :: http://localhost:3154/login
+PASS register page reached :: http://localhost:3154/register
+PASS password mismatch error
+PASS registration success message
+PASS redirected to /login after registration
+PASS duplicate username rejected
+PASS bad password error
+PASS login redirects back to /need2login (redirect_to) :: http://localhost:3154/need2login/
+PASS protected content visible
+PASS Logout link visible when authenticated
+PASS ProtectedState.on_load data
+PASS user-info username :: Username: alice409361
+
+No extra UserInfo for 1
+
+Built with Reflex
+PASS user-info without extra info :: Username: alice409361
+
+No extra UserInfo for 1
+
+Built with Reflex
+PASS still logged in after reload
+PASS second tab (same context) shares login
+PASS fresh context is anonymous -> /login :: http://localhost:3154/login
+PASS after logout index shows Login link
+PASS after logout /protected -> /login :: http://localhost:3154/login
+PASS second tab logged out after reload :: http://localhost:3154/login
+PASS custom registration success
+PASS custom user info email :: Username: bob409361
+
+Email: bob409361@example.com
+
+Account Created From: 127.0.0.1
+
+Built with Reflex
+PASS custom user info created_from_ip :: Username: bob409361
+
+Email: bob409361@example.com
+
+Account Created From: 127.0.0.1
+
+Built with Reflex
+PASS whoami LoginState sees parent computed var
+PASS whoami MyLocalAuthState sees user
+PASS whoami email (substate computed var)
+PASS whoami probe handler (get_state + inherited computed) :: user=bob409361 id=2 auth=True same_token=True email=bob409361@example.com
+PASS whoami after logout: email cleared
+PASS whoami after user switch shows U1
+PASS whoami after user switch: no email for U1
+PASS whoami probe after switch :: user=alice409361 id=1 auth=True same_token=True email=None
+FAIL subclass override of _validate_fields honoured via self.handle_registration() :: error_message='<gone>' success='<gone>' url=http://localhost:3154/login
+FAIL short-password user NOT created by strict register (DB) :: db row=(3, 'short409361', 1)
+PASS short session login
+PASS short session authenticated
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:3154/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0

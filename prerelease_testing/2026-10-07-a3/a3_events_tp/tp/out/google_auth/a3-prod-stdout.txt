@@ -1,0 +1,37 @@
+PASS index renders
+PASS index link Protected Page
+PASS index link Partially Protected Page
+PASS index link Custom Login Button
+PASS index link Custom Scope
+PASS /protected anonymous: no protected content
+PASS /partially-protected renders
+PASS /custom-button shows custom login button :: Google Login 🚀
+Built with Reflex
+PASS custom login button click handled (popup or no reflex error) :: popups=['https://accounts.google.com/signin/oauth/error?authError=Cg5pbnZhbGlkX2NsaWVudBIfVGhlIE9BdXRoIGNsaWVudCB3YXMgbm90IGZvdW5kLiCRAw&flowName=GeneralOAuthLite&client_id=123456789012-dummyclientid.apps.googleusercontent.com&as=S2082935870:1791409793299257&aes=AVQXgOCDqAOK-lIMa6kIQ4er-a3E']
+PASS /custom-scope (on_load DriveState + get_state(GoogleAuthState)) renders login button :: Login with Drive API scope
+Built with Reflex
+FAIL token_response_json LocalStorage key discoverable :: {"theme": "system"}
+PASS bogus token cleared from LocalStorage by tokeninfo computed var :: reflex___state____state.reflex_google_auth___state____google_auth_state.token_response_json_rx_state_=''
+PASS bogus token does not unlock /protected
+SUMMARY checks=13 failed=1 console_err/warn=9 pageerrors=3 failedreq=6 badresp=3
+  ANOMALY console_nonbenign: {"where": "protected", "page": "main", "type": "error", "text": "Failed to load resource: the server responded with a status of 403 ()", "benign": false}
+  ANOMALY console_nonbenign: {"where": "protected", "page": "main", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "benign": false}
+  ANOMALY console_nonbenign: {"where": "protected", "page": "main", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "benign": false}
+  ANOMALY console_nonbenign: {"where": "partially", "page": "main", "type": "error", "text": "Failed to load resource: the server responded with a status of 403 ()", "benign": false}
+  ANOMALY console_nonbenign: {"where": "partially", "page": "main", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "benign": false}
+  ANOMALY console_nonbenign: {"where": "partially", "page": "main", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "benign": false}
+  ANOMALY console_nonbenign: {"where": "after-inject", "page": "main", "type": "error", "text": "Failed to load resource: the server responded with a status of 403 ()", "benign": false}
+  ANOMALY console_nonbenign: {"where": "after-inject", "page": "main", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "benign": false}
+  ANOMALY console_nonbenign: {"where": "after-inject", "page": "main", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "benign": false}
+  ANOMALY page_errors: {"where": "protected", "page": "main", "error": "gis is not defined"}
+  ANOMALY page_errors: {"where": "partially", "page": "main", "error": "gis is not defined"}
+  ANOMALY page_errors: {"where": "after-inject", "page": "main", "error": "gis is not defined"}
+  ANOMALY failed_requests: {"where": "protected", "page": "main", "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.NNg7128vSs4.L.W.O/am=AAAAAYIABk0U/d=1/rs=AF0KOtVWWgbJzYkaOCFWlGnuhDjYYbEPYg/m=credential_button_library", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  ANOMALY failed_requests: {"where": "protected", "page": "main", "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.kPQq5DtIW3I.O/am=AAAAAIIABk0U/d=1/rs=AF0KOtXQUcHdHVftu_xOeoBxAu92HjSwRg/m=credential_button_library", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  ANOMALY failed_requests: {"where": "partially", "page": "main", "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.NNg7128vSs4.L.W.O/am=AAAAAYIAhk0U/d=1/rs=AF0KOtXEb85p0dumtckIXRcv5ipA0iTpPw/m=credential_button_library", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  ANOMALY failed_requests: {"where": "partially", "page": "main", "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.kPQq5DtIW3I.O/am=AAAAAIIAhk0U/d=1/rs=AF0KOtVnFhWAsyvzPJ9Lcc22KyF57eQpvQ/m=credential_button_library", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  ANOMALY failed_requests: {"where": "after-inject", "page": "main", "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.NNg7128vSs4.L.W.O/am=AAAAAYIAhl0U/d=1/rs=AF0KOtWWZIe5Vq_aX7VeWWtOkJWusAw0HA/m=credential_button_library", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  ANOMALY failed_requests: {"where": "after-inject", "page": "main", "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.kPQq5DtIW3I.O/am=AAAAAIIAhl0U/d=1/rs=AF0KOtWpsNzX3w2kfw-6yavi_7w-jIdWhQ/m=credential_button_library", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  ANOMALY bad_responses: {"where": "protected", "page": "main", "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_786935_518103&cas=FMEYiH7GgB6Z4RHsGMDwBWsOsyrn7KVOWxNXGmuO%2FJ4", "status": 403}
+  ANOMALY bad_responses: {"where": "partially", "page": "main", "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_791210_643957&cas=%2F%2B88tudvw%2FBkVi5T7wzXHODFG0FIOU38sVVFNQ3ojv4", "status": 403}
+  ANOMALY bad_responses: {"where": "after-inject", "page": "main", "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_798662_682716&cas=gJj2ILSvjktTblnNDG1R14lKrsCD5SCV4UnCkZncpRs", "status": 403}

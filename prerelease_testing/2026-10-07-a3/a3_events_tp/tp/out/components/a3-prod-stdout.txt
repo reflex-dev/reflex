@@ -1,0 +1,48 @@
+PASS /hotkey builds+renders :: /hotkey
+PASS global_hotkey_watcher delivers keys + modifiers :: a,shift+Shift,shift+B,Escape
+PASS /intersection builds+renders :: /intersection
+PASS intersection_observer on_intersect/on_non_intersect :: before='seen=0 unseen=1' in='seen=1 unseen=1' out='seen=1 unseen=2'
+PASS /audio builds+renders :: /audio
+FAIL audio capture start/stop -> on_data_available :: TIMEOUT(last="chunks=0 total=0 codec= started=false error={'isTrusted': False, 'data': {}}")
+PASS /webcam skipped (TP_SKIP) :: page left out of the app
+PASS /icons builds+renders :: /icons
+PASS simpleicons render :: svg+img=4
+PASS /monaco skipped (TP_SKIP) :: page left out of the app
+PASS /calendar builds+renders :: /calendar
+PASS react-calendar renders day tiles :: tiles=35
+FAIL calendar on_change -> state :: TIMEOUT(last='picked=')
+PASS /pyplot builds+renders :: /pyplot
+PASS pyplot renders PNG data URI and updates :: len1=10574 len2=9858
+PASS /recaptcha builds+renders :: /recaptcha
+PASS recaptcha widget mounted (iframe present or script attempted) :: ['http://localhost:8467/recaptcha/']
+PASS /motion builds+renders :: /motion
+PASS framer-motion div animates (style set) :: opacity: 1; transform: scale(1.5);
+PASS /type-animation builds+renders :: /type-animation
+PASS type animation types text :: Second line
+PASS /image-zoom builds+renders :: /image-zoom
+PASS image zoom opens modal :: modal-like elements=2
+PASS /color-picker builds+renders :: /color-picker
+PASS color picker on_change -> state :: #2878c9
+PASS /qrcode builds+renders :: /qrcode
+PASS qrcode re-renders on state change :: len1=15814 len2=11110
+FAIL /dynoselect builds :: VarTypeError: Unsupported Operand type(s) for []: ObjectCastedVar, Field
+PASS /chat builds+renders :: /chat
+PASS reflex-chat default process appends assistant reply :: TIMEOUT(last='home\n/chat\nBuilt with\n\nhello bot\n\nPass the process argument to connect the chat to a model.\n\nSend\nBuilt with Reflex')
+PASS /chat-initial builds+renders :: /chat-initial
+PASS reflex-chat initial_messages rendered :: home
+/chat-initial
+Built with
+
+INITIAL-GREETING
+
+Send
+Built with Reflex
+PASS /clerk skipped (TP_SKIP) :: page left out of the app
+PASS errors page :: 1 errors
+SUMMARY checks=34 failed=3 console_err/warn=2 pageerrors=2 failedreq=2 badresp=0
+  ANOMALY console_nonbenign: {"where": "/hotkey", "page": "main", "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)", "benign": false}
+  ANOMALY console_nonbenign: {"where": "/recaptcha", "page": "main", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "benign": false}
+  ANOMALY page_errors: {"where": "/audio", "page": "main", "error": "Failed to execute 'importScripts' on 'WorkerGlobalScope': The script at 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js' failed to load."}
+  ANOMALY page_errors: {"where": "/audio", "page": "main", "error": "Cannot read properties of null (reading 'name')"}
+  ANOMALY failed_requests: {"where": "/audio", "page": "main", "url": "https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  ANOMALY failed_requests: {"where": "/recaptcha", "page": "main", "url": "https://www.google.com/recaptcha/api.js?onload=onloadcallback&render=explicit", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
