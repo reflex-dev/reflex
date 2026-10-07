@@ -693,6 +693,51 @@ def test_class_assignment_history_is_bounded():
     assert ConfigState()._value == 100 - kept
 
 
+def test_class_assignment_calls_declared_factory_only_for_frontend_strings():
+    """A declared factory is only called to learn the browser storage it produces.
+
+    Only a frontend var is stored in the browser, and only a string is kept in
+    browser storage, so other assignments leave the factory uncalled.
+    """
+    calls = []
+
+    def recorded(name: str, value: Any) -> Callable[[], Any]:
+        """Make a default factory that records each call.
+
+        Args:
+            name: The name recorded for a call.
+            value: The value the factory produces.
+
+        Returns:
+            The default factory.
+        """
+
+        def factory() -> Any:
+            """Produce the declared default, recording the call.
+
+            Returns:
+                The declared default.
+            """
+            calls.append(name)
+            return value
+
+        return factory
+
+    class ConfigState(BaseState):
+        items: Field[list[int]] = field(default_factory=recorded("items", [1]))
+        label: Field[str] = field(default_factory=recorded("label", "declared"))
+        _label: Field[str] = field(default_factory=recorded("_label", "declared"))
+
+    ConfigState.items = [2]
+    ConfigState._label = "assigned"
+    assert calls == []
+    ConfigState.label = "assigned"
+    assert calls == ["label"]
+    assert type(ConfigState.get_fields()["label"].default) is str
+    state = ConfigState()
+    assert (state.items, state.label, state._label) == ([2], "assigned", "assigned")
+
+
 def test_class_assignment_delattr_restores_default():
     """Deleting a var through its class restores its previous default, keeping the field."""
 

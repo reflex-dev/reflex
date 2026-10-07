@@ -4743,6 +4743,9 @@ def _keep_client_storage(declared: Field, value: Any) -> Any:
 
     A browser storage var is classified and configured by its default value,
     so a plain value replacing it must carry the same storage type and options.
+    A default factory only reveals the storage it produces when called, so it
+    is called once for a plain string assigned to a frontend var, the only kind
+    the browser stores.
 
     Args:
         declared: The field.
@@ -4752,6 +4755,13 @@ def _keep_client_storage(declared: Field, value: Any) -> Any:
         The value held by the declared storage, or the value unchanged.
     """
     storage: Any = declared.default
+    if (
+        declared.default is MISSING
+        and declared.default_factory is not None
+        and not declared._backend
+        and isinstance(value, str)
+    ):
+        storage = declared.default_factory()
     if isinstance(storage, declared._client_storage):
         return storage._with_value(value)
     return value
@@ -4840,11 +4850,12 @@ class BaseStateMeta(ABCMeta):
         A value the field's annotation accepts becomes the default. A
         zero-argument callable it does not accept becomes the default factory,
         after one call validates what it produces, unless it produces a browser
-        storage value, which becomes the default itself. A plain value assigned
-        to a browser storage default, or produced by an assigned factory, keeps
-        the declared storage type and options. Assigning the field itself, or the
-        Var read through the class, undoes the most recent assignment, as
-        patching tools do to restore what they saved.
+        storage value, which becomes the default itself. A plain value, assigned
+        or produced by an assigned factory, keeps the storage type and options of
+        a browser storage default, or of the value a frontend var's declared
+        default factory produces, which is called once to find them. Assigning
+        the field itself, or the Var read through the class, undoes the most
+        recent assignment, as patching tools do to restore what they saved.
 
         Args:
             name: The class attribute being assigned.

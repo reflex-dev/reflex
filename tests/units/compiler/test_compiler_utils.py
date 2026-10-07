@@ -345,6 +345,7 @@ def test_storage_factory_assignment_keeps_classification(
 
 
 @pytest.mark.parametrize("factory", [False, True])
+@pytest.mark.parametrize("declared_factory", [False, True])
 @pytest.mark.parametrize("annotated_storage", [False, True])
 @pytest.mark.parametrize(
     ("storage_type", "settings", "storage_key"),
@@ -380,6 +381,7 @@ def test_plain_default_assignment_keeps_browser_storage(
     settings: dict[str, Any],
     storage_key: str,
     annotated_storage: bool,
+    declared_factory: bool,
     factory: bool,
     forked_registration_context: RegistrationContext,
 ):
@@ -390,22 +392,38 @@ def test_plain_default_assignment_keeps_browser_storage(
         settings: The storage options of the declaration.
         storage_key: The compiled storage section listing the var.
         annotated_storage: Whether the var is annotated with the storage type, or str.
+        declared_factory: Whether the declaration is a factory producing the storage value.
         factory: Whether to assign a factory producing the plain value.
         forked_registration_context: Keeps the test's state out of other tests.
     """
     declared_default = storage_type("old", **settings)
+    calls = []
+
+    def declared_storage() -> str:
+        """Produce the declared storage value, recording each call.
+
+        Returns:
+            The storage value.
+        """
+        calls.append(True)
+        return storage_type("old", **settings)
+
     storage_state: Any = type(
         "StorageState",
         (State,),
         {
             "__annotations__": {"value": storage_type if annotated_storage else str},
-            "value": declared_default,
+            "value": rx.field(default_factory=declared_storage)
+            if declared_factory
+            else declared_default,
             "__module__": __name__,
         },
     )
     declared = storage_state.get_fields()["value"]
     storage_state.value = (lambda: "new") if factory else "new"
 
+    # A declared factory is called once to learn the storage it produces.
+    assert len(calls) == declared_factory
     assert type(declared.default) is storage_type
     assert declared.default == "new"
     assert vars(declared.default) == vars(declared_default)
@@ -416,6 +434,7 @@ def test_plain_default_assignment_keeps_browser_storage(
     state = storage_state(value="changed")
     state._reset_client_storage()
     assert state.value == "new"
+    assert len(calls) == declared_factory
 
     with pytest.raises(TypeError, match="Invalid default"):
         storage_state.value = 1
