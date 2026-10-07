@@ -1002,6 +1002,9 @@ import sys
 from reflex_base.utils import log
 
 if not log.is_output_supervised():
+    # Per-line sleeps can overshoot on macOS. Test backpressure within a generous
+    # drain budget; the lingering-descendant tests exercise the production limit.
+    log._DRAIN_MAX_SECONDS = 30
     sys.exit(log.supervise_output([sys.executable, __file__]))
 for i in range(200):
     print(f"line {i:03d} " + "x" * 1000)
@@ -1024,8 +1027,10 @@ def test_supervise_output_drains_everything_for_a_slow_consumer(tmp_path):
             lines.append(line)
             time.sleep(0.015)
         proc.wait(timeout=30)
-    assert len(lines) == 200
-    assert json.loads(lines[-1])["message"].startswith("line 199 ")
+    assert proc.returncode == 0
+    assert [json.loads(line)["message"] for line in lines] == [
+        f"line {i:03d} " + "x" * 1000 for i in range(200)
+    ]
 
 
 _LINGERING_SCRIPT = """
