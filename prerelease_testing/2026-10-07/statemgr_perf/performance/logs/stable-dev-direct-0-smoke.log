@@ -1,0 +1,7 @@
+WARN `--no-project` was provided, but no project was found
+{
+ "reflex": "0.9.12",
+ "path": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py",
+ "mode": "dev",
+ "smoke": true
+}

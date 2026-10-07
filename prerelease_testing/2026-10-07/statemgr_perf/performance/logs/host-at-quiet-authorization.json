@@ -1,0 +1,52 @@
+{
+  "recorded_at_utc": "2026-10-07T08:28:29.183843+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "python": "3.12.14",
+  "logical_cpu_python": 10,
+  "load_average": [
+    3.4453125,
+    4.087890625,
+    4.75244140625
+  ],
+  "quiet_scope": "Coordinator confirmed no other campaign Reflex/browser/Redis workloads; ordinary host apps remain.",
+  "hardware": {
+    "command": [
+      "sysctl",
+      "-n",
+      "hw.model",
+      "hw.logicalcpu",
+      "hw.physicalcpu",
+      "hw.memsize",
+      "machdep.cpu.brand_string"
+    ],
+    "stdout": "MacBookPro18,3\n10\n10\n17179869184\nApple M1 Pro",
+    "stderr": "",
+    "returncode": 0
+  },
+  "macos": {
+    "command": [
+      "sw_vers"
+    ],
+    "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83",
+    "stderr": "",
+    "returncode": 0
+  },
+  "node": {
+    "command": [
+      "node",
+      "--version"
+    ],
+    "stdout": "v26.8.1",
+    "stderr": "",
+    "returncode": 0
+  },
+  "uv": {
+    "command": [
+      "uv",
+      "--version"
+    ],
+    "stdout": "uv 0.12.18 (01cb90c1a 2026-09-22 aarch64-apple-darwin)",
+    "stderr": "",
+    "returncode": 0
+  }
+}

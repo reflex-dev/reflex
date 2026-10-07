@@ -1,0 +1,898 @@
+[
+  {
+    "label": "stable-dev-direct-0",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.625,
+      4.22509765625,
+      4.68505859375
+    ],
+    "load_average_after": [
+      4.625,
+      4.22509765625,
+      4.68505859375
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-dev-direct-0",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.625,
+      4.22509765625,
+      4.68505859375
+    ],
+    "load_average_after": [
+      4.625,
+      4.22509765625,
+      4.68505859375
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-prod-direct-0",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.625,
+      4.22509765625,
+      4.68505859375
+    ],
+    "load_average_after": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-prod-direct-0",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "load_average_after": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-vars-0",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "load_average_after": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-vars-0",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "load_average_after": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-dev-direct-1",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "load_average_after": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-dev-direct-1",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "load_average_after": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-prod-direct-1",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "load_average_after": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-prod-direct-1",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "load_average_after": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-vars-1",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49462890625,
+      4.20458984375,
+      4.6748046875
+    ],
+    "load_average_after": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-vars-1",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "load_average_after": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-dev-direct-2",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "load_average_after": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-dev-direct-2",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "load_average_after": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-prod-direct-2",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "load_average_after": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-prod-direct-2",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "load_average_after": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-vars-2",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.53466796875,
+      4.2177734375,
+      4.67626953125
+    ],
+    "load_average_after": [
+      4.49169921875,
+      4.2138671875,
+      4.671875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-vars-2",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49169921875,
+      4.2138671875,
+      4.671875
+    ],
+    "load_average_after": [
+      4.49169921875,
+      4.2138671875,
+      4.671875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-compile-setup",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [
+      "0.42"
+    ],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49169921875,
+      4.2138671875,
+      4.671875
+    ],
+    "load_average_after": [
+      4.49169921875,
+      4.2138671875,
+      4.671875
+    ],
+    "package_install_log_lines": [
+      "Debug: bun install v1.4.0 (34cbb9a40)",
+      "Debug: Checked 226 installs across 250 packages (no changes) [42.00ms]",
+      "Debug: Installing frontend development dependencies",
+      "Debug: Installing frontend packages"
+    ]
+  },
+  {
+    "label": "alpha2-compile-setup",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [
+      "0.34"
+    ],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49169921875,
+      4.2138671875,
+      4.671875
+    ],
+    "load_average_after": [
+      4.4521484375,
+      4.2099609375,
+      4.66748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-python-compile-setup",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [
+      "0.42"
+    ],
+    "full_python_compile_seconds": [
+      "0.722"
+    ],
+    "load_average_before": [
+      4.4521484375,
+      4.2099609375,
+      4.66748046875
+    ],
+    "load_average_after": [
+      4.4521484375,
+      4.2099609375,
+      4.66748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-python-compile-setup",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [
+      "0.37"
+    ],
+    "full_python_compile_seconds": [
+      "0.689"
+    ],
+    "load_average_before": [
+      4.4521484375,
+      4.2099609375,
+      4.66748046875
+    ],
+    "load_average_after": [
+      4.4521484375,
+      4.2099609375,
+      4.66748046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-python-compile-0",
+    "returncode": 0,
+    "wall_ns": 1222525375,
+    "compile_pages_seconds": [
+      "0.42"
+    ],
+    "full_python_compile_seconds": [
+      "0.726"
+    ],
+    "load_average_before": [
+      4.4521484375,
+      4.2099609375,
+      4.66748046875
+    ],
+    "load_average_after": [
+      4.49560546875,
+      4.22265625,
+      4.6689453125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-compile-0",
+    "returncode": 0,
+    "wall_ns": 2905035916,
+    "compile_pages_seconds": [
+      "0.42"
+    ],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49560546875,
+      4.22265625,
+      4.6689453125
+    ],
+    "load_average_after": [
+      4.49560546875,
+      4.22265625,
+      4.6689453125
+    ],
+    "package_install_log_lines": [
+      "Debug: bun install v1.4.0 (34cbb9a40)",
+      "Debug: Checked 226 installs across 250 packages (no changes) [16.00ms]",
+      "Debug: Installing frontend development dependencies",
+      "Debug: Installing frontend packages"
+    ]
+  },
+  {
+    "label": "alpha2-python-compile-0",
+    "returncode": 0,
+    "wall_ns": 1086994541,
+    "compile_pages_seconds": [
+      "0.34"
+    ],
+    "full_python_compile_seconds": [
+      "0.638"
+    ],
+    "load_average_before": [
+      4.49560546875,
+      4.22265625,
+      4.6689453125
+    ],
+    "load_average_after": [
+      4.49560546875,
+      4.22265625,
+      4.6689453125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-compile-0",
+    "returncode": 0,
+    "wall_ns": 2773847417,
+    "compile_pages_seconds": [
+      "0.34"
+    ],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.49560546875,
+      4.22265625,
+      4.6689453125
+    ],
+    "load_average_after": [
+      4.69580078125,
+      4.2685546875,
+      4.68212890625
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-python-compile-1",
+    "returncode": 0,
+    "wall_ns": 1220024750,
+    "compile_pages_seconds": [
+      "0.37"
+    ],
+    "full_python_compile_seconds": [
+      "0.691"
+    ],
+    "load_average_before": [
+      4.69580078125,
+      4.2685546875,
+      4.68212890625
+    ],
+    "load_average_after": [
+      4.69580078125,
+      4.2685546875,
+      4.68212890625
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-compile-1",
+    "returncode": 0,
+    "wall_ns": 2800607875,
+    "compile_pages_seconds": [
+      "0.37"
+    ],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.69580078125,
+      4.2685546875,
+      4.68212890625
+    ],
+    "load_average_after": [
+      5.4404296875,
+      4.4296875,
+      4.736328125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-python-compile-1",
+    "returncode": 0,
+    "wall_ns": 1173345083,
+    "compile_pages_seconds": [
+      "0.42"
+    ],
+    "full_python_compile_seconds": [
+      "0.717"
+    ],
+    "load_average_before": [
+      5.4404296875,
+      4.4296875,
+      4.736328125
+    ],
+    "load_average_after": [
+      5.4404296875,
+      4.4296875,
+      4.736328125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-compile-1",
+    "returncode": 0,
+    "wall_ns": 2864224750,
+    "compile_pages_seconds": [
+      "0.42"
+    ],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      5.4404296875,
+      4.4296875,
+      4.736328125
+    ],
+    "load_average_after": [
+      5.48486328125,
+      4.45556640625,
+      4.74365234375
+    ],
+    "package_install_log_lines": [
+      "Debug: bun install v1.4.0 (34cbb9a40)",
+      "Debug: Checked 226 installs across 250 packages (no changes) [16.00ms]",
+      "Debug: Installing frontend development dependencies",
+      "Debug: Installing frontend packages"
+    ]
+  },
+  {
+    "label": "stable-python-compile-2",
+    "returncode": 0,
+    "wall_ns": 1182883209,
+    "compile_pages_seconds": [
+      "0.43"
+    ],
+    "full_python_compile_seconds": [
+      "0.734"
+    ],
+    "load_average_before": [
+      5.48486328125,
+      4.45556640625,
+      4.74365234375
+    ],
+    "load_average_after": [
+      5.48486328125,
+      4.45556640625,
+      4.74365234375
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-compile-2",
+    "returncode": 0,
+    "wall_ns": 3022985333,
+    "compile_pages_seconds": [
+      "0.42"
+    ],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      5.48486328125,
+      4.45556640625,
+      4.74365234375
+    ],
+    "load_average_after": [
+      5.48486328125,
+      4.45556640625,
+      4.74365234375
+    ],
+    "package_install_log_lines": [
+      "Debug: bun install v1.4.0 (34cbb9a40)",
+      "Debug: Checked 226 installs across 250 packages (no changes) [15.00ms]",
+      "Debug: Installing frontend development dependencies",
+      "Debug: Installing frontend packages"
+    ]
+  },
+  {
+    "label": "alpha2-python-compile-2",
+    "returncode": 0,
+    "wall_ns": 1095747458,
+    "compile_pages_seconds": [
+      "0.34"
+    ],
+    "full_python_compile_seconds": [
+      "0.640"
+    ],
+    "load_average_before": [
+      5.48486328125,
+      4.45556640625,
+      4.74365234375
+    ],
+    "load_average_after": [
+      5.12548828125,
+      4.39794921875,
+      4.7216796875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-compile-2",
+    "returncode": 0,
+    "wall_ns": 2680506000,
+    "compile_pages_seconds": [
+      "0.34"
+    ],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      5.12548828125,
+      4.39794921875,
+      4.7216796875
+    ],
+    "load_average_after": [
+      5.12548828125,
+      4.39794921875,
+      4.7216796875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-shared0-browser-0",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      5.515625,
+      4.49072265625,
+      4.75244140625
+    ],
+    "load_average_after": [
+      5.15380859375,
+      4.4326171875,
+      4.72998046875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-shared0-browser-0",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.82080078125,
+      4.37548828125,
+      4.7080078125
+    ],
+    "load_average_after": [
+      4.5947265625,
+      4.3359375,
+      4.69189453125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-shared1-browser-0",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.466796875,
+      4.3134765625,
+      4.681640625
+    ],
+    "load_average_after": [
+      4.669921875,
+      4.3671875,
+      4.6962890625
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-shared1-browser-0",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.4560546875,
+      4.32763671875,
+      4.68017578125
+    ],
+    "load_average_after": [
+      4.57958984375,
+      4.35498046875,
+      4.6875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-shared1-browser-1",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.57958984375,
+      4.35498046875,
+      4.6875
+    ],
+    "load_average_after": [
+      4.32958984375,
+      4.3095703125,
+      4.6669921875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-shared1-browser-1",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.32958984375,
+      4.3095703125,
+      4.6669921875
+    ],
+    "load_average_after": [
+      4.1982421875,
+      4.2822265625,
+      4.65283203125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-shared0-browser-1",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.18212890625,
+      4.27734375,
+      4.64892578125
+    ],
+    "load_average_after": [
+      4.00732421875,
+      4.2392578125,
+      4.63330078125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-shared0-browser-1",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.24658203125,
+      4.28466796875,
+      4.64697265625
+    ],
+    "load_average_after": [
+      4.06640625,
+      4.24658203125,
+      4.63134765625
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-shared0-browser-2",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      3.90087890625,
+      4.208984375,
+      4.61572265625
+    ],
+    "load_average_after": [
+      3.76220703125,
+      4.16845703125,
+      4.59619140625
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-shared0-browser-2",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      3.76220703125,
+      4.16845703125,
+      4.59619140625
+    ],
+    "load_average_after": [
+      4.8359375,
+      4.3916015625,
+      4.669921875
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-shared1-browser-2",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.8359375,
+      4.3916015625,
+      4.669921875
+    ],
+    "load_average_after": [
+      4.8603515625,
+      4.4111328125,
+      4.6728515625
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-shared1-browser-2",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.7109375,
+      4.3876953125,
+      4.66259765625
+    ],
+    "load_average_after": [
+      4.65380859375,
+      4.380859375,
+      4.65869140625
+    ],
+    "package_install_log_lines": []
+  }
+]

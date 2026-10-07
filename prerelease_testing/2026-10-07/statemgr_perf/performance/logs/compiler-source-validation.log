@@ -1,0 +1,159 @@
+stable: /private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/reflex.py:783
+780:     is_flag=True,
+781:     help="Whether to use rich progress bars.",
+782: )
+783: def compile(dry: bool, rich: bool):
+784:     """Compile the app in the current directory."""
+785:     import time
+786: 
+787:     from reflex.utils import prerequisites
+788: 
+789:     # Check the app.
+790:     if prerequisites.needs_reinit():
+791:         _init(name=get_config().app_name)
+792:     reload_config()
+793:     starting_time = time.monotonic()
+794:     prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
+795:     elapsed_time = time.monotonic() - starting_time
+796:     logger.log(log.SUCCESS, f"App compiled successfully in {elapsed_time:.3f} seconds.")
+797: 
+
+stable: /private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/compiler/compiler.py:1321
+1318:     )
+1319: 
+1320:     with (
+1321:         log.timing(logger, "Compile pages"),
+1322:         otel.span("reflex.compile.pages"),
+1323:         compile_ctx,
+1324:     ):
+1325:         compile_ctx.compile(
+1326:             evaluate_progress=lambda: progress.advance(task),
+1327:             render_progress=lambda: progress.advance(task),
+1328:         )
+1329: 
+1330:     for route, page_ctx in compile_ctx.compiled_pages.items():
+1331:         app._check_routes_conflict(route)
+1332:         if not isinstance(page_ctx.root_component, Component):
+1333:             msg = (
+1334:                 f"Compiled page {route!r} root must be a Component before it can "
+1335:                 "be registered on the app."
+
+stable: /private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/compiler/compiler.py:1404
+1401:         ] = hydrate_fallback_definition
+1402:         hydrate_fallback_export = hydrate_fallback_definition.export_name
+1403: 
+1404:     memo_component_files, memo_components_imports = compile_memo_components(
+1405:         (
+1406:             *MEMOS.values(),
+1407:             *compile_ctx.auto_memo_components.values(),
+1408:         ),
+1409:     )
+1410:     compile_results.extend(memo_component_files)
+1411:     all_imports = utils.merge_imports(all_imports, memo_components_imports)
+1412:     progress.advance(task)
+1413: 
+1414:     compile_results.append(
+1415:         compile_document_root(
+1416:             app.head_components,
+1417:             html_lang=app.html_lang,
+1418:             html_custom_attrs=(
+
+stable: /private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/compiler/compiler.py:1509
+1506: 
+1507:     progress.stop()
+1508: 
+1509:     if dry_run:
+1510:         return True
+1511: 
+1512:     # Delete memo files this compile no longer emits. Done here (not before the
+1513:     # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.
+1514:     utils.prune_stale_memo_files(path for path, _ in memo_component_files)
+1515:     # A leftover ``.js`` module would win extensionless resolution of
+1516:     # ``$/utils/context`` over the ``.jsx`` file written below.
+1517:     Path(utils.get_context_path()).with_suffix(constants.Ext.JS).unlink(missing_ok=True)
+1518: 
+1519:     with (
+1520:         log.timing(logger, "Install Frontend Packages"),
+1521:         otel.span("reflex.compile.install_frontend_packages"),
+1522:     ):
+1523:         app._get_frontend_packages(all_imports)
+
+alpha2: /private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/reflex.py:835
+832:     is_flag=True,
+833:     help="Whether to use rich progress bars.",
+834: )
+835: def compile(dry: bool, rich: bool):
+836:     """Compile the app in the current directory."""
+837:     import time
+838: 
+839:     from reflex.utils import prerequisites
+840: 
+841:     # Check the app.
+842:     if prerequisites.needs_reinit():
+843:         _init(name=get_config().app_name)
+844:     reload_config()
+845:     starting_time = time.monotonic()
+846:     prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
+847:     elapsed_time = time.monotonic() - starting_time
+848:     logger.log(log.SUCCESS, f"App compiled successfully in {elapsed_time:.3f} seconds.")
+849: 
+
+alpha2: /private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/compiler/compiler.py:1318
+1315:     )
+1316: 
+1317:     with (
+1318:         log.timing(logger, "Compile pages"),
+1319:         otel.span("reflex.compile.pages"),
+1320:         compile_ctx,
+1321:     ):
+1322:         compile_ctx.compile(
+1323:             evaluate_progress=lambda: progress.advance(task),
+1324:             render_progress=lambda: progress.advance(task),
+1325:         )
+1326: 
+1327:     for route, page_ctx in compile_ctx.compiled_pages.items():
+1328:         app._check_routes_conflict(route)
+1329:         if not isinstance(page_ctx.root_component, Component):
+1330:             msg = (
+1331:                 f"Compiled page {route!r} root must be a Component before it can "
+1332:                 "be registered on the app."
+
+alpha2: /private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/compiler/compiler.py:1401
+1398:         ] = hydrate_fallback_definition
+1399:         hydrate_fallback_export = hydrate_fallback_definition.export_name
+1400: 
+1401:     memo_component_files, memo_components_imports = compile_memo_components(
+1402:         (
+1403:             *MEMOS.values(),
+1404:             *compile_ctx.auto_memo_components.values(),
+1405:         ),
+1406:     )
+1407:     compile_results.extend(memo_component_files)
+1408:     all_imports = utils.merge_imports(all_imports, memo_components_imports)
+1409:     progress.advance(task)
+1410: 
+1411:     compile_results.append(
+1412:         compile_document_root(
+1413:             app.head_components,
+1414:             html_lang=app.html_lang,
+1415:             html_custom_attrs=(
+
+alpha2: /private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/compiler/compiler.py:1506
+1503: 
+1504:     progress.stop()
+1505: 
+1506:     if dry_run:
+1507:         return True
+1508: 
+1509:     # Delete memo files this compile no longer emits. Done here (not before the
+1510:     # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.
+1511:     utils.prune_stale_memo_files(path for path, _ in memo_component_files)
+1512:     # A leftover ``.js`` module would win extensionless resolution of
+1513:     # ``$/utils/context`` over the ``.jsx`` file written below.
+1514:     Path(utils.get_context_path()).with_suffix(constants.Ext.JS).unlink(missing_ok=True)
+1515: 
+1516:     with (
+1517:         log.timing(logger, "Install Frontend Packages"),
+1518:         otel.span("reflex.compile.install_frontend_packages"),
+1519:     ):
+1520:         app._get_frontend_packages(all_imports)

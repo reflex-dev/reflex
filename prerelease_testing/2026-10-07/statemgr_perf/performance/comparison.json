@@ -1,0 +1,720 @@
+{
+  "isolated": {
+    "stable": {
+      "dev_read_ns_per_op": {
+        "samples": [
+          903.77292,
+          883.62,
+          895.57208
+        ],
+        "median": 895.57208,
+        "min": 883.62,
+        "max": 903.77292
+      },
+      "dev_write_ns_per_op": {
+        "samples": [
+          9041.21792,
+          9387.88042,
+          8926.4725
+        ],
+        "median": 9041.21792,
+        "min": 8926.4725,
+        "max": 9387.88042
+      },
+      "prod_read_ns_per_op": {
+        "samples": [
+          918.1725,
+          983.33625,
+          960.12917
+        ],
+        "median": 960.12917,
+        "min": 918.1725,
+        "max": 983.33625
+      },
+      "prod_write_ns_per_op": {
+        "samples": [
+          9352.99667,
+          8871.44333,
+          10029.79584
+        ],
+        "median": 9352.99667,
+        "min": 8871.44333,
+        "max": 10029.79584
+      },
+      "var_construction_ms": {
+        "samples": [
+          245.292542,
+          262.449709,
+          245.951166
+        ],
+        "median": 245.951166,
+        "min": 245.292542,
+        "max": 262.449709
+      }
+    },
+    "alpha2": {
+      "dev_read_ns_per_op": {
+        "samples": [
+          207.00417,
+          203.92084,
+          205.40833
+        ],
+        "median": 205.40833,
+        "min": 203.92084,
+        "max": 207.00417
+      },
+      "dev_write_ns_per_op": {
+        "samples": [
+          1037.39333,
+          1083.10334,
+          1041.935
+        ],
+        "median": 1041.935,
+        "min": 1037.39333,
+        "max": 1083.10334
+      },
+      "prod_read_ns_per_op": {
+        "samples": [
+          203.45,
+          203.415,
+          206.76416
+        ],
+        "median": 203.45,
+        "min": 203.415,
+        "max": 206.76416
+      },
+      "prod_write_ns_per_op": {
+        "samples": [
+          855.81625,
+          859.24875,
+          871.75209
+        ],
+        "median": 859.24875,
+        "min": 855.81625,
+        "max": 871.75209
+      },
+      "var_construction_ms": {
+        "samples": [
+          174.440125,
+          180.952125,
+          173.242541
+        ],
+        "median": 174.440125,
+        "min": 173.242541,
+        "max": 180.952125
+      }
+    }
+  },
+  "compile": {
+    "stable": {
+      "compile_process_seconds": {
+        "samples": [
+          2.905035916,
+          2.86422475,
+          3.022985333
+        ],
+        "median": 2.905035916,
+        "min": 2.86422475,
+        "max": 3.022985333
+      },
+      "compile_pages_seconds": {
+        "samples": [
+          0.42,
+          0.42,
+          0.42
+        ],
+        "median": 0.42,
+        "min": 0.42,
+        "max": 0.42
+      },
+      "compile_install_evidence": [
+        {
+          "repeat": 0,
+          "reported_install_seconds": [
+            "0.07"
+          ],
+          "bun_install_invoked": true,
+          "install_lines": [
+            "Debug: bun install v1.4.0 (34cbb9a40)",
+            "Debug: Checked 226 installs across 250 packages (no changes) [16.00ms]",
+            "Debug: [timing] Install Frontend Packages: 0.07s"
+          ]
+        },
+        {
+          "repeat": 1,
+          "reported_install_seconds": [
+            "0.08"
+          ],
+          "bun_install_invoked": true,
+          "install_lines": [
+            "Debug: bun install v1.4.0 (34cbb9a40)",
+            "Debug: Checked 226 installs across 250 packages (no changes) [16.00ms]",
+            "Debug: [timing] Install Frontend Packages: 0.08s"
+          ]
+        },
+        {
+          "repeat": 2,
+          "reported_install_seconds": [
+            "0.08"
+          ],
+          "bun_install_invoked": true,
+          "install_lines": [
+            "Debug: bun install v1.4.0 (34cbb9a40)",
+            "Debug: Checked 226 installs across 250 packages (no changes) [15.00ms]",
+            "Debug: [timing] Install Frontend Packages: 0.08s"
+          ]
+        }
+      ],
+      "python-compile_process_seconds": {
+        "samples": [
+          1.222525375,
+          1.173345083,
+          1.182883209
+        ],
+        "median": 1.182883209,
+        "min": 1.173345083,
+        "max": 1.222525375
+      },
+      "python-compile_pages_seconds": {
+        "samples": [
+          0.42,
+          0.42,
+          0.43
+        ],
+        "median": 0.42,
+        "min": 0.42,
+        "max": 0.43
+      },
+      "full_python_internal_seconds": {
+        "samples": [
+          0.726,
+          0.717,
+          0.734
+        ],
+        "median": 0.726,
+        "min": 0.717,
+        "max": 0.734
+      },
+      "python-compile_install_evidence": [
+        {
+          "repeat": 0,
+          "reported_install_seconds": [],
+          "bun_install_invoked": false,
+          "install_lines": []
+        },
+        {
+          "repeat": 1,
+          "reported_install_seconds": [],
+          "bun_install_invoked": false,
+          "install_lines": []
+        },
+        {
+          "repeat": 2,
+          "reported_install_seconds": [],
+          "bun_install_invoked": false,
+          "install_lines": []
+        }
+      ]
+    },
+    "alpha2": {
+      "compile_process_seconds": {
+        "samples": [
+          2.773847417,
+          2.800607875,
+          2.680506
+        ],
+        "median": 2.773847417,
+        "min": 2.680506,
+        "max": 2.800607875
+      },
+      "compile_pages_seconds": {
+        "samples": [
+          0.34,
+          0.37,
+          0.34
+        ],
+        "median": 0.34,
+        "min": 0.34,
+        "max": 0.37
+      },
+      "compile_install_evidence": [
+        {
+          "repeat": 0,
+          "reported_install_seconds": [
+            "0.00"
+          ],
+          "bun_install_invoked": false,
+          "install_lines": [
+            "Debug: [timing] Install Frontend Packages: 0.00s"
+          ]
+        },
+        {
+          "repeat": 1,
+          "reported_install_seconds": [
+            "0.00"
+          ],
+          "bun_install_invoked": false,
+          "install_lines": [
+            "Debug: [timing] Install Frontend Packages: 0.00s"
+          ]
+        },
+        {
+          "repeat": 2,
+          "reported_install_seconds": [
+            "0.00"
+          ],
+          "bun_install_invoked": false,
+          "install_lines": [
+            "Debug: [timing] Install Frontend Packages: 0.00s"
+          ]
+        }
+      ],
+      "python-compile_process_seconds": {
+        "samples": [
+          1.086994541,
+          1.22002475,
+          1.095747458
+        ],
+        "median": 1.095747458,
+        "min": 1.086994541,
+        "max": 1.22002475
+      },
+      "python-compile_pages_seconds": {
+        "samples": [
+          0.34,
+          0.37,
+          0.34
+        ],
+        "median": 0.34,
+        "min": 0.34,
+        "max": 0.37
+      },
+      "full_python_internal_seconds": {
+        "samples": [
+          0.638,
+          0.691,
+          0.64
+        ],
+        "median": 0.64,
+        "min": 0.638,
+        "max": 0.691
+      },
+      "python-compile_install_evidence": [
+        {
+          "repeat": 0,
+          "reported_install_seconds": [],
+          "bun_install_invoked": false,
+          "install_lines": []
+        },
+        {
+          "repeat": 1,
+          "reported_install_seconds": [],
+          "bun_install_invoked": false,
+          "install_lines": []
+        },
+        {
+          "repeat": 2,
+          "reported_install_seconds": [],
+          "bun_install_invoked": false,
+          "install_lines": []
+        }
+      ]
+    }
+  },
+  "browser": {
+    "stable-shared0": {
+      "repeat_medians": {
+        "handler_cpu_ms": {
+          "samples": [
+            32.447,
+            33.429,
+            32.954
+          ],
+          "median": 32.954,
+          "min": 32.447,
+          "max": 33.429
+        },
+        "handler_wall_ms": {
+          "samples": [
+            32.539,
+            33.4671875,
+            33.0853955
+          ],
+          "median": 33.0853955,
+          "min": 32.539,
+          "max": 33.4671875
+        },
+        "ws_roundtrip_ms": {
+          "samples": [
+            34.4173125,
+            35.3757085,
+            35.1764375
+          ],
+          "median": 35.1764375,
+          "min": 34.4173125,
+          "max": 35.3757085
+        },
+        "click_to_dom_ms": {
+          "samples": [
+            34.75,
+            35.799999999813735,
+            35.60000000055879
+          ],
+          "median": 35.60000000055879,
+          "min": 34.75,
+          "max": 35.799999999813735
+        }
+      },
+      "measured_clicks": 150,
+      "warmup_clicks": 15,
+      "preflight_checks_passed": 6,
+      "load_1m_before_after": [
+        [
+          5.515625,
+          5.15380859375
+        ],
+        [
+          4.24658203125,
+          4.06640625
+        ],
+        [
+          3.90087890625,
+          3.76220703125
+        ]
+      ]
+    },
+    "alpha2-shared0": {
+      "repeat_medians": {
+        "handler_cpu_ms": {
+          "samples": [
+            21.18,
+            20.9915,
+            21.3645
+          ],
+          "median": 21.18,
+          "min": 20.9915,
+          "max": 21.3645
+        },
+        "handler_wall_ms": {
+          "samples": [
+            21.2007085,
+            21.0225415,
+            21.394625
+          ],
+          "median": 21.2007085,
+          "min": 21.0225415,
+          "max": 21.394625
+        },
+        "ws_roundtrip_ms": {
+          "samples": [
+            22.654792,
+            22.6000625,
+            22.9979585
+          ],
+          "median": 22.654792,
+          "min": 22.6000625,
+          "max": 22.9979585
+        },
+        "click_to_dom_ms": {
+          "samples": [
+            23.049999999813735,
+            23.0,
+            23.40000000037253
+          ],
+          "median": 23.049999999813735,
+          "min": 23.0,
+          "max": 23.40000000037253
+        }
+      },
+      "measured_clicks": 150,
+      "warmup_clicks": 15,
+      "preflight_checks_passed": 6,
+      "load_1m_before_after": [
+        [
+          4.82080078125,
+          4.5947265625
+        ],
+        [
+          4.18212890625,
+          4.00732421875
+        ],
+        [
+          3.76220703125,
+          4.8359375
+        ]
+      ]
+    },
+    "stable-shared1": {
+      "repeat_medians": {
+        "handler_cpu_ms": {
+          "samples": [
+            31.6315,
+            32.192,
+            32.744
+          ],
+          "median": 32.192,
+          "min": 31.6315,
+          "max": 32.744
+        },
+        "handler_wall_ms": {
+          "samples": [
+            31.6702705,
+            32.216083,
+            32.771292
+          ],
+          "median": 32.216083,
+          "min": 31.6702705,
+          "max": 32.771292
+        },
+        "ws_roundtrip_ms": {
+          "samples": [
+            33.6822495,
+            34.1664785,
+            34.5791245
+          ],
+          "median": 34.1664785,
+          "min": 33.6822495,
+          "max": 34.5791245
+        },
+        "click_to_dom_ms": {
+          "samples": [
+            34.049999999348074,
+            34.59999999962747,
+            35.0
+          ],
+          "median": 34.59999999962747,
+          "min": 34.049999999348074,
+          "max": 35.0
+        }
+      },
+      "measured_clicks": 150,
+      "warmup_clicks": 15,
+      "preflight_checks_passed": 6,
+      "load_1m_before_after": [
+        [
+          4.466796875,
+          4.669921875
+        ],
+        [
+          4.32958984375,
+          4.1982421875
+        ],
+        [
+          4.8359375,
+          4.8603515625
+        ]
+      ]
+    },
+    "alpha2-shared1": {
+      "repeat_medians": {
+        "handler_cpu_ms": {
+          "samples": [
+            20.9945,
+            21.074,
+            21.1945
+          ],
+          "median": 21.074,
+          "min": 20.9945,
+          "max": 21.1945
+        },
+        "handler_wall_ms": {
+          "samples": [
+            21.0184375,
+            21.0949585,
+            21.2175625
+          ],
+          "median": 21.0949585,
+          "min": 21.0184375,
+          "max": 21.2175625
+        },
+        "ws_roundtrip_ms": {
+          "samples": [
+            22.6053125,
+            22.647771,
+            22.7728545
+          ],
+          "median": 22.647771,
+          "min": 22.6053125,
+          "max": 22.7728545
+        },
+        "click_to_dom_ms": {
+          "samples": [
+            23.09999999962747,
+            23.199999999720603,
+            23.25
+          ],
+          "median": 23.199999999720603,
+          "min": 23.09999999962747,
+          "max": 23.25
+        }
+      },
+      "measured_clicks": 150,
+      "warmup_clicks": 15,
+      "preflight_checks_passed": 6,
+      "load_1m_before_after": [
+        [
+          4.4560546875,
+          4.57958984375
+        ],
+        [
+          4.57958984375,
+          4.32958984375
+        ],
+        [
+          4.7109375,
+          4.65380859375
+        ]
+      ]
+    }
+  },
+  "comparison": [
+    {
+      "category": "isolated",
+      "metric": "dev_read_ns_per_op",
+      "stable": 895.57208,
+      "alpha2": 205.40833,
+      "stable_over_alpha2": 4.359959890623715,
+      "alpha2_change_percent": -77.06400918617294
+    },
+    {
+      "category": "isolated",
+      "metric": "dev_write_ns_per_op",
+      "stable": 9041.21792,
+      "alpha2": 1041.935,
+      "stable_over_alpha2": 8.677333921981697,
+      "alpha2_change_percent": -88.47572296985405
+    },
+    {
+      "category": "isolated",
+      "metric": "prod_read_ns_per_op",
+      "stable": 960.12917,
+      "alpha2": 203.45,
+      "stable_over_alpha2": 4.719238977635783,
+      "alpha2_change_percent": -78.81014280609764
+    },
+    {
+      "category": "isolated",
+      "metric": "prod_write_ns_per_op",
+      "stable": 9352.99667,
+      "alpha2": 859.24875,
+      "stable_over_alpha2": 10.885086152292919,
+      "alpha2_change_percent": -90.81311818749957
+    },
+    {
+      "category": "isolated",
+      "metric": "var_construction_ms",
+      "stable": 245.951166,
+      "alpha2": 174.440125,
+      "stable_over_alpha2": 1.4099460545559688,
+      "alpha2_change_percent": -29.075300663547175
+    },
+    {
+      "category": "compile",
+      "metric": "compile_process_seconds",
+      "stable": 2.905035916,
+      "alpha2": 2.773847417,
+      "stable_over_alpha2": 1.047294778435176,
+      "alpha2_change_percent": -4.515899382773769
+    },
+    {
+      "category": "compile",
+      "metric": "compile_pages_seconds",
+      "stable": 0.42,
+      "alpha2": 0.34,
+      "stable_over_alpha2": 1.2352941176470587,
+      "alpha2_change_percent": -19.047619047619037
+    },
+    {
+      "category": "compile",
+      "metric": "python-compile_process_seconds",
+      "stable": 1.182883209,
+      "alpha2": 1.095747458,
+      "stable_over_alpha2": 1.079521745967856,
+      "alpha2_change_percent": -7.366386667510816
+    },
+    {
+      "category": "compile",
+      "metric": "python-compile_pages_seconds",
+      "stable": 0.42,
+      "alpha2": 0.34,
+      "stable_over_alpha2": 1.2352941176470587,
+      "alpha2_change_percent": -19.047619047619037
+    },
+    {
+      "category": "compile",
+      "metric": "full_python_internal_seconds",
+      "stable": 0.726,
+      "alpha2": 0.64,
+      "stable_over_alpha2": 1.134375,
+      "alpha2_change_percent": -11.845730027548207
+    },
+    {
+      "category": "browser-shared0",
+      "metric": "handler_cpu_ms",
+      "stable": 32.954,
+      "alpha2": 21.18,
+      "stable_over_alpha2": 1.5559017941454203,
+      "alpha2_change_percent": -35.72859136978819
+    },
+    {
+      "category": "browser-shared0",
+      "metric": "handler_wall_ms",
+      "stable": 33.0853955,
+      "alpha2": 21.2007085,
+      "stable_over_alpha2": 1.5605797089281235,
+      "alpha2_change_percent": -35.92124809268186
+    },
+    {
+      "category": "browser-shared0",
+      "metric": "ws_roundtrip_ms",
+      "stable": 35.1764375,
+      "alpha2": 22.654792,
+      "stable_over_alpha2": 1.5527150944488919,
+      "alpha2_change_percent": -35.59668457045998
+    },
+    {
+      "category": "browser-shared0",
+      "metric": "click_to_dom_ms",
+      "stable": 35.60000000055879,
+      "alpha2": 23.049999999813735,
+      "stable_over_alpha2": 1.5444685466744674,
+      "alpha2_change_percent": -35.25280899030356
+    },
+    {
+      "category": "browser-shared1",
+      "metric": "handler_cpu_ms",
+      "stable": 32.192,
+      "alpha2": 21.074,
+      "stable_over_alpha2": 1.5275695169403054,
+      "alpha2_change_percent": -34.53653081510934
+    },
+    {
+      "category": "browser-shared1",
+      "metric": "handler_wall_ms",
+      "stable": 32.216083,
+      "alpha2": 21.0949585,
+      "stable_over_alpha2": 1.5271934761094692,
+      "alpha2_change_percent": -34.52041174589722
+    },
+    {
+      "category": "browser-shared1",
+      "metric": "ws_roundtrip_ms",
+      "stable": 34.1664785,
+      "alpha2": 22.647771,
+      "stable_over_alpha2": 1.5086022593570025,
+      "alpha2_change_percent": -33.71347591470394
+    },
+    {
+      "category": "browser-shared1",
+      "metric": "click_to_dom_ms",
+      "stable": 34.59999999962747,
+      "alpha2": 23.199999999720603,
+      "stable_over_alpha2": 1.491379310346731,
+      "alpha2_change_percent": -32.94797687869829
+    }
+  ],
+  "warnings": [],
+  "cancellations": [],
+  "errors": [],
+  "slowdowns_over_20_percent": []
+}

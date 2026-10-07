@@ -1,0 +1,1003 @@
+{
+  "finding": "Background completion after configured session expiry leaves untouched child and component counters stale until a foreground event refreshes them.",
+  "classification": "pre-existing; reproduced in 0.9.12 and 0.10.0a2",
+  "severity_assessment": "low: narrow UI consistency trigger; no demonstrated downstream corruption or cross-user leakage",
+  "scope": "macOS Chromium/WebKit, dev mode, memory/disk; shortened TTL simulates external work exceeding the configured session lifetime",
+  "timing_claim": null,
+  "background_cases": 8,
+  "background_finding_reproduced": true,
+  "idle_control_cases": 8,
+  "idle_controls_pass": true,
+  "receipt_reload_checks_pass": 16,
+  "diagnostic_error_totals": {
+    "console_errors": 0,
+    "pageerror_count": 0,
+    "http_error_count": 0,
+    "failed_request_count": 0
+  },
+  "browser_warning_count": 24,
+  "owned_cleanup_pass": true,
+  "server_diagnostic_interpretation": "Shared startup Sitemap/Radix configuration and React peer warnings. Dev exit143 in all runs and worker-exit messages in stable-memory and alpha2-disk occur during deliberate process-group SIGTERM; full logs retained.",
+  "runs": [
+    {
+      "name": "stable-memory-dev-1",
+      "raw_evidence": "results/stable-memory-dev-1/results.json.gz",
+      "published_imports": [
+        {
+          "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py",
+          "version": "0.9.12",
+          "manager": "memory",
+          "ttl_seconds": 5
+        },
+        {
+          "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py",
+          "version": "0.9.12",
+          "manager": "memory",
+          "ttl_seconds": 5
+        }
+      ],
+      "ttl_seconds": 5,
+      "external_job_seconds": 8,
+      "cases": [
+        {
+          "engine": "chromium",
+          "browser_version": "153.0.8010.12",
+          "kind": "background",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 100,
+            "section": 11,
+            "left": 13,
+            "right": 17
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 100,
+            "section": 0
+          },
+          "visible_backend_mismatch": {
+            "section": {
+              "visible": 11,
+              "backend": 0
+            },
+            "left": {
+              "visible": 13,
+              "backend": 0
+            },
+            "right": {
+              "visible": 17,
+              "backend": 0
+            }
+          },
+          "completion_deltas": [
+            {
+              "reflex___state____state.export_desk___export_desk____export_desk": {
+                "processed_rx_state_": 100,
+                "status_rx_state_": "complete"
+              }
+            }
+          ],
+          "zeroed_child_delta_phases": [
+            "load",
+            "public-inspection",
+            "reload"
+          ],
+          "console_errors": 0,
+          "console_warnings": [],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 26,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "chromium",
+          "browser_version": "153.0.8010.12",
+          "kind": "idle",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 1,
+            "section": 0,
+            "left": 0,
+            "right": 0
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 1,
+            "section": 0
+          },
+          "visible_backend_mismatch": {},
+          "completion_deltas": [],
+          "zeroed_child_delta_phases": [
+            "load",
+            "foreground-recovery",
+            "reload"
+          ],
+          "console_errors": 0,
+          "console_warnings": [],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 25,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "webkit",
+          "browser_version": "26.6",
+          "kind": "background",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 100,
+            "section": 11,
+            "left": 13,
+            "right": 17
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 100,
+            "section": 0
+          },
+          "visible_backend_mismatch": {
+            "section": {
+              "visible": 11,
+              "backend": 0
+            },
+            "left": {
+              "visible": 13,
+              "backend": 0
+            },
+            "right": {
+              "visible": 17,
+              "backend": 0
+            }
+          },
+          "completion_deltas": [
+            {
+              "reflex___state____state.export_desk___export_desk____export_desk": {
+                "processed_rx_state_": 100,
+                "status_rx_state_": "complete"
+              }
+            }
+          ],
+          "zeroed_child_delta_phases": [
+            "load",
+            "public-inspection",
+            "reload"
+          ],
+          "console_errors": 0,
+          "console_warnings": [
+            "The resource http://localhost:3266/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 26,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "webkit",
+          "browser_version": "26.6",
+          "kind": "idle",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 1,
+            "section": 0,
+            "left": 0,
+            "right": 0
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 1,
+            "section": 0
+          },
+          "visible_backend_mismatch": {},
+          "completion_deltas": [],
+          "zeroed_child_delta_phases": [
+            "load",
+            "foreground-recovery",
+            "reload"
+          ],
+          "console_errors": 0,
+          "console_warnings": [
+            "The resource http://localhost:3266/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 25,
+          "capture_limit_reached": false,
+          "error": null
+        }
+      ],
+      "server_diagnostic_lines": [
+        {
+          "line": 2,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 119,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 135,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 140,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 145,
+          "text": "DeprecationWarning: Implicit Radix Themes enablement has been deprecated in "
+        },
+        {
+          "line": 188,
+          "text": "Debug: warn: incorrect peer dependency \"react@19.3.0\""
+        },
+        {
+          "line": 215,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 237,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 242,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 258,
+          "text": "Debug: error: script \"dev\" exited with code 143"
+        },
+        {
+          "line": 259,
+          "text": "[ERROR] Unexpected exit from worker-1"
+        }
+      ],
+      "harness_error": null,
+      "cleanup_remaining": [],
+      "listeners_after_cleanup": ""
+    },
+    {
+      "name": "alpha2-memory-dev-1",
+      "raw_evidence": "results/alpha2-memory-dev-1/results.json.gz",
+      "published_imports": [
+        {
+          "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+          "version": "0.10.0a2",
+          "manager": "memory",
+          "ttl_seconds": 5
+        },
+        {
+          "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+          "version": "0.10.0a2",
+          "manager": "memory",
+          "ttl_seconds": 5
+        }
+      ],
+      "ttl_seconds": 5,
+      "external_job_seconds": 8,
+      "cases": [
+        {
+          "engine": "chromium",
+          "browser_version": "153.0.8010.12",
+          "kind": "background",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 100,
+            "section": 11,
+            "left": 13,
+            "right": 17
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 100,
+            "section": 0
+          },
+          "visible_backend_mismatch": {
+            "section": {
+              "visible": 11,
+              "backend": 0
+            },
+            "left": {
+              "visible": 13,
+              "backend": 0
+            },
+            "right": {
+              "visible": 17,
+              "backend": 0
+            }
+          },
+          "completion_deltas": [
+            {
+              "reflex___state____state.export_desk___export_desk____export_desk": {
+                "status_rx_state_": "complete",
+                "processed_rx_state_": 100
+              }
+            }
+          ],
+          "zeroed_child_delta_phases": [
+            "public-inspection"
+          ],
+          "console_errors": 0,
+          "console_warnings": [],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 22,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "chromium",
+          "browser_version": "153.0.8010.12",
+          "kind": "idle",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 1,
+            "section": 0,
+            "left": 0,
+            "right": 0
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 1,
+            "section": 0
+          },
+          "visible_backend_mismatch": {},
+          "completion_deltas": [],
+          "zeroed_child_delta_phases": [
+            "foreground-recovery"
+          ],
+          "console_errors": 0,
+          "console_warnings": [],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 21,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "webkit",
+          "browser_version": "26.6",
+          "kind": "background",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 100,
+            "section": 11,
+            "left": 13,
+            "right": 17
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 100,
+            "section": 0
+          },
+          "visible_backend_mismatch": {
+            "section": {
+              "visible": 11,
+              "backend": 0
+            },
+            "left": {
+              "visible": 13,
+              "backend": 0
+            },
+            "right": {
+              "visible": 17,
+              "backend": 0
+            }
+          },
+          "completion_deltas": [
+            {
+              "reflex___state____state.export_desk___export_desk____export_desk": {
+                "status_rx_state_": "complete",
+                "processed_rx_state_": 100
+              }
+            }
+          ],
+          "zeroed_child_delta_phases": [
+            "public-inspection"
+          ],
+          "console_errors": 0,
+          "console_warnings": [
+            "The resource http://localhost:3266/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 22,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "webkit",
+          "browser_version": "26.6",
+          "kind": "idle",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 1,
+            "section": 0,
+            "left": 0,
+            "right": 0
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 1,
+            "section": 0
+          },
+          "visible_backend_mismatch": {},
+          "completion_deltas": [],
+          "zeroed_child_delta_phases": [
+            "foreground-recovery"
+          ],
+          "console_errors": 0,
+          "console_warnings": [
+            "The resource http://localhost:3266/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 21,
+          "capture_limit_reached": false,
+          "error": null
+        }
+      ],
+      "server_diagnostic_lines": [
+        {
+          "line": 2,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 117,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 133,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 138,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 143,
+          "text": "DeprecationWarning: Implicit Radix Themes enablement has been deprecated in "
+        },
+        {
+          "line": 185,
+          "text": "Debug: warn: incorrect peer dependency \"react@19.3.0\""
+        },
+        {
+          "line": 212,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 234,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 239,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 255,
+          "text": "Debug: error: script \"dev\" exited with code 143"
+        }
+      ],
+      "harness_error": null,
+      "cleanup_remaining": [],
+      "listeners_after_cleanup": ""
+    },
+    {
+      "name": "stable-disk-dev-1",
+      "raw_evidence": "results/stable-disk-dev-1/results.json.gz",
+      "published_imports": [
+        {
+          "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py",
+          "version": "0.9.12",
+          "manager": "disk",
+          "ttl_seconds": 5
+        },
+        {
+          "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py",
+          "version": "0.9.12",
+          "manager": "disk",
+          "ttl_seconds": 5
+        }
+      ],
+      "ttl_seconds": 5,
+      "external_job_seconds": 8,
+      "cases": [
+        {
+          "engine": "chromium",
+          "browser_version": "153.0.8010.12",
+          "kind": "background",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 100,
+            "section": 11,
+            "left": 13,
+            "right": 17
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 100,
+            "section": 0
+          },
+          "visible_backend_mismatch": {
+            "section": {
+              "visible": 11,
+              "backend": 0
+            },
+            "left": {
+              "visible": 13,
+              "backend": 0
+            },
+            "right": {
+              "visible": 17,
+              "backend": 0
+            }
+          },
+          "completion_deltas": [
+            {
+              "reflex___state____state.export_desk___export_desk____export_desk": {
+                "processed_rx_state_": 100,
+                "status_rx_state_": "complete"
+              }
+            }
+          ],
+          "zeroed_child_delta_phases": [
+            "load",
+            "public-inspection",
+            "reload"
+          ],
+          "console_errors": 0,
+          "console_warnings": [],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 26,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "chromium",
+          "browser_version": "153.0.8010.12",
+          "kind": "idle",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 1,
+            "section": 0,
+            "left": 0,
+            "right": 0
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 1,
+            "section": 0
+          },
+          "visible_backend_mismatch": {},
+          "completion_deltas": [],
+          "zeroed_child_delta_phases": [
+            "load",
+            "foreground-recovery",
+            "reload"
+          ],
+          "console_errors": 0,
+          "console_warnings": [],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 25,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "webkit",
+          "browser_version": "26.6",
+          "kind": "background",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 100,
+            "section": 11,
+            "left": 13,
+            "right": 17
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 100,
+            "section": 0
+          },
+          "visible_backend_mismatch": {
+            "section": {
+              "visible": 11,
+              "backend": 0
+            },
+            "left": {
+              "visible": 13,
+              "backend": 0
+            },
+            "right": {
+              "visible": 17,
+              "backend": 0
+            }
+          },
+          "completion_deltas": [
+            {
+              "reflex___state____state.export_desk___export_desk____export_desk": {
+                "processed_rx_state_": 100,
+                "status_rx_state_": "complete"
+              }
+            }
+          ],
+          "zeroed_child_delta_phases": [
+            "load",
+            "public-inspection",
+            "reload"
+          ],
+          "console_errors": 0,
+          "console_warnings": [
+            "The resource http://localhost:3266/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 26,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "webkit",
+          "browser_version": "26.6",
+          "kind": "idle",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 1,
+            "section": 0,
+            "left": 0,
+            "right": 0
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 1,
+            "section": 0
+          },
+          "visible_backend_mismatch": {},
+          "completion_deltas": [],
+          "zeroed_child_delta_phases": [
+            "load",
+            "foreground-recovery",
+            "reload"
+          ],
+          "console_errors": 0,
+          "console_warnings": [
+            "The resource http://localhost:3266/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 25,
+          "capture_limit_reached": false,
+          "error": null
+        }
+      ],
+      "server_diagnostic_lines": [
+        {
+          "line": 2,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 117,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 133,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 138,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 143,
+          "text": "DeprecationWarning: Implicit Radix Themes enablement has been deprecated in "
+        },
+        {
+          "line": 185,
+          "text": "Debug: warn: incorrect peer dependency \"react@19.3.0\""
+        },
+        {
+          "line": 212,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 234,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 239,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 257,
+          "text": "Debug: error: script \"dev\" exited with code 143"
+        }
+      ],
+      "harness_error": null,
+      "cleanup_remaining": [],
+      "listeners_after_cleanup": ""
+    },
+    {
+      "name": "alpha2-disk-dev-1",
+      "raw_evidence": "results/alpha2-disk-dev-1/results.json.gz",
+      "published_imports": [
+        {
+          "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+          "version": "0.10.0a2",
+          "manager": "disk",
+          "ttl_seconds": 5
+        },
+        {
+          "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+          "version": "0.10.0a2",
+          "manager": "disk",
+          "ttl_seconds": 5
+        }
+      ],
+      "ttl_seconds": 5,
+      "external_job_seconds": 8,
+      "cases": [
+        {
+          "engine": "chromium",
+          "browser_version": "153.0.8010.12",
+          "kind": "background",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 100,
+            "section": 11,
+            "left": 13,
+            "right": 17
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 100,
+            "section": 0
+          },
+          "visible_backend_mismatch": {
+            "section": {
+              "visible": 11,
+              "backend": 0
+            },
+            "left": {
+              "visible": 13,
+              "backend": 0
+            },
+            "right": {
+              "visible": 17,
+              "backend": 0
+            }
+          },
+          "completion_deltas": [
+            {
+              "reflex___state____state.export_desk___export_desk____export_desk": {
+                "status_rx_state_": "complete",
+                "processed_rx_state_": 100
+              }
+            }
+          ],
+          "zeroed_child_delta_phases": [
+            "public-inspection"
+          ],
+          "console_errors": 0,
+          "console_warnings": [],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 22,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "chromium",
+          "browser_version": "153.0.8010.12",
+          "kind": "idle",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 1,
+            "section": 0,
+            "left": 0,
+            "right": 0
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 1,
+            "section": 0
+          },
+          "visible_backend_mismatch": {},
+          "completion_deltas": [],
+          "zeroed_child_delta_phases": [
+            "foreground-recovery"
+          ],
+          "console_errors": 0,
+          "console_warnings": [],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 21,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "webkit",
+          "browser_version": "26.6",
+          "kind": "background",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 100,
+            "section": 11,
+            "left": 13,
+            "right": 17
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 100,
+            "section": 0
+          },
+          "visible_backend_mismatch": {
+            "section": {
+              "visible": 11,
+              "backend": 0
+            },
+            "left": {
+              "visible": 13,
+              "backend": 0
+            },
+            "right": {
+              "visible": 17,
+              "backend": 0
+            }
+          },
+          "completion_deltas": [
+            {
+              "reflex___state____state.export_desk___export_desk____export_desk": {
+                "status_rx_state_": "complete",
+                "processed_rx_state_": 100
+              }
+            }
+          ],
+          "zeroed_child_delta_phases": [
+            "public-inspection"
+          ],
+          "console_errors": 0,
+          "console_warnings": [
+            "The resource http://localhost:3266/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 22,
+          "capture_limit_reached": false,
+          "error": null
+        },
+        {
+          "engine": "webkit",
+          "browser_version": "26.6",
+          "kind": "idle",
+          "expiry_receipt_reload_checks_pass": true,
+          "visible_before_inspection": {
+            "root": 1,
+            "section": 0,
+            "left": 0,
+            "right": 0
+          },
+          "backend_receipt": {
+            "left": 0,
+            "right": 0,
+            "root": 1,
+            "section": 0
+          },
+          "visible_backend_mismatch": {},
+          "completion_deltas": [],
+          "zeroed_child_delta_phases": [
+            "foreground-recovery"
+          ],
+          "console_errors": 0,
+          "console_warnings": [
+            "The resource http://localhost:3266/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3266/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ],
+          "pageerror_count": 0,
+          "http_error_count": 0,
+          "failed_request_count": 0,
+          "websocket_frames": 21,
+          "capture_limit_reached": false,
+          "error": null
+        }
+      ],
+      "server_diagnostic_lines": [
+        {
+          "line": 2,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 117,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 133,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 138,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 143,
+          "text": "DeprecationWarning: Implicit Radix Themes enablement has been deprecated in "
+        },
+        {
+          "line": 185,
+          "text": "Debug: warn: incorrect peer dependency \"react@19.3.0\""
+        },
+        {
+          "line": 212,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 234,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 239,
+          "text": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by "
+        },
+        {
+          "line": 257,
+          "text": "Debug: error: script \"dev\" exited with code 143"
+        },
+        {
+          "line": 258,
+          "text": "[ERROR] Unexpected exit from worker-1"
+        }
+      ],
+      "harness_error": null,
+      "cleanup_remaining": [],
+      "listeners_after_cleanup": ""
+    }
+  ]
+}

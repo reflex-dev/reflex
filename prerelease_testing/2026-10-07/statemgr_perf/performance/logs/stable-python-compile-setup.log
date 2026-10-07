@@ -1,0 +1,29 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+PERF_SOURCE 0.9.12 /private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py shared False capture True
+Debug: Registered lifespan task: _setup_event_processor
+Progress: 1/14
+Progress: 2/14
+Progress: 3/14
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-pack
+ages/reflex_components_radix/plugin.py:76)
+Progress: 4/14
+Progress: 5/14
+Progress: 6/14
+Debug: [timing] Compile pages: 0.42s
+Progress: 7/14
+Progress: 8/14
+Progress: 9/14
+Progress: 10/14
+Progress: 11/15
+Progress: 12/15
+Progress: 13/15
+Progress: 14/15
+Progress: 15/15
+Progress: 16/15
+Success: App compiled successfully in 0.722 seconds.

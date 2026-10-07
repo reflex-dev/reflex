@@ -7,7 +7,7 @@ from pathlib import Path
 root = Path(sys.argv[1])
 rows = []
 for directory in sorted((root / "runs").iterdir()):
-    if not directory.is_dir():
+    if not directory.is_dir() or directory.name == "harness-negative":
         continue
     assets = json.loads((directory / "assets.json").read_text())
     for path in sorted(directory.glob("*-summary.json")):

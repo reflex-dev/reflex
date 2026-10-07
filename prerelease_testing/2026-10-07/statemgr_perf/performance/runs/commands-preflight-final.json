@@ -1,0 +1,74 @@
+[
+  {
+    "label": "stable-shared0-browser-0-smoke",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      3.92431640625,
+      3.99169921875,
+      4.62939453125
+    ],
+    "load_average_after": [
+      3.92431640625,
+      3.99169921875,
+      4.62939453125
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-shared0-browser-0-smoke",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      3.85009765625,
+      3.97509765625,
+      4.61962890625
+    ],
+    "load_average_after": [
+      4.50244140625,
+      4.10791015625,
+      4.66259765625
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "stable-shared1-browser-0-smoke",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      4.50244140625,
+      4.10791015625,
+      4.66259765625
+    ],
+    "load_average_after": [
+      5.5830078125,
+      4.33837890625,
+      4.74072265625
+    ],
+    "package_install_log_lines": []
+  },
+  {
+    "label": "alpha2-shared1-browser-0-smoke",
+    "returncode": 0,
+    "wall_ns": null,
+    "compile_pages_seconds": [],
+    "full_python_compile_seconds": [],
+    "load_average_before": [
+      5.3759765625,
+      4.31591796875,
+      4.73046875
+    ],
+    "load_average_after": [
+      5.3759765625,
+      4.31591796875,
+      4.73046875
+    ],
+    "package_install_log_lines": []
+  }
+]

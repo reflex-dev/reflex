@@ -1,0 +1,18 @@
+WARN `--no-project` was provided, but no project was found
+{
+ "reflex": "0.9.12",
+ "path": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py",
+ "mode": "dev",
+ "smoke": false,
+ "count": 100000,
+ "samples": [
+  {
+   "repeat": 0,
+   "reads_ns": 90377292,
+   "writes_ns": 904121792,
+   "checksum": 200000
+  }
+ ],
+ "median_read_ns_per_op": 903.77292,
+ "median_write_ns_per_op": 9041.21792
+}

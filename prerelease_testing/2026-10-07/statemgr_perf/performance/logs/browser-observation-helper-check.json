@@ -1,0 +1,65 @@
+{
+  "test": "untimed synthetic observation callbacks",
+  "observed_channels": [
+    "console",
+    "pageerror",
+    "requestfailed",
+    "response"
+  ],
+  "errors": 4,
+  "warnings": 1,
+  "cancellations": 1,
+  "pass": true,
+  "observations": [
+    {
+      "context": "synthetic-preflight",
+      "kind": "console",
+      "text": "example warning",
+      "type": "warning",
+      "location": {},
+      "classification": "warning-retained-for-review"
+    },
+    {
+      "context": "synthetic-preflight",
+      "kind": "console",
+      "text": "example error",
+      "type": "error",
+      "location": {},
+      "classification": "error-invalidates-run"
+    },
+    {
+      "context": "synthetic-preflight",
+      "kind": "requestfailed",
+      "url": "http://local-fixture/a",
+      "method": "GET",
+      "resource_type": "script",
+      "text": "net::ERR_ABORTED",
+      "classification": "cancellation-retained-for-review"
+    },
+    {
+      "context": "synthetic-preflight",
+      "kind": "requestfailed",
+      "url": "http://local-fixture/b",
+      "method": "GET",
+      "resource_type": "script",
+      "text": "net::ERR_CONNECTION_REFUSED",
+      "classification": "error-invalidates-run"
+    },
+    {
+      "context": "synthetic-preflight",
+      "kind": "http",
+      "url": "http://local-fixture/missing",
+      "status": 404,
+      "resource_type": "document",
+      "text": "HTTP 404",
+      "classification": "error-invalidates-run"
+    },
+    {
+      "context": "synthetic-preflight",
+      "kind": "pageerror",
+      "text": "example page failure",
+      "page_url": "http://local-fixture/",
+      "classification": "error-invalidates-run"
+    }
+  ]
+}

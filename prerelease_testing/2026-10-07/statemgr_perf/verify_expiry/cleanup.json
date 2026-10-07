@@ -1,0 +1,20 @@
+{
+  "verified_at_utc": "2026-10-07T08:43:21.135179+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "owned_process_groups": [
+    46764,
+    47231,
+    47415,
+    47594
+  ],
+  "remaining": [],
+  "reserved_port_listeners": "",
+  "lsof_exit_code": 1,
+  "identical_fixture_source_in_all_runs": {
+    "export_desk/__init__.py": "d3988d6d1068358d5f1db5534477321b31b53b6b8978b0cf5dee69578990dd52",
+    "export_desk/export_desk.py": "8c2426eca258539e39ec1aebfebe18c9289b33335a2b96021ceda77cddea9d98",
+    "rxconfig.py": "9395ac15d2ff4eb9d89f4f2bdf09bea6524a46246e4fce8d930016c0240b089f"
+  },
+  "python_syntax_checks": "passed",
+  "evidence_bytes": 1290805
+}

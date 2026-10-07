@@ -1,0 +1,260 @@
+{
+  "name": "alpha2-memory-dev-1",
+  "command": [
+    "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/reflex",
+    "run",
+    "--env",
+    "dev",
+    "--frontend-port",
+    "3266",
+    "--backend-port",
+    "8266",
+    "--loglevel",
+    "debug"
+  ],
+  "ttl_seconds": 5,
+  "external_job_seconds": 8,
+  "seed": {
+    "root": 7,
+    "section": 11,
+    "left": 13,
+    "right": 17
+  },
+  "cases": [
+    {
+      "engine": "chromium",
+      "browser_version": "153.0.8010.12",
+      "kind": "background",
+      "phase": "reload",
+      "pageerrors": [],
+      "http_errors": [],
+      "seed_visible": {
+        "root": 7,
+        "section": 11,
+        "left": 13,
+        "right": 17
+      },
+      "visible_at_completion": {
+        "root": 100,
+        "section": 11,
+        "left": 13,
+        "right": 17
+      },
+      "elapsed_until_recovery_seconds": 8.677044957999897,
+      "visible_before_inspection": {
+        "root": 100,
+        "section": 11,
+        "left": 13,
+        "right": 17
+      },
+      "status_before_inspection": "complete",
+      "public_server_receipt": {
+        "left": 0,
+        "right": 0,
+        "root": 100,
+        "section": 0
+      },
+      "visible_after_inspection": {
+        "root": 100,
+        "section": 0,
+        "left": 0,
+        "right": 0
+      },
+      "visible_backend_mismatch": {
+        "section": {
+          "visible": 11,
+          "backend": 0
+        },
+        "left": {
+          "visible": 13,
+          "backend": 0
+        },
+        "right": {
+          "visible": 17,
+          "backend": 0
+        }
+      },
+      "visible_after_reload": {
+        "root": 100,
+        "section": 0,
+        "left": 0,
+        "right": 0
+      },
+      "expiry_and_persistence_checks_pass": true
+    },
+    {
+      "engine": "chromium",
+      "browser_version": "153.0.8010.12",
+      "kind": "idle",
+      "phase": "reload",
+      "pageerrors": [],
+      "http_errors": [],
+      "seed_visible": {
+        "root": 7,
+        "section": 11,
+        "left": 13,
+        "right": 17
+      },
+      "before_recovery_visible": {
+        "root": 7,
+        "section": 11,
+        "left": 13,
+        "right": 17
+      },
+      "elapsed_until_recovery_seconds": 9.047489083000073,
+      "visible_before_inspection": {
+        "root": 1,
+        "section": 0,
+        "left": 0,
+        "right": 0
+      },
+      "status_before_inspection": "idle",
+      "public_server_receipt": {
+        "left": 0,
+        "right": 0,
+        "root": 1,
+        "section": 0
+      },
+      "visible_after_inspection": {
+        "root": 1,
+        "section": 0,
+        "left": 0,
+        "right": 0
+      },
+      "visible_backend_mismatch": {},
+      "visible_after_reload": {
+        "root": 1,
+        "section": 0,
+        "left": 0,
+        "right": 0
+      },
+      "expiry_and_persistence_checks_pass": true
+    },
+    {
+      "engine": "webkit",
+      "browser_version": "26.6",
+      "kind": "background",
+      "phase": "reload",
+      "pageerrors": [],
+      "http_errors": [],
+      "seed_visible": {
+        "root": 7,
+        "section": 11,
+        "left": 13,
+        "right": 17
+      },
+      "visible_at_completion": {
+        "root": 100,
+        "section": 11,
+        "left": 13,
+        "right": 17
+      },
+      "elapsed_until_recovery_seconds": 8.654811292000886,
+      "visible_before_inspection": {
+        "root": 100,
+        "section": 11,
+        "left": 13,
+        "right": 17
+      },
+      "status_before_inspection": "complete",
+      "public_server_receipt": {
+        "left": 0,
+        "right": 0,
+        "root": 100,
+        "section": 0
+      },
+      "visible_after_inspection": {
+        "root": 100,
+        "section": 0,
+        "left": 0,
+        "right": 0
+      },
+      "visible_backend_mismatch": {
+        "section": {
+          "visible": 11,
+          "backend": 0
+        },
+        "left": {
+          "visible": 13,
+          "backend": 0
+        },
+        "right": {
+          "visible": 17,
+          "backend": 0
+        }
+      },
+      "visible_after_reload": {
+        "root": 100,
+        "section": 0,
+        "left": 0,
+        "right": 0
+      },
+      "expiry_and_persistence_checks_pass": true
+    },
+    {
+      "engine": "webkit",
+      "browser_version": "26.6",
+      "kind": "idle",
+      "phase": "reload",
+      "pageerrors": [],
+      "http_errors": [],
+      "seed_visible": {
+        "root": 7,
+        "section": 11,
+        "left": 13,
+        "right": 17
+      },
+      "before_recovery_visible": {
+        "root": 7,
+        "section": 11,
+        "left": 13,
+        "right": 17
+      },
+      "elapsed_until_recovery_seconds": 9.055324333000499,
+      "visible_before_inspection": {
+        "root": 1,
+        "section": 0,
+        "left": 0,
+        "right": 0
+      },
+      "status_before_inspection": "idle",
+      "public_server_receipt": {
+        "left": 0,
+        "right": 0,
+        "root": 1,
+        "section": 0
+      },
+      "visible_after_inspection": {
+        "root": 1,
+        "section": 0,
+        "left": 0,
+        "right": 0
+      },
+      "visible_backend_mismatch": {},
+      "visible_after_reload": {
+        "root": 1,
+        "section": 0,
+        "left": 0,
+        "right": 0
+      },
+      "expiry_and_persistence_checks_pass": true
+    }
+  ],
+  "server_pid": 47231,
+  "cleanup": {
+    "actions": [
+      {
+        "signal": "SIGTERM",
+        "before": [
+          "47231 47228 47231 Ss   /opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/reflex run --env dev --frontend-port 3266 --backend-port 8266 --loglevel debug",
+          "47236 47231 47231 S    /opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -c from multiprocessing.resource_tracker import main;main(12)",
+          "47252 47231 47231 S    /Users/masen/Library/Application Support/reflex/bun/bin/bun run dev",
+          "47253 47252 47231 S    node /private/tmp/reflex-prerelease-macos-pass2/apps/verify_expiry/alpha2-memory-dev-1/.web/node_modules/.bin/react-router dev --host",
+          "47254 47231 47231 S    /opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=13, pipe_handle=15) --multiprocessing-fork"
+        ]
+      }
+    ],
+    "remaining": []
+  },
+  "listeners_after_cleanup": ""
+}

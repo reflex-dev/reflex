@@ -1,0 +1,142 @@
+WARN `--no-project` was provided, but no project was found
+START stable-dev-direct-0
+DONE stable-dev-direct-0 returncode 0
+START alpha2-dev-direct-0
+DONE alpha2-dev-direct-0 returncode 0
+START stable-prod-direct-0
+DONE stable-prod-direct-0 returncode 0
+START alpha2-prod-direct-0
+DONE alpha2-prod-direct-0 returncode 0
+START stable-vars-0
+DONE stable-vars-0 returncode 0
+START alpha2-vars-0
+DONE alpha2-vars-0 returncode 0
+START alpha2-dev-direct-1
+DONE alpha2-dev-direct-1 returncode 0
+START stable-dev-direct-1
+DONE stable-dev-direct-1 returncode 0
+START alpha2-prod-direct-1
+DONE alpha2-prod-direct-1 returncode 0
+START stable-prod-direct-1
+DONE stable-prod-direct-1 returncode 0
+START alpha2-vars-1
+DONE alpha2-vars-1 returncode 0
+START stable-vars-1
+DONE stable-vars-1 returncode 0
+START stable-dev-direct-2
+DONE stable-dev-direct-2 returncode 0
+START alpha2-dev-direct-2
+DONE alpha2-dev-direct-2 returncode 0
+START stable-prod-direct-2
+DONE stable-prod-direct-2 returncode 0
+START alpha2-prod-direct-2
+DONE alpha2-prod-direct-2 returncode 0
+START stable-vars-2
+DONE stable-vars-2 returncode 0
+START alpha2-vars-2
+DONE alpha2-vars-2 returncode 0
+START stable-compile-setup
+DONE stable-compile-setup returncode 0
+START alpha2-compile-setup
+DONE alpha2-compile-setup returncode 0
+START stable-python-compile-setup
+DONE stable-python-compile-setup returncode 0
+START alpha2-python-compile-setup
+DONE alpha2-python-compile-setup returncode 0
+START stable-python-compile-0
+DONE stable-python-compile-0 returncode 0
+START stable-compile-0
+DONE stable-compile-0 returncode 0
+START alpha2-python-compile-0
+DONE alpha2-python-compile-0 returncode 0
+START alpha2-compile-0
+DONE alpha2-compile-0 returncode 0
+START alpha2-python-compile-1
+DONE alpha2-python-compile-1 returncode 0
+START alpha2-compile-1
+DONE alpha2-compile-1 returncode 0
+START stable-python-compile-1
+DONE stable-python-compile-1 returncode 0
+START stable-compile-1
+DONE stable-compile-1 returncode 0
+START stable-python-compile-2
+DONE stable-python-compile-2 returncode 0
+START stable-compile-2
+DONE stable-compile-2 returncode 0
+START alpha2-python-compile-2
+DONE alpha2-python-compile-2 returncode 0
+START alpha2-compile-2
+DONE alpha2-compile-2 returncode 0
+SERVER stable-shared0-browser-0 45140
+START stable-shared0-browser-0
+DONE stable-shared0-browser-0 returncode 0
+CLEANUP_SIGNAL 45140 SIGINT [45140, 45141, 45151, 45152]
+CLEANUP_VERIFIED_EMPTY 45140
+STOPPED stable-shared0-browser-0
+SERVER alpha2-shared0-browser-0 45238
+START alpha2-shared0-browser-0
+DONE alpha2-shared0-browser-0 returncode 0
+CLEANUP_SIGNAL 45238 SIGINT [45238, 45239, 45246, 45247]
+CLEANUP_VERIFIED_EMPTY 45238
+STOPPED alpha2-shared0-browser-0
+SERVER stable-shared1-browser-0 45338
+START stable-shared1-browser-0
+DONE stable-shared1-browser-0 returncode 0
+CLEANUP_SIGNAL 45338 SIGINT [45338, 45339, 45349, 45350]
+CLEANUP_VERIFIED_EMPTY 45338
+STOPPED stable-shared1-browser-0
+SERVER alpha2-shared1-browser-0 45460
+START alpha2-shared1-browser-0
+DONE alpha2-shared1-browser-0 returncode 0
+CLEANUP_SIGNAL 45460 SIGINT [45460, 45461, 45467, 45468]
+CLEANUP_VERIFIED_EMPTY 45460
+STOPPED alpha2-shared1-browser-0
+SERVER alpha2-shared1-browser-1 45548
+START alpha2-shared1-browser-1
+DONE alpha2-shared1-browser-1 returncode 0
+CLEANUP_SIGNAL 45548 SIGINT [45548, 45549, 45583, 45584]
+CLEANUP_VERIFIED_EMPTY 45548
+STOPPED alpha2-shared1-browser-1
+SERVER stable-shared1-browser-1 45603
+START stable-shared1-browser-1
+DONE stable-shared1-browser-1 returncode 0
+CLEANUP_SIGNAL 45603 SIGINT [45603, 45604, 45650, 45651]
+CLEANUP_VERIFIED_EMPTY 45603
+STOPPED stable-shared1-browser-1
+SERVER alpha2-shared0-browser-1 45668
+START alpha2-shared0-browser-1
+DONE alpha2-shared0-browser-1 returncode 0
+CLEANUP_SIGNAL 45668 SIGINT [45668, 45669, 45675, 45676]
+CLEANUP_VERIFIED_EMPTY 45668
+STOPPED alpha2-shared0-browser-1
+SERVER stable-shared0-browser-1 45714
+START stable-shared0-browser-1
+DONE stable-shared0-browser-1 returncode 0
+CLEANUP_SIGNAL 45714 SIGINT [45714, 45715, 45729, 45730]
+CLEANUP_VERIFIED_EMPTY 45714
+STOPPED stable-shared0-browser-1
+SERVER stable-shared0-browser-2 45766
+START stable-shared0-browser-2
+DONE stable-shared0-browser-2 returncode 0
+CLEANUP_SIGNAL 45766 SIGINT [45766, 45767, 45813, 45814]
+CLEANUP_VERIFIED_EMPTY 45766
+STOPPED stable-shared0-browser-2
+SERVER alpha2-shared0-browser-2 45973
+START alpha2-shared0-browser-2
+DONE alpha2-shared0-browser-2 returncode 0
+CLEANUP_SIGNAL 45973 SIGINT [45973, 45974, 45983, 45984]
+CLEANUP_VERIFIED_EMPTY 45973
+STOPPED alpha2-shared0-browser-2
+SERVER stable-shared1-browser-2 46078
+START stable-shared1-browser-2
+DONE stable-shared1-browser-2 returncode 0
+CLEANUP_SIGNAL 46078 SIGINT [46078, 46079, 46089, 46090]
+CLEANUP_VERIFIED_EMPTY 46078
+STOPPED stable-shared1-browser-2
+SERVER alpha2-shared1-browser-2 46248
+START alpha2-shared1-browser-2
+DONE alpha2-shared1-browser-2 returncode 0
+CLEANUP_SIGNAL 46248 SIGINT [46248, 46249, 46257, 46258]
+CLEANUP_VERIFIED_EMPTY 46248
+STOPPED alpha2-shared1-browser-2
+FAILED_CASES []

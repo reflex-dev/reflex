@@ -1,0 +1,27 @@
+HARNESS: production frontend=8274, backend=8274, API/readiness/browser URL=http://localhost:8274
+
+stable: /private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/reflex.py:559
+555:     if (
+556:         env in (constants.Env.PROD, constants.Env.PREVIEW)
+557:         and frontend_port
+558:         and backend_port
+559:         and frontend_port != backend_port
+560:     ):
+561:         logger.error(
+562:             f"In {env.value} mode, frontend and backend must run on the same port."
+563:         )
+564:         raise SystemExit(1)
+
+alpha2: /private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/reflex.py:604
+600:     if (
+601:         env in (constants.Env.PROD, constants.Env.PREVIEW)
+602:         and frontend_port
+603:         and backend_port
+604:         and frontend_port != backend_port
+605:     ):
+606:         logger.error(
+607:             f"In {env.value} mode, frontend and backend must run on the same port."
+608:         )
+609:         raise SystemExit(1)
+
+PASS: equal production ports bypass the published unequal-port rejection on both release graphs. Source validation only; no server or timing run.

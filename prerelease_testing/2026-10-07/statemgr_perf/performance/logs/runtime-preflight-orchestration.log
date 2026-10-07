@@ -1,0 +1,26 @@
+WARN `--no-project` was provided, but no project was found
+SERVER stable-shared0-browser-0-smoke 43991
+START stable-shared0-browser-0-smoke
+DONE stable-shared0-browser-0-smoke returncode 0
+CLEANUP_SIGNAL 43991 SIGINT [43991, 43992, 44002, 44003]
+CLEANUP_VERIFIED_EMPTY 43991
+STOPPED stable-shared0-browser-0-smoke
+SERVER alpha2-shared0-browser-0-smoke 44020
+START alpha2-shared0-browser-0-smoke
+DONE alpha2-shared0-browser-0-smoke returncode 0
+CLEANUP_SIGNAL 44020 SIGINT [44020, 44021, 44029, 44030]
+CLEANUP_VERIFIED_EMPTY 44020
+STOPPED alpha2-shared0-browser-0-smoke
+SERVER stable-shared1-browser-0-smoke 44044
+START stable-shared1-browser-0-smoke
+DONE stable-shared1-browser-0-smoke returncode 0
+CLEANUP_SIGNAL 44044 SIGINT [44044, 44045, 44067, 44068]
+CLEANUP_VERIFIED_EMPTY 44044
+STOPPED stable-shared1-browser-0-smoke
+SERVER alpha2-shared1-browser-0-smoke 44098
+START alpha2-shared1-browser-0-smoke
+DONE alpha2-shared1-browser-0-smoke returncode 0
+CLEANUP_SIGNAL 44098 SIGINT [44098, 44099, 44105, 44106]
+CLEANUP_VERIFIED_EMPTY 44098
+STOPPED alpha2-shared1-browser-0-smoke
+FAILED_CASES []

@@ -1,0 +1,154 @@
+{
+  "comparison": [
+    {
+      "category": "isolated",
+      "metric": "dev_read_ns_per_op",
+      "stable": 895.57208,
+      "alpha2": 205.40833,
+      "stable_over_alpha2": 4.359959890623715,
+      "alpha2_change_percent": -77.06400918617294
+    },
+    {
+      "category": "isolated",
+      "metric": "dev_write_ns_per_op",
+      "stable": 9041.21792,
+      "alpha2": 1041.935,
+      "stable_over_alpha2": 8.677333921981697,
+      "alpha2_change_percent": -88.47572296985405
+    },
+    {
+      "category": "isolated",
+      "metric": "prod_read_ns_per_op",
+      "stable": 960.12917,
+      "alpha2": 203.45,
+      "stable_over_alpha2": 4.719238977635783,
+      "alpha2_change_percent": -78.81014280609764
+    },
+    {
+      "category": "isolated",
+      "metric": "prod_write_ns_per_op",
+      "stable": 9352.99667,
+      "alpha2": 859.24875,
+      "stable_over_alpha2": 10.885086152292919,
+      "alpha2_change_percent": -90.81311818749957
+    },
+    {
+      "category": "isolated",
+      "metric": "var_construction_ms",
+      "stable": 245.951166,
+      "alpha2": 174.440125,
+      "stable_over_alpha2": 1.4099460545559688,
+      "alpha2_change_percent": -29.075300663547175
+    },
+    {
+      "category": "compile",
+      "metric": "compile_process_seconds",
+      "stable": 2.905035916,
+      "alpha2": 2.773847417,
+      "stable_over_alpha2": 1.047294778435176,
+      "alpha2_change_percent": -4.515899382773769
+    },
+    {
+      "category": "compile",
+      "metric": "compile_pages_seconds",
+      "stable": 0.42,
+      "alpha2": 0.34,
+      "stable_over_alpha2": 1.2352941176470587,
+      "alpha2_change_percent": -19.047619047619037
+    },
+    {
+      "category": "compile",
+      "metric": "python-compile_process_seconds",
+      "stable": 1.182883209,
+      "alpha2": 1.095747458,
+      "stable_over_alpha2": 1.079521745967856,
+      "alpha2_change_percent": -7.366386667510816
+    },
+    {
+      "category": "compile",
+      "metric": "python-compile_pages_seconds",
+      "stable": 0.42,
+      "alpha2": 0.34,
+      "stable_over_alpha2": 1.2352941176470587,
+      "alpha2_change_percent": -19.047619047619037
+    },
+    {
+      "category": "compile",
+      "metric": "full_python_internal_seconds",
+      "stable": 0.726,
+      "alpha2": 0.64,
+      "stable_over_alpha2": 1.134375,
+      "alpha2_change_percent": -11.845730027548207
+    },
+    {
+      "category": "browser-shared0",
+      "metric": "handler_cpu_ms",
+      "stable": 32.954,
+      "alpha2": 21.18,
+      "stable_over_alpha2": 1.5559017941454203,
+      "alpha2_change_percent": -35.72859136978819
+    },
+    {
+      "category": "browser-shared0",
+      "metric": "handler_wall_ms",
+      "stable": 33.0853955,
+      "alpha2": 21.2007085,
+      "stable_over_alpha2": 1.5605797089281235,
+      "alpha2_change_percent": -35.92124809268186
+    },
+    {
+      "category": "browser-shared0",
+      "metric": "ws_roundtrip_ms",
+      "stable": 35.1764375,
+      "alpha2": 22.654792,
+      "stable_over_alpha2": 1.5527150944488919,
+      "alpha2_change_percent": -35.59668457045998
+    },
+    {
+      "category": "browser-shared0",
+      "metric": "click_to_dom_ms",
+      "stable": 35.60000000055879,
+      "alpha2": 23.049999999813735,
+      "stable_over_alpha2": 1.5444685466744674,
+      "alpha2_change_percent": -35.25280899030356
+    },
+    {
+      "category": "browser-shared1",
+      "metric": "handler_cpu_ms",
+      "stable": 32.192,
+      "alpha2": 21.074,
+      "stable_over_alpha2": 1.5275695169403054,
+      "alpha2_change_percent": -34.53653081510934
+    },
+    {
+      "category": "browser-shared1",
+      "metric": "handler_wall_ms",
+      "stable": 32.216083,
+      "alpha2": 21.0949585,
+      "stable_over_alpha2": 1.5271934761094692,
+      "alpha2_change_percent": -34.52041174589722
+    },
+    {
+      "category": "browser-shared1",
+      "metric": "ws_roundtrip_ms",
+      "stable": 34.1664785,
+      "alpha2": 22.647771,
+      "stable_over_alpha2": 1.5086022593570025,
+      "alpha2_change_percent": -33.71347591470394
+    },
+    {
+      "category": "browser-shared1",
+      "metric": "click_to_dom_ms",
+      "stable": 34.59999999962747,
+      "alpha2": 23.199999999720603,
+      "stable_over_alpha2": 1.491379310346731,
+      "alpha2_change_percent": -32.94797687869829
+    }
+  ],
+  "slowdowns_over_20_percent": [],
+  "diagnostic_counts": {
+    "warnings": 0,
+    "cancellations": 0,
+    "errors": 0
+  }
+}

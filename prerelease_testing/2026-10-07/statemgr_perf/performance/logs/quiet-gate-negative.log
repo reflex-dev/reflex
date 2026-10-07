@@ -1,0 +1,8 @@
+WARN `--no-project` was provided, but no project was found
+Traceback (most recent call last):
+  File "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr-performance/scripts/run_suite.py", line 24, in <module>
+    assert args.smoke or os.environ.get('PERF_QUIET_CONFIRMED') == '1', 'No timing until parent explicitly confirms the machine is quiet.'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: No timing until parent explicitly confirms the machine is quiet.
+
+Verified expected exit code: 1

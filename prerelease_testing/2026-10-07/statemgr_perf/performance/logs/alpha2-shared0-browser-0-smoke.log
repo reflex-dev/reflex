@@ -1,0 +1,60 @@
+WARN `--no-project` was provided, but no project was found
+{
+ "load_average_before": [
+  3.85009765625,
+  3.97509765625,
+  4.61962890625
+ ],
+ "url": "http://localhost:8274",
+ "smoke": true,
+ "checks": [
+  {
+   "name": "untimed-actual-handler-sort-preflight",
+   "pass": true,
+   "expected_rank_checksum": 31273879436
+  },
+  {
+   "name": "untimed-compile-route-semantics",
+   "pass": true,
+   "panels": 10,
+   "conditional_values": 2000,
+   "foreach_values": 2000,
+   "expression_samples": [
+    14,
+    18,
+    27,
+    -38200,
+    -38592
+   ],
+   "foreach_samples": [
+    7,
+    7,
+    9,
+    205,
+    1393
+   ]
+  },
+  {
+   "repeat": 0,
+   "actions": 2,
+   "checksum": 2497500,
+   "pass": true
+  }
+ ],
+ "errors": [],
+ "observations": [],
+ "warnings": [],
+ "cancellations": [],
+ "runs": [
+  {
+   "repeat": 0,
+   "sample_count": 0
+  }
+ ],
+ "browser": "153.0.8010.12",
+ "load_average_after": [
+  4.50244140625,
+  4.10791015625,
+  4.66259765625
+ ]
+}

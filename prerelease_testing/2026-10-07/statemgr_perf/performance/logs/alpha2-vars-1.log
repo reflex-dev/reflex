@@ -1,0 +1,16 @@
+WARN `--no-project` was provided, but no project was found
+{
+ "reflex": "0.10.0a2",
+ "smoke": false,
+ "samples": [
+  {
+   "repeat": 0,
+   "count": 2000,
+   "nanoseconds": 180952125,
+   "output_chars": 552459,
+   "semantic_js_evaluation": "pass",
+   "semantic_checksum": -878871883
+  }
+ ],
+ "median_ns": 180952125
+}

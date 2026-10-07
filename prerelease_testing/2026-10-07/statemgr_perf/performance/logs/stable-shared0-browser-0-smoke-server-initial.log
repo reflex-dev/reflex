@@ -1,0 +1,283 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-pack
+ages/reflex_base/config.py'
+Debug: Config: Config(app_name='perf_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8274', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, state_manager_mode='memory', 
+redis_lock_expiration=10000, redis_lock_warning_threshold=1000, 
+redis_token_expiration=3600, _non_default_attributes={'loglevel', 
+'telemetry_enabled', 'api_url', 'plugins', 'app_name', 'state_manager_mode'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/homebrew/bin/node'), '--version']
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.14 (PATH: 
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/python)]
+Debug: [Node 26.8.1 (Minimum: 22.22.0) (PATH:/opt/homebrew/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masen/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; 
+root:xnu-12377.161.14~5/RELEASE_ARM64_T6000]
+Debug: Using package installer at: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', '/opt/homebrew/bin/npm']
+Debug: Using package executer at: [['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'], ['/opt/homebrew/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-pack
+ages/reflex_base/config.py'
+Debug: Config: Config(app_name='perf_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8274', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, state_manager_mode='memory', 
+redis_lock_expiration=10000, redis_lock_warning_threshold=1000, 
+redis_token_expiration=3600, _non_default_attributes={'loglevel', 
+'telemetry_enabled', 'api_url', 'plugins', 'app_name', 'state_manager_mode'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.14 (PATH: 
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/python)]
+Debug: [Node 26.8.1 (Minimum: 22.22.0) (PATH:/opt/homebrew/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masen/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; 
+root:xnu-12377.161.14~5/RELEASE_ARM64_T6000]
+Debug: Using package installer at: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', '/opt/homebrew/bin/npm']
+Debug: Using package executer at: [['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'], ['/opt/homebrew/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+──────────────────────────── Initializing perf_app ─────────────────────────────
+Debug: Creating /Users/masen/Library/Application Support/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /Users/masen/Library/Application Support/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packa
+ges/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr-performance/stable-shar
+ed0/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 15818567531903386535675097845030025139.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.070 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized perf_app. Install dependencies from `requirements.txt` with
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8274
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8274
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 8274 is in use.
+Debug: Checking if Fullstack port: 8274 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Fullstack port: 8274 is not in use.
+PERF_SOURCE 0.9.12 /private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py shared False capture False
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-pack
+ages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.45s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 16/15 0:00:00
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', '-d', 
+'postcss-import@17.0.0', '@react-router/fs-routes@8.4.0', 
+'@react-router/dev@8.4.0', 'vite@8.2.2', '@emotion/react@11.14.0', 
+'autoprefixer@10.5.4', 'postcss@8.5.26']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [113]
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: 
+Debug: 127 packages installed [611.00ms]
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', 'react@19.2.8', 
+'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 'isbot@5.2.2', 
+'lucide-react@1.26.0', '@radix-ui/themes@3.3.0', 'sonner@2.0.8', 
+'react-error-boundary@6.1.2', 'react-helmet@6.1.0', 'mergician@v2.0.2', 
+'react-router@8.4.0', '@react-router/node@8.4.0', 'react-dom@19.2.8']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [29]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed isbot@5.2.2
+Debug: installed lucide-react@1.26.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed sonner@2.0.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-helmet@6.1.0
+Debug: installed mergician@2.0.2
+Debug: installed react-router@8.4.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-dom@19.2.8
+Debug: 
+Debug: 99 packages installed [386.00ms]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr-performance/stable-shar
+ed0/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr-performance/stable-shar
+ed0/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 1.02s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 434 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             3.49 kB │ 
+gzip:  0.65 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-DJ5VXWUm.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-DEKlLv-N.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_index-DP8Zt1hX.js                       3.38 kB │ 
+gzip:  0.94 kB
+Debug: build/client/assets/react-dom-CM0sdMnz.js                    3.54 kB │ 
+gzip:  1.33 kB
+Debug: build/client/assets/button-BZXadduZ.js                      17.86 kB │ 
+gzip:  5.48 kB
+Debug: build/client/assets/emotion-react.browser.esm-BUuhssUM.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-m9jGFIQ4.js             33.32 kB │ 
+gzip: 11.68 kB
+Debug: build/client/assets/components-DzQT6F3y.js                  86.48 kB │ 
+gzip: 28.62 kB
+Debug: build/client/assets/_compile_._index-BMoE3KjN.js           157.37 kB │ 
+gzip:  7.02 kB
+Debug: build/client/assets/entry.client-PAjQ1ewH.js               182.42 kB │ 
+gzip: 57.74 kB
+Debug: build/client/assets/context-BrFNrQcV.js                    273.94 kB │ 
+gzip: 62.85 kB
+Debug: build/client/assets/root-CQl2lgO5.js                       308.24 kB │ 
+gzip: 86.78 kB
+Debug: 
+Debug: ✓ built in 868ms
+Debug: vite v8.2.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 28 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.73 kB │ 
+gzip:  0.28 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-DJ5VXWUm.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                    391.71 kB │ 
+gzip: 57.26 kB
+Debug: 
+Debug: ✓ built in 238ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /compile -> build/client/compile/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+Debug: Copying .web/build/client/compile/index.html to 
+.web/build/client/compile.html
+Debug: Running command: [PosixPath('/opt/homebrew/bin/node'), 
+PosixPath('/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr-performance/
+stable-shared0/.web/compress-static.js'), 
+PosixPath('/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr-performance/
+stable-shared0/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8274/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 43173)
+[INFO] Listening at: http://0.0.0.0:8274
+[INFO] Spawning worker-1 with PID: 43218
+PERF_SOURCE 0.9.12 /private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py shared False capture False
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=8274
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8274
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Warning: Error transforming event payload for handler 
+Workload.process_shipments: Error transforming event argument 'validate' with 
+value 'True' and type hint '<class 'bool'>'
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.
