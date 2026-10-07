@@ -1,5 +1,7 @@
 """Ensure that Components returned by ComponentState.create have independent State classes."""
 
+from unittest import mock
+
 import pytest
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_components_core.base.bare import Bare
@@ -107,3 +109,43 @@ def test_component_state_defaults_from_props():
     assert first_state.labels == ["first"]
     assert second_state.count == 10
     assert second_state.labels == ["second"]
+
+
+def test_component_state_patch_round_trip():
+    """Undoing a patched default restores the default get_component configured."""
+
+    class PatchedComponentState(rx.ComponentState):
+        count: int = 0
+        _secret: int = 0
+
+        @classmethod
+        def get_component(cls, initial: int) -> rx.Component:
+            """Configure the new state class before returning its component.
+
+            Args:
+                initial: The default of both vars.
+
+            Returns:
+                The component using the configured state var.
+            """
+            cls.count = initial
+            cls._secret = initial
+            return rx.text(cls.count)
+
+    for name in ("count", "_secret"):
+        state_cls = PatchedComponentState.create(initial=5).State
+        assert state_cls is not None
+        assert issubclass(state_cls, PatchedComponentState)
+        with pytest.MonkeyPatch.context() as patcher:
+            patcher.setattr(state_cls, name, 99)
+            assert getattr(state_cls(), name) == 99
+        assert getattr(state_cls(), name) == 5
+        assert state_cls.count is state_cls.base_vars["count"]
+
+        with mock.patch.object(PatchedComponentState, name, 42):
+            patched = PatchedComponentState.create(initial=6).State
+            assert patched is not None
+            assert getattr(patched(), name) == 6
+            assert PatchedComponentState.get_fields()[name].default_value() == 42
+        assert PatchedComponentState.get_fields()[name].default_value() == 0
+        assert getattr(state_cls(), name) == 5

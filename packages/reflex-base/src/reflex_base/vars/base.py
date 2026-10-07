@@ -3895,7 +3895,8 @@ FIELD_TYPE = TypeVar("FIELD_TYPE")
 
 # Custom attrs never copied from a source field: get_field_type duck-types
 # pydantic fields on `.annotation`, so carrying it over would shadow the
-# real class annotation; the binding attrs belong to the source's own class.
+# real class annotation; the binding attrs and the defaults replaced by class
+# assignments belong to the source's own class.
 _RESERVED_FIELD_ATTRS = frozenset({
     "annotation",
     "_owner",
@@ -3904,6 +3905,7 @@ _RESERVED_FIELD_ATTRS = frozenset({
     "_tracked",
     "_plain_types",
     "_var",
+    "_replaced_defaults",
 })
 
 # Exact types of values that are never wrapped in a MutableProxy. Checking them
@@ -4094,6 +4096,29 @@ class Field(Generic[FIELD_TYPE]):
             The field.
         """
         return cls(annotated_type=annotated_type, **_default_arguments(value))
+
+    def _assign_default(
+        self, default: Any, default_factory: Callable[[], Any] | None
+    ) -> None:
+        """Replace the default from a class assignment, keeping the previous one.
+
+        The previous default is restored when the assignment is undone.
+
+        Args:
+            default: The new default value, or MISSING.
+            default_factory: The new default factory, or None.
+        """
+        self.__dict__.setdefault("_replaced_defaults", []).append((
+            self.default,
+            self.default_factory,
+        ))
+        self.default = default
+        self.default_factory = default_factory
+
+    def _restore_default(self) -> None:
+        """Undo the most recent class assignment of the default, if any."""
+        if replaced := self.__dict__.get("_replaced_defaults"):
+            self.default, self.default_factory = replaced.pop()
 
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
@@ -4701,6 +4726,23 @@ def _accepts_default(declared: Field, value: Any) -> bool:
     return _isinstance(value, declared.outer_type_, nested=1, treat_var_as_type=False)
 
 
+def _assigned_field(cls: BaseStateMeta, name: str) -> Field | None:
+    """Get the field a class attribute assignment or deletion configures.
+
+    Args:
+        cls: The state class the attribute is assigned through.
+        name: The attribute name.
+
+    Returns:
+        The field the class resolves the name to, declared by this class or
+        inherited from a base, or None if the name resolves to anything else.
+    """
+    declared = cls.__fields__.get(name)
+    if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+        return None
+    return declared
+
+
 def _is_descriptor(value: Any) -> bool:
     """Whether a class attribute is a descriptor defining its own access, rather than a field.
 
@@ -4767,19 +4809,24 @@ class BaseStateMeta(ABCMeta):
         A value the field's annotation accepts becomes the default. A
         zero-argument callable it does not accept becomes the default factory,
         after one call validates what it produces, unless it produces a browser
-        storage value, which becomes the default itself.
+        storage value, which becomes the default itself. Assigning the field
+        itself, or the Var read through the class, undoes the most recent
+        assignment, as patching tools do to restore what they saved.
 
         Args:
             name: The class attribute being assigned.
             value: Its new default value or zero-argument default factory.
 
         Raises:
-            TypeError: If the default is a Var or a Field, does not satisfy the
-                field's annotation, or its factory fails.
+            TypeError: If the default is another Var or Field, does not satisfy
+                the field's annotation, or its factory fails.
         """
-        declared = cls.__fields__.get(name)
-        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+        declared = _assigned_field(cls, name)
+        if declared is None:
             super().__setattr__(name, value)
+            return
+        if value is declared or (declared._var is not None and value is declared._var):
+            declared._restore_default()
             return
         if isinstance(value, declared._proxy):
             # A value read from a state instance is proxied for dirty tracking;
@@ -4800,8 +4847,7 @@ class BaseStateMeta(ABCMeta):
             accepted = _accepts_default(declared, default)
             if accepted and not isinstance(default, declared._client_storage):
                 # Keep the callable to produce future defaults.
-                declared.default = MISSING
-                declared.default_factory = value
+                declared._assign_default(MISSING, value)
                 return
             # Browser storage is classified and configured by the value itself,
             # and the browser supplies later values, so the value produced once
@@ -4812,9 +4858,22 @@ class BaseStateMeta(ABCMeta):
                 f"{declared.outer_type_}, got {default!r} of type {type(default)}."
             )
             raise TypeError(msg)
-        defaults = _default_arguments(default)
-        declared.default = defaults["default"]
-        declared.default_factory = defaults["default_factory"]
+        declared._assign_default(**_default_arguments(default))
+
+    def __delattr__(cls, name: str) -> None:
+        """Undo the most recent assignment of a field's default, retaining its descriptor.
+
+        Patching tools delete the attribute to undo a patch made through a
+        class that inherits the field.
+
+        Args:
+            name: The class attribute being deleted.
+        """
+        declared = _assigned_field(cls, name)
+        if declared is None:
+            super().__delattr__(name)
+            return
+        declared._restore_default()
 
     def __new__(
         cls,

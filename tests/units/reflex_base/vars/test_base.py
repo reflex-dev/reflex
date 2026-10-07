@@ -1,6 +1,7 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
 import asyncio
+import contextlib
 import dataclasses
 import datetime
 import enum
@@ -18,6 +19,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any, ClassVar, Generic, Literal, Protocol, Self, TypeVar
+from unittest import mock
 
 import pytest
 from reflex_base import constants
@@ -522,6 +524,167 @@ def test_backend_class_assignment_inherited_field_and_classvar():
     Child._config = "child"
     assert Parent._config == "old"
     assert Child._config == "child"
+
+
+@contextlib.contextmanager
+def _patched_default(
+    mechanism: str, target: type, name: str, value: Any
+) -> Iterator[None]:
+    """Patch a class attribute, then undo the patch the way a testing tool does.
+
+    Args:
+        mechanism: The tool or manual protocol that saves and restores the attribute.
+        target: The class to patch.
+        name: The attribute to patch.
+        value: The temporary value.
+
+    Yields:
+        While the patch is applied.
+    """
+    if mechanism == "monkeypatch":
+        with pytest.MonkeyPatch.context() as patcher:
+            patcher.setattr(target, name, value)
+            yield
+    elif mechanism == "mock":
+        with mock.patch.object(target, name, value):
+            yield
+    else:
+        saved = getattr(target, name)
+        setattr(target, name, value)
+        yield
+        if mechanism == "delattr":
+            delattr(target, name)
+        else:
+            setattr(target, name, saved)
+
+
+def _patch_target(kind: str) -> tuple[type[BaseState], str]:
+    """Declare vars of every kind on fresh states.
+
+    Args:
+        kind: The state to patch through and the var name, as ``state:name``.
+
+    Returns:
+        The state to patch the var through, and the var's name.
+    """
+
+    class Mixin(BaseState, mixin=True):
+        _mixin_private: int = 5
+        mixin_public: int = 5
+
+    class Parent(BaseState):
+        _private: int = 5
+        public: int = 5
+        _field_private: Field[int] = field(5)
+        field_public: Field[int] = field(5)
+        _excluded: int = None  # pyright: ignore[reportAssignmentType]
+        _factory: Field[list[int]] = field(default_factory=lambda: [5])
+
+    class Child(Parent):
+        pass
+
+    class Mixed(Mixin, BaseState):
+        pass
+
+    state, _, name = kind.partition(":")
+    return {"parent": Parent, "child": Child, "mixed": Mixed}[state], name
+
+
+@pytest.mark.parametrize("mechanism", ["monkeypatch", "mock", "getattr", "delattr"])
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "parent:_private",
+        "parent:public",
+        "parent:_field_private",
+        "parent:field_public",
+        "parent:_excluded",
+        "parent:_factory",
+        "mixed:_mixin_private",
+        "mixed:mixin_public",
+        "child:_private",
+        "child:public",
+    ],
+)
+def test_class_assignment_patch_round_trip(kind: str, mechanism: str):
+    """Undoing a patched default restores the default configured before it.
+
+    Testing tools save the class attribute, which is the field (or, read
+    through the class, its Var), then assign it back or delete the attribute.
+
+    Args:
+        kind: The state to patch through and the var name, as ``state:name``.
+        mechanism: How the patch is applied and undone.
+    """
+    target, name = _patch_target(kind)
+    declared = target.get_fields()[name]
+    owner = declared._owner
+    assert owner is not None
+    in_target_dict = name in target.__dict__
+    class_value = getattr(target, name)
+    original = declared.default_value()
+    configured = [7] if name == "_factory" else 7
+    setattr(target, name, configured)
+    unread = target()
+
+    with _patched_default(mechanism, target, name, [99] if name == "_factory" else 99):
+        assert getattr(target(), name) in (99, [99])
+
+    assert target.get_fields()[name] is owner.__dict__[name] is declared
+    assert (name in target.__dict__) is in_target_dict
+    assert getattr(target, name) is class_value
+    assert getattr(target(), name) == configured
+    assert getattr(unread, name) == configured
+    # An inherited var resets with the state that declares it.
+    fresh = owner()
+    setattr(fresh, name, [1] if name == "_factory" else 1)
+    fresh.reset()
+    assert getattr(fresh, name) == configured
+
+    delattr(target, name)
+    assert declared.default_value() == original
+    assert getattr(target(), name) == original
+
+
+def test_class_assignment_nested_patches_unwind():
+    """Nested patches of one default unwind to each previous default in turn."""
+
+    class ConfigState(BaseState):
+        _value: int = 5
+
+    with pytest.MonkeyPatch.context() as outer:
+        outer.setattr(ConfigState, "_value", 6)
+        with mock.patch.object(ConfigState, "_value", 7):
+            assert ConfigState()._value == 7
+        assert ConfigState()._value == 6
+    assert ConfigState()._value == 5
+
+
+def test_class_assignment_delattr_restores_default():
+    """Deleting a var through its class restores its previous default, keeping the field."""
+
+    class ConfigState(BaseState):
+        _value: list[int] = [1]
+        _other: int = 0
+
+    declared = ConfigState.get_fields()["_value"]
+    factory = declared.default_factory
+    del ConfigState._value
+    assert ConfigState.__dict__["_value"] is declared
+    assert ConfigState()._value == [1]
+
+    ConfigState._value = [2]
+    ConfigState._value = [3]
+    del ConfigState._value
+    assert ConfigState()._value == [2]
+    del ConfigState._value
+    assert declared.default_factory is factory
+    assert ConfigState()._value == [1]
+
+    ConfigState._value = declared  # pyright: ignore[reportAttributeAccessIssue]
+    assert ConfigState()._value == [1]
+    with pytest.raises(TypeError, match="computed var"):
+        ConfigState._value = ConfigState.get_fields()["_other"]  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_custom_field_attr_survives_annotated_rebuild():

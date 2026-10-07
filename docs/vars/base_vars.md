@@ -83,7 +83,8 @@ configured default. Defaults are not part of the saved-state schema, so changing
 one does not invalidate state saved by this release or later.
 
 Assigned defaults must match the field's declared type. Var and Field assignments
-are rejected, including fresh `rx.field(...)` objects. Declare a `ClassVar[rx.Var]` to
+are rejected, including fresh `rx.field(...)` objects, unless they restore a
+default as described below. Declare a `ClassVar[rx.Var]` to
 store a Var reference, or define a computed var to read another field at runtime.
 A callable the annotation accepts, such as for a `Callable` or `Any` var, is
 stored as the default. Otherwise, assigning a zero-argument callable updates the
@@ -100,6 +101,12 @@ through a subclass also changes that declaring state's default. Each generated
 `ComponentState` class owns its copied fields, allowing
 [`get_component` to configure defaults](/docs/state-structure/component-state/#passing-props)
 independently for each component.
+
+Assigning a var's own field or Var back to its state class, as read through the
+class before a change, or deleting the class attribute undoes the most recent
+default assignment. Testing tools such as pytest's `monkeypatch.setattr` and
+`unittest.mock.patch.object` restore a patched default this way, including a
+patch made through a subclass.
 
 ## Backend-only Vars
 
