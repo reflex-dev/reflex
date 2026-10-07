@@ -314,6 +314,7 @@ def context_template(
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
     initial_state_json: str | None = None,
+    initial_state_hashes: list[str] | None = None,
     state_name: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
@@ -323,6 +324,9 @@ def context_template(
     Args:
         initial_state: The initial state for the context.
         initial_state_json: Initial state JSON already serialized by the compiler.
+        initial_state_hashes: Per-state hashes of ``initial_state`` in sorted
+            state name order, sent with the first hydrate so the backend can
+            skip vars still at their default.
         state_name: The name of the state.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
@@ -350,18 +354,26 @@ export const state_name = "{state_name}"
 
 export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
 
-// These events are triggered on initial load and each page navigation.
+// Tracked cookie and local storage vars set in the browser, or undefined if none.
+const clientStorageVars = () => {{
+    const client_storage_vars = hydrateClientStorage(clientStorage);
+    if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
+        return client_storage_vars;
+    }}
+    return undefined;
+}}
+
+// These events are triggered on each client-side page navigation.
 export const onLoadInternalEvent = () => {{
     const internal_events = [];
 
-    // Get tracked cookie and local storage vars to send to the backend.
-    const client_storage_vars = hydrateClientStorage(clientStorage);
-    // But only send the vars if any are actually set in the browser.
-    if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
+    // Only send the client storage vars if any are actually set in the browser.
+    const client_storage_vars = clientStorageVars();
+    if (client_storage_vars !== undefined) {{
         internal_events.push(
             ReflexEvent(
                 '{state_name}.{constants.CompileVars.UPDATE_VARS_INTERNAL}',
-                {{vars: client_storage_vars}},
+                {{{constants.CompileVars.PAYLOAD_VARS}: client_storage_vars}},
             ),
         );
     }}
@@ -373,11 +385,22 @@ export const onLoadInternalEvent = () => {{
     return internal_events;
 }}
 
-// The following events are sent when the websocket connects or reconnects.
-export const initialEvents = () => [
-    ReflexEvent('{state_name}.{constants.CompileVars.HYDRATE}'),
-    ...onLoadInternalEvent()
-]
+// The single event sent when the websocket connects or reconnects: it resets and
+// applies client storage, sends the state, and queues the page's on_load events.
+// On the first connect the frontend still holds the compiled defaults, so it
+// sends their hashes and the backend only returns the vars that differ; any
+// later (re)hydrate gets the full state.
+export const initialEvents = (first = false) => {{
+    const client_storage_vars = clientStorageVars();
+    const payload = {{}};
+    if (client_storage_vars !== undefined) {{
+        payload["{constants.CompileVars.PAYLOAD_VARS}"] = client_storage_vars;
+    }}
+    if (first) {{
+        payload["{constants.CompileVars.PAYLOAD_HASHES}"] = initialStateHashes;
+    }}
+    return [ReflexEvent('{state_name}.{constants.CompileVars.HYDRATE_AND_LOAD}', payload)];
+}}
     """
         if state_name
         else """
@@ -391,8 +414,8 @@ export const initialEvents = () => []
 """
     )
 
-    create_state_contexts_str = "\n".join(
-        rf"createElement(SubstateProvider, {{substateName: '{state_name}', contextName: '{format_state_name(state_name)}'}},"
+    substates_str = "".join(
+        f"\n  ['{state_name}', '{format_state_name(state_name)}'],"
         for state_name in initial_state
     )
 
@@ -431,6 +454,7 @@ import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
 export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
 export const initialState = {initial_state_json}
+export const initialStateHashes = {"[]" if not initial_state_hashes else json_dumps(initial_state_hashes)}
 
 export const defaultColorMode = {default_color_mode}
 export const StateContexts = {{{state_contexts_str}}};
@@ -557,16 +581,40 @@ const SubstateProvider = ({{ children, substateName, contextName }}) => {{
   );
 }};
 
-export function StateProvider({{ children }}) {{
-  return useMemo(
-    () => (
-    createElement(DispatchProvider, {{}},
-    {create_state_contexts_str}children
-    {")" * len(initial_state)}
-  )),
-    [children],
-  );
-}}"""
+// ``[substateName, contextName]`` for every substate, outermost first.
+const SUBSTATES = [{substates_str}
+];
+
+function ClientStateProvider({{ children }}) {{
+  return useMemo(() => {{
+    let tree = children;
+    for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
+      const [substateName, contextName] = SUBSTATES[i];
+      tree = createElement(SubstateProvider, {{ substateName, contextName }}, tree);
+    }}
+    return createElement(DispatchProvider, {{}}, tree);
+  }}, [children]);
+}}
+
+// The server renders once and never applies a delta, so it provides the
+// initial state through bare context providers. ``SubstateProvider`` would add
+// a second render level per substate, and the server renderer recurses once per
+// level, so with many substates rendering a page can exhaust the stack.
+function ServerStateProvider({{ children }}) {{
+  let tree = children;
+  for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
+    const [substateName, contextName] = SUBSTATES[i];
+    tree = createElement(
+      StateContexts[contextName],
+      {{ value: initialState[substateName] }},
+      tree,
+    );
+  }}
+  return createElement(DispatchContext, {{ value: {{}} }}, tree);
+}}
+
+export const StateProvider =
+  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;"""
 
 
 def component_template(component: Component):
