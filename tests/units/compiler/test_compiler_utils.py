@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from copy import deepcopy
+from typing import Any
 
 import pytest
 from reflex_base import constants
@@ -266,31 +267,81 @@ def test_compile_client_storage_honors_default_factories(
 
 
 @pytest.mark.parametrize(
-    "storage_type", [rx.Cookie, rx.LocalStorage, rx.SessionStorage]
+    ("storage_type", "settings", "expected_options"),
+    [
+        pytest.param(
+            rx.Cookie,
+            {
+                "name": "custom-key",
+                "path": "/app",
+                "max_age": 60,
+                "secure": True,
+                "same_site": "strict",
+            },
+            {
+                "name": "custom-key",
+                "path": "/app",
+                "maxAge": 60,
+                "secure": True,
+                "sameSite": "strict",
+            },
+            id="cookie",
+        ),
+        pytest.param(
+            rx.LocalStorage,
+            {"name": "custom-key", "sync": True},
+            {"name": "custom-key", "sync": True},
+            id="local_storage",
+        ),
+        pytest.param(
+            rx.SessionStorage,
+            {"name": "custom-key"},
+            {"name": "custom-key"},
+            id="session_storage",
+        ),
+    ],
 )
 def test_storage_factory_assignment_keeps_classification(
-    storage_type: type, forked_registration_context: RegistrationContext
+    storage_type: type,
+    settings: dict[str, Any],
+    expected_options: dict[str, Any],
+    forked_registration_context: RegistrationContext,
 ):
-    """A factory assigned to a str-annotated storage var stays browser storage.
+    """A factory assigned to a str-annotated storage var is called once and stays storage.
 
     Args:
         storage_type: The browser storage type the declaration uses.
+        settings: The storage options the factory configures.
+        expected_options: The compiled options those settings produce.
         forked_registration_context: Keeps the test's state out of other tests.
     """
+    calls = []
+
+    def factory() -> str:
+        """Produce the configured storage value, recording each call.
+
+        Returns:
+            The storage value.
+        """
+        calls.append(True)
+        return storage_type("new", **settings)
 
     class StorageState(State):
         value: str = storage_type("old", name="custom-key")
 
     declared = StorageState.get_fields()["value"]
-    StorageState.value = lambda: storage_type("new", name="custom-key")  # pyright: ignore[reportAttributeAccessIssue]
+    StorageState.value = factory  # pyright: ignore[reportAttributeAccessIssue]
+    assert calls == [True]
     assert declared.default_value() == "new"
     field_type, options = utils._compile_client_storage_field(declared)
     assert field_type is storage_type
     assert options is not None
-    assert options["name"] == "custom-key"
+    assert expected_options.items() <= options.items()
     state = StorageState(value="changed")
     state._reset_client_storage()
     assert state.value == "new"
+    state._reset_client_storage()
+    assert calls == [True]
 
 
 def test_document_root_allows_static_id_on_head_script():
