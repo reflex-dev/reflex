@@ -1,0 +1,263 @@
+{
+ "tag": "gh-base-fresh-home",
+ "url": "http://localhost:3144",
+ "args": {
+  "url": "http://localhost:3144",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/gh",
+  "tag": "gh-base-fresh-home",
+  "profile": "-",
+  "wait": 6.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "fail",
+   "detail": "[('setItem', 'reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_', '[]')]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[]"
+  },
+  "ss": {
+   "token": "c2085308-0bc8-4cc2-ec49-00423706ad4e"
+  },
+  "cookie": ""
+ },
+ "body_text": "Github Stats\nGet Stats",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {},
+  "ss": {},
+  "cookie": "",
+  "t": 29,
+  "path": "/"
+ },
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1227,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "c2085308-0bc8-4cc2-ec49-00423706ad4e",
+   "prev": null,
+   "t": 1428,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "t": 1432,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "t": 1435,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[]",
+   "prev": null,
+   "t": 1479,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1227,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "c2085308-0bc8-4cc2-ec49-00423706ad4e",
+   "prev": null,
+   "t": 1428,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "t": 1432,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "t": 1435,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[]",
+   "prev": null,
+   "t": 1479,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[]",
+   "prev": null,
+   "t": 1479,
+   "path": "/"
+  }
+ ],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 7.26,
+   "dir": "recv",
+   "data": "0{\"sid\":\"at3UkahXPxiADEkWAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 7.26,
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 7.26,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"6MmMWc3wo_8N_mmFAAAB\"}"
+  },
+  {
+   "t": 7.26,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 7.26,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 7.26,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8144\",\"origin\":\"http://localhost:3144\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"3U0JABojy8oIqwPNvY2J3A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8144\",\"origin\":\"http://localhost:3144\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"3U0JABojy8oIqwPNvY2J3A==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3144\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3144/index\",\"full_raw_path\":\"http://localhost:3144/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"c2085308-0bc8-4cc2-ec49-00423706ad4e\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"6MmMWc3wo_8N_mmFAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3144\",\"origin\":\"http://localhost:3144\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3144/\"},\"selected_user_param_rx_state_\":\"\"},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.github_stats___widget____widget_state\":{\"appearance_rx_state_\":\"light\",\"fetching_rx_state_\":false,\"last_fetch_rx_state_\":\"\",\"selected_user_rx_state_\":\"\",\"user_stats_rx_state_\":[],\"user_stats_json_rx_state_\":\"\"},\"reflex___state____state.github_stats___github_stats____state\":{\"data_pretty_rx_state_\":\"[]\",\"fetching_rx_state_\":false,\"selected_users_rx_state_\":[],\"selected_users_json_rx_state_\":\"\",\"user_stats_rx_state_\":[],\"user_stats_json_rx_state_\":\"\",\"username_rx_state_\":\"\"},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{}}}]"
+  },
+  {
+   "t": 7.26,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 7.26,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 7.26,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 7.26,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_json_rx_state_\":\"[]\",\"fetching_rx_state_\":false}}}]"
+  },
+  {
+   "t": 7.4,
+   "dir": "sent",
+   "data": "41/_event,"
+  }
+ ],
+ "console": [
+  {
+   "t": 0.97,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 1.22,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 7.25,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 7.25,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "t": 7.27,
+   "type": "error",
+   "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`."
+  },
+  {
+   "t": 7.4,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "last_compiled_theme",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 5,
+  "n_changing": 5,
+  "n_changing_app": 1,
+  "n_idempotent": 0,
+  "console_errors": [
+   "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`"
+  ],
+  "pageerrors": [],
+  "bad_requests": []
+ }
+}

@@ -1,0 +1,599 @@
+{
+ "tag": "twr-stale-prod",
+ "results": [
+  {
+   "name": "A: dave signs up on the old version",
+   "status": "pass",
+   "detail": "/",
+   "t": 3.106
+  },
+  {
+   "name": "A: dave tweets + follows alice",
+   "status": "pass",
+   "detail": "[['daver', 'dave pre-upgrade twr-stale-prod'], ['alicer', 'alice after twr-base-restart']]",
+   "t": 3.733
+  },
+  {
+   "name": "C: did the old tab reload itself after the new server came up?",
+   "status": "anomaly",
+   "detail": "marker=old-tab-1791356072421",
+   "t": 30.684
+  },
+  {
+   "name": "C: dave still logged in after restart WITHOUT re-login (same token)",
+   "status": "pass",
+   "detail": "{'marker': 'old-tab-1791356072421', 'path': '/', 'on_home': True, 'on_login': False, 'avatar': 'da', 'token': '8f603948-8897-455a-cd62-d3ca26dd46ee', 'feed': [['daver', 'dave pre-upgrade twr-stale-prod'], ['alicer', 'alice after twr-base-restart'], ['bobr', 'bob tweet twr-base-prod'], ['alicer', 'alice tweet two twr-base-prod'], ['alicer', 'alice tweet one twr-base-prod']], 'following': [], 'toasts': [], 'body_tail': 'PySocial\\nHome\\nFollowers\\nSign out\\nHome\\nDA\\nTweet\\nDA\\n\\n@daver\\n\\ndave pre-upgrade twr-stale-prod\\n\\nAL\\n\\n@alicer\\n\\nalice after twr-base-restart\\n\\nBO\\n\\n@bobr\\n\\nbob tweet twr-base-prod\\n\\nAL\\n\\n@alicer\\n\\nalice tweet two twr-base-prod\\n\\nAL\\n\\n@alicer\\n\\nalice tweet one twr-base-prod\\n\\nAL\\n\\nalicer\\n\\nFollowing\\nBuilt with Reflex'}",
+   "t": 30.684
+  },
+  {
+   "name": "D: the tab posts a tweet through the new backend",
+   "status": "pass",
+   "detail": "[['daver', 'dave after upgrade twr-stale-prod'], ['daver', 'dave pre-upgrade twr-stale-prod'], ['alicer', 'alice after twr-base-restart']]",
+   "t": 31.123
+  },
+  {
+   "name": "E: manual reload keeps dave's session",
+   "status": "pass",
+   "detail": "da",
+   "t": 32.002
+  },
+  {
+   "name": "F: sign out on new version",
+   "status": "pass",
+   "detail": "/login",
+   "t": 32.377
+  },
+  {
+   "name": "F: dave logs back in with the 0.9.12-written password row",
+   "status": "pass",
+   "detail": "/",
+   "t": 33.657
+  },
+  {
+   "name": "F: dave Following lists alice after fresh login",
+   "status": "pass",
+   "detail": "['alicer']",
+   "t": 34.662
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"dave\", \"t\": 1.616, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"dave\", \"t\": 5.943, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 6.147, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 6.55, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 7.15, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 7.954, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 8.955, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3152/_eve",
+   "t": 34.93
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"dave\", \"t\": 1.615, \"url\": \"http://localhost:3152/signup/bg.svg\", \"status\": 404}, {\"page\": \"dave\", \"t\": 32.369, \"url\": \"http://localhost:3152/bg.svg\", \"status\": 404}]",
+   "t": 34.93
+  }
+ ],
+ "console": [
+  {
+   "page": "dave",
+   "t": 1.616,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "dave",
+   "t": 1.633,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "dave",
+   "t": 1.633,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "dave",
+   "t": 5.943,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 6.147,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 6.55,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 7.15,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 7.954,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 8.955,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 10.16,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 11.561,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 13.164,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 14.967,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 16.973,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 18.975,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 20.986,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 22.993,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "dave",
+   "t": 31.256,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "dave",
+   "t": 32.369,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "dave",
+   "t": 32.37,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [
+  {
+   "page": "dave",
+   "t": 1.615,
+   "url": "http://localhost:3152/signup/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "dave",
+   "t": 32.369,
+   "url": "http://localhost:3152/bg.svg",
+   "status": 404
+  }
+ ],
+ "ws_frames": [
+  {
+   "page": "dave",
+   "t": 1.758,
+   "dir": "open",
+   "payload": "ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket"
+  },
+  {
+   "page": "dave",
+   "t": 1.759,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"imn14vgNFSVZqu9yAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "dave",
+   "t": 1.759,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "dave",
+   "t": 1.771,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"vquo5Eoc1aQ5U-h4AAAD\"}"
+  },
+  {
+   "page": "dave",
+   "t": 1.771,
+   "dir": "out",
+   "len": 120,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/signup/\",\"asPath\":\"/signup/\"}}]"
+  },
+  {
+   "page": "dave",
+   "t": 1.772,
+   "dir": "out",
+   "len": 170,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/signup/\",\"asPath\":\"/signup/\"}}]"
+  },
+  "{\"page\": \"dave\", \"t\": 1.779, \"dir\": \"in\", \"len\": 2668, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3152\\\",\\\"origin\\\":\\\"http://localhost:3152\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"buzNOUjVu/uSTr6MhhF99Q==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"gzip, ...",
+  {
+   "page": "dave",
+   "t": 1.786,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "dave",
+   "t": 2.653,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_username\",\"payload\":{\"username\":\"daver\"},\"router_data\":{\"pathname\":\"/signup/\",\"asPath\":\"/signup/\"}}]"
+  },
+  {
+   "page": "dave",
+   "t": 2.664,
+   "dir": "in",
+   "len": 157,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"username_rx_state_\":\"daver\"}}}]"
+  },
+  {
+   "page": "dave",
+   "t": 2.731,
+   "dir": "out",
+   "len": 227,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_password\",\"payload\":{\"password\":\"pw-dave\"},\"router_data\":{\"pathname\":\"/signup/\",\"asPath\":\"/signup/\"}}]"
+  },
+  {
+   "page": "dave",
+   "t": 2.735,
+   "dir": "in",
+   "len": 159,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"password_rx_state_\":\"pw-dave\"}}}]"
+  },
+  {
+   "page": "dave",
+   "t": 2.792,
+   "dir": "out",
+   "len": 243,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_confirm_password\",\"payload\":{\"confirm_password\":\"pw-dave\"},\"router_data\":{\"pathname\":\"/signup/\",\"asPath\":\"/signup/\"}}]"
+  },
+  {
+   "page": "dave",
+   "t": 2.797,
+   "dir": "in",
+   "len": 167,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"confirm_password_rx_state_\":\"pw-dave\"}}}]"
+  },
+  {
+   "page": "dave",
+   "t": 2.837,
+   "dir": "out",
+   "len": 188,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.signup\",\"router_data\":{\"pathname\":\"/signup/\",\"asPath\":\"/signup/\"}}]"
+  },
+  {
+   "page": "dave",
+   "t": 3.095,
+   "dir": "in",
+   "len": 359,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state\":{\"logged_in_rx_state_\":true,\"user_rx_state_\":{\"username\":\"daver\",\"password\":\"pw-dave\",\"id\":4}},\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"search_users_rx_state_\":[],\"following_rx_state_\":[],\"followers_rx_state_\":[]}}}]"
+  },
+  {
+   "page": "dave",
+   "t": 3.095,
+   "dir": "in",
+   "len": 140,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "dave",
+   "t": 3.096,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "dave",
+   "t": 3.096,
+   "dir": "in",
+   "len": 508,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3152\",\"origin\":\"http://localhost:3152\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3152/\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3152\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3152/index\",\"full_raw_path\":\"http://localhost:3152/\",\"params\":{}}}}}]"
+  },
+  {
+   "page": "dave",
+   "t": 3.096,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "dave",
+   "t": 3.192,
+   "dir": "out",
+   "len": 231,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.set_tweet\",\"payload\":{\"tweet\":\"dave pre-upgrade twr-stale-prod\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "dave",
+   "t": 3.192,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.post_tweet\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "dave",
+   "t": 3.198,
+   "dir": "in",
+   "len": 180,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweet_rx_state_\":\"dave pre-upgrade twr-stale-prod\"}}}]"
+  },
+  "{\"page\": \"dave\", \"t\": 3.454, \"dir\": \"in\", \"len\": 606, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\\\":{\\\"tweets_rx_state_\\\":[{\\\"created_at\\\":\\\"10/07 06\\\",\\\"author\\\":\\\"daver\\\",\\\"id\\\":5,\\\"content\\\":\\\"dave pre-upgrade twr-stale-prod\\\"},{\\\"created_at\\\":\\\"10/07 06\\\",\\\"author\\\":\\\"alicer\\\",\\\"id\\\":4,\\\"content\\\":\\\"alice after twr-base-restart\\\"},{\\\"created_at\\\":\\\"10/07 06\\\",\\\"author\\\":\\\"bobr\\\",\\\"id\\\":3,\\\"content\\\":\\\"bob tweet twr-base-prod\\\"},{\\\"created_at\\\":\\\"10/07 06\\\",\\\"author\\\":\\\"alicer\\\",\\\"id\\\":2,\\\"content\\\":\\\"alice tweet two twr-base-prod\\\"},{\\\"created_at\\\":\\\"10/07 06\\\",\\\"author\\\":\\\"alicer\\\",\\\"id\\\":1,\\...",
+  {
+   "page": "dave",
+   "t": 3.47,
+   "dir": "out",
+   "len": 208,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.set_friend\",\"payload\":{\"friend\":\"alicer\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "dave",
+   "t": 3.723,
+   "dir": "in",
+   "len": 234,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"search_users_rx_state_\":[{\"username\":\"alicer\",\"password\":\"pw-alice\",\"id\":1}],\"friend_rx_state_\":\"alicer\"}}}]"
+  },
+  {
+   "page": "dave",
+   "t": 3.73,
+   "dir": "out",
+   "len": 211,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.follow_user\",\"payload\":{\"username\":\"alicer\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "dave",
+   "t": 5.94,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "dave",
+   "t": 5.942,
+   "dir": "open",
+   "payload": "ws://localhost:3152/_event/?token=8f603948-8897-455a-cd62-d3ca26dd46ee&EIO=4&transport=websocket"
+  },
+  {
+   "page": "dave",
+   "t": 5.943,
+   "dir": "close",
+   "payload": ""
+  },
+  "... 67 more frames trimmed"
+ ],
+ "notes": {
+  "expect_session": true,
+  "dialogs": [],
+  "A_before": {
+   "marker": "old-tab-1791356072421",
+   "path": "/",
+   "on_home": true,
+   "on_login": false,
+   "avatar": "da",
+   "token": "8f603948-8897-455a-cd62-d3ca26dd46ee",
+   "feed": [
+    [
+     "daver",
+     "dave pre-upgrade twr-stale-prod"
+    ],
+    [
+     "alicer",
+     "alice after twr-base-restart"
+    ],
+    [
+     "bobr",
+     "bob tweet twr-base-prod"
+    ],
+    [
+     "alicer",
+     "alice tweet two twr-base-prod"
+    ],
+    [
+     "alicer",
+     "alice tweet one twr-base-prod"
+    ]
+   ],
+   "following": [],
+   "toasts": [],
+   "body_tail": "PySocial\nHome\nFollowers\nSign out\nHome\nDA\nTweet\nDA\n\n@daver\n\ndave pre-upgrade twr-stale-prod\n\nAL\n\n@alicer\n\nalice after twr-base-restart\n\nBO\n\n@bobr\n\nbob tweet twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet two twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet one twr-base-prod\n\nAL\n\nalicer\n\nFollowing\nBuilt with Reflex"
+  },
+  "B_server_down": {
+   "marker": "old-tab-1791356072421",
+   "path": "/",
+   "on_home": true,
+   "on_login": false,
+   "avatar": "da",
+   "token": "8f603948-8897-455a-cd62-d3ca26dd46ee",
+   "feed": [
+    [
+     "daver",
+     "dave pre-upgrade twr-stale-prod"
+    ],
+    [
+     "alicer",
+     "alice after twr-base-restart"
+    ],
+    [
+     "bobr",
+     "bob tweet twr-base-prod"
+    ],
+    [
+     "alicer",
+     "alice tweet two twr-base-prod"
+    ],
+    [
+     "alicer",
+     "alice tweet one twr-base-prod"
+    ]
+   ],
+   "following": [],
+   "toasts": [
+    "Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:3152/_event"
+   ],
+   "body_tail": "t\nPySocial\nHome\nFollowers\nSign out\nHome\nDA\nTweet\nDA\n\n@daver\n\ndave pre-upgrade twr-stale-prod\n\nAL\n\n@alicer\n\nalice after twr-base-restart\n\nBO\n\n@bobr\n\nbob tweet twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet two twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet one twr-base-prod\n\nAL\n\nalicer\n\nFollowing\nBuilt with Reflex"
+  },
+  "t_up": 25.536,
+  "C_after_up": {
+   "marker": "old-tab-1791356072421",
+   "path": "/",
+   "on_home": true,
+   "on_login": false,
+   "avatar": "da",
+   "token": "8f603948-8897-455a-cd62-d3ca26dd46ee",
+   "feed": [
+    [
+     "daver",
+     "dave pre-upgrade twr-stale-prod"
+    ],
+    [
+     "alicer",
+     "alice after twr-base-restart"
+    ],
+    [
+     "bobr",
+     "bob tweet twr-base-prod"
+    ],
+    [
+     "alicer",
+     "alice tweet two twr-base-prod"
+    ],
+    [
+     "alicer",
+     "alice tweet one twr-base-prod"
+    ]
+   ],
+   "following": [],
+   "toasts": [],
+   "body_tail": "PySocial\nHome\nFollowers\nSign out\nHome\nDA\nTweet\nDA\n\n@daver\n\ndave pre-upgrade twr-stale-prod\n\nAL\n\n@alicer\n\nalice after twr-base-restart\n\nBO\n\n@bobr\n\nbob tweet twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet two twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet one twr-base-prod\n\nAL\n\nalicer\n\nFollowing\nBuilt with Reflex"
+  },
+  "D_interact": {
+   "marker": "old-tab-1791356072421",
+   "path": "/",
+   "on_home": true,
+   "on_login": false,
+   "avatar": "da",
+   "token": "8f603948-8897-455a-cd62-d3ca26dd46ee",
+   "feed": [
+    [
+     "daver",
+     "dave after upgrade twr-stale-prod"
+    ],
+    [
+     "daver",
+     "dave pre-upgrade twr-stale-prod"
+    ],
+    [
+     "alicer",
+     "alice after twr-base-restart"
+    ],
+    [
+     "bobr",
+     "bob tweet twr-base-prod"
+    ],
+    [
+     "alicer",
+     "alice tweet two twr-base-prod"
+    ],
+    [
+     "alicer",
+     "alice tweet one twr-base-prod"
+    ]
+   ],
+   "following": [],
+   "toasts": [],
+   "body_tail": "t\nDA\n\n@daver\n\ndave after upgrade twr-stale-prod\n\nDA\n\n@daver\n\ndave pre-upgrade twr-stale-prod\n\nAL\n\n@alicer\n\nalice after twr-base-restart\n\nBO\n\n@bobr\n\nbob tweet twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet two twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet one twr-base-prod\n\nAL\n\nalicer\n\nFollowing\nBuilt with Reflex"
+  },
+  "E_after_manual_reload": {
+   "marker": null,
+   "path": "/",
+   "on_home": true,
+   "on_login": false,
+   "avatar": "da",
+   "token": "8f603948-8897-455a-cd62-d3ca26dd46ee",
+   "feed": [
+    [
+     "daver",
+     "dave after upgrade twr-stale-prod"
+    ],
+    [
+     "daver",
+     "dave pre-upgrade twr-stale-prod"
+    ],
+    [
+     "alicer",
+     "alice after twr-base-restart"
+    ],
+    [
+     "bobr",
+     "bob tweet twr-base-prod"
+    ],
+    [
+     "alicer",
+     "alice tweet two twr-base-prod"
+    ],
+    [
+     "alicer",
+     "alice tweet one twr-base-prod"
+    ]
+   ],
+   "following": [],
+   "toasts": [],
+   "body_tail": "t\nDA\n\n@daver\n\ndave after upgrade twr-stale-prod\n\nDA\n\n@daver\n\ndave pre-upgrade twr-stale-prod\n\nAL\n\n@alicer\n\nalice after twr-base-restart\n\nBO\n\n@bobr\n\nbob tweet twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet two twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet one twr-base-prod\n\nAL\n\nalicer\n\nFollowing\nBuilt with Reflex"
+  },
+  "F_relogin": {
+   "marker": null,
+   "path": "/",
+   "on_home": true,
+   "on_login": false,
+   "avatar": "da",
+   "token": "8f603948-8897-455a-cd62-d3ca26dd46ee",
+   "feed": [],
+   "following": [
+    "alicer"
+   ],
+   "toasts": [],
+   "body_tail": "PySocial\nHome\nFollowers\nSign out\nHome\nDA\nTweet\n\nClick to load tweets\n\nFollowing\nAL\n\nalicer\n\nBuilt with Reflex"
+  }
+ }
+}

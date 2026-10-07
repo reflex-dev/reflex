@@ -1,0 +1,14 @@
+################ ty 0.0.84 / alpha2
+error[type-assertion-failure] handlers_0_5.py:62 error[no-matching-overload] handlers_0_5.py:62 error[type-assertion-failure] handlers_0_5.py:68 error[no-matching-overload] handlers_0_5.py:68 error[invalid-assignment] handlers_0_5.py:75 error[invalid-assignment] handlers_0_5.py:80 error[no-matching-overload] handlers_0_5.py:88 error[no-matching-overload] handlers_0_5.py:89 error[no-matching-overload] handlers_0_5.py:98 error[no-matching-overload] handlers_0_5.py:99
+################ pyright 1.1.414 / alpha2
+handlers_0_5.py:62 handlers_0_5.py:62 handlers_0_5.py:68 handlers_0_5.py:68 handlers_0_5.py:80 handlers_0_5.py:88 handlers_0_5.py:89 handlers_0_5.py:98 handlers_0_5.py:99
+################ ty 0.0.84 / alpha
+error[type-assertion-failure] handlers_0_5.py:62 error[no-matching-overload] handlers_0_5.py:62 error[type-assertion-failure] handlers_0_5.py:68 error[no-matching-overload] handlers_0_5.py:68 error[invalid-assignment] handlers_0_5.py:75 error[invalid-assignment] handlers_0_5.py:80 error[no-matching-overload] handlers_0_5.py:88 error[no-matching-overload] handlers_0_5.py:89 error[no-matching-overload] handlers_0_5.py:98 error[no-matching-overload] handlers_0_5.py:99
+################ pyright 1.1.414 / alpha
+handlers_0_5.py:62 handlers_0_5.py:62 handlers_0_5.py:68 handlers_0_5.py:68 handlers_0_5.py:80 handlers_0_5.py:88 handlers_0_5.py:89 handlers_0_5.py:98 handlers_0_5.py:99
+################ ty 0.0.84 / stable
+error[type-assertion-failure] handlers_0_5.py:62 error[no-matching-overload] handlers_0_5.py:62 error[type-assertion-failure] handlers_0_5.py:68 error[no-matching-overload] handlers_0_5.py:68 error[invalid-assignment] handlers_0_5.py:75 error[invalid-assignment] handlers_0_5.py:76 error[invalid-assignment] handlers_0_5.py:77 error[invalid-assignment] handlers_0_5.py:78 error[invalid-assignment] handlers_0_5.py:79 error[invalid-assignment] handlers_0_5.py:80 error[no-matching-overload] handlers_0_5.py:88 error[no-matching-overload] handlers_0_5.py:89 error[invalid-argument-type] handlers_0_5.py:98 error[no-matching-overload] handlers_0_5.py:99
+################ pyright 1.1.414 / stable
+handlers_0_5.py:62 handlers_0_5.py:62 handlers_0_5.py:68 handlers_0_5.py:68 handlers_0_5.py:80 handlers_0_5.py:88 handlers_0_5.py:89 handlers_0_5.py:98 handlers_0_5.py:99
+################ ty 0.0.85 / alpha2
+error[type-assertion-failure] handlers_0_5.py:62 error[no-matching-overload] handlers_0_5.py:62 error[type-assertion-failure] handlers_0_5.py:68 error[no-matching-overload] handlers_0_5.py:68 error[invalid-assignment] handlers_0_5.py:75 error[invalid-assignment] handlers_0_5.py:80 error[no-matching-overload] handlers_0_5.py:88 error[no-matching-overload] handlers_0_5.py:89 error[no-matching-overload] handlers_0_5.py:98 error[no-matching-overload] handlers_0_5.py:99

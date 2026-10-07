@@ -1,0 +1,671 @@
+{
+ "tag": "fd-base-full",
+ "results": [
+  {
+   "name": "home: renders link + README markdown",
+   "status": "pass",
+   "detail": "version shown=0.9.12",
+   "t": 3.236
+  },
+  {
+   "name": "home: importlib version text matches installed reflex",
+   "status": "pass",
+   "detail": "0.9.12 vs 0.9.12",
+   "t": 3.236
+  },
+  {
+   "name": "register: success message then redirect to /login",
+   "status": "pass",
+   "detail": "http://localhost:3140/login",
+   "t": 5.062
+  },
+  {
+   "name": "login: auto-redirects away from /login (pre-existing FAIL on 0.9.x)",
+   "status": "anomaly",
+   "detail": "http://localhost:3140/login",
+   "t": 8.539
+  },
+  {
+   "name": "login: LocalStorage _auth_token written",
+   "status": "pass",
+   "detail": "len=36",
+   "t": 8.68
+  },
+  {
+   "name": "login: protected /edit/form/ renders",
+   "status": "pass",
+   "detail": "",
+   "t": 9.47
+  },
+  {
+   "name": "create form: debounced name input creates form + redirect",
+   "status": "pass",
+   "detail": "http://localhost:3140/edit/form/1",
+   "t": 10.591
+  },
+  {
+   "name": "add field favorite_food (text)",
+   "status": "pass",
+   "detail": "options=[]",
+   "t": 11.271
+  },
+  {
+   "name": "add field age (number, required)",
+   "status": "pass",
+   "detail": "options=[]",
+   "t": 13.009
+  },
+  {
+   "name": "add field color (radio)",
+   "status": "pass",
+   "detail": "options=['Red', 'Blue']",
+   "t": 17.478
+  },
+  {
+   "name": "add field color: rx.call_script focused newest option input",
+   "status": "pass",
+   "detail": "",
+   "t": 17.478
+  },
+  {
+   "name": "add field size (select)",
+   "status": "pass",
+   "detail": "options=['Small', 'Large']",
+   "t": 22.334
+  },
+  {
+   "name": "add field size: rx.call_script focused newest option input",
+   "status": "pass",
+   "detail": "",
+   "t": 22.334
+  },
+  {
+   "name": "editor lists 4 fields after reload",
+   "status": "pass",
+   "detail": "['What is your favorite food? (favorite_food)', 'How old are you? (age)', 'Favorite color (color)', 'Shirt size (size)']",
+   "t": 24.721
+  },
+  {
+   "name": "entry page /form/<id>: renders (pre-existing FormMessage crash unless FD_FIX)",
+   "status": "anomaly",
+   "detail": "error boundary: %o\n\n%s\n\n%s\n Error: `FormMessage` must be used within `FormField` or specify the `name` prop\n    at FormMessage (http://localhost:3140/node_modules/.vite/deps/@radix-ui_react-form.js?v=ef6088f9:295:19)",
+   "t": 28.102
+  },
+  {
+   "name": "logout: protected page bounces to /login",
+   "status": "pass",
+   "detail": "http://localhost:3140/login",
+   "t": 31.253
+  },
+  {
+   "name": "re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x)",
+   "status": "anomaly",
+   "detail": "http://localhost:3140/login",
+   "t": 34.696
+  },
+  {
+   "name": "re-login works (left logged in for next run)",
+   "status": "pass",
+   "detail": "",
+   "t": 34.939
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"main\", \"t\": 28.007, \"type\": \"error\", \"text\": \"%o\\n\\n%s\\n\\n%s\\n Error: `FormMessage` must be used within `FormField` or specify the `name` prop\\n    at FormMessage (http://localhost:3140/node_modules/.vite/deps/@radix-ui_react-form.js?v=ef6088f9:295:19)\\n    at Object.react_stack_bottom_frame (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:12866:12)\\n    at renderWithHooks (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:4213:19)\\n    at updateForwardRef (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:5396:16)\\n    at beginWork (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:6204:21)\\n    at runWithFiberInDEV (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:851:66)\\n    at performUnitOfWork (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:8429:92)\\n    at workLoopSync (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:8325:37)\\n    at renderRootSync (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:8309:6)\\n    at performWorkOnRoot (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:7994:27) The above error occurred in the <ForwardRef(FormMessage)> component. React will try to recreate this component tree from scratch using the error boundary you provided, m.\"}]",
+   "t": 35.123
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 35.123
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 0.968,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 1.218,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 1.284,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 1.413,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 3.363,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 3.565,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 3.722,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 3.799,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 3.804,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 3.989,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 3.989,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 5.073,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 5.086,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 5.201,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 5.278,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 5.312,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 5.312,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 5.469,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 8.71,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 8.986,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 9.215,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 9.244,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 9.244,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 22.352,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 22.419,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 22.521,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 22.545,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 22.545,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 24.817,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 24.906,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 24.989,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 28.003,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 28.003,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 28.007,
+   "type": "error",
+   "text": "%o\n\n%s\n\n%s\n Error: `FormMessage` must be used within `FormField` or specify the `name` prop\n    at FormMessage (http://localhost:3140/node_modules/.vite/deps/@radix-ui_react-form.js?v=ef6088f9:295:19)\n    at Object.react_stack_bottom_frame (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:12866:12)\n    at renderWithHooks (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:4213:19)\n    at updateForwardRef (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:5396:16)\n    at beginWork (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:6204:21)\n    at runWithFiberInDEV (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:851:66)\n    at performUnitOfWork (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:8429:92)\n    at workLoopSync (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:8325:37)\n    at renderRootSync (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:8309:6)\n    at performWorkOnRoot (http://localhost:3140/node_modules/.vite/deps/react-dom_client.js?v=85e22ea4:7994:27) The above error occurred in the <ForwardRef(FormMessage)> component. React will try to recreate this component tree from scratch using the error boundary you provided, m."
+  },
+  {
+   "page": "main",
+   "t": 28.106,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 28.17,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 28.215,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 28.235,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 28.235,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 30.903,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 30.991,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 31.122,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 31.139,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 31.139,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 31.27,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 31.367,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 31.446,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 31.479,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 31.48,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 31.64,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 34.702,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 34.753,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 34.787,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 34.802,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 34.806,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 1.475,
+   "dir": "open",
+   "payload": "ws://localhost:8140/_event/?token=03405a93-5ddd-4179-eadf-365698aa3ec9&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 1.493,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"aXfiMLyGu2hnLt9bAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 1.498,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 1.502,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"9lWZkDF1qkGogCS-AAAF\"}"
+  },
+  {
+   "page": "main",
+   "t": 1.502,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.506,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  "{\"page\": \"main\", \"t\": 1.522, \"dir\": \"in\", \"len\": 4200, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"field_id_rx_state_\\\":\\\"\\\",\\\"form_id_rx_state_\\\":\\\"\\\",\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"u7U1RE/LlJbG+3E1TjMBJA==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate...",
+  {
+   "page": "main",
+   "t": 1.522,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.366,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 3.369,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 3.848,
+   "dir": "open",
+   "payload": "ws://localhost:8140/_event/?token=03405a93-5ddd-4179-eadf-365698aa3ec9&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 3.851,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"GMuqF_xsEDBueDaMAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 3.851,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 3.854,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"1LwtxNUmdhHQXSAqAAAH\"}"
+  },
+  {
+   "page": "main",
+   "t": 3.854,
+   "dir": "out",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/register\",\"asPath\":\"/register\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.854,
+   "dir": "out",
+   "len": 172,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/register\",\"asPath\":\"/register\"}}]"
+  },
+  "{\"page\": \"main\", \"t\": 3.865, \"dir\": \"in\", \"len\": 4241, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"field_id_rx_state_\\\":\\\"\\\",\\\"form_id_rx_state_\\\":\\\"\\\",\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"f5W4/P85W5cSf5SNIGR1Sw==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate...",
+  {
+   "page": "main",
+   "t": 3.869,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.078,
+   "dir": "out",
+   "len": 350,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___registration____registration_state.handle_registration\",\"payload\":{\"form_data\":{\"username\":\"qa_admin\",\"password\":\"S3cretPass!42\",\"confirm_password\":\"S3cretPass!42\"}},\"router_data\":{\"pathname\":\"/register\",\"asPath\":\"/register\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.386,
+   "dir": "in",
+   "len": 191,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___registration____registration_state\":{\"new_user_id_rx_state_\":1}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.39,
+   "dir": "in",
+   "len": 246,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___registration____registration_state\":{\"new_user_id_rx_state_\":-1,\"error_message_rx_state_\":\"\",\"success_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.901,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/login\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 4.917,
+   "dir": "in",
+   "len": 191,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___registration____registration_state\":{\"success_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.063,
+   "dir": "out",
+   "len": 166,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  "{\"page\": \"main\", \"t\": 5.073, \"dir\": \"in\", \"len\": 574, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":true,\\\"rx_router_route_id_rx_state_\\\":\\\"/login\\\",\\\"rx_router_url_rx_state_\\\":{\\\"scheme\\\":\\\"http\\\",\\\"netloc\\\":\\\"localhost:3140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"path\\\":\\\"/login\\\",\\\"query\\\":\\\"\\\",\\\"query_parameters\\\":{},\\\"fragment\\\":\\\"\\\",\\\"href\\\":\\\"http://localhost:3140/login\\\"},\\\"rx_router_page_rx_state_\\\":{\\\"host\\\":\\\"http://localhost:3140\\\",\\\"path\\\":\\\"/login\\\",\\\"raw_path\\\":\\\"/login\\\",\\\"full_path\\\":\\\"http://localhost:3140/login\\\",\\\"full_raw_path\\\":\\\"http://localhost:3140/login\\\",\\\"params\\\":{}},\\\"form_id_rx_state_\\\":\\\"\\\",\\\"field_id_rx_s...",
+  {
+   "page": "main",
+   "t": 5.087,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 5.088,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 5.338,
+   "dir": "open",
+   "payload": "ws://localhost:8140/_event/?token=03405a93-5ddd-4179-eadf-365698aa3ec9&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 5.342,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"Z4E07CuG6HkVPEyfAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 5.342,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  "... 315 more frames trimmed"
+ ],
+ "notes": {
+  "mode": "full",
+  "url": "http://localhost:3140/",
+  "md_h1": [
+   "Form Designer",
+   "form-designer"
+  ],
+  "auth_token_after_login": "03405a93-5ddd-4179-eadf-365698aa3ec9",
+  "fields_after_add": [
+   "What is your favorite food? (favorite_food)",
+   "How old are you? (age)",
+   "Favorite color (color)",
+   "Shirt size (size)"
+  ],
+  "form_id": "1",
+  "final_local_storage": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "03405a93-5ddd-4179-eadf-365698aa3ec9"
+  },
+  "final_cookies": []
+ }
+}

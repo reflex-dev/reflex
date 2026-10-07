@@ -1,0 +1,8 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/upgrade_sweep-form-designer
+Resolved 3 packages in 106ms
+Uninstalled 1 package in 40ms
+Installed 2 packages in 16ms
+ + greenlet==3.5.6
+ - sqlalchemy==2.1.3
+ + sqlalchemy==2.0.54

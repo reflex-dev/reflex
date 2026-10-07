@@ -1,0 +1,51 @@
+Collecting reflex==0.10.0a2
+  Using cached reflex-0.10.0a2-py3-none-any.whl.metadata (7.0 kB)
+Requirement already satisfied: reflex-hosting-cli==0.1.73a1 in ./envs/rdi-hc073-pipconflict/lib/python3.12/site-packages (0.1.73a1)
+Requirement already satisfied: click>=8.2 in ./envs/rdi-hc073-pipconflict/lib/python3.12/site-packages (from reflex==0.10.0a2) (8.5.0)
+Requirement already satisfied: granian>=2.7.4 in ./envs/rdi-hc073-pipconflict/lib/python3.12/site-packages (from granian[reload]>=2.7.4->reflex==0.10.0a2) (2.8.4)
+Requirement already satisfied: httpx<1.0,>=0.26 in ./envs/rdi-hc073-pipconflict/lib/python3.12/site-packages (from reflex==0.10.0a2) (0.28.1)
+Requirement already satisfied: packaging<27,>=24.2 in ./envs/rdi-hc073-pipconflict/lib/python3.12/site-packages (from reflex==0.10.0a2) (26.3)
+Requirement already satisfied: python-multipart<1.0,>=0.0.32 in ./envs/rdi-hc073-pipconflict/lib/python3.12/site-packages (from reflex==0.10.0a2) (0.0.32)
+Requirement already satisfied: python-socketio<6.0,>=5.12.0 in ./envs/rdi-hc073-pipconflict/lib/python3.12/site-packages (from reflex==0.10.0a2) (5.17.0)
+Requirement already satisfied: redis<8.0,>=6.4 in ./envs/rdi-hc073-pipconflict/lib/python3.12/site-packages (from reflex==0.10.0a2) (7.4.1)
+Collecting reflex-base==0.10.0a2 (from reflex==0.10.0a2)
+  Using cached reflex_base-0.10.0a2-py3-none-any.whl.metadata (881 bytes)
+Collecting reflex-components-code>=0.10.0a2 (from reflex==0.10.0a2)
+  Using cached reflex_components_code-0.10.0a2-py3-none-any.whl.metadata (849 bytes)
+Collecting reflex-components-core>=0.10.0a2 (from reflex==0.10.0a2)
+  Using cached reflex_components_core-0.10.0a2-py3-none-any.whl.metadata (903 bytes)
+Collecting reflex-components-dataeditor>=0.10.0a1 (from reflex==0.10.0a2)
+  Using cached reflex_components_dataeditor-0.10.0a1-py3-none-any.whl.metadata (759 bytes)
+Collecting reflex-components-gridjs>=0.10.0a2 (from reflex==0.10.0a2)
+  Using cached reflex_components_gridjs-0.10.0a2-py3-none-any.whl.metadata (695 bytes)
+Collecting reflex-components-lucide>=1.1.0a1 (from reflex==0.10.0a2)
+  Using cached reflex_components_lucide-1.1.0a1-py3-none-any.whl.metadata (694 bytes)
+Collecting reflex-components-markdown>=0.10.0a2 (from reflex==0.10.0a2)
+  Using cached reflex_components_markdown-0.10.0a2-py3-none-any.whl.metadata (848 bytes)
+Collecting reflex-components-moment>=0.10.0a2 (from reflex==0.10.0a2)
+  Using cached reflex_components_moment-0.10.0a2-py3-none-any.whl.metadata (695 bytes)
+Collecting reflex-components-plotly>=0.10.0a2 (from reflex==0.10.0a2)
+  Using cached reflex_components_plotly-0.10.0a2-py3-none-any.whl.metadata (743 bytes)
+Collecting reflex-components-radix>=0.10.0a2 (from reflex==0.10.0a2)
+  Using cached reflex_components_radix-0.10.0a2-py3-none-any.whl.metadata (788 bytes)
+Collecting reflex-components-react-player>=0.10.0a1 (from reflex==0.10.0a2)
+  Using cached reflex_components_react_player-0.10.0a1-py3-none-any.whl.metadata (767 bytes)
+Collecting reflex-components-recharts>=0.10.0a2 (from reflex==0.10.0a2)
+  Using cached reflex_components_recharts-0.10.0a2-py3-none-any.whl.metadata (751 bytes)
+Collecting reflex-components-sonner>=0.10.0a1 (from reflex==0.10.0a2)
+  Using cached reflex_components_sonner-0.10.0a1-py3-none-any.whl.metadata (744 bytes)
+INFO: pip is looking at multiple versions of reflex to determine which version is compatible with other requirements. This could take a while.
+ERROR: Cannot install reflex-hosting-cli==0.1.73a1 and reflex==0.10.0a2 because these package versions have conflicting dependencies.
+
+The conflict is caused by:
+    The user requested reflex-hosting-cli==0.1.73a1
+    reflex 0.10.0a2 depends on reflex-hosting-cli!=0.1.73a1 and >=0.2.0a1
+
+Additionally, some packages in these conflicts have no matching distributions available for your environment:
+    reflex-hosting-cli
+
+To fix this you could try to:
+1. loosen the range of package versions you've specified
+2. remove package versions to allow pip to attempt to solve the dependency conflict
+
+ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts

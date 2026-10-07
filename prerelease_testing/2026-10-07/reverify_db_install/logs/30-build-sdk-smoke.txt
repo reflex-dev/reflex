@@ -1,0 +1,7 @@
+reflex-build-sdk 0.1.0a1 requires: ["aiohttp<4.0,>=3.10.0; extra == 'aiohttp'", "httpx<1.0,>=0.25.1; extra == 'httpx'", "httpx2<3.0,>=2.0.0; extra == 'httpx2'"]
+top-level: ['reflex_build_sdk', 'reflex_build_sdk', 'reflex_build_sdk']
+file: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_build_sdk/__init__.py
+public names: ['APIConnectionError', 'APIError', 'APIResponseValidationError', 'APIStatusError', 'APITimeoutError', 'AsyncReflexBuild', 'AuthenticationError', 'BadRequestError', 'ConflictError', 'DeploymentFailedError', 'DeploymentTimeoutError', 'InternalServerError', 'LoginDeniedError', 'LoginTimeoutError', 'MissingTokenError', 'NotFoundError', 'PermissionDeniedError', 'RateLimitError', 'ReflexBuild', 'ReflexBuildError', 'SecurityReviewFailedError', 'SecurityReviewTimeoutError', 'UnprocessableEntityError', 'transports', 'types']
+reflex-hosting-cli 0.2.0a1 requires: ['click>=8.2', 'httpx<1.0,>=0.25.1', 'packaging>=24.2', 'platformdirs<5.0,>=3.10.0', 'reflex-build-sdk[httpx]!=0.1.1,<0.1.1.post,>=0.1.0a1', 'rich<16,>=13']
+import reflex_cli ok
+import reflex_cli.v2.deployments ok

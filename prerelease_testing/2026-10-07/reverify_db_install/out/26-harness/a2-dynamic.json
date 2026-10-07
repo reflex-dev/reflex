@@ -1,0 +1,69 @@
+{
+ "reflex": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-harness-a2/lib/python3.12/site-packages/reflex/__init__.py",
+ "scenario": "dynamic",
+ "checks": [
+  {
+   "name": "one: app one renders",
+   "ok": true,
+   "detail": "widget:0",
+   "s": 0.1
+  },
+  {
+   "name": "one: app one event roundtrip (state from 2nd module)",
+   "ok": true,
+   "detail": "widget:2",
+   "s": 0.2
+  },
+  {
+   "name": "two: app two renders",
+   "ok": true,
+   "detail": null,
+   "s": 0.1
+  },
+  {
+   "name": "two: app two event roundtrip",
+   "ok": true,
+   "detail": "renamed",
+   "s": 0.1
+  },
+  {
+   "name": "two: no app-one state names / KeyError in app-two frames",
+   "ok": true,
+   "detail": "6 frames, no app-one state names",
+   "s": 0.0
+  },
+  {
+   "name": "two: no error toast",
+   "ok": true,
+   "detail": "none",
+   "s": 0.0
+  }
+ ],
+ "frames": {
+  "one": [
+   "0{\"sid\":\"FHEANuFRMXtiIe-1AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "{\"type\":\"connected\"}",
+   "40/_event,{\"sid\":\"ii7G3hAzbtF3srM4AAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:42317\",\"origin\":\"http://localhost:34963\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"/0lA0SwBerMlUkOtSSz+OA==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:42317\",\"origin\":\"http://localhost:34963\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"/0lA0SwBerMlUkOtSSz+OA==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:34963\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:34963/index\",\"full_raw_path\":\"http://localhost:34963/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"cfbb31c5-a985-4d4e-c2f8-f799aaac7abd\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ii7G3hAzbtF3srM4AAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:34963\",\"origin\":\"http://localhost:34963\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:34963/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.mm_one___states____widget_state\":{\"dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_\":\"//__reflex_evaluate\\nconst React = window.__reflex.react;\\n\\nconst {jsx} = window.__reflex['@emotion/react']\\nconst {Fragment,useEffect,useRef} = window.__reflex['react']\\nconst {pyOr,refs} = window.__reflex['$/utils/state']\\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\\n\\nexport default function MySSRComponent () {\\n  const ref_widget = useRef(null); refs[\\\"ref_widget\\\"] = ref_widget;\\n\\n\\n\\n  return (\\n    (jsx(RadixThemesText, ({as:\\\"p\\\",id:\\\"widget\\\",ref:ref_widget}), \\\"widget:\\\", 0))\\n  )\\n}\"}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mm_one___states____widget_state\":{\"dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_\":\"//__reflex_evaluate\\nconst React = window.__reflex.react;\\n\\nconst {jsx} = window.__reflex['@emotion/react']\\nconst {Fragment,useEffect,useRef} = window.__reflex['react']\\nconst {pyOr,refs} = window.__reflex['$/utils/state']\\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\\n\\nexport default function MySSRComponent () {\\n  const ref_widget = useRef(null); refs[\\\"ref_widget\\\"] = ref_widget;\\n\\n\\n\\n  return (\\n    (jsx(RadixThemesText, ({as:\\\"p\\\",id:\\\"widget\\\",ref:ref_widget}), \\\"widget:\\\", 1))\\n  )\\n}\",\"n_rx_state_\":1}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mm_one___states____widget_state\":{\"dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_\":\"//__reflex_evaluate\\nconst React = window.__reflex.react;\\n\\nconst {jsx} = window.__reflex['@emotion/react']\\nconst {Fragment,useEffect,useRef} = window.__reflex['react']\\nconst {pyOr,refs} = window.__reflex['$/utils/state']\\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\\n\\nexport default function MySSRComponent () {\\n  const ref_widget = useRef(null); refs[\\\"ref_widget\\\"] = ref_widget;\\n\\n\\n\\n  return (\\n    (jsx(RadixThemesText, ({as:\\\"p\\\",id:\\\"widget\\\",ref:ref_widget}), \\\"widget:\\\", 2))\\n  )\\n}\",\"n_rx_state_\":2}}}]"
+  ],
+  "two": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"nM8oAv24_H1GPyCnAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"Xb-Lbe1O5CXLmumgAAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:43527\",\"origin\":\"http://localhost:33695\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"VZ6aX4okrIfOAoUcP87B0g==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:43527\",\"origin\":\"http://localhost:33695\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"VZ6aX4okrIfOAoUcP87B0g==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:33695\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:33695/index\",\"full_raw_path\":\"http://localhost:33695/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"4a02474d-df78-4084-dcae-4b58b48be51f\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Xb-Lbe1O5CXLmumgAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:33695\",\"origin\":\"http://localhost:33695\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:33695/\"},\"is_hydrated_rx_state_\":false}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.two_source___two_source____two_state\":{\"name_rx_state_\":\"renamed\"}}}]"
+  ]
+ },
+ "console_errors": {
+  "one": [],
+  "two": []
+ },
+ "after_one_stop": {
+  "always_dirty_substates_on_root": []
+ },
+ "all_ok": true
+}

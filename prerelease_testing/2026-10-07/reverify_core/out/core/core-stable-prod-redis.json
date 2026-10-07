@@ -1,0 +1,104 @@
+{
+ "home": {
+  "fstring_label": "label=label-const",
+  "sized_width": "16px",
+  "items": [
+   "i1",
+   "i2"
+  ],
+  "classvar_label": "classvar-const",
+  "cs_btn_label": "+5",
+  "cs_count_after_click": "5",
+  "1_show": {
+   "shown": "key=None",
+   "log": "key=None"
+  },
+  "2_show_after_3.5s": {
+   "shown": "key=None",
+   "log": "key=None | key=None"
+  },
+  "3_set_instance": {
+   "shown": "key=None",
+   "log": "key=None | key=None"
+  },
+  "4_show": {
+   "shown": "key='set-on-instance'",
+   "log": "key=None | key=None | key='set-on-instance'"
+  },
+  "5_reset": {
+   "shown": "",
+   "log": "reset-done"
+  },
+  "6_show": {
+   "shown": "key=None",
+   "log": "reset-done | key=None"
+  },
+  "7_after_reload": {
+   "shown": "key=None",
+   "log": "reset-done | key=None"
+  }
+ },
+ "dunder": {
+  "0_initial": {
+   "d_view": "",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "1_bump": {
+   "d_view": "counter=1",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "2_bump_silent": {
+   "d_view": "counter=1",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "3_bump_silent": {
+   "d_view": "counter=1",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "4_show": {
+   "d_view": "counter=1 fielded=0 params=Params(1)",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "5_bump_fielded": {
+   "d_view": "counter=1 fielded=0 params=Params(1)",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "6_bump_mx": {
+   "d_view": "counter=1 fielded=0 params=Params(1)",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "7_bump_mx": {
+   "d_view": "counter=1 fielded=0 params=Params(1)",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "8_after_reload": {
+   "d_view": "counter=1 fielded=0 params=Params(1)",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "9_show_after_reload": {
+   "d_view": "counter=1 fielded=0 params=Params(1)",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  }
+ },
+ "console": [
+  "[tab1] error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "[tab1] log: Disconnect websocket on page navigation",
+  "[tab1] log: Disconnect websocket on page navigation",
+  "[tab1] log: Disconnect websocket on page navigation"
+ ],
+ "bad_responses": [],
+ "ws_frames": {
+  "sent": 30,
+  "recv": 27
+ }
+}

@@ -50,3 +50,11 @@ Partial-cluster leads (unverified): see FINDINGS.md "Partial clusters" (ent_demo
   $SB/envs/alpha2-ent (alpha2 + offline enterprise wheel [mcp] + oidc-provider-mock), $SB/envs/alpha
   (0.10.0a1, previous train, for before/after), $SB/envs/stable (0.9.12), $SB/envs/driver (playwright).
 - Artifact root for this phase: /home/user/reflex/prerelease_testing/2026-10-07/ (branch claude/reflex-prerelease-testing-t0sd90).
+
+## Orchestrator note (07:0x UTC 10-07): greenlet added to the shared alpha2 / alpha2-ent venvs
+A fresh `reflex[db]==0.10.0a2` (and today also a fresh `reflex[db]==0.9.12`) resolves sqlmodel 0.0.48 →
+SQLAlchemy 2.1.3, which made `greenlet` an optional extra; `reflex/model.py` imports `sqlalchemy.ext.asyncio`
+at import time, so `rx.Model` and every `reflex db *` command raise ImportError (new finding N-001, HIGH,
+from reverify_db_install). To keep the other clusters testing the framework rather than this packaging bug,
+`greenlet` has been installed into the shared `alpha2` and `alpha2-ent` venvs. Any venv YOU create with
+`reflex[db]` needs `greenlet` added too (say so in NOTES.md). The bug itself remains a release blocker candidate.

@@ -1,0 +1,530 @@
+{
+ "tag": "tw-ctl0912-up",
+ "results": [
+  {
+   "name": "alice's token after restart lands on /login (disk state manager: `reflex run` wipes .states, both versions)",
+   "status": "pass",
+   "detail": "path=/login avatar=None token_now=2ddc8f80-b567-4107-81ff-c98cea754e8b same_token=True",
+   "t": 4.452
+  },
+  {
+   "name": "alice posts after upgrade; pre-upgrade tweets still in feed",
+   "status": "pass",
+   "detail": "[['alice', 'alice after tw-ctl0912-up'], ['bob', 'bob tweet tw-base'], ['alice', 'alice tweet two tw-base'], ['alice', 'alice tweet one tw-base']]",
+   "t": 6.178
+  },
+  {
+   "name": "bob's token after restart lands on /login (disk mode, expected)",
+   "status": "pass",
+   "detail": "path=/login",
+   "t": 8.489
+  },
+  {
+   "name": "bob logs in with pre-upgrade password row",
+   "status": "pass",
+   "detail": "bo",
+   "t": 10.501
+  },
+  {
+   "name": "bob Following lists alice after login (pre-upgrade follow row)",
+   "status": "pass",
+   "detail": "['alice']",
+   "t": 11.311
+  },
+  {
+   "name": "bob loads full feed (pre+post upgrade tweets)",
+   "status": "pass",
+   "detail": "[['alice', 'alice after tw-ctl0912-up'], ['bob', 'bob tweet tw-base'], ['alice', 'alice tweet two tw-base'], ['alice', 'alice tweet one tw-base']]",
+   "t": 11.596
+  },
+  {
+   "name": "new user carol0912up signup after upgrade",
+   "status": "pass",
+   "detail": "/",
+   "t": 13.783
+  },
+  {
+   "name": "carol0912up follows alice",
+   "status": "pass",
+   "detail": "['alice']",
+   "t": 14.061
+  },
+  {
+   "name": "alice sign out -> /login",
+   "status": "pass",
+   "detail": "/login",
+   "t": 15.415
+  },
+  {
+   "name": "alice re-login -> home",
+   "status": "pass",
+   "detail": "al",
+   "t": 17.006
+  },
+  {
+   "name": "alice Followers = bob + carol0912up",
+   "status": "pass",
+   "detail": "['bob', 'carol0912up']",
+   "t": 18.011
+  },
+  {
+   "name": "alice still logged in after reload",
+   "status": "pass",
+   "detail": "al",
+   "t": 18.697
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 18.904
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 18.906
+  }
+ ],
+ "console": [
+  {
+   "page": "alice-tok",
+   "t": 1.869,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.268,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.352,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.653,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice-tok",
+   "t": 3.18,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob-tok",
+   "t": 6.446,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "bob-tok",
+   "t": 6.643,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "bob-tok",
+   "t": 6.682,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "bob-tok",
+   "t": 6.964,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "bob-tok",
+   "t": 7.026,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob-tok",
+   "t": 8.494,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "bob-pw",
+   "t": 8.696,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "bob-pw",
+   "t": 8.899,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "bob-pw",
+   "t": 8.956,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "bob-pw",
+   "t": 9.093,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "bob-pw",
+   "t": 9.303,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob-pw",
+   "t": 11.601,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "carol",
+   "t": 11.859,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "carol",
+   "t": 12.077,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "carol",
+   "t": 12.134,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "carol",
+   "t": 12.279,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "carol",
+   "t": 12.487,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol",
+   "t": 12.487,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol",
+   "t": 15.068,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "alice-tok",
+   "t": 15.408,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice-tok",
+   "t": 15.422,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice-tok",
+   "t": 15.508,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice-tok",
+   "t": 15.602,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice-tok",
+   "t": 15.661,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "alice-tok",
+   "t": 15.669,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice-tok",
+   "t": 15.835,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice-tok",
+   "t": 18.113,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice-tok",
+   "t": 18.21,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice-tok",
+   "t": 18.301,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice-tok",
+   "t": 18.412,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "alice-tok",
+   "t": 18.423,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "alice-tok",
+   "t": 2.653,
+   "dir": "open",
+   "payload": "ws://localhost:8151/_event/?token=2ddc8f80-b567-4107-81ff-c98cea754e8b&EIO=4&transport=websocket"
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.653,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"Rnu99A--fcFYFgCeAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.654,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.913,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"hhMhpflJTSxyMVg4AAAB\"}"
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.913,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.914,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  "{\"page\": \"alice-tok\", \"t\": 2.914, \"dir\": \"in\", \"len\": 2637, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8151\\\",\\\"origin\\\":\\\"http://localhost:3151\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"7CYWBqnHsM74tpj/IpU0zQ==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"g...",
+  {
+   "page": "alice-tok",
+   "t": 2.914,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 3.002,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/login\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 3.005,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 3.091,
+   "dir": "out",
+   "len": 166,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 3.095,
+   "dir": "in",
+   "len": 527,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true,\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3151\",\"path\":\"/login\",\"raw_path\":\"/login\",\"full_path\":\"http://localhost:3151/login\",\"full_raw_path\":\"http://localhost:3151/login\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3151\",\"origin\":\"http://localhost:3151\",\"path\":\"/login\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3151/login\"}}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.425,
+   "dir": "out",
+   "len": 221,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_username\",\"payload\":{\"username\":\"alice\"},\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.425,
+   "dir": "in",
+   "len": 157,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"username_rx_state_\":\"alice\"}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.49,
+   "dir": "out",
+   "len": 224,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_password\",\"payload\":{\"password\":\"pw-alice\"},\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.492,
+   "dir": "in",
+   "len": 160,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"password_rx_state_\":\"pw-alice\"}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.536,
+   "dir": "out",
+   "len": 183,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.login\",\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.793,
+   "dir": "in",
+   "len": 415,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state\":{\"logged_in_rx_state_\":true,\"user_rx_state_\":{\"username\":\"alice\",\"id\":1,\"password\":\"pw-alice\"}},\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"following_rx_state_\":[],\"followers_rx_state_\":[{\"follower_username\":\"bob\",\"followed_username\":\"alice\"}],\"search_users_rx_state_\":[]}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.793,
+   "dir": "in",
+   "len": 140,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.793,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.793,
+   "dir": "in",
+   "len": 508,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3151\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3151/index\",\"full_raw_path\":\"http://localhost:3151/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3151\",\"origin\":\"http://localhost:3151\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3151/\"}}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.793,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.904,
+   "dir": "out",
+   "len": 225,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.set_tweet\",\"payload\":{\"tweet\":\"alice after tw-ctl0912-up\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.904,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.post_tweet\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.908,
+   "dir": "in",
+   "len": 174,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweet_rx_state_\":\"alice after tw-ctl0912-up\"}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 5.919,
+   "dir": "in",
+   "len": 487,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweets_rx_state_\":[{\"content\":\"alice after tw-ctl0912-up\",\"created_at\":\"10/07 06\",\"author\":\"alice\",\"id\":4},{\"content\":\"bob tweet tw-base\",\"created_at\":\"10/07 06\",\"author\":\"bob\",\"id\":3},{\"content\":\"alice tweet two tw-base\",\"created_at\":\"10/07 06\",\"author\":\"alice\",\"id\":2},{\"content\":\"alice tweet one tw-base\",\"created_at\":\"10/07 06\",\"author\":\"alice\",\"id\":1}]}}}]"
+  },
+  {
+   "page": "bob-tok",
+   "t": 6.964,
+   "dir": "open",
+   "payload": "ws://localhost:8151/_event/?token=3735ceba-fdc3-4a13-9521-e8ba06734c3a&EIO=4&transport=websocket"
+  },
+  {
+   "page": "bob-tok",
+   "t": 6.965,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"224aVo47G65YaGIyAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "bob-tok",
+   "t": 6.965,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "bob-tok",
+   "t": 6.965,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"DqdlljpScoFXGtwOAAAD\"}"
+  },
+  "... 91 more frames trimmed"
+ ],
+ "notes": {
+  "expect_session": false,
+  "dialogs": [],
+  "tokens_in": {
+   "alice": "2ddc8f80-b567-4107-81ff-c98cea754e8b",
+   "bob": "3735ceba-fdc3-4a13-9521-e8ba06734c3a"
+  },
+  "observations": {
+   "A_feed_on_restore": [],
+   "A_followers_on_restore": null
+  },
+  "tokens_out": {
+   "alice": "2ddc8f80-b567-4107-81ff-c98cea754e8b",
+   "bob": "3735ceba-fdc3-4a13-9521-e8ba06734c3a"
+  }
+ }
+}

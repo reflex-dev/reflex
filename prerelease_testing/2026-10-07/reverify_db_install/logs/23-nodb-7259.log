@@ -1,0 +1,35 @@
+################ a2 (3.12, pip full train, no db extra)
+--- reflex db init
+Database is not available. Please install the required packages: `pip install reflex[db]`.
+rc=1
+--- reflex db migrate
+Database is not available. Please install the required packages: `pip install reflex[db]`.
+rc=1
+--- reflex db makemigrations --message x
+Database is not available. Please install the required packages: `pip install reflex[db]`.
+rc=1
+--- reflex db status
+Database is not available. Please install the required packages: `pip install reflex[db]`.
+rc=1
+################ 0.9.12 baseline
+--- reflex db init
+    model.alembic_init()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-stablenodb/lib/python3.12/site-packages/reflex/model.py", line 47, in _print_db_not_available
+    raise ImportError(msg)
+ImportError: Database is not available. Please install the required packages: `pip install reflex[db]`.
+rc=1
+--- reflex db migrate
+Database is not initialized. Run reflex db init first.
+rc=0
+--- reflex db makemigrations --message x
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-stablenodb/lib/python3.12/site-packages/reflex/reflex.py", line 1044, in makemigrations
+    from alembic.util.exc import CommandError
+ModuleNotFoundError: No module named 'alembic'
+rc=1
+--- reflex db status
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-stablenodb/lib/python3.12/site-packages/reflex/reflex.py", line 1006, in status
+    from reflex.model import format_revision, get_migration_history
+ImportError: cannot import name 'format_revision' from 'reflex.model' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-stablenodb/lib/python3.12/site-packages/
+rc=1

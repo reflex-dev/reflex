@@ -1,0 +1,61 @@
+{
+ "reflex": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-harness-a2/lib/python3.12/site-packages/reflex/__init__.py",
+ "scenario": "dynamic-restart",
+ "checks": [
+  {
+   "name": "one: app one renders",
+   "ok": true,
+   "detail": "widget:0",
+   "s": 0.1
+  },
+  {
+   "name": "one: app one event roundtrip (state from 2nd module)",
+   "ok": true,
+   "detail": "widget:2",
+   "s": 0.1
+  },
+  {
+   "name": "one_again: app one renders",
+   "ok": false,
+   "detail": "TimeoutError: Page.wait_for_selector: Timeout 60000ms exceeded.\nCall log:\n  - waiting for locator(\"text=app one\") to be visible\n",
+   "s": 60.0
+  },
+  {
+   "name": "one_again: app one event roundtrip (state from 2nd module)",
+   "ok": false,
+   "detail": "TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#bump\")\n",
+   "s": 30.0
+  }
+ ],
+ "frames": {
+  "one": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"Bc9ez7tSh9-flC7EAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"Fq0--ThnEZCdfZhxAAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:39271\",\"origin\":\"http://localhost:36535\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"RkagLgNc2+PvkX0YmqYlGg==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:39271\",\"origin\":\"http://localhost:36535\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"RkagLgNc2+PvkX0YmqYlGg==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:36535\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:36535/index\",\"full_raw_path\":\"http://localhost:36535/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"18238a07-196e-40ea-d7c4-58eadf644b5d\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Fq0--ThnEZCdfZhxAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:36535\",\"origin\":\"http://localhost:36535\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:36535/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.mm_one___states____widget_state\":{\"dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_\":\"//__reflex_evaluate\\nconst React = window.__reflex.react;\\n\\nconst {jsx} = window.__reflex['@emotion/react']\\nconst {Fragment,useEffect,useRef} = window.__reflex['react']\\nconst {pyOr,refs} = window.__reflex['$/utils/state']\\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\\n\\nexport default function MySSRComponent () {\\n  const ref_widget = useRef(null); refs[\\\"ref_widget\\\"] = ref_widget;\\n\\n\\n\\n  return (\\n    (jsx(RadixThemesText, ({as:\\\"p\\\",id:\\\"widget\\\",ref:ref_widget}), \\\"widget:\\\", 0))\\n  )\\n}\"}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mm_one___states____widget_state\":{\"n_rx_state_\":1,\"dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_\":\"//__reflex_evaluate\\nconst React = window.__reflex.react;\\n\\nconst {jsx} = window.__reflex['@emotion/react']\\nconst {Fragment,useEffect,useRef} = window.__reflex['react']\\nconst {pyOr,refs} = window.__reflex['$/utils/state']\\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\\n\\nexport default function MySSRComponent () {\\n  const ref_widget = useRef(null); refs[\\\"ref_widget\\\"] = ref_widget;\\n\\n\\n\\n  return (\\n    (jsx(RadixThemesText, ({as:\\\"p\\\",id:\\\"widget\\\",ref:ref_widget}), \\\"widget:\\\", 1))\\n  )\\n}\"}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mm_one___states____widget_state\":{\"n_rx_state_\":2,\"dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_\":\"//__reflex_evaluate\\nconst React = window.__reflex.react;\\n\\nconst {jsx} = window.__reflex['@emotion/react']\\nconst {Fragment,useEffect,useRef} = window.__reflex['react']\\nconst {pyOr,refs} = window.__reflex['$/utils/state']\\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\\n\\nexport default function MySSRComponent () {\\n  const ref_widget = useRef(null); refs[\\\"ref_widget\\\"] = ref_widget;\\n\\n\\n\\n  return (\\n    (jsx(RadixThemesText, ({as:\\\"p\\\",id:\\\"widget\\\",ref:ref_widget}), \\\"widget:\\\", 2))\\n  )\\n}\"}}}]"
+  ],
+  "one_again": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"B3QaXLrRv60fuGhpAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"fU-TNacPH7xsLYa8AAAB\"}",
+   "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"KeyError: 'mm_one___states____widget_state'\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]",
+   "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"KeyError: 'mm_one___states____widget_state'\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]",
+   "2",
+   "2",
+   "2"
+  ]
+ },
+ "console_errors": {
+  "one": [],
+  "one_again": [
+   "error: %o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading '$$typeof')\n    at exports.useContext (http://localhost:40695/node_modules/.vite/deps/react.js?v=ac33f826:726:12)\n    at Bare (http://localhost:40695/app_components/mm_one/mm_one.jsx:12:70)\n    at Object.react_stack_bottom_frame (ht"
+  ]
+ },
+ "after_one_stop": {
+  "always_dirty_substates_on_root": []
+ },
+ "all_ok": false
+}

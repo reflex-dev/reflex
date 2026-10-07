@@ -1,0 +1,282 @@
+{
+ "tag": "gh-up-fresh_widget_alice",
+ "url": "http://localhost:3144",
+ "args": {
+  "url": "http://localhost:3144",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/gh",
+  "tag": "gh-up-fresh_widget_alice",
+  "profile": "-",
+  "wait": 6.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": false,
+  "reload": false,
+  "path": "/widget/alice"
+ },
+ "checks": [],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "system",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": "[\"alice\", 1791355291.3322594]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]"
+  },
+  "ss": {
+   "token": "ac749136-39b3-4759-e0e6-20327625447e"
+  },
+  "cookie": ""
+ },
+ "body_text": "Github Stats for alice\nclosedIssuesmergedPullRequestsopenIssuesrepositoriesContributedTo\nalice\n0\n50\n100\n150\n200\n0",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {},
+  "ss": {},
+  "cookie": "",
+  "t": 64,
+  "path": "/widget/alice"
+ },
+ "writes_idempotent_counts": {},
+ "writes_total": 6,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 374,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "ac749136-39b3-4759-e0e6-20327625447e",
+   "prev": null,
+   "t": 609,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "t": 611,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "t": 611,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": null,
+   "t": 740,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_",
+   "value": "[\"alice\", 1791355291.3322594]",
+   "prev": null,
+   "t": 742,
+   "path": "/widget/alice"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 374,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "ac749136-39b3-4759-e0e6-20327625447e",
+   "prev": null,
+   "t": 609,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "t": 611,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "t": 611,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": null,
+   "t": 740,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_",
+   "value": "[\"alice\", 1791355291.3322594]",
+   "prev": null,
+   "t": 742,
+   "path": "/widget/alice"
+  }
+ ],
+ "writes_changing_app": [
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "prev": null,
+   "t": 740,
+   "path": "/widget/alice"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_",
+   "value": "[\"alice\", 1791355291.3322594]",
+   "prev": null,
+   "t": 742,
+   "path": "/widget/alice"
+  }
+ ],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 6.43,
+   "dir": "recv",
+   "data": "0{\"sid\":\"W7X9cGHXXJrgj9KKAAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 6.43,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"05e44e7be8d4d91b\",\"c28addc779b6a4ce\",\"179b3745bec6ff80\",\"8ba9045da9a01deb\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/widget/alice\",\"asPath\":\"/widget/alice\",\"query\":{\"selected_user_param\":\"alice\"}}}}"
+  },
+  {
+   "t": 6.43,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"Czl_nGotJ1ulCX6vAAAN\"}"
+  },
+  {
+   "t": 6.43,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8144\",\"origin\":\"http://localhost:3144\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"iREiwli8tNVmO06iiRU2Yw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8144\",\"origin\":\"http://localhost:3144\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"iREiwli8tNVmO06iiRU2Yw==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3144\",\"path\":\"/widget/[selected_user_param]\",\"raw_path\":\"/widget/alice\",\"full_path\":\"http://localhost:3144/widget/[selected_user_param]\",\"full_raw_path\":\"http://localhost:3144/widget/alice\",\"params\":{\"selected_user_param\":\"alice\"}},\"rx_router_route_id_rx_state_\":\"/widget/[selected_user_param]\",\"rx_router_session_rx_state_\":{\"client_token\":\"ac749136-39b3-4759-e0e6-20327625447e\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Czl_nGotJ1ulCX6vAAAN\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3144\",\"origin\":\"http://localhost:3144\",\"path\":\"/widget/alice\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3144/widget/alice\"},\"selected_user_param_rx_state_\":\"alice\",\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 6.43,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 6.43,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___widget____widget_state\":{\"selected_user_rx_state_\":\"alice\",\"appearance_rx_state_\":\"light\"}}}]"
+  },
+  {
+   "t": 6.43,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 6.43,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___widget____widget_state\":{\"fetching_rx_state_\":true,\"user_stats_rx_state_\":[]}}}]"
+  },
+  {
+   "t": 6.43,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___widget____widget_state\":{\"user_stats_rx_state_\":[{\"name\":\"Alice\",\"login\":\"alice\",\"contributionsCollection\":{\"totalCommitContributions\":491,\"totalPullRequestReviewContributions\":54},\"repositoriesContributedTo\":26,\"pullRequests\":252,\"mergedPullRequests\":191,\"openIssues\":38,\"closedIssues\":25,\"followers\":185,\"repositoryDiscussions\":7,\"repositoryDiscussionComments\":19}]}}}]"
+  },
+  {
+   "t": 6.43,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___widget____widget_state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"last_fetch_rx_state_\":\"[\\\"alice\\\", 1791355291.3322594]\"}}}]"
+  },
+  {
+   "t": 6.53,
+   "dir": "sent",
+   "data": "41/_event,"
+  }
+ ],
+ "console": [
+  {
+   "t": 0.13,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 0.37,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 6.43,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 6.43,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "t": 6.53,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "last_compiled_theme",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_",
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 6,
+  "n_changing": 6,
+  "n_changing_app": 2,
+  "n_idempotent": 0,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {}
+ }
+}

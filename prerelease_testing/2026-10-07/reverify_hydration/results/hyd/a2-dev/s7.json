@@ -1,0 +1,97 @@
+{
+ "direct": {
+  "hyd_flag_series": [
+   [
+    128,
+    null
+   ],
+   [
+    797,
+    "H:no"
+   ],
+   [
+    1540,
+    "H:yes"
+   ]
+  ],
+  "content_series": [
+   [
+    128,
+    null
+   ],
+   [
+    1540,
+    "CONTENT"
+   ]
+  ],
+  "spinner_series": [
+   [
+    128,
+    null
+   ],
+   [
+    797,
+    ""
+   ],
+   [
+    1540,
+    null
+   ]
+  ],
+  "gate_loads": "1"
+ },
+ "direct_yes_flips": 1,
+ "client_nav": {
+  "hyd_flag_series": [
+   [
+    5328,
+    "H:no"
+   ],
+   [
+    6131,
+    "H:yes"
+   ]
+  ],
+  "content_series": [
+   [
+    5320,
+    "CONTENT"
+   ],
+   [
+    5328,
+    null
+   ],
+   [
+    6131,
+    "CONTENT"
+   ]
+  ]
+ },
+ "client_yes_flips": 1,
+ "client_nav_gated_content_flash_ms": 8,
+ "reload": {
+  "hyd_flag_series": [
+   [
+    46,
+    null
+   ],
+   [
+    232,
+    "H:no"
+   ],
+   [
+    1008,
+    "H:yes"
+   ]
+  ]
+ },
+ "reload_yes_flips": 1,
+ "status": "pass",
+ "duration_s": 10.4,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

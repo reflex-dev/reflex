@@ -1,0 +1,71 @@
+{
+ "reflex": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex/__init__.py",
+ "scenario": "dynamic",
+ "checks": [
+  {
+   "name": "one: app one renders",
+   "ok": true,
+   "detail": "widget:0",
+   "s": 0.1
+  },
+  {
+   "name": "one: app one event roundtrip (state from 2nd module)",
+   "ok": true,
+   "detail": "widget:2",
+   "s": 0.1
+  },
+  {
+   "name": "two: app two renders",
+   "ok": true,
+   "detail": null,
+   "s": 0.0
+  },
+  {
+   "name": "two: app two event roundtrip",
+   "ok": false,
+   "detail": "TimeoutError: Page.wait_for_function: Timeout 20000ms exceeded.",
+   "s": 20.1
+  },
+  {
+   "name": "two: no app-one state names / KeyError in app-two frames",
+   "ok": false,
+   "detail": "AssertionError: ['42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs[\\'__toast\\']) ? (refs[\\'__toast\\']?.[\\\\\"error\\\\\"](\\\\\"An error occurred.\\\\\", ({ [\\\\\"description\\\\\"] : \\\\\"KeyError: \\'mm_one___states____widget_state\\'\\\\\\\\nSee logs for details.\\\\\", [\\\\\"position\\\\\"] : \\\\\"top-center\\\\\", [\\\\\"id\\\\\"] : \\\\\"backend_error\\\\\", [\\\\\"style\\\\\"] : ({ [\\\\\"width\\\\\"] : \\\\\"500px\\\\\", [\\\\\"whiteSpace\\\\\"] : \\\\\"pre-wrap\\\\\" }) }))) : (window.alert(\\\\\"An error occurred.\\\\\".replaceAll(\\\\\"<br/>\\\\\", \\\\\"\\\\\\\\n\\\\\")))))\",\"callback\":null}}]}]', '42/_event,[\"event\",{\"events\":[{\"n",
+   "s": 0.0
+  },
+  {
+   "name": "two: no error toast",
+   "ok": true,
+   "detail": "none",
+   "s": 0.0
+  }
+ ],
+ "frames": {
+  "one": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"Kr8ZIDKR4RA-aND1AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"hW5-Awcl9-KS6mt-AAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:41257\",\"origin\":\"http://localhost:32815\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"bpEt8BN1spZYMXqpZIiodA==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:41257\",\"origin\":\"http://localhost:32815\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"bpEt8BN1spZYMXqpZIiodA==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:32815\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:32815/index\",\"full_raw_path\":\"http://localhost:32815/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"63fdf7f0-d875-457a-b994-dc0ba2c400a8\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"hW5-Awcl9-KS6mt-AAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:32815\",\"origin\":\"http://localhost:32815\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:32815/\"}}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.mm_one___states____widget_state\":{\"dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_\":\"//__reflex_evaluate\\nconst React = window.__reflex.react;\\n\\nconst {jsx} = window.__reflex['@emotion/react']\\nconst {Fragment,useEffect,useRef} = window.__reflex['react']\\nconst {pyOr,refs} = window.__reflex['$/utils/state']\\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\\n\\nexport default function MySSRComponent () {\\n  const ref_widget = useRef(null); refs[\\\"ref_widget\\\"] = ref_widget;\\n\\n\\n\\n  return (\\n    (jsx(RadixThemesText, ({as:\\\"p\\\",id:\\\"widget\\\",ref:ref_widget}), \\\"widget:\\\", 0))\\n  )\\n}\"}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mm_one___states____widget_state\":{\"n_rx_state_\":1,\"dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_\":\"//__reflex_evaluate\\nconst React = window.__reflex.react;\\n\\nconst {jsx} = window.__reflex['@emotion/react']\\nconst {Fragment,useEffect,useRef} = window.__reflex['react']\\nconst {pyOr,refs} = window.__reflex['$/utils/state']\\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\\n\\nexport default function MySSRComponent () {\\n  const ref_widget = useRef(null); refs[\\\"ref_widget\\\"] = ref_widget;\\n\\n\\n\\n  return (\\n    (jsx(RadixThemesText, ({as:\\\"p\\\",id:\\\"widget\\\",ref:ref_widget}), \\\"widget:\\\", 1))\\n  )\\n}\"}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mm_one___states____widget_state\":{\"n_rx_state_\":2,\"dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_\":\"//__reflex_evaluate\\nconst React = window.__reflex.react;\\n\\nconst {jsx} = window.__reflex['@emotion/react']\\nconst {Fragment,useEffect,useRef} = window.__reflex['react']\\nconst {pyOr,refs} = window.__reflex['$/utils/state']\\nconst {Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\\n\\nexport default function MySSRComponent () {\\n  const ref_widget = useRef(null); refs[\\\"ref_widget\\\"] = ref_widget;\\n\\n\\n\\n  return (\\n    (jsx(RadixThemesText, ({as:\\\"p\\\",id:\\\"widget\\\",ref:ref_widget}), \\\"widget:\\\", 2))\\n  )\\n}\"}}}]"
+  ],
+  "two": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"bm0pQBHDpbXpcDS4AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"ouHHEP0e8oJN4KjFAAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:39837\",\"origin\":\"http://localhost:46685\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"mByWyygI5Y8OqycT7HIKcw==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:39837\",\"origin\":\"http://localhost:46685\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"mByWyygI5Y8OqycT7HIKcw==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:46685\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:46685/index\",\"full_raw_path\":\"http://localhost:46685/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"b47a313a-73f1-45b4-c44c-630d2d86d780\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ouHHEP0e8oJN4KjFAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:46685\",\"origin\":\"http://localhost:46685\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:46685/\"}}}}]",
+   "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"KeyError: 'mm_one___states____widget_state'\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]",
+   "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"KeyError: 'mm_one___states____widget_state'\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]"
+  ]
+ },
+ "console_errors": {
+  "one": [],
+  "two": []
+ },
+ "after_one_stop": {
+  "always_dirty_substates_on_root": [
+   "mm_one___states____widget_state"
+  ]
+ },
+ "all_ok": false
+}

@@ -1,0 +1,21 @@
+19:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+56:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+129:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 19/18 0:00:00
+156:'isbot@5.2.2', 'socket.io-client@4.8.4', 'react-error-boundary@6.1.6']
+161:Debug: warn: incorrect peer dependency "react@19.3.0"
+176:Debug: installed react-error-boundary@6.1.6
+187:───────────────────────────────── App Running ──────────────────────────────────
+201:[INFO] Spawning worker-1 with PID: 28016
+207:App running at: http://localhost:3102/
+215: Traceback (most recent call last):
+253:    raise SetUndefinedStateVarError(msg)
+254:reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable 
+260: Traceback (most recent call last):
+300:    raise SetUndefinedStateVarError(msg)
+301:reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable 
+327:[INFO] Changes detected, reloading workers..
+333:[INFO] Spawning worker-1 with PID: 29156
+336:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 19/18 0:00:00
+338:['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+368:[ERROR] Unexpected exit from worker-1
+372:Debug: error: script "dev" exited with code 143

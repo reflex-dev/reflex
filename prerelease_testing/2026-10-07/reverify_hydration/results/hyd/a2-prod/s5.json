@@ -1,0 +1,286 @@
+{
+ "300000_hydrated": true,
+ "300000_time_to_hydrated_s": 0.2,
+ "300000_big_len": "300000",
+ "300000_ws_opens": 2,
+ "300000_ws_closes": 1,
+ "300000_hyd_flag": "H:yes",
+ "300000_screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_hydration/results/hyd/a2-prod/shots/s5_big_300000.png",
+ "300000_frames_head": [
+  {
+   "t": 0.277,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 0.328,
+   "dir": "out",
+   "kind": "connect",
+   "len": 404,
+   "boot": "reflex___state____state.hydrate_and_load",
+   "boot_payload_keys": [
+    "hashes"
+   ],
+   "n_hashes": 14
+  },
+  {
+   "t": 0.334,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 0.336,
+   "dir": "in",
+   "kind": "event",
+   "len": 2542,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_",
+     "rx_router_headers_rx_state_",
+     "rx_router_page_rx_state_",
+     "rx_router_route_id_rx_state_",
+     "rx_router_session_rx_state_",
+     "rx_router_url_rx_state_"
+    ],
+    "hydapp___hydapp____defaults": [
+     "created_rx_state_",
+     "env_val_rx_state_",
+     "fixed_dt_rx_state_",
+     "flt_rx_state_",
+     "items_rx_state_",
+     "mapping_rx_state_",
+     "pid_default_rx_state_",
+     "point_rx_state_",
+     "session_id_rx_state_",
+     "summary_rx_state_"
+    ],
+    "hydapp___hydapp____sub": [
+     "sub_ck_rx_state_",
+     "sub_ls_rx_state_",
+     "sub_saw_rx_state_",
+     "sub_ss_rx_state_",
+     "sub_uuid_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.336,
+   "dir": "in",
+   "kind": "event",
+   "len": 89,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.337,
+   "dir": "in",
+   "kind": "event",
+   "len": 311,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "load_count_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.337,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.41,
+   "dir": "out",
+   "kind": "disconnect",
+   "len": 10
+  },
+  {
+   "t": 0.489,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 0.513,
+   "dir": "out",
+   "kind": "connect-trunc",
+   "len": 300484
+  },
+  {
+   "t": 0.526,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 0.535,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 302871
+  }
+ ],
+ "1200000_hydrated": false,
+ "1200000_time_to_hydrated_s": null,
+ "1200000_big_len": "0",
+ "1200000_ws_opens": 647,
+ "1200000_ws_closes": 646,
+ "1200000_hyd_flag": "H:no",
+ "1200000_screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_hydration/results/hyd/a2-prod/shots/s5_big_1200000.png",
+ "1200000_frames_head": [
+  {
+   "t": 2.473,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 2.523,
+   "dir": "out",
+   "kind": "connect",
+   "len": 404,
+   "boot": "reflex___state____state.hydrate_and_load",
+   "boot_payload_keys": [
+    "hashes"
+   ],
+   "n_hashes": 14
+  },
+  {
+   "t": 2.53,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 2.532,
+   "dir": "in",
+   "kind": "event",
+   "len": 2542,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_",
+     "rx_router_headers_rx_state_",
+     "rx_router_page_rx_state_",
+     "rx_router_route_id_rx_state_",
+     "rx_router_session_rx_state_",
+     "rx_router_url_rx_state_"
+    ],
+    "hydapp___hydapp____defaults": [
+     "created_rx_state_",
+     "env_val_rx_state_",
+     "fixed_dt_rx_state_",
+     "flt_rx_state_",
+     "items_rx_state_",
+     "mapping_rx_state_",
+     "pid_default_rx_state_",
+     "point_rx_state_",
+     "session_id_rx_state_",
+     "summary_rx_state_"
+    ],
+    "hydapp___hydapp____sub": [
+     "sub_ck_rx_state_",
+     "sub_ls_rx_state_",
+     "sub_saw_rx_state_",
+     "sub_ss_rx_state_",
+     "sub_uuid_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.534,
+   "dir": "in",
+   "kind": "event",
+   "len": 89,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.534,
+   "dir": "in",
+   "kind": "event",
+   "len": 311,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "load_count_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.535,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.608,
+   "dir": "out",
+   "kind": "disconnect",
+   "len": 10
+  },
+  {
+   "t": 2.708,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 2.758,
+   "dir": "out",
+   "kind": "connect-trunc",
+   "len": 1200484
+  },
+  {
+   "t": 2.776,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 2.804,
+   "dir": "out",
+   "kind": "connect-trunc",
+   "len": 1200207
+  }
+ ],
+ "status": "pass",
+ "duration_s": 24.6,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

@@ -1,0 +1,52 @@
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+The _evaluate method is experimental and may be removed in future versions.
+Implicit Radix Themes enablement has been deprecated in version 0.9.0. a Radix Themes component was detected, which enables the full Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to make this explicit, or remove Radix components to avoid loading the stylesheet. It will be completely removed in 1.0. (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-harness-a2/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [4813]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:42317 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:34963/
+
+INFO:     127.0.0.1:55348 - "WebSocket /_event/?token=cfbb31c5-a985-4d4e-c2f8-f799aaac7abd&EIO=4&transport=websocket" [accepted]
+[PASS] one: app one renders: widget:0
+[PASS] one: app one event roundtrip (state from 2nd module): widget:2
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [4813]
+after app one stopped: State._always_dirty_substates = {'always_dirty_substates_on_root': []}
+─────────────────────────── Initializing two_source ────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+INFO:     Started server process [4813]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Backend started.
+Polling for servers...
+INFO:     Uvicorn running on http://127.0.0.1:43527 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:33695/
+
+INFO:     127.0.0.1:36096 - "WebSocket /_event/?token=4a02474d-df78-4084-dcae-4b58b48be51f&EIO=4&transport=websocket" [accepted]
+[PASS] two: app two renders: None
+[PASS] two: app two event roundtrip: renamed
+[PASS] two: no app-one state names / KeyError in app-two frames: 6 frames, no app-one state names
+[PASS] two: no error toast: none
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [4813]
+ALL_OK

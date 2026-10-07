@@ -1,0 +1,230 @@
+{
+ "tag": "ck-base-fresh-home",
+ "url": "http://localhost:3146",
+ "args": {
+  "url": "http://localhost:3146",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/ck",
+  "tag": "ck-base-fresh-home",
+  "profile": "-",
+  "wait": 6.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": false,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "light",
+   "last_compiled_theme": "light"
+  },
+  "ss": {
+   "token": "28f6543a-bab3-430b-9135-ba47cf7e81c2"
+  },
+  "cookie": ""
+ },
+ "body_text": "11\n:\n44\n:\n10\nPM\nUS/Pacific",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {},
+  "ss": {},
+  "cookie": "",
+  "t": 30,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {},
+ "writes_total": 4,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1220,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "28f6543a-bab3-430b-9135-ba47cf7e81c2",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1416,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "light",
+   "prev": null,
+   "same": false,
+   "vlen": 5,
+   "t": 1420,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "light",
+   "prev": null,
+   "same": false,
+   "vlen": 5,
+   "t": 1420,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1220,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "28f6543a-bab3-430b-9135-ba47cf7e81c2",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1416,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "light",
+   "prev": null,
+   "same": false,
+   "vlen": 5,
+   "t": 1420,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "light",
+   "prev": null,
+   "same": false,
+   "vlen": 5,
+   "t": 1420,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 7.25,
+   "dir": "recv",
+   "data": "0{\"sid\":\"_2KIBgBUaHdtRLOdAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 7.25,
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 7.25,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"0AZVCg_2_oTalqp7AAAB\"}"
+  },
+  {
+   "t": 7.25,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 7.25,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 7.25,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8146\",\"origin\":\"http://localhost:3146\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"/dqN94FBtNYGasS3gOpwmQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8146\",\"origin\":\"http://localhost:3146\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"/dqN94FBtNYGasS3gOpwmQ==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3146\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3146/index\",\"full_raw_path\":\"http://localhost:3146/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"28f6543a-bab3-430b-9135-ba47cf7e81c2\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"0AZVCg_2_oTalqp7AAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3146\",\"origin\":\"http://localhost:3146\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3146/\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.clock___clock____state\":{\"running_rx_state_\":false,\"time_info_rx_state_\":{\"hour\":4,\"minute\":0,\"second\":0,\"meridiem\":\"PM\",\"minute_display\":\"00\",\"second_display\":\"00\",\"hour_rotation\":\"rotate(390deg)\",\"minute_rotation\":\"rotate(-90.0deg)\",\"second_rotation\":\"rotate(-90.0deg)\"},\"valid_zone_rx_state_\":\"US/Pacific\",\"zone_rx_state_\":\"US/Pacific\"},\"reflex___state____state.reflex___state____update_vars_internal_state\":{}}}]"
+  },
+  {
+   "t": 7.25,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 7.25,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":11,\"minute\":44,\"second\":10,\"meridiem\":\"PM\",\"minute_display\":\"44\",\"second_display\":\"10\",\"hour_rotation\":\"rotate(600deg)\",\"minute_rotation\":\"rotate(174.52800000000002deg)\",\"second_rotation\":\"rotate(-29.88000000000001deg)\"},\"running_rx_state_\":false}}}]"
+  },
+  {
+   "t": 7.25,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 7.33,
+   "dir": "sent",
+   "data": "41/_event,"
+  }
+ ],
+ "console": [
+  {
+   "t": 1.02,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 1.2,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 7.24,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 7.24,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "t": 7.33,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "last_compiled_theme",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 4,
+  "n_changing": 4,
+  "n_changing_app": 0,
+  "n_idempotent": 0,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {}
+ }
+}

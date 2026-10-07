@@ -1,0 +1,23 @@
+===== /clerk load 1
+URL: http://localhost:3109/clerk
+BODY: Application Error
+SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'
+CONSOLE error Error loading route module `/app/routes/[clerk]._index.jsx`, reloading page...
+CONSOLE error SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'
+CONSOLE error Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).
+CONSOLE error SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'
+CONSOLE error SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'
+===== /clerk load 2
+URL: http://localhost:3109/clerk
+BODY: Application Error
+SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'
+CONSOLE error Error loading route module `/app/routes/[clerk]._index.jsx`, reloading page...
+CONSOLE error SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'
+CONSOLE error Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).
+CONSOLE error SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'
+CONSOLE error SyntaxError: The requested module '/utils/state.js' does not provide an export named 'Event'
+===== /dynoselect
+URL: http://localhost:3109/dynoselect
+BODY: home
+/dynoselect
+VarTypeError: Unsupported Operand type(s) for []: ObjectCastedVar, Field

@@ -1,0 +1,12 @@
+19:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+59:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 23/22 0:00:00
+62:'react-debounce-input@3.3.0', 'react-error-boundary@6.1.6', 
+79:───────────────────────────────── App Running ──────────────────────────────────
+93:[INFO] Spawning worker-1 with PID: 25677
+101:App running at: http://localhost:3101/
+105:[INFO] Changes detected, reloading workers..
+111:[INFO] Spawning worker-1 with PID: 27497
+114:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 23/22 0:00:00
+117:'react-debounce-input@3.3.0', 'react-error-boundary@6.1.6', 
+139:[ERROR] Unexpected exit from worker-1
+143:Debug: error: script "dev" exited with code 143

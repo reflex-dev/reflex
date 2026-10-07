@@ -1,0 +1,358 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='core_a2', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3105', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url='redis://localhost:8119', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'plugins', 'redis_url', 'telemetry_enabled', 
+'app_name', 'api_url', 'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/stable/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3105
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3105
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3105 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 3105 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 3105 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.05s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 19/18 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.2 (744846f84)
+Debug: 
+Debug: Checked 227 installs across 250 packages (no changes) [10.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', '@react-router/dev@8.4.0', 'vite@8.2.2', 'autoprefixer@10.5.4', 
+'@emotion/react@11.14.0', 'postcss@8.5.26', '@react-router/fs-routes@8.4.0', 
+'postcss-import@17.0.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: 
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss-import@17.0.0
+Debug: 
+Debug: [8.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react@19.2.8', 'mergician@v2.0.2', 'sonner@2.0.8', '@react-router/node@8.4.0', 
+'react-helmet@6.1.0', 'react-dom@19.2.8', 'react-router@8.4.0', 
+'socket.io-client@4.8.3', 'lucide-react@1.26.0', '@radix-ui/themes@3.3.0', 
+'isbot@5.2.2', 'universal-cookie@8.1.2', 'react-error-boundary@6.1.2']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: 
+Debug: installed react@19.2.8
+Debug: installed mergician@2.0.2
+Debug: installed sonner@2.0.8
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-helmet@6.1.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-router@8.4.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed lucide-react@1.26.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed isbot@5.2.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-error-boundary@6.1.2
+Debug: 
+Debug: [8.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/reverify_core/run/core_stable_prod/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/reverify_core/run/core_stable_prod/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 435 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             4.30 kB │ 
+gzip:  0.74 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-DgZ6wo1r.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-DEKlLv-N.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_schema_._index-tRApTQdd.js              0.69 kB │ 
+gzip:  0.43 kB
+Debug: build/client/assets/heading-0JIZVxhY.js                      0.69 kB │ 
+gzip:  0.43 kB
+Debug: build/client/assets/_dunder_._index-CTYa-H2v.js              0.95 kB │ 
+gzip:  0.53 kB
+Debug: build/client/assets/link-CywQlljV.js                         1.10 kB │ 
+gzip:  0.58 kB
+Debug: build/client/assets/_index-C6KbQ8S2.js                       1.54 kB │ 
+gzip:  0.76 kB
+Debug: build/client/assets/core_a2-l5-M0E6C.js                      4.65 kB │ 
+gzip:  0.74 kB
+Debug: build/client/assets/emotion-react.browser.esm-BUuhssUM.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-C2delMrB.js             36.83 kB │ 
+gzip: 12.81 kB
+Debug: build/client/assets/components-DzQT6F3y.js                  86.48 kB │ 
+gzip: 28.62 kB
+Debug: build/client/assets/button-CcKvVsAK.js                     121.02 kB │ 
+gzip: 35.52 kB
+Debug: build/client/assets/entry.client-dNVOKTyN.js               182.39 kB │ 
+gzip: 57.72 kB
+Debug: build/client/assets/root-D-MyHjjn.js                       307.28 kB │ 
+gzip: 86.58 kB
+Debug: 
+Debug: ✓ built in 1.51s
+Debug: vite v8.2.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 28 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.80 kB │ 
+gzip:  0.31 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-DgZ6wo1r.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     57.31 kB │ 
+gzip: 15.84 kB
+Debug: 
+Debug: ✓ built in 687ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /dunder -> build/client/dunder/index.html
+Debug: Prerender (html): /schema -> build/client/schema/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Debug: Copying .web/build/client/schema/index.html to 
+.web/build/client/schema.html
+Debug: Copying .web/build/client/dunder/index.html to 
+.web/build/client/dunder.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/reverify_core/run/core_stable_prod/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/reverify_core/run/core_stable_prod/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3105/
+Debug: Using Granian for backend
+[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+[INFO] Starting granian (main PID: 6227)
+[INFO] Listening at: http://0.0.0.0:3105
+[INFO] Spawning worker-1 with PID: 6429
+[INFO] Spawning worker-2 with PID: 6431
+Debug: BE Evaluating stateful page: index
+[INFO] Spawning worker-3 with PID: 6433
+[INFO] Spawning worker-4 with PID: 6435
+Debug: BE Evaluating stateful page: index
+Debug: BE Evaluating stateful page: index
+[INFO] Spawning worker-5 with PID: 6437
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Spawning worker-6 with PID: 6441
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-2
+[INFO] Spawning worker-7 with PID: 6446
+Debug: BE Evaluating stateful page: index
+Debug: BE Evaluating stateful page: index
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-3
+[INFO] Spawning worker-8 with PID: 6457
+Debug: BE Evaluating stateful page: index
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-5
+[INFO] Spawning worker-9 with PID: 6463
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-4
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-6
+Debug: BE Evaluating stateful page: index
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: BE Evaluating stateful page: index
+Debug: BE Evaluating stateful page: index
+[INFO] Started worker-7
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-8
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-9
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got '<dataclasses._MISSING_TYPE 
+object at 0x7fd1e397d190>' of type '<class 'dataclasses._MISSING_TYPE'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got '<dataclasses._MISSING_TYPE 
+object at 0x7fd1e3949460>' of type '<class 'dataclasses._MISSING_TYPE'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got '<dataclasses._MISSING_TYPE 
+object at 0x7fd1e8171460>' of type '<class 'dataclasses._MISSING_TYPE'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got '<dataclasses._MISSING_TYPE 
+object at 0x7fd1e3779970>' of type '<class 'dataclasses._MISSING_TYPE'>'.
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 916, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 907, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 704, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 470, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 308, in process_event
+    events = fn(**payload)
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/reverify_core/run/core_stable_prod/core_a2/core_a2.py", line 254, in 
+bump_mx
+    self.__mx += 1
+    ^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 2026, in 
+__setattr__
+    raise SetUndefinedStateVarError(msg)
+reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable 
+'_DMx__mx' has not been defined in 'D'. All state variables must be declared 
+before they can be set.
+
+
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 916, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 907, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 704, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 470, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 308, in process_event
+    events = fn(**payload)
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/reverify_core/run/core_stable_prod/core_a2/core_a2.py", line 254, in 
+bump_mx
+    self.__mx += 1
+    ^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 2026, in 
+__setattr__
+    raise SetUndefinedStateVarError(msg)
+reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable 
+'_DMx__mx' has not been defined in 'D'. All state variables must be declared 
+before they can be set.
+
+
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got '<dataclasses._MISSING_TYPE 
+object at 0x7fd1e81ae060>' of type '<class 'dataclasses._MISSING_TYPE'>'.
+[INFO] Shutting down granian
+[INFO] Stopping worker-6
+[INFO] Stopping worker-7
+[INFO] Stopping worker-2
+[INFO] Stopping worker-1
+[INFO] Stopping worker-5
+[INFO] Stopping worker-3
+[INFO] Stopping worker-9
+[INFO] Stopping worker-4
+[INFO] Stopping worker-8
+[INFO] Stopped worker-1
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Stopped worker-9
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

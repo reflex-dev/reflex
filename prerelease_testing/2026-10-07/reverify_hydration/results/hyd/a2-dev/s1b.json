@@ -1,0 +1,137 @@
+{
+ "hydrated": true,
+ "storage_after_first_load": {
+  "local": {
+   "theme": "system",
+   "last_compiled_theme": "system"
+  },
+  "session": {
+   "token": "f9e28da6-0ae6-4168-beb1-32573b4bcb55"
+  },
+  "cookie": ""
+ },
+ "client_storage_written_on_first_load": {
+  "local": [],
+  "session": [],
+  "cookie": []
+ },
+ "frames": [
+  {
+   "t": 0.356,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 0.543,
+   "dir": "out",
+   "kind": "connect",
+   "len": 404,
+   "boot": "reflex___state____state.hydrate_and_load",
+   "boot_payload_keys": [
+    "hashes"
+   ],
+   "n_hashes": 14
+  },
+  {
+   "t": 0.551,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 0.555,
+   "dir": "in",
+   "kind": "event",
+   "len": 2542,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_",
+     "rx_router_headers_rx_state_",
+     "rx_router_page_rx_state_",
+     "rx_router_route_id_rx_state_",
+     "rx_router_session_rx_state_",
+     "rx_router_url_rx_state_"
+    ],
+    "hydapp___hydapp____defaults": [
+     "created_rx_state_",
+     "env_val_rx_state_",
+     "fixed_dt_rx_state_",
+     "flt_rx_state_",
+     "items_rx_state_",
+     "mapping_rx_state_",
+     "pid_default_rx_state_",
+     "point_rx_state_",
+     "session_id_rx_state_",
+     "summary_rx_state_"
+    ],
+    "hydapp___hydapp____sub": [
+     "sub_ck_rx_state_",
+     "sub_ls_rx_state_",
+     "sub_saw_rx_state_",
+     "sub_ss_rx_state_",
+     "sub_uuid_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.558,
+   "dir": "in",
+   "kind": "event",
+   "len": 89,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.558,
+   "dir": "in",
+   "kind": "event",
+   "len": 311,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "load_count_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.559,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  }
+ ],
+ "storage_after_reload": {
+  "local": {
+   "theme": "system",
+   "last_compiled_theme": "system"
+  },
+  "session": {
+   "token": "f9e28da6-0ae6-4168-beb1-32573b4bcb55",
+   "react-router-scroll-positions": "{\"default\":0}"
+  },
+  "cookie": ""
+ },
+ "status": "pass",
+ "duration_s": 3.4,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

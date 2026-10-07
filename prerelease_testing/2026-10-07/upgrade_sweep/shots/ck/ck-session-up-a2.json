@@ -1,0 +1,802 @@
+{
+ "tag": "ck-session-up-a2",
+ "results": [
+  {
+   "name": "A: old version tab set up (Europe/Paris, ticking)",
+   "status": "pass",
+   "detail": "['8', ':', '46', ':', '22', 'AM']->['8', ':', '46', ':', '24', 'AM']",
+   "t": 4.162
+  },
+  {
+   "name": "C: did the old tab reload itself after the new server came up?",
+   "status": "pass",
+   "detail": "marker=gone (page reloaded)",
+   "t": 61.58
+  },
+  {
+   "name": "C: clock state after reconnect (was ticking before upgrade)",
+   "status": "pass",
+   "detail": "ticking=False ['8', ':', '46', ':', '57', 'AM']->['8', ':', '46', ':', '57', 'AM']",
+   "t": 63.991
+  },
+  {
+   "name": "N: new tab right after the upgrade shows the zone written under the old version (Europe/Paris)",
+   "status": "pass",
+   "detail": "select=Europe/Paris cookie={'reflex___state____state.clock___clock____state.zone_rx_state_': 'Europe%2FParis'}",
+   "t": 69.562
+  },
+  {
+   "name": "N: new tab did not write/overwrite any app cookie or storage value on load",
+   "status": "pass",
+   "detail": "[]",
+   "t": 69.562
+  },
+  {
+   "name": "D: zone change from the (possibly stale) tab reaches the new backend",
+   "status": "pass",
+   "detail": "['3', ':', '46', ':', '57', 'PM']",
+   "t": 69.871
+  },
+  {
+   "name": "D: switch toggle from the tab drives the bg task on the new backend",
+   "status": "pass",
+   "detail": "switch unchecked->checked ticking False->True",
+   "t": 73.858
+  },
+  {
+   "name": "E: zone cookie survives the upgrade in the same browser session",
+   "status": "pass",
+   "detail": "select=Asia/Tokyo expected=Asia/Tokyo cookie={'reflex___state____state.clock___clock____state.zone_rx_state_': 'Asia%2FTokyo'}",
+   "t": 76.382
+  },
+  {
+   "name": "E: on_load reset switch to off after reload",
+   "status": "pass",
+   "detail": "unchecked",
+   "t": 76.382
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"main\", \"t\": 5.985, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"main\", \"t\": 6.189, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"main\", \"t\": 6.592, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"main\", \"t\": 7.192, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"main\", \"t\": 7.997, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"main\", \"t\": 8.996, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTIO",
+   "t": 76.502
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 76.502
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 0.736,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 1.024,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 1.026,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 1.249,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 5.985,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 6.189,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 6.592,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 7.192,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 7.997,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 8.996,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 10.198,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 11.601,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 13.204,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 15.011,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 17.009,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 19.024,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 21.015,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 22.087,
+   "type": "log",
+   "text": "[vite] server connection lost. Polling for restart..."
+  },
+  {
+   "page": "main",
+   "t": 23.018,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 25.024,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 27.037,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 29.044,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 31.071,
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "page": "main",
+   "t": 34.324,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 36.468,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 36.787,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 36.846,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 37.06,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 73.943,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 74.017,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 74.104,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 74.157,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 74.161,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 1.312,
+   "dir": "open",
+   "payload": "ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 1.315,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"4r00HKzOKDZ1W5GwAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 1.315,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 1.325,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"1zq_meTXkJ6M05ycAAAJ\"}"
+  },
+  {
+   "page": "main",
+   "t": 1.325,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.325,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  "{\"page\": \"main\", \"t\": 1.344, \"dir\": \"in\", \"len\": 2453, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8146\\\",\\\"origin\\\":\\\"http://localhost:3146\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"3v3/gjFmDSvfJUf4q0Giug==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"gzip, ...",
+  {
+   "page": "main",
+   "t": 1.345,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.425,
+   "dir": "in",
+   "len": 358,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"running_rx_state_\":false,\"time_info_rx_state_\":{\"hour\":11,\"minute\":46,\"second\":21,\"meridiem\":\"PM\",\"minute_display\":\"46\",\"second_display\":\"21\",\"hour_rotation\":\"rotate(600deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(36.25200000000001deg)\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.425,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.68,
+   "dir": "out",
+   "len": 164,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.set_zone\",\"payload\":{\"zone\":\"Europe/Paris\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.68,
+   "dir": "in",
+   "len": 401,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"zone_rx_state_\":\"Europe/Paris\",\"valid_zone_rx_state_\":\"Europe/Paris\",\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":21,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"21\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(36.25200000000001deg)\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.736,
+   "dir": "out",
+   "len": 160,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.flip_switch\",\"payload\":{\"running\":true},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.74,
+   "dir": "in",
+   "len": 107,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"running_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.743,
+   "dir": "in",
+   "len": 331,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":22,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"22\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(42.26400000000001deg)\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.74,
+   "dir": "in",
+   "len": 331,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":23,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"23\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(48.27600000000001deg)\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.745,
+   "dir": "in",
+   "len": 331,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":24,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"24\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(54.28799999999998deg)\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.748,
+   "dir": "in",
+   "len": 331,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":25,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"25\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(60.29999999999998deg)\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.744,
+   "dir": "in",
+   "len": 331,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":26,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"26\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(66.31199999999998deg)\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.984,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 5.985,
+   "dir": "open",
+   "payload": "ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 5.988,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 6.188,
+   "dir": "open",
+   "payload": "ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 6.189,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 6.592,
+   "dir": "open",
+   "payload": "ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 6.592,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 7.191,
+   "dir": "open",
+   "payload": "ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 7.192,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 7.997,
+   "dir": "open",
+   "payload": "ws://localhost:8146/_event/?token=a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 7.997,
+   "dir": "close",
+   "payload": ""
+  },
+  "... 69 more frames trimmed"
+ ],
+ "notes": {
+  "A_cookie": {
+   "reflex___state____state.clock___clock____state.zone_rx_state_": "Europe%2FParis"
+  },
+  "A_before": {
+   "marker": "old-tab-1791355581856",
+   "select": "Europe/Paris",
+   "digital": [
+    "8",
+    ":",
+    "46",
+    ":",
+    "24",
+    "AM"
+   ],
+   "switch": "checked",
+   "body_tail": "8\n:\n46\n:\n24\nAM\nEurope/Paris",
+   "toasts": [],
+   "url": "http://localhost:3146/"
+  },
+  "B_server_down": {
+   "marker": "old-tab-1791355581856",
+   "select": "Europe/Paris",
+   "digital": [
+    "8",
+    ":",
+    "46",
+    ":",
+    "26",
+    "AM"
+   ],
+   "switch": "checked",
+   "body_tail": "Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:8146/_event\n8\n:\n46\n:\n26\nAM\nEurope/Paris",
+   "toasts": [
+    "Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:8146/_event"
+   ],
+   "url": "http://localhost:3146/"
+  },
+  "t_up": 36.48,
+  "C_after_up": {
+   "marker": null,
+   "select": "Europe/Paris",
+   "digital": [
+    "8",
+    ":",
+    "46",
+    ":",
+    "57",
+    "AM"
+   ],
+   "switch": "unchecked",
+   "body_tail": "8\n:\n46\n:\n57\nAM\nEurope/Paris",
+   "toasts": [],
+   "url": "http://localhost:3146/"
+  },
+  "C_ticking": [
+   false,
+   [
+    "8",
+    ":",
+    "46",
+    ":",
+    "57",
+    "AM"
+   ],
+   [
+    "8",
+    ":",
+    "46",
+    ":",
+    "57",
+    "AM"
+   ]
+  ],
+  "N_new_tab": {
+   "select": "Europe/Paris",
+   "doc_start_cookie": "reflex___state____state.clock___clock____state.zone_rx_state_=Europe%2FParis",
+   "writes": [
+    [
+     "removeItem",
+     "debug",
+     ""
+    ],
+    [
+     "setItem",
+     "token",
+     "2c000064-7fd1-4220-8fd8-6852966491f7"
+    ]
+   ],
+   "storage_end": {
+    "ls": {
+     "theme": "light",
+     "last_compiled_theme": "light"
+    },
+    "ss": {
+     "token": "2c000064-7fd1-4220-8fd8-6852966491f7"
+    },
+    "cookie": "reflex___state____state.clock___clock____state.zone_rx_state_=Europe%2FParis"
+   },
+   "cookies": {
+    "reflex___state____state.clock___clock____state.zone_rx_state_": "Europe%2FParis"
+   }
+  },
+  "D_cookie": {
+   "reflex___state____state.clock___clock____state.zone_rx_state_": "Asia%2FTokyo"
+  },
+  "D_interact": {
+   "marker": null,
+   "select": "Asia/Tokyo",
+   "digital": [
+    "3",
+    ":",
+    "47",
+    ":",
+    "33",
+    "PM"
+   ],
+   "switch": "checked",
+   "body_tail": "3\n:\n47\n:\n33\nPM\nAsia/Tokyo",
+   "toasts": [],
+   "url": "http://localhost:3146/"
+  },
+  "E_after_manual_reload": {
+   "marker": null,
+   "select": "Asia/Tokyo",
+   "digital": [
+    "3",
+    ":",
+    "47",
+    ":",
+    "34",
+    "PM"
+   ],
+   "switch": "unchecked",
+   "body_tail": "3\n:\n47\n:\n34\nPM\nAsia/Tokyo",
+   "toasts": [],
+   "url": "http://localhost:3146/"
+  },
+  "all_writes": [
+   [
+    "removeItem",
+    "debug",
+    "",
+    319,
+    "/"
+   ],
+   [
+    "setItem",
+    "token",
+    "a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8",
+    631,
+    "/"
+   ],
+   [
+    "setItem",
+    "last_compiled_theme",
+    "light",
+    635,
+    "/"
+   ],
+   [
+    "setItem",
+    "theme",
+    "light",
+    636,
+    "/"
+   ],
+   [
+    "cookie",
+    null,
+    "reflex___state____state.clock___clock____state.zone_rx_state_=Europe%2FParis; Pa",
+    1014,
+    "/"
+   ],
+   [
+    "cookie",
+    null,
+    "reflex___state____state.clock___clock____state.zone_rx_state_=Europe%2FParis; Pa",
+    32544,
+    "/"
+   ],
+   [
+    "setItem",
+    "react-router-scroll-positions",
+    "{\"default\":0}",
+    34427,
+    "/"
+   ],
+   [
+    "removeItem",
+    "debug",
+    "",
+    2477,
+    "/"
+   ],
+   [
+    "removeItem",
+    "debug",
+    "",
+    165,
+    "/"
+   ],
+   [
+    "setItem",
+    "token",
+    "2c000064-7fd1-4220-8fd8-6852966491f7",
+    364,
+    "/"
+   ],
+   [
+    "cookie",
+    null,
+    "reflex___state____state.clock___clock____state.zone_rx_state_=Asia%2FTokyo; Path",
+    35505,
+    "/"
+   ],
+   [
+    "setItem",
+    "react-router-scroll-positions",
+    "{\"default\":0}",
+    39632,
+    "/"
+   ],
+   [
+    "removeItem",
+    "debug",
+    "",
+    153,
+    "/"
+   ]
+  ],
+  "probe_ws": [
+   {
+    "t": 0.66,
+    "dir": "recv",
+    "data": "0{\"sid\":\"4r00HKzOKDZ1W5GwAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "t": 0.66,
+    "dir": "sent",
+    "data": "40/_event,"
+   },
+   {
+    "t": 0.67,
+    "dir": "recv",
+    "data": "40/_event,{\"sid\":\"1zq_meTXkJ6M05ycAAAJ\"}"
+   },
+   {
+    "t": 0.67,
+    "dir": "sent",
+    "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+   },
+   {
+    "t": 0.67,
+    "dir": "sent",
+    "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+   },
+   {
+    "t": 0.69,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8146\",\"origin\":\"http://localhost:3146\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"3v3/gjFmDSvfJUf4q0Giug==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8146\",\"origin\":\"http://localhost:3146\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"3v3/gjFmDSvfJUf4q0Giug==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3146\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3146/index\",\"full_raw_path\":\"http://localhost:3146/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"a21b0b3b-6dca-4c7f-cc8b-57a2c20967e8\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"1zq_meTXkJ6M05ycAAAJ\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3146\",\"origin\":\"http://localhost:3146\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3146/\"}},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.clock___clock____state\":{\"running_rx_state_\":false,\"time_info_rx_state_\":{\"hour\":4,\"minute\":0,\"second\":0,\"meridiem\":\"PM\",\"minute_display\":\"00\",\"second_display\":\"00\",\"hour_rotation\":\"rotate(390deg)\",\"minute_rotation\":\"rotate(-90.0deg)\",\"second_rotation\":\"rotate(-90.0deg)\"},\"valid_zone_rx_state_\":\"US/Pacific\",\"zone_rx_state_\":\"US/Pacific\"}}}]"
+   },
+   {
+    "t": 0.69,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+   },
+   {
+    "t": 0.77,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"running_rx_state_\":false,\"time_info_rx_state_\":{\"hour\":11,\"minute\":46,\"second\":21,\"meridiem\":\"PM\",\"minute_display\":\"46\",\"second_display\":\"21\",\"hour_rotation\":\"rotate(600deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(36.25200000000001deg)\"}}}}]"
+   },
+   {
+    "t": 0.77,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   },
+   {
+    "t": 1.02,
+    "dir": "sent",
+    "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.set_zone\",\"payload\":{\"zone\":\"Europe/Paris\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+   },
+   {
+    "t": 1.02,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"zone_rx_state_\":\"Europe/Paris\",\"valid_zone_rx_state_\":\"Europe/Paris\",\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":21,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"21\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(36.25200000000001deg)\"}}}}]"
+   },
+   {
+    "t": 1.08,
+    "dir": "sent",
+    "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.flip_switch\",\"payload\":{\"running\":true},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+   },
+   {
+    "t": 1.08,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"running_rx_state_\":true}}}]"
+   },
+   {
+    "t": 1.09,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":22,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"22\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(42.26400000000001deg)\"}}}}]"
+   },
+   {
+    "t": 2.08,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":23,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"23\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(48.27600000000001deg)\"}}}}]"
+   },
+   {
+    "t": 3.09,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":24,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"24\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(54.28799999999998deg)\"}}}}]"
+   },
+   {
+    "t": 4.09,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":25,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"25\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(60.29999999999998deg)\"}}}}]"
+   },
+   {
+    "t": 5.09,
+    "dir": "recv",
+    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":8,\"minute\":46,\"second\":26,\"meridiem\":\"AM\",\"minute_display\":\"46\",\"second_display\":\"26\",\"hour_rotation\":\"rotate(150deg)\",\"minute_rotation\":\"rotate(186.55200000000002deg)\",\"second_rotation\":\"rotate(66.31199999999998deg)\"}}}}]"
+   },
+   {
+    "t": 32.53,
+    "dir": "recv",
+    "data": "0{\"sid\":\"OLObIeytzEmQBw3zAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "t": 32.53,
+    "dir": "sent",
+    "data": "40/_event,"
+   }
+  ]
+ }
+}

@@ -1,0 +1,69 @@
+{
+ "reflex": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-harness-a2/lib/python3.12/site-packages/reflex/__init__.py",
+ "scenario": "plain",
+ "checks": [
+  {
+   "name": "one: app one renders",
+   "ok": true,
+   "detail": "widget:0",
+   "s": 0.1
+  },
+  {
+   "name": "one: app one event roundtrip (state from 2nd module)",
+   "ok": true,
+   "detail": "widget:2",
+   "s": 0.1
+  },
+  {
+   "name": "two: app two renders",
+   "ok": true,
+   "detail": null,
+   "s": 0.0
+  },
+  {
+   "name": "two: app two event roundtrip",
+   "ok": true,
+   "detail": "renamed",
+   "s": 0.1
+  },
+  {
+   "name": "two: no app-one state names / KeyError in app-two frames",
+   "ok": true,
+   "detail": "6 frames, no app-one state names",
+   "s": 0.0
+  },
+  {
+   "name": "two: no error toast",
+   "ok": true,
+   "detail": "none",
+   "s": 0.0
+  }
+ ],
+ "frames": {
+  "one": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"0cmx2510csLPw1i9AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"yPF_svcM9pzHuIpgAAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:43447\",\"origin\":\"http://localhost:38319\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UvJ9JxXy905Wgf0TUqhkZw==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:43447\",\"origin\":\"http://localhost:38319\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"UvJ9JxXy905Wgf0TUqhkZw==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:38319\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:38319/index\",\"full_raw_path\":\"http://localhost:38319/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"5e269867-a7c4-48df-fb40-baa2b95353d1\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"yPF_svcM9pzHuIpgAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:38319\",\"origin\":\"http://localhost:38319\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:38319/\"},\"is_hydrated_rx_state_\":false}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mm_one___states____widget_state\":{\"n_rx_state_\":1}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mm_one___states____widget_state\":{\"n_rx_state_\":2}}}]"
+  ],
+  "two": [
+   "{\"type\":\"connected\"}",
+   "0{\"sid\":\"AezLdTeRIcqvdkWoAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+   "40/_event,{\"sid\":\"ZIkaYlhUc7yxN07rAAAB\"}",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:44267\",\"origin\":\"http://localhost:41631\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ebgcd21wulFiiUyg3WfTMQ==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:44267\",\"origin\":\"http://localhost:41631\",\"pragma\":\"no-cache\",\"sec-websocket-key\":\"ebgcd21wulFiiUyg3WfTMQ==\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:41631\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:41631/index\",\"full_raw_path\":\"http://localhost:41631/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"668ab6ca-f5ca-4f44-9f67-027cead27d03\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZIkaYlhUc7yxN07rAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:41631\",\"origin\":\"http://localhost:41631\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:41631/\"},\"is_hydrated_rx_state_\":false}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.two_source___two_source____two_state\":{\"name_rx_state_\":\"renamed\"}}}]"
+  ]
+ },
+ "console_errors": {
+  "one": [],
+  "two": []
+ },
+ "after_one_stop": {
+  "always_dirty_substates_on_root": []
+ },
+ "all_ok": true
+}

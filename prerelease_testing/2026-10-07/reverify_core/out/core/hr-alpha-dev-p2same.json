@@ -1,0 +1,21 @@
+{
+ "schema2": {
+  "resumed_token": "add8c65d-8312-46fb-9314-4a4d7162cb6e",
+  "token_in_page": "add8c65d-8312-46fb-9314-4a4d7162cb6e",
+  "after_restart": {
+   "count": "42",
+   "note": "saved-before-restart"
+  }
+ },
+ "console": [
+  "[resumed] log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "[resumed] debug: [vite] connecting...",
+  "[resumed] debug: [vite] connected.",
+  "[resumed] info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+ ],
+ "bad_responses": [],
+ "ws_frames": {
+  "sent": 1,
+  "recv": 5
+ }
+}

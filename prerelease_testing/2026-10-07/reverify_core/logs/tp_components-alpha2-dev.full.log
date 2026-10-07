@@ -1,0 +1,311 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: state_auto_setters has been deprecated in version 0.9.0. 
+auto setters will be removed; use explicit event handlers instead. It will be 
+completely removed in 1.0. (rxconfig.py:3)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/reverify_core-tp/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='tp_components', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'state_auto_setters', 'app_name', 
+'loglevel', 'plugins'}, env_file=None, state_auto_setters=True, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a2 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/reverify_core-tp/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/reverify_core-tp/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='tp_components', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'state_auto_setters', 'app_name', 
+'loglevel', 'plugins'}, env_file=None, state_auto_setters=True, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a2 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/reverify_core-tp/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────────────────── Initializing tp_components ──────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/reverify_core-tp/lib/python3.12/site-packages/reflex_base/.templates/web to
+.web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/reverify_core/tp_components/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 326858921775711616982354743518959319046.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.048 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized tp_components. Install dependencies from `requirements.txt`
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3109
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8109
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3109 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3109 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3109 is not in use.
+Debug: Checking if Backend port: 8109 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8109 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8109 is not in use.
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n1.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/reverify_core-tp/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+Debug: Registered lifespan task: _setup_event_processor
+Instantiating components directly is not supported. Use `Calendar.create` method
+instead.
+[tp_components] page /dynoselect failed to build: VarTypeError: Unsupported Operand type(s) for []: ObjectCastedVar, Field
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n2.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n3.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Debug: [timing] Compile pages: 0.24s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 53/52 0:00:01
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'vite@8.3.2', 'postcss-import@17.0.0', 'postcss@8.5.29', 
+'@emotion/react@11.14.0', '@react-router/dev@8.4.0', 'autoprefixer@10.6.1', 
+'@react-router/fs-routes@8.4.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed postcss-import@17.0.0
+Debug: installed postcss@8.5.29
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: 
+Debug: 128 packages installed [147.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-dom@19.3.0', 'isbot@5.2.2', 'react-markdown@10.1.0', 'remark-math@6.0.0',
+'mergician@v2.0.2', '@clerk/clerk-react', 'react-debounce-input@3.3.0', 
+'@monaco-editor/react@4.7.0', 'audio-recorder-polyfill', 'react@19.3.0', 
+'react-google-recaptcha', 'rehype-unwrap-images@1.0.0', 'sonner@2.0.8', 
+'react-syntax-highlighter@16.1.1', 'lucide-react@1.26.0', 'rehype-katex@7.0.1', 
+'universal-cookie@8.1.2', '@radix-ui/react-form@0.1.16', 'react-router@8.4.0', 
+'react-qr-code', 'react-calendar@5.1.0', 'react-webcam', 
+'@react-router/node@8.4.0', '@radix-ui/themes@3.3.0', 'remark-gfm@4.0.1', 
+'react-type-animation', 'react-medium-image-zoom', 'react-colorful', 
+'rehype-raw@7.0.0', 'react-helmet@6.1.0', 'socket.io-client@4.8.4', 
+'react-error-boundary@6.1.6', 'framer-motion']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [27]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-dom@19.3.0
+Debug: installed isbot@5.2.2
+Debug: installed react-markdown@10.1.0
+Debug: installed remark-math@6.0.0
+Debug: installed mergician@2.0.2
+Debug: installed @clerk/clerk-react@5.61.3
+Debug: installed react-debounce-input@3.3.0
+Debug: installed @monaco-editor/react@4.7.0
+Debug: installed audio-recorder-polyfill@0.4.1
+Debug: installed react@19.3.0
+Debug: installed react-google-recaptcha@3.1.0
+Debug: installed rehype-unwrap-images@1.0.0
+Debug: installed sonner@2.0.8
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: installed lucide-react@1.26.0
+Debug: installed rehype-katex@7.0.1
+Debug: installed universal-cookie@8.1.2
+Debug: installed @radix-ui/react-form@0.1.16
+Debug: installed react-router@8.4.0
+Debug: installed react-qr-code@2.2.0
+Debug: installed react-calendar@5.1.0
+Debug: installed react-webcam@7.2.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed remark-gfm@4.0.1
+Debug: installed react-type-animation@3.2.0
+Debug: installed react-medium-image-zoom@5.4.9
+Debug: installed react-colorful@5.8.1
+Debug: installed rehype-raw@7.0.0
+Debug: installed react-helmet@6.1.0
+Debug: installed socket.io-client@4.8.4
+Debug: installed react-error-boundary@6.1.6
+Debug: installed framer-motion@14.0.0
+Debug: 
+Debug: 277 packages installed [2.47s]
+Debug: 
+Debug: Blocked 1 postinstall. Run `bun pm untrusted` for details.
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/reverify_core/tp_components/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/reverify_core/tp_components/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 2.65s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpa
+d/apps/reverify_core/tp_components/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/reverify_core/tp_components/tp_components', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/reverify_core/tp_components/assets', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/reverify_core/tp_components/rxconfig.py']
+[INFO] Starting granian (main PID: 23914)
+[INFO] Listening at: http://0.0.0.0:8109
+[INFO] Spawning worker-1 with PID: 24128
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n1.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/reverify_core-tp/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+Debug: Registered lifespan task: _setup_event_processor
+Debug: BE Evaluating stateful page: dynoselect
+[tp_components] page /dynoselect failed to build: VarTypeError: Unsupported Operand type(s) for []: ObjectCastedVar, Field
+Debug: BE Evaluating stateful page: chat
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n2.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Debug: BE Evaluating stateful page: chat-initial
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n3.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Debug:   ➜  Local:   http://localhost:3109/
+App running at: http://localhost:3109/
+Backend running at: http://0.0.0.0:8109
+Debug:   ➜  Network: http://192.0.2.2:3109/  eth0
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 7:05:12 AM [vite] (ssr) connected.
+Debug: 7:05:13 AM [vite] (client) [optimizer] bundling dependencies...
+Debug: 7:05:25 AM [vite] (client) [console.error] Error loading route module 
+`/app/routes/[clerk]._index.jsx`, reloading page...
+Debug: 7:05:25 AM [vite] (client) [console.error] SyntaxError: The requested 
+module '/utils/state.js' does not provide an export named 'Event'
+Debug: 7:05:25 AM [vite] (client) [console.error] Encountered a script tag while
+rendering React component. Scripts inside React components are never executed 
+when rendering on the client. Consider using template tag instead 
+(https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).
+Debug: 7:05:25 AM [vite] (client) [console.error] SyntaxError: The requested 
+module '/utils/state.js' does not provide an export named 'Event'
+Debug: 7:05:25 AM [vite] (client) [console.error] SyntaxError: The requested 
+module '/utils/state.js' does not provide an export named 'Event'
+Debug: 7:05:35 AM [vite] (client) [console.error] Error loading route module 
+`/app/routes/[clerk]._index.jsx`, reloading page...
+Debug: 7:05:35 AM [vite] (client) [console.error] SyntaxError: The requested 
+module '/utils/state.js' does not provide an export named 'Event'
+Debug: 7:05:35 AM [vite] (client) [console.error] Encountered a script tag while
+rendering React component. Scripts inside React components are never executed 
+when rendering on the client. Consider using template tag instead 
+(https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).
+Debug: 7:05:35 AM [vite] (client) [console.error] SyntaxError: The requested 
+module '/utils/state.js' does not provide an export named 'Event'
+Debug: 7:05:35 AM [vite] (client) [console.error] SyntaxError: The requested 
+module '/utils/state.js' does not provide an export named 'Event'
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

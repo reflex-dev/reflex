@@ -1,0 +1,22 @@
+### a2 (sqlmodel 0.0.48, sqlalchemy 2.1.3+greenlet): reflex db init
+Generating /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_db_install/run/dtapp-a2gen/alembic/env.py ...  done
+Generating /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_db_install/run/dtapp-a2gen/alembic.ini ...  done
+Please edit configuration/connection/logging settings in /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_db_install/run/dtapp-a2gen/alembic.ini before pro
+Generating /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_db_install/run/dtapp-a2gen/alembic/versions/a31ab83843a7_.py ...  done
+### migration content
+25:    sa.Column('id', sa.Integer(), nullable=False),
+26:    sa.Column('title', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+27:    sa.Column('created_at', sqlmodel.sql.sqltypes.UTCDateTime(), nullable=False),
+### reflex db migrate (fresh db)
+ction.py:156)
+rc=0
+### reflex db makemigrations again (no change expected)
+ction.py:156)
+revision files before/after: 1/1
+### same migration replayed under 0.9.12 (stable, sqlmodel 0.0.47): rm reflex.db && migrate
+rc=0
+### same migration replayed under a1 (sqlmodel 0.0.44): rm reflex.db && migrate  (expected: AttributeError UTCDateTime)
+    sa.Column('created_at', sqlmodel.sql.sqltypes.UTCDateTime(), nullable=False),
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'sqlmodel.sql.sqltypes' has no attribute 'UTCDateTime'
+rc=1

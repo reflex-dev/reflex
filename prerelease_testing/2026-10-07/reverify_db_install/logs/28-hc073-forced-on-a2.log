@@ -1,0 +1,30 @@
+### force 0.1.73a1 onto an a2 environment
+  Attempting uninstall: reflex-hosting-cli
+    Found existing installation: reflex-hosting-cli 0.2.0a1
+    Uninstalling reflex-hosting-cli-0.2.0a1:
+      Successfully uninstalled reflex-hosting-cli-0.2.0a1
+
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+reflex 0.10.0a2 requires reflex-hosting-cli!=0.1.73a1,>=0.2.0a1, but you have reflex-hosting-cli 0.1.73a1 which is incompatible.
+Successfully installed reflex-build-sdk-0.0.5 reflex-hosting-cli-0.1.73a1
+### pip check
+reflex 0.10.0a2 has requirement reflex-hosting-cli!=0.1.73a1,>=0.2.0a1, but you have reflex-hosting-cli 0.1.73a1.
+### reflex --version
+0.10.0a2
+### reflex cloud --help
+Usage: reflex cloud [OPTIONS] COMMAND [ARGS]...
+
+  The Hosting CLI.
+
+  This CLI is used to manage the Reflex cloud hosting service. It provides
+  commands for managing apps, projects, secrets, and VM types/regions.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  apps            Commands for managing apps.
+rc=0
+### reflex cloud apps list --json  (no token, non-interactive)
+Token is required for non-interactive mode.
+rc=1

@@ -1,0 +1,114 @@
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+The _evaluate method is experimental and may be removed in future versions.
+Implicit Radix Themes enablement has been deprecated in version 0.9.0. a Radix Themes component was detected, which enables the full Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to make this explicit, or remove Radix components to avoid loading the stylesheet. It will be completely removed in 1.0. (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [5771]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:41257 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:32815/
+
+INFO:     127.0.0.1:58770 - "WebSocket /_event/?token=63fdf7f0-d875-457a-b994-dc0ba2c400a8&EIO=4&transport=websocket" [accepted]
+[PASS] one: app one renders: widget:0
+[PASS] one: app one event roundtrip (state from 2nd module): widget:2
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [5771]
+after app one stopped: State._always_dirty_substates = {'always_dirty_substates_on_root': ['mm_one___states____widget_state']}
+─────────────────────────── Initializing two_source ────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [5771]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:39837 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:46685/
+
+INFO:     127.0.0.1:48320 - "WebSocket /_event/?token=b47a313a-73f1-45b4-c44c-630d2d86d780&EIO=4&transport=websocket" [accepted]
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 953, in _resolve_future
+    future.result()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 942, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 741, in _process_event_queue_entry
+    await self._execute_event(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 514, in _execute_event
+    await process_event(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 367, in process_event
+    await chain_updates(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 243, in chain_updates
+    delta = await root_state._get_resolved_delta()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex/state.py", line 1904, in _get_resolved_delta
+    return await resolve_delta(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex/istate/delta.py", line 295, in resolve_delta
+    delta = await _resolve_delta(state.get_delta())
+                                 ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex/state.py", line 1896, in get_delta
+    return build_delta(self)
+           ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex/istate/delta.py", line 273, in build_delta
+    delta.update(substates[substate].get_delta())
+                 ~~~~~~~~~^^^^^^^^^^
+KeyError: 'mm_one___states____widget_state'
+
+
+[PASS] two: app two renders: None
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 953, in _resolve_future
+    future.result()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 942, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 741, in _process_event_queue_entry
+    await self._execute_event(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 514, in _execute_event
+    await process_event(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 367, in process_event
+    await chain_updates(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 243, in chain_updates
+    delta = await root_state._get_resolved_delta()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex/state.py", line 1904, in _get_resolved_delta
+    return await resolve_delta(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex/istate/delta.py", line 295, in resolve_delta
+    delta = await _resolve_delta(state.get_delta())
+                                 ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex/state.py", line 1896, in get_delta
+    return build_delta(self)
+           ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/pymatrix_install-harness312/lib/python3.12/site-packages/reflex/istate/delta.py", line 273, in build_delta
+    delta.update(substates[substate].get_delta())
+                 ~~~~~~~~~^^^^^^^^^^
+KeyError: 'mm_one___states____widget_state'
+
+
+[FAIL] two: app two event roundtrip: TimeoutError: Page.wait_for_function: Timeout 20000ms exceeded.
+[FAIL] two: no app-one state names / KeyError in app-two frames: AssertionError: ['42/_event,["event",{"events":[{"name":"_call_function","router_data":{},"payload":{"function":"(() => (isTrue(refs[\'__toast\']) ? (refs[\'__toast\']?.[\\"error\\"](\\"An error occurred.\\", ({ [\\"description\\"] : \\"KeyError: \'mm_one___states____widget_state\'\\\\nSee logs for details.\\", [\\
+[PASS] two: no error toast: none
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [5771]
+SOME_FAILED

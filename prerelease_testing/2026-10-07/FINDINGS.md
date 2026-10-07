@@ -34,22 +34,53 @@ train) and 0.9.12.
 | F-002 first-load client-storage default write-back | HIGH regression | pending | reverify_hydration |
 | F-003 computed-var client-storage rewrite dropped at hydration | MED partial regression | pending | reverify_hydration |
 | F-004 class-level assignment replaces descriptor | MED regression | pending | reverify_core |
-| F-005 sqlmodel<0.0.45 cap | MED regression | cap lifted (metadata); behaviour pending | reverify_db_install |
-| F-006 component floors unchanged | MED release-eng | floors raised (metadata); behaviour pending | reverify_db_install |
-| F-007 npm SIGTERM hang | MED pre-existing | pending | reverify_db_install |
+| F-005 sqlmodel<0.0.45 cap | MED regression | **fixed** (sqlmodel 0.0.48 resolves; `UTCDateTime()` migrations apply on a fresh db; aware round trip identical to 0.9.12+0.0.47) — with caveats: N-001 below, and a1→a2 `uv -U` upgraders of a naive-datetime app silently change semantics with no release note for #7462 (N-002) | reverify_db_install |
+| F-006 component floors unchanged | MED release-eng | **fixed** (every pip/uv upgrade variant from 0.9.12 moves all 13 component packages; fresh `pip install reflex==0.10.0a2` without `--pre` resolves the full train; formapp submits the fixed #7227 payload) | reverify_db_install |
+| F-007 npm SIGTERM hang | MED pre-existing | **still broken** (3/3 on a2; a1 and 0.9.12 identical; bun clean) | reverify_db_install |
 | F-008 >1 MB storage reconnect storm | MED pre-existing | pending | reverify_hydration |
 | F-010 pre-connect nav on_load | LOW pre-existing | pending | reverify_hydration |
 | F-011 forward-ref TypeError | LOW regression | pending | reverify_core |
 | F-012 PageContext LookupError message | LOW | pending | reverify_core |
 | F-013 rx.Model deprecation location | LOW | pending | reverify_core |
 | F-014 `reflex component` message | LOW | pending | reverify_core |
-| F-015 duplicate npm notice | LOW | pending | reverify_db_install |
+| F-015 duplicate npm notice | LOW | **still broken** (unchanged) | reverify_db_install |
 | F-016 ty 0-arg / 5-arg | LOW | pending | reverify_core |
 | F-017 redis restart token loss | LOW unknown | pending | reverify_hydration |
 | F-018 React 19.3 console error | LOW | pending | reverify_core |
 
 ## New findings on 0.10.0a2
-(none yet)
+
+### N-001: Fresh `reflex[db]` resolves SQLAlchemy 2.1.3 without greenlet; `rx.Model` and every `reflex db` command crash with ImportError (HIGH)
+- Cluster: `reverify_db_install` | Regression vs 0.9.12: no in the strict sense (a fresh `reflex[db]==0.9.12`
+  fails identically since sqlmodel 0.0.48 was published 2026-10-06 21:44 UTC) | vs 0.10.0a1: yes (a1's
+  `sqlmodel<0.0.45` cap kept SQLAlchemy at 2.0.x) | Verifier: pending (explorer reproduced on 3.11, 3.12, 3.14, uv and pip)
+- Repro: `uv --no-config venv --python 3.12 v && uv --no-config pip install --python v/bin/python --prerelease=allow 'reflex[db]==0.10.0a2' 'pydantic<2.14'`,
+  then any `reflex db migrate` / `reflex run` of an app with an `rx.Model`: `ImportError: The SQLAlchemy asyncio
+  module requires that the Python 'greenlet' library is installed`. Probe: `reverify_db_install/scripts/greenlet_probe.py`.
+  Workarounds: `pip install greenlet`, or `sqlalchemy[asyncio]`, or `sqlalchemy<2.1`.
+- Evidence: `reverify_db_install/freeze/1a-uv-db-prealllow.txt`, `freeze/10-pip-db.txt` (sqlalchemy 2.1.3, no greenlet),
+  `logs/11-greenlet-reflex-db-cli.log`, `logs/15-dtapp-a2nogreenlet-run.log`, `logs/36-greenlet-probe-other-pythons.txt`.
+- Cause: sqlmodel 0.0.48 widened `SQLAlchemy<2.1.0` to `<2.2.0`; SQLAlchemy 2.1 made greenlet an extra;
+  `reflex/model.py:69` imports `sqlalchemy.ext.asyncio` at import time while the `db` extra lists only alembic,
+  pydantic and sqlmodel. reflex-local-auth users (`reflex[db]>=0.8.1`) hit it too. Fix options: add `greenlet`
+  or `sqlalchemy[asyncio]` to the `db` extra, import the asyncio module lazily, or cap `SQLAlchemy<2.1`.
+- Campaign impact: greenlet was added to the shared alpha2 venvs after this report so the other clusters test the framework.
+
+### N-002: No changelog entry for the sqlmodel cap removal (#7462); a1→a2 `uv -U` upgraders of naive-datetime apps silently change semantics (LOW)
+- Cluster: `reverify_db_install`. The v0.10.0a2 CHANGELOG has no sqlmodel/datetime/#7462 entry (the PR only
+  trimmed the old fragment and added `docs/database/tables.md`). An app written under sqlmodel 0.0.44 (naive
+  datetimes) upgraded with `uv pip install -U` moves to 0.0.48 and breaks (naive compare TypeError, naive insert
+  rejected, rows read with `+00:00`); the documented `sa_type=DateTime(timezone=False)` / `NaiveDatetime` recipes fix it.
+  In-place `pip install [-U]` and uv without `-U` keep 0.0.44. Evidence: `reverify_db_install/logs/19-naive-uvU-run.log`, `out/17-naive/`.
+
+### N-003: AppHarness cannot restart the same multi-module app within one process (LOW, acknowledged in #7359, unchanged)
+- Cluster: `reverify_db_install`. The cross-app fix of #7359 works (app B after a multi-module app A with
+  `rx.dynamic`: a2 clean, a1 `KeyError`); restarting the SAME app (`plain-restart`, `dynamic-restart`,
+  `dynamic-same`) still fails on a2 and a1 (KeyError / frontend `$$typeof` TypeError). Evidence: `reverify_db_install/logs/26-harness-*.log`.
 
 ## Cluster summaries
-(pending)
+
+### `reverify_db_install` (pass: 15, anomaly: 3, fail: 4) — done
+F-005 and F-006 fixed; F-007 and F-015 unchanged. Python 3.10 refused cleanly by uv and pip; 3.11 and 3.14
+state app 14/14 in dev and prod; #7210, #7259, the #7359 cross-app AppHarness fix, hosting-cli 0.2.0a1 +
+build-sdk 0.1.0a1 smoke (0.1.73a1 excluded at resolution time) all pass. New: N-001 (greenlet), N-002, N-003.

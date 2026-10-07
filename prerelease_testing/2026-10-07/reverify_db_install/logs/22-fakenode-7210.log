@@ -1,0 +1,28 @@
+######## fake node 18.0.0: reflex init (REFLEX_USE_NPM=1) in fresh dir
+──────────────────────── Initializing fnode_init_18_0_0 ────────────────────────
+Reflex requires node version 22.22.0 or higher to run, but the detected version 
+is 18.0.0
+init rc=1
+. .. 
+(npm artifacts above, if any)
+######## fake node 18.0.0: reflex run (REFLEX_USE_NPM=1) in an app initialised with the real node (bun)
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Reflex requires node version 22.22.0 or higher to run, but the detected version 
+is 18.0.0
+run rc=1
+(npm artifacts above, if any)
+######## fake node 22.21.0: reflex init (REFLEX_USE_NPM=1) in fresh dir
+─────────────────────── Initializing fnode_init_22_21_0 ────────────────────────
+Reflex requires node version 22.22.0 or higher to run, but the detected version 
+is 22.21.0
+init rc=1
+. .. 
+(npm artifacts above, if any)
+######## fake node 22.21.0: reflex run (REFLEX_USE_NPM=1) in an app initialised with the real node (bun)
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Reflex requires node version 22.22.0 or higher to run, but the detected version 
+is 22.21.0
+run rc=1
+(npm artifacts above, if any)

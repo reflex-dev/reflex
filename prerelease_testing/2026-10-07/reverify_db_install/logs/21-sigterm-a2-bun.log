@@ -1,0 +1,19 @@
+### reflex 0.10.0a2 REFLEX_USE_NPM=0 app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_db_install/run/sigterm_a2_bun
+frontend up; reflex CLI pid=31718; process group before SIGTERM:
+31718 31685 31718 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/python /tmp/claude-0/
+31742 31718 31718 S    /root/.bun/bin/bun run dev
+31743 31742 31718 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_db_install/run/sig
+31751 31718 31718 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/python /tmp/claude-0/
+--- kill -TERM 31718 (single process, no TTY)
+RESULT: reflex CLI exited
+listeners on 3389/8389 after 30s:
+  (none)
+process group after 30s:
+--- cleanup: SIGKILL process group 31718
+  ports free
+server log tail:
+  | Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+  | ───────────────────────────────── App Running ──────────────────────────────────
+  | App running at: http://localhost:3389/
+  | Backend running at: http://0.0.0.0:8389
+  | Info: Reflex app stopped.

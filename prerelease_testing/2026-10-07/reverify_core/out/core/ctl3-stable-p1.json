@@ -1,0 +1,21 @@
+{
+ "schema1": {
+  "0_initial": {
+   "count": "5",
+   "note": "fresh"
+  },
+  "1_after_set42": {
+   "count": "42",
+   "note": "saved-before-restart"
+  },
+  "token": "8a90cb2b-d048-4a25-f41b-b8668e045c27"
+ },
+ "console": [
+  "[tab1] error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "bad_responses": [],
+ "ws_frames": {
+  "sent": 4,
+  "recv": 5
+ }
+}

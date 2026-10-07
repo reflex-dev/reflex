@@ -1,0 +1,481 @@
+{
+ "tag": "fd-up-up",
+ "results": [
+  {
+   "name": "home: renders link + README markdown",
+   "status": "pass",
+   "detail": "version shown=0.10.0a2",
+   "t": 3.885
+  },
+  {
+   "name": "home: importlib version text matches installed reflex",
+   "status": "pass",
+   "detail": "0.10.0a2 vs 0.10.0a2",
+   "t": 3.885
+  },
+  {
+   "name": "auth survives (LocalStorage token): /edit/form/ renders WITHOUT login",
+   "status": "pass",
+   "detail": "",
+   "t": 4.368
+  },
+  {
+   "name": "existing form listed in 'Existing Forms' select (on_mount load)",
+   "status": "pass",
+   "detail": "",
+   "t": 4.507
+  },
+  {
+   "name": "persisted form name",
+   "status": "pass",
+   "detail": "Upgrade Survey",
+   "t": 4.81
+  },
+  {
+   "name": "persisted fields listed",
+   "status": "pass",
+   "detail": "['What is your favorite food? (favorite_food)', 'How old are you? (age)', 'Favorite color (color)', 'Shirt size (size)']",
+   "t": 6.32
+  },
+  {
+   "name": "add another field (email) after upgrade",
+   "status": "pass",
+   "detail": "",
+   "t": 8.096
+  },
+  {
+   "name": "entry page /form/<id>: renders (pre-existing FormMessage crash unless FD_FIX)",
+   "status": "pass",
+   "detail": "rendered",
+   "t": 11.594
+  },
+  {
+   "name": "logout: protected page bounces to /login",
+   "status": "pass",
+   "detail": "http://localhost:3140/login",
+   "t": 15.424
+  },
+  {
+   "name": "re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x)",
+   "status": "anomaly",
+   "detail": "http://localhost:3140/login",
+   "t": 18.864
+  },
+  {
+   "name": "re-login works (left logged in for next run)",
+   "status": "pass",
+   "detail": "",
+   "t": 19.205
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 19.436
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 19.436
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 1.332,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 1.628,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 1.75,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 1.851,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 4.008,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 4.071,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 4.21,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 4.234,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 4.234,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 8.101,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 8.192,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 8.415,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 11.434,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 11.435,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 11.6,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 11.672,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 11.753,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 11.783,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 11.783,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 15.027,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 15.095,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 15.235,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 15.266,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 15.269,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 15.44,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 15.531,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 15.608,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 15.63,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 15.641,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 15.809,
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "main",
+   "t": 18.875,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 18.931,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 18.999,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 19.029,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 19.029,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 1.732,
+   "dir": "open",
+   "payload": "ws://localhost:8140/_event/?token=64254e32-5964-4850-9f96-cca731e43e42&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 1.75,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"Zs5pBCp9QYX2vC39AAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 1.926,
+   "dir": "out",
+   "len": 569,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"03405a93-5ddd-4179-eadf-365698aa3ec9\"},\"hashes\":[\"7f02077446d480d6\",\"0b97b0aeacae1d37\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 1.944,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"dNtd5gKJwe1ByXodAAAD\"}"
+  },
+  "{\"page\": \"main\", \"t\": 1.951, \"dir\": \"in\", \"len\": 2176, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"ZhFAeKnZJp5/RlEy9KKxPQ==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"gzip, deflate, br, zstd\\\",\\\"accept_lan...",
+  {
+   "page": "main",
+   "t": 1.951,
+   "dir": "in",
+   "len": 418,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"is_authenticated_rx_state_\":true,\"authenticated_user_rx_state_\":{\"id\":1,\"username\":\"qa_admin\",\"enabled\":true}},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.012,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 4.012,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 4.234,
+   "dir": "open",
+   "payload": "ws://localhost:8140/_event/?token=64254e32-5964-4850-9f96-cca731e43e42&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 4.234,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"EtmXDRAWOvmVD3LgAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  "{\"page\": \"main\", \"t\": 4.26, \"dir\": \"out\", \"len\": 589, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\\\":\\\"03405a93-5ddd-4179-eadf-365698aa3ec9\\\"},\\\"hashes\\\":[\\\"7f02077446d480d6\\\",\\\"0b97b0aeacae1d37\\\",\\\"72c4c6e4d5ca6372\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"ce9ce44eccafc12e\\\",\\\"b0b4835a001a4843\\\",\\\"dc444275bfc30eb3\\\",\\\"c68bb4ed71ecc55b\\\",\\\"b971016ed11f5146\\\",\\\"f13ccfd1edf5d20e\\\",\\\"cb3bd1e58984a23f\\\",\\\"475ba198521ff3f6\\\"]},\\\"router_data\\\":{\\\"pathname\\\":\\\"/edit/form/\\\",\\\"asPath\\\":\\\"/edit...",
+  {
+   "page": "main",
+   "t": 4.271,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Vu4di7tNKb5kA-X_AAAF\"}"
+  },
+  "{\"page\": \"main\", \"t\": 4.273, \"dir\": \"in\", \"len\": 2228, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"MGyg/GpeorvTAeVEUKwaNA==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"gzip, deflate, br, zstd\\\",\\\"accept_lan...",
+  {
+   "page": "main",
+   "t": 4.273,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.273,
+   "dir": "in",
+   "len": 298,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":null,\"name\":\"\",\"fields\":[],\"responses\":[],\"user\":null}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.273,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.349,
+   "dir": "out",
+   "len": 277,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.35,
+   "dir": "out",
+   "len": 277,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  "{\"page\": \"main\", \"t\": 4.356, \"dir\": \"in\", \"len\": 1048, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\\\":{\\\"forms_rx_state_\\\":[{\\\"owner_id\\\":1,\\\"id\\\":1,\\\"name\\\":\\\"Upgrade Survey\\\",\\\"fields\\\":[{\\\"id\\\":1,\\\"required\\\":false,\\\"form_id\\\":1,\\\"name\\\":\\\"favorite_food\\\",\\\"type_\\\":\\\"text\\\",\\\"prompt\\\":\\\"What is your favorite food?\\\",\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"id\\\":2,\\\"required\\\":true,\\\"form_id\\\":1,\\\"name\\\":\\\"age\\\",\\\"type_\\\":\\\"number\\\",\\\"prompt\\\":\\\"How old are you?\\\",\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"id\\\":3,\\\"required\\...",
+  "{\"page\": \"main\", \"t\": 4.364, \"dir\": \"in\", \"len\": 1048, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\\\":{\\\"forms_rx_state_\\\":[{\\\"owner_id\\\":1,\\\"id\\\":1,\\\"name\\\":\\\"Upgrade Survey\\\",\\\"fields\\\":[{\\\"id\\\":1,\\\"required\\\":false,\\\"form_id\\\":1,\\\"name\\\":\\\"favorite_food\\\",\\\"type_\\\":\\\"text\\\",\\\"prompt\\\":\\\"What is your favorite food?\\\",\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"id\\\":2,\\\"required\\\":true,\\\"form_id\\\":1,\\\"name\\\":\\\"age\\\",\\\"type_\\\":\\\"number\\\",\\\"prompt\\\":\\\"How old are you?\\\",\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"id\\\":3,\\\"required\\...",
+  {
+   "page": "main",
+   "t": 4.556,
+   "dir": "out",
+   "len": 307,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.on_select_change\",\"payload\":{\"value\":\"1\"},\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.566,
+   "dir": "in",
+   "len": 151,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/edit/form/1\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 4.689,
+   "dir": "out",
+   "len": 277,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.69,
+   "dir": "out",
+   "len": 368,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"03405a93-5ddd-4179-eadf-365698aa3ec9\"}},\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.709,
+   "dir": "out",
+   "len": 202,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.709,
+   "dir": "out",
+   "len": 303,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
+  },
+  "{\"page\": \"main\", \"t\": 4.71, \"dir\": \"in\", \"len\": 1048, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\\\":{\\\"forms_rx_state_\\\":[{\\\"owner_id\\\":1,\\\"id\\\":1,\\\"name\\\":\\\"Upgrade Survey\\\",\\\"fields\\\":[{\\\"id\\\":1,\\\"required\\\":false,\\\"form_id\\\":1,\\\"name\\\":\\\"favorite_food\\\",\\\"type_\\\":\\\"text\\\",\\\"prompt\\\":\\\"What is your favorite food?\\\",\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"id\\\":2,\\\"required\\\":true,\\\"form_id\\\":1,\\\"name\\\":\\\"age\\\",\\\"type_\\\":\\\"number\\\",\\\"prompt\\\":\\\"How old are you?\\\",\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"id\\\":3,\\\"required\\\"...",
+  "{\"page\": \"main\", \"t\": 4.71, \"dir\": \"in\", \"len\": 1017, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_page_rx_state_\\\":{\\\"host\\\":\\\"http://localhost:3140\\\",\\\"path\\\":\\\"/edit/form/[form_id]\\\",\\\"raw_path\\\":\\\"/edit/form/1\\\",\\\"full_path\\\":\\\"http://localhost:3140/edit/form/[form_id]\\\",\\\"full_raw_path\\\":\\\"http://localhost:3140/edit/form/1\\\",\\\"params\\\":{\\\"form_id\\\":\\\"1\\\"}},\\\"field_id_rx_state_\\\":\\\"\\\",\\\"form_id_rx_state_\\\":\\\"1\\\",\\\"rx_router_url_rx_state_\\\":{\\\"scheme\\\":\\\"http\\\",\\\"netloc\\\":\\\"localhost:3140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"path\\\":\\\"/edit/form/1\\\",\\\"query\\\":\\\"\\\",\\\"query_parameters\\\":{},\\\"fragment\\\":\\\"\\\",\\\"href\\\":\\\"http://localhost:3140/edit/fo...",
+  {
+   "page": "main",
+   "t": 4.71,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  "{\"page\": \"main\", \"t\": 4.71, \"dir\": \"in\", \"len\": 992, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\\\":{\\\"form_rx_state_\\\":{\\\"owner_id\\\":1,\\\"id\\\":1,\\\"name\\\":\\\"Upgrade Survey\\\",\\\"fields\\\":[{\\\"id\\\":1,\\\"required\\\":false,\\\"form_id\\\":1,\\\"name\\\":\\\"favorite_food\\\",\\\"type_\\\":\\\"text\\\",\\\"prompt\\\":\\\"What is your favorite food?\\\",\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"id\\\":2,\\\"required\\\":true,\\\"form_id\\\":1,\\\"name\\\":\\\"age\\\",\\\"type_\\\":\\\"number\\\",\\\"prompt\\\":\\\"How old are you?\\\",\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"id\\\":3,\\\"required\\\":fa...",
+  "... 110 more frames trimmed"
+ ],
+ "notes": {
+  "mode": "up",
+  "url": "http://localhost:3140/",
+  "md_h1": [
+   "Form Designer",
+   "form-designer"
+  ],
+  "auth_token": "03405a93-5ddd-4179-eadf-365698aa3ec9",
+  "fields_listed": [
+   "What is your favorite food? (favorite_food)",
+   "How old are you? (age)",
+   "Favorite color (color)",
+   "Shirt size (size)"
+  ],
+  "form_id": "1",
+  "final_local_storage": {
+   "theme": "system",
+   "last_compiled_theme": "system",
+   "_auth_token": "03405a93-5ddd-4179-eadf-365698aa3ec9"
+  },
+  "final_cookies": []
+ }
+}

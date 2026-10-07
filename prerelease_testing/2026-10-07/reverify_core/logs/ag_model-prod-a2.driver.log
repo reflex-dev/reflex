@@ -1,0 +1,74 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=reverify_core-ent versions=0.10.0a2 0.9.7a4
+[NOTE] guard: 0.10.0a2 0.9.7a4
+[NOTE] db rows at start: 98
+[PASS] ssrm: logged-out initial data request made: ['http://localhost:3108/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=0vkEjx-oIMEl5ZfJAA
+[PASS] ssrm: datasource URL carries endpoint_kwargs (state, sid) + SSRM params: {'startRow': '0', 'endRow': '50', 'sortModel': '[]', 'filterModel': '{}', 'rowGroupCols': '[]', 'groupKeys': '[]', 'valueCols': '[]', 'pivotMode': 'false', 'pivotCols': '[]', 'state': 'reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n', 'sid': '0vkEjx-oIMEl5ZfJAAAB'}
+[PASS] ssrm: logged out shows no rows: 0
+[PASS] ssrm: Generate Friends inserted 50 rows into sqlite: {'before': 98, 'after': 148}
+[NOTE] ssrm rows right after generate (demo only calls setRowCount, no SSRM refresh): 22
+[PASS] ssrm: login (backend var) survives reload: Logout button shown after reload
+[PASS] ssrm: rows rendered after generate: 22
+[PASS] ssrm: sort asc request carries sortModel(age): ['[{"sort":"asc","type":"default","colId":"age"}]']
+[PASS] ssrm: sort asc first row has min age from db: {'first_rows': [18, 18, 19, 20, 20, 20, 21, 21], 'db_min': 18}
+[PASS] ssrm: sort desc first row has max age: {'first_rows': [80, 80, 80, 80, 80, 79, 78, 78], 'db_max': 80}
+[PASS] ssrm: filter request carries filterModel(name): ['{"name":{"filterType":"text","type":"contains","filter":"Jenn"}}']
+[FAIL] ssrm: filtered rows all match and count matches db: {'sub': 'Jenn', 'shown': 22, 'db_matches': 4, 'sample': ['Jennifer Keller', 'Jennifer Lee', 'Jenna Wade', 'Jenna Davis', '']}
+[PASS] ssrm: editing a cell updates sqlite: {'id': '3', 'db_name': 'QA Edited SSRM'}
+[PASS] ssrm: edited value visible after refresh: ['QA Edited SSRM', 'Kristin Leblanc', 'Catherine Rush', 'Nicole Thompson', 'Jacob Wright']
+[PASS] ssrm: selection -> selected_items computed var renders 2 badges: ['QA Edited SSRM', 'Kristin Leblanc']
+[PASS] ssrm: enable_advanced_filter switch shows advanced filter bar: 1
+[PASS] ssrm: logout refreshes grid to empty: 0
+[PASS] infinite(workaround): data requests return rows: {'reqs': ['http://localhost:3108/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model_wrapper_n1'], 'rows': 23}
+[PASS] infinite: sort asc by age matches db: {'first': [18, 18, 19, 20, 20, 20, 21, 21], 'db_min': 18}
+[FAIL] infinite: text filter matches db: {'sub': 'Sand', 'shown': 23, 'db': 1}
+[PASS] infinite: numeric cell edit updates sqlite: {'id': '3', 'db_age': 77}
+[FAIL] infinite: add dialog inserts row: {'before': 148, 'after': 148, 'row': None}
+[FAIL] infinite: add dialog closes after submit: 1
+[FAIL] infinite workaround flow: exception: TimeoutError('Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(".ag-row .ag-selection-checkbox input").first\n')
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_core/ent_scripts/drive_ag_model.py", line 71, in run_step
+    fn()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_core/ent_scripts/drive_ag_model.py", line 241, in workaround
+    boxes.nth(0).click()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 18032, in click
+    self._sync(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_locator.py", line 165, in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 594, in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".ag-row .ag-selection-checkbox input").first
+
+[PASS] /model: data endpoint has no HTTP errors: []
+[PASS] /model: grid shows db rows (db has 148): 23
+[PASS] /model-auth: data endpoint has no HTTP errors: []
+[PASS] /model-auth: grid shows db rows (db has 148): 22
+[NOTE] db rows at end: 148
+{
+ "checks_failed": [
+  "ssrm: filtered rows all match and count matches db",
+  "infinite: text filter matches db",
+  "infinite: add dialog inserts row",
+  "infinite: add dialog closes after submit",
+  "infinite workaround flow"
+ ],
+ "n_checks": 27,
+ "console_total": 48,
+ "console_benign": 35,
+ "console_errors": 0,
+ "console_warnings": 1,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}
+  console_warnings: {"t": 92.88, "ctx": "auth", "type": "warning", "text": "AG Grid: warning #129 Visit https://www.ag-grid.com/react-data-grid/errors/129?_version_=36.2.0&feature=headerCheckbox&rowModel=infinite \n  Alternatively register the ValidationModule to see the full message in the console.", "url": "http://localhost:3108/model-auth/", "location": {"url": "http://localhost:3108/assets/ag-theme-quartz-D5FVVJL

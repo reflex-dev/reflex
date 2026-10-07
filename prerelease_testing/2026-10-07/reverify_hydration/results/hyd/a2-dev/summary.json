@@ -1,0 +1,107 @@
+{
+ "s1": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s1b": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s2": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s3": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s4": {
+  "status": "anomaly",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s5": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s6": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s6b": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s7": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s8": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s9": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s10": {
+  "status": "anomaly",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s11": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s12": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ },
+ "s13": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ }
+}

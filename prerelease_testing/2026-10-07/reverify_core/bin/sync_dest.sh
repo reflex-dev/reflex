@@ -6,5 +6,5 @@ DEST=/home/user/reflex/prerelease_testing/2026-10-07/reverify_core
 mkdir -p $DEST
 cd $W && tar -cf - --exclude='.web' --exclude='node_modules' --exclude='.states' --exclude='__pycache__' \
   --exclude='*.db' --exclude='reflex.lock' --exclude='*.bin' --exclude='assets/external' --exclude='pids' \
-  --exclude='alembic' --exclude='alembic.ini' --exclude='*.full.log' "$@" | (cd $DEST && tar -xf -)
+  --exclude='alembic' --exclude='alembic.ini' "$@" | (cd $DEST && tar -xf -)
 du -sh $DEST

@@ -1,0 +1,18 @@
+{
+ "schema2": {
+  "resumed_token": "e5144639-b757-4e24-d29e-d199aa028976",
+  "token_in_page": "e5144639-b757-4e24-d29e-d199aa028976",
+  "after_restart": {
+   "count": "42",
+   "note": "saved-before-restart"
+  }
+ },
+ "console": [
+  "[resumed] error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "bad_responses": [],
+ "ws_frames": {
+  "sent": 3,
+  "recv": 4
+ }
+}

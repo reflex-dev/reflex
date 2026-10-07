@@ -1,0 +1,67 @@
+### uv pip compile: reflex[db]==0.10.0a2 + sqlmodel>=0.0.45 (was unsatisfiable on a1)
+reflex==0.10.0a2
+reflex-base==0.10.0a2
+reflex-build-sdk==0.1.0a1
+reflex-components-code==0.10.0a2
+reflex-components-core==0.10.0a2
+reflex-components-dataeditor==0.10.0a1
+reflex-components-gridjs==0.10.0a2
+reflex-components-lucide==1.1.0a1
+reflex-components-markdown==0.10.0a2
+reflex-components-moment==0.10.0a2
+reflex-components-plotly==0.10.0a2
+reflex-components-radix==0.10.0a2
+reflex-components-react-player==0.10.0a1
+reflex-components-recharts==0.10.0a2
+reflex-components-sonner==0.10.0a1
+reflex-hosting-cli==0.2.0a1
+sqlalchemy==2.1.3
+sqlmodel==0.0.48
+### uv pip compile: reflex==0.10.0a2 + reflex-local-auth + sqlmodel>=0.0.45 (a1 silently dropped to local-auth 0.4.0)
+reflex==0.10.0a2
+reflex-local-auth==0.5.0
+sqlalchemy==2.1.3
+sqlmodel==0.0.48
+### uv pip compile: reflex[db]==0.10.0a2 + sqlmodel==0.0.44 (pinning the old one explicitly)
+greenlet==3.5.6
+reflex==0.10.0a2
+reflex-base==0.10.0a2
+reflex-build-sdk==0.1.0a1
+reflex-components-code==0.10.0a2
+reflex-components-core==0.10.0a2
+reflex-components-dataeditor==0.10.0a1
+reflex-components-gridjs==0.10.0a2
+reflex-components-lucide==1.1.0a1
+reflex-components-markdown==0.10.0a2
+reflex-components-moment==0.10.0a2
+reflex-components-plotly==0.10.0a2
+reflex-components-radix==0.10.0a2
+reflex-components-react-player==0.10.0a1
+reflex-components-recharts==0.10.0a2
+reflex-components-sonner==0.10.0a1
+reflex-hosting-cli==0.2.0a1
+sqlalchemy==2.0.54
+sqlmodel==0.0.44
+### uv pip compile: reflex[db]==0.10.0a2 + sqlmodel==0.0.47 (keeps sqlalchemy 2.0 + greenlet)
+greenlet==3.5.6
+reflex==0.10.0a2
+reflex-base==0.10.0a2
+reflex-build-sdk==0.1.0a1
+reflex-components-code==0.10.0a2
+reflex-components-core==0.10.0a2
+reflex-components-dataeditor==0.10.0a1
+reflex-components-gridjs==0.10.0a2
+reflex-components-lucide==1.1.0a1
+reflex-components-markdown==0.10.0a2
+reflex-components-moment==0.10.0a2
+reflex-components-plotly==0.10.0a2
+reflex-components-radix==0.10.0a2
+reflex-components-react-player==0.10.0a1
+reflex-components-recharts==0.10.0a2
+reflex-components-sonner==0.10.0a1
+reflex-hosting-cli==0.2.0a1
+sqlalchemy==2.0.54
+sqlmodel==0.0.47
+### reflex requirement metadata of reflex-local-auth latest
+Version: 0.5.0
+Requires-Dist: reflex[db]>=0.8.1

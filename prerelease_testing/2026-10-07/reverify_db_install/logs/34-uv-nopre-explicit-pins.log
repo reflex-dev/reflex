@@ -1,0 +1,11 @@
+### uv pip install reflex==0.10.0a2 reflex-base==0.10.0a2 (no prerelease flag; a1 workaround)
+Using Python 3.12.3 environment at: envs/rdi-uvpin
+  × No solution found when resolving dependencies:
+  ╰─▶ Because only reflex-components-code<0.10.0a2 is available and
+      reflex>=0.10.0a2 depends on reflex-components-code>=0.10.0a2, we can
+      conclude that reflex>=0.10.0a2 cannot be used.
+      And because you require reflex==0.10.0a2, we can conclude that your
+      requirements are unsatisfiable.
+
+hint: `reflex-components-code` was requested with a pre-release marker (e.g., reflex-components-code>=0.10.0a2), but pre-releases weren't enabled (try: `--prerelease=allow`)
+rc=1

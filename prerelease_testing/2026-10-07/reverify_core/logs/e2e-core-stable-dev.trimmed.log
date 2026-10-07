@@ -1,0 +1,17 @@
+19:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+56:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+129:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 19/18 0:00:00
+154:'react-helmet@6.1.0', 'socket.io-client@4.8.3', 'react-error-boundary@6.1.2', 
+162:Debug: warn: incorrect peer dependency "react@19.3.0"
+170:Debug: installed react-error-boundary@6.1.2
+188:───────────────────────────────── App Running ──────────────────────────────────
+202:[INFO] Spawning worker-1 with PID: 30170
+208:App running at: http://localhost:3103/
+222: Traceback (most recent call last):
+260:    raise SetUndefinedStateVarError(msg)
+261:reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable 
+267: Traceback (most recent call last):
+305:    raise SetUndefinedStateVarError(msg)
+306:reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable 
+317:[ERROR] Unexpected exit from worker-1
+321:Debug: error: script "dev" exited with code 143

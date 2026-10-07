@@ -1,0 +1,90 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=reverify_core-ent versions=0.10.0a2 0.9.7a4
+[NOTE] guard: 0.10.0a2 0.9.7a4
+[NOTE] db rows at start: 0
+[FAIL] ssrm: logged-out initial data request made: []
+[FAIL] ssrm: logged out shows no rows: 1
+[PASS] ssrm: Generate Friends inserted 50 rows into sqlite: {'before': 0, 'after': 50}
+[NOTE] ssrm rows right after generate (demo only calls setRowCount, no SSRM refresh): 0
+[PASS] ssrm: login (backend var) survives reload: Logout button shown after reload
+[FAIL] ssrm flow: exception: TimeoutError('Page.wait_for_function: Timeout 15000ms exceeded.')
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_core/ent_scripts/drive_ag_model.py", line 71, in run_step
+    fn()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_core/ent_scripts/drive_ag_model.py", line 129, in ssrm
+    wait_rows(p)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_core/ent_scripts/drive_ag_model.py", line 55, in wait_rows
+    page.wait_for_function(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 12809, in wait_for_function
+    self._sync(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_page.py", line 1153, in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 941, in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 15000ms exceeded.
+[PASS] infinite(workaround): data requests return rows: {'reqs': ['http://localhost:8107/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model_wrapper_n1'], 'rows': 23}
+[PASS] infinite: sort asc by age matches db: {'first': [18, 19, 21, 24, 24, 26, 27, 27], 'db_min': 18}
+[FAIL] infinite: text filter matches db: {'sub': 'Torr', 'shown': 23, 'db': 1}
+[PASS] infinite: numeric cell edit updates sqlite: {'id': '1', 'db_age': 77}
+[FAIL] infinite: add dialog inserts row: {'before': 50, 'after': 50, 'row': None}
+[FAIL] infinite: add dialog closes after submit: 1
+[FAIL] infinite workaround flow: exception: TimeoutError('Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(".ag-row .ag-selection-checkbox input").first\n')
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_core/ent_scripts/drive_ag_model.py", line 71, in run_step
+    fn()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_core/ent_scripts/drive_ag_model.py", line 241, in workaround
+    boxes.nth(0).click()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 18032, in click
+    self._sync(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_locator.py", line 165, in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 594, in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".ag-row .ag-selection-checkbox input").first
+
+[PASS] /model: data endpoint has no HTTP errors: []
+[PASS] /model: grid shows db rows (db has 50): 23
+[PASS] /model-auth: data endpoint has no HTTP errors: []
+[PASS] /model-auth: grid shows db rows (db has 50): 22
+[NOTE] db rows at end: 50
+{
+ "checks_failed": [
+  "ssrm: logged-out initial data request made",
+  "ssrm: logged out shows no rows",
+  "ssrm flow",
+  "infinite: text filter matches db",
+  "infinite: add dialog inserts row",
+  "infinite: add dialog closes after submit",
+  "infinite workaround flow"
+ ],
+ "n_checks": 16,
+ "console_total": 98,
+ "console_benign": 90,
+ "console_errors": 2,
+ "console_warnings": 1,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}
+  console_errors: {"t": 47.83, "ctx": "workaround", "type": "error", "text": "In HTML, %s cannot be a child of <%s>.%s\nThis will cause a hydration error.%s <tr> table  Add a <tbody>, <thead> or <tfoot> to your code to match the DOM tree generated by the browser. \n\n  ...\n    <Table.Root>\n      <div ref={null} className=\"rt-TableRo...\" style={undefined}>\n        <ScrollArea>\n          <ScrollArea type={undef
+  console_errors: {"t": 47.83, "ctx": "workaround", "type": "error", "text": "<%s> cannot contain a nested %s.\nSee this log for the ancestor stack trace. table <tr>", "url": "http://localhost:3107/model", "location": {"url": "http://localhost:3107/@vite/client", "line": 356, "column": 3, "lineNumber": 356, "columnNumber": 3}, "benign": false}
+  console_warnings: {"t": 92.37, "ctx": "auth", "type": "warning", "text": "AG Grid: warning #129 headerCheckbox is only available if using `clientSide` or `serverSide` `rowModelType`, you are using `infinite`. \nSee https://www.ag-grid.com/react-data-grid/errors/129?_version_=36.2.0&feature=headerCheckbox&rowModel=infinite", "url": "http://localhost:3107/model-auth", "location": {"url": "http://localhost:3107/@vite/

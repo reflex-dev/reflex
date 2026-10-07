@@ -1,0 +1,127 @@
+{
+ "same_token": true,
+ "values": {
+  "ls-plain": "ls-default",
+  "ls-sync": "sync-default",
+  "ss-val": "ss-default",
+  "ck-val": "ck-default",
+  "sub-ls": "sub-ls-default",
+  "sub-ck": "sub-ck-default",
+  "clean-ls": "clean-default"
+ },
+ "trace": "index_load#2 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False",
+ "checks": {
+  "ls-plain": true,
+  "ls-sync": true,
+  "ss-val": true,
+  "ck-val": true,
+  "sub-ls": true,
+  "sub-ck": true
+ },
+ "on_load_saw_defaults": true,
+ "after_remove_ls": "ls-default",
+ "load_count_before_after_remove": [
+  "2",
+  "3"
+ ],
+ "frames": [
+  {
+   "t": 1.896,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.044,
+   "dir": "out",
+   "kind": "event",
+   "len": 156,
+   "name": "reflex___state____state.hydapp___hydapp____state.set_values",
+   "payload_keys": [
+    "tag"
+   ]
+  },
+  {
+   "t": 2.049,
+   "dir": "in",
+   "kind": "event",
+   "len": 193,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "ck_val_rx_state_",
+     "ls_plain_rx_state_",
+     "ls_sync_rx_state_",
+     "ss_val_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.091,
+   "dir": "out",
+   "kind": "event",
+   "len": 364,
+   "name": "reflex___state____state.hydrate_and_load",
+   "payload_keys": [
+    "vars"
+   ]
+  },
+  {
+   "t": 2.101,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 4556
+  },
+  {
+   "t": 2.102,
+   "dir": "in",
+   "kind": "event",
+   "len": 89,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.102,
+   "dir": "in",
+   "kind": "event",
+   "len": 657,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "load_count_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.102,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  }
+ ],
+ "status": "pass",
+ "duration_s": 3.2,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

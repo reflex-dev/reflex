@@ -1,0 +1,201 @@
+{
+ "tag": "fd-up-fresh",
+ "url": "http://localhost:3140",
+ "args": {
+  "url": "http://localhost:3140",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/fd",
+  "tag": "fd-up-fresh",
+  "profile": "-",
+  "wait": 6.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "pass",
+   "detail": "[]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "system",
+   "last_compiled_theme": "system"
+  },
+  "ss": {
+   "token": "e0fda7aa-4bc4-4c39-d18a-12d0bd98966b"
+  },
+  "cookie": ""
+ },
+ "body_text": "Form Designer\nCreate or Edit Forms\nREADME.md\nform-designer\n\nThis is the Form Designer sample app for Reflex.\n\nIt demonstrates how to make dynamic forms, take responses from end users, and display responses to the owner of the form.\n\nUsage\n\nTo get started, login to the app. If you have not already registered, then register a new account with username and password.\n\nThe first user created on an instance will automatically be the admin user and has access to view and edit forms created by all other users.\n\nCreate a Form\n\nClick \"Create or Edit Forms\" to enter the form designer.\n\nEither select an existing form from the drop down, or create a new form by entering a name in the \"Form Name\" box. Press enter, or wait a second for the form to be created.\n\nWhen a form is selected, the interface will show the current fields associated with the form. Click the prompt of an existing field to edit it. Click the \"X\" button to delete the field.\n\nBelow the existing fields, click \"Add Field\" to add a new field to the form.\n\nThe Edit Field dialog allows you to enter a name for the field and a longer prompt with instructions for how to answer the field. You can also select the type of field, and add or remove options for enumerated types, like select, radio, or checkbox.\n\nFill out a Form\n\nClick the \"Preview\" button next to the form name box to see the form as an end user would see it.\n\nYou can share the link to this preview to allow other users to answer the form.\n\nView Responses\n\nClick the \"Resp",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {},
+  "ss": {},
+  "cookie": "",
+  "t": 36,
+  "path": "/"
+ },
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 509,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "e0fda7aa-4bc4-4c39-d18a-12d0bd98966b",
+   "prev": null,
+   "t": 772,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "t": 774,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "t": 774,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 509,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "e0fda7aa-4bc4-4c39-d18a-12d0bd98966b",
+   "prev": null,
+   "t": 772,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "t": 774,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "t": 774,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 6.59,
+   "dir": "recv",
+   "data": "0{\"sid\":\"niIv-2hEheyQ-mdEAAAZ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 6.59,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"7f02077446d480d6\",\"0b97b0aeacae1d37\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "t": 6.59,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"x8KzoMDd4OBmLuYpAAAa\"}"
+  },
+  {
+   "t": 6.59,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8140\",\"origin\":\"http://localhost:3140\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"XRNCLXbalYkJMCXu/a0vPg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8140\",\"origin\":\"http://localhost:3140\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"XRNCLXbalYkJMCXu/a0vPg==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3140\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3140/index\",\"full_raw_path\":\"http://localhost:3140/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"e0fda7aa-4bc4-4c39-d18a-12d0bd98966b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"x8KzoMDd4OBmLuYpAAAa\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3140\",\"origin\":\"http://localhost:3140\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3140/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"id\":-1,\"enabled\":false},\"is_authenticated_rx_state_\":false},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":false}}}]"
+  },
+  {
+   "t": 6.59,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"id\":-1,\"enabled\":false},\"is_authenticated_rx_state_\":false},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":false}}}]"
+  },
+  {
+   "t": 7.07,
+   "dir": "sent",
+   "data": "41/_event,"
+  }
+ ],
+ "console": [
+  {
+   "t": 0.18,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 0.52,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 6.59,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 6.59,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "t": 7.07,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "last_compiled_theme",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 4,
+  "n_changing": 4,
+  "n_changing_app": 0,
+  "n_idempotent": 0,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": []
+ }
+}

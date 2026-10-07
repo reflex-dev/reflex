@@ -1,0 +1,26 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=reverify_core-ent versions=0.10.0a2 0.9.7a4
+[NOTE] guard: 0.10.0a2 0.9.7a4
+[NOTE] db rows at start: 148
+[PASS] infinite(workaround): data requests return rows: {'reqs': ['http://localhost:3108/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2'], 'rows': 23}
+[PASS] infinite: sort asc by age matches db: {'first': [18, 18, 19, 20, 20, 20, 21, 21], 'db_min': 18}
+[FAIL] infinite: text filter matches db: {'sub': 'Sand', 'shown': 23, 'db': 1}
+[PASS] infinite: numeric cell edit updates sqlite: {'id': '3', 'db_age': 77}
+[FAIL] infinite: add dialog inserts row: {'before': 148, 'after': 148, 'row': None}
+[FAIL] infinite: add dialog closes after submit: 1
+[PASS] infinite: delete_selected removes the 2 selected rows from sqlite: {'before': 148, 'after': 146, 'ids': ['3', '4'], 'gone': ['3', '4']}
+[NOTE] db rows at end: 146
+{
+ "checks_failed": [
+  "infinite: text filter matches db",
+  "infinite: add dialog inserts row",
+  "infinite: add dialog closes after submit"
+ ],
+ "n_checks": 7,
+ "console_total": 8,
+ "console_benign": 7,
+ "console_errors": 0,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}

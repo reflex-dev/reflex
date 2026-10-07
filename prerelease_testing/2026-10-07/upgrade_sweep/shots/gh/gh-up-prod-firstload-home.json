@@ -1,0 +1,196 @@
+{
+ "tag": "gh-up-prod-firstload-home",
+ "url": "http://localhost:3144",
+ "args": {
+  "url": "http://localhost:3144",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/gh",
+  "tag": "gh-up-prod-firstload-home",
+  "profile": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/profiles/gh",
+  "wait": 6.0,
+  "expect_text": [
+   "alice"
+  ],
+  "keep": [],
+  "forbid_writes": false,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "text visible: 'alice'",
+   "status": "pass",
+   "detail": "Github Stats | aliceX | carolX | Get Stats | alice | carol | 0 | 50 | 100 | 150 | 200 | Built with Reflex | 0"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": "[\"alice\", \"carol\"]",
+   "theme": "system",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": "[\"alice\", 1791355358.2775524]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}, {\"name\": \"Carol\", \"login\": \"carol\", \"contributionsCollection\": {\"totalCommitContributions\": 319, \"totalPullRequestReviewContributions\": 20}, \"repositoriesContributedTo\": 17, \"pullRequests\": 245, \"mergedPullRequests\": 91, \"openIssues\": 23, \"closedIssues\": 77, \"followers\": 302, \"repositoryDiscussions\": 16, \"repositoryDiscussionComments\": 6}]"
+  },
+  "ss": {
+   "token": "0f50af31-a4cc-47ff-9f8d-b7b15c6d01ac"
+  },
+  "cookie": ""
+ },
+ "body_text": "Github Stats\naliceX\ncarolX\nGet Stats\nalice\ncarol\n0\n50\n100\n150\n200\nBuilt with Reflex\n0",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": "[\"alice\", \"carol\"]",
+   "theme": "system",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": "[\"alice\", 1791355358.2775524]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}, {\"name\": \"Carol\", \"login\": \"carol\", \"contributionsCollection\": {\"totalCommitContributions\": 319, \"totalPullRequestReviewContributions\": 20}, \"repositoriesContributedTo\": 17, \"pullRequests\": 245, \"mergedPullRequests\": 91, \"openIssues\": 23, \"closedIssues\": 77, \"followers\": 302, \"repositoryDiscussions\": 16, \"repositoryDiscussionComments\": 6}]"
+  },
+  "ss": {},
+  "cookie": "",
+  "t": 18,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {
+  "setItem reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": 1
+ },
+ "writes_total": 2,
+ "writes": [
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "0f50af31-a4cc-47ff-9f8d-b7b15c6d01ac",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 197,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}, {\"name\": \"Carol\", \"login\": \"carol\", \"contributionsCollec",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}, {\"name\": \"Carol\", \"login\": \"carol\", \"contributionsCollec",
+   "same": true,
+   "vlen": 685,
+   "t": 208,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "0f50af31-a4cc-47ff-9f8d-b7b15c6d01ac",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 197,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "value": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}, {\"name\": \"Carol\", \"login\": \"carol\", \"contributionsCollec",
+   "prev": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}, {\"name\": \"Carol\", \"login\": \"carol\", \"contributionsCollec",
+   "same": true,
+   "vlen": 685,
+   "t": 208,
+   "path": "/"
+  }
+ ],
+ "ws": [
+  {
+   "t": 6.15,
+   "dir": "recv",
+   "data": "0{\"sid\":\"o3KJIuVc9JhIxrLsAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 6.15,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_\":\"[\\\"alice\\\", 1791355358.2775524]\",\"reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_\":\"[\\\"alice\\\", \\\"carol\\\"]\",\"reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}, {\\\"name\\\": \\\"Carol\\\", \\\"login\\\": \\\"carol\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 319, \\\"totalPullRequestReviewContributions\\\": 20}, \\\"repositoriesContributedTo\\\": 17, \\\"pullRequests\\\": 245, \\\"mergedPullRequests\\\": 91, \\\"openIssues\\\": 23, \\\"closedIssues\\\": 77, \\\"followers\\\": 302, \\\"repositoryDiscussions\\\": 16, \\\"repositoryDiscussionComments\\\": 6}]\"},\"hashes\":[\"05e44e7be8d4d91b\",\"c28addc779b6a4ce\",\"179b3745bec6ff80\",\"8ba9045da9a01deb\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "t": 6.16,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"ZpjBz-OAo5h0nESOAAAL\"}"
+  },
+  {
+   "t": 6.16,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3144\",\"origin\":\"http://localhost:3144\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"z/xcg/WvPNKjlBv7PCQ22A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3144\",\"origin\":\"http://localhost:3144\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"z/xcg/WvPNKjlBv7PCQ22A==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3144\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3144/index\",\"full_raw_path\":\"http://localhost:3144/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"0f50af31-a4cc-47ff-9f8d-b7b15c6d01ac\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZpjBz-OAo5h0nESOAAAL\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3144\",\"origin\":\"http://localhost:3144\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3144/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.github_stats___widget____widget_state\":{\"last_fetch_rx_state_\":\"[\\\"alice\\\", 1791355358.2775524]\",\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\"},\"reflex___state____state.github_stats___github_stats____state\":{\"selected_users_json_rx_state_\":\"[\\\"alice\\\", \\\"carol\\\"]\",\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}, {\\\"name\\\": \\\"Carol\\\", \\\"login\\\": \\\"carol\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 319, \\\"totalPullRequestReviewContributions\\\": 20}, \\\"repositori"
+  },
+  {
+   "t": 6.16,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 6.16,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"user_stats_rx_state_\":[{\"name\":\"Alice\",\"login\":\"alice\",\"contributionsCollection\":{\"totalCommitContributions\":491,\"totalPullRequestReviewContributions\":54},\"repositoriesContributedTo\":26,\"pullRequests\":252,\"mergedPullRequests\":191,\"openIssues\":38,\"closedIssues\":25,\"followers\":185,\"repositoryDiscussions\":7,\"repositoryDiscussionComments\":19},{\"name\":\"Carol\",\"login\":\"carol\",\"contributionsCollection\":{\"totalCommitContributions\":319,\"totalPullRequestReviewContributions\":20},\"repositoriesContributedTo\":17,\"pullRequests\":245,\"mergedPullRequests\":91,\"openIssues\":23,\"closedIssues\":77,\"followers\":302,\"repositoryDiscussions\":16,\"repositoryDiscussionComments\":6}],\"data_pretty_rx_state_\":\"[\\n  {\\n    \\\"name\\\": \\\"Alice\\\",\\n    \\\"login\\\": \\\"alice\\\",\\n    \\\"contributionsCollection\\\": {\\n      \\\"totalCommitContributions\\\": 491,\\n      \\\"totalPullRequestReviewContributions\\\": 54\\n    },\\n    \\\"repositoriesContributedTo\\\": 26,\\n    \\\"pullRequests\\\": 252,\\n    \\\"mergedPullRequests\\\": 191,\\n    \\\"openIssues\\\": 38,\\n    \\\"closedIssues\\\": 25,\\n    \\\"followers\\\": 185,\\n    \\\"repositoryDiscussions\\\": 7,\\n    \\\"repositoryDiscussionComments\\\": 19\\n  },\\n  {\\n    \\\"name\\\": \\\"Carol\\\",\\n    \\\"login\\\": \\\"carol\\\",\\n    \\\"contributionsCollection\\\": {\\n      \\\"totalCommitContributions\\\": 319,\\n      \\\"totalPullRequestReviewContributions\\\": 20\\n    },\\n    \\\"repositoriesContributedTo\\\": 17,\\n    \\\"pullRequests\\\": 245,\\n    \\\"mergedPullRequests\\\": 91,\\n    \\\"openIssues\\\": 23,\\n    \\\"closedIssues\\\": 77,\\n    \\\"followers\\\": 302,\\n    \\\"repositoryDiscussions\\\": 16,\\n    \\\"repositoryDiscussionComments\\\": 6\\n  }\\n]\",\"selected_users_rx_state_\":[\"alice\",\"carol\"]}}}]"
+  },
+  {
+   "t": 6.16,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 6.16,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
+  },
+  {
+   "t": 6.16,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}, {\\\"name\\\": \\\"Carol\\\", \\\"login\\\": \\\"carol\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 319, \\\"totalPullRequestReviewContributions\\\": 20}, \\\"repositoriesContributedTo\\\": 17, \\\"pullRequests\\\": 245, \\\"mergedPullRequests\\\": 91, \\\"openIssues\\\": 23, \\\"closedIssues\\\": 77, \\\"followers\\\": 302, \\\"repositoryDiscussions\\\": 16, \\\"repositoryDiscussionComments\\\": 6}]\"}}}]"
+  }
+ ],
+ "console": [],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [
+   "last_compiled_theme",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_",
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_",
+   "theme"
+  ],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "last_compiled_theme",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_",
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 2,
+  "n_changing": 1,
+  "n_changing_app": 0,
+  "n_idempotent": 1,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {
+   "setItem reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": 1
+  }
+ }
+}
