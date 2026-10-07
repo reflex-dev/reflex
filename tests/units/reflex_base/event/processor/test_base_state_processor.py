@@ -25,6 +25,7 @@ from reflex import event
 from reflex.app import App
 from reflex.compiler.utils import compile_state
 from reflex.event import Event, EventSpec
+from reflex.istate.delta import Delta
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -36,6 +37,7 @@ from reflex.state import (
     OnLoadInternalState,
     State,
     StateUpdate,
+    _override_base_method,
     state_snapshot_hashes,
 )
 from reflex.utils import types as reflex_types
@@ -1599,12 +1601,15 @@ async def test_hydrate_and_load_single_lock_cycle(
         )
         await future.wait_all()
 
-    # Snapshot (not hydrated, browser cookie applied), the on_load chain, hydrated.
+    # Snapshot (not hydrated, browser cookie applied), the browser cookie
+    # through get_delta (as update_vars_internal sends it), the on_load chain,
+    # hydrated.
     snapshot = emitted_deltas[0][1]
     assert snapshot[state_name][hydrated_key] is False
     assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "chocolate"
     assert snapshot[CookieState.get_full_name()]["loads" + FIELD_MARKER] == 0
     assert [d for _, d in emitted_deltas[1:]] == [
+        {CookieState.get_full_name(): {"flavor" + FIELD_MARKER: "chocolate"}},
         {state_name: {hydrated_key: False}},
         {CookieState.get_full_name(): {"loads" + FIELD_MARKER: 1}},
         {state_name: {hydrated_key: True}},
@@ -1898,6 +1903,90 @@ async def test_hydrate_delivers_computed_var_mutations(
         assert stored.value == ""
         assert stored.status == "cleared"
         assert stored.loaded_value == ("" if with_load else "initial")
+
+
+@pytest.mark.parametrize("with_load", [True, False])
+@pytest.mark.parametrize("with_hashes", [True, False])
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_hydrate_passes_client_storage_through_get_delta(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    with_load: bool,
+    with_hashes: bool,
+):
+    """A get_delta override sees the browser's client storage at boot, once.
+
+    Overrides reconcile client storage there (reflex-enterprise checks its
+    OIDC token hash), so the boot values must reach them as
+    update_vars_internal's did, in a delta the browser may persist, without
+    writing back the defaults of values the browser does not hold.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+        with_load: Whether the page has an on-load handler.
+        with_hashes: Whether this is the first boot or a reconnect.
+    """
+    key = "token_hash" + FIELD_MARKER
+    seen: list[str] = []
+
+    class ReconcileState(State):
+        token_hash: str = rx.LocalStorage("")
+        unset: str = rx.Cookie("unset-default")
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            """Record the token hash passing through and replace a stale one.
+
+            Returns:
+                The delta, with a stale token hash reconciled.
+            """
+            delta = super().get_delta()
+            subdelta = delta.get(self.get_full_name(), {})
+            if (value := subdelta.get(key)) is not None:
+                seen.append(value)
+                if value == "stale":
+                    subdelta[key] = "fresh"
+            return delta
+
+        @event
+        def load(self):
+            """Provide an on-load event."""
+
+    wired_app.add_page(
+        lambda: rx.text(ReconcileState.token_hash, ReconcileState.unset),
+        route="/",
+        on_load=ReconcileState.load if with_load else None,
+    )
+    wired_app._compile_page("index")
+    name = ReconcileState.get_full_name()
+    payload: dict[str, Any] = {"vars": {f"{name}.{key}": "stale"}}
+    if with_hashes:
+        payload["hashes"] = state_snapshot_hashes(compile_state(State))
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, payload))
+        ).wait_all()
+
+    assert seen == ["stale"]
+    hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+    assert emitted_deltas[0][1][State.get_full_name()][hydrated_key] is False
+    persisted = [
+        delta[name]
+        for _, delta in emitted_deltas[1:]
+        if name in delta
+        and delta.get(State.get_full_name(), {}).get(hydrated_key) is not False
+    ]
+    assert any(subdelta.get(key) == "fresh" for subdelta in persisted)
+    assert not any("unset" + FIELD_MARKER in subdelta for subdelta in persisted)
 
 
 @pytest.mark.parametrize(

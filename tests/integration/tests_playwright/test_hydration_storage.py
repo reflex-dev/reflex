@@ -13,6 +13,7 @@ def HydrationStorageApp():
     import uuid
 
     import reflex as rx
+    from reflex.constants.state import FIELD_MARKER
 
     class StorageState(rx.State):
         local: str = rx.LocalStorage("local-default", name="hydrate-local")
@@ -39,6 +40,22 @@ def HydrationStorageApp():
         def load(self):
             """Provide an on-load event for the second page."""
 
+    class ReconcileState(rx.State):
+        token_hash: str = rx.LocalStorage("", name="hydrate-token-hash")
+
+        @rx.state._override_base_method
+        def get_delta(self):
+            """Replace a stale token hash, as auth plugins reconcile theirs.
+
+            Returns:
+                The delta, with a stale token hash replaced.
+            """
+            delta = super().get_delta()
+            subdelta = delta.get(self.get_full_name(), {})
+            if subdelta.get("token_hash" + FIELD_MARKER) == "stale":
+                subdelta["token_hash" + FIELD_MARKER] = "fresh"
+            return delta
+
     def index():
         """Display hydration and normalized storage values.
 
@@ -48,6 +65,7 @@ def HydrationStorageApp():
         return rx.box(
             rx.text(StorageState.checked, id="checked"),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
+            rx.text(ReconcileState.token_hash, id="token-hash"),
         )
 
     app = rx.App()
@@ -112,3 +130,26 @@ def test_hydration_storage(hydration_storage_app: AppHarness, page: Page, route:
     page.reload()
     expect(page.locator("#hydrated")).to_have_text("true")
     expect(page.locator("#checked")).to_have_text("||")
+
+
+@pytest.mark.parametrize("route", ["", "loaded"])
+def test_hydration_reconciles_storage_in_get_delta(
+    hydration_storage_app: AppHarness, page: Page, route: str
+):
+    """A get_delta override reconciles the client storage a page boots with.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+        route: The page with or without on-load handlers.
+    """
+    assert hydration_storage_app.frontend_url is not None
+    page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/{route}")
+    expect(page.locator("#hydrated")).to_have_text("true")
+    assert page.evaluate("localStorage.getItem('hydrate-token-hash')") is None
+
+    page.evaluate("localStorage.setItem('hydrate-token-hash', 'stale')")
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#token-hash")).to_have_text("fresh")
+    page.wait_for_function("localStorage.getItem('hydrate-token-hash') === 'fresh'")
