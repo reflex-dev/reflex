@@ -17,7 +17,7 @@ import weakref
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import Any, ClassVar, Generic, Literal, Self, TypeVar
+from typing import Any, ClassVar, Generic, Literal, Protocol, Self, TypeVar
 
 import pytest
 from reflex_base import constants
@@ -183,15 +183,33 @@ def test_class_assignment_keeps_accepted_callables():
 
 def test_class_assignment_accepts_type_parameter_defaults():
     """A field annotated with a type parameter checks a default against its bound."""
+
+    class Reader(Protocol):
+        def read(self) -> str: ...
+
+    class FileReader:
+        def read(self) -> str:
+            """Read a fixed value.
+
+            Returns:
+                The value.
+            """
+            return "read"
+
     E = TypeVar("E")
     N = TypeVar("N", bound=int)
+    R = TypeVar("R", bound=Reader)
 
-    class GenericState(BaseState, Generic[E, N]):
+    class GenericState(BaseState, Generic[E, N, R]):
         _value: E = None  # pyright: ignore[reportAssignmentType]
         _count: N = 0  # pyright: ignore[reportAssignmentType]
+        _reader: R | None = None
 
-    class IntState(GenericState[int, int]):
+    class IntState(GenericState[int, int, FileReader]):
         pass
+
+    GenericState._reader = FileReader()  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
+    assert IntState()._reader.read() == "read"  # pyright: ignore[reportOptionalMemberAccess]
 
     IntState._value = 5  # pyright: ignore[reportAttributeAccessIssue]
     assert IntState()._value == 5

@@ -1022,6 +1022,9 @@ def _isinstance(
                         for bound in bounds
                     )
                 )
+            if typing_extensions.is_protocol(cls):
+                # A protocol without @runtime_checkable cannot be checked.
+                return True
             raise
 
     args = _get_args_cached(cls)
@@ -1131,6 +1134,9 @@ def _isinstance(
                 treat_var_as_type=treat_var_as_type,
                 treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
             )
+        if typing_extensions.is_protocol(origin):
+            # A subscripted protocol without @runtime_checkable cannot be checked.
+            return True
         raise
 
 
