@@ -36,6 +36,9 @@ the new train fixed (F-001 enterprise half, F-002, F-003, F-004, F-005, F-006) a
 - **N-004** (MEDIUM, regression vs a1, CONFIRMED on 10-07) — state pickled by a2 is discarded by 0.9.12 and a1
   workers: a rolling deploy or a rollback silently resets every session. Regression arm. Fix: tolerate the
   schema-version mismatch (keep the old loader for one version) or document the rollback constraint loudly.
+  **Resolved 10-07 (maintainer decision):** declared a breaking change instead of a format fix: 0.9 and 0.10 instances
+  cannot share a Redis or disk state store; 0.10 keeps loading 0.9 state. PR #7494 re-scoped to the `breaking` fragment
+  plus a Self Hosting note (upgrade-guide section in #7496); issue #7470 closed as not planned.
 - **N-005** (MEDIUM, side effect of #7461, CONFIRMED on 10-07) — `cls.value = initial` on a LocalStorage/Cookie
   var (the documented ComponentState pattern) silently drops browser persistence. Regression arm for the
   documented pattern. Fix: preserve the `ClientStorageBase` wrapper when a plain default is assigned, or raise.
@@ -121,6 +124,7 @@ the new train fixed (F-001 enterprise half, F-002, F-003, F-004, F-005, F-006) a
    should keep or drop persistence.
 3. **Rollback compatibility (N-004).** Whether 0.10.0 must read 0.9.12-pickled state (it does) *and* 0.9.12 must
    tolerate 0.10-pickled state (it does not). If not, document that a rollback resets sessions.
+   **Decided:** documented as a breaking change (#7494, #7496); no forward compatibility.
 4. **N-033 severity** for the enterprise release: pre-existing, but it hits every multi-worker prod deployment.
 
 ## Suggested sequencing
@@ -142,7 +146,7 @@ Fix-before-release items, assigned to @masenf, each with a fix branch in progres
 |---|---|---|
 | N-025 | [reflex#7468](https://github.com/reflex-dev/reflex/issues/7468) | `claude/n025-reflex-before-render` — PR #7492 **closed by the maintainer** (16:40 UTC): fixed on the enterprise side instead, [reflex-enterprise#273](https://github.com/reflex-dev/reflex-enterprise/pull/273), because moving `window.__reflex` out of the useEffect would negate that change's benefits |
 | N-032 | [reflex#7469](https://github.com/reflex-dev/reflex/issues/7469) | `claude/n032-boot-reconcile` |
-| N-004 | [reflex#7470](https://github.com/reflex-dev/reflex/issues/7470) | `claude/n004-pickle-compat` |
+| N-004 | [reflex#7470](https://github.com/reflex-dev/reflex/issues/7470) (closed, not planned) | `claude/n004-pickle-compat` — PR #7494 **re-scoped by the maintainer** to a breaking-change declaration (fragment + Self Hosting note), pickle-format change reverted |
 | N-005 | [reflex#7471](https://github.com/reflex-dev/reflex/issues/7471) | `claude/class-assignment` |
 | N-039 | [reflex#7472](https://github.com/reflex-dev/reflex/issues/7472) | `claude/class-assignment` |
 | N-008 | [reflex#7473](https://github.com/reflex-dev/reflex/issues/7473) | `claude/class-assignment` |
@@ -154,8 +158,8 @@ All five fix branches are pushed and have pull requests (label `on deck`, milest
 module scope; compiler unit test + Playwright test; verifier fixtures: probe NO_REFLEX→HAS_REFLEX, enterprise grid 0→2 headers),
 `claude/n032-boot-reconcile` 33568493e (client-storage vars applied at boot are re-marked dirty after the guarded snapshot so the
 event delta goes through `get_delta`; verifier fixtures: `away` 0/3→3/3 dev and prod, stale-hash probes 3/3), `claude/n004-pickle-compat`
-378d403b7 (legacy default-including hash in the pickle tuple, new hash inside the pickled dict; rollback matrix kept on Redis and disk;
-new issue #7491 for the Python-version hash dependence), `claude/class-assignment` 5cfb3d20f + 347d0456c + b57fd27fc (patch/restore
+c6e7cd9cc (re-scoped 10-07: the 378d403b7 pickle-compat change is reverted, `reflex/state.py` matches main; a `breaking` fragment and a
+Self Hosting note declare that 0.9 and 0.10 instances cannot share a state store; new issue #7491 for the Python-version hash dependence), `claude/class-assignment` 5cfb3d20f + 347d0456c + b57fd27fc (patch/restore
 round trip, storage wrapper kept on plain-default assignment, mangled-name guard), `claude/docs-0.10-migration` 8c725dcde + 12f54a690 +
 e46344d84 (`BackendVarFormatError` hint, #7462 fragment, "Upgrading to Reflex 0.10" guide). Each worktree ran ruff, pyright, the unit
 suite (the only failures are the 232 reflex_cli version-check tests that fail on unmodified main in a shallow checkout) and the relevant

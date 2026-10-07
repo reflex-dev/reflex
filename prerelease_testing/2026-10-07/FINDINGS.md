@@ -136,6 +136,8 @@ train) and 0.9.12.
   `dynamic-same`) still fails on a2 and a1 (KeyError / frontend `$$typeof` TypeError). Evidence: `reverify_db_install/logs/26-harness-*.log`.
 
 ### N-004: State saved by 0.10.0a2 is discarded by 0.9.12 and 0.10.0a1 workers (rolling deploy / rollback silently resets sessions) (MEDIUM)
+
+**Resolution (10-07, maintainer decision):** not fixed in the state format. Declared a breaking change in reflex#7494: instances of 0.9 and 0.10 cannot share a Redis or disk state store (0.10 still loads 0.9 state; 0.9 discards 0.10 state). Issue reflex#7470 closed as not planned; the 0.10 upgrade guide (reflex#7496) and the Self Hosting docs carry the note.
 - Cluster: `reverify_core` | Regression vs 0.10.0a1: yes (a1-saved state still loads on 0.9.12, as the #7312 changelog
   promises; a2's schema hash — "Defaults are no longer part of the saved-state schema", #7461 — breaks that) | Verifier: **CONFIRMED** (medium)
 - Verification: full 3×3 save/load matrix reproduced; loading an a2 pickle on 0.9.12/a1 with the hash check skipped works
