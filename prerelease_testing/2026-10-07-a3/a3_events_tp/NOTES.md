@@ -1,6 +1,6 @@
 # a3_events_tp — events suite + third-party sweep on reflex 0.10.0a3 (2026-10-07, a3 pass)
 
-Status: IN PROGRESS (updated after every sub-test; another session can continue from "Remaining").
+Status: DONE (2026-10-07 ~22:15 UTC). Final report: `../board/results/a3_events_tp.md`; inbox files `a3_events_tp-1.md` (N-024 docs), `a3_events_tp-2.md` (#7493 duplicate boot delta).
 
 Versions: under test `$SB/envs/a3` (reflex/reflex-base 0.10.0a3); comparisons `$SB/envs/alpha2` (0.10.0a2 + greenlet),
 `$SB/envs/stable` (0.9.12 + greenlet). Third-party venvs (own, from PyPI, identical except reflex/reflex-base, see
@@ -99,7 +99,53 @@ $TW/bin/stop_app.sh $TW/pids/tp_components-a3_events_tp-all.pid
 # N-039 downstream: cd $TW/pytest_downstream && EXPECT_VENV=<venv> $SB/envs/<venv>/bin/python -I -m pytest -p no:cacheprovider -p no:randomly -rA -q test_pkg_states.py
 ```
 
-## Remaining (in order)
-local-auth demo dev / prod / prod+redis (`drive_local_auth.py`) + AppHarness; magic-link dev + prod; google-auth dev +
-prod; fresh-profile storage check (#7493 risk: F-002) for the three auth demos; mini app (E-1..E-4 and on_load
-boot-delta cases) on a3 dev.
+### Auth demos (a3 vs a2 pass, `bin/cmp_checks.py` + `bin/compare_console.py`)
+| run | a3 | vs a2 |
+|---|---|---|
+| reflex-local-auth demo dev / prod / prod+redis (38 checks, `drive_local_auth.py`) | 36/38 each (the known `_validate_fields` subclass-override pair) | identical checks, 0 new console anomalies, 0 tracebacks; redis had 24 keys |
+| AppHarness `harness/test_local_auth_harness.py` (3464/8464) | 2 passed, 28 warnings (framework `PydanticDeprecatedSince20 __fields__`) | identical |
+| dev hot reload while logged in (`drive_hmr_auth.py`) | 7/7 after warming the routes | identical to a2 pass. ANOMALY (pre-existing): on a COLD dev server the driver's first registration posts an empty username ("Username cannot be empty" while the field shows the value): a3 2/2 and a2 (`a3_events_tp-a2`) 1/1 cold runs; screenshot `tp/out/local_auth/a3-dev-hmr-report-fail.jpg`; not investigated further |
+| reflex-magic-link-auth dev (11 checks) | 10/11 (known `/check-your-email` bounce) | identical |
+| magic-link prod with `ML_FORCE_DEV=1`, real prod (captcha) | 10/11, 3/3 | identical when each run gets a FRESH db. NOTE: a first prod run on the dev run's db failed 3 checks with "Invalid email, or too many attempts" = the package's per-IP OTP rate limit (5 per 30 min, `reflex_magic_link_auth/state.py:_generate_otp`) tripped by the preceding dev run: test-order artifact, not a regression |
+| reflex-google-auth dev / prod (13 checks) | 12/13 (driver's "key discoverable" check, same on a2); bogus token cleared by the tokeninfo computed var; does not unlock /protected | identical |
+| fresh profile storage (`drive_fresh_storage.py`; F-002 risk from #7493) | local-auth, magic-link, google-auth: only `theme`/`last_compiled_theme` + per-tab session `token`; no package storage key written | identical (F-002 stays fixed) |
+
+### #7493 hunt: boot deltas
+- `events/src/bootdup` + `driver/drive_bootdup.py` (core only, ports 3474/8477): per reload with a stored value, a3 sends
+  4 deltas (storage var + every dependent computed var twice, each dependent var evaluated twice), a2 3 deltas / once,
+  0.9.12 4 / twice (same as a3); fresh profile: nothing written to localStorage on any version -> inbox `a3_events_tp-2.md` (low).
+- `tp/drivers/drive_boot_frames.py <base> <out> local|magic <server_log>` (logged-in reload x3 + 5 tabs, prod):
+  local-auth a3 second boot delta re-sends `auth_token`/`is_authenticated`/`authenticated_user` (a2: only `is_hydrated`);
+  magic-link: token re-sent, 0 frames in tab 0 while 5 tabs open, 0 idle frames, all tabs logged in, same as a2.
+- mini app (E-1..E-4, on_load partial delta, bg raise, supersedes, emoji prerender, ComponentState private attrs):
+  a3 dev and prod identical to a2 (`out/mini_a3_{dev,prod}`, `tools/mini_summary.py`).
+
+### N-039 / pytest (Python only)
+`pytest_downstream/test_pkg_states.py`: a3 19/19; a2 12 failed + 6 errors; 0.9.12 11 pass / 8 fail (patches ignored).
+a2-pass probes on my venvs (`tp/logs/pytest-probes-a2pass.txt`): test_min a3 2 passed (a2 1F/1E); backend_var a3 5/6
+(the 1 failure = `Mock()` rejected/called as a factory for `_client: Client | None`, documented N-040; a2 5 failed);
+other_attrs a3 10/10 (a2 3 failed + 1 error from the leak).
+
+### More rerun commands
+```bash
+# bootdup (#7493): bash $W/bin/start.sh <a3|alpha2|stable> <dev|prod> <label> bootdup ; base 3474 (dev) / 8477 (prod)
+(cd $W/driver && env $D drive_bootdup.py http://localhost:3474 $W/out/bootdup/<label>.json $W/logs/<label>.log)
+# N-024: same with app n024doc and drive_n024.py BASE OUT_JSON SERVER_LOG
+# mini: bash $W/bin/start.sh a3 dev mini_a3_dev mini ; (cd $W/driver && env $D drive_mini.py http://localhost:3470 $W/out/mini_a3_dev mini_a3_dev)
+# auth demos (copy apps/<demo> to run/<x>/, then `TP_EXPECT_VENV=<venv> <venv>/bin/reflex db migrate` in it):
+#   local: bin/start_app.sh a3_events_tp-all <dir> 3463 8463 <log>; drivers: drive_local_auth.py <base> $TW/out/local_auth a3-dev <dir>/reflex.db
+#   prod:  REFLEX_API_URL=http://localhost:8467 bin/start_app.sh ... 8467 8467 <log> --env prod  (+ REFLEX_REDIS_URL=redis://localhost:8469 for redis)
+#   magic: drive_magic_link.py <base> $TW/out/magic_link a3-dev <server log>   (prod: ML_FORCE_DEV=1; real prod: drive_magic_prod_real.py <base> <json>) - FRESH db per run
+#   google: GOOGLE_CLIENT_ID=123456789012-dummyclientid.apps.googleusercontent.com, drive_google_auth.py <base> $TW/out/google_auth a3-dev
+#   fresh storage: drive_fresh_storage.py <base> <label> <json> / [/login]
+#   boot frames: drive_boot_frames.py <base> <json> local x | magic <server log>
+#   HMR: drive_hmr_auth.py http://localhost:3463 <dir>/local_auth_demo/local_auth_demo.py <log> <json>   (warm the routes first, see above)
+# AppHarness: cd $TW/harness && TP_VENV=a3_events_tp-all TP_FP=3464 TP_BP=8464 REFLEX_TELEMETRY_ENABLED=false NO_PROXY=localhost,127.0.0.1 $SB/envs/a3_events_tp-all/bin/python -m pytest -x -s -p no:cacheprovider test_local_auth_harness.py
+```
+
+## Not covered
+Real OAuth/Clerk logins and CDN-hosted assets (sandbox), reflex-chakra/community ag-grid (do not import anywhere),
+0.9.12 evapp columns re-run today (the a2-pass 0.9.12 reports were re-used; the a2 positive control was re-run),
+Redis for the evapp suite and the mini app (the E-2 Redis cases are unchanged code paths; local-auth and tp_patterns
+did run prod+redis), Python versions other than 3.12, root cause of the cold-dev registration race (identical on a2).
+All servers, proxies and redis were stopped (`lsof` on 3460-3479/8460-8479 clear at the end).

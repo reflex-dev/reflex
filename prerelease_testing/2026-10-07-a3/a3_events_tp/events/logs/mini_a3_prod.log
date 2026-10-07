@@ -1,0 +1,395 @@
+────────────────────────────── Initializing mini ───────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized mini. Install dependencies from `requirements.txt` with `uv
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+VENV_GUARD ok venv=a3 reflex=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/lib/python3.12/site-packages/reflex/__init__.py
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 22/21 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8475/
+MINI 1791409943.915 ping 1
+MINI 1791409943.960 a_returns_b
+MINI 1791409943.961 b_raises (raising)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 510, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 326, in process_event
+    events = fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_events_tp/events/run/mini_a3_prod/mini/mini.py", line 49, in b_raises
+    raise RuntimeError("B-intentional")
+RuntimeError: B-intentional
+
+
+MINI 1791409947.076 ping 2
+MINI 1791409948.446 ping 3
+MINI 1791409949.745 ping 1
+MINI 1791409949.795 a_yields_b
+MINI 1791409949.796 b_raises (raising)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 510, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 326, in process_event
+    events = fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_events_tp/events/run/mini_a3_prod/mini/mini.py", line 49, in b_raises
+    raise RuntimeError("B-intentional")
+RuntimeError: B-intentional
+
+
+MINI 1791409952.857 ping 2
+MINI 1791409954.179 ping 3
+MINI 1791409955.465 ping 1
+MINI 1791409955.508 direct_raises (raising)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 510, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 326, in process_event
+    events = fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_events_tp/events/run/mini_a3_prod/mini/mini.py", line 55, in 
+direct_raises
+    raise RuntimeError("direct-intentional")
+RuntimeError: direct-intentional
+
+
+MINI 1791409958.674 ping 2
+MINI 1791409959.975 ping 3
+MINI 1791409961.429 ping 1
+MINI 1791409961.473 async_raises (raising)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 510, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 322, in process_event
+    events = await fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_events_tp/events/run/mini_a3_prod/mini/mini.py", line 61, in 
+async_raises
+    raise RuntimeError("async-intentional")
+RuntimeError: async-intentional
+
+
+MINI 1791409964.539 ping 2
+MINI 1791409965.842 ping 3
+MINI 1791409967.229 ping 1
+MINI 1791409967.273 gen_yield_then_raise (raising)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 510, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 344, in process_event
+    next(events),
+    ^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_events_tp/events/run/mini_a3_prod/mini/mini.py", line 69, in 
+gen_yield_then_raise
+    raise RuntimeError("gen-intentional")
+RuntimeError: gen-intentional
+
+
+MINI 1791409970.424 ping 2
+MINI 1791409971.742 ping 3
+MINI 1791409973.228 ping 1
+MINI 1791409973.287 bg_raise_inside (raising inside async with self)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 528, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 322, in process_event
+    events = await fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_events_tp/events/run/mini_a3_prod/mini/mini.py", line 76, in 
+bg_raise_inside
+    raise RuntimeError("bg-inside-intentional")
+RuntimeError: bg-inside-intentional
+
+
+MINI 1791409976.358 ping 2
+MINI 1791409977.658 ping 3
+MINI 1791409979.055 ping 1
+MINI 1791409979.106 bg_raise_after (raising outside the lock)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 528, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 322, in process_event
+    events = await fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_events_tp/events/run/mini_a3_prod/mini/mini.py", line 83, in 
+bg_raise_after
+    raise RuntimeError("bg-after-intentional")
+RuntimeError: bg-after-intentional
+
+
+MINI 1791409982.172 ping 2
+MINI 1791409983.544 ping 3
+MINI 1791409984.460 onload_raises (raising)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 510, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 326, in process_event
+    events = fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_events_tp/events/run/mini_a3_prod/mini/mini.py", line 94, in 
+onload_raises
+    raise RuntimeError("onload-intentional")
+RuntimeError: onload-intentional
+
+
+MINI 1791409988.008 ping 1
+MINI 1791409990.360 ping 1
+MINI 1791409990.515 onload_raises (raising)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 510, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 326, in process_event
+    events = fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_events_tp/events/run/mini_a3_prod/mini/mini.py", line 94, in 
+onload_raises
+    raise RuntimeError("onload-intentional")
+RuntimeError: onload-intentional
+
+
+MINI 1791409993.659 ping 2
+MINI 1791409996.027 ping 1
+MINI 1791409996.155 work a sleeping
+MINI 1791409996.778 work b sleeping
+MINI 1791409999.780 work b done
+MINI 1791410001.957 ping 2
+MINI 1791410003.327 ping 1
+MINI 1791410003.376 work_split a sleeping
+MINI 1791410004.007 work_split b ran (no log change)
+MINI 1791410008.606 ping 2
+MINI 1791410009.841 ping 3
+Info: Reflex app stopped.

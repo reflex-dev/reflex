@@ -1,0 +1,16 @@
+VENV_GUARD venv=a3-ent reflex 0.10.0a3 reflex-base 0.10.0a3 reflex-enterprise 0.9.7a5
+START venv=a3-ent app=vea_a3e mode=dev mgr=redis workers=default instrument=1 fix=0
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+[INFO] Started worker-1
+VEA_FILTER t=1791410599.805 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791410600.506 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791410601.956 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', '')}
+VEA_FILTER t=1791410609.194 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791410609.232 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791410614.783 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791410615.424 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791410616.708 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', '')}
+VEA_FILTER t=1791410623.990 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791410624.028 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+[ERROR] Unexpected exit from worker-1

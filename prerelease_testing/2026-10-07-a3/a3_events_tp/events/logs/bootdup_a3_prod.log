@@ -1,0 +1,50 @@
+───────────────────────────── Initializing bootdup ─────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized bootdup. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+VENV_GUARD ok venv=a3 reflex=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/lib/python3.12/site-packages/reflex/__init__.py
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+BOOTDUP 1791410422.138 eval derived #1 tok=''
+BOOTDUP 1791410422.138 eval lookup #1 tok=''
+BOOTDUP 1791410422.138 eval sub_derived #1 tok=''
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 12/11 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8477/
+BOOTDUP 1791410426.074 eval derived #2 tok=''
+BOOTDUP 1791410426.074 eval lookup #2 tok=''
+BOOTDUP 1791410426.074 eval sub_derived #2 tok=''
+BOOTDUP 1791410431.324 eval derived #3 tok=''
+BOOTDUP 1791410431.324 eval lookup #3 tok=''
+BOOTDUP 1791410431.324 eval sub_derived #3 tok=''
+BOOTDUP 1791410431.328 eval on_load #1 tok=''
+BOOTDUP 1791410434.897 eval derived #4 tok='hello'
+BOOTDUP 1791410434.897 eval lookup #4 tok='hello'
+BOOTDUP 1791410434.897 eval sub_derived #4 tok='hello'
+BOOTDUP 1791410434.898 eval derived #5 tok='hello'
+BOOTDUP 1791410434.898 eval lookup #5 tok='hello'
+BOOTDUP 1791410434.898 eval sub_derived #5 tok='hello'
+BOOTDUP 1791410434.898 eval on_load #2 tok='hello'
+BOOTDUP 1791410438.498 eval derived #6 tok='hello'
+BOOTDUP 1791410438.498 eval lookup #6 tok='hello'
+BOOTDUP 1791410438.498 eval sub_derived #6 tok='hello'
+BOOTDUP 1791410438.499 eval derived #7 tok='hello'
+BOOTDUP 1791410438.499 eval lookup #7 tok='hello'
+BOOTDUP 1791410438.499 eval sub_derived #7 tok='hello'
+BOOTDUP 1791410438.499 eval on_load #3 tok='hello'
+BOOTDUP 1791410442.116 eval derived #8 tok='hello'
+BOOTDUP 1791410442.116 eval lookup #8 tok='hello'
+BOOTDUP 1791410442.116 eval sub_derived #8 tok='hello'
+BOOTDUP 1791410442.117 eval derived #9 tok='hello'
+BOOTDUP 1791410442.117 eval lookup #9 tok='hello'
+BOOTDUP 1791410442.117 eval sub_derived #9 tok='hello'
+BOOTDUP 1791410442.117 eval on_load #4 tok='hello'
+Info: Reflex app stopped.

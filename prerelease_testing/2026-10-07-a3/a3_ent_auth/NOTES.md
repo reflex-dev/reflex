@@ -230,3 +230,99 @@ favicon 404. Logs `logs/maps-a3e-{dev,prod}-redis.out`, `logs/maps-{dev,prod}-re
   so a3 + a4 is expected to behave like a3 + a5 for auth).
 - a4 matrix in prod; two-provider (`AUTH_MULTI=1`) variant; Redis restart mid-session; expiry scenarios other than
   `proactive`; bglive `loaded` variant on a3.
+
+## VERIFICATION
+
+Verifier `verify_ent_auth` (independent; own app + driver built from the FINDINGS/inbox text before opening the explorer's
+apps/drivers, then the explorer's fixtures re-run). Verdicts: **A3-10 CONFIRMED (and broadened), MEDIUM, pre-existing, enterprise**;
+**A3-09 NARROWED, LOW, enterprise** (a3 behaviour confirmed; the 0.9.12 "redirect" is the outcome of a race, not a guarantee).
+Artifacts: `verification/` (app `app/` = `vea`, `bin/`, `drivers/`, `drivers_explorer_copy/`, `out/*.json.gz`, `out_vdrv/*.json.gz`,
+`logs/*.trimmed.log`, `shots/*.jpg`). Inbox: `../board/findings-inbox/verify_ent_auth-{1,2}.md`.
+
+### Setup (verifier ports 3620/8620 dev, 8621 prod single port, redis 8629, mock IdP 8638)
+```sh
+SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad; W=$SB/apps/verify_ent_auth
+V=/home/user/reflex/prerelease_testing/2026-10-07-a3/a3_ent_auth/verification
+mkdir -p $W/{bin,drivers,scripts,logs,shots,run,out}; cp $V/bin/*.sh $W/bin/; cp $V/drivers/*.py $W/drivers/; cp $V/scripts/mock_oidc.py $W/scripts/
+mkdir -p $W/vea_src; cp -r $V/app/* $W/vea_src/; for t in a3e s912e5 a2e; do mkdir -p $W/vea_$t; cp -r $W/vea_src/* $W/vea_$t/; done
+$W/bin/infra.sh start          # redis :8629 + oidc-provider-mock (2026-10-07/ent_auth/scripts/mock_oidc.py, guard -> a3-ent, port 8638)
+redis-cli -p 8629 flushall; VEA_INSTRUMENT=1 $W/bin/start.sh a3-ent vea_a3e dev $W/logs/a3e-dev-redis.server.log
+#   MGR=disk|memory (no Redis), VEA_FIX=1 (causality probe), GRANIAN_WORKERS=1 ... prod (base http://localhost:8621)
+$W/bin/wait.sh http://localhost:3620/ http://localhost:8620 420
+cd $W/drivers; DRV="env NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/python"
+$DRV vea_drv.py storx|xsync|stale|away|live|stalenav http://localhost:3620 <label> <reps>   # -> ../out/<label>-<scen>.json
+$DRV summ.py ../out/<label>-{stale,away,live}.json; $DRV frames.py ../out/<label>-stale.json 0   # A3-09 summary / ws timeline
+grep VEA_FILTER $W/logs/<log>      # instrumented filter: which deltas were rewritten and whether AuthUserState was in the tree
+$W/bin/stop.sh; $W/bin/infra.sh stop
+```
+App `vea`: `rxe.Config(plugins=[AuthPlugin()])` (secure default). `Vault(rx.State)` (default-protected): `secret` (plain field),
+`draft = rx.LocalStorage(name="vea_draft", sync=True)`, `plain = rx.LocalStorage(name="vea_plain")`, `ck = rx.Cookie(name="vea_ck")`,
+`ss = rx.SessionStorage(name="vea_ss")`; protected events `fill` (writes `*-of-<sub>` everywhere) and `show_server` (echoes what the
+BACKEND holds for the four client-storage vars). Control `Pub(rx.State)`: `rxe.field(rx.LocalStorage(..., sync=True), auth=False)` +
+`rxe.field(rx.Cookie(...), auth=False)`, public `pfill`. Pages `/` (auth=False), `/vault`, `/vault2` (secure default), `rx.link` nav.
+`VEA_INSTRUMENT=1` wraps `enforcement.filter_protected_delta` (logs rewritten keys + whether `_get_state_from_cache(AuthUserState)`
+succeeds); `VEA_FIX=1` makes `AuthMiddleware.preprocess` call `resolve_userinfo(state)` before `update_vars_internal` (what the gate
+already does for `hydrate`/`hydrate_and_load`). Explorer fixtures re-run from copies: `vauth`, `vauthx` apps unchanged;
+`drivers_explorer_copy/vdrv.py` = `drivers/vdrv.py` with only the IdP port (8358 -> 8638) and OUT/SHOTS dirs changed; `storx.py`,
+`hunt.py` unchanged; `storx_table.py` reads `../out_vdrv`.
+
+### A3-10 — protected client storage erased (CONFIRMED, broadened)
+`storx` (sign in alice, `fill`, then client nav /vault -> /vault2 -> /vault -> /, reload, `show_server`) and `xsync` (two tabs of one
+browser on /vault, `fill` in tab A, no navigation):
+
+| build / manager | client nav: draft, plain, ck, ss in UI + browser | backend after nav (`show_server`) | backend after next reload | xsync: tab A's own `draft` after 4 s | `auth=False` controls |
+|---|---|---|---|---|---|
+| a3 + a5, dev, Redis | **"" (all four), every nav** (3/3 navs) | still `draft-of-alice` | **""** (re-seeded from the browser) | **""** (2/2) | kept, synced |
+| a3 + a5, dev, Redis, `VEA_FIX=1` | kept | kept | kept | kept; tab B receives it | kept |
+| a3 + a5, dev, disk (default) / memory | kept | kept | kept | kept; tab B receives it | kept |
+| a3 + a5, prod, Redis, 1 worker | **""** | still alice's | **""** | **""** (1/1) | kept |
+| a3 + a5, prod, Redis, 9 workers | **""** (2/2) | still alice's | **""** | **""** (1/1; rep 2 lost its login = N-033) | kept |
+| 0.9.12 + a5, dev, Redis | **""** | still alice's | **""** | **""** | kept |
+| a2 + a4, dev, Redis | **""** | still alice's | **""** | **""** | kept |
+| explorer `vauthx` + `storx.py`, a3 dev Redis | **""** on 3c/3d/4 (2/2 reps) | – | – | – | – |
+
+Wire evidence (a3 dev Redis, `out/a3e-dev-redis-storx.json.gz`): the nav's `update_vars_internal` carries
+`vault.draft="draft-of-alice"`, `ck="ck-of-alice"`, ...; the reply delta carries `vault: {draft:"", plain:"", ck:"", ss:""}` next to
+`pub: {pdraft:"pub-draft", pck:"pub-ck"}` unchanged; `applyClientStorageDelta` then writes "" to localStorage/cookie/sessionStorage.
+Server log: `VEA_FILTER ... state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_':
+('draft-of-alice', ''), ...}` once per navigation (and once per storage-event sync in `xsync`); never with disk/memory or `VEA_FIX=1`.
+xsync chain: A's `fill` writes localStorage -> storage event in B -> B sends `update_vars_internal{draft: "draft-of-alice"}` -> B's
+delta rewritten to "" -> B writes "" -> storage event in A -> A sends `update_vars_internal{draft: ""}` -> A's value gone (~1 ms).
+Answers to the brief: not specific to `sync=True` (plain LocalStorage, Cookie and SessionStorage are erased by navigation too;
+`sync=True` adds a second trigger that needs no navigation, only a second open tab); affects every protected client-storage var
+(default or explicit `auth=True`; a callable check also withholds when no user is resolved), never `auth=False` ones; the trigger is
+`update_vars_internal` (an exempt framework state, so `AuthMiddleware.preprocess` returns before `resolve_userinfo`; only
+`hydrate`/`hydrate_and_load` load `AuthUserState` on that branch); Redis only (partial state tree), dev and prod (1 and 9 workers);
+cause confirmed by instrumentation + the `VEA_FIX` counter-experiment. User data: the backend keeps the value until the tab's next
+boot, which re-seeds it from the now-empty browser storage -> lost on both sides. Same root cause as N-034 (enterprise#263,
+identity read only from the event's tree cache); here the fail-closed placeholder is PERSISTED by the browser, so it is data loss,
+not just a stale display. Workaround: `rxe.field(rx.LocalStorage(...), auth=False)`.
+
+### A3-09 — stale tab left blanked on the protected page (NARROWED)
+`stale` = tab1 signed in on /vault (after `fill`) goes to same-origin `/blank.html`, cookies cleared + token hash "" written, tab1
+returns to /vault; `away` = tab1 leaves, tab2 logs out via /logout + IdP end_session, tab1 Back; `live` = tab1 stays open while tab2
+logs out (P4 analogue). "stay" = tab ends on /vault with who="" and every protected value blanked.
+
+| build | my app `vea` stale | `vea` away | `vea` live | explorer `vauth` + `vdrv.py` P3 | `vauth` away | `vauth` P4 (live) |
+|---|---|---|---|---|---|---|
+| a3 + a5 dev Redis | stay 3/3 | stay 3/3 | stay 3/3 | stay 3/3 | stay 3/3 | stay 3/3 |
+| 0.9.12 + a5 dev Redis | **stay 3/3** | **stay 3/3** | stay 3/3 | /login 3/3 | /login 3/3 | stay 3/3 |
+| a3 + a5 prod Redis 1 worker | stay 3/3 | stay 2/3, /login 1/3 | – | (explorer: /login 1/3) | – | – |
+| 0.9.12 + a5 prod Redis 1 worker | stay 1/3, /login 2/3 | stay 2/3, /login 1/3 | – | – | – | – |
+
+In every "stay" case: a protected click redirects to /login in ~0.2 s (vea 9/9 a3, 9/9 0.9.12; vauth 6/6), a client-side nav to
+another protected page redirects to /login (`stalenav` 2/2), public events still work; nothing protected is rendered after the reset.
+Pre-existing on both versions: before the reset the boot snapshot renders the previous user's protected values (`secret-of-alice`;
+DOM mutation log): a3 dev 6–20 ms, 0.9.12 dev 30–51 ms, a3 prod 24–221 ms, 0.9.12 prod 19–178 ms.
+Mechanism (frames): 0.9.12 sends `hydrate`, `update_vars_internal`, `on_load_internal`; the hash mismatch in `update_vars_internal`'s
+delta triggers the `/_reflex/cookies/sync` POST; whether the POST lands before the `on_load_internal` page guard decides the outcome
+(vauth: POST first -> guard sees no tokens -> `/login`; vea: guard first -> allowed, then `reconcile_tokens_after_sync` ->
+`reset_auth` blanks the page). a3 chains `on_load_internal` server-side from `hydrate_and_load`, so the guard nearly always wins
+(prod 1/6 lost it). The live cross-tab logout (P4) never redirects on any version: `reset_auth` (enterprise `oidc/state.py:868`)
+resets state and syncs cookies but does not re-run the page guard. => a3 changes the odds of a pre-existing race; not a
+deterministic regression, no exposure; fix belongs in enterprise (redirect/re-guard after the reconcile reset).
+
+### Noise seen (benign / known)
+mock IdP page's pico.css `ERR_TUNNEL_CONNECTION_FAILED`, cookie-sync keepalive `ERR_ABORTED` on navigation, granian
+`Unexpected exit from worker-1` at shutdown, Radix implicit-enablement + `disable_plugins` string deprecation warnings (my config),
+prod 9-worker xsync rep 2 lost its login (N-033 cold-worker cookie sync). 0 server tracebacks in all 16 runs.

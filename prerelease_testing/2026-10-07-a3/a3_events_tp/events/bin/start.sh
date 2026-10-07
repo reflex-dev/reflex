@@ -15,6 +15,8 @@ case "$APP-$M" in
   mini-prod) FP=8475; BP=8475; PX=8476;;
   n024doc-dev) FP=3474; BP=8474; PX=8473;;
   n024doc-prod) FP=8477; BP=8477; PX=8478;;
+  bootdup-dev) FP=3474; BP=8474; PX=8473;;
+  bootdup-prod) FP=8477; BP=8477; PX=8478;;
 esac
 RUN=$W/run/$L
 mkdir -p "$RUN" "$W/logs" "$W/pids"

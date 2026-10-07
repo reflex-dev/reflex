@@ -11,3 +11,8 @@ for f in $W/logs/*.server.log; do
 done
 cp $W/shots/*.jpg $D/shots/ 2>/dev/null
 du -sh $D
+mkdir -p $D/drivers_explorer_copy $D/out_vdrv
+cp $W/drivers_explorer/*.py $D/drivers_explorer_copy/
+for f in $W/out_vdrv/*.json; do gzip -c $f > $D/out_vdrv/$(basename $f).gz; done
+cp $W/out/*.txt $W/out/*.out $D/out/ 2>/dev/null
+du -sh $D

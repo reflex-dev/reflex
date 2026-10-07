@@ -1,0 +1,12 @@
+== a3_events_tp-all
+   min/test_min.py: 2 passed in 0.24s
+   test_monkeypatch_backend_var.py: 1 failed, 5 passed in 0.34s
+   test_monkeypatch_other_attrs.py: 10 passed in 0.32s
+== a3_events_tp-a2
+   min/test_min.py: 1 failed, 1 passed, 1 error in 0.36s
+   test_monkeypatch_backend_var.py: 5 failed, 1 passed, 1 error in 0.60s
+   test_monkeypatch_other_attrs.py: 3 failed, 7 passed, 1 error in 0.37s
+== a3_events_tp-s912
+   min/test_min.py: 2 passed in 0.27s
+   test_monkeypatch_backend_var.py: 4 failed, 2 passed in 0.31s
+   test_monkeypatch_other_attrs.py: 3 failed, 7 passed in 0.29s

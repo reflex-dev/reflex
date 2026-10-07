@@ -1,0 +1,6 @@
+VENV_GUARD venv=a3-ent reflex 0.10.0a3 reflex-base 0.10.0a3 reflex-enterprise 0.9.7a5
+START venv=a3-ent app=vauth_a3e mode=dev mgr=redis workers=default instrument=0 fix=0
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+[INFO] Started worker-1
+[ERROR] Unexpected exit from worker-1

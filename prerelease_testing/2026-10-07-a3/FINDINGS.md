@@ -99,6 +99,8 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   (count declared on Parent) outside the lock: 0.9.12 14 → 114 with no error; a3 raises. A handler declared on the same state that
   writes the inherited var splits the same way. The guide covers only calling inherited handlers (N-024). The new behaviour is the
   safe one; the gap is documentation. 0.9.12 cause: `istate/proxy.py:322-329` skip-vars bypass + `state.py:1455`.
+- Independently reproduced by `a3_events_tp` (inbox 1, `events/src/n024doc` running the guide's own Parent/Child sample: 9/9 guide claims
+  hold in dev and prod; `direct_write:inherited`, `outside_call:write_inherited` raise on a2/a3 and write silently on 0.9.12).
 
 ### A3-07: `reflex run --json` ignores SIGINT sent to its pid only; the server keeps running (LOW, pre-existing on 0.9.12 and a2)
 - Item `a3_upgrade` (inbox 4). `kill -INT <pid>` of `reflex run --json`: still running after 60–210 s; plain `reflex run` exits in
@@ -142,7 +144,25 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   `/stamp`'s on_load), `scripts/run_stamp.sh a3 dev 4 3142 8142 /stamp 6`: 3–6 tabs → a3 41k–234k, a2 118k–137k, 0.9.12 40k–64k frames
   per 5 s; the control `/same` (same value from every tab) stays quiet. The volume crashed the Playwright driver in 4/12 runs.
 
+### A3-13: #7493 re-sends client-storage vars and their dependent computed vars in a second boot delta, so storage-dependent computed vars run twice per page load (LOW, performance; same as 0.9.12, a2 ran them once)
+- Item `a3_events_tp` (inbox 2). `events/src/bootdup` (core only): on each reload with a stored value a3 sends 4 deltas and evaluates every
+  storage-dependent computed var twice; a2 3 deltas / once; 0.9.12 = a3. Fresh profiles write nothing on any version. Real package:
+  reflex-local-auth's second boot delta re-sends `auth_token`, `is_authenticated` and `authenticated_user` — a cached computed var that
+  runs a DB query — so that query now runs twice per page load (as on 0.9.12). Consistent with `a3_hydration`'s "+24 % boot bytes".
+
 ## Cluster summaries
+
+### `a3_events_tp` — done (positive control on a2 reproduced first)
+Events suite: all 63 checks have the a2 status in dev and prod; 58/60 records byte-identical once timing keys are removed, console rows and
+server-log signatures identical; the pre-existing not-ok rows are unchanged (N-022, throttle without trailing call, UTF-16 string Vars,
+#7370 `is_background` read once). N-024 guide section accurate (9/9) but incomplete (A3-06, reproduced independently). Third-party sweep:
+`reflex[db]==0.10.0a3` + 22 packages resolve (greenlet via the extra, also via local-auth/magic-link's own `reflex[db]` requirement);
+20/22 import on every version (reflex-chakra and community reflex-ag-grid fail everywhere); tp_components dev 35 checks / prod 34 with
+the known failures only; reflex-local-auth 36/38 dev/prod/prod+redis + AppHarness 2/2; magic-link 10/11 (fresh DB per run); google-auth
+12/13; tp_patterns identical to a2 (F-003, F-004 still fixed); reflex-chat F-009 leak and reflex-clerk `set_clerk_session` TypeError
+unchanged; local-auth reload ×3 + 5 tabs and magic-link `sync=True` with 5 extra tabs: no storm. N-039 from the downstream side:
+patching the packages' own State vars round-trips 19/19 on a3 (a2: 12 failed + 6 errors). Fresh profiles write no package storage key.
+New: A3-13 (low, performance). Notes: `a3_events_tp/NOTES.md`.
 
 ### `a3_hydration` — done (positive controls catch a1's F-002/F-003 and 0.9.12's storm first)
 F-002 and F-003 stay fixed; the whole reverify_hydration suite (f1combo, mini, cvstore a–j, hydapp s1–s13, reconnect, Redis restart,

@@ -13,7 +13,7 @@ cp "$W/sync_dest.sh" "$D/"
 # screenshots -> jpg (quality 60, max width 1000)
 for png in $(find "$W/events/out" "$W/tp/out" -name '*.png' 2>/dev/null); do
   rel=${png#$W/}; jpg="$D/${rel%.png}.jpg"; mkdir -p "$(dirname "$jpg")"
-  [ -f "$jpg" ] || convert "$png" -resize '1000x>' -quality 60 "$jpg"
+  [ -f "$jpg" ] || convert "$png" -resize '640x>' -quality 40 "$jpg"
 done
 # server logs: keep, gzip those over 300 KB
 mkdir -p "$D/events/logs" "$D/tp/logs"

@@ -1,0 +1,70 @@
+VENV_GUARD venv=a3-ent reflex 0.10.0a3 reflex-base 0.10.0a3 reflex-enterprise 0.9.7a5
+START venv=a3-ent app=vea_a3e mode=dev mgr=redis workers=default instrument=1 fix=0
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+[INFO] Started worker-1
+VEA_FILTER t=1791409597.819 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409598.714 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409600.362 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409608.587 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409678.307 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409679.060 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409680.818 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409689.088 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409695.681 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409696.334 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409697.885 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409705.997 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409713.047 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409713.926 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409715.537 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409723.739 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409731.122 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409731.623 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409734.685 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409736.022 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409736.023 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409738.245 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409746.376 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409752.988 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409753.725 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409756.610 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409757.968 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409757.969 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409760.237 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409768.509 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409775.005 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409775.477 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409778.577 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409779.933 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409779.934 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409782.322 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409790.586 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409798.146 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409798.731 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409801.647 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409801.662 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', '')}
+VEA_FILTER t=1791409801.708 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409801.709 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409803.000 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409803.002 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409803.033 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409803.050 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409813.344 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409819.869 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409820.470 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409823.370 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409823.388 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', '')}
+VEA_FILTER t=1791409823.415 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409824.751 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409824.758 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409835.032 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409841.643 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409842.261 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409845.348 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409845.368 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', '')}
+VEA_FILTER t=1791409845.389 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ss_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', '')}
+VEA_FILTER t=1791409846.711 state=vea___vea____vault auth_user=loaded defer=False changed={'ck_rx_state_': ('', ''), 'draft_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409846.712 state=vea___vea____vault auth_user=loaded defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+VEA_FILTER t=1791409857.047 state=vea___vea____vault auth_user=NOT-LOADED(ValueError) defer=True changed={'draft_rx_state_': ('', ''), 'ck_rx_state_': ('', ''), 'plain_rx_state_': ('', ''), 'ss_rx_state_': ('', '')}
+[ERROR] Unexpected exit from worker-1

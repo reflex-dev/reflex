@@ -1,0 +1,9 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 33/32 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3463/
+Backend running at: http://0.0.0.0:8463
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 33/32 0:00:00
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 33/32 0:00:00
+[WARNING] Killing worker-1 after it refused to gracefully stop
+Info: Reflex app stopped.

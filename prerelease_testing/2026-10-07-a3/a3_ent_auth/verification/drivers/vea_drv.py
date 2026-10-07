@@ -28,11 +28,41 @@ FIELDS = ["title", "who", "secret", "draft", "plain", "ck", "ss", "echo", "click
 LS_KEYS = ["vea_draft", "vea_plain", "vea_pub_draft"]
 
 
+_PAGES = []
+DOM_LOG_JS = """
+window.__veaLog = [];
+const __veaRec = () => { const g = (id) => { const e = document.getElementById(id); return e ? e.textContent : null; };
+  const cur = [location.pathname, g('who'), g('secret'), g('draft')].join('|');
+  if (window.__veaLast !== cur) { window.__veaLast = cur; window.__veaLog.push([Date.now(), cur]); } };
+new MutationObserver(__veaRec).observe(document, {subtree: true, childList: true, characterData: true});
+"""
+
+
+def _nap(s):
+    """Sleep while letting Playwright dispatch events (so frame timestamps stay real-time)."""
+    for pg in reversed(_PAGES):
+        try:
+            if not pg.is_closed():
+                pg.wait_for_timeout(s * 1000)
+                return
+        except Exception:  # noqa: BLE001
+            continue
+    time.sleep(s)
+
+
+def dom_log(page):
+    try:
+        return page.evaluate("window.__veaLog || []")
+    except Exception:  # noqa: BLE001
+        return []
+
+
 class Rec:
     """Per-page recorder: console, failed requests, websocket frames."""
 
     def __init__(self, name, page, t0):
         self.name, self.t0 = name, t0
+        _PAGES.append(page)
         self.console, self.failed, self.frames = [], [], []
         page.on("console", lambda m: self.console.append([self.t(), m.type, m.text[:300]]))
         page.on("pageerror", lambda e: self.console.append([self.t(), "pageerror", str(e)[:300]]))
@@ -127,14 +157,14 @@ def logout(page, base):
     page.wait_for_url(IDP + "/**", timeout=30000)
     page.get_by_role("button", name="End session").click()
     page.wait_for_url(base + "/**", timeout=30000)
-    time.sleep(2)
+    _nap(2)
 
 
 def clicknav(page, sel, title):
     page.click(sel)
     ok = wait_text(page, "#title", title, 15)
     wait_hydrated(page)
-    time.sleep(2.0)
+    _nap(2.0)
     return ok
 
 
@@ -152,7 +182,7 @@ def show(page):
         if el is None or el.inner_text() != before:
             break
         time.sleep(0.1)
-    time.sleep(0.5)
+    _nap(0.5)
 
 
 def poll(page, ctx, secs, rows, step):
@@ -176,40 +206,42 @@ def poll(page, ctx, secs, rows, step):
 
 def scen_storx(b, base, label, rep, res):
     ctx = b.new_context()
+    ctx.add_init_script(DOM_LOG_JS)
     page = ctx.new_page()
     rec = Rec("tab1", page, time.time())
+    res["t0"] = rec.t0
     rows = []
     res["login"] = login(page, base)
     page.click("#pfill")
     wait_text(page, "#pdraft", "pub-draft", 10)
     res["fill0"] = fill(page)
-    time.sleep(1)
+    _nap(1)
     snap(page, ctx, "S0_after_fill", rows, label, "storx", rep)
     clicknav(page, "#to_vault2", "vault2")
     snap(page, ctx, "S1_nav_vault_to_vault2", rows, label, "storx", rep, shot=True)
     show(page)
     snap(page, ctx, "S1b_show_server", rows, label, "storx", rep)
     fill(page)
-    time.sleep(1)
+    _nap(1)
     clicknav(page, "#to_vault", "vault")
     snap(page, ctx, "S2_nav_vault2_to_vault", rows, label, "storx", rep)
     fill(page)
-    time.sleep(1)
+    _nap(1)
     clicknav(page, "#to_home", "home (public)")
     snap(page, ctx, "S3_nav_vault_to_home", rows, label, "storx", rep)
     page.reload()
     wait_hydrated(page)
-    time.sleep(2)
+    _nap(2)
     snap(page, ctx, "S4_reload_home_after_wipe", rows, label, "storx", rep)
     clicknav(page, "#to_vault", "vault")
     show(page)
     snap(page, ctx, "S4b_vault_show_server_after_reload", rows, label, "storx", rep, shot=True)
     # control: fill + full reload (no client nav)
     fill(page)
-    time.sleep(1)
+    _nap(1)
     page.reload()
     wait_hydrated(page)
-    time.sleep(2)
+    _nap(2)
     snap(page, ctx, "S5_fill_then_reload_vault", rows, label, "storx", rep)
     res["rows"] = rows
     res["tab1"] = rec.dump()
@@ -227,17 +259,17 @@ def scen_xsync(b, base, label, rep, res):
     bb.goto(base + "/vault")
     res["tabB_who"] = wait_text(bb, "#who", "alice", 20)
     wait_hydrated(bb)
-    time.sleep(3)
+    _nap(3)
     snap(a, ctx, "A0", rows, label, "xsync", rep)
     snap(bb, ctx, "B0", rows, label, "xsync", rep)
     a.bring_to_front()
     a.click("#fill")
-    time.sleep(4)
+    _nap(4)
     snap(a, ctx, "A1_after_fill_in_A", rows, label, "xsync", rep, shot=True)
     snap(bb, ctx, "B1_after_fill_in_A", rows, label, "xsync", rep)
     # public sync var control
     a.click("#pfill")
-    time.sleep(3)
+    _nap(3)
     snap(a, ctx, "A2_after_pfill", rows, label, "xsync", rep)
     snap(bb, ctx, "B2_after_pfill", rows, label, "xsync", rep)
     res["rows"] = rows
@@ -257,21 +289,34 @@ def _after_return(page, ctx, rows, label, scen, rep, res):
     poll(page, ctx, 8, rows, "P_boot_seq")
     r = snap(page, ctx, "P_after_boot", rows, label, scen, rep, shot=True)
     res["after_boot"] = [r["ui"]["url"], r["ui"]["who"], r["ui"]["secret"], r["ui"]["draft"]]
+    log = dom_log(page)
+    res["dom_log"] = log
+    mark_ms = (res["t0"] + res["mark_t"]) * 1000
+    shown = [e for e in log if e[0] >= mark_ms - 50 and "secret-of-alice" in e[1]]
+    res["flash"] = None
+    if shown:
+        after = [e for e in log if e[0] > shown[0][0] and "secret-of-alice" not in e[1]]
+        res["flash"] = {"first_ms_after_return": round(shown[0][0] - mark_ms), "visible_ms": (round(after[0][0] - shown[0][0]) if after else "still")}
+    print(f"  flash={res['flash']} dom_log_tail={log[-6:]}", flush=True)
     if "/vault" in r["ui"]["url"] and page.query_selector("#show"):
+        t_click = time.time()
         page.click("#show")
-        time.sleep(4)
+        seq = poll(page, ctx, 6, rows, "P_click_seq")
         r2 = snap(page, ctx, "P_after_protected_click", rows, label, scen, rep)
         res["after_click"] = [r2["ui"]["url"], r2["ui"]["who"], r2["ui"]["clicks"], r2["ui"]["echo"]]
+        res["click_seq"] = seq
 
 
 def scen_stale(b, base, label, rep, res):
     ctx = b.new_context()
+    ctx.add_init_script(DOM_LOG_JS)
     page = ctx.new_page()
     rec = Rec("tab1", page, time.time())
+    res["t0"] = rec.t0
     rows = []
     res["login"] = login(page, base)
     fill(page)
-    time.sleep(1)
+    _nap(1)
     snap(page, ctx, "S0_signed_in", rows, label, "stale", rep)
     key = _hash_key(page)
     res["hash_key"] = key
@@ -288,18 +333,20 @@ def scen_stale(b, base, label, rep, res):
 
 def scen_away(b, base, label, rep, res):
     ctx = b.new_context()
+    ctx.add_init_script(DOM_LOG_JS)
     page = ctx.new_page()
     rec = Rec("tab1", page, time.time())
+    res["t0"] = rec.t0
     rows = []
     res["login"] = login(page, base)
     fill(page)
-    time.sleep(1)
+    _nap(1)
     page.goto(base + "/blank.html")
     t2 = ctx.new_page()
     rec2 = Rec("tab2", t2, rec.t0)
     t2.goto(base + "/")
     wait_hydrated(t2)
-    time.sleep(1)
+    _nap(1)
     logout(t2, base)
     snap(t2, ctx, "T2_after_logout", rows, label, "away", rep)
     t2.close()
@@ -315,17 +362,19 @@ def scen_away(b, base, label, rep, res):
 
 def scen_live(b, base, label, rep, res):
     ctx = b.new_context()
+    ctx.add_init_script(DOM_LOG_JS)
     page = ctx.new_page()
     rec = Rec("tab1", page, time.time())
+    res["t0"] = rec.t0
     rows = []
     res["login"] = login(page, base)
     fill(page)
-    time.sleep(1)
+    _nap(1)
     t2 = ctx.new_page()
     rec2 = Rec("tab2", t2, rec.t0)
     t2.goto(base + "/")
     wait_hydrated(t2)
-    time.sleep(1)
+    _nap(1)
     res["mark_t"] = rec.t()
     logout(t2, base)
     page.bring_to_front()
@@ -336,7 +385,41 @@ def scen_live(b, base, label, rep, res):
     ctx.close()
 
 
-SCEN = {"storx": scen_storx, "xsync": scen_xsync, "stale": scen_stale, "away": scen_away, "live": scen_live}
+def scen_stalenav(b, base, label, rep, res):
+    """stale, then in the blanked state: public event, then client-side nav to another protected page."""
+    ctx = b.new_context()
+    ctx.add_init_script(DOM_LOG_JS)
+    page = ctx.new_page()
+    rec = Rec("tab1", page, time.time())
+    res["t0"] = rec.t0
+    rows = []
+    res["login"] = login(page, base)
+    fill(page)
+    _nap(1)
+    key = _hash_key(page)
+    page.goto(base + "/blank.html")
+    ctx.clear_cookies()
+    page.evaluate("(k) => localStorage.setItem(k, '')", key)
+    res["mark_t"] = rec.t()
+    page.goto(base + "/vault")
+    poll(page, ctx, 5, rows, "P_boot_seq")
+    r = snap(page, ctx, "P_after_boot", rows, label, "stalenav", rep)
+    res["after_boot"] = [r["ui"]["url"], r["ui"]["who"], r["ui"]["secret"], r["ui"]["draft"]]
+    if page.query_selector("#pfill"):
+        page.click("#pfill")
+        _nap(2)
+        r = snap(page, ctx, "P_after_public_event", rows, label, "stalenav", rep)
+        res["after_public"] = [r["ui"]["url"], r["ui"]["pdraft"]]
+    if page.query_selector("#to_vault2"):
+        page.click("#to_vault2")
+        seq = poll(page, ctx, 5, rows, "P_nav_seq")
+        res["after_nav"] = seq[-1][:3] if seq else None
+    res["rows"] = rows
+    res["tab1"] = rec.dump()
+    ctx.close()
+
+
+SCEN = {"stalenav": scen_stalenav, "storx": scen_storx, "xsync": scen_xsync, "stale": scen_stale, "away": scen_away, "live": scen_live}
 
 
 def main():

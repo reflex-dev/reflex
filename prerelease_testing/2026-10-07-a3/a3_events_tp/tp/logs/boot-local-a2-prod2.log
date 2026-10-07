@@ -1,0 +1,14 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 33/32 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8467/
+Warning: Page custom-register is being redefined with the same component.
+Warning: Page user-info is being redefined with the same component.
+Warning: Page index is being redefined with the same component.
+Warning: Page need2login is being redefined with the same component.
+Warning: Page protected is being redefined with the same component.
+Warning: Page tp-expiry is being redefined with the same component.
+Warning: Page tp-strict-register is being redefined with the same component.
+Warning: Page tp-whoami is being redefined with the same component.
+Info: Reflex app stopped.

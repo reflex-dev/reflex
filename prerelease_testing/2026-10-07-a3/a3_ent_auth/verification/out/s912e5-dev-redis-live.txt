@@ -1,0 +1,19 @@
+== s912e5-dev-redis live rep 0
+  [P_boot_seq] seq=[[0.08, 'http://localhost:3620/vault', '', '', '', 'yes']]
+  [P_after_boot] ui={'url': 'http://localhost:3620/vault', 'title': 'vault', 'who': '', 'secret': '', 'draft': '', 'plain': '', 'ck': '', 'ss': '', 'echo': '', 'clicks': '0', 'pdraft': '', 'pck': '', 'hyd': 'yes'} storage={'vea_draft': '', 'vea_plain': '', 'vea_pub_draft': None, 'vea_ss': '', 'hash': '', 'cookie_vea_ck': '', 'cookie_vea_pub_ck': None, 'token_cookies': []}
+  flash=None dom_log_tail=[[1791410002561, '/callback|||'], [1791410002903, '/vault|alice||'], [1791410003019, '/vault|alice|secret-of-alice|draft-of-alice'], [1791410004380, '/vault|alice|secret-of-alice|'], [1791410007114, '/vault|||']]
+  [P_click_seq] seq=[[0.1, 'http://localhost:3620/vault', '', None, None, None], [0.23, 'http://localhost:3620/login', None, None, None, None]]
+  [P_after_protected_click] ui={'url': 'http://localhost:3620/login', 'title': None, 'who': None, 'secret': None, 'draft': None, 'plain': None, 'ck': None, 'ss': None, 'echo': None, 'clicks': None, 'pdraft': None, 'pck': None, 'hyd': None} storage={'vea_draft': '', 'vea_plain': '', 'vea_pub_draft': None, 'vea_ss': '', 'hash': '', 'cookie_vea_ck': '', 'cookie_vea_pub_ck': None, 'token_cookies': []}
+== s912e5-dev-redis live rep 1
+  [P_boot_seq] seq=[[0.07, 'http://localhost:3620/vault', '', '', '', 'yes']]
+  [P_after_boot] ui={'url': 'http://localhost:3620/vault', 'title': 'vault', 'who': '', 'secret': '', 'draft': '', 'plain': '', 'ck': '', 'ss': '', 'echo': '', 'clicks': '0', 'pdraft': '', 'pck': '', 'hyd': 'yes'} storage={'vea_draft': '', 'vea_plain': '', 'vea_pub_draft': None, 'vea_ss': '', 'hash': '', 'cookie_vea_ck': '', 'cookie_vea_pub_ck': None, 'token_cookies': []}
+  flash=None dom_log_tail=[[1791410024660, '/callback|||'], [1791410024869, '/vault|alice||'], [1791410024950, '/vault|alice|secret-of-alice|draft-of-alice'], [1791410026421, '/vault|alice|secret-of-alice|'], [1791410029123, '/vault|||']]
+  [P_click_seq] seq=[[0.06, 'http://localhost:3620/vault', '', None, None, None], [0.19, 'http://localhost:3620/login', None, None, None, None]]
+  [P_after_protected_click] ui={'url': 'http://localhost:3620/login', 'title': None, 'who': None, 'secret': None, 'draft': None, 'plain': None, 'ck': None, 'ss': None, 'echo': None, 'clicks': None, 'pdraft': None, 'pck': None, 'hyd': None} storage={'vea_draft': '', 'vea_plain': '', 'vea_pub_draft': None, 'vea_ss': '', 'hash': '', 'cookie_vea_ck': '', 'cookie_vea_pub_ck': None, 'token_cookies': []}
+== s912e5-dev-redis live rep 2
+  [P_boot_seq] seq=[[0.08, 'http://localhost:3620/vault', '', '', '', 'yes']]
+  [P_after_boot] ui={'url': 'http://localhost:3620/vault', 'title': 'vault', 'who': '', 'secret': '', 'draft': '', 'plain': '', 'ck': '', 'ss': '', 'echo': '', 'clicks': '0', 'pdraft': '', 'pck': '', 'hyd': 'yes'} storage={'vea_draft': '', 'vea_plain': '', 'vea_pub_draft': None, 'vea_ss': '', 'hash': '', 'cookie_vea_ck': '', 'cookie_vea_pub_ck': None, 'token_cookies': []}
+  flash=None dom_log_tail=[[1791410046345, '/callback|||'], [1791410046560, '/vault|alice||'], [1791410046665, '/vault|alice|secret-of-alice|draft-of-alice'], [1791410048125, '/vault|alice|secret-of-alice|'], [1791410050811, '/vault|||']]
+  [P_click_seq] seq=[[0.07, 'http://localhost:3620/vault', None, None, None, None], [0.21, 'http://localhost:3620/login', None, None, None, None]]
+  [P_after_protected_click] ui={'url': 'http://localhost:3620/login', 'title': None, 'who': None, 'secret': None, 'draft': None, 'plain': None, 'ck': None, 'ss': None, 'echo': None, 'clicks': None, 'pdraft': None, 'pck': None, 'hyd': None} storage={'vea_draft': '', 'vea_plain': '', 'vea_pub_draft': None, 'vea_ss': '', 'hash': '', 'cookie_vea_ck': '', 'cookie_vea_pub_ck': None, 'token_cookies': []}
+WROTE /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_ent_auth/drivers/../out/s912e5-dev-redis-live.json

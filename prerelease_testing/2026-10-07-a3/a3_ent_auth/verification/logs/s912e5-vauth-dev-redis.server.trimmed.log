@@ -1,0 +1,5 @@
+VENV_GUARD venv=s912-ent-a5 reflex 0.9.12 reflex-base 0.9.12 reflex-enterprise 0.9.7a5
+START venv=s912-ent-a5 app=vauth_s912e5 mode=dev mgr=redis workers=default instrument=0 fix=0
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+[INFO] Started worker-1
