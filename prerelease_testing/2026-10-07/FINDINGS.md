@@ -30,23 +30,23 @@ train) and 0.9.12.
 
 | finding (10-06) | a1 status | a2 result | cluster |
 |---|---|---|---|
-| F-001 class-level backend var → Field; enterprise AG Grid model wrapper 500 | HIGH regression | pending | reverify_core |
+| F-001 class-level backend var → Field; enterprise AG Grid model wrapper 500 | HIGH regression | **changed / enterprise half fixed**: class reads still return `Field` (documented as breaking in the a2 CHANGELOG); `f"{S._x}"` now raises `BackendVarFormatError` (#7456) so the 10-06 e2e app fails loudly at compile instead of rendering `Field(...)`; enterprise AG Grid `/model`, `/model-auth`, SSRM and infinite pages return 200 with rows in dev and prod, 0 `from_request` errors (#7465). Gaps: N-006/N-007 | reverify_core |
 | F-002 first-load client-storage default write-back | HIGH regression | pending | reverify_hydration |
 | F-003 computed-var client-storage rewrite dropped at hydration | MED partial regression | pending | reverify_hydration |
-| F-004 class-level assignment replaces descriptor | MED regression | pending | reverify_core |
+| F-004 class-level assignment replaces descriptor | MED regression | **fixed** (#7461: descriptor kept, fresh/pickled instances read the assigned default, dev writes and `reset()` work, e2e dev and prod+redis) — new gaps N-004/N-005 | reverify_core |
 | F-005 sqlmodel<0.0.45 cap | MED regression | **fixed** (sqlmodel 0.0.48 resolves; `UTCDateTime()` migrations apply on a fresh db; aware round trip identical to 0.9.12+0.0.47) — with caveats: N-001 below, and a1→a2 `uv -U` upgraders of a naive-datetime app silently change semantics with no release note for #7462 (N-002) | reverify_db_install |
 | F-006 component floors unchanged | MED release-eng | **fixed** (every pip/uv upgrade variant from 0.9.12 moves all 13 component packages; fresh `pip install reflex==0.10.0a2` without `--pre` resolves the full train; formapp submits the fixed #7227 payload) | reverify_db_install |
 | F-007 npm SIGTERM hang | MED pre-existing | **still broken** (3/3 on a2; a1 and 0.9.12 identical; bun clean) | reverify_db_install |
 | F-008 >1 MB storage reconnect storm | MED pre-existing | pending | reverify_hydration |
 | F-010 pre-connect nav on_load | LOW pre-existing | pending | reverify_hydration |
-| F-011 forward-ref TypeError | LOW regression | pending | reverify_core |
-| F-012 PageContext LookupError message | LOW | pending | reverify_core |
-| F-013 rx.Model deprecation location | LOW | pending | reverify_core |
-| F-014 `reflex component` message | LOW | pending | reverify_core |
+| F-011 forward-ref TypeError | LOW regression | **still broken** | reverify_core |
+| F-012 PageContext LookupError message | LOW | **still broken** | reverify_core |
+| F-013 rx.Model deprecation location | LOW | **still broken** | reverify_core |
+| F-014 `reflex component` message | LOW | **still broken** | reverify_core |
 | F-015 duplicate npm notice | LOW | **still broken** (unchanged) | reverify_db_install |
-| F-016 ty 0-arg / 5-arg | LOW | pending | reverify_core |
+| F-016 ty 0-arg / 5-arg | LOW | **still broken** (ty 0.0.84/0.0.85 and pyright 1.1.414 identical to a1) | reverify_core |
 | F-017 redis restart token loss | LOW unknown | pending | reverify_hydration |
-| F-018 React 19.3 console error | LOW | pending | reverify_core |
+| F-018 React 19.3 console error | LOW | **still broken** (2/2) | reverify_core |
 
 ## New findings on 0.10.0a2
 
@@ -78,7 +78,50 @@ train) and 0.9.12.
   `rx.dynamic`: a2 clean, a1 `KeyError`); restarting the SAME app (`plain-restart`, `dynamic-restart`,
   `dynamic-same`) still fails on a2 and a1 (KeyError / frontend `$$typeof` TypeError). Evidence: `reverify_db_install/logs/26-harness-*.log`.
 
+### N-004: State saved by 0.10.0a2 is discarded by 0.9.12 and 0.10.0a1 workers (rolling deploy / rollback silently resets sessions) (MEDIUM)
+- Cluster: `reverify_core` | Regression vs 0.10.0a1: yes (a1-saved state still loads on 0.9.12, as the #7312 changelog
+  promises; a2's schema hash — "Defaults are no longer part of the saved-state schema", #7461 — breaks that) | Verifier: pending
+- Repro: `cd reverify_core/scripts/schema; SCHEMA_DEFAULT=0 $SB/envs/alpha2/bin/python derive_h_schema.py alpha2 save s.bin;
+  SCHEMA_DEFAULT=0 $SB/envs/stable/bin/python derive_h_schema.py stable load s.bin` → `StateSchemaMismatchError`; an a1-saved
+  file loads (count=42). E2E: `core_a2` `/schema` in prod with one Redis: a2 → stop → 0.9.12 comes back fresh (count 5);
+  controls 0.9.12→0.9.12 and a1→0.9.12 keep 42. The Redis manager suppresses the mismatch and creates a fresh state.
+- Evidence: `reverify_core/logs/derive_h_schema.txt`, `out/core/rb2-x-p2.json` vs `ctl4-a1-p2.json`, `ctl3-stable-p2.json`.
+- Decision needed: the maintainer's stated policy is forward-only upgrades, but the a1 changelog sentence about old workers
+  loading new states is still in the 0.10.0 notes; either drop/qualify it for a2 or restore compatibility.
+
+### N-005: Assigning a plain default to a LocalStorage/Cookie var (incl. the documented ComponentState `cls.value = initial` pattern) silently drops browser persistence (MEDIUM)
+- Cluster: `reverify_core` | Regression: no (new #7461 behaviour; 0.9.12 ignored the assignment and kept storage) | Verifier: pending
+- Repro: `class St(rx.State): v: str = rx.LocalStorage("d", name="k")`; `St.v = "x"` → `St._is_client_storage("v")` is False and the
+  var is absent from compiled storage; same for `rx.Cookie`, a factory returning a plain str, and `cls.value = initial` in
+  `ComponentState.get_component`. Workaround: assign `rx.LocalStorage("x", name="k")`. Scripts: `reverify_core/scripts/derive_g_assign.py`
+  (storage section), `derive_i_storage_legacy.py`; e2e `core_a2` `/storage` via `drive_core.py <url> out lbl storage`.
+- Evidence: `reverify_core/out/core/core-alpha2-{dev,prod-redis}.json` (`1_browser_storage` lacks `ls_plain_key`, `lscs_key`, cookie `ck_key`).
+
+### N-006: #7456 leaves silent and non-actionable paths for backend vars in the UI (LOW)
+- `str(S._size)+"px"`, `"%s" % S._size` and `f"{S._size!s}"` still embed `Field(default=16, ...)`; `rx.box(id=S._label)` → cryptic
+  `TypeError: expected string or bytes-like object, got 'Field'`; the `BackendVarFormatError` text ("Use a regular state var instead.")
+  never mentions `default_value()` or `ClassVar`. Script: `reverify_core/scripts/derive_e_format.py`.
+
+### N-007: The documented `State._x.default_value()` is not portable to 0.9.x (LOW, docs)
+- On 0.9.12 it raises `AttributeError: 'list' object has no attribute 'default_value'`; `State.get_fields()["_x"].default_value()` works
+  on 0.9.12, a1 and a2. Packages supporting both lines need the latter.
+
+### N-008: Dev `SetUndefinedStateVarError` guard now accepts any undeclared `_x__y` name (LOW, regression)
+- `self._sneaky__name = 1` is accepted in dev on a2 (0.9.12 and a1 raise): `state.py` treats `name.startswith("_") and "__" in name`
+  as a private attribute. Script: `derive_f_dunder.py`.
+
+### N-009: Class-default assignment scope surprises are undocumented (LOW)
+- Assigning on a mixin only affects states defined afterwards (`U1/U2/U3` → `(5, 1, 7)`); a runtime `type(self).count = 77`
+  is per worker process (dev 77, prod with 6 granian workers: a new tab sees 20). Script: `derive_g_assign.py`; e2e `/cs` `reconf_b`.
+
 ## Cluster summaries
+
+### `reverify_core` (pass: 16, anomaly: 6, fail: 2) — done
+F-001 changed-and-documented (enterprise half fixed), F-004 fixed; F-011/012/013/014/016/018 unchanged. #7461 (class
+defaults, ComponentState per-instance defaults, factories, "defaults not part of the saved schema"), #7465 (dunder
+attributes, `rx.field()` dunder backend vars) and #7456 verified in Python and in Chromium (dev, prod+redis). New: N-004
+(a2 state discarded by older workers), N-005 (plain default drops storage), N-006..N-009. Enterprise AG Grid model
+wrapper, SSRM and infinite pages pass in dev and prod; pre-existing demo failures identical on 0.9.12 + wheel.
 
 ### `reverify_db_install` (pass: 15, anomaly: 3, fail: 4) — done
 F-005 and F-006 fixed; F-007 and F-015 unchanged. Python 3.10 refused cleanly by uv and pip; 3.11 and 3.14

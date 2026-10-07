@@ -1,0 +1,15 @@
+################ alpha2
+legacy       is_client_storage=False default='configured'
+newstyle     is_client_storage=False default='configured'
+newstyle_ls  is_client_storage=True default='configured'
+compiled local_storage keys: ['newstyle_ls_rx_state_']
+################ alpha
+legacy       is_client_storage=False default='configured'
+newstyle     is_client_storage=True default='d'
+newstyle_ls  is_client_storage=True default='d'
+compiled local_storage keys: ['newstyle_ls_rx_state_', 'newstyle_rx_state_']
+################ stable
+legacy       is_client_storage=False default='configured'
+newstyle     is_client_storage=True default='d'
+newstyle_ls  is_client_storage=True default='d'
+compiled local_storage keys: ['newstyle_ls_rx_state_', 'newstyle_rx_state_']
