@@ -6803,3 +6803,31 @@ def test_private_attribute_is_assignable(clean_registration_context):
     assert getattr(state, counter) == 1
     assert getattr(state, declared) == 1
     assert state.dirty_vars == {declared}
+
+
+def test_private_attribute_of_underscored_class_and_mixin_is_assignable(
+    clean_registration_context,
+):
+    """Private names mangled with another prefix than the state's own are assignable.
+
+    Python strips the leading underscores of the class name when mangling, and
+    a mixin method mangles with the mixin's name.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class PrivateMixin(BaseState, mixin=True):
+        def bump_mixin(self):
+            self.__from_mixin = 1
+
+    class _PrivateState(PrivateMixin, BaseState):
+        def bump(self):
+            self.__own = 2
+
+    state = _PrivateState()  # pyright: ignore[reportCallIssue]
+    state.bump()
+    state.bump_mixin()
+    assert vars(state)["_PrivateState__own"] == 2
+    assert vars(state)["_PrivateMixin__from_mixin"] == 1
+    assert not state.dirty_vars

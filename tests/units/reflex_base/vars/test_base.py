@@ -1901,3 +1901,23 @@ def test_private_names_of_plain_base_are_not_fields():
     assert set(Model.__fields__) == {"_backend"}
     name = "_Plain__mangled"
     assert getattr(Model(), name) == 1
+
+
+def test_new_default_for_inherited_private_field_stays_a_field():
+    """A private name shadowing an inherited explicit field is a field as well."""
+
+    class Parent(EvenMoreBasicBaseState):
+        __counter__: Field[int] = field(default=1)
+
+    class Annotated(Parent):
+        __counter__: int = 2  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    class Unannotated(Parent):
+        __counter__ = 2  # pyright: ignore[reportAssignmentType]
+
+    for child in (Annotated, Unannotated):
+        child_field = child.__fields__["__counter__"]
+        assert child_field is not Parent.__fields__["__counter__"]
+        assert child_field.default == 2
+        assert isinstance(vars(child)["__counter__"], Field)
+        assert child().__counter__ == 2

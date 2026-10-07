@@ -4616,11 +4616,16 @@ def _annotated_fields(
         if types.is_classvar(annotation) or key in slots:
             continue
         value = namespace.get(key, MISSING)
-        if key.startswith(private) and not isinstance(value, Field):
+        inherited = _inherited_value(lookup_order, key)
+        if (
+            key.startswith(private)
+            and not isinstance(value, Field)
+            and not isinstance(inherited, Field)
+        ):
+            # A private name is a plain attribute unless declared a field, here
+            # or on a base it shadows.
             continue
-        declared = (
-            value if value is not MISSING else _inherited_value(lookup_order, key)
-        )
+        declared = value if value is not MISSING else inherited
         if _is_descriptor(declared):
             # A property, computed var or other descriptor under an annotated
             # name stays as is, here or on a base; a field would shadow it.
@@ -4636,7 +4641,7 @@ def _annotated_fields(
             fields[key] = Field(annotated_type=annotation)
         elif isinstance(value, Field):
             fields[key] = value._replace(annotated_type=annotation)
-        elif isinstance(inherited := _inherited_value(lookup_order, key), Field):
+        elif isinstance(inherited, Field):
             # A new default for an inherited field keeps its kind of field.
             fields[key] = inherited._replace(
                 annotated_type=annotation, **_default_arguments(value)
