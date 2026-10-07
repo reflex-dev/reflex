@@ -277,3 +277,117 @@ Repro: `derive_e_format.py stable` ("documented fix" section), `derive_workaroun
 earlier keep the old default (`derive_g_assign.py`, mixin section). (b) A runtime assignment (`type(self).count = 77`
 in a handler) changes only the worker process that ran it: with 6 prod workers a new session got 20, in dev 77
 (`out/core/core-alpha2-{dev,prod-redis}.json` `cs.6_new_session_tab2`).
+
+## VERIFICATION — N-004/N-005
+
+Independent verifier, 2026-10-07 07:19–07:35 UTC. Work dir `$SB/apps/verify_core_a2/`; ports 3600 (prod, one port), 3601/8601 (dev),
+3602 (prod); redis on 8603. Venvs: shared `alpha2` (0.10.0a2), `alpha` (0.10.0a1), `stable` (0.9.12), all read-only. No new venvs were
+created, so greenlet (N-001) did not apply; the apps don't use `rx.Model`. Artifacts: `verification/n004-schema-rollback/`,
+`verification/n005-storage-assign/`. Everything I started (servers, redis, browsers) has been stopped.
+
+### N-004: state saved by 0.10.0a2 is discarded by 0.9.12 / 0.10.0a1 workers. CONFIRMED (regression vs 0.10.0a1)
+**Pickle level.** I ran the written repro unchanged and got `StateSchemaMismatchError`. I then ran the full 3x3 save/load matrix
+(`logs/pickle_matrix.txt`), which matches the explorer's `logs/derive_h_schema.txt` exactly. For an a2 save, a2 loads it with the same
+default and also after a default change; a1 and 0.9.12 raise a mismatch. For an a1 or 0.9.12 save, all three versions load it with the
+same default, and all three raise a mismatch after a default change.
+Refutation check (`scripts/bypass_hash.py`): 0.9.12 and a1 load the a2 pickle without trouble when the hash is skipped. count, label and
+backend var come back, mutation and dirty tracking work, and it serialises again. **The only thing breaking compatibility is the hash.**
+The rest of the a2 payload was built for old workers: `_PREVIOUS_RELEASE_PICKLE_KEYS` is commented "Entries in each pickle for workers
+of the previous release" (alpha2 `reflex/state.py:100-107`, returned by `__getstate__` at :2053). The new hash cancels that work.
+
+**E2E, prod + one real Redis, one token, a new prod server per step on port 3600.** The app is `fleet_app/`, a minimal re-derived app
+with identical source and default (`count: int = 5`) on every version. The driver is `drivers/drive_fleet.py`, run through
+`bin/phase.sh`. Results are in `logs/chain_summary.txt` and `out/chain*.jsonl`:
+
+| step | transition | on arrival | verdict |
+|---|---|---|---|
+| 2 | 0.9.12 → 0.9.12 (control) | alice, 6 | kept |
+| 3 | 0.9.12 → a2 (forward) | alice, 7, full history | kept |
+| 4 | **a2 → 0.9.12 (rollback)** | **user '', count 5, history ''** | **LOST** |
+| 5 | 0.9.12 → a2 | alice, 6, history = only the post-reset 0.9.12 entry | kept (a2-era history permanently gone: the 0.9.12 worker overwrote Redis with a fresh state) |
+| 6 | **a2 → 0.9.12 (second switch)** | **'', 5, ''** | **LOST again**: every switch from a2 back to an old worker loses the session |
+| 7 | 0.9.12 → a1 | kept | kept |
+| 8 | a1 → a2 (forward) | kept | kept |
+| 9 | **a2 → a1** | **'', 5, ''** | **LOST** |
+| 10 | a1 → 0.9.12 (#7312 promise) | kept | kept |
+| 12 | a2(d=5) → a2(d=7) (advertised feature) | kept (count 8) | kept |
+| B2 | 0.9.12(d=5) → a2(d=7) | fresh (count 7) | lost, as expected: a legacy hash needs the same defaults, which the changelog says ("saved by this release or later") |
+
+The old workers log nothing when they discard the state (`logs/fleet-chain-4_*.trimmed.log`). No console errors apart from the
+`/favicon.ico` 404.
+
+**Classification:** (a) a2→0.9.12 rollback: broken. (b) a2→a1: broken. (c) 0.9.12→a2 and a1→a2 forward upgrades: work, with and without
+backend vars. (d) a2→a2 across a default change: works. Mixed fleet (old and new workers on one Redis, as in a rolling deploy from
+0.9.x to 0.10.0): each time a request lands on an old worker after a new worker saved the state, the user gets a fresh state (logged out,
+data reset). The old worker then writes that fresh state back, so the loss is permanent.
+
+**Mechanism** (published sources). alpha2 `reflex/state.py:2102-2122` `_to_schema` now hashes only `(name, type)`. `_serialize` at :2141
+writes `(new_hash, state)`. a2's own `_deserialize` (:2210-2214) also accepts `_legacy_state_schema` (:2218, the default-including hash),
+so it can read old saves, but it never writes that hash. 0.9.12 `reflex/state.py:2864` and a1 `reflex/state.py:2213` compare only against
+their own default-including `_to_schema()` and raise `StateSchemaMismatchError`. `istate/manager/redis.py:345` (0.9.12; :380 in a1) wraps
+this in `contextlib.suppress`, which creates a fresh state silently.
+
+**Intent:** PR #7461 says "Defaults no longer affect new serialization schema hashes. Deserialization also accepts compatible hashes from
+the previous format". Only the forward direction is covered, and the validation comment says "No live Redis/multi-worker deployment was
+exercised". The a2 CHANGELOG (release branch `CHANGELOG.md:26`, v0.10.0a1 section, #7312) **still says** "States saved by this release
+still load in workers of the previous one, so rolling deploys sharing Redis keep working". The a2 #7461 entry (:12) only promises
+"state saved by this release or later" stays loadable. When the alphas are merged into one 0.10.0 changelog, the #7312 sentence will be
+false for the release as a whole.
+
+### N-005: plain default assigned to a `str`-annotated browser-storage var silently drops persistence. CONFIRMED (new-feature gap, not a regression vs a working 0.9.12)
+**Python level** (`scripts/storage_assign_matrix.py`, `logs/storage_assign_matrix.txt`). The matrix covers 3 storage types × annotation
+(`str` / the storage type) × 6 assignment kinds × 3 versions. On a2 with a `str` annotation:
+
+| assignment | `_is_client_storage` | compiled storage entry | kept? |
+|---|---|---|---|
+| none (control) | True | `name k1` | yes |
+| `St.v = "x"` (plain value) | **False** | **none** | **no, silently** |
+| `St.v = lambda: "x"` (factory → plain) | **False** | **none** | **no, silently** |
+| `St.v = lambda: T("x", name="k2")` (factory → storage, the changelog case) | True | `name k2` (+ sync/cookie options) | yes |
+| `St.v = T("x", name="k2")` (storage value) | True | `name k2` | yes |
+| `St.v = T("x")` (storage value, no name) | True | compiled **without** `name`: the key changes from `k1` to the default key | yes, but the declared name is lost (it only keeps what the new value carries) |
+
+All three types (LocalStorage, SessionStorage, Cookie) behave the same way. With an explicit storage-type annotation
+(`v: rx.LocalStorage = ...`), a plain value or a factory returning a plain value raises `TypeError: Invalid default for field 'v'`, which
+is loud and keeps the storage. But the documented declaration style (`docs/api-reference/browser_storage.md`: `c1: str = rx.Cookie()`)
+uses `str`, so that path drops storage silently. Baselines: on 0.9.12 the class assignment is ignored (fresh value stays `'d'`, storage
+kept). On a1 storage is kept but every factory replaced the descriptor (F-004). `derive_i_storage_legacy.py` was re-run with the same
+output as the explorer's (`logs/derive_i_storage_legacy_rerun.txt`). The 0.9.12-documented `cls.__fields__[n].default = v` already
+dropped storage on 0.9.12.
+
+**E2E** (`app/stor/stor.py`, `drivers/drive_stor.py`). On a2 in dev (3601/8601) and prod (3602) the results were identical
+(`out/stor-a2-{dev,prod}.json`). After `change`, localStorage has only `k_lsval`, `k_ctrl`, `k_facls`, and the only cookie is `k_ck_val`.
+**`k_plain`, `k_facplain`, `k_ck_plain` and the ComponentState key `k_cs` are never written.** A new tab in the same browser shows
+`assigned` / `cs-initial` for those four, while the storage-value, factory→storage and control vars show `changed-*`. Reloading the same
+tab keeps everything, because it is the same server-side token, which hides the bug in casual testing. The compiled `clientStorage` in
+`.web/utils/context.jsx` lacks the four vars (`logs/stor-a2-dev.compiled-clientStorage.txt`). There were no server or console warnings.
+The same app does not compile on 0.9.12: `St.b_facplain = lambda: ...` replaces the attribute, giving `ChildrenTypeError: ... child
+<function <lambda>>` (`logs/stor-stable-dev.traceback.log`). Class-default assignment is simply new in a2.
+
+**Documented ComponentState pattern:** the doc is **not directly affected**. `docs/state_structure/component_state.md` (release branch,
+lines 83-111) uses `text: str = "Click to edit"`, a plain var, then `if initial_value is not None: cls.text = initial_value`. The
+explorer's `LsCS` combines that documented pattern with the documented storage declaration, and it loses storage. Nothing in the docs
+covers that combination. `docs/vars/base_vars.md` "Changing Defaults" (lines 76-96) says assigning a value "updates the default" for
+frontend and backend vars. On storage it only says "A factory that produces a browser storage value is called once at assignment, and its
+result becomes the default so the storage name and options are kept." It doesn't warn that a plain value or a plain-returning factory
+turns the var into an ordinary var. PR #7461's review thread fixed exactly the str-annotated **factory** case ("A `str`-annotated storage
+var is classified only through its default value") and never considered plain values.
+
+**Mechanism:** alpha2 `reflex_base/vars/base.py:4764-4817` `BaseStateMeta.__setattr__`. `_accepts_default(str-field, "x")` is True, so
+`declared.default = "x"` (:4816), or, for a plain-returning factory, `default = MISSING; default_factory = fn` (:4801-4804). That replaces
+the `rx.LocalStorage(...)` default, which was the only carrier of the storage classification and options. `_is_client_storage`
+(`reflex/state.py:1606-1625`) and `_compile_client_storage_field` (`reflex/compiler/utils.py:308-333`) only look at `field.default` or a
+storage-typed annotation. A fix would wrap an accepted plain value in the declared storage's class and options, or reject it with a
+TypeError as the storage-annotated path does.
+
+Rerun:
+```bash
+SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad; V=/home/user/reflex/prerelease_testing/2026-10-07/reverify_core/verification
+W=$SB/apps/<yours>; mkdir -p $W && cp -r $V/n004-schema-rollback/. $W/ && cd $W   # edit W= in bin/*.sh, ports in bin/prod.sh/phase.sh
+for v in stable alpha alpha2; do cp -r fleet_app fleet_$v; done; mkdir -p pids out logs
+redis-server --port 8603 --save '' --appendonly no &
+MODE=new bin/phase.sh stable "1:stable(new)"   # phase.sh stops the previous prod server, starts fleet_<venv> on 3600 with redis 8603, resumes out/chain-token.txt; then: bin/phase.sh alpha2 "3:..."; bin/phase.sh stable "4:a2->stable"; ...
+cd $V/../scripts/schema && PYTHONPATH=. SCHEMA_DEFAULT=0 $SB/envs/stable/bin/python $V/n004-schema-rollback/scripts/bypass_hash.py stable <a2-saved.bin>
+cd $V/n005-storage-assign/scripts && for v in alpha2 alpha stable; do $SB/envs/$v/bin/python storage_assign_matrix.py $v; done
+# e2e: copy app/ to a work dir, PIDTAG=stor bin/start_app.sh alpha2 <copy> 3601 8601 log --loglevel debug; drivers/drive_stor.py http://localhost:3601 out.json
+```
