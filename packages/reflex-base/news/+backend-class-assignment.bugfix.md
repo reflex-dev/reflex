@@ -1,1 +1,1 @@
-Class-level assignment to a backend var now updates its default without replacing the field descriptor, preserving instance writes, reset, and state persistence. Existing instances keep values they have already initialized.
+Class-level assignment to a declared field now updates its default, or replaces its configuration when given another field, preserving its name, owner, and instance tracking. Existing instances keep values they have already initialized, and `ClassVar` assignments retain ordinary Python behavior.

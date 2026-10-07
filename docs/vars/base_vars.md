@@ -73,6 +73,24 @@ def ticker_example():
     )
 ```
 
+## Changing Defaults
+
+Assigning a value to a declared var on its state class updates the default for
+values that have not yet been initialized and for `reset()`. This works for both
+frontend and backend vars. Values already stored on a state instance stay the
+same, and mutable defaults are copied for each instance.
+
+Assigning an `rx.field(...)` replaces the field configuration, including its
+default factory. The replacement retains the declared type, frontend or backend
+visibility, attribute name, and owning state class. Frontend vars remain usable
+in the UI after either kind of assignment.
+
+An inherited var belongs to the state that declared it, so assigning a default
+through a subclass also changes that declaring state's default. Each generated
+`ComponentState` class owns its copied fields, allowing
+[`get_component` to configure defaults](/docs/state-structure/component-state/#passing-props)
+independently for each component.
+
 ## Backend-only Vars
 
 Any Var in a state class that starts with an underscore (`_`) is considered backend
@@ -103,11 +121,7 @@ then paged to the frontend using cached vars.
 
 Read and write a backend var through a state instance, such as `self._token`.
 Reading `MyState._token` through the class returns its field descriptor. Assigning
-to `MyState._token` updates the field's default for values that have not yet been
-initialized and for `reset()`; it does not change values already stored on an
-instance. Mutable defaults are copied for each instance. For an inherited backend
-var, the default belongs to the state that declared the field, so changing it
-through a subclass also changes that declaring state's default.
+to `MyState._token` updates its default as described above.
 
 For configuration shared by all sessions, declare a `ClassVar` instead:
 

@@ -1,1 +1,1 @@
-Class-level assignment to a backend var now updates its default without replacing the field descriptor, preserving instance writes, reset, and state persistence. Use `ClassVar` for configuration shared by all sessions.
+Class-level assignment to a frontend or backend var now updates its default while preserving instance writes, reset, and state persistence. Assign a field to replace its default factory; `ComponentState.get_component` can set per-component defaults with ordinary class assignments.

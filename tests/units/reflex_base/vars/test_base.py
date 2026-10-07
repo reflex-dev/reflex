@@ -64,40 +64,196 @@ _MARKER_ATTR = "_marker"
 
 
 @pytest.mark.parametrize("mutable", [False, True])
-def test_backend_class_assignment_preserves_field(mutable: bool):
-    """Changing a backend default preserves its descriptor and instance tracking.
+@pytest.mark.parametrize("name", ["_value", "value"])
+def test_class_assignment_preserves_field(mutable: bool, name: str):
+    """Changing a default preserves its descriptor and instance tracking.
 
     Args:
         mutable: Whether the default is mutable.
+        name: The backend or frontend field name.
     """
 
     class ConfigState(BaseState):
-        _value: Any = None
+        _value: str | list[str] | None = None
+        value: str | list[str] | None = None
 
-    declared = ConfigState.get_fields()["_value"]
+    declared = ConfigState.get_fields()[name]
     original = ConfigState()
-    assert original._value is None
+    assert getattr(original, name) is None
     replacement = ["configured"] if mutable else "configured"
-    ConfigState._value = replacement
-    assert ConfigState.__dict__["_value"] is declared
-    assert original._value is None
+    setattr(ConfigState, name, replacement)
+    assert ConfigState.__dict__[name] is declared
+    assert getattr(original, name) is None
 
     first = ConfigState()
     second = ConfigState()
-    assert first._value == second._value == replacement
+    assert getattr(first, name) == getattr(second, name) == replacement
     restored = ConfigState()
     restored.__setstate__(pickle.loads(pickle.dumps(first.__getstate__())))
-    assert restored._value == replacement
+    assert getattr(restored, name) == replacement
 
     first._clean()
-    first._value = "changed"
-    assert "_value" in first.dirty_vars
+    setattr(first, name, "changed")
+    assert name in first.dirty_vars
     assert first._was_touched
     first.reset()
-    assert first._value == replacement
+    assert getattr(first, name) == replacement
     if mutable:
-        first._value.append("session-only")
-        assert second._value == replacement == ["configured"]
+        getattr(first, name).append("session-only")
+        assert getattr(second, name) == replacement == ["configured"]
+
+
+@pytest.mark.parametrize("name", ["_value", "value", "server_value"])
+def test_class_assignment_replaces_field(name: str):
+    """A replacement field keeps the declared type, binding, and frontend Var.
+
+    Args:
+        name: The backend or frontend field name.
+    """
+
+    class ConfigState(BaseState):
+        _value: list[str] = []
+        value: list[str] = []
+        server_value: list[str] = field(default_factory=list, is_var=False)
+
+    declared = ConfigState.get_fields()[name]
+    original = ConfigState()
+    assert getattr(original, name) == []
+    calls = []
+
+    def factory() -> list[str]:
+        """Count factory calls and return an independent default.
+
+        Returns:
+            The new default value.
+        """
+        calls.append(True)
+        return ["configured"]
+
+    replacement = field(default_factory=factory)
+    marker = object()
+    setattr(replacement, _MARKER_ATTR, marker)
+    setattr(ConfigState, name, replacement)
+    installed = ConfigState.get_fields()[name]
+    assert installed is not declared
+    assert ConfigState.__dict__[name] is installed
+    assert installed._owner is ConfigState
+    assert installed._name == name
+    assert installed.annotated_type == list[str]
+    assert installed._backend is declared._backend
+    assert installed._var is declared._var
+    assert getattr(installed, _MARKER_ATTR) is marker
+    assert calls == []
+    assert getattr(original, name) == []
+
+    first, second = ConfigState(), ConfigState()
+    assert getattr(first, name) == getattr(second, name) == ["configured"]
+    assert calls == [True, True]
+    getattr(first, name).append("session-only")
+    assert getattr(second, name) == ["configured"]
+    first.reset()
+    assert getattr(first, name) == ["configured"]
+    restored = ConfigState()
+    restored.__setstate__(pickle.loads(pickle.dumps(first.__getstate__())))
+    assert getattr(restored, name) == ["configured"]
+
+
+@pytest.mark.parametrize("replace_field", [False, True])
+def test_class_assignment_refreshes_frontend_metadata(replace_field: bool):
+    """A changed frontend default refreshes schema and nullable Var metadata.
+
+    Args:
+        replace_field: Whether to assign a Field rather than a plain value.
+    """
+
+    class ConfigState(BaseState):
+        value: Field[int] = field(default=1)
+
+    schema = ConfigState._to_schema()
+    ConfigState.value = field(default=None) if replace_field else None  # pyright: ignore[reportAttributeAccessIssue]
+    assert ConfigState._to_schema() != schema
+    assert ConfigState.base_vars["value"]._var_type == int | None
+
+
+@pytest.mark.parametrize("name", ["_value", "value"])
+def test_class_assignment_replaces_inherited_field(name: str):
+    """Replacing an inherited field updates its owner and existing descendants.
+
+    Args:
+        name: The backend or frontend field name.
+    """
+
+    class Parent(BaseState):
+        _value: str = "old"
+        value: str = "old"
+
+    class Child(Parent):
+        pass
+
+    class Grandchild(Child):
+        pass
+
+    class Override(Parent):
+        _value: str = "own"
+        value: str = "own"
+
+    declared = Parent.get_fields()[name]
+    setattr(Child, name, field(default="new"))
+    installed = Parent.get_fields()[name]
+    assert installed is not declared
+    assert installed._owner is Parent
+    assert installed._name == name
+    assert name not in Child.__dict__
+    assert Parent.__dict__[name] is installed
+    assert Parent.__own_fields__[name] is installed
+    for state_cls in (Child, Grandchild, Override):
+        assert state_cls.__inherited_fields__[name] is installed
+    for state_cls in (Parent, Child, Grandchild):
+        assert state_cls.get_fields()[name] is installed
+        assert getattr(state_cls(), name) == "new"
+    assert getattr(Override(), name) == "own"
+
+    class Later(Child):
+        pass
+
+    assert Later.get_fields()[name] is installed
+    assert getattr(Later(), name) == "new"
+
+
+def test_class_assignment_preserves_shadowing_classvar():
+    """A ClassVar shadowing an inherited field remains ordinary configuration."""
+
+    class Parent(BaseState):
+        _value: str = "old"
+
+    class Child(Parent):
+        _value: ClassVar[str] = "child"  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    Child._value = "new"
+    assert Child._value == "new"
+    assert Parent()._value == "old"
+
+
+def test_class_assignment_binds_installed_field():
+    """A replacement descriptor sees itself installed while its binding hook runs."""
+
+    class BindingField(Field[str]):
+        def __set_name__(self, owner: type, name: str) -> None:
+            """Bind the field after it is installed on its owner.
+
+            Args:
+                owner: The class owning the descriptor.
+                name: Its attribute name.
+            """
+            super().__set_name__(owner, name)
+            assert owner.__dict__[name] is self
+            assert owner.__dict__["__fields__"][name] is self
+
+    class ConfigState(BaseState):
+        value: str = "old"
+
+    ConfigState.value = BindingField(default="new")  # pyright: ignore[reportAttributeAccessIssue]
+    assert ConfigState().value == "new"
 
 
 def test_backend_class_assignment_replaces_default_factory():

@@ -4684,12 +4684,44 @@ def _is_tree_state(cls: Any) -> bool:
     )
 
 
+def _replace_bound_field(declared: Field, replacement: Field) -> None:
+    """Replace a field's configuration while retaining its declaration and binding.
+
+    Args:
+        declared: The existing bound field.
+        replacement: The new field configuration.
+    """
+    owner = cast("BaseStateMeta", declared._owner)
+    name = declared._name
+    replacement = replacement._replace(
+        annotated_type=declared.annotated_type, is_var=declared.is_var
+    )
+    type.__setattr__(owner, name, replacement)
+    pending = [owner]
+    seen = set()
+    while pending:
+        state_cls = pending.pop()
+        if state_cls in seen:
+            continue
+        seen.add(state_cls)
+        for fields in (
+            state_cls.__fields__,
+            state_cls.__own_fields__,
+            state_cls.__inherited_fields__,
+        ):
+            if fields.get(name) is declared:
+                fields[name] = replacement
+        pending.extend(cast("list[BaseStateMeta]", state_cls.__subclasses__()))
+    replacement.__set_name__(owner, name)
+    replacement._var = declared._var
+
+
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseStateMeta(ABCMeta):
     """Meta class for BaseState."""
 
     if TYPE_CHECKING:
-        __inherited_fields__: Mapping[str, Field]
+        __inherited_fields__: dict[str, Field]
         __own_fields__: dict[str, Field]
         __fields__: dict[str, Field]
 
@@ -4701,17 +4733,23 @@ class BaseStateMeta(ABCMeta):
         _reflex_state_root: BaseStateMeta
 
     def __setattr__(cls, name: str, value: Any) -> None:
-        """Update backend defaults without replacing their field descriptors.
+        """Update field defaults while retaining their descriptors and bindings.
 
         Args:
             name: The class attribute being assigned.
             value: Its new value.
         """
         declared = cls.__fields__.get(name)
-        if declared is not None and declared._backend and not isinstance(value, Field):
-            defaults = _default_arguments(value)
-            declared.default = defaults["default"]
-            declared.default_factory = defaults["default_factory"]
+        if declared is not None and _inherited_value(cls.__mro__, name) is declared:
+            if isinstance(value, Field):
+                _replace_bound_field(declared, value)
+            else:
+                defaults = _default_arguments(value)
+                declared.default = defaults["default"]
+                declared.default_factory = defaults["default_factory"]
+            cast("type[EvenMoreBasicBaseState]", declared._owner)._on_field_changed(
+                name
+            )
             return
         super().__setattr__(name, value)
 
@@ -4834,6 +4872,14 @@ class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
             The fields of the component.
         """
         return cls.__fields__
+
+    @classmethod
+    def _on_field_changed(cls, name: str) -> None:
+        """Refresh metadata after a field's default or configuration changes.
+
+        Args:
+            name: The field that changed.
+        """
 
     @classmethod
     def add_field(cls, name: str, var: Var, default_value: Any):

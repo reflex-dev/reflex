@@ -365,12 +365,14 @@ def _has_data_descriptor(cls: type, name: str) -> bool:
 def _bind_attr(cls: type, name: str, value: Any) -> None:
     """Set a descriptor on a class, binding it to the class as class creation does.
 
+    Bypass the metaclass's default assignment handling during field registration.
+
     Args:
         cls: The class.
         name: The attribute name.
         value: The descriptor.
     """
-    setattr(cls, name, value)
+    type.__setattr__(cls, name, value)
     value.__set_name__(cls, name)
 
 
@@ -1378,6 +1380,17 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         if field.default is None and not types.is_optional(prop._var_type):
             # Ensure frontend uses null coalescing when accessing.
             object.__setattr__(prop, "_var_type", prop._var_type | None)
+
+    @classmethod
+    def _on_field_changed(cls, name: str) -> None:
+        """Refresh frontend metadata after changing a field's default.
+
+        Args:
+            name: The field that changed.
+        """
+        if (prop := cls.__fields__[name]._var) is not None:
+            cls._set_default_value(name, prop)
+            cls._to_schema.cache_clear()
 
     @classmethod
     def _update_substate_vars(cls, vars_to_add: builtins.dict[str, Var]):
