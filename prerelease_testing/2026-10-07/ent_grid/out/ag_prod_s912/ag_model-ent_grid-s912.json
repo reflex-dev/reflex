@@ -1,0 +1,977 @@
+{
+ "name": "ag_model-ent_grid-s912",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 3.31,
+   "name": "ssrm: logged-out initial data request made",
+   "ok": true,
+   "detail": [
+    "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=DI_RVMH69HR8jorGAAAB"
+   ]
+  },
+  {
+   "t": 3.31,
+   "name": "ssrm: datasource URL carries endpoint_kwargs (state, sid) + SSRM params",
+   "ok": true,
+   "detail": {
+    "startRow": "0",
+    "endRow": "50",
+    "sortModel": "[]",
+    "filterModel": "{}",
+    "rowGroupCols": "[]",
+    "groupKeys": "[]",
+    "valueCols": "[]",
+    "pivotMode": "false",
+    "pivotCols": "[]",
+    "state": "reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n",
+    "sid": "DI_RVMH69HR8jorGAAAB"
+   }
+  },
+  {
+   "t": 3.32,
+   "name": "ssrm: logged out shows no rows",
+   "ok": true,
+   "detail": 0
+  },
+  {
+   "t": 5.78,
+   "name": "ssrm: Generate Friends inserted 50 rows into sqlite",
+   "ok": true,
+   "detail": {
+    "before": 0,
+    "after": 50
+   }
+  },
+  {
+   "t": 8.31,
+   "name": "ssrm: login (backend var) survives reload",
+   "ok": true,
+   "detail": "Logout button shown after reload"
+  },
+  {
+   "t": 23.32,
+   "name": "ssrm: rows render on reload right after generate (row_count_cached interval=10s)",
+   "ok": false,
+   "detail": "TimeoutError('Page.wait_for_function: Timeout 15000ms exceeded.')"
+  },
+  {
+   "t": 35.94,
+   "name": "ssrm: rows render on reload >10s after generate",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 36.02,
+   "name": "ssrm: rows rendered after generate",
+   "ok": true,
+   "detail": 22
+  },
+  {
+   "t": 38.15,
+   "name": "ssrm: sort asc request carries sortModel(age)",
+   "ok": true,
+   "detail": [
+    "[{\"sort\":\"asc\",\"type\":\"default\",\"colId\":\"age\"}]"
+   ]
+  },
+  {
+   "t": 38.15,
+   "name": "ssrm: sort asc first row has min age from db",
+   "ok": true,
+   "detail": {
+    "first_rows": [
+     19,
+     23,
+     23,
+     24,
+     26,
+     26,
+     27,
+     27
+    ],
+    "db_min": 19
+   }
+  },
+  {
+   "t": 40.28,
+   "name": "ssrm: sort desc first row has max age",
+   "ok": true,
+   "detail": {
+    "first_rows": [
+     80,
+     78,
+     75,
+     75,
+     74,
+     74,
+     69,
+     67
+    ],
+    "db_max": 80
+   }
+  },
+  {
+   "t": 45.59,
+   "name": "ssrm: filter request carries filterModel(name)",
+   "ok": true,
+   "detail": [
+    "{\"name\":{\"filterType\":\"text\",\"type\":\"contains\",\"filter\":\"Paul\"}}"
+   ]
+  },
+  {
+   "t": 45.59,
+   "name": "ssrm: filtered rows all match and count matches db",
+   "ok": false,
+   "detail": {
+    "sub": "Paul",
+    "shown": 22,
+    "blank_rows": 21,
+    "db_matches": 1,
+    "sample": [
+     "Paul Williams",
+     "",
+     "",
+     "",
+     ""
+    ]
+   }
+  },
+  {
+   "t": 52.58,
+   "name": "ssrm: editing a cell updates sqlite",
+   "ok": true,
+   "detail": {
+    "id": "1",
+    "db_name": "QA Edited SSRM"
+   }
+  },
+  {
+   "t": 54.09,
+   "name": "ssrm: edited value visible after refresh",
+   "ok": true,
+   "detail": [
+    "QA Edited SSRM",
+    "Shannon Curtis",
+    "James Lucas",
+    "Sarah Hall",
+    "Scott Grant"
+   ]
+  },
+  {
+   "t": 55.88,
+   "name": "ssrm: selection -> selected_items computed var renders 2 badges",
+   "ok": true,
+   "detail": [
+    "QA Edited SSRM",
+    "Shannon Curtis"
+   ]
+  },
+  {
+   "t": 57.94,
+   "name": "ssrm: enable_advanced_filter switch shows advanced filter bar",
+   "ok": true,
+   "detail": 1
+  },
+  {
+   "t": 60.54,
+   "name": "ssrm: logout refreshes grid to empty",
+   "ok": true,
+   "detail": 0
+  },
+  {
+   "t": 62.51,
+   "name": "infinite(workaround): data requests return rows",
+   "ok": true,
+   "detail": {
+    "reqs": [
+     "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2"
+    ],
+    "rows": 23
+   }
+  },
+  {
+   "t": 64.63,
+   "name": "infinite: sort asc by age matches db",
+   "ok": true,
+   "detail": {
+    "first": [
+     19,
+     23,
+     23,
+     24,
+     26,
+     26,
+     27,
+     27
+    ],
+    "db_min": 19
+   }
+  },
+  {
+   "t": 71.94,
+   "name": "infinite: text filter matches db",
+   "ok": false,
+   "detail": {
+    "sub": "Scot",
+    "shown": 23,
+    "blank_rows": 21,
+    "db": 2
+   }
+  },
+  {
+   "t": 78.82,
+   "name": "infinite: numeric cell edit updates sqlite",
+   "ok": true,
+   "detail": {
+    "id": "1",
+    "db_age": 77
+   }
+  },
+  {
+   "t": 82.39,
+   "name": "infinite: add dialog inserts row",
+   "ok": false,
+   "detail": {
+    "before": 50,
+    "after": 50,
+    "row": null
+   }
+  },
+  {
+   "t": 82.39,
+   "name": "infinite: add dialog closes after submit",
+   "ok": false,
+   "detail": 1
+  },
+  {
+   "t": 87.33,
+   "name": "infinite: delete_selected removes the 2 selected rows from sqlite",
+   "ok": true,
+   "detail": {
+    "before": 50,
+    "after": 48,
+    "ids": [
+     "1",
+     "2"
+    ],
+    "gone": [
+     "1",
+     "2"
+    ]
+   }
+  },
+  {
+   "t": 92.53,
+   "name": "/model: data endpoint has no HTTP errors",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "t": 92.53,
+   "name": "/model: grid shows db rows (db has 48)",
+   "ok": true,
+   "detail": 23
+  },
+  {
+   "t": 98.05,
+   "name": "/model-auth: data endpoint has no HTTP errors",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "t": 98.05,
+   "name": "/model-auth: grid shows db rows (db has 48)",
+   "ok": true,
+   "detail": 22
+  }
+ ],
+ "notes": [
+  "guard: 0.9.12 0.9.7a4",
+  "db rows at start: 0",
+  "ssrm rows right after generate (demo only calls setRowCount, no SSRM refresh): 0",
+  "ssrm datasource responses so far: [(1.31, 200, '[] ... []'), (3.68, 200, '{\"rowData\": [], \"rowCount\": 0} ... {\"rowData\": [], \"rowCount\": 0}'), (4.25, 200, '{\"rowData\": [{\"age\": 46, \"years_known\": 27, \"owes_me\": false, \"name\": \"Paul Williams\", \"spouse_is_an ... 54:08.281772\", \"id\": 50, \"has_a_dog\": true}], \"rowCount\": 0}'), (7.77, 200, '{\"rowData\": [{\"age\": 46, \"years_known\": 27, \"owes_me\": false, \"name\": \"Paul Williams\", \"spouse_is_an ... 54:08.281772\", \"id\": 50, \"has_a_dog\": true}], \"rowCount\": 0}')]",
+  "add dialog: met field value submitted = '2020-01-02T03:04:05'",
+  "db rows at end: 48"
+ ],
+ "summary": {
+  "checks_failed": [
+   "ssrm: rows render on reload right after generate (row_count_cached interval=10s)",
+   "ssrm: filtered rows all match and count matches db",
+   "infinite: text filter matches db",
+   "infinite: add dialog inserts row",
+   "infinite: add dialog closes after submit"
+  ],
+  "n_checks": 29,
+  "console_total": 56,
+  "console_benign": 42,
+  "console_errors": 0,
+  "console_warnings": 1,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [
+   {
+    "t": 93.4,
+    "ctx": "auth",
+    "type": "warning",
+    "text": "AG Grid: warning #129 Visit https://www.ag-grid.com/react-data-grid/errors/129?_version_=36.2.0&feature=headerCheckbox&rowModel=infinite \n  Alternatively register the ValidationModule to see the full message in the console.",
+    "url": "http://localhost:3302/model-auth/",
+    "location": {
+     "url": "http://localhost:3302/assets/ag-theme-quartz-BKErmBm6.js",
+     "line": 14,
+     "column": 261941,
+     "lineNumber": 14,
+     "columnNumber": 261941
+    },
+    "benign": false
+   }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 7.29,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-BKu6eW8C.js",
+    "line": 2,
+    "column": 9852,
+    "lineNumber": 2,
+    "columnNumber": 9852
+   },
+   "benign": false
+  },
+  {
+   "t": 34.38,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-BKu6eW8C.js",
+    "line": 2,
+    "column": 9852,
+    "lineNumber": 2,
+    "columnNumber": 9852
+   },
+   "benign": false
+  },
+  {
+   "t": 42.48,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{col_id: name, source: COLUMN_MENU, type: filterOpened}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-CKFKjEyN.js",
+    "line": 0,
+    "column": 10748,
+    "lineNumber": 0,
+    "columnNumber": 10748
+   },
+   "benign": false
+  },
+  {
+   "t": 42.57,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{filter_instance: Object, col_id: name, type: filterModified}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-CKFKjEyN.js",
+    "line": 0,
+    "column": 11274,
+    "lineNumber": 0,
+    "columnNumber": 11274
+   },
+   "benign": false
+  },
+  {
+   "t": 43.13,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{source: columnFilter, after_data_change: undefined, after_floating_filter: undefined, col_ids: Array(1), type: filterChanged}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-CKFKjEyN.js",
+    "line": 0,
+    "column": 10963,
+    "lineNumber": 0,
+    "columnNumber": 10963
+   },
+   "benign": false
+  },
+  {
+   "t": 45.73,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{col_id: name, source: COLUMN_MENU, type: filterOpened}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-CKFKjEyN.js",
+    "line": 0,
+    "column": 10748,
+    "lineNumber": 0,
+    "columnNumber": 10748
+   },
+   "benign": false
+  },
+  {
+   "t": 45.83,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{filter_instance: Object, col_id: name, type: filterModified}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-CKFKjEyN.js",
+    "line": 0,
+    "column": 11274,
+    "lineNumber": 0,
+    "columnNumber": 11274
+   },
+   "benign": false
+  },
+  {
+   "t": 46.3,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{source: columnFilter, after_data_change: undefined, after_floating_filter: undefined, col_ids: Array(1), type: filterChanged}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-CKFKjEyN.js",
+    "line": 0,
+    "column": 10963,
+    "lineNumber": 0,
+    "columnNumber": 10963
+   },
+   "benign": false
+  },
+  {
+   "t": 56.03,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "{source: advancedFilter, after_data_change: undefined, after_floating_filter: undefined, col_ids: Array(0), type: filterChanged}",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/_model-ssrm_._index-CKFKjEyN.js",
+    "line": 0,
+    "column": 10963,
+    "lineNumber": 0,
+    "columnNumber": 10963
+   },
+   "benign": false
+  },
+  {
+   "t": 93.4,
+   "ctx": "auth",
+   "type": "warning",
+   "text": "AG Grid: warning #129 Visit https://www.ag-grid.com/react-data-grid/errors/129?_version_=36.2.0&feature=headerCheckbox&rowModel=infinite \n  Alternatively register the ValidationModule to see the full message in the console.",
+   "url": "http://localhost:3302/model-auth/",
+   "location": {
+    "url": "http://localhost:3302/assets/ag-theme-quartz-BKErmBm6.js",
+    "line": 14,
+    "column": 261941,
+    "lineNumber": 14,
+    "columnNumber": 261941
+   },
+   "benign": false
+  },
+  {
+   "t": 98.11,
+   "ctx": "ssrm",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-BKu6eW8C.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 98.14,
+   "ctx": "workaround",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/qa-model-workaround/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-BKu6eW8C.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 98.17,
+   "ctx": "simple",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/model/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-BKu6eW8C.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 98.19,
+   "ctx": "auth",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/model-auth/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-BKu6eW8C.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3302/_event/?token=ab4a7725-ccbb-4840-dc49-0749f57a78e7&EIO=4&transport=websocket": {
+   "ctx": "ssrm",
+   "sent": 24,
+   "recv": 31,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_mount\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state.toggle_login\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state.generate_friends\",\"payload\":{\"n\":50},\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_mount\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "3",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_mount\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\",\"payload\":{\"row_data\":{\"age\":46,\"years_known\":27,\"owes_me\":false,\"name\":\"Paul Williams\",\"spouse_is_annoying\":true,\"met\":\"1999-08-18 14:37:10.155365\",\"id\":1,\"has_a_dog\":false},\"field_name\":\"name\",\"value\":\"QA Edited SSRM\"},\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_selection_changed\",\"payload\":{\"rows\":[{\"age\":46,\"years_known\":27,\"owes_me\":false,\"name\":\"QA Edited SSRM\",\"spouse_is_annoying\":true,\"met\":\"1999-08-18 14:37:10.155365\",\"id\":1,\"has_a_dog\":false}],\"source\":\"checkboxSelected\",\"type\":\"selectionChanged\"},\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_selection_changed\",\"payload\":{\"rows\":[{\"age\":46,\"years_known\":27,\"owes_me\":false,\"name\":\"QA Edited SSRM\",\"spouse_is_annoying\":true,\"met\":\"1999-08-18 14:37:10.155365\",\"id\":1,\"has_a_dog\":false},{\"age\":38,\"years_known\":26,\"owes_me\":false,\"name\":\"Shannon Curtis\",\"spouse_is_annoying\":false,\"met\":\"2000-09-08 18:26:00.218454\",\"id\":2,\"has_a_dog\":true}],\"source\":\"checkboxSelected\",\"type\":\"selectionChanged\"},\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.set_enable_advanced_filter\",\"payload\":{\"v\":true},\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state.toggle_login\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"PvKY3NGJ26eOzXhuAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"DI_RVMH69HR8jorGAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"3Qxcq+seC0fHE3/FtTaukQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state\":{\"logged_in_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast']?.[\\\"info\\\"](\\\"Created 50 friends.\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setRowCount\\\"](50)))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setRowCount\\\"](50)))\",\"callback\":null}}]}]",
+    "0{\"sid\":\"4UyfaJoti7F9pW1KAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"s2TcxIVsnQwF5-jcAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"IQj5TVHsB/NS+5ooyDu7pg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "2",
+    "0{\"sid\":\"GaqDIfdmuM9bCklMAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"myPGDMCQ9e3XuHgaAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"4TFc5q9buU6Fvk9+4eO2sw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"refreshServerSide\\\"]()))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1\":{\"selected_items_rx_state_\":[{\"id\":1,\"name\":\"QA Edited SSRM\",\"age\":46,\"years_known\":27,\"owes_me\":false,\"has_a_dog\":false,\"spouse_is_annoying\":true,\"met\":\"1999-08-18 14:37:10.155365\"}],\"row_count_cached_rx_state_\":50}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1\":{\"selected_items_rx_state_\":[{\"id\":1,\"name\":\"QA Edited SSRM\",\"age\":46,\"years_known\":27,\"owes_me\":false,\"has_a_dog\":false,\"spouse_is_annoying\":true,\"met\":\"1999-08-18 14:37:10.155365\"},{\"id\":2,\"name\":\"Shannon Curtis\",\"age\":38,\"years_known\":26,\"owes_me\":false,\"has_a_dog\":true,\"spouse_is_annoying\":false,\"met\":\"2000-09-08 18:26:00.218454\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1\":{\"row_count_cached_rx_state_\":50,\"enable_advanced_filter_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state\":{\"logged_in_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3302/_event/?token=f7cebdc3-a9aa-4ee4-e2c7-c43b1c1e264a&EIO=4&transport=websocket": {
+   "ctx": "workaround",
+   "sent": 13,
+   "recv": 12,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.on_mount\",\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.on_value_setter\",\"payload\":{\"row_data\":{\"age\":46,\"years_known\":27,\"owes_me\":false,\"name\":\"QA Edited SSRM\",\"spouse_is_annoying\":true,\"met\":\"1999-08-18 14:37:10.155365\",\"id\":1,\"has_a_dog\":false},\"field_name\":\"age\",\"value\":77},\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.set_add_dialog_is_open\",\"payload\":{\"value\":true},\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.on_add\",\"payload\":{\"row_data\":{\"name\":\"QA Added Friend\",\"age\":\"33\",\"years_known\":\"3\",\"met\":\"2020-01-02T03:04:05\",\"owes_me\":false,\"has_a_dog\":false,\"spouse_is_annoying\":false}},\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.set_add_dialog_is_open\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.on_selection_changed\",\"payload\":{\"rows\":[{\"age\":77,\"years_known\":27,\"owes_me\":false,\"name\":\"QA Edited SSRM\",\"spouse_is_annoying\":true,\"met\":\"1999-08-18 14:37:10.155365\",\"id\":1,\"has_a_dog\":false}],\"source\":\"checkboxSelected\",\"type\":\"selectionChanged\"},\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.on_selection_changed\",\"payload\":{\"rows\":[{\"age\":77,\"years_known\":27,\"owes_me\":false,\"name\":\"QA Edited SSRM\",\"spouse_is_annoying\":true,\"met\":\"1999-08-18 14:37:10.155365\",\"id\":1,\"has_a_dog\":false},{\"age\":38,\"years_known\":26,\"owes_me\":false,\"name\":\"Shannon Curtis\",\"spouse_is_annoying\":false,\"met\":\"2000-09-08 18:26:00.218454\",\"id\":2,\"has_a_dog\":true}],\"source\":\"checkboxSelected\",\"type\":\"selectionChanged\"},\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.delete_selected\",\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.on_selection_changed\",\"payload\":{\"rows\":[],\"source\":\"apiSelectAll\",\"type\":\"selectionChanged\"},\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"TDCFgnBfXpGWC0mPAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"JY2mlFrAW_pI36FRAAAH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"0hVFuUjPv6uCvxfWvGNAhA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_wrapper_workaround_n2']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_wrapper_workaround_n2']?.current?.api?.[\\\"refreshInfiniteCache\\\"]()))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2\":{\"add_dialog_is_open_rx_state_\":true,\"row_count_cached_rx_state_\":50}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"Contact the website administrator.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2\":{\"add_dialog_is_open_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2\":{\"row_count_cached_rx_state_\":50}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_wrapper_workaround_n2']?.current?.api?.[\\\"deselectAll\\\"]()))\",\"callback\":null}},{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_wrapper_workaround_n2']?.current?.api?.[\\\"refreshInfiniteCache\\\"]()))\",\"callback\":null}}]}]",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3302/_event/?token=fa1f1e4f-9a58-4394-d6c5-1d9e4cb1eab6&EIO=4&transport=websocket": {
+   "ctx": "simple",
+   "sent": 4,
+   "recv": 5,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/model/\",\"asPath\":\"/model/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/model/\",\"asPath\":\"/model/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____model_wrapper_n1.on_mount\",\"router_data\":{\"pathname\":\"/model/\",\"asPath\":\"/model/\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"uHKeYdXljkpC8OVhAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"CD01WuBWoLjVV8T_AAAJ\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"y6ORZzP9F9lvyuEzPQGe9Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____model_wrapper_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____model_wrapper_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"data\\\"], [\\\"fi"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3302/_event/?token=1ca9de19-b286-4e2f-d3df-bc176ac4095a&EIO=4&transport=websocket": {
+   "ctx": "auth",
+   "sent": 5,
+   "recv": 8,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/model-auth/\",\"asPath\":\"/model-auth/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/model-auth/\",\"asPath\":\"/model-auth/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_mount\",\"router_data\":{\"pathname\":\"/model-auth/\",\"asPath\":\"/model-auth/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state.toggle_login\",\"router_data\":{\"pathname\":\"/model-auth/\",\"asPath\":\"/model-auth/\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"oUhCeYFlM6Et7-PlAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"DQloBRwWSEvRAPjiAAAL\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"9iXH91Rg331dv0leTZzUFA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___model_wrapper_customized____auth_state\":{\"logged_in_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p"
+   ],
+   "closed": false
+  }
+ },
+ "requests": [
+  {
+   "t": 0.76,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/model-ssrm",
+   "method": "GET"
+  },
+  {
+   "t": 0.76,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/model-ssrm/",
+   "method": "GET"
+  },
+  {
+   "t": 1.3,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=DI_RVMH69HR8jorGAAAB",
+   "method": "GET"
+  },
+  {
+   "t": 3.46,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=DI_RVMH69HR8jorGAAAB",
+   "method": "GET"
+  },
+  {
+   "t": 4.03,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=DI_RVMH69HR8jorGAAAB",
+   "method": "GET"
+  },
+  {
+   "t": 7.29,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/model-ssrm/",
+   "method": "GET"
+  },
+  {
+   "t": 7.55,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=s2TcxIVsnQwF5-jcAAAD",
+   "method": "GET"
+  },
+  {
+   "t": 34.38,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/model-ssrm/",
+   "method": "GET"
+  },
+  {
+   "t": 34.71,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 36.13,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%7B%22sort%22%3A%22asc%22%2C%22type%22%3A%22default%22%2C%22colId%22%3A%22age%22%7D%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 38.26,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%7B%22sort%22%3A%22desc%22%2C%22type%22%3A%22default%22%2C%22colId%22%3A%22age%22%7D%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 40.36,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 43.18,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 43.45,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 43.68,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 43.93,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 44.17,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 44.4,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 44.63,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 44.86,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 45.11,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 45.32,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 45.54,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 45.77,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 45.99,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 46.2,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Paul%22%7D%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 46.35,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 50.07,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 56.06,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=null&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 58.15,
+   "ctx": "ssrm",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=null&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=myPGDMCQ9e3XuHgaAAAF",
+   "method": "GET"
+  },
+  {
+   "t": 60.69,
+   "ctx": "workaround",
+   "url": "http://localhost:3302/qa-model-workaround",
+   "method": "GET"
+  },
+  {
+   "t": 60.7,
+   "ctx": "workaround",
+   "url": "http://localhost:3302/qa-model-workaround/",
+   "method": "GET"
+  },
+  {
+   "t": 61.39,
+   "ctx": "workaround",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2",
+   "method": "GET"
+  },
+  {
+   "t": 62.61,
+   "ctx": "workaround",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%7B%22sort%22%3A%22asc%22%2C%22type%22%3A%22default%22%2C%22colId%22%3A%22age%22%7D%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2",
+   "method": "GET"
+  },
+  {
+   "t": 64.68,
+   "ctx": "workaround",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%7B%22sort%22%3A%22desc%22%2C%22type%22%3A%22default%22%2C%22colId%22%3A%22age%22%7D%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2",
+   "method": "GET"
+  },
+  {
+   "t": 66.73,
+   "ctx": "workaround",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2",
+   "method": "GET"
+  },
+  {
+   "t": 69.43,
+   "ctx": "workaround",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%22name%22%3A%7B%22filterType%22%3A%22text%22%2C%22type%22%3A%22contains%22%2C%22filter%22%3A%22Scot%22%7D%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2",
+   "method": "GET"
+  },
+  {
+   "t": 72.68,
+   "ctx": "workaround",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2",
+   "method": "GET"
+  },
+  {
+   "t": 76.32,
+   "ctx": "workaround",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2",
+   "method": "GET"
+  },
+  {
+   "t": 84.34,
+   "ctx": "workaround",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2",
+   "method": "GET"
+  },
+  {
+   "t": 87.46,
+   "ctx": "simple",
+   "url": "http://localhost:3302/model",
+   "method": "GET"
+  },
+  {
+   "t": 87.46,
+   "ctx": "simple",
+   "url": "http://localhost:3302/model/",
+   "method": "GET"
+  },
+  {
+   "t": 87.99,
+   "ctx": "simple",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model_wrapper_n1",
+   "method": "GET"
+  },
+  {
+   "t": 92.72,
+   "ctx": "auth",
+   "url": "http://localhost:3302/model-auth",
+   "method": "GET"
+  },
+  {
+   "t": 92.73,
+   "ctx": "auth",
+   "url": "http://localhost:3302/model-auth/",
+   "method": "GET"
+  },
+  {
+   "t": 93.45,
+   "ctx": "auth",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2",
+   "method": "GET"
+  },
+  {
+   "t": 94.09,
+   "ctx": "auth",
+   "url": "http://localhost:3302/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2",
+   "method": "GET"
+  }
+ ]
+}

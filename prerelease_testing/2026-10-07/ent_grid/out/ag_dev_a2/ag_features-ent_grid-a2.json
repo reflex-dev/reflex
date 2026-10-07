@@ -1,0 +1,1507 @@
+{
+ "name": "ag_features-ent_grid-a2",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 7.14,
+   "name": "master-detail[state-vars-grid]: expanding row 0 shows detail grid",
+   "ok": true,
+   "detail": "Count\nDescription\n10\nStock Level\n5\nOrders Today\n25\nTotal Sales"
+  },
+  {
+   "t": 8.87,
+   "name": "master-detail[static-objects-grid]: expanding row 0 shows detail grid",
+   "ok": true,
+   "detail": "Count\nDescription\n10\nStock Level\n5\nOrders Today\n25\nTotal Sales"
+  },
+  {
+   "t": 13.36,
+   "name": "tree: top-level groups are folders (combine hosts on)",
+   "ok": true,
+   "detail": [
+    "Desktop",
+    "Documents",
+    "Pictures",
+    "Videos",
+    "Downloads"
+   ]
+  },
+  {
+   "t": 14.34,
+   "name": "tree: expanding Documents shows Work/Personal",
+   "ok": true,
+   "detail": [
+    "Work",
+    "Personal"
+   ]
+  },
+  {
+   "t": 14.35,
+   "name": "tree: aggregated size uses JS value_formatter (MB/KB)",
+   "ok": true,
+   "detail": "7.91 MB"
+  },
+  {
+   "t": 17.16,
+   "name": "tree: toggling Combine Hosts re-keys grid with hosts at top level",
+   "ok": true,
+   "detail": [
+    "vali",
+    "vidar"
+   ]
+  },
+  {
+   "t": 18.73,
+   "name": "tree: Save column state writes LocalStorage var",
+   "ok": true,
+   "detail": {
+    "reflex___state____state.ag_grid___tree____grid_state.column_state_json_rx_state_": "[{\"colId\": \"ag-Grid-AutoColumn\", \"width\": 280, \"hide\": false, \"pinned\": null, \"sort\": null, \"sortType\": null, \"sortIndex"
+   }
+  },
+  {
+   "t": 18.74,
+   "name": "tree: Load column state button enabled after save (computed var from LocalStorage)",
+   "ok": true,
+   "detail": true
+  },
+  {
+   "t": 22.45,
+   "name": "tree: Load column state still enabled after reload",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 28.16,
+   "name": "pivot: pivot headers by sport (virtualised) with sum(Gold) value columns",
+   "ok": true,
+   "detail": "Biathlon | Cross Country Skiing | Cycling | Diving | Gymnastics | Short-Track Speed Skating | Speed Skating | Group | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold)"
+  },
+  {
+   "t": 28.16,
+   "name": "pivot: rows grouped by country",
+   "ok": true,
+   "detail": [
+    "United States",
+    "Australia",
+    "Canada",
+    "Norway",
+    "China",
+    "Zimbabwe"
+   ]
+  },
+  {
+   "t": 28.2,
+   "name": "pivot: pivot panel + columns side bar visible",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 34.68,
+   "name": "cell-selection: range drag fires on_cell_selection_changed(finished) -> toast",
+   "ok": true,
+   "detail": [
+    "Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]",
+    "Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]"
+   ]
+  },
+  {
+   "t": 34.71,
+   "name": "cell-selection: highlighted cells match reported range (3 rows x 2 cols)",
+   "ok": true,
+   "detail": 6
+  },
+  {
+   "t": 40.85,
+   "name": "fill-handle: handle visible on selected cell",
+   "ok": true,
+   "detail": {
+    "x": 367,
+    "y": 590,
+    "width": 6,
+    "height": 6
+   }
+  },
+  {
+   "t": 43.23,
+   "name": "fill-handle: dragging fills rows 1-2 and fires on_cell_value_changed toasts",
+   "ok": true,
+   "detail": {
+    "ages": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ],
+    "toasts": [
+     "Updated age: 23",
+     "Updated age: 23"
+    ]
+   }
+  },
+  {
+   "t": 47.48,
+   "name": "fill-handle: filled values persisted in State across reload",
+   "ok": true,
+   "detail": {
+    "before_reload": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ],
+    "after_reload": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ]
+   }
+  },
+  {
+   "t": 50.32,
+   "name": "clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event",
+   "ok": false,
+   "detail": {
+    "golds": [
+     "8",
+     "6",
+     "4",
+     "1",
+     "2"
+    ],
+    "toasts": []
+   }
+  },
+  {
+   "t": 55.03,
+   "name": "aligned: both grids show data",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 56.77,
+   "name": "aligned: expanding Medals group in grid1 also expands grid2",
+   "ok": true,
+   "detail": {
+    "before": [
+     0,
+     0
+    ],
+    "after": [
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "t": 58.9,
+   "name": "aligned: resizing athlete column in grid1 resizes grid2",
+   "ok": true,
+   "detail": {
+    "w1_before": 200,
+    "w1_after": 318,
+    "w2_after": 318
+   }
+  },
+  {
+   "t": 67.15,
+   "name": "editable: edit fires on_cell_value_changed toast",
+   "ok": true,
+   "detail": [
+    "Cell value changed: name = Johnny"
+   ]
+  },
+  {
+   "t": 70.09,
+   "name": "editable: edited value persisted in State across reload",
+   "ok": true,
+   "detail": [
+    "Johnny",
+    "Anna",
+    "Mike"
+   ]
+  },
+  {
+   "t": 76.51,
+   "name": "state-grid: Load Columns sets header_name/headerName from State",
+   "ok": true,
+   "detail": [
+    "",
+    "DIR",
+    "STR",
+    "HZ"
+   ]
+  },
+  {
+   "t": 78.75,
+   "name": "state-grid: data loaded with JS value_formatter suffix",
+   "ok": true,
+   "detail": [
+    {
+     "idx": 0,
+     "id": "0",
+     "sel": "true",
+     "val": "0.5 Hz"
+    },
+    {
+     "idx": 1,
+     "id": "1",
+     "sel": "true",
+     "val": "0.6 Hz"
+    }
+   ]
+  },
+  {
+   "t": 78.75,
+   "name": "state-grid: on_row_data_updated event chain selected all rows (select_all_on_load)",
+   "ok": true,
+   "detail": [
+    "true",
+    "true",
+    "true",
+    "true",
+    "true"
+   ]
+  },
+  {
+   "t": 78.76,
+   "name": "state-grid: chained set_select_all_on_load(False) reset the switch",
+   "ok": true,
+   "detail": "unchecked"
+  },
+  {
+   "t": 80.07,
+   "name": "state-grid: Clear Data empties grid",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 81.15,
+   "name": "state-grid: Clear Columns removes headers",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "t": 89.34,
+   "name": "selected-items: Select All -> on_selection_changed -> State count",
+   "ok": true,
+   "detail": "Selected Items (128)"
+  },
+  {
+   "t": 93.2,
+   "name": "selected-items: tags input 'n' -> upper-cased key -> select_rows_by_key(direction=N)",
+   "ok": true,
+   "detail": {
+    "heading": "Selected Items (8)",
+    "visible_selected_N_rows": 2
+   }
+  },
+  {
+   "t": 105.32,
+   "name": "integrated-charts: chart range -> chart dialog with canvas",
+   "ok": true,
+   "detail": 1
+  },
+  {
+   "t": 110.11,
+   "name": "row_id_key: getRowId uses data.uid",
+   "ok": true,
+   "detail": [
+    "u-1",
+    "u-2",
+    "u-3"
+   ]
+  },
+  {
+   "t": 110.16,
+   "name": "pinned rows (new names pinned_top_row_data/pinned_bottom_row_data)",
+   "ok": true,
+   "detail": {
+    "top": [
+     "TOP-NEW\npinned top new\nundefined units\nS:"
+    ],
+    "bottom": [
+     "BOT-NEW\npinned bottom new\nundefined units\nS:"
+    ]
+   }
+  },
+  {
+   "t": 110.18,
+   "name": "pinned rows (legacy aliases pinned_row_top_data/pinned_row_bottom_data)",
+   "ok": true,
+   "detail": {
+    "top": [
+     "TOP-OLD\npinned top old"
+    ],
+    "bottom": [
+     "BOT-OLD\npinned bottom old"
+    ]
+   }
+  },
+  {
+   "t": 110.19,
+   "name": "suppress_overlays=['noRows'] hides the no-rows overlay (default grid shows it)",
+   "ok": true,
+   "detail": {
+    "default": [
+     "No Rows To Show"
+    ],
+    "suppressed": []
+   }
+  },
+  {
+   "t": 110.2,
+   "name": "value_formatter string renders 'N units'",
+   "ok": true,
+   "detail": [
+    "1 units",
+    "2 units",
+    "3 units"
+   ]
+  },
+  {
+   "t": 110.21,
+   "name": "custom JS cell renderer (rx.badge via ArgsFunctionOperation) renders",
+   "ok": true,
+   "detail": [
+    "S:",
+    "S:new",
+    "S:new",
+    "S:done",
+    "S:"
+   ]
+  },
+  {
+   "t": 111.51,
+   "name": "row_id_key: prepending a row keeps stable ids",
+   "ok": true,
+   "detail": [
+    "u-4",
+    "u-1",
+    "u-2",
+    "u-3"
+   ]
+  },
+  {
+   "t": 112.83,
+   "name": "row_id_key: immutable State update bumps u-2 in place",
+   "ok": true,
+   "detail": {
+    "u-4": "4 units",
+    "u-1": "1 units",
+    "u-2": "12 units",
+    "u-3": "3 units"
+   }
+  },
+  {
+   "t": 115.33,
+   "name": "select cell editor edit -> on_cell_value_changed node_id == row_id_key uid -> State",
+   "ok": true,
+   "detail": {
+    "edits": "edits: u-1:status->doing",
+    "badge": "S:doing"
+   }
+  },
+  {
+   "t": 117.59,
+   "name": "clipboard (ClipboardModule): Ctrl+C copies cell, Ctrl+V pastes + fires on_cell_value_changed",
+   "ok": true,
+   "detail": {
+    "clipboard": "10",
+    "b": [
+     "10",
+     "20",
+     "10"
+    ],
+    "log": "clip: 2:b=10"
+   }
+  },
+  {
+   "t": 122.65,
+   "name": "memo grid: column defs from State.fields.foreach",
+   "ok": true,
+   "detail": [
+    "Name",
+    "Qty"
+   ]
+  },
+  {
+   "t": 123.97,
+   "name": "memo grid: on_cell_clicked inside @rx.memo reaches State",
+   "ok": true,
+   "detail": "clicked: name=beta"
+  },
+  {
+   "t": 125.23,
+   "name": "memo grid: toggling State field list adds Status column",
+   "ok": true,
+   "detail": [
+    "Name",
+    "Qty",
+    "Status"
+   ]
+  },
+  {
+   "t": 126.91,
+   "name": "ComponentState grids: instance A grows independently of B",
+   "ok": true,
+   "detail": {
+    "a": "rows: 3",
+    "b": "rows: 1",
+    "rows_a": 3,
+    "rows_b": 1
+   }
+  },
+  {
+   "t": 130.23,
+   "name": "ComponentState grids: state survives reload",
+   "ok": true,
+   "detail": 3
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [
+   "clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event"
+  ],
+  "n_checks": 47,
+  "console_total": 430,
+  "console_benign": 414,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 18.76,
+   "ctx": "tree",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/tree",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 43.24,
+   "ctx": "fill_handle",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/fill-handle",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 67.16,
+   "ctx": "editable",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/editable",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 126.92,
+   "ctx": "qa_memo",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/qa-grid-memo",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.32,
+   "ctx": "master_detail",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/master-detail",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.37,
+   "ctx": "tree",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/tree",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.42,
+   "ctx": "pivot",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.46,
+   "ctx": "cell_selection",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.49,
+   "ctx": "fill_handle",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/fill-handle",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.54,
+   "ctx": "aligned",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/aligned-grids",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.61,
+   "ctx": "editable",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/editable",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.67,
+   "ctx": "state_grid",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/state-grid",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.75,
+   "ctx": "selected_items",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.81,
+   "ctx": "integrated_charts",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/integrated-charts",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.88,
+   "ctx": "qa_props",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 130.99,
+   "ctx": "qa_memo",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/qa-grid-memo",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3300/?token=3otEDAxFJKLb": {
+   "ctx": "master_detail",
+   "sent": 372,
+   "recv": 16,
+   "sent_samples": [
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}"
+   ],
+   "recv_samples": [
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  "ws://localhost:8300/_event/?token=b6062609-38f1-43b1-d552-79b2d30bfbd4&EIO=4&transport=websocket": {
+   "ctx": "master_detail",
+   "sent": 6,
+   "recv": 9,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"R8S3zeJ1UofFwxQwAABm\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"vdNnlT3CHuJeWDMuAABn\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"5eEx/+5rPeJayKrnzeHKBA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=c44722a6-cf50-453d-fcce-a29aad93b97f&EIO=4&transport=websocket": {
+   "ctx": "tree",
+   "sent": 9,
+   "recv": 14,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___tree____tree_display_state.set_combine_hosts\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/tree\",\"asPath\":\"/tree\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___tree____grid_state.save_column_state\",\"payload\":{\"state\":[{\"colId\":\"ag-Grid-AutoColumn\",\"width\":280,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivotIndex\":null,\"pivotSort\":\"asc\",\"flex\":null,\"showValuesAs\":null,\"headerName\":null},{\"colId\":\"created\",\"width\":200,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivot",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___tree____grid_state.column_state_json_rx_state_\":\"[{\\\"colId\\\": \\\"ag-Grid-AutoColumn\\\", \\\"width\\\": 280, \\\"hide\\\": false, \\\"pinned\\\": null, \\\"sort\\\": null, \\\"sortType\\\": null, \\\"sortIndex\\\": null, \\\"aggFunc\\\": null, \\\"valueIndex\\\": null, \\\"rowGroup\\\": false, \\\"rowGroupIndex\\\": null, \\\"pivot\\\": false, \\\"pivotIndex\\\": null, \\\"pivotSort\\\": \\\"asc\\\", \\\"flex\\\": null, \\\"showValuesAs\\\": null, \\\"headerName\\\": null}, {\\\"colId\\\": \\\"created\\\", \\\"width\\\": 200, \\\"hide\\\": false, \\\"pinned\\\"",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"Y1nGbCGTEGPNcMSJAABo\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"nhOOhP8rXhJF03DuAABp\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"H4zXFOh62ktnGdSL4fjRAg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___tree____tree_display_state\":{\"combine_hosts_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___tree____grid_state\":{\"column_state_json_rx_state_\":\"[{\\\"colId\\\": \\\"ag-Grid-AutoColumn\\\", \\\"width\\\": 280, \\\"hide\\\": false, \\\"pinned\\\": null, \\\"sort\\\": null, \\\"sortType\\\": null, \\\"sortIndex\\\": null, \\\"aggFunc\\\": null, \\\"valueIndex\\\": null, \\\"rowGroup\\\": false, \\\"rowGroupIndex\\\": null, \\\"pivot\\\": false, \\\"pivotIndex\\\": null, \\\"pivotSort\\\": \\\"asc\\\", \\\"flex\\\": null, \\\"showValuesAs\\\": null, \\\"headerName\\\": null}, {\\\"colId\\\": \\\"created\\\", \\\"width\\\": 200, \\\"hide\\\": false, \\\"pinned\\\": null, \\\"sort\\\": null, \\\"sortType\\\": null, \\\"sortIndex\\\"",
+    "0{\"sid\":\"xmMdbPtoSJhq7fEcAABq\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"xpfXOtuetUzbu2p4AABr\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"u4Ba8TnToXVzQwzJOG6ycQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:8300/_event/?token=47ba50a9-f3c8-4fee-d21f-4e46686093af&EIO=4&transport=websocket": {
+   "ctx": "pivot",
+   "sent": 5,
+   "recv": 8,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"1QOlpWBBd8LHrc-SAABs\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"MPyTrNgMKMVR9qQGAABt\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"WgCPiBovsDm39Fa14NtzIA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=46779803-6905-4165-df7a-e27b9af21235&EIO=4&transport=websocket": {
+   "ctx": "cell_selection",
+   "sent": 10,
+   "recv": 11,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":0,\"columns\":[\"athlete\"]}],\"started\":true,\"finished\":true},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":0,\"columns\":[\"athlete\"]}],\"started\":true,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":1,\"columns\":[\"athlete\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":1,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":2,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":2,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":true},\"router_data\":{\"pathname\":\"/cell-selection\",\"asPath\":\"/cell-selection\"}}]",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"iAtUe3sfSNyTdToMAABu\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"9H9pOCO-APZAA6xEAABv\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"2WNlg8YIO+rMF374xr+u1w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___cell_selection____cell_selection_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"ath",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]\\\")))\",\"callback\":null}}]}]",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=d3a298bb-0b23-4177-bed6-66187883d771&EIO=4&transport=websocket": {
+   "ctx": "fill_handle",
+   "sent": 8,
+   "recv": 15,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___fill_handle____fill_handle_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":1,\"field\":\"age\",\"newValue\":23,\"node_id\":\"1\"}},\"router_data\":{\"pathname\":\"/fill-handle\",\"asPath\":\"/fill-handle\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___fill_handle____fill_handle_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":2,\"field\":\"age\",\"newValue\":23,\"node_id\":\"2\"}},\"router_data\":{\"pathname\":\"/fill-handle\",\"asPath\":\"/fill-handle\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"4IHQwKbfF_Ape8r_AABw\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"lsUD7ediAJtJyVXsAABx\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"unSDQsXxns0OMEAwlVU68A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___fill_handle____fill_handle_state\":{\"row_data_rx_state_\":[{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2008,\"date\":\"24/08/2008\",\"sport\":\"Swimming\",\"gold\":8,\"silver\":0,\"bronze\":0,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2004,\"date\":\"29/08/2004\",\"sport\":\"Swimming\",\"gold\":6,\"silver\":0,\"bronze\":2,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":27,\"country\":\"United States\",\"year\":2012,\"date\":\"12/08/2012\",\"sport\":\"Swimming\",\"gold\":4,\"silver\":2,\"bronze\":0,\"total\":6},{\"athlete\":",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Updated age: 23\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___fill_handle____fill_handle_state\":{\"row_data_rx_state_\":[{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2008,\"date\":\"24/08/2008\",\"sport\":\"Swimming\",\"gold\":8,\"silver\":0,\"bronze\":0,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2004,\"date\":\"29/08/2004\",\"sport\":\"Swimming\",\"gold\":6,\"silver\":0,\"bronze\":2,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2012,\"date\":\"12/08/2012\",\"sport\":\"Swimming\",\"gold\":4,\"silver\":2,\"bronze\":0,\"total\":6},{\"athlete\":",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Updated age: 23\\\")))\",\"callback\":null}}]}]",
+    "0{\"sid\":\"BW0ooLsQbkELY4HjAABy\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Y075ssZ7qP5-bcLAAABz\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"S3tDVry49iVu6BEsdfjF2A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:8300/_event/?token=d1692396-9ef8-4b37-fb85-533320388519&EIO=4&transport=websocket": {
+   "ctx": "aligned",
+   "sent": 4,
+   "recv": 9,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"4D-FwJdXeuv10gwLAAB0\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"w1FzWdv131u_bOQTAAB1\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"HAMR7m2m8xMHk639nRi7WQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___aligned_grids____aligned_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"athlete\":\"M",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=90b21cb0-20a0-4ca7-f71b-973ad467aa2c&EIO=4&transport=websocket": {
+   "ctx": "editable",
+   "sent": 6,
+   "recv": 12,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___editable____editable_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":0,\"field\":\"name\",\"newValue\":\"Johnny\",\"node_id\":\"0\"}},\"router_data\":{\"pathname\":\"/editable\",\"asPath\":\"/editable\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"uuUD-j7i7Ju1T4xMAAB2\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"xohacJVRyMGZQ217AAB3\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"hoXemoenTH0JdlMpKdnXeQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___editable____editable_state\":{\"row_data_rx_state_\":[{\"name\":\"Johnny\",\"age\":30,\"country\":\"USA\"},{\"name\":\"Anna\",\"age\":25,\"country\":\"Sweden\"},{\"name\":\"Mike\",\"age\":35,\"country\":\"Canada\"}]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Cell value changed: name = Johnny\\\")))\",\"callback\":null}}]}]",
+    "0{\"sid\":\"T-qMB5KasTXouGCvAAB4\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"3O2aK1wcgUbTyvzMAAB5\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"lcDW4CttyAlfoq9R/YHj6A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:8300/_event/?token=69bd4535-6459-44c1-f91e-4a7f61231f40&EIO=4&transport=websocket": {
+   "ctx": "state_grid",
+   "sent": 11,
+   "recv": 14,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid\",\"asPath\":\"/state-grid\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.load_columns\",\"router_data\":{\"pathname\":\"/state-grid\",\"asPath\":\"/state-grid\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":true},\"router_data\":{\"pathname\":\"/state-grid\",\"asPath\":\"/state-grid\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.load_data\",\"router_data\":{\"pathname\":\"/state-grid\",\"asPath\":\"/state-grid\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid\",\"asPath\":\"/state-grid\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.clear_data\",\"router_data\":{\"pathname\":\"/state-grid\",\"asPath\":\"/state-grid\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid\",\"asPath\":\"/state-grid\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.clear_columns\",\"router_data\":{\"pathname\":\"/state-grid\",\"asPath\":\"/state-grid\"}}]",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"QK7Rw0EMvnxVwdcJAAB6\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"VMjY8QFCYeKoZK07AAB7\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"DomyPkIMnk2jZ1OrY0MI7g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"column_defs_rx_state_\":[{\"field\":\"direction\",\"header_name\":\"DIR\"},{\"field\":\"strength\",\"headerName\":\"STR\"},{\"field\":\"frequency\",\"header_name\":\"HZ\",\"value_formatter\":\"params.value + ' Hz'\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"row_data_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"SSW\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"row_data_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"column_defs_rx_state_\":[]}}}]",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=fb377bc0-429a-4635-b644-e124d6e1ae33&EIO=4&transport=websocket": {
+   "ctx": "selected_items",
+   "sent": 7,
+   "recv": 12,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_keys\",\"payload\":{\"keys\":[]},\"router_data\":{\"pathname\":\"/selected-items\",\"asPath\":\"/selected-items\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[]},\"router_data\":{\"pathname\":\"/selected-items\",\"asPath\":\"/selected-items\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_keys\",\"payload\":{\"keys\":[\"n\"]},\"router_data\":{\"pathname\":\"/selected-items\",\"asPath\":\"/selected-items\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"N\",\"strength\":\"1-2\",\"frequency\":1.6},{\"direction\":\"N\",\"strength\":\"2-3\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"3-4\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"4-4\",\"frequency\":0.4},{\"direction\":\"N\",\"strength\":\"4-5\",\"frequency\":0.3},{\"direction\":\"N\",\"strength\":\"5-6\",\"frequency\":0.2},{\"direction\":\"N\",\"strength\":\"6+\",\"frequency\":0.1}]},\"router_data\":{\"pathname\":\"/selected-items\",\"asPath\":\"/",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"0DLV-YMRcvJf6b-WAAB8\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"H6gKKXyj2fZQMyYiAAB9\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"aplp6ZHhr4K4zFYulXv+2g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direc",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"keys_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"let api = refs['ref_ag_grid_basic_1']?.current?.api;\\nconst selected_nodes = [];\\nlet keys_set = new Set([]);\\napi.forEachNode((node) => {\\n    if (keys_set.has(node.data.direction)) {\\n        selected_nodes.push(node);\\n    }\\n});\\napi.deselectAll();\\napi.setNodesSelected({ nodes: selected_nodes, newValue: true });\\n    \",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"keys_rx_state_\":[\"N\"]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"let api = refs['ref_ag_grid_basic_1']?.current?.api;\\nconst selected_nodes = [];\\nlet keys_set = new Set([\\\"N\\\"]);\\napi.forEachNode((node) => {\\n    if (keys_set.has(node.data.direction)) {\\n        selected_nodes.push(node);\\n    }\\n});\\napi.deselectAll();\\napi.setNodesSelected({ nodes: selected_nodes, newValue: true });\\n    \",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"N\",\"strength\":\"1-2\",\"frequency\":1.6},{\"direction\":\"N\",\"strength\":\"2-3\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"3-4\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"4-4\",\"frequency\":0.4},{\"direction\":\"N\",\"strength\":\"4-5\",\"frequency\":0.3},{\"direction\":\"N\",\"strength\":\"5-6\",\"frequency\":0.2},{\"direction\":\"N\",\"strength\":\"6+\",\"frequency\":0.1}]}}}]",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=11bfa550-47b5-45d0-d62f-e5eae3523415&EIO=4&transport=websocket": {
+   "ctx": "integrated_charts",
+   "sent": 2,
+   "recv": 5,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"Jl7AC3dQ-3qny309AAB-\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"MncQxSW5VLdd4hYJAAB_\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"P4rGgR+UY19U+JsgbvILDg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=4cbbfd5a-6468-4166-b58f-166c1ed3c7a6&EIO=4&transport=websocket": {
+   "ctx": "qa_props",
+   "sent": 5,
+   "recv": 8,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.prepend\",\"router_data\":{\"pathname\":\"/qa-grid-props\",\"asPath\":\"/qa-grid-props\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.bump\",\"router_data\":{\"pathname\":\"/qa-grid-props\",\"asPath\":\"/qa-grid-props\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_edit\",\"payload\":{\"params\":{\"rowIndex\":1,\"field\":\"status\",\"newValue\":\"doing\",\"node_id\":\"u-1\"}},\"router_data\":{\"pathname\":\"/qa-grid-props\",\"asPath\":\"/qa-grid-props\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_clip_change\",\"payload\":{\"params\":{\"rowIndex\":2,\"field\":\"b\",\"newValue\":10,\"node_id\":\"2\"}},\"router_data\":{\"pathname\":\"/qa-grid-props\",\"asPath\":\"/qa-grid-props\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"LHyQTDBz8FgB11PhAACA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"mGoKAfe3cVWEipe_AACB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"aO4GLMiNkPVLuFDnubSEyQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"new\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":2,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"new\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":12,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"edits_rx_state_\":[\"u-1:status->doing\"],\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"doing\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":12,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"clip_log_rx_state_\":[\"2:b=10\"]}}}]"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8300/_event/?token=64138fd4-cf07-42a0-f54d-c6b55fc10e79&EIO=4&transport=websocket": {
+   "ctx": "qa_memo",
+   "sent": 7,
+   "recv": 12,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_cell_clicked\",\"payload\":{\"params\":{\"type\":\"cellClicked\",\"data\":{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":2,\"status\":\"new\"},\"value\":\"beta\",\"colDef\":{\"cellDataType\":\"text\",\"type\":null,\"field\":\"name\"},\"rowIndex\":1,\"rowPinned\":null}},\"router_data\":{\"pathname\":\"/qa-grid-memo\",\"asPath\":\"/qa-grid-memo\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.toggle_status_field\",\"router_data\":{\"pathname\":\"/qa-grid-memo\",\"asPath\":\"/qa-grid-memo\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1.add_row\",\"router_data\":{\"pathname\":\"/qa-grid-memo\",\"asPath\":\"/qa-grid-memo\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1.add_row\",\"router_data\":{\"pathname\":\"/qa-grid-memo\",\"asPath\":\"/qa-grid-memo\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"HFm9o6uNPtLnX_0DAACC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"uWuUcEXeasg8rlcgAACD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ixUDtL9MlIx2MElW6OXXeQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"clicked_rx_state_\":\"name=beta\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"fields_rx_state_\":[\"name\",\"qty\",\"status\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1\":{\"cs_rows_rx_state_\":[{\"k\":1,\"v\":\"one\"},{\"k\":2,\"v\":\"row2\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1\":{\"cs_rows_rx_state_\":[{\"k\":1,\"v\":\"one\"},{\"k\":2,\"v\":\"row2\"},{\"k\":3,\"v\":\"row3\"}]}}}]",
+    "0{\"sid\":\"XptChXG_CGfPb8GqAACE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"iJhIlva_JJ0sjGpRAACF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"OimsMPawoa+7tMuowdCGyg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 1.03,
+   "ctx": "master_detail",
+   "url": "http://localhost:3300/master-detail",
+   "method": "GET"
+  },
+  {
+   "t": 1.29,
+   "ctx": "master_detail",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 1.29,
+   "ctx": "master_detail",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 1.34,
+   "ctx": "master_detail",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 4.05,
+   "ctx": "master_detail",
+   "url": "http://localhost:3300/app/routes/[master-detail]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 9.13,
+   "ctx": "tree",
+   "url": "http://localhost:3300/tree",
+   "method": "GET"
+  },
+  {
+   "t": 9.35,
+   "ctx": "tree",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 9.35,
+   "ctx": "tree",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 9.43,
+   "ctx": "tree",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 11.65,
+   "ctx": "tree",
+   "url": "http://localhost:3300/app/routes/[tree]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 18.76,
+   "ctx": "tree",
+   "url": "http://localhost:3300/tree",
+   "method": "GET"
+  },
+  {
+   "t": 19.02,
+   "ctx": "tree",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 19.02,
+   "ctx": "tree",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 19.05,
+   "ctx": "tree",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 20.6,
+   "ctx": "tree",
+   "url": "http://localhost:3300/app/routes/[tree]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 23.87,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/pivot",
+   "method": "GET"
+  },
+  {
+   "t": 24.09,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 24.14,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 24.17,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 26.39,
+   "ctx": "pivot",
+   "url": "http://localhost:3300/app/routes/[pivot]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 28.45,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/cell-selection",
+   "method": "GET"
+  },
+  {
+   "t": 28.76,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 28.82,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 28.83,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 31.01,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3300/app/routes/[cell-selection]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 35.04,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3300/fill-handle",
+   "method": "GET"
+  },
+  {
+   "t": 35.43,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 35.43,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 35.51,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 38.67,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3300/app/routes/[fill-handle]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 43.24,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3300/fill-handle",
+   "method": "GET"
+  },
+  {
+   "t": 43.49,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 43.49,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 43.53,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 44.92,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3300/app/routes/[fill-handle]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 50.42,
+   "ctx": "aligned",
+   "url": "http://localhost:3300/aligned-grids",
+   "method": "GET"
+  },
+  {
+   "t": 50.6,
+   "ctx": "aligned",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 50.62,
+   "ctx": "aligned",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 50.68,
+   "ctx": "aligned",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 53.47,
+   "ctx": "aligned",
+   "url": "http://localhost:3300/app/routes/[aligned-grids]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 59.63,
+   "ctx": "editable",
+   "url": "http://localhost:3300/editable",
+   "method": "GET"
+  },
+  {
+   "t": 60.1,
+   "ctx": "editable",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 60.11,
+   "ctx": "editable",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 60.17,
+   "ctx": "editable",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 63.92,
+   "ctx": "editable",
+   "url": "http://localhost:3300/app/routes/[editable]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 67.17,
+   "ctx": "editable",
+   "url": "http://localhost:3300/editable",
+   "method": "GET"
+  },
+  {
+   "t": 67.41,
+   "ctx": "editable",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 67.41,
+   "ctx": "editable",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 67.46,
+   "ctx": "editable",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 68.8,
+   "ctx": "editable",
+   "url": "http://localhost:3300/app/routes/[editable]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 70.37,
+   "ctx": "state_grid",
+   "url": "http://localhost:3300/state-grid",
+   "method": "GET"
+  },
+  {
+   "t": 70.65,
+   "ctx": "state_grid",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 70.69,
+   "ctx": "state_grid",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 70.82,
+   "ctx": "state_grid",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 74.32,
+   "ctx": "state_grid",
+   "url": "http://localhost:3300/app/routes/[state-grid]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 81.31,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/selected-items",
+   "method": "GET"
+  },
+  {
+   "t": 81.64,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 81.68,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 81.81,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 85.43,
+   "ctx": "selected_items",
+   "url": "http://localhost:3300/app/routes/[selected-items]._index.jsx?import",
+   "method": "GET"
+  }
+ ],
+ "requests_truncated_from": 80
+}

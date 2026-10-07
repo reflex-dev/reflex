@@ -83,6 +83,7 @@ class ChainState(rx.State):
 
 class SupMini(rx.State):
     log: list[str] = []
+    other: str = "none"
 
     @rx.event(supersedes=True)
     async def work(self, label: str):
@@ -94,9 +95,29 @@ class SupMini(rx.State):
         self.log.append(f"{label}:end")
         mark(f"work {label} done")
 
+    @rx.event(supersedes=True)
+    async def work_split(self, label: str):
+        """Variant: the superseding call (label b) never touches `log`."""
+        if label == "b":
+            self.other = "b-ran"
+            mark("work_split b ran (no log change)")
+            return
+        self.log.append(f"{label}:start")
+        yield
+        self.log.append(f"{label}:after-yield")
+        mark(f"work_split {label} sleeping")
+        await asyncio.sleep(3)
+        self.log.append(f"{label}:end")
+        mark(f"work_split {label} done")
+
     @rx.event
     def clear(self):
         self.log = []
+        self.other = "none"
+
+
+class EmojiState(rx.State):
+    emoji: str = "a\U0001f600b"
 
 
 def panel() -> rx.Component:
@@ -119,7 +140,10 @@ def panel() -> rx.Component:
             rx.button("work a", on_click=SupMini.work("a"), id="work-a"),
             rx.button("work b", on_click=SupMini.work("b"), id="work-b"),
             rx.button("sup clear", on_click=SupMini.clear, id="sup-clear"),
+            rx.button("split a", on_click=SupMini.work_split("a"), id="split-a"),
+            rx.button("split b", on_click=SupMini.work_split("b"), id="split-b"),
             rx.text(SupMini.log.join(","), id="sup-log"),
+            rx.text(SupMini.other, id="sup-other"),
         ),
         rx.link("to onload page", href="/onload", id="to-onload"),
     )
@@ -133,6 +157,22 @@ def onload_page() -> rx.Component:
     return panel()
 
 
+def emoji_rev() -> rx.Component:
+    """Only the reversed emoji string (JS reversal splits the surrogate pair)."""
+    return rx.vstack(rx.text(VERSION, id="version"), rx.text(EmojiState.emoji[::-1], id="emoji-rev"))
+
+
+def emoji_len() -> rx.Component:
+    return rx.vstack(rx.text(VERSION, id="version"), rx.text(EmojiState.emoji.length(), id="emoji-len"))
+
+
+def emoji_plain() -> rx.Component:
+    return rx.vstack(rx.text(VERSION, id="version"), rx.text(EmojiState.emoji, id="emoji-plain"))
+
+
 app = rx.App()
 app.add_page(index)
 app.add_page(onload_page, route="/onload", on_load=ChainState.onload_raises)
+app.add_page(emoji_rev, route="/emoji-rev")
+app.add_page(emoji_len, route="/emoji-len")
+app.add_page(emoji_plain, route="/emoji-plain")

@@ -1,4 +1,4 @@
-"""Shared Playwright capture helpers for the ent_demos cluster drivers.
+"""Shared Playwright capture helpers for the ent_grid cluster drivers (adapted from the 10-06 ent_demos cluster).
 
 Every driver opens a `Session`, which records console messages (all levels),
 page errors, failed requests, HTTP >= 400 responses and websocket frame
@@ -156,9 +156,9 @@ class Session:
 
     def shot(self, page: Page, name: str, full_page: bool = False) -> None:
         """Save a screenshot under the output dir."""
-        path = self.out_dir / f"{self.name}-{name}.png"
+        path = self.out_dir / f"{self.name}-{name}.jpg"
         try:
-            page.screenshot(path=str(path), full_page=full_page)
+            page.screenshot(path=str(path), full_page=full_page, type="jpeg", quality=45)
         except Exception as e:  # noqa: BLE001
             self.note(f"screenshot {name} failed: {e}")
 
@@ -218,9 +218,11 @@ def assert_driver_and_server(expected_venv: str) -> dict[str, str]:
     assert f"/scratchpad/envs/{expected_venv}/bin/" in cmdline, cmdline
     out = subprocess.run(
         [f"{SB}/envs/{expected_venv}/bin/python", "-I", "-c",
-         "import reflex, reflex_enterprise, importlib.metadata as m; "
-         "print(reflex.__file__); print(reflex_enterprise.__file__); "
-         "print(m.version('reflex'), m.version('reflex-enterprise'))"],
+         "import reflex, importlib.metadata as m, importlib.util as u; "
+         "print(reflex.__file__); "
+         "spec = u.find_spec('reflex_enterprise'); "
+         "print(spec.origin if spec else '(no reflex_enterprise: /scratchpad/envs/' + __import__('sys').prefix.split('/scratchpad/envs/')[1] + '/)'); "
+         "print(m.version('reflex'), m.version('reflex-enterprise') if spec else '-')"],
         capture_output=True, text=True, check=True, cwd=SB,
     ).stdout.split("\n")
     assert f"/scratchpad/envs/{expected_venv}/" in out[0], out

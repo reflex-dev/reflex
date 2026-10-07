@@ -1,0 +1,1154 @@
+{
+ "name": "ag_grid-smoke",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 7.65,
+   "name": "route /",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 0,
+    "center_rows": 0,
+    "text": "AgGrid demo |  | A collection of examples using AG Grid in Reflex. |  | Example |  | Source |  | Aligned Grids |  | Demonstrates the use of aligned grids in Reflex. |  | Cell Selection |  | Demonstrates cell selection in AG Grid. |  | Editable AG Grid |  | An editable AG Grid example. |  | Fill Handle |  | Demonstrates the Fill Handle feature"
+   }
+  },
+  {
+   "t": 12.68,
+   "name": "route /advanced-serialization",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 22,
+    "text": "Grid State Serialization (Advanced) | AgGrid demo |  | AG Grid with column state serialization. |  | Example |  | Source |  | 1 to 31 of 31. Page 1 of 1 | Athlete | Age | Country | Year | Date | Sport | Gold | Natalie Coughlin | 25 | United States | 2008 | 2008-08-24 00:00:00 | Swimming | 1 | Aleksey Nemov | 24 | 2000 | Gymnastics | 2 | Alicia Coutts | 24 | Au"
+   }
+  },
+  {
+   "t": 16.97,
+   "name": "route /aligned-grids",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 2,
+    "center_rows": 28,
+    "text": "Aligned Grids | AgGrid demo |  | Demonstrates the use of aligned grids in Reflex. |  | Example |  | Source |  | No Rows To Show | Medals | Athlete | Age | Country | Year | Sport | Total | Natalie Coughlin | 25 | United States | 2008 | Swimming | 6 | Aleksey Nemov | 24 | 2000 | Gymnastics | 6 | Alicia Coutts | 24 | Australia | 2012 | Swimming | 5 | Missy Franklin | 17 | "
+   }
+  },
+  {
+   "t": 21.72,
+   "name": "route /cell-selection",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 22,
+    "text": "Cell Selection | AgGrid demo |  | Demonstrates cell selection in AG Grid. |  | Example |  | Source |  | Medals | Athlete | Age | Country | Year | Sport | Total | Natalie Coughlin | 25 | United States | 2008 | Swimming | 6 | Aleksey Nemov | 24 | 2000 | Gymnastics | 6 | Alicia Coutts | 24 | Australia | 2012 | Swimming | 5 | Missy Franklin | 17 | 2012 | Swimming | 5 | Ryan Loc"
+   }
+  },
+  {
+   "t": 25.77,
+   "name": "route /editable",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 3,
+    "text": "Editable AG Grid | AgGrid demo |  | An editable AG Grid example. |  | Example |  | Source |  | Name | Age | Country | John | 30 | USA | Anna | 25 | Sweden | Mike | 35 | Canada"
+   }
+  },
+  {
+   "t": 30.48,
+   "name": "route /fill-handle",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 10,
+    "text": "Fill Handle | AgGrid demo |  | Demonstrates the Fill Handle feature. Select cells and drag the fill handle (small square in bottom-right corner) to copy values or create series. |  | Example |  | Source |  | Fill Handle Demo |  | How to use the Fill Handle: |  | Select a cell or range of cells | Look for the small square (fill"
+   }
+  },
+  {
+   "t": 34.66,
+   "name": "route /formatters",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 5,
+    "text": "AG Grid Formatters | AgGrid demo |  | AG Grid with custom formatters. |  | Example |  | Source |  | Each of the three methods of setting column defs should work the same |  | Inline | State | API | Name | Name Reversed | Country | Percent | Flag | Number | Currency Number | Scaled Number | # Clicks (Last click) | Show raw data | John | nhoJ | USA | 56."
+   }
+  },
+  {
+   "t": 39.73,
+   "name": "route /integrated-charts",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 25,
+    "text": "Integrated Charts | AgGrid demo |  | Select a range of data, then right-click to create a chart. |  | Example |  | Source |  | Direction | Strength | Frequency | N | 0-1 | 0.5 | NNE | 0-1 | 0.6 | NE | 0-1 | 0.5 | ENE | 0-1 | 0.4 | E | 0-1 | 0.4 | ESE | 0-1 | 0.3 | SE | 0-1 | 0.4 | SSE | 0-1 | 0.4 | S | 0-1 | 0.6 | SSW | 0-1 | 0.4 | SW | 0-1 | 0.5 | WSW | 0-1 | 0.6 | W | 0-1 | 0.6 | WNW | 0-1 | 0.5 | NW | 0-"
+   }
+  },
+  {
+   "t": 44.16,
+   "name": "route /master-detail",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 2,
+    "center_rows": 8,
+    "text": "Master Detail | AgGrid demo |  | Demonstrates AG Grid master detail functionality with expandable rows showing detailed information. |  | Example |  | Source |  | Master Detail Demo |  | Click the expand icon (\u25ba) on any row to see detailed information in a nested grid below. |  | Both grids should behave identically - one us"
+   }
+  },
+  {
+   "t": 49.08,
+   "name": "route /model",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 0,
+    "text": "Simple ModelWrapper | AgGrid demo |  | Basic example of an infinite-row ModelWrapper with no customization. |  | Example |  | Source |  | No Rows To Show | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_annoying | Met | No Rows To Show"
+   }
+  },
+  {
+   "t": 53.84,
+   "name": "route /model-auth",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 0,
+    "text": "Customized ModelWrapper | AgGrid demo |  | Extended infinite-row ModelWrapper with custom behavior and auth. |  | Example |  | Source |  | Login | AG Grid found 1 warning | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_annoying | Met | AG Grid found 1 warning | Copy | Warnings (1) | HeaderCheckbox is only available if using "
+   }
+  },
+  {
+   "t": 58.57,
+   "name": "route /model-ssrm",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 0,
+    "text": "SSRM ModelWrapper | AgGrid demo |  | Extended SSRM ModelWrapper with custom behavior and auth. |  | Example |  | Source |  | Login | Enable Advanced Filter | No Rows To Show | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_annoying | Met | No Rows To Show"
+   }
+  },
+  {
+   "t": 62.98,
+   "name": "route /pivot",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 10,
+    "text": "Pivot | AgGrid demo |  | AgGrid with pivoting |  | Example |  | Source |  | Sport | Year | Biathlon | Cross Country Skiing | Cycling | Diving | Gymnastics | Short-Track Speed Skating | Speed Skating | Group | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | United States | (8) | 1 | Australia | (6) | Canada | (1) | 1 | Norway | (3) | 4"
+   }
+  },
+  {
+   "t": 67.38,
+   "name": "route /qa-grid-memo",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 3,
+    "center_rows": 5,
+    "text": "QA: memo / ComponentState grids | AgGrid demo |  | QA: rxe.ag_grid inside @rx.memo and rx.ComponentState, column defs from State via foreach. |  | Example |  | Source |  | Toggle status column |  | clicked: |  | Name | Qty | alpha | 1 | beta | 2 | gamma | 3 | Add row qa_cs_a |  | rows: 1 |  | K | V | 1 | one | Add row qa_cs_b |  | rows: 1 |  | K | V | 1 | one"
+   }
+  },
+  {
+   "t": 71.64,
+   "name": "route /qa-grid-props",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 5,
+    "center_rows": 9,
+    "text": "QA: row_id_key / pinned / overlays | AgGrid demo |  | QA: row_id_key, pinned rows (new + legacy alias), suppress_overlays, custom renderer/editor. |  | Example |  | Source |  | Bump u-2 | Prepend |  | edits: |  | rowid grid (new pinned names) |  | Uid | Name | Qty | Status | TOP-NEW | pinned top new | undefined units | S: | u-1 | alpha | 1 units | S:ne"
+   }
+  },
+  {
+   "t": 76.6,
+   "name": "route /qa-model-workaround",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 0,
+    "text": "QA: ModelWrapper (params-class workaround) | AgGrid demo |  | QA: infinite ModelWrapper with multi-row selection; __data_source_params_class__ re-declared unannotated. |  | Example |  | Source |  | No Rows To Show | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_annoying | Met | No Rows To Show"
+   }
+  },
+  {
+   "t": 81.11,
+   "name": "route /selected-items",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 25,
+    "text": "Selected Items | AgGrid demo |  | Handle grid selection events and display selected items in a separate panel. |  | Example |  | Source |  | Select by Direction |  | Select All | Deselect All | Log nodes | Direction | Strength | Frequency | N | 0-1 | 0.5 | NNE | 0-1 | 0.6 | NE | 0-1 | 0.5 | ENE | 0-1 | 0.4 | E | 0-1 | 0.4 | ESE | 0-1 | 0.3 | SE | 0-1 | 0.4 | SSE | 0-1 | 0.4 | S | 0"
+   }
+  },
+  {
+   "t": 85.26,
+   "name": "route /simple-serialization",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 15,
+    "text": "Grid State Serialization (Simple) | AgGrid demo |  | AG Grid with column state serialization. |  | Example |  | Source |  | Save State | Restore State | Save State Backend | Restore State Backend | No Rows To Show | Athlete | Age | Country | Year | Natalie Coughlin | 25 years old | United States | 2008 | Aleksey Nemov | 24 years old | 2000 | Alicia"
+   }
+  },
+  {
+   "t": 89.58,
+   "name": "route /state-grid",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 0,
+    "text": "AGGrid w/ State | AgGrid demo |  | AGGrid with data and column definitions in the state. |  | Example |  | Source |  | Load Columns | Load Data |  | Select All on Load |  | Clear Columns | Clear Data | No Rows To Show | No Rows To Show"
+   }
+  },
+  {
+   "t": 93.99,
+   "name": "route /tree",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 5,
+    "text": "Tree (enterprise) | AgGrid demo |  | Use tree data with get_data_path to visualize hierarchical information. |  | Example |  | Source |  | Combine Hosts | Save column state | Load column state | File Explorer | Created | Modified | sum(Size) | func(Host) | Desktop | 2.45 MB | vali, vidar | Documents | 7.91 MB | vali, vidar | Pictures | 7.84 MB | va"
+   }
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 20,
+  "console_total": 409,
+  "console_benign": 388,
+  "console_errors": 0,
+  "console_warnings": 1,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [
+   {
+    "t": 50.7,
+    "ctx": "smoke",
+    "type": "warning",
+    "text": "AG Grid: warning #129 headerCheckbox is only available if using `clientSide` or `serverSide` `rowModelType`, you are using `infinite`. \nSee https://www.ag-grid.com/react-data-grid/errors/129?_version_=36.2.0&feature=headerCheckbox&rowModel=infinite",
+    "url": "http://localhost:3300/model-auth",
+    "location": {
+     "url": "http://localhost:3300/@vite/client",
+     "line": 356,
+     "column": 3,
+     "lineNumber": 356,
+     "columnNumber": 3
+    },
+    "benign": false
+   }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 7.85,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 12.81,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/advanced-serialization",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 17.04,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/aligned-grids",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 21.79,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/cell-selection",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 25.84,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/editable",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 30.57,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/fill-handle",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 34.73,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/formatters",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 39.79,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/integrated-charts",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 44.24,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/master-detail",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 49.14,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/model",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 50.7,
+   "ctx": "smoke",
+   "type": "warning",
+   "text": "AG Grid: warning #129 headerCheckbox is only available if using `clientSide` or `serverSide` `rowModelType`, you are using `infinite`. \nSee https://www.ag-grid.com/react-data-grid/errors/129?_version_=36.2.0&feature=headerCheckbox&rowModel=infinite",
+   "url": "http://localhost:3300/model-auth",
+   "location": {
+    "url": "http://localhost:3300/@vite/client",
+    "line": 356,
+    "column": 3,
+    "lineNumber": 356,
+    "columnNumber": 3
+   },
+   "benign": false
+  },
+  {
+   "t": 53.91,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/model-auth",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 58.65,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/model-ssrm",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 63.06,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/pivot",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 67.44,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/qa-grid-memo",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 71.73,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/qa-grid-props",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 76.69,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/qa-model-workaround",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 81.2,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/selected-items",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 85.32,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/simple-serialization",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 89.64,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/state-grid",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 94.08,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/tree",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3300/?token=3otEDAxFJKLb": {
+   "ctx": "smoke",
+   "sent": 309,
+   "recv": 20,
+   "sent_samples": [
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"***************************************** AG Grid and AG Charts Enterprise License *****************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"***************************************** AG Grid and AG Charts Enterprise License *****************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"****************************************************************************************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************ AG Grid Enterprise License ************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"************************************************** License Key Not Found ***************************************************\"}}}",
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"* All AG Grid Enterprise features are unlocked for trial.                                                                  *\"}}}"
+   ],
+   "recv_samples": [
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  "ws://localhost:8300/_event/?token=f8207d23-2410-4fb4-c16f-dc8a23892a17&EIO=4&transport=websocket": {
+   "ctx": "smoke",
+   "sent": 49,
+   "recv": 98,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.save_state\",\"payload\":{\"state_data\":{\"source\":null,\"state\":{\"version\":\"36.2.0\",\"cellSelection\":null,\"sideBar\":{\"visible\":true,\"position\":\"right\",\"openToolPanel\":\"columns\",\"toolPanels\":{\"columns\":{\"expandedGroupIds\":[]},\"filters\":{\"expandedGroupIds\":[],\"expandedColIds\":[]}}},\"sort\":null,\"rowGroup\":null,\"aggregation\":null,\"showValuesAs\":null,\"pivot\":null,\"columnPinning\":null,\"columnVisibility\":null,\"columnSizing\":{\"columnSizingModel\":[{\"colId\":\"ag-Grid-SelectionCol",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____model_wrapper_n1.on_mount\",\"router_data\":{\"pathname\":\"/model\",\"asPath\":\"/model\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____model_wrapper_n1.on_mount\",\"router_data\":{\"pathname\":\"/model\",\"asPath\":\"/model\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_mount\",\"router_data\":{\"pathname\":\"/model-auth\",\"asPath\":\"/model-auth\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_mount\",\"router_data\":{\"pathname\":\"/model-auth\",\"asPath\":\"/model-auth\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_mount\",\"router_data\":{\"pathname\":\"/model-ssrm\",\"asPath\":\"/model-ssrm\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_mount\",\"router_data\":{\"pathname\":\"/model-ssrm\",\"asPath\":\"/model-ssrm\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.on_mount\",\"router_data\":{\"pathname\":\"/qa-model-workaround\",\"asPath\":\"/qa-model-workaround\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.on_mount\",\"router_data\":{\"pathname\":\"/qa-model-workaround\",\"asPath\":\"/qa-model-workaround\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid\",\"asPath\":\"/state-grid\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"DYDI3N-ateM3Fq07AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Rnxw-3nXRHu1TOPEAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"qh8ePyvcGq7WcFgCXQ0TXg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"MLZLDz_7ZpCe-SijAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"lx3h4VQ8yGDhEudOAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"OKeKQmdvVdje6ZjK6LMagw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state\":{\"row_data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"s",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state\":{\"grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\\": null, \\\"columnVisibility\\\": null, \\\"columnSizing\\\": {\\",
+    "0{\"sid\":\"9NvAhIaobfP5GPK_AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"sUNdKS5-KeWUdGlPAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"mWSTRMr5MPBlniiL1zwYAw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___aligned_grids____aligned_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"athlete\":\"M",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"QLutHM5qhR780dZBAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"uA0_zku24NaEglFIAAAH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"6hwZKJ7CvTMfeO19q2KJ/A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___cell_selection____cell_selection_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"ath",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"diNoLex95kfoK-NiAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"ZuSDleh1Bw6lcjZRAAAJ\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"OuOl97rqswgBMNhb5jWZAA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"401FHdzqQz1vknKIAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"nsshprAc0GKEugfvAAAL\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"sJpOZ4kBGO5DvWkUa9gIVg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"RNQIXX91PihFE0h6AAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"QNhUyajh4VAuDgGAAAAN\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"zRqSDA184sqQchCongptzQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"1WiqazDXEd4i2yzvAAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"FBMUe5zLroy3sXvaAAAP\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Jpzk0/ra1reXFDhsyTl6DQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"8T5pxm3t_2F-h3l5AAAQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"zlhRSjkaUOw3quYBAAAR\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"LytAuAIDRJ3ow8xc4s3AKQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"pFcnydrIde2mPOzAAAAS\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"VR7xmj4zpuTL3LQ-AAAT\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"F2A4S5d3PhdesEFQ7K+7aQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____model_wrapper_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____model_wrapper_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"data\\\"], [\\\"fi",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____model_wrapper_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____model_wrapper_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"data\\\"], [\\\"fi",
+    "0{\"sid\":\"in-hJJ0Flgbohnb3AAAU\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Ykhy_84r4G4Uf9a9AAAV\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"BCjBrUiqGaT5Gx1td74Trw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"",
+    "0{\"sid\":\"51svMen2Ru2AG-8oAAAW\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"oYVgyxVt_AMKbJdCAAAX\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"t7X0BG7iAoS3pX0jn78rlg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 0.8,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/",
+   "method": "GET"
+  },
+  {
+   "t": 3.28,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 3.28,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 3.28,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 5.37,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/_index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 7.89,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/advanced-serialization",
+   "method": "GET"
+  },
+  {
+   "t": 8.09,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 8.09,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 8.1,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 8.99,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/[advanced-serialization]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 12.81,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/aligned-grids",
+   "method": "GET"
+  },
+  {
+   "t": 12.99,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 13.0,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 13.05,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 13.89,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/[aligned-grids]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 17.04,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/cell-selection",
+   "method": "GET"
+  },
+  {
+   "t": 17.23,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 17.23,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 17.25,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 18.08,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/[cell-selection]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 21.8,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/editable",
+   "method": "GET"
+  },
+  {
+   "t": 21.98,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 21.99,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 21.99,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 22.69,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/[editable]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 25.84,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/fill-handle",
+   "method": "GET"
+  },
+  {
+   "t": 26.04,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 26.04,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 26.05,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 26.82,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/[fill-handle]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 30.57,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/formatters",
+   "method": "GET"
+  },
+  {
+   "t": 30.79,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 30.79,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 30.8,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 31.59,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/[formatters]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 34.73,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/integrated-charts",
+   "method": "GET"
+  },
+  {
+   "t": 34.95,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 34.97,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 34.99,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 35.89,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/[integrated-charts]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 39.79,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/master-detail",
+   "method": "GET"
+  },
+  {
+   "t": 40.01,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 40.01,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 40.02,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 40.68,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/[master-detail]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 44.24,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/model",
+   "method": "GET"
+  },
+  {
+   "t": 44.41,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 44.41,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 44.41,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 45.27,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/[model]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 45.98,
+   "ctx": "smoke",
+   "url": "http://localhost:8300/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model_wrapper_n1",
+   "method": "GET"
+  },
+  {
+   "t": 46.02,
+   "ctx": "smoke",
+   "url": "http://localhost:8300/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model_wrapper_n1",
+   "method": "GET"
+  },
+  {
+   "t": 49.14,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/model-auth",
+   "method": "GET"
+  },
+  {
+   "t": 49.31,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 49.35,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 49.35,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 50.18,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/app/routes/[model-auth]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 50.75,
+   "ctx": "smoke",
+   "url": "http://localhost:8300/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2",
+   "method": "GET"
+  },
+  {
+   "t": 50.79,
+   "ctx": "smoke",
+   "url": "http://localhost:8300/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2",
+   "method": "GET"
+  },
+  {
+   "t": 53.91,
+   "ctx": "smoke",
+   "url": "http://localhost:3300/model-ssrm",
+   "method": "GET"
+  }
+ ],
+ "requests_truncated_from": 108
+}

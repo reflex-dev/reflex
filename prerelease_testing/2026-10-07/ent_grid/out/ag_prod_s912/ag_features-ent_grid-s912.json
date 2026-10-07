@@ -1,0 +1,1246 @@
+{
+ "name": "ag_features-ent_grid-s912",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 5.11,
+   "name": "master-detail[state-vars-grid]: expanding row 0 shows detail grid",
+   "ok": true,
+   "detail": "Count\nDescription\n10\nStock Level\n5\nOrders Today\n25\nTotal Sales"
+  },
+  {
+   "t": 6.67,
+   "name": "master-detail[static-objects-grid]: expanding row 0 shows detail grid",
+   "ok": true,
+   "detail": "Count\nDescription\n10\nStock Level\n5\nOrders Today\n25\nTotal Sales"
+  },
+  {
+   "t": 9.5,
+   "name": "tree: top-level groups are folders (combine hosts on)",
+   "ok": true,
+   "detail": [
+    "Desktop",
+    "Documents",
+    "Pictures",
+    "Videos",
+    "Downloads"
+   ]
+  },
+  {
+   "t": 10.39,
+   "name": "tree: expanding Documents shows Work/Personal",
+   "ok": true,
+   "detail": [
+    "Work",
+    "Personal"
+   ]
+  },
+  {
+   "t": 10.4,
+   "name": "tree: aggregated size uses JS value_formatter (MB/KB)",
+   "ok": true,
+   "detail": "7.91 MB"
+  },
+  {
+   "t": 12.95,
+   "name": "tree: toggling Combine Hosts re-keys grid with hosts at top level",
+   "ok": true,
+   "detail": [
+    "vali",
+    "vidar"
+   ]
+  },
+  {
+   "t": 14.48,
+   "name": "tree: Save column state writes LocalStorage var",
+   "ok": true,
+   "detail": {
+    "reflex___state____state.ag_grid___tree____grid_state.column_state_json_rx_state_": "[{\"colId\": \"ag-Grid-AutoColumn\", \"width\": 280, \"hide\": false, \"pinned\": null, \"sort\": null, \"sortType\": null, \"sortIndex"
+   }
+  },
+  {
+   "t": 14.49,
+   "name": "tree: Load column state button enabled after save (computed var from LocalStorage)",
+   "ok": true,
+   "detail": true
+  },
+  {
+   "t": 17.08,
+   "name": "tree: Load column state still enabled after reload",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 21.48,
+   "name": "pivot: pivot headers by sport (virtualised) with sum(Gold) value columns",
+   "ok": true,
+   "detail": "Biathlon | Cross Country Skiing | Cycling | Diving | Gymnastics | Short-Track Speed Skating | Speed Skating | Group | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold)"
+  },
+  {
+   "t": 21.49,
+   "name": "pivot: rows grouped by country",
+   "ok": true,
+   "detail": [
+    "United States",
+    "Australia",
+    "Canada",
+    "Norway",
+    "China",
+    "Zimbabwe"
+   ]
+  },
+  {
+   "t": 21.52,
+   "name": "pivot: pivot panel + columns side bar visible",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 26.27,
+   "name": "cell-selection: range drag fires on_cell_selection_changed(finished) -> toast",
+   "ok": true,
+   "detail": [
+    "Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]",
+    "Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]"
+   ]
+  },
+  {
+   "t": 26.28,
+   "name": "cell-selection: highlighted cells match reported range (3 rows x 2 cols)",
+   "ok": true,
+   "detail": 6
+  },
+  {
+   "t": 29.82,
+   "name": "fill-handle: handle visible on selected cell",
+   "ok": true,
+   "detail": {
+    "x": 367,
+    "y": 590,
+    "width": 6,
+    "height": 6
+   }
+  },
+  {
+   "t": 32.12,
+   "name": "fill-handle: dragging fills rows 1-2 and fires on_cell_value_changed toasts",
+   "ok": true,
+   "detail": {
+    "ages": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ],
+    "toasts": [
+     "Updated age: 23",
+     "Updated age: 23"
+    ]
+   }
+  },
+  {
+   "t": 34.65,
+   "name": "fill-handle: filled values persisted in State across reload",
+   "ok": true,
+   "detail": {
+    "before_reload": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ],
+    "after_reload": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ]
+   }
+  },
+  {
+   "t": 37.38,
+   "name": "clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event",
+   "ok": false,
+   "detail": {
+    "golds": [
+     "8",
+     "6",
+     "4",
+     "1",
+     "2"
+    ],
+    "toasts": []
+   }
+  },
+  {
+   "t": 40.1,
+   "name": "aligned: both grids show data",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 41.41,
+   "name": "aligned: expanding Medals group in grid1 also expands grid2",
+   "ok": true,
+   "detail": {
+    "before": [
+     0,
+     0
+    ],
+    "after": [
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "t": 42.49,
+   "name": "aligned: resizing athlete column in grid1 resizes grid2",
+   "ok": true,
+   "detail": {
+    "w1_before": 200,
+    "w1_after": 318,
+    "w2_after": 318
+   }
+  },
+  {
+   "t": 47.41,
+   "name": "editable: edit fires on_cell_value_changed toast",
+   "ok": true,
+   "detail": [
+    "Cell value changed: name = Johnny"
+   ]
+  },
+  {
+   "t": 49.44,
+   "name": "editable: edited value persisted in State across reload",
+   "ok": true,
+   "detail": [
+    "Johnny",
+    "Anna",
+    "Mike"
+   ]
+  },
+  {
+   "t": 53.41,
+   "name": "state-grid: Load Columns sets header_name/headerName from State",
+   "ok": true,
+   "detail": [
+    "",
+    "DIR",
+    "STR",
+    "HZ"
+   ]
+  },
+  {
+   "t": 55.49,
+   "name": "state-grid: data loaded with JS value_formatter suffix",
+   "ok": true,
+   "detail": [
+    {
+     "idx": 0,
+     "id": "0",
+     "sel": "true",
+     "val": "0.5 Hz"
+    },
+    {
+     "idx": 1,
+     "id": "1",
+     "sel": "true",
+     "val": "0.6 Hz"
+    }
+   ]
+  },
+  {
+   "t": 55.49,
+   "name": "state-grid: on_row_data_updated event chain selected all rows (select_all_on_load)",
+   "ok": true,
+   "detail": [
+    "true",
+    "true",
+    "true",
+    "true",
+    "true"
+   ]
+  },
+  {
+   "t": 55.5,
+   "name": "state-grid: chained set_select_all_on_load(False) reset the switch",
+   "ok": true,
+   "detail": "unchecked"
+  },
+  {
+   "t": 56.52,
+   "name": "state-grid: Clear Data empties grid",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 57.57,
+   "name": "state-grid: Clear Columns removes headers",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "t": 62.47,
+   "name": "selected-items: Select All -> on_selection_changed -> State count",
+   "ok": true,
+   "detail": "Selected Items (128)"
+  },
+  {
+   "t": 66.13,
+   "name": "selected-items: tags input 'n' -> upper-cased key -> select_rows_by_key(direction=N)",
+   "ok": true,
+   "detail": {
+    "heading": "Selected Items (8)",
+    "visible_selected_N_rows": 2
+   }
+  },
+  {
+   "t": 75.01,
+   "name": "integrated-charts: chart range -> chart dialog with canvas",
+   "ok": true,
+   "detail": 1
+  },
+  {
+   "t": 78.03,
+   "name": "row_id_key: getRowId uses data.uid",
+   "ok": true,
+   "detail": [
+    "u-1",
+    "u-2",
+    "u-3"
+   ]
+  },
+  {
+   "t": 78.07,
+   "name": "pinned rows (new names pinned_top_row_data/pinned_bottom_row_data)",
+   "ok": true,
+   "detail": {
+    "top": [
+     "TOP-NEW\npinned top new\nundefined units\nS:"
+    ],
+    "bottom": [
+     "BOT-NEW\npinned bottom new\nundefined units\nS:"
+    ]
+   }
+  },
+  {
+   "t": 78.07,
+   "name": "pinned rows (legacy aliases pinned_row_top_data/pinned_row_bottom_data)",
+   "ok": true,
+   "detail": {
+    "top": [
+     "TOP-OLD\npinned top old"
+    ],
+    "bottom": [
+     "BOT-OLD\npinned bottom old"
+    ]
+   }
+  },
+  {
+   "t": 78.08,
+   "name": "suppress_overlays=['noRows'] hides the no-rows overlay (default grid shows it)",
+   "ok": true,
+   "detail": {
+    "default": [
+     "No Rows To Show"
+    ],
+    "suppressed": []
+   }
+  },
+  {
+   "t": 78.09,
+   "name": "value_formatter string renders 'N units'",
+   "ok": true,
+   "detail": [
+    "1 units",
+    "2 units",
+    "3 units"
+   ]
+  },
+  {
+   "t": 78.09,
+   "name": "custom JS cell renderer (rx.badge via ArgsFunctionOperation) renders",
+   "ok": true,
+   "detail": [
+    "S:",
+    "S:new",
+    "S:new",
+    "S:done",
+    "S:"
+   ]
+  },
+  {
+   "t": 79.37,
+   "name": "row_id_key: prepending a row keeps stable ids",
+   "ok": true,
+   "detail": [
+    "u-4",
+    "u-1",
+    "u-2",
+    "u-3"
+   ]
+  },
+  {
+   "t": 80.61,
+   "name": "row_id_key: immutable State update bumps u-2 in place",
+   "ok": true,
+   "detail": {
+    "u-4": "4 units",
+    "u-1": "1 units",
+    "u-2": "12 units",
+    "u-3": "3 units"
+   }
+  },
+  {
+   "t": 83.02,
+   "name": "select cell editor edit -> on_cell_value_changed node_id == row_id_key uid -> State",
+   "ok": true,
+   "detail": {
+    "edits": "edits: u-1:status->doing",
+    "badge": "S:doing"
+   }
+  },
+  {
+   "t": 85.23,
+   "name": "clipboard (ClipboardModule): Ctrl+C copies cell, Ctrl+V pastes + fires on_cell_value_changed",
+   "ok": true,
+   "detail": {
+    "clipboard": "10",
+    "b": [
+     "10",
+     "20",
+     "10"
+    ],
+    "log": "clip: 2:b=10"
+   }
+  },
+  {
+   "t": 88.14,
+   "name": "memo grid: column defs from State.fields.foreach",
+   "ok": true,
+   "detail": [
+    "Name",
+    "Qty"
+   ]
+  },
+  {
+   "t": 89.42,
+   "name": "memo grid: on_cell_clicked inside @rx.memo reaches State",
+   "ok": true,
+   "detail": "clicked: name=beta"
+  },
+  {
+   "t": 90.66,
+   "name": "memo grid: toggling State field list adds Status column",
+   "ok": true,
+   "detail": [
+    "Name",
+    "Qty",
+    "Status"
+   ]
+  },
+  {
+   "t": 92.23,
+   "name": "ComponentState grids: instance A grows independently of B",
+   "ok": true,
+   "detail": {
+    "a": "rows: 3",
+    "b": "rows: 1",
+    "rows_a": 3,
+    "rows_b": 1
+   }
+  },
+  {
+   "t": 94.77,
+   "name": "ComponentState grids: state survives reload",
+   "ok": true,
+   "detail": 3
+  }
+ ],
+ "notes": [
+  "guard: 0.9.12 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [
+   "clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event"
+  ],
+  "n_checks": 47,
+  "console_total": 198,
+  "console_benign": 182,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 14.49,
+   "ctx": "tree",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3302/tree/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 9852,
+    "lineNumber": 2,
+    "columnNumber": 9852
+   },
+   "benign": false
+  },
+  {
+   "t": 32.12,
+   "ctx": "fill_handle",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3302/fill-handle/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 9852,
+    "lineNumber": 2,
+    "columnNumber": 9852
+   },
+   "benign": false
+  },
+  {
+   "t": 47.41,
+   "ctx": "editable",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3302/editable/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 9852,
+    "lineNumber": 2,
+    "columnNumber": 9852
+   },
+   "benign": false
+  },
+  {
+   "t": 92.24,
+   "ctx": "qa_memo",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3302/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 9852,
+    "lineNumber": 2,
+    "columnNumber": 9852
+   },
+   "benign": false
+  },
+  {
+   "t": 94.84,
+   "ctx": "master_detail",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/master-detail/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 94.86,
+   "ctx": "tree",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/tree/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 94.88,
+   "ctx": "pivot",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/pivot/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 94.9,
+   "ctx": "cell_selection",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/cell-selection/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 94.92,
+   "ctx": "fill_handle",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/fill-handle/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 94.94,
+   "ctx": "aligned",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/aligned-grids/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 94.97,
+   "ctx": "editable",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/editable/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 94.99,
+   "ctx": "state_grid",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/state-grid/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 95.01,
+   "ctx": "selected_items",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/selected-items/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 95.04,
+   "ctx": "integrated_charts",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 95.06,
+   "ctx": "qa_props",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  },
+  {
+   "t": 95.08,
+   "ctx": "qa_memo",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3302/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3302/assets/prism-async-light-CiIv6ZPw.js",
+    "line": 2,
+    "column": 10036,
+    "lineNumber": 2,
+    "columnNumber": 10036
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3302/_event/?token=9e41f760-a9eb-4b8e-ea23-f6187513cbc1&EIO=4&transport=websocket": {
+   "ctx": "master_detail",
+   "sent": 6,
+   "recv": 7,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/master-detail/\",\"asPath\":\"/master-detail/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/master-detail/\",\"asPath\":\"/master-detail/\"}}]",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"V51bvozN-LpqQEPaAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"waRnl0Xmc_sWehuQAAAL\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"pmOJMDu0Lyvyf4klbxUCTg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3302/_event/?token=76d6fc27-89df-41f1-9047-37dd925a03dd&EIO=4&transport=websocket": {
+   "ctx": "tree",
+   "sent": 13,
+   "recv": 14,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/tree/\",\"asPath\":\"/tree/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/tree/\",\"asPath\":\"/tree/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___tree____tree_display_state.set_combine_hosts\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/tree/\",\"asPath\":\"/tree/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___tree____grid_state.save_column_state\",\"payload\":{\"state\":[{\"colId\":\"ag-Grid-AutoColumn\",\"width\":280,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivotIndex\":null,\"pivotSort\":\"asc\",\"flex\":null,\"showValuesAs\":null,\"headerName\":null},{\"colId\":\"created\",\"width\":200,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivot",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/tree/\",\"asPath\":\"/tree/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___tree____grid_state.column_state_json_rx_state_\":\"[{\\\"colId\\\": \\\"ag-Grid-AutoColumn\\\", \\\"width\\\": 280, \\\"hide\\\": false, \\\"pinned\\\": null, \\\"sort\\\": null, \\\"sortType\\\": null, \\\"sortIndex\\\": null, \\\"aggFunc\\\": null, \\\"valueIndex\\\": null, \\\"rowGroup\\\": false, \\\"rowGroupIndex\\\": null, \\\"pivot\\\": false, \\\"pivotIndex\\\": null, \\\"pivotSort\\\": \\\"asc\\\", \\\"flex\\\": null, \\\"showValuesAs\\\": null, \\\"headerName\\\": null}, {\\\"colId\\\": \\\"creat",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/tree/\",\"asPath\":\"/tree/\"}}]",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"6YhFqHjE5OQvW-pwAAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"W51-3l8l1JSF8W0-AAAN\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"lok/vCZagnpy4dG1Y7Phsg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___tree____tree_display_state\":{\"combine_hosts_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___tree____grid_state\":{\"column_state_json_rx_state_\":\"[{\\\"colId\\\": \\\"ag-Grid-AutoColumn\\\", \\\"width\\\": 280, \\\"hide\\\": false, \\\"pinned\\\": null, \\\"sort\\\": null, \\\"sortType\\\": null, \\\"sortIndex\\\": null, \\\"aggFunc\\\": null, \\\"valueIndex\\\": null, \\\"rowGroup\\\": false, \\\"rowGroupIndex\\\": null, \\\"pivot\\\": false, \\\"pivotIndex\\\": null, \\\"pivotSort\\\": \\\"asc\\\", \\\"flex\\\": null, \\\"showValuesAs\\\": null, \\\"headerName\\\": null}, {\\\"colId\\\": \\\"created\\\", \\\"width\\\": 200, \\\"hide\\\": false, \\\"pinned\\\": null, \\\"sort\\\": null, \\\"sortType\\\": null, \\\"sortIndex\\\"",
+    "0{\"sid\":\"NgnPx6U1sKBFBZfLAAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"giKwFHoAF5nywGseAAAP\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"6awlcjIuHgiC8bP/iodQZQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___tree____grid_state\":{\"column_state_json_rx_state_\":\"[{\\\"colId\\\": \\\"ag-Grid-AutoColumn\\\", \\\"width\\\": 280, \\\"hide\\\": false, \\\"pinned\\\": null, \\\"sort\\\": null, \\\"sortType\\\": null, \\\"sortIndex\\\": null, \\\"aggFunc\\\": null, \\\"valueIndex\\\": null, \\\"rowGroup\\\": false, \\\"rowGroupIndex\\\": null, \\\"pivot\\\": false, \\\"pivotIndex\\\": null, \\\"pivotSort\\\": \\\"asc\\\", \\\"flex\\\": null, \\\"showValuesAs\\\": null, \\\"headerName\\\": null}, {\\\"colId\\\": \\\"created\\\", \\\"width\\\": 200, \\\"hide\\\": false, \\\"pinned\\\": null, \\\"sort\\\": null, \\\"sortType\\\": null, \\\"sortIndex\\\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3302/_event/?token=08b2afaa-4b93-4ea3-8acb-d632953afc87&EIO=4&transport=websocket": {
+   "ctx": "pivot",
+   "sent": 6,
+   "recv": 7,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/pivot/\",\"asPath\":\"/pivot/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/pivot/\",\"asPath\":\"/pivot/\"}}]",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"xtlRjsC60QPmLaghAAAQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"qUD8rLw5X0MUYUjIAAAR\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"4Asm/37yidSuXKazfCdW+w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3302/_event/?token=7a3e578d-66f1-4efa-c6ed-e0ed1ab079b7&EIO=4&transport=websocket": {
+   "ctx": "cell_selection",
+   "sent": 11,
+   "recv": 10,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":0,\"columns\":[\"athlete\"]}],\"started\":true,\"finished\":true},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":0,\"columns\":[\"athlete\"]}],\"started\":true,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":1,\"columns\":[\"athlete\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":1,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":2,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":2,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":true},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"k3myoW4tqOWX8bZ-AAAS\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"9usKGx3XKJh6-4TkAAAT\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"hi5dprizsvah+jQodEAaDg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___cell_selection____cell_selection_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"ath",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]\\\")))\",\"callback\":null}}]}]",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3302/_event/?token=3214ecc3-f8c9-46e4-d6ed-6eded7ad6a8b&EIO=4&transport=websocket": {
+   "ctx": "fill_handle",
+   "sent": 11,
+   "recv": 14,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/fill-handle/\",\"asPath\":\"/fill-handle/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/fill-handle/\",\"asPath\":\"/fill-handle/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___fill_handle____fill_handle_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":1,\"field\":\"age\",\"newValue\":23,\"node_id\":\"1\"}},\"router_data\":{\"pathname\":\"/fill-handle/\",\"asPath\":\"/fill-handle/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___fill_handle____fill_handle_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":2,\"field\":\"age\",\"newValue\":23,\"node_id\":\"2\"}},\"router_data\":{\"pathname\":\"/fill-handle/\",\"asPath\":\"/fill-handle/\"}}]",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/fill-handle/\",\"asPath\":\"/fill-handle/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/fill-handle/\",\"asPath\":\"/fill-handle/\"}}]",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"Tju5uqLk-sVDKXGrAAAU\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Rmsla_tF3o6IYrXNAAAV\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"xHqz9rqCxPNcr9zf6+AUkg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___fill_handle____fill_handle_state\":{\"row_data_rx_state_\":[{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2008,\"date\":\"24/08/2008\",\"sport\":\"Swimming\",\"gold\":8,\"silver\":0,\"bronze\":0,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2004,\"date\":\"29/08/2004\",\"sport\":\"Swimming\",\"gold\":6,\"silver\":0,\"bronze\":2,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":27,\"country\":\"United States\",\"year\":2012,\"date\":\"12/08/2012\",\"sport\":\"Swimming\",\"gold\":4,\"silver\":2,\"bronze\":0,\"total\":6},{\"athlete\":",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Updated age: 23\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___fill_handle____fill_handle_state\":{\"row_data_rx_state_\":[{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2008,\"date\":\"24/08/2008\",\"sport\":\"Swimming\",\"gold\":8,\"silver\":0,\"bronze\":0,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2004,\"date\":\"29/08/2004\",\"sport\":\"Swimming\",\"gold\":6,\"silver\":0,\"bronze\":2,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2012,\"date\":\"12/08/2012\",\"sport\":\"Swimming\",\"gold\":4,\"silver\":2,\"bronze\":0,\"total\":6},{\"athlete\":",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Updated age: 23\\\")))\",\"callback\":null}}]}]",
+    "0{\"sid\":\"-M9jM-gye6dMgZvoAAAW\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"lbIbw1nmMCz07LcvAAAX\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"rf4OCscrgQXOU2n/05QhMQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3302/_event/?token=46b20419-2285-4e68-ea90-0e692fc1317a&EIO=4&transport=websocket": {
+   "ctx": "aligned",
+   "sent": 5,
+   "recv": 8,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/aligned-grids/\",\"asPath\":\"/aligned-grids/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/aligned-grids/\",\"asPath\":\"/aligned-grids/\"}}]",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"OJhnHhd4WjIUqjeUAAAY\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"GvF1N7pI2Q4T9o3vAAAZ\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"JUIDqMlEDRYCwGHD12jGLg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___aligned_grids____aligned_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"athlete\":\"M",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3302/_event/?token=b37aff17-5043-4a73-98cf-4285c3abe8ff&EIO=4&transport=websocket": {
+   "ctx": "editable",
+   "sent": 9,
+   "recv": 11,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/editable/\",\"asPath\":\"/editable/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/editable/\",\"asPath\":\"/editable/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___editable____editable_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":0,\"field\":\"name\",\"newValue\":\"Johnny\",\"node_id\":\"0\"}},\"router_data\":{\"pathname\":\"/editable/\",\"asPath\":\"/editable/\"}}]",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/editable/\",\"asPath\":\"/editable/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/editable/\",\"asPath\":\"/editable/\"}}]",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"hLxra7hy4geBR1z4AAAa\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"6IohR9_jkN8uhnUkAAAb\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"+/dvQ0WMxiAhJjdaWZ7hYQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___editable____editable_state\":{\"row_data_rx_state_\":[{\"name\":\"Johnny\",\"age\":30,\"country\":\"USA\"},{\"name\":\"Anna\",\"age\":25,\"country\":\"Sweden\"},{\"name\":\"Mike\",\"age\":35,\"country\":\"Canada\"}]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Cell value changed: name = Johnny\\\")))\",\"callback\":null}}]}]",
+    "0{\"sid\":\"r0WXMcf-XGKza4OzAAAc\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"zfC80HqXlLUf9A_sAAAd\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"x6YjBRZxpAZ6hVe/Vxg3Qw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3302/_event/?token=cda246ca-a3d8-4b4a-dae4-efb38d91f597&EIO=4&transport=websocket": {
+   "ctx": "state_grid",
+   "sent": 13,
+   "recv": 14,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.load_columns\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":true},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.load_data\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.clear_data\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.clear_columns\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"iyujd076a8ImUDUBAAAe\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"vtlpNk5EKEiROW4QAAAf\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"tLoMuhURqYw/iTPZBPyGQw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"column_defs_rx_state_\":[{\"field\":\"direction\",\"header_name\":\"DIR\"},{\"field\":\"strength\",\"headerName\":\"STR\"},{\"field\":\"frequency\",\"header_name\":\"HZ\",\"value_formatter\":\"params.value + ' Hz'\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"row_data_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"SSW\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"row_data_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"column_defs_rx_state_\":[]}}}]",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3302/_event/?token=1587ae75-ea9f-43f0-e40f-a42be5899449&EIO=4&transport=websocket": {
+   "ctx": "selected_items",
+   "sent": 9,
+   "recv": 12,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_keys\",\"payload\":{\"keys\":[]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_keys\",\"payload\":{\"keys\":[\"n\"]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"N\",\"strength\":\"1-2\",\"frequency\":1.6},{\"direction\":\"N\",\"strength\":\"2-3\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"3-4\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"4-4\",\"frequency\":0.4},{\"direction\":\"N\",\"strength\":\"4-5\",\"frequency\":0.3},{\"direction\":\"N\",\"strength\":\"5-6\",\"frequency\":0.2},{\"direction\":\"N\",\"strength\":\"6+\",\"frequency\":0.1}]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"-5_5VzpmY-BN5SpRAAAg\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Vcjbfd83h4ON4x6YAAAh\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"rO7bZKJ0uT0Coh+AwXzSLw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direc",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"keys_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"let api = refs['ref_ag_grid_basic_1']?.current?.api;\\nconst selected_nodes = [];\\nlet keys_set = new Set([]);\\napi.forEachNode((node) => {\\n    if (keys_set.has(node.data.direction)) {\\n        selected_nodes.push(node);\\n    }\\n});\\napi.deselectAll();\\napi.setNodesSelected({ nodes: selected_nodes, newValue: true });\\n    \",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"keys_rx_state_\":[\"N\"]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"let api = refs['ref_ag_grid_basic_1']?.current?.api;\\nconst selected_nodes = [];\\nlet keys_set = new Set([\\\"N\\\"]);\\napi.forEachNode((node) => {\\n    if (keys_set.has(node.data.direction)) {\\n        selected_nodes.push(node);\\n    }\\n});\\napi.deselectAll();\\napi.setNodesSelected({ nodes: selected_nodes, newValue: true });\\n    \",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"N\",\"strength\":\"1-2\",\"frequency\":1.6},{\"direction\":\"N\",\"strength\":\"2-3\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"3-4\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"4-4\",\"frequency\":0.4},{\"direction\":\"N\",\"strength\":\"4-5\",\"frequency\":0.3},{\"direction\":\"N\",\"strength\":\"5-6\",\"frequency\":0.2},{\"direction\":\"N\",\"strength\":\"6+\",\"frequency\":0.1}]}}}]",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3302/_event/?token=ef2c96e4-2ac2-45bd-9ce6-9b31176f0e5d&EIO=4&transport=websocket": {
+   "ctx": "integrated_charts",
+   "sent": 4,
+   "recv": 5,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/integrated-charts/\",\"asPath\":\"/integrated-charts/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/integrated-charts/\",\"asPath\":\"/integrated-charts/\"}}]",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"c2qguyc7zi7U0SVWAAAi\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"gp9Xc7wQD982kknaAAAj\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"bn6uJVPkoC1KZHqLLIbIjw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3302/_event/?token=203f81ec-6c54-4980-a479-58630a7a0bc7&EIO=4&transport=websocket": {
+   "ctx": "qa_props",
+   "sent": 7,
+   "recv": 8,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.prepend\",\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.bump\",\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_edit\",\"payload\":{\"params\":{\"rowIndex\":1,\"field\":\"status\",\"newValue\":\"doing\",\"node_id\":\"u-1\"}},\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_clip_change\",\"payload\":{\"params\":{\"rowIndex\":2,\"field\":\"b\",\"newValue\":10,\"node_id\":\"2\"}},\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"jsEZQd19r5WEHel8AAAk\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"tm6klks_A_BQvESUAAAl\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"wooPWzPRJE93IFftJavq8w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"new\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":2,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"new\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":12,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"doing\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":12,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}],\"edits_rx_state_\":[\"u-1:status->doing\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"clip_log_rx_state_\":[\"2:b=10\"]}}}]"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3302/_event/?token=c220877c-be47-4b9d-bf1f-1686f33368ed&EIO=4&transport=websocket": {
+   "ctx": "qa_memo",
+   "sent": 11,
+   "recv": 12,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_cell_clicked\",\"payload\":{\"params\":{\"type\":\"cellClicked\",\"data\":{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":2,\"status\":\"new\"},\"value\":\"beta\",\"colDef\":{\"cellDataType\":\"text\",\"type\":null,\"field\":\"name\"},\"rowIndex\":1,\"rowPinned\":null}},\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.toggle_status_field\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1.add_row\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1.add_row\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"gN8kCHIsC7cjkuyNAAAm\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"-B-I5c--_6Ox6QeXAAAn\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"im60Ixk2ZLu/BI1PxlzPvw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"clicked_rx_state_\":\"name=beta\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"fields_rx_state_\":[\"name\",\"qty\",\"status\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1\":{\"cs_rows_rx_state_\":[{\"k\":1,\"v\":\"one\"},{\"k\":2,\"v\":\"row2\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1\":{\"cs_rows_rx_state_\":[{\"k\":1,\"v\":\"one\"},{\"k\":2,\"v\":\"row2\"},{\"k\":3,\"v\":\"row3\"}]}}}]",
+    "0{\"sid\":\"Azoto_AKyC9-dwJlAAAo\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"akMh4bLp80ufjpO6AAAp\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"dSFMmvNwQDSI2ZxDSdmhXQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"acce",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 0.69,
+   "ctx": "master_detail",
+   "url": "http://localhost:3302/master-detail",
+   "method": "GET"
+  },
+  {
+   "t": 0.69,
+   "ctx": "master_detail",
+   "url": "http://localhost:3302/master-detail/",
+   "method": "GET"
+  },
+  {
+   "t": 6.78,
+   "ctx": "tree",
+   "url": "http://localhost:3302/tree",
+   "method": "GET"
+  },
+  {
+   "t": 6.79,
+   "ctx": "tree",
+   "url": "http://localhost:3302/tree/",
+   "method": "GET"
+  },
+  {
+   "t": 14.49,
+   "ctx": "tree",
+   "url": "http://localhost:3302/tree/",
+   "method": "GET"
+  },
+  {
+   "t": 18.62,
+   "ctx": "pivot",
+   "url": "http://localhost:3302/pivot",
+   "method": "GET"
+  },
+  {
+   "t": 18.63,
+   "ctx": "pivot",
+   "url": "http://localhost:3302/pivot/",
+   "method": "GET"
+  },
+  {
+   "t": 21.66,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3302/cell-selection",
+   "method": "GET"
+  },
+  {
+   "t": 21.67,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3302/cell-selection/",
+   "method": "GET"
+  },
+  {
+   "t": 26.43,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3302/fill-handle",
+   "method": "GET"
+  },
+  {
+   "t": 26.44,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3302/fill-handle/",
+   "method": "GET"
+  },
+  {
+   "t": 32.12,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3302/fill-handle/",
+   "method": "GET"
+  },
+  {
+   "t": 37.45,
+   "ctx": "aligned",
+   "url": "http://localhost:3302/aligned-grids",
+   "method": "GET"
+  },
+  {
+   "t": 37.45,
+   "ctx": "aligned",
+   "url": "http://localhost:3302/aligned-grids/",
+   "method": "GET"
+  },
+  {
+   "t": 42.65,
+   "ctx": "editable",
+   "url": "http://localhost:3302/editable",
+   "method": "GET"
+  },
+  {
+   "t": 42.66,
+   "ctx": "editable",
+   "url": "http://localhost:3302/editable/",
+   "method": "GET"
+  },
+  {
+   "t": 47.41,
+   "ctx": "editable",
+   "url": "http://localhost:3302/editable/",
+   "method": "GET"
+  },
+  {
+   "t": 49.55,
+   "ctx": "state_grid",
+   "url": "http://localhost:3302/state-grid",
+   "method": "GET"
+  },
+  {
+   "t": 49.55,
+   "ctx": "state_grid",
+   "url": "http://localhost:3302/state-grid/",
+   "method": "GET"
+  },
+  {
+   "t": 57.65,
+   "ctx": "selected_items",
+   "url": "http://localhost:3302/selected-items",
+   "method": "GET"
+  },
+  {
+   "t": 57.66,
+   "ctx": "selected_items",
+   "url": "http://localhost:3302/selected-items/",
+   "method": "GET"
+  },
+  {
+   "t": 66.3,
+   "ctx": "integrated_charts",
+   "url": "http://localhost:3302/integrated-charts",
+   "method": "GET"
+  },
+  {
+   "t": 66.31,
+   "ctx": "integrated_charts",
+   "url": "http://localhost:3302/integrated-charts/",
+   "method": "GET"
+  },
+  {
+   "t": 75.17,
+   "ctx": "qa_props",
+   "url": "http://localhost:3302/qa-grid-props",
+   "method": "GET"
+  },
+  {
+   "t": 75.18,
+   "ctx": "qa_props",
+   "url": "http://localhost:3302/qa-grid-props/",
+   "method": "GET"
+  },
+  {
+   "t": 85.37,
+   "ctx": "qa_memo",
+   "url": "http://localhost:3302/qa-grid-memo",
+   "method": "GET"
+  },
+  {
+   "t": 85.37,
+   "ctx": "qa_memo",
+   "url": "http://localhost:3302/qa-grid-memo/",
+   "method": "GET"
+  },
+  {
+   "t": 92.24,
+   "ctx": "qa_memo",
+   "url": "http://localhost:3302/qa-grid-memo/",
+   "method": "GET"
+  }
+ ]
+}

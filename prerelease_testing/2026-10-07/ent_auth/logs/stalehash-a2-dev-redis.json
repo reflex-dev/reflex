@@ -1,0 +1,778 @@
+[
+  {
+    "case": "anon_boot",
+    "i": 0,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:3340/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 4,
+        "received": 12
+      }
+    },
+    "ls_initial": null,
+    "ls_after_boot": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    "reconcile_sent": 0,
+    "cookie_syncs": 0,
+    "hash_ls_writes": [
+      "deadbeefdead"
+    ],
+    "sent": [
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"
+    ],
+    "corrected": false
+  },
+  {
+    "case": "loggedin_boot",
+    "i": 0,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:3340/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:3340/dashboard"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:8340/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 13,
+        "received": 37
+      }
+    },
+    "ls_real_prefix": "84f802926a6b",
+    "ls_after_boot_prefix": "deadbeefdead",
+    "reconcile_sent": 0,
+    "cookie_syncs": 0,
+    "hash_ls_writes": [
+      "deadbeefdead"
+    ],
+    "sent": [
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"
+    ],
+    "corrected": false
+  },
+  {
+    "case": "live_update",
+    "i": 0,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:3340/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:8340/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:8340/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 4,
+        "received": 10
+      }
+    },
+    "ls_after": "",
+    "reconcile_sent": 1,
+    "cookie_syncs": 2,
+    "hash_ls_writes": [
+      "deadbeefdead",
+      ""
+    ],
+    "sent": [
+      "update_vars_internal",
+      "reconcile_tokens_after_sync",
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"
+    ],
+    "corrected": true
+  },
+  {
+    "case": "anon_boot",
+    "i": 1,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:3340/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 4,
+        "received": 12
+      }
+    },
+    "ls_initial": null,
+    "ls_after_boot": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    "reconcile_sent": 0,
+    "cookie_syncs": 0,
+    "hash_ls_writes": [
+      "deadbeefdead"
+    ],
+    "sent": [
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"
+    ],
+    "corrected": false
+  },
+  {
+    "case": "loggedin_boot",
+    "i": 1,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:3340/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:3340/dashboard"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:8340/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 13,
+        "received": 37
+      }
+    },
+    "ls_real_prefix": "665810f6a84b",
+    "ls_after_boot_prefix": "deadbeefdead",
+    "reconcile_sent": 0,
+    "cookie_syncs": 0,
+    "hash_ls_writes": [
+      "deadbeefdead"
+    ],
+    "sent": [
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"
+    ],
+    "corrected": false
+  },
+  {
+    "case": "live_update",
+    "i": 1,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:3340/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:8340/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:8340/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 4,
+        "received": 10
+      }
+    },
+    "ls_after": "",
+    "reconcile_sent": 1,
+    "cookie_syncs": 2,
+    "hash_ls_writes": [
+      "deadbeefdead",
+      ""
+    ],
+    "sent": [
+      "update_vars_internal",
+      "reconcile_tokens_after_sync",
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"
+    ],
+    "corrected": true
+  },
+  {
+    "case": "anon_boot",
+    "i": 2,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:3340/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 4,
+        "received": 12
+      }
+    },
+    "ls_initial": null,
+    "ls_after_boot": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    "reconcile_sent": 0,
+    "cookie_syncs": 0,
+    "hash_ls_writes": [
+      "deadbeefdead"
+    ],
+    "sent": [
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"
+    ],
+    "corrected": false
+  },
+  {
+    "case": "loggedin_boot",
+    "i": 2,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:3340/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/callback"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/dashboard"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:3340/dashboard"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:8340/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 13,
+        "received": 37
+      }
+    },
+    "ls_real_prefix": "48334406751a",
+    "ls_after_boot_prefix": "deadbeefdead",
+    "reconcile_sent": 0,
+    "cookie_syncs": 0,
+    "hash_ls_writes": [
+      "deadbeefdead"
+    ],
+    "sent": [
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"
+    ],
+    "corrected": false
+  },
+  {
+    "case": "live_update",
+    "i": 2,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting...",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected.",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+          "url": "http://localhost:3340/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:3340/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:8340/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:8340/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 4,
+        "received": 10
+      }
+    },
+    "ls_after": "",
+    "reconcile_sent": 1,
+    "cookie_syncs": 2,
+    "hash_ls_writes": [
+      "deadbeefdead",
+      ""
+    ],
+    "sent": [
+      "update_vars_internal",
+      "reconcile_tokens_after_sync",
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_"
+    ],
+    "corrected": true
+  }
+]

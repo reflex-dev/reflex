@@ -1,0 +1,2218 @@
+{
+  "label": "s912w-rep",
+  "i": 4,
+  "tab1_diag": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "url": "http://localhost:3340/list"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "url": "http://localhost:3340/list"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "url": "http://localhost:3340/list"
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "url": "http://localhost:3340/list"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation",
+        "url": "http://localhost:3340/login"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "url": "http://localhost:8358/oauth2/authorize"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "url": "http://localhost:3340/callback"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "url": "http://localhost:3340/callback"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "url": "http://localhost:3340/callback"
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "url": "http://localhost:3340/callback"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation",
+        "url": "http://localhost:3340/login"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "url": "http://localhost:3340/login"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "url": "http://localhost:3340/login"
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "url": "http://localhost:3340/login"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "url": "http://localhost:3340/login"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on pagehide",
+        "url": "http://localhost:3340/login"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+        "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+        "method": "GET"
+      },
+      {
+        "url": "http://localhost:8340/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED",
+        "method": "POST"
+      },
+      {
+        "url": "http://localhost:8340/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED",
+        "method": "POST"
+      },
+      {
+        "url": "http://localhost:8340/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED",
+        "method": "POST"
+      },
+      {
+        "url": "http://localhost:8340/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED",
+        "method": "POST"
+      }
+    ],
+    "http_errors": [],
+    "ws_frames": {
+      "sent": 28,
+      "received": 51
+    }
+  },
+  "t_login_done": 2.069,
+  "tab2_diag": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "url": "http://localhost:3340/dashboard"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "url": "http://localhost:3340/dashboard"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "url": "http://localhost:3340/dashboard"
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "url": "http://localhost:3340/dashboard"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation",
+        "url": "http://localhost:3340/dashboard"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "url": "http://localhost:8358/oauth2/end_session"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "url": "http://localhost:3340/"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "url": "http://localhost:3340/"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "url": "http://localhost:3340/"
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "url": "http://localhost:3340/"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on pagehide",
+        "url": "http://localhost:3340/"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8340/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED",
+        "method": "POST"
+      },
+      {
+        "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+        "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+        "method": "GET"
+      },
+      {
+        "url": "http://localhost:8340/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED",
+        "method": "POST"
+      },
+      {
+        "url": "http://localhost:8340/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED",
+        "method": "POST"
+      }
+    ],
+    "http_errors": [],
+    "ws_frames": {
+      "sent": 14,
+      "received": 25
+    }
+  },
+  "ls_hash_before_logout": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+  "redis_tab1_before_logout": {
+    "token_tail": "c3253d",
+    "keys": [
+      "reflex_enterprise___auth___oidc___state____generic_oidc_auth_state"
+    ],
+    "reflex_enterprise___auth___oidc___state____generic_oidc_auth_state": {
+      "bytes": 3875,
+      "has_http_cookie_access_attr": true,
+      "has_http_cookie_id_attr": true,
+      "has_access_token_value": true,
+      "has_dirty_flag": true
+    }
+  },
+  "t_logout_click": 3.825,
+  "t_tab2_anon": 4.846,
+  "ls_hash_6s_after_logout": "",
+  "redis_tab1_6s_after_logout": {
+    "token_tail": "c3253d",
+    "keys": [
+      "reflex_enterprise___auth___oidc___state____generic_oidc_auth_state"
+    ],
+    "reflex_enterprise___auth___oidc___state____generic_oidc_auth_state": {
+      "bytes": 3799,
+      "has_http_cookie_access_attr": true,
+      "has_http_cookie_id_attr": true,
+      "has_access_token_value": false,
+      "has_dirty_flag": true
+    }
+  },
+  "redis_tab2_6s_after_logout": {
+    "token_tail": "3a61ec",
+    "keys": [
+      "reflex_enterprise___auth___oidc___state____generic_oidc_auth_state"
+    ],
+    "reflex_enterprise___auth___oidc___state____generic_oidc_auth_state": {
+      "bytes": 2719,
+      "has_http_cookie_access_attr": true,
+      "has_http_cookie_id_attr": true,
+      "has_access_token_value": false,
+      "has_dirty_flag": true
+    }
+  },
+  "cookies_after_logout": [],
+  "tab1_url_6s": "http://localhost:3340/list",
+  "tab1_user_6s": "",
+  "tab1_after_protected_click": {
+    "url": "http://localhost:3340/login?redirect_to=%2Flist",
+    "items_before": 0,
+    "items_after": null
+  },
+  "tab1_after_reload": {
+    "url": "http://localhost:3340/login?redirect_to=%2Flist",
+    "user": null,
+    "items": []
+  },
+  "fresh_tab3_url": "http://localhost:3340/login?redirect_to=%2Flist",
+  "fresh_tab3_user": null,
+  "passed_run": true,
+  "events": [
+    {
+      "t": 0.122,
+      "tab": "tab1",
+      "kind": "nav",
+      "v": "http://localhost:3340/list"
+    },
+    {
+      "kind": "ls.rm",
+      "k": "debug",
+      "v": null,
+      "href": "/list",
+      "t": 0.545,
+      "tab": "tab1"
+    },
+    {
+      "t": 0.788,
+      "tab": "tab1",
+      "kind": "nav",
+      "v": "http://localhost:3340/list"
+    },
+    {
+      "kind": "ss.set",
+      "k": "token",
+      "v": "fbce3a0b-65b7-4872-a482-d67c23c3253d",
+      "href": "/list",
+      "t": 0.828,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ls.set",
+      "k": "last_compiled_theme",
+      "v": "system",
+      "href": "/list",
+      "t": 0.838,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ls.set",
+      "k": "theme",
+      "v": "system",
+      "href": "/list",
+      "t": 0.838,
+      "tab": "tab1"
+    },
+    {
+      "t": 0.877,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.hydrate",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 0.901,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 0.905,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false
+      }
+    },
+    {
+      "t": 0.927,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": "True"
+      }
+    },
+    {
+      "t": 0.989,
+      "tab": "tab1",
+      "kind": "nav",
+      "v": "http://localhost:3340/login"
+    },
+    {
+      "t": 1.025,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state.check_if_iframed",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 1.026,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state.check_if_iframed_cb",
+        "payload_keys": [
+          "is_iframed"
+        ]
+      }
+    },
+    {
+      "t": 1.026,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false
+      }
+    },
+    {
+      "t": 1.056,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": "True"
+      }
+    },
+    {
+      "t": 1.138,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_login",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 1.15,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "redirect_to_url",
+        "app_state",
+        "code_verifier"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "VBEsVkXAkqaU5jI1jKV7Yf8g",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "/list",
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "GKfd5nJlhYuHN2YeEqIHe9Hk"
+      }
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.code_verifier_rx_state_",
+      "v": "VBEsVkXAkqaU5jI1jKV7Yf8gZ3wgFrIQERZcd-o8GXOq3HcAvMqcDEMLBr5JXWrEXn9aS51JTD5u6Qqonh814Q",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 1.15,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_",
+      "v": "/list",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 1.151,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_",
+      "v": "GKfd5nJlhYuHN2YeEqIHe9HkZAQ2bJ1rpGkZhEOq2JIHKd3jSegaKlBzAuKHXQDba0aJQdYp9fXgPfzI9zPg1g",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 1.151,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "react-router-scroll-positions",
+      "v": "{\"default\":0,\"0bklaiay\":0}",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 1.179,
+      "tab": "tab1"
+    },
+    {
+      "t": 1.203,
+      "tab": "tab1",
+      "kind": "nav",
+      "v": "http://localhost:8358/oauth2/authorize"
+    },
+    {
+      "t": 1.569,
+      "tab": "tab1",
+      "kind": "nav",
+      "v": "http://localhost:3340/callback"
+    },
+    {
+      "kind": "ls.rm",
+      "k": "debug",
+      "v": null,
+      "href": "/callback?code=IBbcLHta2xVcjBNZ3fcx4u4CEpLXv7By9b",
+      "t": 1.701,
+      "tab": "tab1"
+    },
+    {
+      "t": 1.795,
+      "tab": "tab1",
+      "kind": "nav",
+      "v": "http://localhost:3340/callback"
+    },
+    {
+      "t": 1.835,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.hydrate",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 1.835,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+        "payload_keys": [
+          "vars"
+        ]
+      }
+    },
+    {
+      "t": 1.852,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 1.859,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "redirect_to_url",
+        "app_state",
+        "code_verifier"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "VBEsVkXAkqaU5jI1jKV7Yf8g",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "/list",
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "GKfd5nJlhYuHN2YeEqIHe9Hk"
+      }
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.code_verifier_rx_state_",
+      "v": "VBEsVkXAkqaU5jI1jKV7Yf8gZ3wgFrIQERZcd-o8GXOq3HcAvMqcDEMLBr5JXWrEXn9aS51JTD5u6Qqonh814Q",
+      "href": "/callback?code=IBbcLHta2xVcjBNZ3fcx4u4CEpLXv7By9b",
+      "t": 1.86,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_",
+      "v": "/list",
+      "href": "/callback?code=IBbcLHta2xVcjBNZ3fcx4u4CEpLXv7By9b",
+      "t": 1.86,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_",
+      "v": "GKfd5nJlhYuHN2YeEqIHe9HkZAQ2bJ1rpGkZhEOq2JIHKd3jSegaKlBzAuKHXQDba0aJQdYp9fXgPfzI9zPg1g",
+      "href": "/callback?code=IBbcLHta2xVcjBNZ3fcx4u4CEpLXv7By9b",
+      "t": 1.861,
+      "tab": "tab1"
+    },
+    {
+      "t": 1.864,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false
+      }
+    },
+    {
+      "t": 1.877,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": "True"
+      }
+    },
+    {
+      "t": 1.943,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.update_access_token_hash_in_browser",
+        "payload_keys": [
+          "redirect_url"
+        ]
+      }
+    },
+    {
+      "t": 1.945,
+      "tab": "tab1",
+      "kind": "cookie-sync",
+      "status": 200,
+      "req_cookies_nonempty": [],
+      "set_cookie": [
+        {
+          "name": "_oidc_generic_access_token_data_partitioned",
+          "empty": false,
+          "max_age_0": false,
+          "val_len": 87
+        },
+        {
+          "name": "_oidc_generic_id_token_partitioned",
+          "empty": false,
+          "max_age_0": false,
+          "val_len": 781
+        },
+        {
+          "name": "_oidc_generic_refresh_token_partitioned",
+          "empty": false,
+          "max_age_0": false,
+          "val_len": 48
+        },
+        {
+          "name": "_oidc_generic_granted_scopes_partitioned",
+          "empty": false,
+          "max_age_0": false,
+          "val_len": 22
+        }
+      ]
+    },
+    {
+      "t": 1.948,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "0f7976c49eb2d8786da3fe15"
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+      "href": "/callback?code=IBbcLHta2xVcjBNZ3fcx4u4CEpLXv7By9b",
+      "t": 1.948,
+      "tab": "tab1"
+    },
+    {
+      "t": 1.974,
+      "tab": "tab1",
+      "kind": "nav",
+      "v": "http://localhost:3340/list"
+    },
+    {
+      "t": 2.019,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+        "payload_keys": [
+          "vars"
+        ]
+      }
+    },
+    {
+      "t": 2.025,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "VBEsVkXAkqaU5jI1jKV7Yf8g",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "/list",
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "GKfd5nJlhYuHN2YeEqIHe9Hk",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "0f7976c49eb2d8786da3fe15"
+      }
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.code_verifier_rx_state_",
+      "v": "VBEsVkXAkqaU5jI1jKV7Yf8gZ3wgFrIQERZcd-o8GXOq3HcAvMqcDEMLBr5JXWrEXn9aS51JTD5u6Qqonh814Q",
+      "href": "/list",
+      "t": 2.025,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_",
+      "v": "/list",
+      "href": "/list",
+      "t": 2.026,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_",
+      "v": "GKfd5nJlhYuHN2YeEqIHe9HkZAQ2bJ1rpGkZhEOq2JIHKd3jSegaKlBzAuKHXQDba0aJQdYp9fXgPfzI9zPg1g",
+      "href": "/list",
+      "t": 2.027,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+      "href": "/list",
+      "t": 2.027,
+      "tab": "tab1"
+    },
+    {
+      "t": 2.038,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false
+      }
+    },
+    {
+      "t": 2.056,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": "True"
+      }
+    },
+    {
+      "t": 2.152,
+      "tab": "tab2",
+      "kind": "nav",
+      "v": "http://localhost:3340/dashboard"
+    },
+    {
+      "kind": "ls.rm",
+      "k": "debug",
+      "v": null,
+      "href": "/dashboard",
+      "t": 2.389,
+      "tab": "tab2"
+    },
+    {
+      "t": 2.578,
+      "tab": "tab2",
+      "kind": "nav",
+      "v": "http://localhost:3340/dashboard"
+    },
+    {
+      "kind": "ss.set",
+      "k": "token",
+      "v": "c32aed6a-daa5-4d0b-91c3-e6f3fc3a61ec",
+      "href": "/dashboard",
+      "t": 2.626,
+      "tab": "tab2"
+    },
+    {
+      "t": 2.67,
+      "tab": "tab2",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.hydrate",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 2.67,
+      "tab": "tab2",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+        "payload_keys": [
+          "vars"
+        ]
+      }
+    },
+    {
+      "t": 2.704,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 2.712,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "0f7976c49eb2d8786da3fe15"
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+      "href": "/dashboard",
+      "t": 2.713,
+      "tab": "tab2"
+    },
+    {
+      "t": 2.726,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false
+      }
+    },
+    {
+      "t": 2.74,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": "True"
+      }
+    },
+    {
+      "t": 3.859,
+      "tab": "tab2",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___user_state____auth_user_state.logout",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 3.892,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "app_state"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "cK4xTIaxBnxPo0jfJ5AHD3_J",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_",
+      "v": "cK4xTIaxBnxPo0jfJ5AHD3_JkraC9N_boh5CPXNi9QpRc4xg9i1MXk1AyiR2U9EHpcOV1zP2MEapE95TxOf1Qw",
+      "href": "/dashboard",
+      "t": 3.892,
+      "tab": "tab2"
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/dashboard",
+      "t": 3.893,
+      "tab": "tab2"
+    },
+    {
+      "kind": "storage.event",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/list",
+      "t": 3.901,
+      "tab": "tab1"
+    },
+    {
+      "t": 3.903,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+        "payload_keys": [
+          "vars"
+        ]
+      }
+    },
+    {
+      "t": 3.926,
+      "tab": "tab2",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.update_access_token_hash_in_browser",
+        "payload_keys": [
+          "redirect_url"
+        ]
+      }
+    },
+    {
+      "t": 3.929,
+      "tab": "tab2",
+      "kind": "cookie-sync",
+      "status": 200,
+      "req_cookies_nonempty": [
+        "_oidc_generic_access_token_data_partitioned",
+        "_oidc_generic_granted_scopes_partitioned",
+        "_oidc_generic_id_token_partitioned",
+        "_oidc_generic_refresh_token_partitioned"
+      ],
+      "set_cookie": [
+        {
+          "name": "_oidc_generic_access_token_data_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        },
+        {
+          "name": "_oidc_generic_id_token_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        },
+        {
+          "name": "_oidc_generic_refresh_token_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        },
+        {
+          "name": "_oidc_generic_granted_scopes_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        }
+      ]
+    },
+    {
+      "t": 3.938,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/dashboard",
+      "t": 3.944,
+      "tab": "tab2"
+    },
+    {
+      "t": 3.954,
+      "tab": "tab1",
+      "kind": "cookie-sync",
+      "status": 200,
+      "req_cookies_nonempty": [
+        "_oidc_generic_access_token_data_partitioned",
+        "_oidc_generic_granted_scopes_partitioned",
+        "_oidc_generic_id_token_partitioned",
+        "_oidc_generic_refresh_token_partitioned"
+      ],
+      "set_cookie": []
+    },
+    {
+      "t": 3.963,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.reconcile_tokens_after_sync",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 3.968,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "0f7976c49eb2d8786da3fe15"
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+      "href": "/list",
+      "t": 3.968,
+      "tab": "tab1"
+    },
+    {
+      "kind": "storage.event",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+      "href": "/dashboard",
+      "t": 3.969,
+      "tab": "tab2"
+    },
+    {
+      "kind": "ss.set",
+      "k": "react-router-scroll-positions",
+      "v": "{\"default\":8}",
+      "href": "/dashboard",
+      "t": 4.013,
+      "tab": "tab2"
+    },
+    {
+      "t": 4.015,
+      "tab": "tab2",
+      "kind": "nav",
+      "v": "http://localhost:8358/oauth2/end_session"
+    },
+    {
+      "t": 4.426,
+      "tab": "tab2",
+      "kind": "nav",
+      "v": "http://localhost:3340/"
+    },
+    {
+      "kind": "ls.rm",
+      "k": "debug",
+      "v": null,
+      "href": "/?state=cK4xTIaxBnxPo0jfJ5AHD3_JkraC9N_bo",
+      "t": 4.567,
+      "tab": "tab2"
+    },
+    {
+      "t": 4.692,
+      "tab": "tab2",
+      "kind": "nav",
+      "v": "http://localhost:3340/"
+    },
+    {
+      "t": 4.775,
+      "tab": "tab2",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.hydrate",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 4.775,
+      "tab": "tab2",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+        "payload_keys": [
+          "vars"
+        ]
+      }
+    },
+    {
+      "t": 4.793,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 4.793,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "app_state"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "cK4xTIaxBnxPo0jfJ5AHD3_J"
+      }
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_",
+      "v": "cK4xTIaxBnxPo0jfJ5AHD3_JkraC9N_boh5CPXNi9QpRc4xg9i1MXk1AyiR2U9EHpcOV1zP2MEapE95TxOf1Qw",
+      "href": "/?state=cK4xTIaxBnxPo0jfJ5AHD3_JkraC9N_bo",
+      "t": 4.794,
+      "tab": "tab2"
+    },
+    {
+      "t": 4.805,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false
+      }
+    },
+    {
+      "t": 4.816,
+      "tab": "tab2",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.reconcile_tokens_after_sync",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 4.82,
+      "tab": "tab2",
+      "kind": "cookie-sync",
+      "status": 200,
+      "req_cookies_nonempty": [],
+      "set_cookie": []
+    },
+    {
+      "t": 4.821,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": "True"
+      }
+    },
+    {
+      "t": 4.834,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/?state=cK4xTIaxBnxPo0jfJ5AHD3_JkraC9N_bo",
+      "t": 4.834,
+      "tab": "tab2"
+    },
+    {
+      "kind": "storage.event",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/list",
+      "t": 4.837,
+      "tab": "tab1"
+    },
+    {
+      "t": 4.838,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+        "payload_keys": [
+          "vars"
+        ]
+      }
+    },
+    {
+      "t": 4.871,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.reconcile_tokens_after_sync",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 4.872,
+      "tab": "tab2",
+      "kind": "cookie-sync",
+      "status": 200,
+      "req_cookies_nonempty": [],
+      "set_cookie": [
+        {
+          "name": "_oidc_generic_access_token_data_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        },
+        {
+          "name": "_oidc_generic_id_token_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        },
+        {
+          "name": "_oidc_generic_refresh_token_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        },
+        {
+          "name": "_oidc_generic_granted_scopes_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        }
+      ]
+    },
+    {
+      "t": 4.873,
+      "tab": "tab1",
+      "kind": "cookie-sync",
+      "status": 200,
+      "req_cookies_nonempty": [],
+      "set_cookie": []
+    },
+    {
+      "t": 4.887,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/list",
+      "t": 4.888,
+      "tab": "tab1"
+    },
+    {
+      "t": 4.912,
+      "tab": "tab1",
+      "kind": "cookie-sync",
+      "status": 200,
+      "req_cookies_nonempty": [],
+      "set_cookie": [
+        {
+          "name": "_oidc_generic_access_token_data_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        },
+        {
+          "name": "_oidc_generic_id_token_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        },
+        {
+          "name": "_oidc_generic_refresh_token_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        },
+        {
+          "name": "_oidc_generic_granted_scopes_partitioned",
+          "empty": true,
+          "max_age_0": true,
+          "val_len": 2
+        }
+      ]
+    },
+    {
+      "t": 11.003,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.entauth___entauth____list_base.entauth___entauth____list_worker.add_item",
+        "payload_keys": [
+          "value"
+        ]
+      }
+    },
+    {
+      "t": 11.03,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "pending_event"
+      ],
+      "v": {
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": "{\"name\": \"reflex___state"
+      }
+    },
+    {
+      "kind": "ss.set",
+      "k": "rxe_auth_pending_event",
+      "v": "{\"name\": \"reflex___state____state.entauth___entauth____list_base.entauth___entauth____list_worker.add_item\", \"payload\": ",
+      "href": "/list",
+      "t": 11.033,
+      "tab": "tab1"
+    },
+    {
+      "t": 11.057,
+      "tab": "tab1",
+      "kind": "nav",
+      "v": "http://localhost:3340/login"
+    },
+    {
+      "t": 11.068,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+        "payload_keys": [
+          "vars"
+        ]
+      }
+    },
+    {
+      "t": 11.082,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "pending_event"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "VBEsVkXAkqaU5jI1jKV7Yf8g",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "/list",
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "GKfd5nJlhYuHN2YeEqIHe9Hk",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": "{\"name\": \"reflex___state"
+      }
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.code_verifier_rx_state_",
+      "v": "VBEsVkXAkqaU5jI1jKV7Yf8gZ3wgFrIQERZcd-o8GXOq3HcAvMqcDEMLBr5JXWrEXn9aS51JTD5u6Qqonh814Q",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 11.087,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_",
+      "v": "/list",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 11.088,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_",
+      "v": "GKfd5nJlhYuHN2YeEqIHe9HkZAQ2bJ1rpGkZhEOq2JIHKd3jSegaKlBzAuKHXQDba0aJQdYp9fXgPfzI9zPg1g",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 11.091,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 11.092,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "rxe_auth_pending_event",
+      "v": "{\"name\": \"reflex___state____state.entauth___entauth____list_base.entauth___entauth____list_worker.add_item\", \"payload\": ",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 11.093,
+      "tab": "tab1"
+    },
+    {
+      "t": 11.093,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false
+      }
+    },
+    {
+      "t": 11.113,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": "True"
+      }
+    },
+    {
+      "kind": "ss.set",
+      "k": "react-router-scroll-positions",
+      "v": "{\"default\":0,\"0bklaiay\":0,\"m22o78dl\":0,\"3cr8vp6j\":0}",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 14.049,
+      "tab": "tab1"
+    },
+    {
+      "t": 14.053,
+      "tab": "tab1",
+      "kind": "nav",
+      "v": "http://localhost:3340/login"
+    },
+    {
+      "kind": "ls.rm",
+      "k": "debug",
+      "v": null,
+      "href": "/login?redirect_to=%2Flist",
+      "t": 14.134,
+      "tab": "tab1"
+    },
+    {
+      "t": 14.257,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.hydrate",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 14.258,
+      "tab": "tab1",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+        "payload_keys": [
+          "vars"
+        ]
+      }
+    },
+    {
+      "t": 14.258,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 14.27,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "pending_event"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "VBEsVkXAkqaU5jI1jKV7Yf8g",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "/list",
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "GKfd5nJlhYuHN2YeEqIHe9Hk",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": "{\"name\": \"reflex___state"
+      }
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.code_verifier_rx_state_",
+      "v": "VBEsVkXAkqaU5jI1jKV7Yf8gZ3wgFrIQERZcd-o8GXOq3HcAvMqcDEMLBr5JXWrEXn9aS51JTD5u6Qqonh814Q",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 14.271,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_",
+      "v": "/list",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 14.272,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_",
+      "v": "GKfd5nJlhYuHN2YeEqIHe9HkZAQ2bJ1rpGkZhEOq2JIHKd3jSegaKlBzAuKHXQDba0aJQdYp9fXgPfzI9zPg1g",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 14.272,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 14.273,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "rxe_auth_pending_event",
+      "v": "{\"name\": \"reflex___state____state.entauth___entauth____list_base.entauth___entauth____list_worker.add_item\", \"payload\": ",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 14.273,
+      "tab": "tab1"
+    },
+    {
+      "t": 14.292,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false
+      }
+    },
+    {
+      "t": 14.295,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": "True"
+      }
+    },
+    {
+      "t": 19.268,
+      "tab": "tab3",
+      "kind": "nav",
+      "v": "http://localhost:3340/list"
+    },
+    {
+      "kind": "ls.rm",
+      "k": "debug",
+      "v": null,
+      "href": "/list",
+      "t": 19.506,
+      "tab": "tab3"
+    },
+    {
+      "t": 19.65,
+      "tab": "tab3",
+      "kind": "nav",
+      "v": "http://localhost:3340/list"
+    },
+    {
+      "kind": "ss.set",
+      "k": "token",
+      "v": "c4aa07c9-48fe-4353-f3cc-cb3ea2522029",
+      "href": "/list",
+      "t": 19.7,
+      "tab": "tab3"
+    },
+    {
+      "t": 19.748,
+      "tab": "tab3",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.hydrate",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 19.748,
+      "tab": "tab3",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+        "payload_keys": [
+          "vars"
+        ]
+      }
+    },
+    {
+      "t": 19.771,
+      "tab": "tab3",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 19.795,
+      "tab": "tab3",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/list",
+      "t": 19.796,
+      "tab": "tab3"
+    },
+    {
+      "t": 19.797,
+      "tab": "tab3",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false
+      }
+    },
+    {
+      "t": 19.803,
+      "tab": "tab3",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": "True"
+      }
+    },
+    {
+      "t": 19.824,
+      "tab": "tab3",
+      "kind": "nav",
+      "v": "http://localhost:3340/login"
+    },
+    {
+      "t": 19.836,
+      "tab": "tab3",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state.check_if_iframed",
+        "payload_keys": []
+      }
+    },
+    {
+      "t": 19.836,
+      "tab": "tab3",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+        "payload_keys": [
+          "vars"
+        ]
+      }
+    },
+    {
+      "t": 19.849,
+      "tab": "tab3",
+      "kind": "ws.sent",
+      "v": {
+        "name": "reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state.check_if_iframed_cb",
+        "payload_keys": [
+          "is_iframed"
+        ]
+      }
+    },
+    {
+      "t": 19.852,
+      "tab": "tab3",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 19.852,
+      "tab": "tab3"
+    },
+    {
+      "t": 19.859,
+      "tab": "tab3",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false
+      }
+    },
+    {
+      "t": 19.868,
+      "tab": "tab3",
+      "kind": "ws.recv",
+      "hits": [
+        "is_hydrated"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": "True"
+      }
+    },
+    {
+      "kind": "ss.set",
+      "k": "react-router-scroll-positions",
+      "v": "{\"default\":0,\"0bklaiay\":0,\"m22o78dl\":0,\"3cr8vp6j\":0}",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 25.617,
+      "tab": "tab1"
+    },
+    {
+      "kind": "ss.set",
+      "k": "react-router-scroll-positions",
+      "v": "{\"default\":0}",
+      "href": "/?state=cK4xTIaxBnxPo0jfJ5AHD3_JkraC9N_bo",
+      "t": 25.621,
+      "tab": "tab2"
+    },
+    {
+      "kind": "ss.set",
+      "k": "react-router-scroll-positions",
+      "v": "{\"default\":0,\"lkxn3dng\":0}",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 25.623,
+      "tab": "tab3"
+    }
+  ],
+  "hash_writes": [
+    {
+      "t": 0.901,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 1.852,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 1.948,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "0f7976c49eb2d8786da3fe15"
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+      "href": "/callback?code=IBbcLHta2xVcjBNZ3fcx4u4CEpLXv7By9b",
+      "t": 1.948,
+      "tab": "tab1"
+    },
+    {
+      "t": 2.025,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "VBEsVkXAkqaU5jI1jKV7Yf8g",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "/list",
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "GKfd5nJlhYuHN2YeEqIHe9Hk",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "0f7976c49eb2d8786da3fe15"
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+      "href": "/list",
+      "t": 2.027,
+      "tab": "tab1"
+    },
+    {
+      "t": 2.704,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 2.712,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "0f7976c49eb2d8786da3fe15"
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+      "href": "/dashboard",
+      "t": 2.713,
+      "tab": "tab2"
+    },
+    {
+      "t": 3.892,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "app_state"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "cK4xTIaxBnxPo0jfJ5AHD3_J",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/dashboard",
+      "t": 3.893,
+      "tab": "tab2"
+    },
+    {
+      "kind": "storage.event",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/list",
+      "t": 3.901,
+      "tab": "tab1"
+    },
+    {
+      "t": 3.938,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/dashboard",
+      "t": 3.944,
+      "tab": "tab2"
+    },
+    {
+      "t": 3.968,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "0f7976c49eb2d8786da3fe15"
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+      "href": "/list",
+      "t": 3.968,
+      "tab": "tab1"
+    },
+    {
+      "kind": "storage.event",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "0f7976c49eb2d8786da3fe15dd3eb445467e0b57d2d23db8b1e716f9f1e796c0",
+      "href": "/dashboard",
+      "t": 3.969,
+      "tab": "tab2"
+    },
+    {
+      "t": 4.793,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 4.834,
+      "tab": "tab2",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/?state=cK4xTIaxBnxPo0jfJ5AHD3_JkraC9N_bo",
+      "t": 4.834,
+      "tab": "tab2"
+    },
+    {
+      "kind": "storage.event",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/list",
+      "t": 4.837,
+      "tab": "tab1"
+    },
+    {
+      "t": 4.887,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/list",
+      "t": 4.888,
+      "tab": "tab1"
+    },
+    {
+      "t": 11.082,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "pending_event"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "VBEsVkXAkqaU5jI1jKV7Yf8g",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "/list",
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "GKfd5nJlhYuHN2YeEqIHe9Hk",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": "{\"name\": \"reflex___state"
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 11.092,
+      "tab": "tab1"
+    },
+    {
+      "t": 14.258,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 14.27,
+      "tab": "tab1",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "pending_event"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "VBEsVkXAkqaU5jI1jKV7Yf8g",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "/list",
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "GKfd5nJlhYuHN2YeEqIHe9Hk",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": "{\"name\": \"reflex___state"
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 14.273,
+      "tab": "tab1"
+    },
+    {
+      "t": 19.771,
+      "tab": "tab3",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash",
+        "is_hydrated",
+        "redirect_to_url",
+        "app_state",
+        "code_verifier",
+        "rejected",
+        "pending_event"
+      ],
+      "v": {
+        "reflex___state____state.is_hydrated_rx_state_": false,
+        "_oidc___state____generic_oidc_auth_state.app_state_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.code_verifier_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_": "",
+        "_oidc___state____generic_oidc_auth_state.rejected_state_digest_rx_state_": "",
+        "e___auth___replay____pending_event_state.pending_event_rx_state_": ""
+      }
+    },
+    {
+      "t": 19.795,
+      "tab": "tab3",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/list",
+      "t": 19.796,
+      "tab": "tab3"
+    },
+    {
+      "t": 19.852,
+      "tab": "tab3",
+      "kind": "ws.recv",
+      "hits": [
+        "latest_access_token_hash"
+      ],
+      "v": {
+        "_oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_": ""
+      }
+    },
+    {
+      "kind": "ls.set",
+      "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+      "v": "",
+      "href": "/login?redirect_to=%2Flist",
+      "t": 19.852,
+      "tab": "tab3"
+    }
+  ]
+}

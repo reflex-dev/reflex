@@ -1,0 +1,1089 @@
+{
+ "label": "mini_s_dev",
+ "base": "http://localhost:3470",
+ "results": [
+  {
+   "name": "chain.a_returns_b_raises",
+   "status": "anomaly",
+   "details": {
+    "initial_roundtrip_ok": true,
+    "ping_roundtrip_ok": true,
+    "toast_visible_before_ping": true,
+    "partial_visible_with_error": {
+     "status": true,
+     "items": false
+    },
+    "partial_visible_after_next_event": {
+     "status": true,
+     "items": true
+    },
+    "ui_before_ping": {
+     "status": "A-set",
+     "items": "",
+     "pings": "1",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "ui_after_ping": {
+     "status": "A-set",
+     "items": "B-partial",
+     "pings": "2",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "timeline": {
+     "status": [
+      [
+       0.01,
+       "idle"
+      ],
+      [
+       0.13,
+       "A-set"
+      ]
+     ],
+     "items": [
+      [
+       0.03,
+       ""
+      ]
+     ]
+    },
+    "t_click": 2.594,
+    "t_ping": 5.726,
+    "first_recv_frame_with_marker": {
+     "t": 2.635,
+     "dt_from_click": 0.041,
+     "after_ping": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"A-set\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 2.627,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.a_returns_b\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 2.635,
+      "dir": "recv",
+      "markers": [
+       "A-set"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"A-set\"}}}]"
+     },
+     {
+      "t": 2.639,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: B-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 5.74,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 5.756,
+      "dir": "recv",
+      "markers": [
+       "B-partial"
+      ],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"items_rx_state_\":[\"B-partial\"],\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 6.466
+  },
+  {
+   "name": "chain.a_yields_b_raises",
+   "status": "anomaly",
+   "details": {
+    "initial_roundtrip_ok": true,
+    "ping_roundtrip_ok": true,
+    "toast_visible_before_ping": true,
+    "partial_visible_with_error": {
+     "status": true,
+     "items": false
+    },
+    "partial_visible_after_next_event": {
+     "status": true,
+     "items": true
+    },
+    "ui_before_ping": {
+     "status": "AY-set",
+     "items": "",
+     "pings": "1",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "ui_after_ping": {
+     "status": "AY-set",
+     "items": "B-partial",
+     "pings": "2",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "timeline": {
+     "status": [
+      [
+       0.01,
+       "AY-set"
+      ]
+     ],
+     "items": [
+      [
+       0.02,
+       ""
+      ]
+     ]
+    },
+    "t_click": 7.659,
+    "t_ping": 10.743,
+    "first_recv_frame_with_marker": {
+     "t": 7.687,
+     "dt_from_click": 0.028,
+     "after_ping": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"AY-set\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 7.676,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.a_yields_b\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 7.687,
+      "dir": "recv",
+      "markers": [
+       "AY-set"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"AY-set\"}}}]"
+     },
+     {
+      "t": 7.687,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: B-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 10.756,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 10.768,
+      "dir": "recv",
+      "markers": [
+       "B-partial"
+      ],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"items_rx_state_\":[\"B-partial\"],\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 11.468
+  },
+  {
+   "name": "chain.direct_raises",
+   "status": "anomaly",
+   "details": {
+    "initial_roundtrip_ok": true,
+    "ping_roundtrip_ok": true,
+    "toast_visible_before_ping": true,
+    "partial_visible_with_error": {
+     "status": false
+    },
+    "partial_visible_after_next_event": {
+     "status": true
+    },
+    "ui_before_ping": {
+     "status": "idle",
+     "items": "",
+     "pings": "1",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "ui_after_ping": {
+     "status": "direct-partial",
+     "items": "",
+     "pings": "2",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "timeline": {
+     "status": [
+      [
+       0.01,
+       "idle"
+      ]
+     ],
+     "items": [
+      [
+       0.01,
+       ""
+      ]
+     ]
+    },
+    "t_click": 12.653,
+    "t_ping": 15.761,
+    "first_recv_frame_with_marker": {
+     "t": 15.801,
+     "dt_from_click": 3.148,
+     "after_ping": true,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2,\"status_rx_state_\":\"direct-partial\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 12.69,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.direct_raises\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 12.701,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: direct-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":n"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 15.791,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 15.801,
+      "dir": "recv",
+      "markers": [
+       "direct-partial"
+      ],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2,\"status_rx_state_\":\"direct-partial\"}}}]"
+     }
+    ]
+   },
+   "t": 16.544
+  },
+  {
+   "name": "chain.async_raises",
+   "status": "anomaly",
+   "details": {
+    "initial_roundtrip_ok": true,
+    "ping_roundtrip_ok": true,
+    "toast_visible_before_ping": true,
+    "partial_visible_with_error": {
+     "status": false
+    },
+    "partial_visible_after_next_event": {
+     "status": true
+    },
+    "ui_before_ping": {
+     "status": "idle",
+     "items": "",
+     "pings": "1",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "ui_after_ping": {
+     "status": "async-partial",
+     "items": "",
+     "pings": "2",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "timeline": {
+     "status": [
+      [
+       0.0,
+       "idle"
+      ]
+     ],
+     "items": [
+      [
+       0.01,
+       ""
+      ]
+     ]
+    },
+    "t_click": 17.792,
+    "t_ping": 20.862,
+    "first_recv_frame_with_marker": {
+     "t": 20.904,
+     "dt_from_click": 3.112,
+     "after_ping": true,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2,\"status_rx_state_\":\"async-partial\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 17.809,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.async_raises\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 17.82,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: async-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":nu"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 20.89,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 20.904,
+      "dir": "recv",
+      "markers": [
+       "async-partial"
+      ],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2,\"status_rx_state_\":\"async-partial\"}}}]"
+     }
+    ]
+   },
+   "t": 21.643
+  },
+  {
+   "name": "chain.gen_yield_then_raise",
+   "status": "anomaly",
+   "details": {
+    "initial_roundtrip_ok": true,
+    "ping_roundtrip_ok": true,
+    "toast_visible_before_ping": true,
+    "partial_visible_with_error": {
+     "status": true,
+     "items": false
+    },
+    "partial_visible_after_next_event": {
+     "status": true,
+     "items": true
+    },
+    "ui_before_ping": {
+     "status": "gen-flushed",
+     "items": "",
+     "pings": "1",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "ui_after_ping": {
+     "status": "gen-flushed",
+     "items": "gen-partial",
+     "pings": "2",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "timeline": {
+     "status": [
+      [
+       0.0,
+       "idle"
+      ],
+      [
+       0.11,
+       "gen-flushed"
+      ]
+     ],
+     "items": [
+      [
+       0.01,
+       ""
+      ]
+     ]
+    },
+    "t_click": 23.14,
+    "t_ping": 26.26,
+    "first_recv_frame_with_marker": {
+     "t": 23.186,
+     "dt_from_click": 0.046,
+     "after_ping": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"gen-flushed\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 23.176,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.gen_yield_then_raise\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 23.186,
+      "dir": "recv",
+      "markers": [
+       "gen-flushed"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"gen-flushed\"}}}]"
+     },
+     {
+      "t": 23.186,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: gen-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 26.297,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 26.302,
+      "dir": "recv",
+      "markers": [
+       "gen-partial"
+      ],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"items_rx_state_\":[\"gen-partial\"],\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 26.938
+  },
+  {
+   "name": "chain.onload_initial",
+   "status": "pass",
+   "details": {
+    "toast_visible": true,
+    "load_note_before_ping": "onload-partial",
+    "load_note_after_ping": "onload-partial",
+    "timeline": {
+     "load-note": [
+      [
+       0.03,
+       "none"
+      ],
+      [
+       1.69,
+       "onload-partial"
+      ]
+     ]
+    },
+    "t0": 27.152,
+    "t_ping": 31.741,
+    "first_recv_frame_with_marker": {
+     "dt_from_start": 3.137,
+     "after_ping": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.mini___mini____chain_state\":{\"load_note_rx_state_\":\"onload-partial\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 28.196,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "40/_event,"
+     },
+     {
+      "t": 28.204,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "40/_event,{\"sid\":\"W-QIJIhP9I6OPsc1AAAL\"}"
+     },
+     {
+      "t": 28.204,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/onload\",\"asPath\":\"/onload\"}}]"
+     },
+     {
+      "t": 28.204,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/onload\",\"asPath\":\"/onload\"}}]"
+     },
+     {
+      "t": 28.22,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8472\",\"origin\":\"http://localhost:3470\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"c1F5mkNl/x8ZIAa44WZTCQ==\",\"sec_websocket_extens"
+     },
+     {
+      "t": 30.289,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+     },
+     {
+      "t": 30.289,
+      "dir": "recv",
+      "markers": [
+       "onload-partial"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.mini___mini____chain_state\":{\"load_note_rx_state_\":\"onload-partial\"}}}]"
+     },
+     {
+      "t": 30.289,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: onload-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":n"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 31.762,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/onload\",\"asPath\":\"/onload\"}}]"
+     },
+     {
+      "t": 31.77,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":1}}}]"
+     }
+    ]
+   },
+   "t": 33.358
+  },
+  {
+   "name": "chain.onload_via_nav",
+   "status": "pass",
+   "details": {
+    "toast_visible": true,
+    "load_note_before_ping": "onload-partial",
+    "load_note_after_ping": "onload-partial",
+    "timeline": {
+     "load-note": [
+      [
+       0.01,
+       "none"
+      ],
+      [
+       0.12,
+       "onload-partial"
+      ]
+     ]
+    },
+    "t0": 34.644,
+    "t_ping": 37.769,
+    "first_recv_frame_with_marker": {
+     "dt_from_start": 0.101,
+     "after_ping": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.mini___mini____chain_state\":{\"load_note_rx_state_\":\"onload-partial\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 34.725,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/onload\",\"asPath\":\"/onload\"}}]"
+     },
+     {
+      "t": 34.725,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3470\",\"path\":\"/onload\",\"raw_path\":\"/onload\",\"full_path\":\"http://localhost:3470/onload\",\"full_raw_path\":\"http://localhost:3470/onload\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/onload\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3470\",\"origin\":\"http://localhost:3470\",\"path\":\"/onload\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3470/onload\""
+     },
+     {
+      "t": 34.745,
+      "dir": "recv",
+      "markers": [
+       "onload-partial"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.mini___mini____chain_state\":{\"load_note_rx_state_\":\"onload-partial\"}}}]"
+     },
+     {
+      "t": 34.745,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: onload-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":n"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 37.796,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/onload\",\"asPath\":\"/onload\"}}]"
+     },
+     {
+      "t": 37.813,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 39.386
+  },
+  {
+   "name": "sup.cancelled_mutation_after_last_yield",
+   "status": "anomaly",
+   "details": {
+    "final": "a:start,a:after-yield,b:start,b:after-yield,b:end",
+    "leaked_a_after_yield": true,
+    "a_end_present": false,
+    "timeline": [
+     [
+      0.01,
+      "a:start"
+     ],
+     [
+      0.12,
+      "a:start,a:after-yield,b:start"
+     ],
+     [
+      3.01,
+      "a:start,a:after-yield,b:start,b:after-yield,b:end"
+     ]
+    ],
+    "first_frame_with_leak": {
+     "t": 41.272,
+     "dir": "recv",
+     "markers": [
+      "a:after-yield",
+      "a:start",
+      "b:start"
+     ],
+     "toast": false,
+     "pings_in": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"log_rx_state_\":[\"a:start\",\"a:after-yield\",\"b:start\"]}}}]"
+    },
+    "frames": [
+     {
+      "t": 40.634,
+      "dir": "recv",
+      "markers": [
+       "a:start"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"log_rx_state_\":[\"a:start\"]}}}]"
+     },
+     {
+      "t": 41.272,
+      "dir": "recv",
+      "markers": [
+       "a:after-yield",
+       "a:start",
+       "b:start"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"log_rx_state_\":[\"a:start\",\"a:after-yield\",\"b:start\"]}}}]"
+     },
+     {
+      "t": 44.262,
+      "dir": "recv",
+      "markers": [
+       "a:after-yield",
+       "b:after-yield",
+       "a:start",
+       "b:start",
+       "b:end"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"log_rx_state_\":[\"a:start\",\"a:after-yield\",\"b:start\",\"b:after-yield\",\"b:end\"]}}}]"
+     }
+    ]
+   },
+   "t": 45.769
+  },
+  {
+   "name": "sup.cancelled_mutation_after_reload",
+   "status": "info",
+   "details": {
+    "after_reload": "a:start,a:after-yield,b:start,b:after-yield,b:end"
+   },
+   "t": 47.125
+  },
+  {
+   "name": "sup.split_cancelled_mutation_surfaces",
+   "status": "anomaly",
+   "details": {
+    "after_b": {
+     "log": "a:start,a:after-yield",
+     "other": "b-ran"
+    },
+    "after_next_event": {
+     "log": "a:start,a:after-yield",
+     "other": "b-ran"
+    },
+    "after_reload": {
+     "log": "a:start,a:after-yield",
+     "other": "b-ran"
+    },
+    "a_end_present": false,
+    "timeline": {
+     "sup-log": [
+      [
+       0.0,
+       "a:start"
+      ],
+      [
+       0.11,
+       "a:start,a:after-yield"
+      ]
+     ],
+     "sup-other": [
+      [
+       0.01,
+       "none"
+      ],
+      [
+       0.12,
+       "b-ran"
+      ]
+     ]
+    },
+    "first_frame_with_a_after_yield": {
+     "t": 49.033,
+     "dir": "recv",
+     "markers": [
+      "a:after-yield",
+      "a:start"
+     ],
+     "toast": false,
+     "pings_in": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"other_rx_state_\":\"b-ran\",\"log_rx_state_\":[\"a:start\",\"a:after-yield\"]}}}]"
+    },
+    "recv_frames": [
+     {
+      "t": 48.283,
+      "dir": "recv",
+      "markers": [
+       "a:start"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"log_rx_state_\":[\"a:start\"]}}}]"
+     },
+     {
+      "t": 49.033,
+      "dir": "recv",
+      "markers": [
+       "a:after-yield",
+       "a:start"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"other_rx_state_\":\"b-ran\",\"log_rx_state_\":[\"a:start\",\"a:after-yield\"]}}}]"
+     },
+     {
+      "t": 53.6,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 55.681
+  },
+  {
+   "name": "prerender.emoji_hydration",
+   "status": "pass",
+   "details": {
+    "routes_with_page_errors": [],
+    "detail": {
+     "/emoji-plain": {
+      "client_text": "a\ud83d\ude00b",
+      "client_codepoints": [
+       "0x61",
+       "0x1f600",
+       "0x62"
+      ],
+      "page_errors": [],
+      "html_status": 200,
+      "html_snippet_hex": "",
+      "html_has_replacement_char": false
+     },
+     "/emoji-len": {
+      "client_text": "4",
+      "client_codepoints": [
+       "0x34"
+      ],
+      "page_errors": [],
+      "html_status": 200,
+      "html_snippet_hex": "",
+      "html_has_replacement_char": false
+     },
+     "/emoji-rev": {
+      "client_text": "b\ufffd\ufffda",
+      "client_codepoints": [
+       "0x62",
+       "0xfffd",
+       "0xfffd",
+       "0x61"
+      ],
+      "page_errors": [],
+      "html_status": 200,
+      "html_snippet_hex": "",
+      "html_has_replacement_char": false
+     }
+    }
+   },
+   "t": 63.896
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 6.47,
+   "tag": "a_returns_b_raises",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 11.474,
+   "tag": "a_yields_b_raises",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 16.548,
+   "tag": "direct_raises",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 21.646,
+   "tag": "async_raises",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 26.943,
+   "tag": "gen_yield_then_raise",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 33.361,
+   "tag": "onload_initial",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/onload"
+  },
+  {
+   "t": 39.389,
+   "tag": "onload_via_nav",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/onload"
+  },
+  {
+   "t": 45.776,
+   "tag": "sup_cancel",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3470/utils/state.js:631",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 47.128,
+   "tag": "sup_cancel",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 54.232,
+   "tag": "sup_split",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3470/utils/state.js:631",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 55.683,
+   "tag": "sup_split",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 58.374,
+   "tag": "emoji_emoji-plain",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/emoji-plain"
+  },
+  {
+   "t": 61.061,
+   "tag": "emoji_emoji-len",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/emoji-len"
+  },
+  {
+   "t": 63.878,
+   "tag": "emoji_emoji-rev",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/emoji-rev"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "counters": {
+  "console:a_returns_b_raises:log": 2,
+  "console:a_returns_b_raises:debug": 2,
+  "ws:a_returns_b_raises:recv": 9,
+  "console:a_returns_b_raises:info": 1,
+  "ws:a_returns_b_raises:sent": 6,
+  "console:a_yields_b_raises:log": 2,
+  "console:a_yields_b_raises:debug": 2,
+  "ws:a_yields_b_raises:recv": 9,
+  "console:a_yields_b_raises:info": 1,
+  "ws:a_yields_b_raises:sent": 6,
+  "console:direct_raises:log": 2,
+  "console:direct_raises:debug": 2,
+  "ws:direct_raises:recv": 8,
+  "console:direct_raises:info": 1,
+  "ws:direct_raises:sent": 6,
+  "console:async_raises:log": 2,
+  "console:async_raises:debug": 2,
+  "ws:async_raises:recv": 8,
+  "console:async_raises:info": 1,
+  "ws:async_raises:sent": 6,
+  "console:gen_yield_then_raise:log": 2,
+  "console:gen_yield_then_raise:debug": 2,
+  "ws:gen_yield_then_raise:recv": 9,
+  "console:gen_yield_then_raise:info": 1,
+  "ws:gen_yield_then_raise:sent": 6,
+  "console:onload_initial:log": 2,
+  "console:onload_initial:debug": 2,
+  "ws:onload_initial:recv": 8,
+  "console:onload_initial:info": 1,
+  "ws:onload_initial:sent": 4,
+  "console:onload_via_nav:log": 2,
+  "console:onload_via_nav:debug": 2,
+  "ws:onload_via_nav:recv": 10,
+  "console:onload_via_nav:info": 1,
+  "ws:onload_via_nav:sent": 6,
+  "console:sup_cancel:log": 4,
+  "console:sup_cancel:debug": 4,
+  "ws:sup_cancel:recv": 15,
+  "console:sup_cancel:info": 2,
+  "ws:sup_cancel:sent": 11,
+  "console:sup_split:log": 4,
+  "console:sup_split:debug": 4,
+  "ws:sup_split:recv": 15,
+  "console:sup_split:info": 2,
+  "ws:sup_split:sent": 12,
+  "console:emoji_emoji-plain:log": 2,
+  "console:emoji_emoji-plain:debug": 2,
+  "ws:emoji_emoji-plain:recv": 5,
+  "console:emoji_emoji-plain:info": 1,
+  "ws:emoji_emoji-plain:sent": 3,
+  "console:emoji_emoji-len:log": 2,
+  "console:emoji_emoji-len:debug": 2,
+  "ws:emoji_emoji-len:recv": 5,
+  "console:emoji_emoji-len:info": 1,
+  "ws:emoji_emoji-len:sent": 3,
+  "console:emoji_emoji-rev:log": 2,
+  "console:emoji_emoji-rev:debug": 2,
+  "ws:emoji_emoji-rev:recv": 5,
+  "console:emoji_emoji-rev:info": 1,
+  "ws:emoji_emoji-rev:sent": 3
+ },
+ "extra": {}
+}

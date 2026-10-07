@@ -1,0 +1,705 @@
+{
+ "label": "mini_a2_dev_redis",
+ "base": "http://localhost:3470",
+ "results": [
+  {
+   "name": "chain.a_returns_b_raises",
+   "status": "fail",
+   "details": {
+    "initial_roundtrip_ok": true,
+    "ping_roundtrip_ok": true,
+    "toast_visible_before_ping": true,
+    "partial_visible_with_error": {
+     "status": true,
+     "items": false
+    },
+    "partial_visible_after_next_event": {
+     "status": true,
+     "items": false
+    },
+    "partial_persisted_after_reload": {
+     "status": true,
+     "items": false
+    },
+    "ui_after_reload": {
+     "status": "A-set",
+     "items": "",
+     "pings": "3",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "client_server_diverged": {
+     "status": false,
+     "items": false
+    },
+    "ui_before_ping": {
+     "status": "A-set",
+     "items": "",
+     "pings": "1",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "ui_after_ping": {
+     "status": "A-set",
+     "items": "",
+     "pings": "2",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "timeline": {
+     "status": [
+      [
+       0.01,
+       "idle"
+      ],
+      [
+       0.13,
+       "A-set"
+      ]
+     ],
+     "items": [
+      [
+       0.02,
+       ""
+      ]
+     ]
+    },
+    "t_click": 2.64,
+    "t_ping": 5.759,
+    "first_recv_frame_with_marker": {
+     "t": 2.696,
+     "dt_from_click": 0.056,
+     "after_ping": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"A-set\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 2.681,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.a_returns_b\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 2.696,
+      "dir": "recv",
+      "markers": [
+       "A-set"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"A-set\"}}}]"
+     },
+     {
+      "t": 2.711,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: B-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 5.781,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 5.792,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 8.072
+  },
+  {
+   "name": "chain.direct_raises",
+   "status": "fail",
+   "details": {
+    "initial_roundtrip_ok": true,
+    "ping_roundtrip_ok": true,
+    "toast_visible_before_ping": true,
+    "partial_visible_with_error": {
+     "status": false
+    },
+    "partial_visible_after_next_event": {
+     "status": false
+    },
+    "partial_persisted_after_reload": {
+     "status": false
+    },
+    "ui_after_reload": {
+     "status": "idle",
+     "items": "",
+     "pings": "3",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "client_server_diverged": {
+     "status": false
+    },
+    "ui_before_ping": {
+     "status": "idle",
+     "items": "",
+     "pings": "1",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "ui_after_ping": {
+     "status": "idle",
+     "items": "",
+     "pings": "2",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "timeline": {
+     "status": [
+      [
+       0.02,
+       "idle"
+      ]
+     ],
+     "items": [
+      [
+       0.03,
+       ""
+      ]
+     ]
+    },
+    "t_click": 9.628,
+    "t_ping": 12.785,
+    "first_recv_frame_with_marker": null,
+    "frames_until_ping": [
+     {
+      "t": 9.665,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.direct_raises\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 9.678,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: direct-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":n"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 12.815,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 12.825,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 14.869
+  },
+  {
+   "name": "chain.gen_yield_then_raise",
+   "status": "fail",
+   "details": {
+    "initial_roundtrip_ok": true,
+    "ping_roundtrip_ok": true,
+    "toast_visible_before_ping": true,
+    "partial_visible_with_error": {
+     "status": true,
+     "items": false
+    },
+    "partial_visible_after_next_event": {
+     "status": true,
+     "items": false
+    },
+    "partial_persisted_after_reload": {
+     "status": false,
+     "items": false
+    },
+    "ui_after_reload": {
+     "status": "idle",
+     "items": "",
+     "pings": "3",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "client_server_diverged": {
+     "status": true,
+     "items": false
+    },
+    "ui_before_ping": {
+     "status": "gen-flushed",
+     "items": "",
+     "pings": "1",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "ui_after_ping": {
+     "status": "gen-flushed",
+     "items": "",
+     "pings": "2",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "timeline": {
+     "status": [
+      [
+       0.0,
+       "idle"
+      ],
+      [
+       0.13,
+       "gen-flushed"
+      ]
+     ],
+     "items": [
+      [
+       0.02,
+       ""
+      ]
+     ]
+    },
+    "t_click": 16.16,
+    "t_ping": 19.245,
+    "first_recv_frame_with_marker": {
+     "t": 16.211,
+     "dt_from_click": 0.051,
+     "after_ping": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"gen-flushed\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 16.197,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.gen_yield_then_raise\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 16.211,
+      "dir": "recv",
+      "markers": [
+       "gen-flushed"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"gen-flushed\"}}}]"
+     },
+     {
+      "t": 16.211,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: gen-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 19.279,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 19.29,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 21.35
+  },
+  {
+   "name": "chain.onload_initial",
+   "status": "fail",
+   "details": {
+    "toast_visible": true,
+    "load_note_before_ping": "none",
+    "load_note_after_ping": "none",
+    "timeline": {
+     "load-note": [
+      [
+       0.04,
+       "none"
+      ]
+     ]
+    },
+    "t0": 21.494,
+    "t_ping": 25.598,
+    "first_recv_frame_with_marker": null,
+    "frames_until_ping": [
+     {
+      "t": 21.799,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "{\"type\":\"connected\"}"
+     },
+     {
+      "t": 21.799,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "0{\"sid\":\"DSIqzQxWyiysJmqZAAAc\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+     },
+     {
+      "t": 21.958,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"c10b7171782c444f\",\"b084fc0c68f7c73a\",\"0c3657d09cd038de\",\"ecba4ab3459528b8\",\"5a7b5323ca580459\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/onload\",\"asPath\":\"/onload\"}}}"
+     },
+     {
+      "t": 21.966,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "40/_event,{\"sid\":\"-7ws2UB07-xnIa8kAAAd\"}"
+     },
+     {
+      "t": 21.969,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8472\",\"origin\":\"http://localhost:3470\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"JqT94KV4ndlLPtjnQkSFtA==\",\"sec_websocket_extensions\":\"permessage-deflate; cli"
+     },
+     {
+      "t": 21.97,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+     },
+     {
+      "t": 21.977,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: onload-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":n"
+     },
+     {
+      "t": 21.99,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 25.615,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/onload\",\"asPath\":\"/onload\"}}]"
+     },
+     {
+      "t": 25.623,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":1}}}]"
+     }
+    ]
+   },
+   "t": 27.197
+  },
+  {
+   "name": "sup.cancelled_mutation_after_last_yield",
+   "status": "pass",
+   "details": {
+    "final": "b:start,b:after-yield,b:end",
+    "leaked_a_after_yield": false,
+    "a_end_present": false,
+    "timeline": [
+     [
+      0.0,
+      "a:start"
+     ],
+     [
+      0.11,
+      "b:start"
+     ],
+     [
+      3.05,
+      "b:start,b:after-yield,b:end"
+     ]
+    ],
+    "first_frame_with_leak": null,
+    "frames": [
+     {
+      "t": 28.375,
+      "dir": "recv",
+      "markers": [
+       "a:start"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"log_rx_state_\":[\"a:start\"]}}}]"
+     },
+     {
+      "t": 29.007,
+      "dir": "recv",
+      "markers": [
+       "b:start"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"log_rx_state_\":[\"b:start\"]}}}]"
+     },
+     {
+      "t": 32.007,
+      "dir": "recv",
+      "markers": [
+       "b:after-yield",
+       "b:start",
+       "b:end"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"log_rx_state_\":[\"b:start\",\"b:after-yield\",\"b:end\"]}}}]"
+     }
+    ]
+   },
+   "t": 33.544
+  },
+  {
+   "name": "sup.cancelled_mutation_after_reload",
+   "status": "info",
+   "details": {
+    "after_reload": "b:start,b:after-yield,b:end"
+   },
+   "t": 34.861
+  },
+  {
+   "name": "sup.split_cancelled_mutation_surfaces",
+   "status": "pass",
+   "details": {
+    "after_b": {
+     "log": "a:start",
+     "other": "b-ran"
+    },
+    "after_next_event": {
+     "log": "a:start",
+     "other": "b-ran"
+    },
+    "after_reload": {
+     "log": "",
+     "other": "b-ran"
+    },
+    "a_end_present": false,
+    "timeline": {
+     "sup-log": [
+      [
+       0.0,
+       "a:start"
+      ]
+     ],
+     "sup-other": [
+      [
+       0.01,
+       "none"
+      ],
+      [
+       0.12,
+       "b-ran"
+      ]
+     ]
+    },
+    "first_frame_with_a_after_yield": null,
+    "recv_frames": [
+     {
+      "t": 36.158,
+      "dir": "recv",
+      "markers": [
+       "a:start"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"log_rx_state_\":[\"a:start\"]}}}]"
+     },
+     {
+      "t": 36.806,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____sup_mini\":{\"other_rx_state_\":\"b-ran\"}}}]"
+     },
+     {
+      "t": 41.439,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 43.425
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 6.67,
+   "tag": "a_returns_b_raises",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3470/utils/state.js:776",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 8.077,
+   "tag": "a_returns_b_raises",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:788",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 13.527,
+   "tag": "direct_raises",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3470/utils/state.js:776",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 14.872,
+   "tag": "direct_raises",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:788",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 19.998,
+   "tag": "gen_yield_then_raise",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3470/utils/state.js:776",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 21.352,
+   "tag": "gen_yield_then_raise",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:788",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 27.2,
+   "tag": "onload_initial",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:788",
+   "url": "http://localhost:3470/onload"
+  },
+  {
+   "t": 33.551,
+   "tag": "sup_cancel",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3470/utils/state.js:776",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 34.865,
+   "tag": "sup_cancel",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:788",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 42.054,
+   "tag": "sup_split",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3470/utils/state.js:776",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 43.428,
+   "tag": "sup_split",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:788",
+   "url": "http://localhost:3470/"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "counters": {
+  "console:a_returns_b_raises:log": 4,
+  "console:a_returns_b_raises:debug": 4,
+  "ws:a_returns_b_raises:recv": 15,
+  "console:a_returns_b_raises:info": 2,
+  "ws:a_returns_b_raises:sent": 7,
+  "console:direct_raises:log": 4,
+  "console:direct_raises:debug": 4,
+  "ws:direct_raises:recv": 14,
+  "console:direct_raises:info": 2,
+  "ws:direct_raises:sent": 7,
+  "console:gen_yield_then_raise:log": 4,
+  "console:gen_yield_then_raise:debug": 4,
+  "ws:gen_yield_then_raise:recv": 15,
+  "console:gen_yield_then_raise:info": 2,
+  "ws:gen_yield_then_raise:sent": 7,
+  "console:onload_initial:log": 2,
+  "console:onload_initial:debug": 2,
+  "ws:onload_initial:recv": 8,
+  "console:onload_initial:info": 1,
+  "ws:onload_initial:sent": 2,
+  "console:sup_cancel:log": 4,
+  "console:sup_cancel:debug": 4,
+  "ws:sup_cancel:recv": 15,
+  "console:sup_cancel:info": 2,
+  "ws:sup_cancel:sent": 7,
+  "console:sup_split:log": 4,
+  "console:sup_split:debug": 4,
+  "ws:sup_split:recv": 15,
+  "console:sup_split:info": 2,
+  "ws:sup_split:sent": 8
+ },
+ "extra": {}
+}

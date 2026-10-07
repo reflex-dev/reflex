@@ -74,10 +74,19 @@ def chain_case(name: str, button: str, marker_ids: dict):
     after_next = {k: v in after_ping[k] for k, v in marker_ids.items()}
     first_marker_frame = next((f for f in fr1 + fr2 if f["dir"] == "recv" and f["markers"]), None)
     h.shot(page, name)
+    # What did the server persist? Reload the tab (same token) and read the state back.
+    page.reload(wait_until="networkidle")
+    page.wait_for_function("() => (document.querySelector('#version')?.textContent || '').length > 0", timeout=60000)
+    roundtrip(page, "3")
+    page.wait_for_timeout(500)
+    after_reload = ui(page)
+    persisted = {k: v in after_reload[k] for k, v in marker_ids.items()}
     status = "pass" if all(with_error.values()) else ("anomaly" if all(after_next.values()) else "fail")
     h.record(f"chain.{name}", status, {
         "initial_roundtrip_ok": ok0, "ping_roundtrip_ok": ok1, "toast_visible_before_ping": toast,
         "partial_visible_with_error": with_error, "partial_visible_after_next_event": after_next,
+        "partial_persisted_after_reload": persisted, "ui_after_reload": after_reload,
+        "client_server_diverged": {k: after_next[k] != persisted[k] for k in marker_ids},
         "ui_before_ping": before_ping, "ui_after_ping": after_ping, "timeline": tl,
         "t_click": t_click, "t_ping": t_ping,
         "first_recv_frame_with_marker": {"t": first_marker_frame["t"], "dt_from_click": round(first_marker_frame["t"] - t_click, 3),
@@ -146,6 +155,62 @@ def sup_case():
     ctx.close()
 
 
+def split_case():
+    """Superseding call (b) never touches `log`: does cancelled a's post-yield mutation still surface?"""
+    tag = "sup_split"
+    ctx, page = connect(tag)
+    roundtrip(page, "1")
+    n0 = len(h.ws_frames)
+    page.click("#split-a")
+    h.wait_pred(page, "sup-log", lambda v: "a:start" in v, 5)
+    page.wait_for_timeout(600)
+    page.click("#split-b")
+    tl = h.timeline(page, ["sup-log", "sup-other"], 4.5)
+    after_b = {"log": h.text(page, "sup-log"), "other": h.text(page, "sup-other")}
+    roundtrip(page, "2")
+    page.wait_for_timeout(500)
+    after_ping = {"log": h.text(page, "sup-log"), "other": h.text(page, "sup-other")}
+    fr = frames_since(n0, tag)
+    page.reload(wait_until="networkidle")
+    page.wait_for_function("() => (document.querySelector('#version')?.textContent || '').length > 0", timeout=60000)
+    roundtrip(page, "3")
+    page.wait_for_timeout(500)
+    after_reload = {"log": h.text(page, "sup-log"), "other": h.text(page, "sup-other")}
+    leak_frames = [f for f in fr if f["dir"] == "recv" and "a:after-yield" in f["data"]]
+    leaked = any("a:after-yield" in x["log"] for x in (after_b, after_ping, after_reload))
+    h.record("sup.split_cancelled_mutation_surfaces", "anomaly" if leaked else "pass", {
+        "after_b": after_b, "after_next_event": after_ping, "after_reload": after_reload,
+        "a_end_present": "a:end" in after_reload["log"], "timeline": tl,
+        "first_frame_with_a_after_yield": leak_frames[0] if leak_frames else None,
+        "recv_frames": [f for f in fr if f["dir"] == "recv"][:10]})
+    ctx.close()
+
+
+def emoji_case():
+    """Prod prerender vs client text for a JS-reversed emoji (lone surrogates)."""
+    out = {}
+    for route in ("/emoji-plain", "/emoji-len", "/emoji-rev"):
+        tag = "emoji" + route.replace("/", "_")
+        e0 = len(h.page_errors)
+        ctx, page = h.new_context_page(tag)
+        resp = page.request.get(h.base + route + "/")
+        raw = resp.body()
+        page.goto(h.base + route, wait_until="networkidle", timeout=120000)
+        page.wait_for_timeout(1500)
+        el = route.strip("/")
+        txt = h.text(page, el)
+        errs = [e["error"][:200] for e in h.page_errors[e0:]]
+        marker = f'id="{el}"'.encode()
+        i = raw.find(marker)
+        snippet = raw[i:i + 120] if i >= 0 else b""
+        out[route] = {"client_text": txt, "client_codepoints": [hex(ord(c)) for c in txt], "page_errors": errs,
+                      "html_status": resp.status, "html_snippet_hex": snippet.hex()[:240],
+                      "html_has_replacement_char": b"\xef\xbf\xbd" in snippet}
+        ctx.close()
+    bad = [r for r, v in out.items() if v["page_errors"]]
+    h.record("prerender.emoji_hydration", "anomaly" if bad else "pass", {"routes_with_page_errors": bad, "detail": out})
+
+
 CASES = {
     "a_returns_b_raises": lambda: chain_case("a_returns_b_raises", "a-ret", {"status": "A-set", "items": "B-partial"}),
     "a_yields_b_raises": lambda: chain_case("a_yields_b_raises", "a-yield", {"status": "AY-set", "items": "B-partial"}),
@@ -155,13 +220,15 @@ CASES = {
     "onload_initial": lambda: onload_case("onload_initial", via_nav=False),
     "onload_via_nav": lambda: onload_case("onload_via_nav", via_nav=True),
     "sup_cancel": sup_case,
+    "sup_split": split_case,
+    "emoji": emoji_case,
 }
 try:
     for name, fn in CASES.items():
         if only and name not in only:
             continue
         print(f"--- {name}", flush=True)
-        h.run(name, fn)
+        h.run(name, lambda _h, fn=fn: fn())
 finally:
     p = h.dump()
     h.close()

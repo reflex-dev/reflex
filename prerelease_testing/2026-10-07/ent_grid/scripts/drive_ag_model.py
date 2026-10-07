@@ -247,8 +247,10 @@ with Session(f"ag_model-{venv}", Path(out)) as s:
             dlg.locator("input[name=name]").fill("QA Added Friend")
             dlg.locator("input[name=age]").fill("33")
             dlg.locator("input[name=years_known]").fill("3")
-            if dlg.locator("input[name=met]").count():
-                dlg.locator("input[name=met]").fill("2020-01-02T03:04:05")
+            met = os.environ.get("QA_ADD_MET", "2020-01-02T03:04:05")
+            if met and dlg.locator("input[name=met]").count():
+                dlg.locator("input[name=met]").fill(met)
+            s.note(f"add dialog: met field value submitted = {met!r}")
             s.shot(p, "add-dialog")
             dlg.locator("button:has-text('Add')").click()
             p.wait_for_timeout(3000)

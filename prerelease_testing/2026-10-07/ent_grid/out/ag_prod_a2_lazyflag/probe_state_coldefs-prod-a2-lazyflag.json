@@ -1,0 +1,308 @@
+{
+ "name": "probe_state_coldefs-prod-a2-lazyflag",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 6.68,
+   "name": "/master-detail [state-vars-grid] has columns after full load",
+   "ok": true,
+   "detail": [
+    "ID",
+    "Product Name",
+    "Category",
+    "Price"
+   ]
+  },
+  {
+   "t": 6.68,
+   "name": "/master-detail [static-objects-grid] has columns after full load",
+   "ok": true,
+   "detail": [
+    "ID",
+    "Product Name",
+    "Category",
+    "Price"
+   ]
+  },
+  {
+   "t": 12.36,
+   "name": "/qa-grid-memo [qa_memo_grid] has columns after full load",
+   "ok": true,
+   "detail": [
+    "Name",
+    "Qty"
+   ]
+  },
+  {
+   "t": 12.36,
+   "name": "/qa-grid-memo [qa_cs_a] has columns after full load",
+   "ok": true,
+   "detail": [
+    "K",
+    "V"
+   ]
+  },
+  {
+   "t": 12.36,
+   "name": "/qa-grid-memo [qa_cs_b] has columns after full load",
+   "ok": true,
+   "detail": [
+    "K",
+    "V"
+   ]
+  },
+  {
+   "t": 27.85,
+   "name": "/master-detail [state-vars-grid] has columns after client-side nav",
+   "ok": true,
+   "detail": {
+    "state-vars-grid": {
+     "headers": [
+      "ID",
+      "Product Name",
+      "Category",
+      "Price"
+     ],
+     "rows": 4
+    },
+    "static-objects-grid": {
+     "headers": [
+      "ID",
+      "Product Name",
+      "Category",
+      "Price"
+     ],
+     "rows": 4
+    }
+   }
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4",
+  "{\"/master-detail full load +5s\": {\"state-vars-grid\": {\"headers\": [\"ID\", \"Product Name\", \"Category\", \"Price\"], \"rows\": 4}, \"static-objects-grid\": {\"headers\": [\"ID\", \"Product Name\", \"Category\", \"Price\"], \"rows\": 4}}, \"/master-detail __reflex at DOMContentLoaded\": \"undefined\", \"/master-detail __reflex now\": \"object\", \"/master-detail boot hydrate frames mentioning master_detail_state\": 0, \"/master-detail boot frames (event deltas) count\": 2, \"/qa-grid-memo full load +5s\": {\"qa_memo_grid\": {\"headers\": [\"Name\", \"Qty\"], \"rows\": 3}, \"qa_cs_a\": {\"headers\": [\"K\", \"V\"], \"rows\": 1}, \"qa_cs_b\": {\"headers\": [\"K\", \"V\"], \"rows\": 1}}, \"/qa-grid-memo __reflex at DOMContentLoaded\": \"undefined\", \"/qa-grid-memo __reflex now\": \"object\", \"/qa-grid-memo boot hydrate frames mentioning qa_grid_state\": 0, \"/qa-grid-memo boot frames (event deltas) count\": 2, \"/qa-grid-memo after toggling State.fields\": {\"qa_memo_grid\": {\"headers\": [\"Name\", \"Qty\", \"Status\"], \"rows\": 3}, \"qa_cs_a\": {\"headers\": [\"K\", \"V\"], \"rows\": 1}, \"qa_cs_b\": {\"headers\": [\"K\", \"V\"], \"rows\": 1}}, \"/qa-grid-memo after CS-a add_row (row_data change only)\": {\"qa_memo_grid\": {\"headers\": [\"Name\", \"Qty\", \"Status\"], \"rows\": 3}, \"qa_cs_a\": {\"headers\": [\"K\", \"V\"], \"rows\": 2}, \"qa_cs_b\": {\"headers\": [\"K\", \"V\"], \"rows\": 1}}, \"/qa-grid-memo after reload\": {\"qa_memo_grid\": {\"headers\": [\"Name\", \"Qty\", \"Status\"], \"rows\": 3}, \"qa_cs_a\": {\"headers\": [\"K\", \"V\"], \"rows\": 2}, \"qa_cs_b\": {\"headers\": [\"K\", \"V\"], \"rows\": 1}}, \"/master-detail via client-side nav\": {\"state-vars-grid\": {\"headers\": [\"ID\", \"Product Name\", \"Category\", \"Price\"], \"rows\": 4}, \"static-objects-grid\": {\"headers\": [\"ID\", \"Product Name\", \"Category\", \"Price\"], \"rows\": 4}}, \"/formatters tabs\": []}"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 6,
+  "console_total": 76,
+  "console_benign": 70,
+  "console_errors": 1,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [
+   {
+    "t": 28.13,
+    "ctx": "full-load",
+    "type": "error",
+    "text": "Error: Minified React error #130; visit https://react.dev/errors/130?args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.\n    at qi (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:30784)\n    at f (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:40775)\n    at h (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:42398)\n    at _ (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:44383)\n    at http://localhost:3308/assets/entry.client-zRITOxBB.js:8:44825\n    at R (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:68369)\n    at Bc (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:68615)\n    at _l (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:84709)\n    at Zd (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:127901)\n    at Jd (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:126984)",
+    "url": "http://localhost:3308/formatters/",
+    "location": {
+     "url": "http://localhost:3308/assets/entry.client-zRITOxBB.js",
+     "line": 7,
+     "column": 65907,
+     "lineNumber": 7,
+     "columnNumber": 65907
+    },
+    "benign": false
+   }
+  ],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 6.68,
+   "ctx": "full-load",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3308/master-detail/",
+   "location": {
+    "url": "http://localhost:3308/assets/createLucideIcon-CKOSKTZ7.js",
+    "line": 1,
+    "column": 11229,
+    "lineNumber": 1,
+    "columnNumber": 11229
+   },
+   "benign": false
+  },
+  {
+   "t": 16.52,
+   "ctx": "full-load",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3308/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3308/assets/createLucideIcon-CKOSKTZ7.js",
+    "line": 1,
+    "column": 11229,
+    "lineNumber": 1,
+    "columnNumber": 11229
+   },
+   "benign": false
+  },
+  {
+   "t": 21.19,
+   "ctx": "full-load",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3308/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3308/assets/createLucideIcon-CKOSKTZ7.js",
+    "line": 1,
+    "column": 11229,
+    "lineNumber": 1,
+    "columnNumber": 11229
+   },
+   "benign": false
+  },
+  {
+   "t": 27.89,
+   "ctx": "full-load",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3308/master-detail",
+   "location": {
+    "url": "http://localhost:3308/assets/createLucideIcon-CKOSKTZ7.js",
+    "line": 1,
+    "column": 11229,
+    "lineNumber": 1,
+    "columnNumber": 11229
+   },
+   "benign": false
+  },
+  {
+   "t": 28.13,
+   "ctx": "full-load",
+   "type": "error",
+   "text": "Error: Minified React error #130; visit https://react.dev/errors/130?args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.\n    at qi (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:30784)\n    at f (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:40775)\n    at h (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:42398)\n    at _ (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:44383)\n    at http://localhost:3308/assets/entry.client-zRITOxBB.js:8:44825\n    at R (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:68369)\n    at Bc (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:68615)\n    at _l (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:84709)\n    at Zd (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:127901)\n    at Jd (http://localhost:3308/assets/entry.client-zRITOxBB.js:8:126984)",
+   "url": "http://localhost:3308/formatters/",
+   "location": {
+    "url": "http://localhost:3308/assets/entry.client-zRITOxBB.js",
+    "line": 7,
+    "column": 65907,
+    "lineNumber": 7,
+    "columnNumber": 65907
+   },
+   "benign": false
+  },
+  {
+   "t": 31.02,
+   "ctx": "full-load",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3308/formatters/",
+   "location": {
+    "url": "http://localhost:3308/assets/createLucideIcon-CKOSKTZ7.js",
+    "line": 1,
+    "column": 11413,
+    "lineNumber": 1,
+    "columnNumber": 11413
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3308/_event/?token=562cc88e-fceb-49a8-c43f-08d63da91841&EIO=4&transport=websocket": {
+   "ctx": "full-load",
+   "sent": 13,
+   "recv": 23,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.toggle_status_field\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1.add_row\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/master-detail\",\"asPath\":\"/master-detail\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"Error: Minified React error #130; visit https://react.dev/errors/130?args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.\\nError: Minified React error #130; visit https://react.dev/errors/130?args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.\\n    at qi (http://localhost:3308/assets/ent"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"hYAEI-iAoVlJReN7AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"E_A3fU4ybHVTrRNVAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3308\",\"origin\":\"http://localhost:3308\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"fC9JR9YyB47GtI5glHRdnQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"mHho6fP6LBP6ztJ0AAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"zXN_ZzBmX0URDScnAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3308\",\"origin\":\"http://localhost:3308\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"AQ0Kd3frf1tlTJtL4rlPSQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"fields_rx_state_\":[\"name\",\"qty\",\"status\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1\":{\"cs_rows_rx_state_\":[{\"k\":1,\"v\":\"one\"},{\"k\":2,\"v\":\"row2\"}]}}}]",
+    "0{\"sid\":\"UonKokQILZXXOBAMAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"xvgDJZ0aymiLitAAAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3308\",\"origin\":\"http://localhost:3308\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"BMfh23nUY8QmMpjk5LeHcA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"h3yGweRC8HX0srfNAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"jwng-n-ActGDmjiLAAAH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3308\",\"origin\":\"http://localhost:3308\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"JP5ksg+0F2lorS3pqoXYAQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3308\",\"origin\":\"http://localhost:3308\",\"path\":\"/master-detail\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3308/master-detail\"},\"rx_router_route_id_rx_state_\":\"/master-detail\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3308\",\"path\":\"/master-detail\",\"raw_path\":\"/master-detail\",\"full_path\":\"http://localhost:3308/master-detail\",\"full_raw_path\":\"http://localhost:3308/master-detail\",\"params\":{}}}}}]",
+    "0{\"sid\":\"kfF2INS3k-b5vXqHAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"zkX1tc7_RZIe3UkzAAAJ\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3308\",\"origin\":\"http://localhost:3308\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"hgDSkotGTz3mRwBj7xuPjQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 0.87,
+   "ctx": "full-load",
+   "url": "http://localhost:3308/master-detail",
+   "method": "GET"
+  },
+  {
+   "t": 0.87,
+   "ctx": "full-load",
+   "url": "http://localhost:3308/master-detail/",
+   "method": "GET"
+  },
+  {
+   "t": 6.69,
+   "ctx": "full-load",
+   "url": "http://localhost:3308/qa-grid-memo",
+   "method": "GET"
+  },
+  {
+   "t": 6.7,
+   "ctx": "full-load",
+   "url": "http://localhost:3308/qa-grid-memo/",
+   "method": "GET"
+  },
+  {
+   "t": 16.52,
+   "ctx": "full-load",
+   "url": "http://localhost:3308/qa-grid-memo/",
+   "method": "GET"
+  },
+  {
+   "t": 21.19,
+   "ctx": "full-load",
+   "url": "http://localhost:3308/",
+   "method": "GET"
+  },
+  {
+   "t": 27.89,
+   "ctx": "full-load",
+   "url": "http://localhost:3308/formatters",
+   "method": "GET"
+  },
+  {
+   "t": 27.9,
+   "ctx": "full-load",
+   "url": "http://localhost:3308/formatters/",
+   "method": "GET"
+  }
+ ]
+}

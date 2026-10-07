@@ -8,4 +8,4 @@ if [ -f "$W/pids/$L.reflex.pid" ]; then
 fi
 [ -f "$W/pids/$L.proxy.pid" ] && kill $(cat "$W/pids/$L.proxy.pid") 2>/dev/null
 sleep 1
-ss -ltnp 2>/dev/null | grep -E ":(34[67][0-9]|84[67][0-9])\b" || echo "ports clear"
+bash "$W/bin/ports.sh"

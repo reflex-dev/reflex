@@ -1,0 +1,284 @@
+{
+ "name": "probe_state_coldefs-prod-a1",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 6.45,
+   "name": "/master-detail [state-vars-grid] has columns after full load",
+   "ok": false,
+   "detail": []
+  },
+  {
+   "t": 6.45,
+   "name": "/master-detail [static-objects-grid] has columns after full load",
+   "ok": true,
+   "detail": [
+    "ID",
+    "Product Name",
+    "Category",
+    "Price"
+   ]
+  },
+  {
+   "t": 12.16,
+   "name": "/qa-grid-memo [qa_memo_grid] has columns after full load",
+   "ok": false,
+   "detail": []
+  },
+  {
+   "t": 12.16,
+   "name": "/qa-grid-memo [qa_cs_a] has columns after full load",
+   "ok": false,
+   "detail": []
+  },
+  {
+   "t": 12.16,
+   "name": "/qa-grid-memo [qa_cs_b] has columns after full load",
+   "ok": false,
+   "detail": []
+  },
+  {
+   "t": 27.76,
+   "name": "/master-detail [state-vars-grid] has columns after client-side nav",
+   "ok": true,
+   "detail": {
+    "state-vars-grid": {
+     "headers": [
+      "ID",
+      "Product Name",
+      "Category",
+      "Price"
+     ],
+     "rows": 4
+    },
+    "static-objects-grid": {
+     "headers": [
+      "ID",
+      "Product Name",
+      "Category",
+      "Price"
+     ],
+     "rows": 4
+    }
+   }
+  },
+  {
+   "t": 32.99,
+   "name": "/formatters State tab (State-var column defs) has columns",
+   "ok": true,
+   "detail": [
+    "Name",
+    "Name Reversed",
+    "Country",
+    "Percent",
+    "Flag",
+    "Number",
+    "Currency Number",
+    "Scaled Number",
+    "# Clicks (Last click)",
+    "Show raw data"
+   ]
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a1 0.9.7a4",
+  "{\"/master-detail full load +5s\": {\"state-vars-grid\": {\"headers\": [], \"rows\": 4}, \"static-objects-grid\": {\"headers\": [\"ID\", \"Product Name\", \"Category\", \"Price\"], \"rows\": 4}}, \"/master-detail __reflex at DOMContentLoaded\": \"undefined\", \"/master-detail __reflex now\": \"object\", \"/master-detail boot hydrate frames mentioning master_detail_state\": 0, \"/master-detail boot frames (event deltas) count\": 2, \"/qa-grid-memo full load +5s\": {\"qa_memo_grid\": {\"headers\": [], \"rows\": 3}, \"qa_cs_a\": {\"headers\": [], \"rows\": 1}, \"qa_cs_b\": {\"headers\": [], \"rows\": 1}}, \"/qa-grid-memo __reflex at DOMContentLoaded\": \"undefined\", \"/qa-grid-memo __reflex now\": \"object\", \"/qa-grid-memo boot hydrate frames mentioning qa_grid_state\": 0, \"/qa-grid-memo boot frames (event deltas) count\": 2, \"/qa-grid-memo after toggling State.fields\": {\"qa_memo_grid\": {\"headers\": [\"Name\", \"Qty\", \"Status\"], \"rows\": 3}, \"qa_cs_a\": {\"headers\": [], \"rows\": 1}, \"qa_cs_b\": {\"headers\": [], \"rows\": 1}}, \"/qa-grid-memo after CS-a add_row (row_data change only)\": {\"qa_memo_grid\": {\"headers\": [\"Name\", \"Qty\", \"Status\"], \"rows\": 3}, \"qa_cs_a\": {\"headers\": [\"K\", \"V\"], \"rows\": 2}, \"qa_cs_b\": {\"headers\": [], \"rows\": 1}}, \"/qa-grid-memo after reload\": {\"qa_memo_grid\": {\"headers\": [\"Name\", \"Qty\", \"Status\"], \"rows\": 3}, \"qa_cs_a\": {\"headers\": [\"K\", \"V\"], \"rows\": 2}, \"qa_cs_b\": {\"headers\": [], \"rows\": 1}}, \"/master-detail via client-side nav\": {\"state-vars-grid\": {\"headers\": [\"ID\", \"Product Name\", \"Category\", \"Price\"], \"rows\": 4}, \"static-objects-grid\": {\"headers\": [\"ID\", \"Product Name\", \"Category\", \"Price\"], \"rows\": 4}}, \"/formatters tabs\": [\"Example\", \"Source\", \"Inline\", \"State\", \"API\"], \"/formatters State tab headers\": [\"Name\", \"Name Reversed\", \"Country\", \"Percent\", \"Flag\", \"Number\", \"Currency Number\", \"Scaled Number\", \"# Clicks (Last click)\", \"Show raw data\"]}"
+ ],
+ "summary": {
+  "checks_failed": [
+   "/master-detail [state-vars-grid] has columns after full load",
+   "/qa-grid-memo [qa_memo_grid] has columns after full load",
+   "/qa-grid-memo [qa_cs_a] has columns after full load",
+   "/qa-grid-memo [qa_cs_b] has columns after full load"
+  ],
+  "n_checks": 7,
+  "console_total": 75,
+  "console_benign": 70,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 6.45,
+   "ctx": "full-load",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3303/master-detail/",
+   "location": {
+    "url": "http://localhost:3303/assets/prism-async-light-BfwvcWML.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 16.35,
+   "ctx": "full-load",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3303/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3303/assets/prism-async-light-BfwvcWML.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 21.01,
+   "ctx": "full-load",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3303/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3303/assets/prism-async-light-BfwvcWML.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 27.79,
+   "ctx": "full-load",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3303/master-detail",
+   "location": {
+    "url": "http://localhost:3303/assets/prism-async-light-BfwvcWML.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 33.09,
+   "ctx": "full-load",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3303/formatters/",
+   "location": {
+    "url": "http://localhost:3303/assets/prism-async-light-BfwvcWML.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3303/_event/?token=0cc5ff0d-5e43-4ce7-b856-7c76659c785d&EIO=4&transport=websocket": {
+   "ctx": "full-load",
+   "sent": 12,
+   "recv": 23,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.toggle_status_field\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1.add_row\",\"router_data\":{\"pathname\":\"/qa-grid-memo/\",\"asPath\":\"/qa-grid-memo/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/master-detail\",\"asPath\":\"/master-detail\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"TKJb6mAu_9DB2_-iAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"L4IYkI_nd6l5UyBXAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3303\",\"origin\":\"http://localhost:3303\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"4Dlopl9BFChzb0RIcucEOw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"Wtu63yz6TbJ6_kyJAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"SoyaVx7vVeRYWI2DAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3303\",\"origin\":\"http://localhost:3303\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"VMOkzw7XyVZ56Ccz5bBmIQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"fields_rx_state_\":[\"name\",\"qty\",\"status\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____grid_cs_n1\":{\"cs_rows_rx_state_\":[{\"k\":1,\"v\":\"one\"},{\"k\":2,\"v\":\"row2\"}]}}}]",
+    "0{\"sid\":\"Wx8zaHdllxUWgAO_AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"WbcUESwM8RU2unjmAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3303\",\"origin\":\"http://localhost:3303\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"XsUOPwxHOhDeRjSedJv4OQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"8EU-_2W0zfHQ9V5SAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"mnjD2EymzTGcflA3AAAH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3303\",\"origin\":\"http://localhost:3303\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"s+pozp/4bpf+Y8CS2NEAiA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_route_id_rx_state_\":\"/master-detail\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3303\",\"origin\":\"http://localhost:3303\",\"path\":\"/master-detail\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3303/master-detail\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3303\",\"path\":\"/master-detail\",\"raw_path\":\"/master-detail\",\"full_path\":\"http://localhost:3303/master-detail\",\"full_raw_path\":\"http://localhost:3303/master-detail\",\"params\":{}},\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"XWpY8HekETfCNamDAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"WVOdTuL33fnrKk-dAAAJ\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3303\",\"origin\":\"http://localhost:3303\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"lJfC1LSzyC4A4vkp1syl4Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 0.67,
+   "ctx": "full-load",
+   "url": "http://localhost:3303/master-detail",
+   "method": "GET"
+  },
+  {
+   "t": 0.67,
+   "ctx": "full-load",
+   "url": "http://localhost:3303/master-detail/",
+   "method": "GET"
+  },
+  {
+   "t": 6.45,
+   "ctx": "full-load",
+   "url": "http://localhost:3303/qa-grid-memo",
+   "method": "GET"
+  },
+  {
+   "t": 6.46,
+   "ctx": "full-load",
+   "url": "http://localhost:3303/qa-grid-memo/",
+   "method": "GET"
+  },
+  {
+   "t": 16.35,
+   "ctx": "full-load",
+   "url": "http://localhost:3303/qa-grid-memo/",
+   "method": "GET"
+  },
+  {
+   "t": 21.01,
+   "ctx": "full-load",
+   "url": "http://localhost:3303/",
+   "method": "GET"
+  },
+  {
+   "t": 27.79,
+   "ctx": "full-load",
+   "url": "http://localhost:3303/formatters",
+   "method": "GET"
+  },
+  {
+   "t": 27.79,
+   "ctx": "full-load",
+   "url": "http://localhost:3303/formatters/",
+   "method": "GET"
+  }
+ ]
+}

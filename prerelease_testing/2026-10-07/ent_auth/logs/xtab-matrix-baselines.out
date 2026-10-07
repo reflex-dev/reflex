@@ -1,0 +1,16 @@
+started pid=6947 pgid=6947
+ready after 5s
+{"i": 0, "tab1_logged_out": false, "ls_hash_6s_after_logout_empty": false, "tab1_sync_req_cookies": [["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], [], []]}
+{"i": 1, "tab1_logged_out": true, "ls_hash_6s_after_logout_empty": true, "tab1_sync_req_cookies": [[], []]}
+{"i": 2, "tab1_logged_out": false, "ls_hash_6s_after_logout_empty": false, "tab1_sync_req_cookies": [["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], [], []]}
+{"i": 3, "tab1_logged_out": false, "ls_hash_6s_after_logout_empty": false, "tab1_sync_req_cookies": [["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], [], []]}
+{"i": 4, "tab1_logged_out": false, "ls_hash_6s_after_logout_empty": false, "tab1_sync_req_cookies": [["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], [], []]}
+TAB1_LOGGED_OUT 1 / 5
+started pid=9696 pgid=9696
+ready after 5s
+{"i": 0, "tab1_logged_out": true, "ls_hash_6s_after_logout_empty": true, "tab1_sync_req_cookies": [["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], [], []]}
+{"i": 1, "tab1_logged_out": true, "ls_hash_6s_after_logout_empty": true, "tab1_sync_req_cookies": [["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], [], []]}
+{"i": 2, "tab1_logged_out": true, "ls_hash_6s_after_logout_empty": true, "tab1_sync_req_cookies": [["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], [], []]}
+{"i": 3, "tab1_logged_out": true, "ls_hash_6s_after_logout_empty": true, "tab1_sync_req_cookies": [["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], [], []]}
+{"i": 4, "tab1_logged_out": true, "ls_hash_6s_after_logout_empty": true, "tab1_sync_req_cookies": [["_oidc_generic_access_token_data_partitioned", "_oidc_generic_granted_scopes_partitioned", "_oidc_generic_id_token_partitioned", "_oidc_generic_refresh_token_partitioned"], [], []]}
+TAB1_LOGGED_OUT 5 / 5

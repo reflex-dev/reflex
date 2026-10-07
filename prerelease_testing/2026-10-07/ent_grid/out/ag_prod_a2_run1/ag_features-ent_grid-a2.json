@@ -1,0 +1,1168 @@
+{
+ "name": "ag_features-ent_grid-a2",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 33.68,
+   "name": "master_detail: scenario completed",
+   "ok": false,
+   "detail": "exception: TimeoutError('Locator.click: Timeout 30000ms exceeded.\\nCall log:\\n  - waiting for locator(\"[grid-id=\\\\\"state-vars-grid\\\\\"] .ag-row[row-index=\\'0\\'] .ag-group-contracted\").first\\n')"
+  },
+  {
+   "t": 36.81,
+   "name": "tree: top-level groups are folders (combine hosts on)",
+   "ok": true,
+   "detail": [
+    "Desktop",
+    "Documents",
+    "Pictures",
+    "Videos",
+    "Downloads"
+   ]
+  },
+  {
+   "t": 37.8,
+   "name": "tree: expanding Documents shows Work/Personal",
+   "ok": true,
+   "detail": [
+    "Work",
+    "Personal"
+   ]
+  },
+  {
+   "t": 37.81,
+   "name": "tree: aggregated size uses JS value_formatter (MB/KB)",
+   "ok": true,
+   "detail": "7.91 MB"
+  },
+  {
+   "t": 40.44,
+   "name": "tree: toggling Combine Hosts re-keys grid with hosts at top level",
+   "ok": true,
+   "detail": [
+    "vali",
+    "vidar"
+   ]
+  },
+  {
+   "t": 42.01,
+   "name": "tree: Save column state writes LocalStorage var",
+   "ok": true,
+   "detail": {
+    "reflex___state____state.ag_grid___tree____grid_state.column_state_json_rx_state_": "[{\"colId\": \"ag-Grid-AutoColumn\", \"width\": 280, \"hide\": false, \"pinned\": null, \"sort\": null, \"sortType\": null, \"sortIndex"
+   }
+  },
+  {
+   "t": 42.02,
+   "name": "tree: Load column state button enabled after save (computed var from LocalStorage)",
+   "ok": true,
+   "detail": true
+  },
+  {
+   "t": 44.65,
+   "name": "tree: Load column state still enabled after reload",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 48.99,
+   "name": "pivot: pivot headers by sport (virtualised) with sum(Gold) value columns",
+   "ok": true,
+   "detail": "Biathlon | Cross Country Skiing | Cycling | Diving | Gymnastics | Short-Track Speed Skating | Speed Skating | Group | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold)"
+  },
+  {
+   "t": 48.99,
+   "name": "pivot: rows grouped by country",
+   "ok": true,
+   "detail": [
+    "United States",
+    "Australia",
+    "Canada",
+    "Norway",
+    "China",
+    "Zimbabwe"
+   ]
+  },
+  {
+   "t": 49.03,
+   "name": "pivot: pivot panel + columns side bar visible",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 54.06,
+   "name": "cell-selection: range drag fires on_cell_selection_changed(finished) -> toast",
+   "ok": true,
+   "detail": [
+    "Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]",
+    "Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]"
+   ]
+  },
+  {
+   "t": 54.07,
+   "name": "cell-selection: highlighted cells match reported range (3 rows x 2 cols)",
+   "ok": true,
+   "detail": 6
+  },
+  {
+   "t": 57.89,
+   "name": "fill-handle: handle visible on selected cell",
+   "ok": true,
+   "detail": {
+    "x": 367,
+    "y": 590,
+    "width": 6,
+    "height": 6
+   }
+  },
+  {
+   "t": 60.21,
+   "name": "fill-handle: dragging fills rows 1-2 and fires on_cell_value_changed toasts",
+   "ok": true,
+   "detail": {
+    "ages": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ],
+    "toasts": [
+     "Updated age: 23",
+     "Updated age: 23"
+    ]
+   }
+  },
+  {
+   "t": 62.84,
+   "name": "fill-handle: filled values persisted in State across reload",
+   "ok": true,
+   "detail": {
+    "before_reload": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ],
+    "after_reload": [
+     "23",
+     "23",
+     "23",
+     "25"
+    ]
+   }
+  },
+  {
+   "t": 65.66,
+   "name": "clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event",
+   "ok": false,
+   "detail": {
+    "golds": [
+     "8",
+     "6",
+     "4",
+     "1",
+     "2"
+    ],
+    "toasts": []
+   }
+  },
+  {
+   "t": 68.58,
+   "name": "aligned: both grids show data",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 69.99,
+   "name": "aligned: expanding Medals group in grid1 also expands grid2",
+   "ok": true,
+   "detail": {
+    "before": [
+     0,
+     0
+    ],
+    "after": [
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "t": 71.36,
+   "name": "aligned: resizing athlete column in grid1 resizes grid2",
+   "ok": true,
+   "detail": {
+    "w1_before": 200,
+    "w1_after": 318,
+    "w2_after": 318
+   }
+  },
+  {
+   "t": 76.46,
+   "name": "editable: edit fires on_cell_value_changed toast",
+   "ok": true,
+   "detail": [
+    "Cell value changed: name = Johnny"
+   ]
+  },
+  {
+   "t": 78.53,
+   "name": "editable: edited value persisted in State across reload",
+   "ok": true,
+   "detail": [
+    "Johnny",
+    "Anna",
+    "Mike"
+   ]
+  },
+  {
+   "t": 82.65,
+   "name": "state-grid: Load Columns sets header_name/headerName from State",
+   "ok": true,
+   "detail": [
+    "",
+    "DIR",
+    "STR",
+    "HZ"
+   ]
+  },
+  {
+   "t": 84.79,
+   "name": "state-grid: data loaded with JS value_formatter suffix",
+   "ok": true,
+   "detail": [
+    {
+     "idx": 0,
+     "id": "0",
+     "sel": "true",
+     "val": "0.5 Hz"
+    },
+    {
+     "idx": 1,
+     "id": "1",
+     "sel": "true",
+     "val": "0.6 Hz"
+    }
+   ]
+  },
+  {
+   "t": 84.79,
+   "name": "state-grid: on_row_data_updated event chain selected all rows (select_all_on_load)",
+   "ok": true,
+   "detail": [
+    "true",
+    "true",
+    "true",
+    "true",
+    "true"
+   ]
+  },
+  {
+   "t": 84.8,
+   "name": "state-grid: chained set_select_all_on_load(False) reset the switch",
+   "ok": true,
+   "detail": "unchecked"
+  },
+  {
+   "t": 85.93,
+   "name": "state-grid: Clear Data empties grid",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 87.07,
+   "name": "state-grid: Clear Columns removes headers",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "t": 92.87,
+   "name": "selected-items: Select All -> on_selection_changed -> State count",
+   "ok": true,
+   "detail": "Selected Items (128)"
+  },
+  {
+   "t": 96.62,
+   "name": "selected-items: tags input 'n' -> upper-cased key -> select_rows_by_key(direction=N)",
+   "ok": true,
+   "detail": {
+    "heading": "Selected Items (8)",
+    "visible_selected_N_rows": 2
+   }
+  },
+  {
+   "t": 105.67,
+   "name": "integrated-charts: chart range -> chart dialog with canvas",
+   "ok": true,
+   "detail": 1
+  },
+  {
+   "t": 108.65,
+   "name": "row_id_key: getRowId uses data.uid",
+   "ok": true,
+   "detail": [
+    "u-1",
+    "u-2",
+    "u-3"
+   ]
+  },
+  {
+   "t": 108.7,
+   "name": "pinned rows (new names pinned_top_row_data/pinned_bottom_row_data)",
+   "ok": true,
+   "detail": {
+    "top": [
+     "TOP-NEW\npinned top new\nundefined units\nS:"
+    ],
+    "bottom": [
+     "BOT-NEW\npinned bottom new\nundefined units\nS:"
+    ]
+   }
+  },
+  {
+   "t": 108.74,
+   "name": "pinned rows (legacy aliases pinned_row_top_data/pinned_row_bottom_data)",
+   "ok": true,
+   "detail": {
+    "top": [
+     "TOP-OLD\npinned top old"
+    ],
+    "bottom": [
+     "BOT-OLD\npinned bottom old"
+    ]
+   }
+  },
+  {
+   "t": 108.75,
+   "name": "suppress_overlays=['noRows'] hides the no-rows overlay (default grid shows it)",
+   "ok": true,
+   "detail": {
+    "default": [
+     "No Rows To Show"
+    ],
+    "suppressed": []
+   }
+  },
+  {
+   "t": 108.76,
+   "name": "value_formatter string renders 'N units'",
+   "ok": true,
+   "detail": [
+    "1 units",
+    "2 units",
+    "3 units"
+   ]
+  },
+  {
+   "t": 108.77,
+   "name": "custom JS cell renderer (rx.badge via ArgsFunctionOperation) renders",
+   "ok": true,
+   "detail": [
+    "S:",
+    "S:new",
+    "S:new",
+    "S:done",
+    "S:"
+   ]
+  },
+  {
+   "t": 110.13,
+   "name": "row_id_key: prepending a row keeps stable ids",
+   "ok": true,
+   "detail": [
+    "u-4",
+    "u-1",
+    "u-2",
+    "u-3"
+   ]
+  },
+  {
+   "t": 111.4,
+   "name": "row_id_key: immutable State update bumps u-2 in place",
+   "ok": true,
+   "detail": {
+    "u-4": "4 units",
+    "u-1": "1 units",
+    "u-2": "12 units",
+    "u-3": "3 units"
+   }
+  },
+  {
+   "t": 113.89,
+   "name": "select cell editor edit -> on_cell_value_changed node_id == row_id_key uid -> State",
+   "ok": true,
+   "detail": {
+    "edits": "edits: u-1:status->doing",
+    "badge": "S:doing"
+   }
+  },
+  {
+   "t": 116.13,
+   "name": "clipboard (ClipboardModule): Ctrl+C copies cell, Ctrl+V pastes + fires on_cell_value_changed",
+   "ok": true,
+   "detail": {
+    "clipboard": "10",
+    "b": [
+     "10",
+     "20",
+     "10"
+    ],
+    "log": "clip: 2:b=10"
+   }
+  },
+  {
+   "t": 119.33,
+   "name": "memo grid: column defs from State.fields.foreach",
+   "ok": false,
+   "detail": []
+  },
+  {
+   "t": 149.33,
+   "name": "qa_memo: scenario completed",
+   "ok": false,
+   "detail": "exception: TimeoutError('Locator.click: Timeout 30000ms exceeded.\\nCall log:\\n  - waiting for locator(\"[grid-id=\\\\\"qa_memo_grid\\\\\"] .ag-grid-scrolling-container .ag-row[row-index=\\\\\"1\\\\\"] .ag-cell[col-id=\\\\\"name\\\\\"]\").first\\n')"
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [
+   "master_detail: scenario completed",
+   "clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event",
+   "memo grid: column defs from State.fields.foreach",
+   "qa_memo: scenario completed"
+  ],
+  "n_checks": 43,
+  "console_total": 162,
+  "console_benign": 147,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 42.04,
+   "ctx": "tree",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 60.23,
+   "ctx": "fill_handle",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 76.46,
+   "ctx": "editable",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/editable/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 149.4,
+   "ctx": "master_detail",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.47,
+   "ctx": "tree",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.51,
+   "ctx": "pivot",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/pivot/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.57,
+   "ctx": "cell_selection",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/cell-selection/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.6,
+   "ctx": "fill_handle",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.64,
+   "ctx": "aligned",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/aligned-grids/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.7,
+   "ctx": "editable",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/editable/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.75,
+   "ctx": "state_grid",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/state-grid/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.81,
+   "ctx": "selected_items",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/selected-items/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.85,
+   "ctx": "integrated_charts",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.91,
+   "ctx": "qa_props",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 149.96,
+   "ctx": "qa_memo",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3301/_event/?token=5d78ff02-23bf-47de-eba5-5cbde354b5c8&EIO=4&transport=websocket": {
+   "ctx": "master_detail",
+   "sent": 6,
+   "recv": 9,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"FtIRuLKR_eEX76i3AAAo\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"y7gGNQu3080fEV4MAAAp\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UgeMwcdwSW5CCcbbwrpYtQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=897010c6-83af-491f-ce33-d447f208bfdf&EIO=4&transport=websocket": {
+   "ctx": "tree",
+   "sent": 9,
+   "recv": 14,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___tree____tree_display_state.set_combine_hosts\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/tree/\",\"asPath\":\"/tree/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___tree____grid_state.save_column_state\",\"payload\":{\"state\":[{\"colId\":\"ag-Grid-AutoColumn\",\"width\":280,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivotIndex\":null,\"pivotSort\":\"asc\",\"flex\":null,\"showValuesAs\":null,\"headerName\":null},{\"colId\":\"created\",\"width\":200,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivot",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___tree____grid_state.column_state_json_rx_state_\":\"[{\\\"colId\\\": \\\"ag-Grid-AutoColumn\\\", \\\"width\\\": 280, \\\"hide\\\": false, \\\"pinned\\\": null, \\\"sort\\\": null, \\\"sortType\\\": null, \\\"sortIndex\\\": null, \\\"aggFunc\\\": null, \\\"valueIndex\\\": null, \\\"rowGroup\\\": false, \\\"rowGroupIndex\\\": null, \\\"pivot\\\": false, \\\"pivotIndex\\\": null, \\\"pivotSort\\\": \\\"asc\\\", \\\"flex\\\": null, \\\"showValuesAs\\\": null, \\\"headerName\\\": null}, {\\\"colId\\\": \\\"created\\\", \\\"width\\\": 200, \\\"hide\\\": false, \\\"pinned\\\"",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"HnRYoezkyjoy4dNOAAAq\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"0oYZkvyTgGz-j1onAAAr\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"dHxrX9ltfoRZEBU1Nejiqg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___tree____tree_display_state\":{\"combine_hosts_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___tree____grid_state\":{\"column_state_rx_state_\":[{\"colId\":\"ag-Grid-AutoColumn\",\"width\":280,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivotIndex\":null,\"pivotSort\":\"asc\",\"flex\":null,\"showValuesAs\":null,\"headerName\":null},{\"colId\":\"created\",\"width\":200,\"hide\":false,\"pinned\":null,\"sort\":null,\"sortType\":null,\"sortIndex\":null,\"aggFunc\":null,\"valueIndex\":null,\"rowGroup\":false,\"rowGroupIndex\":null,\"pivot\":false,\"pivotIndex\":nu",
+    "0{\"sid\":\"hHYABYBk3KOmcygUAAAs\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"luk0Pkoo8KyNo28iAAAt\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"XW49QnxJ/D0eVS2jVEx1jA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3301/_event/?token=be3b07f6-840b-45e8-b05d-8058e15980d3&EIO=4&transport=websocket": {
+   "ctx": "pivot",
+   "sent": 5,
+   "recv": 8,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"UgHJX8XsQR-XBCXWAAAu\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"p48XqpCuoV-UsNP5AAAv\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ZG+NniMJ6IsXj46nBjkB1w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=0769e934-f7c9-4da2-be23-b01efd890988&EIO=4&transport=websocket": {
+   "ctx": "cell_selection",
+   "sent": 10,
+   "recv": 11,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":0,\"columns\":[\"athlete\"]}],\"started\":true,\"finished\":true},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":0,\"columns\":[\"athlete\"]}],\"started\":true,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":1,\"columns\":[\"athlete\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":1,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":2,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":false},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___cell_selection____cell_selection_state.echo_selection\",\"payload\":{\"ranges\":[{\"startRow\":0,\"endRow\":2,\"columns\":[\"athlete\",\"age\"]}],\"started\":false,\"finished\":true},\"router_data\":{\"pathname\":\"/cell-selection/\",\"asPath\":\"/cell-selection/\"}}]",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"Q4FS699r2ZeZTtwUAAAw\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"zgjR-Obu1FvZSbSyAAAx\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"zf2MV3qk+nLkGihmZ9g80A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___cell_selection____cell_selection_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"ath",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}]\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Selected cells: [{'startRow': 0, 'endRow': 2, 'columns': ['athlete', 'age']}]\\\")))\",\"callback\":null}}]}]",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=f4f49842-7d9e-4fdc-9c60-51873320e327&EIO=4&transport=websocket": {
+   "ctx": "fill_handle",
+   "sent": 8,
+   "recv": 15,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___fill_handle____fill_handle_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":1,\"field\":\"age\",\"newValue\":23,\"node_id\":\"1\"}},\"router_data\":{\"pathname\":\"/fill-handle/\",\"asPath\":\"/fill-handle/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___fill_handle____fill_handle_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":2,\"field\":\"age\",\"newValue\":23,\"node_id\":\"2\"}},\"router_data\":{\"pathname\":\"/fill-handle/\",\"asPath\":\"/fill-handle/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"n0WjVOeajJ3b2tygAAAy\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"nQXNRC_uFjvcmQHNAAAz\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"+56uRPlhsoJJGui9gjULhQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___fill_handle____fill_handle_state\":{\"row_data_rx_state_\":[{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2008,\"date\":\"24/08/2008\",\"sport\":\"Swimming\",\"gold\":8,\"silver\":0,\"bronze\":0,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2004,\"date\":\"29/08/2004\",\"sport\":\"Swimming\",\"gold\":6,\"silver\":0,\"bronze\":2,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":27,\"country\":\"United States\",\"year\":2012,\"date\":\"12/08/2012\",\"sport\":\"Swimming\",\"gold\":4,\"silver\":2,\"bronze\":0,\"total\":6},{\"athlete\":",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Updated age: 23\\\")))\",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___fill_handle____fill_handle_state\":{\"row_data_rx_state_\":[{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2008,\"date\":\"24/08/2008\",\"sport\":\"Swimming\",\"gold\":8,\"silver\":0,\"bronze\":0,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2004,\"date\":\"29/08/2004\",\"sport\":\"Swimming\",\"gold\":6,\"silver\":0,\"bronze\":2,\"total\":8},{\"athlete\":\"Michael Phelps\",\"age\":23,\"country\":\"United States\",\"year\":2012,\"date\":\"12/08/2012\",\"sport\":\"Swimming\",\"gold\":4,\"silver\":2,\"bronze\":0,\"total\":6},{\"athlete\":",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Updated age: 23\\\")))\",\"callback\":null}}]}]",
+    "0{\"sid\":\"UM4JcO6kqM5hDM1VAAA0\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"iYmwg2BhdKVCxnEcAAA1\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"n7KdhFirLQ5bc8rUIYuMuQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3301/_event/?token=4677d2fd-a9ab-4c06-8464-d45cb03731e6&EIO=4&transport=websocket": {
+   "ctx": "aligned",
+   "sent": 4,
+   "recv": 9,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"lUZtbMoQHZfYTLcAAAA2\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Mj6QUrZEGI9C08ECAAA3\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"h9TDz7e730rWr3R0JSnawg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___aligned_grids____aligned_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"athlete\":\"M",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=118055f7-79eb-4d73-a5b6-06d005c62623&EIO=4&transport=websocket": {
+   "ctx": "editable",
+   "sent": 6,
+   "recv": 12,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___editable____editable_state.on_cell_value_changed\",\"payload\":{\"params\":{\"rowIndex\":0,\"field\":\"name\",\"newValue\":\"Johnny\",\"node_id\":\"0\"}},\"router_data\":{\"pathname\":\"/editable/\",\"asPath\":\"/editable/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"rcBP9coxD0XVI-96AAA4\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"pHUTDREvAAOSA5e1AAA5\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"WeCxfA1ItkvgGHzlWu1Hmg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___editable____editable_state\":{\"row_data_rx_state_\":[{\"name\":\"Johnny\",\"age\":30,\"country\":\"USA\"},{\"name\":\"Anna\",\"age\":25,\"country\":\"Sweden\"},{\"name\":\"Mike\",\"age\":35,\"country\":\"Canada\"}]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['__toast'](\\\"Cell value changed: name = Johnny\\\")))\",\"callback\":null}}]}]",
+    "0{\"sid\":\"RHJemP1VSU6OVr0RAAA6\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"UquzGVC2dI_5A0E5AAA7\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"f/lPtIS1nYFnCH79pI+cLQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3301/_event/?token=e4e3ba2d-004b-4957-9512-773ae939dc9a&EIO=4&transport=websocket": {
+   "ctx": "state_grid",
+   "sent": 11,
+   "recv": 14,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.load_columns\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":true},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.load_data\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.clear_data\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.clear_columns\",\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"zGmzmEI-Zp40zOrQAAA8\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"bbYDN9k3g6DPJHv2AAA9\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"wkjZLc3Lpp+fk5ffYzi0RA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"column_defs_rx_state_\":[{\"field\":\"direction\",\"header_name\":\"DIR\"},{\"field\":\"strength\",\"headerName\":\"STR\"},{\"field\":\"frequency\",\"header_name\":\"HZ\",\"value_formatter\":\"params.value + ' Hz'\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"row_data_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"SSW\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"row_data_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"select_all_on_load_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___state_grid____grid_state\":{\"column_defs_rx_state_\":[]}}}]",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=3a29ae36-d436-4eab-9f46-ef8b5aba1a15&EIO=4&transport=websocket": {
+   "ctx": "selected_items",
+   "sent": 8,
+   "recv": 13,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_keys\",\"payload\":{\"keys\":[]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_keys\",\"payload\":{\"keys\":[\"n\"]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"/selected-items/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___selected_items____basic_grid_state.set_selection\",\"payload\":{\"selection\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"N\",\"strength\":\"1-2\",\"frequency\":1.6},{\"direction\":\"N\",\"strength\":\"2-3\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"3-4\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"4-4\",\"frequency\":0.4},{\"direction\":\"N\",\"strength\":\"4-5\",\"frequency\":0.3},{\"direction\":\"N\",\"strength\":\"5-6\",\"frequency\":0.2},{\"direction\":\"N\",\"strength\":\"6+\",\"frequency\":0.1}]},\"router_data\":{\"pathname\":\"/selected-items/\",\"asPath\":\"",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"RCJhW0unT8h9-bmdAAA-\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"vwAMtvyEyiXW7K4NAAA_\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Ocx9Qv/UU4ZDqLhCh294iw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"NNE\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direction\":\"NE\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"ENE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"E\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"ESE\",\"strength\":\"0-1\",\"frequency\":0.3},{\"direction\":\"SE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"SSE\",\"strength\":\"0-1\",\"frequency\":0.4},{\"direction\":\"S\",\"strength\":\"0-1\",\"frequency\":0.6},{\"direc",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"keys_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"let api = refs['ref_ag_grid_basic_1']?.current?.api;\\nconst selected_nodes = [];\\nlet keys_set = new Set([]);\\napi.forEachNode((node) => {\\n    if (keys_set.has(node.data.direction)) {\\n        selected_nodes.push(node);\\n    }\\n});\\napi.deselectAll();\\napi.setNodesSelected({ nodes: selected_nodes, newValue: true });\\n    \",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"keys_rx_state_\":[\"N\"]}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_script\",\"router_data\":{},\"payload\":{\"javascript_code\":\"let api = refs['ref_ag_grid_basic_1']?.current?.api;\\nconst selected_nodes = [];\\nlet keys_set = new Set([\\\"N\\\"]);\\napi.forEachNode((node) => {\\n    if (keys_set.has(node.data.direction)) {\\n        selected_nodes.push(node);\\n    }\\n});\\napi.deselectAll();\\napi.setNodesSelected({ nodes: selected_nodes, newValue: true });\\n    \",\"callback\":null}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___selected_items____basic_grid_state\":{\"selection_rx_state_\":[{\"direction\":\"N\",\"strength\":\"0-1\",\"frequency\":0.5},{\"direction\":\"N\",\"strength\":\"1-2\",\"frequency\":1.6},{\"direction\":\"N\",\"strength\":\"2-3\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"3-4\",\"frequency\":0.9},{\"direction\":\"N\",\"strength\":\"4-4\",\"frequency\":0.4},{\"direction\":\"N\",\"strength\":\"4-5\",\"frequency\":0.3},{\"direction\":\"N\",\"strength\":\"5-6\",\"frequency\":0.2},{\"direction\":\"N\",\"strength\":\"6+\",\"frequency\":0.1}]}}}]",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=317f96ee-b532-4200-97ae-2dab85c398f4&EIO=4&transport=websocket": {
+   "ctx": "integrated_charts",
+   "sent": 3,
+   "recv": 6,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"TYG2T5pyqwbMt7jcAABA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"TK_pnITpzZuel3mpAABB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"I+i36TOzN5PkVRsMQucp/Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=ded48975-c8f0-470d-fc92-bac89c07c8d7&EIO=4&transport=websocket": {
+   "ctx": "qa_props",
+   "sent": 6,
+   "recv": 9,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.prepend\",\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.bump\",\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_edit\",\"payload\":{\"params\":{\"rowIndex\":1,\"field\":\"status\",\"newValue\":\"doing\",\"node_id\":\"u-1\"}},\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___qa_extras___qa_grid_state.on_clip_change\",\"payload\":{\"params\":{\"rowIndex\":2,\"field\":\"b\",\"newValue\":10,\"node_id\":\"2\"}},\"router_data\":{\"pathname\":\"/qa-grid-props/\",\"asPath\":\"/qa-grid-props/\"}}]",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"SrbUDDDSqoZ2bOdyAABC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"x63wG5uUyANyWnCrAABD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"mq5Yx3MKeOFrkBoOV8lxvg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"new\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":2,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"new\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":12,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"rows_rx_state_\":[{\"uid\":\"u-4\",\"name\":\"new4\",\"qty\":4,\"status\":\"new\"},{\"uid\":\"u-1\",\"name\":\"alpha\",\"qty\":1,\"status\":\"doing\"},{\"uid\":\"u-2\",\"name\":\"beta\",\"qty\":12,\"status\":\"new\"},{\"uid\":\"u-3\",\"name\":\"gamma\",\"qty\":3,\"status\":\"done\"}],\"edits_rx_state_\":[\"u-1:status->doing\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___qa_extras___qa_grid_state\":{\"clip_log_rx_state_\":[\"2:b=10\"]}}}]",
+    "2"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3301/_event/?token=0fc138dc-b56c-457f-eece-94829c11d950&EIO=4&transport=websocket": {
+   "ctx": "qa_memo",
+   "sent": 2,
+   "recv": 5,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "3"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"0cULp6YipsPYsSRKAABE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"EJQNa5gKBQwoOAzdAABF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"PGV7jBV6wbmdHvOPY/ccrQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "2"
+   ],
+   "closed": false
+  }
+ },
+ "requests": [
+  {
+   "t": 0.87,
+   "ctx": "master_detail",
+   "url": "http://localhost:3301/master-detail",
+   "method": "GET"
+  },
+  {
+   "t": 0.88,
+   "ctx": "master_detail",
+   "url": "http://localhost:3301/master-detail/",
+   "method": "GET"
+  },
+  {
+   "t": 33.92,
+   "ctx": "tree",
+   "url": "http://localhost:3301/tree",
+   "method": "GET"
+  },
+  {
+   "t": 33.94,
+   "ctx": "tree",
+   "url": "http://localhost:3301/tree/",
+   "method": "GET"
+  },
+  {
+   "t": 42.04,
+   "ctx": "tree",
+   "url": "http://localhost:3301/tree/",
+   "method": "GET"
+  },
+  {
+   "t": 46.09,
+   "ctx": "pivot",
+   "url": "http://localhost:3301/pivot",
+   "method": "GET"
+  },
+  {
+   "t": 46.1,
+   "ctx": "pivot",
+   "url": "http://localhost:3301/pivot/",
+   "method": "GET"
+  },
+  {
+   "t": 49.29,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3301/cell-selection",
+   "method": "GET"
+  },
+  {
+   "t": 49.29,
+   "ctx": "cell_selection",
+   "url": "http://localhost:3301/cell-selection/",
+   "method": "GET"
+  },
+  {
+   "t": 54.41,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3301/fill-handle",
+   "method": "GET"
+  },
+  {
+   "t": 54.42,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3301/fill-handle/",
+   "method": "GET"
+  },
+  {
+   "t": 60.23,
+   "ctx": "fill_handle",
+   "url": "http://localhost:3301/fill-handle/",
+   "method": "GET"
+  },
+  {
+   "t": 65.85,
+   "ctx": "aligned",
+   "url": "http://localhost:3301/aligned-grids",
+   "method": "GET"
+  },
+  {
+   "t": 65.85,
+   "ctx": "aligned",
+   "url": "http://localhost:3301/aligned-grids/",
+   "method": "GET"
+  },
+  {
+   "t": 71.52,
+   "ctx": "editable",
+   "url": "http://localhost:3301/editable",
+   "method": "GET"
+  },
+  {
+   "t": 71.54,
+   "ctx": "editable",
+   "url": "http://localhost:3301/editable/",
+   "method": "GET"
+  },
+  {
+   "t": 76.47,
+   "ctx": "editable",
+   "url": "http://localhost:3301/editable/",
+   "method": "GET"
+  },
+  {
+   "t": 78.64,
+   "ctx": "state_grid",
+   "url": "http://localhost:3301/state-grid",
+   "method": "GET"
+  },
+  {
+   "t": 78.65,
+   "ctx": "state_grid",
+   "url": "http://localhost:3301/state-grid/",
+   "method": "GET"
+  },
+  {
+   "t": 87.39,
+   "ctx": "selected_items",
+   "url": "http://localhost:3301/selected-items",
+   "method": "GET"
+  },
+  {
+   "t": 87.41,
+   "ctx": "selected_items",
+   "url": "http://localhost:3301/selected-items/",
+   "method": "GET"
+  },
+  {
+   "t": 96.86,
+   "ctx": "integrated_charts",
+   "url": "http://localhost:3301/integrated-charts",
+   "method": "GET"
+  },
+  {
+   "t": 96.87,
+   "ctx": "integrated_charts",
+   "url": "http://localhost:3301/integrated-charts/",
+   "method": "GET"
+  },
+  {
+   "t": 105.84,
+   "ctx": "qa_props",
+   "url": "http://localhost:3301/qa-grid-props",
+   "method": "GET"
+  },
+  {
+   "t": 105.85,
+   "ctx": "qa_props",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "method": "GET"
+  },
+  {
+   "t": 116.38,
+   "ctx": "qa_memo",
+   "url": "http://localhost:3301/qa-grid-memo",
+   "method": "GET"
+  },
+  {
+   "t": 116.4,
+   "ctx": "qa_memo",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "method": "GET"
+  }
+ ]
+}

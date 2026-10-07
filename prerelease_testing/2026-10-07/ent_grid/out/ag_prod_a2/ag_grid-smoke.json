@@ -1,0 +1,957 @@
+{
+ "name": "ag_grid-smoke",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 4.59,
+   "name": "route /",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 0,
+    "center_rows": 0,
+    "text": "AgGrid demo |  | A collection of examples using AG Grid in Reflex. |  | Example |  | Source |  | Aligned Grids |  | Demonstrates the use of aligned grids in Reflex. |  | Cell Selection |  | Demonstrates cell selection in AG Grid. |  | Editable AG Grid |  | An editable AG Grid example. |  | Fill Handle |  | Demonstrates the Fill Handle feature"
+   }
+  },
+  {
+   "t": 8.21,
+   "name": "route /advanced-serialization",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 22,
+    "text": "Grid State Serialization (Advanced) | AgGrid demo |  | AG Grid with column state serialization. |  | Example |  | Source |  | 1 to 31 of 31. Page 1 of 1 | Athlete | Age | Country | Year | Date | Sport | Gold | Natalie Coughlin | 25 | United States | 2008 | 2008-08-24 00:00:00 | Swimming | 1 | Aleksey Nemov | 24 | 2000 | Gymnastics | 2 | Alicia Coutts | 24 | Au"
+   }
+  },
+  {
+   "t": 11.44,
+   "name": "route /aligned-grids",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 2,
+    "center_rows": 28,
+    "text": "Aligned Grids | AgGrid demo |  | Demonstrates the use of aligned grids in Reflex. |  | Example |  | Source |  | No Rows To Show | Medals | Athlete | Age | Country | Year | Sport | Total | Natalie Coughlin | 25 | United States | 2008 | Swimming | 6 | Aleksey Nemov | 24 | 2000 | Gymnastics | 6 | Alicia Coutts | 24 | Australia | 2012 | Swimming | 5 | Missy Franklin | 17 | "
+   }
+  },
+  {
+   "t": 14.64,
+   "name": "route /cell-selection",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 22,
+    "text": "Cell Selection | AgGrid demo |  | Demonstrates cell selection in AG Grid. |  | Example |  | Source |  | No Rows To Show | Medals | Athlete | Age | Country | Year | Sport | Total | Natalie Coughlin | 25 | United States | 2008 | Swimming | 6 | Aleksey Nemov | 24 | 2000 | Gymnastics | 6 | Alicia Coutts | 24 | Australia | 2012 | Swimming | 5 | Missy Franklin | 17 | 2012 | Swi"
+   }
+  },
+  {
+   "t": 17.91,
+   "name": "route /editable",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 3,
+    "text": "Editable AG Grid | AgGrid demo |  | An editable AG Grid example. |  | Example |  | Source |  | Name | Age | Country | John | 30 | USA | Anna | 25 | Sweden | Mike | 35 | Canada | Built with Reflex"
+   }
+  },
+  {
+   "t": 21.11,
+   "name": "route /fill-handle",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 10,
+    "text": "Fill Handle | AgGrid demo |  | Demonstrates the Fill Handle feature. Select cells and drag the fill handle (small square in bottom-right corner) to copy values or create series. |  | Example |  | Source |  | Fill Handle Demo |  | How to use the Fill Handle: |  | Select a cell or range of cells | Look for the small square (fill"
+   }
+  },
+  {
+   "t": 24.33,
+   "name": "route /formatters",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 5,
+    "text": "AG Grid Formatters | AgGrid demo |  | AG Grid with custom formatters. |  | Example |  | Source |  | Each of the three methods of setting column defs should work the same |  | Inline | State | API | Name | Name Reversed | Country | Percent | Flag | Number | Currency Number | Scaled Number | # Clicks (Last click) | Show raw data | John | nhoJ | USA | 56."
+   }
+  },
+  {
+   "t": 27.76,
+   "name": "route /integrated-charts",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 25,
+    "text": "Integrated Charts | AgGrid demo |  | Select a range of data, then right-click to create a chart. |  | Example |  | Source |  | Direction | Strength | Frequency | N | 0-1 | 0.5 | NNE | 0-1 | 0.6 | NE | 0-1 | 0.5 | ENE | 0-1 | 0.4 | E | 0-1 | 0.4 | ESE | 0-1 | 0.3 | SE | 0-1 | 0.4 | SSE | 0-1 | 0.4 | S | 0-1 | 0.6 | SSW | 0-1 | 0.4 | SW | 0-1 | 0.5 | WSW | 0-1 | 0.6 | W | 0-1 | 0.6 | WNW | 0-1 | 0.5 | NW | 0-"
+   }
+  },
+  {
+   "t": 30.92,
+   "name": "route /master-detail",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 2,
+    "center_rows": 8,
+    "text": "Master Detail | AgGrid demo |  | Demonstrates AG Grid master detail functionality with expandable rows showing detailed information. |  | Example |  | Source |  | Master Detail Demo |  | Click the expand icon (\u25ba) on any row to see detailed information in a nested grid below. |  | Both grids should behave identically - one us"
+   }
+  },
+  {
+   "t": 34.38,
+   "name": "route /model",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 23,
+    "text": "Simple ModelWrapper | AgGrid demo |  | Basic example of an infinite-row ModelWrapper with no customization. |  | Example |  | Source |  | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_annoying | Met | 3 | Danielle Ross | 35 | 0 | 2026-07-19 19:03:05.126092 | 4 | Edward Herman | 76 | 66 | 1960-09-02 10:12:00.556190 | 5 | Sean Carter | 44 | 1"
+   }
+  },
+  {
+   "t": 37.77,
+   "name": "route /model-auth",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 0,
+    "text": "Customized ModelWrapper | AgGrid demo |  | Extended infinite-row ModelWrapper with custom behavior and auth. |  | Example |  | Source |  | Login | No Rows To Show | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_annoying | Met | No Rows To Show | Built with Reflex"
+   }
+  },
+  {
+   "t": 41.37,
+   "name": "route /model-ssrm",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 0,
+    "text": "SSRM ModelWrapper | AgGrid demo |  | Extended SSRM ModelWrapper with custom behavior and auth. |  | Example |  | Source |  | Login | Enable Advanced Filter | No Rows To Show | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_annoying | Met | No Rows To Show | Built with Reflex"
+   }
+  },
+  {
+   "t": 44.52,
+   "name": "route /pivot",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 10,
+    "text": "Pivot | AgGrid demo |  | AgGrid with pivoting |  | Example |  | Source |  | Sport | Year | Biathlon | Cross Country Skiing | Cycling | Diving | Gymnastics | Short-Track Speed Skating | Speed Skating | Group | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | sum(Gold) | United States | (8) | 1 | Australia | (6) | Canada | (1) | 1 | Norway | (3) | 4"
+   }
+  },
+  {
+   "t": 47.73,
+   "name": "route /qa-grid-memo",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 3,
+    "center_rows": 5,
+    "text": "QA: memo / ComponentState grids | AgGrid demo |  | QA: rxe.ag_grid inside @rx.memo and rx.ComponentState, column defs from State via foreach. |  | Example |  | Source |  | Toggle status column |  | clicked: |  | Add row qa_cs_a |  | rows: 1 |  | Add row qa_cs_b |  | rows: 1 |  | Built with Reflex"
+   }
+  },
+  {
+   "t": 50.9,
+   "name": "route /qa-grid-props",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 5,
+    "center_rows": 9,
+    "text": "QA: row_id_key / pinned / overlays | AgGrid demo |  | QA: row_id_key, pinned rows (new + legacy alias), suppress_overlays, custom renderer/editor. |  | Example |  | Source |  | Bump u-2 | Prepend |  | edits: |  | rowid grid (new pinned names) |  | Uid | Name | Qty | Status | TOP-NEW | pinned top new | undefined units | S: | u-1 | alpha | 1 units | S:ne"
+   }
+  },
+  {
+   "t": 54.39,
+   "name": "route /qa-model-workaround",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 23,
+    "text": "QA: ModelWrapper (params-class workaround) | AgGrid demo |  | QA: infinite ModelWrapper with multi-row selection; __data_source_params_class__ re-declared unannotated. |  | Example |  | Source |  | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_annoying | Met | 3 | Danielle Ross | 35 | 0 | 2026-07-19 19:03:05.126092 | 4 | Edwar"
+   }
+  },
+  {
+   "t": 57.87,
+   "name": "route /selected-items",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 25,
+    "text": "Selected Items | AgGrid demo |  | Handle grid selection events and display selected items in a separate panel. |  | Example |  | Source |  | Select by Direction |  | Select All | Deselect All | Log nodes | Direction | Strength | Frequency | N | 0-1 | 0.5 | NNE | 0-1 | 0.6 | NE | 0-1 | 0.5 | ENE | 0-1 | 0.4 | E | 0-1 | 0.4 | ESE | 0-1 | 0.3 | SE | 0-1 | 0.4 | SSE | 0-1 | 0.4 | S | 0"
+   }
+  },
+  {
+   "t": 61.22,
+   "name": "route /simple-serialization",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 15,
+    "text": "Grid State Serialization (Simple) | AgGrid demo |  | AG Grid with column state serialization. |  | Example |  | Source |  | Save State | Restore State | Save State Backend | Restore State Backend | No Rows To Show | Athlete | Age | Country | Year | Natalie Coughlin | 25 years old | United States | 2008 | Aleksey Nemov | 24 years old | 2000 | Alicia"
+   }
+  },
+  {
+   "t": 64.41,
+   "name": "route /state-grid",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 0,
+    "text": "AGGrid w/ State | AgGrid demo |  | AGGrid with data and column definitions in the state. |  | Example |  | Source |  | Load Columns | Load Data |  | Select All on Load |  | Clear Columns | Clear Data | No Rows To Show | No Rows To Show | Built with Reflex"
+   }
+  },
+  {
+   "t": 67.6,
+   "name": "route /tree",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "ag_grids": 1,
+    "center_rows": 5,
+    "text": "Tree (enterprise) | AgGrid demo |  | Use tree data with get_data_path to visualize hierarchical information. |  | Example |  | Source |  | Combine Hosts | Save column state | Load column state | File Explorer | Created | Modified | sum(Size) | func(Host) | Desktop | 2.45 MB | vali, vidar | Documents | 7.91 MB | vali, vidar | Pictures | 7.84 MB | va"
+   }
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 20,
+  "console_total": 175,
+  "console_benign": 154,
+  "console_errors": 0,
+  "console_warnings": 1,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [
+   {
+    "t": 34.7,
+    "ctx": "smoke",
+    "type": "warning",
+    "text": "AG Grid: warning #129 Visit https://www.ag-grid.com/react-data-grid/errors/129?_version_=36.2.0&feature=headerCheckbox&rowModel=infinite \n  Alternatively register the ValidationModule to see the full message in the console.",
+    "url": "http://localhost:3301/model-auth/",
+    "location": {
+     "url": "http://localhost:3301/assets/ag-theme-quartz-D5FVVJLl.js",
+     "line": 14,
+     "column": 261941,
+     "lineNumber": 14,
+     "columnNumber": 261941
+    },
+    "benign": false
+   }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 4.86,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 8.28,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/advanced-serialization/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 11.51,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/aligned-grids/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 14.7,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/cell-selection/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 17.97,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/editable/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 21.16,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/fill-handle/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 24.42,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/formatters/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 27.83,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/integrated-charts/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 30.98,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/master-detail/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 34.45,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/model/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 34.7,
+   "ctx": "smoke",
+   "type": "warning",
+   "text": "AG Grid: warning #129 Visit https://www.ag-grid.com/react-data-grid/errors/129?_version_=36.2.0&feature=headerCheckbox&rowModel=infinite \n  Alternatively register the ValidationModule to see the full message in the console.",
+   "url": "http://localhost:3301/model-auth/",
+   "location": {
+    "url": "http://localhost:3301/assets/ag-theme-quartz-D5FVVJLl.js",
+    "line": 14,
+    "column": 261941,
+    "lineNumber": 14,
+    "columnNumber": 261941
+   },
+   "benign": false
+  },
+  {
+   "t": 37.81,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/model-auth/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 41.44,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/model-ssrm/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 44.57,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/pivot/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 47.79,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 50.98,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 54.52,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/qa-model-workaround/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 57.96,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/selected-items/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 61.29,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/simple-serialization/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 64.46,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3301/state-grid/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11226,
+    "lineNumber": 2,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 67.66,
+   "ctx": "smoke",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3301/tree/",
+   "location": {
+    "url": "http://localhost:3301/assets/prism-async-light-CSpw1URu.js",
+    "line": 2,
+    "column": 11410,
+    "lineNumber": 2,
+    "columnNumber": 11410
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3301/_event/?token=8df91d61-976d-401f-a194-5853093521a4&EIO=4&transport=websocket": {
+   "ctx": "smoke",
+   "sent": 45,
+   "recv": 94,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f4fc26834b8182ba\",\"b084fc0c68f7c73a\",\"109bd9e614fa068d\",\"109bd9e614fa068d\",\"92e9e5a252da23af\",\"1e352f8b7969d8a8\",\"63e2c841c899bab2\",\"12335ff29f2cd61f\",\"da721860adf08d1a\",\"60a788b2c4a2523f\",\"c29fe68afa366ad9\",\"400a22c0c1749aa0\",\"b79ba68408833f3b\",\"f73713d81ffbd344\",\"50fa4eedb90d20d1\",\"54ca4168e61a4a9d\",\"94d879378807fb39\",\"3e095c4b2a09ee6c\",\"8773a98b92576bab\",\"1abc213369ce1457\",\"a33d031cf8ff70a7\",\"a4aad2a73554632f\",\"a4aad2a73554632f\",\"a33d031cf8ff70a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a3",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.save_state\",\"payload\":{\"state_data\":{\"source\":null,\"state\":{\"version\":\"36.2.0\",\"cellSelection\":null,\"sideBar\":{\"visible\":true,\"position\":\"right\",\"openToolPanel\":\"columns\",\"toolPanels\":{\"columns\":{\"expandedGroupIds\":[]},\"filters\":{\"expandedGroupIds\":[],\"expandedColIds\":[]}}},\"sort\":null,\"rowGroup\":null,\"aggregation\":null,\"showValuesAs\":null,\"pivot\":null,\"columnPinning\":null,\"columnVisibility\":null,\"columnSizing\":{\"columnSizingModel\":[{\"colId\":\"ag-Grid-SelectionCol",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____model_wrapper_n1.on_mount\",\"router_data\":{\"pathname\":\"/model/\",\"asPath\":\"/model/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_mount\",\"router_data\":{\"pathname\":\"/model-auth/\",\"asPath\":\"/model-auth/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_mount\",\"router_data\":{\"pathname\":\"/model-ssrm/\",\"asPath\":\"/model-ssrm/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2.on_mount\",\"router_data\":{\"pathname\":\"/qa-model-workaround/\",\"asPath\":\"/qa-model-workaround/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.ag_grid___state_grid____grid_state.set_select_all_on_load\",\"payload\":{\"value\":false},\"router_data\":{\"pathname\":\"/state-grid/\",\"asPath\":\"/state-grid/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state.grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"IPVsjARYHbBU2vNjAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"fTj7T1zrelFRLcC1AAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"nNyJlgf94MBD23a7LZdMPQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"r3MsNrd5kaPT50IXAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"pTFmzsOQVDJV7gf6AAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"hE5JtzSqy619poXnj/v8CQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state\":{\"row_data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"s",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___grid_state_serialization_advanced____grid_serialization_advanced_state\":{\"grid_state_rx_state_\":\"{\\\"version\\\": \\\"36.2.0\\\", \\\"cellSelection\\\": null, \\\"sideBar\\\": {\\\"visible\\\": true, \\\"position\\\": \\\"right\\\", \\\"openToolPanel\\\": \\\"columns\\\", \\\"toolPanels\\\": {\\\"columns\\\": {\\\"expandedGroupIds\\\": []}, \\\"filters\\\": {\\\"expandedGroupIds\\\": [], \\\"expandedColIds\\\": []}}}, \\\"sort\\\": null, \\\"rowGroup\\\": null, \\\"aggregation\\\": null, \\\"showValuesAs\\\": null, \\\"pivot\\\": null, \\\"columnPinning\\\": null, \\\"columnVisibility\\\": null, \\\"columnSizing\\\": {\\",
+    "0{\"sid\":\"BH8w9NBP40c8PM6GAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"GCzJVMRRdAcBG5KEAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CV5c9gOxkPPUTFYe43Xh2w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___aligned_grids____aligned_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"athlete\":\"M",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"PU5KwIMYtFQ5DLCjAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"2oDBdN8DU9_6J-3sAAAH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"7facbQF86g54IwZ5YTNprw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.ag_grid___cell_selection____cell_selection_state\":{\"data_rx_state_\":[{\"athlete\":\"Natalie Coughlin\",\"age\":25.0,\"country\":\"United States\",\"year\":2008,\"date\":\"2008-08-24 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":2,\"bronze\":3,\"total\":6},{\"athlete\":\"Aleksey Nemov\",\"age\":24.0,\"country\":null,\"year\":2000,\"date\":\"NaT\",\"sport\":\"Gymnastics\",\"gold\":2,\"silver\":1,\"bronze\":3,\"total\":6},{\"athlete\":\"Alicia Coutts\",\"age\":24.0,\"country\":\"Australia\",\"year\":2012,\"date\":\"2012-12-08 00:00:00\",\"sport\":\"Swimming\",\"gold\":1,\"silver\":3,\"bronze\":1,\"total\":5},{\"ath",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"VwtLGehLvheSftcgAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Z-CndMPKvKuH2CjKAAAJ\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"sMp0kp0awW8J3NAleDjZdQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"MRwtUl5yrlBxgRIsAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"jcf3zhxhIPZ55yu4AAAL\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"JrThz7dFP4bDBc6GDSfymg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"Lvbx21FrXMi8Bge0AAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"mnNHWY2L69p_0XBEAAAN\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"kWDB0+Zmpr+oQJPbkQOjCA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"ehfQuz-ZqjkWssw3AAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"_2aAqg70Nais6ThYAAAP\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ahAVFcJJ/ZI0/OMAb8gaEw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"wgavw48Vxsl8kMUmAAAQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"sTuR-ARADxP_1bLVAAAR\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"sjSp2DqaLl4g1QS7tZBDeg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"YRvyuhfUIB_suVn6AAAS\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"jo_FXTp79sCWNpbmAAAT\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"L27HRiLY/McmLAkVYM5/IQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____model_wrapper_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____model_wrapper_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"data\\\"], [\\\"fi",
+    "0{\"sid\":\"tzixHsbcqyop4nMGAAAU\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"mpLrJmN2hQNvPahOAAAV\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"hyBOp6dqKtIsFKumDDuIpg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_n2']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2.on_value_setter\\\", ({ [\\\"row_data\\\"] : _params?.[\\\"",
+    "0{\"sid\":\"MGUxRNNnHTXtE9kEAAAW\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"drxlUYwtuY8USOjNAAAX\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UYorqYHRx3ASTP8rXLueTA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (refs['ref_ag_grid_reflex___state____state_reflex___istate___dynamic____friend_model_wrapper_ssrm_n1']?.current?.api?.[\\\"setGridOption\\\"](\\\"columnDefs\\\", [({ [\\\"sortable\\\"] : true, [\\\"filter\\\"] : \\\"agNumberColumnFilter\\\", [\\\"editable\\\"] : false, [\\\"valueSetter\\\"] : ((_params) => (((events) => queueEvents(events, {current: socket}, false, navigate, params))([(ReflexEvent(\\\"reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1.on_value_setter\\\", ({ [\\\"row_data\\\"] : _p",
+    "0{\"sid\":\"Kn4_mWIkjJUzrBgQAAAY\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"PsqfW89tvV-Ls1K3AAAZ\"}"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 1.17,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/",
+   "method": "GET"
+  },
+  {
+   "t": 4.86,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/advanced-serialization",
+   "method": "GET"
+  },
+  {
+   "t": 4.89,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/advanced-serialization/",
+   "method": "GET"
+  },
+  {
+   "t": 8.28,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/aligned-grids",
+   "method": "GET"
+  },
+  {
+   "t": 8.29,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/aligned-grids/",
+   "method": "GET"
+  },
+  {
+   "t": 11.51,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/cell-selection",
+   "method": "GET"
+  },
+  {
+   "t": 11.51,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/cell-selection/",
+   "method": "GET"
+  },
+  {
+   "t": 14.71,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/editable",
+   "method": "GET"
+  },
+  {
+   "t": 14.71,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/editable/",
+   "method": "GET"
+  },
+  {
+   "t": 17.97,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/fill-handle",
+   "method": "GET"
+  },
+  {
+   "t": 17.97,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/fill-handle/",
+   "method": "GET"
+  },
+  {
+   "t": 21.16,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/formatters",
+   "method": "GET"
+  },
+  {
+   "t": 21.17,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/formatters/",
+   "method": "GET"
+  },
+  {
+   "t": 24.42,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/integrated-charts",
+   "method": "GET"
+  },
+  {
+   "t": 24.45,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/integrated-charts/",
+   "method": "GET"
+  },
+  {
+   "t": 27.83,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/master-detail",
+   "method": "GET"
+  },
+  {
+   "t": 27.83,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/master-detail/",
+   "method": "GET"
+  },
+  {
+   "t": 30.98,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/model",
+   "method": "GET"
+  },
+  {
+   "t": 30.99,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/model/",
+   "method": "GET"
+  },
+  {
+   "t": 31.3,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model_wrapper_n1",
+   "method": "GET"
+  },
+  {
+   "t": 34.45,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/model-auth",
+   "method": "GET"
+  },
+  {
+   "t": 34.46,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/model-auth/",
+   "method": "GET"
+  },
+  {
+   "t": 34.71,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2",
+   "method": "GET"
+  },
+  {
+   "t": 37.81,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/model-ssrm",
+   "method": "GET"
+  },
+  {
+   "t": 37.82,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/model-ssrm/",
+   "method": "GET"
+  },
+  {
+   "t": 38.3,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=drxlUYwtuY8USOjNAAAX",
+   "method": "GET"
+  },
+  {
+   "t": 41.44,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/pivot",
+   "method": "GET"
+  },
+  {
+   "t": 41.45,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/pivot/",
+   "method": "GET"
+  },
+  {
+   "t": 44.58,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/qa-grid-memo",
+   "method": "GET"
+  },
+  {
+   "t": 44.58,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/qa-grid-memo/",
+   "method": "GET"
+  },
+  {
+   "t": 47.79,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/qa-grid-props",
+   "method": "GET"
+  },
+  {
+   "t": 47.8,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/qa-grid-props/",
+   "method": "GET"
+  },
+  {
+   "t": 50.98,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/qa-model-workaround",
+   "method": "GET"
+  },
+  {
+   "t": 50.99,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/qa-model-workaround/",
+   "method": "GET"
+  },
+  {
+   "t": 51.28,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_wrapper_workaround_n2",
+   "method": "GET"
+  },
+  {
+   "t": 54.53,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/selected-items",
+   "method": "GET"
+  },
+  {
+   "t": 54.59,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/selected-items/",
+   "method": "GET"
+  },
+  {
+   "t": 57.96,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/simple-serialization",
+   "method": "GET"
+  },
+  {
+   "t": 57.98,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/simple-serialization/",
+   "method": "GET"
+  },
+  {
+   "t": 61.29,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/state-grid",
+   "method": "GET"
+  },
+  {
+   "t": 61.3,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/state-grid/",
+   "method": "GET"
+  },
+  {
+   "t": 64.47,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/tree",
+   "method": "GET"
+  },
+  {
+   "t": 64.49,
+   "ctx": "smoke",
+   "url": "http://localhost:3301/tree/",
+   "method": "GET"
+  }
+ ]
+}
