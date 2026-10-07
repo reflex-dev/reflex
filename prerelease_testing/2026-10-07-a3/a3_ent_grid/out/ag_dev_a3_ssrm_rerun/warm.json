@@ -1,0 +1,325 @@
+{
+"name": "warm",
+"python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+"checks": [
+{
+"t": 7.78,
+"name": "route /model-ssrm",
+"ok": true,
+"detail": {
+"status": 200,
+"ag_grids": 1,
+"center_rows": 0,
+"text": "SSRM ModelWrapper | AgGrid demo |  | Extended SSRM ModelWrapper with custom behavior and auth. |  | Example |  | Source |  | Login | Enable Advanced Filter | No Rows To Show | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_annoying | Met | No Rows To Show"
+}
+}
+],
+"notes": [
+"guard: 0.10.0a3 0.9.7a5"
+],
+"summary": {
+"checks_failed": [],
+"n_checks": 1,
+"console_total": 19,
+"console_benign": 18,
+"console_errors": 0,
+"console_warnings": 0,
+"page_errors": 0,
+"failed_requests": 0,
+"http_errors": 0
+},
+"anomalies": {
+"console_errors": [],
+"console_warnings": [],
+"page_errors": [],
+"failed_requests": [],
+"http_errors": []
+},
+"console_all": [
+{
+"t": 2.17,
+"ctx": "smoke",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/model-ssrm",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 3.43,
+"ctx": "smoke",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 3.82,
+"ctx": "smoke",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 3.95,
+"ctx": "smoke",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/node_modules/.vite/deps/react-dom_client.js?v=4b65319b",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 4.43,
+"ctx": "smoke",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.43,
+"ctx": "smoke",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.43,
+"ctx": "smoke",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.43,
+"ctx": "smoke",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.43,
+"ctx": "smoke",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.43,
+"ctx": "smoke",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.43,
+"ctx": "smoke",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.47,
+"ctx": "smoke",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.47,
+"ctx": "smoke",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.47,
+"ctx": "smoke",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.48,
+"ctx": "smoke",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.48,
+"ctx": "smoke",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.48,
+"ctx": "smoke",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.48,
+"ctx": "smoke",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 7.86,
+"ctx": "smoke",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/utils/state.js",
+"line": 788,
+"column": 14,
+"lineNumber": 788,
+"columnNumber": 14
+},
+"benign": false
+}
+]
+}

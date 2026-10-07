@@ -1,0 +1,57 @@
+### ck base 20:39:54
+started reflex pid=19336 (20:39:54) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/ck-base.server.log
+UP after 13s (frontend 200, backend /ping 200)
+== ck-base: {'pass': 17, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=54
+session ready: yes
+SHUTDOWN: main pid 19336 still alive 15s after SIGTERM
+ORPHAN after SIGTERM: port=3226 pid=19444 cmd=node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/clock/.web/node_modules/.bin/react-rout
+### ck upgrade 20:41:06
+freeze diff ck: > annotated-types==0.8.0 > pydantic==2.13.5 > pydantic-core==2.46.5 < reflex==0.9.12 < reflex-base==0.9.12 < reflex-components-code==0.9.6 < reflex-components-core==0.9.10.post1 < reflex-components-dataeditor==0.9.3.post1 < reflex-components-gridjs==0.9.2.post1 < reflex-components-lucide==1.0.4 < reflex-components-markdown==0.9.4.post1 < reflex-components-moment==0.9.4 < reflex-components-plotly==0.9.7 < reflex-components-radix==0.9.10.post1 < reflex-components-react-player==0.9.2 < reflex-components-recharts==0.9.4.post1 < reflex-components-sonner==0.9.4 < reflex-hosting-cli==0.1.72 > reflex==0.10.0a3 > reflex-base==0.10.0a3 > reflex-build-sdk==0.1.0a1 > reflex-components-code==0.10.0a2 > reflex-components-core==0.10.0a2 > reflex-components-dataeditor==0.10.0a1 > reflex-components-gridjs==0.10.0a2 > reflex-components-lucide==1.1.0a1 > reflex-components-markdown==0.10.0a2 > reflex-components-moment==0.10.0a2 > reflex-components-plotly==0.10.0a2 > reflex-components-radix==0.10.0a2 > reflex-components-react-player==0.10.0a1 > reflex-components-recharts==0.10.0a2 > reflex-components-sonner==0.10.0a1 > reflex-hosting-cli==0.2.0a1 > typing-inspection==0.4.4 < wrapt==2.3.0 > wrapt==2.5.0 
+Checked 46 packages in 1ms
+All installed packages are compatible
+### ck up 20:41:08
+started reflex pid=21016 (20:41:09) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/ck-up.server.log
+UP after 22s (frontend 200, backend /ping 200)
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 9.517, "type": "error", "text": "WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error 
+== ck-session-up-a3: {'pass': 10, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=35 unexpected_console=20 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=103
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:8226/_event/?token=b713ccd0-722d-4a2a-d589-072b935fd9a6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+package.json diff: < "react": "19.2.8", < "react-dom": "19.2.8", < "react-error-boundary": "6.1.2", > "react": "19.3.0", > "react-dom": "19.3.0", > "react-error-boundary": "6.1.6", < "socket.io-client": "4.8.3", > "socket.io-client": "4.8.4", < "autoprefixer": "10.5.4", < "postcss": "8.5.26", > "autoprefixer": "10.6.1", > "postcss": "8.5.29", < "vite": "8.2.2" > "vite": "8.3.2" 
+== ck-up: {'pass': 17, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=46
+SHUTDOWN: main pid 21016 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### ck cold 20:42:42
+started reflex pid=22901 (20:42:42) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/ck-cold.server.log
+UP after 10s (frontend 200, backend /ping 200)
+cold package.json == up
+== ck-cold: {'pass': 17, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=47
+SHUTDOWN: main pid 22901 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- ck-base server-log warnings:
+      1 [WARNING] Killing worker-1 after it refused to gracefully stop
+      1 Warning: Attempting to send delta to disconnected client 
+--- ck-up server-log warnings:
+      2 Warning: Attempting to send delta to disconnected client 
+      1 Warning: Frontend version 0.9.12 for session jN2sPVx0thkMtzX4AAAB does not match
+      1 Debug: error: script "dev" exited with code 143
+--- ck-cold server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+### ck done 20:43:30

@@ -117,3 +117,45 @@ granian 2.8.4, starlette 1.7.0, no pydantic). `reflex init --template blank` rc 
 prod (3236) both: welcome page, colour-mode toggle survives reload, no console errors, no failed requests; prod `/ping` 200, `/sitemap.xml` 200, `/nope` 404.
 Dev answers unknown routes with 200 (react-router dev server SPA fallback; 0.9.12 dev does the same: `curl /nope` on the 0.9.12 form-designer dev server -> 200), not an issue.
 The generated `.web/package.json` is identical on 3.11 and 3.14. SIGTERM: "exited after SIGTERM in ~2-3 s, all ports free" every time.
+
+## Item 1: 0.9.12 -> 0.10.0a3 in place (form-designer, github-stats, clock, twitter dev, twitter prod + Redis)
+Same apps, QA patches and drivers as the a2 pass (`../2026-10-07/upgrade_sweep`, copied). Per-app venv `$SB/envs/a3_upgrade-{fd,gh,ck,tw,twr}`
+built by `bin/build_base_venvs.sh` (Python 3.12, `-r requirements.txt 'reflex==0.9.12'`, db apps `'sqlalchemy<2.1'` = a 0.9.12 install from
+before SQLAlchemy 2.1, with greenlet; baselines `freeze/<k>-base.txt`). Upgrade in place: `uv pip install --prerelease=allow -U 'reflex==0.10.0a3' 'pydantic<2.14'`
+(twitter-redis: `'reflex[db]==0.10.0a3'`), same app dir with `.web/`, `reflex.lock/`, `reflex.db`, same persistent Chromium profile.
+Sequences (one server at a time): `bin/seq_fd.sh` (3220/8220), `bin/seq_gh.sh` (3224/8224, GraphQL stub 8228), `bin/seq_ck.sh` (3226/8226),
+`bin/seq_tw.sh` (3230/8230), `bin/seq_twr.sh` (prod 3232, redis 8209); `bin/run_all.sh` chains them; outputs `logs/seq-<k>.txt`, `shots/<k>/<tag>.json`.
+
+Freeze diff 0.9.12 -> a3 (every app, `freeze/<k>-base-to-up.diff`): reflex/reflex-base 0.10.0a3, reflex-build-sdk 0.1.0a1 (new), components
+code/core/gridjs/markdown/moment/plotly/radix/recharts 0.10.0a2, dataeditor/react-player/sonner 0.10.0a1, lucide 1.1.0a1, hosting-cli 0.2.0a1,
+wrapt 2.5.0 — i.e. the a2 diff with reflex/reflex-base at a3. `uv pip check` clean.
+`.web/package.json` diff after the first a3 run (`pkg/<k>-base-to-up.package.diff`): react/react-dom 19.2.8->19.3.0, react-error-boundary 6.1.2->6.1.6,
+socket.io-client 4.8.3->4.8.4, autoprefixer 10.5.4->10.6.1, postcss 8.5.26->8.5.29, vite 8.2.2->8.3.2 (+ moment 2.30.1->2.31.0 in form-designer) — identical to a2.
+The cold rebuild (`rm -rf .web`) produces the identical package.json and file list.
+
+### form-designer (`logs/seq-fd.txt`, `shots/fd/`)
+| run | result (pass/fail/anomaly) | a2 pass |
+|---|---|---|
+| 0.9.12 `full` / `entry` (FD_FIX_FIELD_NAME=1 throughout) | 18/0/2 (`login`/`re-login` auto-redirect: app bug, pre-existing) / 14/0/1 (React DOM-nesting / `:first-child` dev console errors: app markup, pre-existing) | 16/0/4 (full without the fix), 14/0/1 |
+| a3 in place `up` / `entry` | 12/0/1 / 14/0/1 | 12/0/1 / 14/0/1 |
+| a3 prod `up` / `entry` | 12/0/1 / 15/0/0 | 12/0/1 / 15/0/0 |
+| a3 cold `up` | 12/0/1 | 12/0/1 |
+Storage (persistent profile written by 0.9.12): first a3 load of `/edit/form/` renders the protected editor without logging in, `_auth_token` byte-identical,
+**0 changing app writes**; a3 does ONE idempotent `setItem _auth_token` (same value) — 0.9.12 does the same, a2 did not (consistent with #7493 sending boot client-storage
+values through the delta again; harmless). DB: alembic head `4c92535dbbbd` unchanged, rows only added; `reflex db makemigrations` after the upgrade rc 0, no new revision.
+Prod routes: `/edit/form/1` `/form/1` `/responses/1` 200, `/nope` 404, `/login` 307. Shutdown: a3 exits 2-3 s after SIGTERM with all ports free; 0.9.12 dev leaves the
+react-router node process on the frontend port (known, fixed by #7328 since a1). Server-log noise identical across versions (pydantic serializer UserWarning from the app's model,
+vite console relays, `Killing worker-1 after it refused to gracefully stop` once at a cold-run shutdown, also seen on a2).
+
+### github-stats (`logs/seq-gh.txt`, `shots/gh/`; server env `QA_GITHUB_GRAPHQL_URL=http://127.0.0.1:8228/graphql GITHUB_API_TOKEN=qa-dummy-token`, stub `scripts/github_stub.py 8228`)
+| run | result | a2 pass |
+|---|---|---|
+| 0.9.12 `fresh` | 14/0/2 | 14/0/2 |
+| a3 in place `persist` (same profile) | 12/0/2 — users + stats restored from the 0.9.12-written LocalStorage without refetch | 12/0/2 |
+| a3 prod `persist` | 13/0/1 | 13/0/1 |
+| a3 cold `fresh` (new profile) | 14/0/2 | (a2 ran cold as persist: 12/0/2) |
+Anomalies are pre-existing on 0.9.12: widget `?appearance=dark` not applied by the nested `rx.theme`, React "value prop without onChange" dev console error.
+Storage probe on the first a3 load (`gh-up-firstload-home`): 0 changing app writes; the `user_stats_json` key is rewritten with the same value 208 times in 8 s
+(app's refetch loop for the unknown user `ghost1`; a2 pass: 147 in the same probe, so app behaviour) and a3 additionally rewrites `selected_users_json`,
+the widget's `user_stats_json` and `last_fetch` once each with identical values (a2: not rewritten; 0.9.12 behaviour, see form-designer). The probe's
+`FAIL text visible: 'Alice'` is my expect-text (the page shows the login `alice`; the a2 pass used `'alice'`), not an app failure.

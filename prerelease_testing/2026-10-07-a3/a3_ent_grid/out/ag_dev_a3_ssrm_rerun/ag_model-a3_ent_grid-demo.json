@@ -1,0 +1,880 @@
+{
+"name": "ag_model-a3_ent_grid-demo",
+"python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+"checks": [
+{
+"t": 6.52,
+"name": "ssrm: logged-out initial data request made",
+"ok": true,
+"detail": [
+"http://localhost:8317/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=sTLnPPjrOGeoRCNvAAAD"
+]
+},
+{
+"t": 6.52,
+"name": "ssrm: datasource URL carries endpoint_kwargs (state, sid) + SSRM params",
+"ok": true,
+"detail": {
+"startRow": "0",
+"endRow": "50",
+"sortModel": "[]",
+"filterModel": "{}",
+"rowGroupCols": "[]",
+"groupKeys": "[]",
+"valueCols": "[]",
+"pivotMode": "false",
+"pivotCols": "[]",
+"state": "reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n",
+"sid": "sTLnPPjrOGeoRCNvAAAD"
+}
+},
+{
+"t": 6.53,
+"name": "ssrm: logged out shows no rows",
+"ok": true,
+"detail": 0
+},
+{
+"t": 8.87,
+"name": "ssrm: Generate Friends inserted 50 rows into sqlite",
+"ok": true,
+"detail": {
+"before": 96,
+"after": 146
+}
+},
+{
+"t": 13.41,
+"name": "ssrm: login (backend var) survives reload",
+"ok": true,
+"detail": "Logout button shown after reload"
+},
+{
+"t": 14.35,
+"name": "ssrm: rows render on reload right after generate (row_count_cached interval=10s)",
+"ok": true,
+"detail": ""
+},
+{
+"t": 14.65,
+"name": "ssrm: rows rendered after generate",
+"ok": true,
+"detail": 22
+},
+{
+"t": 16.96,
+"name": "ssrm: sort asc request carries sortModel(age)",
+"ok": true,
+"detail": [
+"[{\"sort\":\"asc\",\"type\":\"default\",\"colId\":\"age\"}]"
+]
+},
+{
+"t": 16.96,
+"name": "ssrm: sort asc first row has min age from db",
+"ok": true,
+"detail": {
+"first_rows": [
+18,
+18,
+19,
+19,
+19,
+20,
+20,
+20
+],
+"db_min": 18
+}
+},
+{
+"t": 19.47,
+"name": "ssrm: sort desc first row has max age",
+"ok": true,
+"detail": {
+"first_rows": [
+80,
+80,
+80,
+79,
+79,
+77,
+77,
+77
+],
+"db_max": 80
+}
+},
+{
+"t": 26.33,
+"name": "ssrm: filter request carries filterModel(name)",
+"ok": true,
+"detail": [
+"{\"name\":{\"filterType\":\"text\",\"type\":\"contains\",\"filter\":\"Hect\"}}"
+]
+},
+{
+"t": 26.33,
+"name": "ssrm: filtered rows all match and count matches db",
+"ok": false,
+"detail": {
+"sub": "Hect",
+"shown": 22,
+"blank_rows": 21,
+"db_matches": 1,
+"sample": [
+"Hector Rasmussen",
+"",
+"",
+"",
+""
+]
+}
+},
+{
+"t": 34.58,
+"name": "ssrm: editing a cell updates sqlite",
+"ok": true,
+"detail": {
+"id": "5",
+"db_name": "QA Edited SSRM"
+}
+},
+{
+"t": 36.09,
+"name": "ssrm: edited value visible after refresh",
+"ok": true,
+"detail": [
+"QA Edited SSRM",
+"Cynthia Walker",
+"Ashley Fischer",
+"Brenda Smith",
+"Jorge Duarte"
+]
+},
+{
+"t": 38.22,
+"name": "ssrm: selection -> selected_items computed var renders 2 badges",
+"ok": true,
+"detail": [
+"QA Edited SSRM",
+"Cynthia Walker"
+]
+},
+{
+"t": 41.73,
+"name": "ssrm: enable_advanced_filter switch shows advanced filter bar",
+"ok": true,
+"detail": 1
+},
+{
+"t": 44.35,
+"name": "ssrm: logout refreshes grid to empty",
+"ok": true,
+"detail": 0
+}
+],
+"notes": [
+"guard: 0.10.0a3 0.9.7a5",
+"db rows at start: 96",
+"ssrm rows right after generate (demo only calls setRowCount, no SSRM refresh): 22",
+"db rows at end: 146"
+],
+"summary": {
+"checks_failed": [
+"ssrm: filtered rows all match and count matches db"
+],
+"n_checks": 17,
+"console_total": 45,
+"console_benign": 36,
+"console_errors": 0,
+"console_warnings": 0,
+"page_errors": 0,
+"failed_requests": 0,
+"http_errors": 0
+},
+"anomalies": {
+"console_errors": [],
+"console_warnings": [],
+"page_errors": [],
+"failed_requests": [],
+"http_errors": []
+},
+"console_all": [
+{
+"t": 1.22,
+"ctx": "ssrm",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/model-ssrm",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 3.1,
+"ctx": "ssrm",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 3.53,
+"ctx": "ssrm",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 3.7,
+"ctx": "ssrm",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/node_modules/.vite/deps/react-dom_client.js?v=4b65319b",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 4.22,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.22,
+"ctx": "ssrm",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.22,
+"ctx": "ssrm",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.23,
+"ctx": "ssrm",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.23,
+"ctx": "ssrm",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.23,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.23,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.28,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.29,
+"ctx": "ssrm",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.29,
+"ctx": "ssrm",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.29,
+"ctx": "ssrm",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.29,
+"ctx": "ssrm",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.29,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 4.29,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 10.4,
+"ctx": "ssrm",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 10.48,
+"ctx": "ssrm",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/model-ssrm",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 11.38,
+"ctx": "ssrm",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 11.88,
+"ctx": "ssrm",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/node_modules/.vite/deps/react-dom_client.js?v=4b65319b",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 11.88,
+"ctx": "ssrm",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 12.2,
+"ctx": "ssrm",
+"type": "error",
+"text": "****************************************************************************************************************************",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/@vite/client",
+"line": 356,
+"column": 3,
+"lineNumber": 356,
+"columnNumber": 3
+},
+"benign": true
+},
+{
+"t": 22.55,
+"ctx": "ssrm",
+"type": "log",
+"text": "{col_id: name, source: COLUMN_MENU, type: filterOpened}",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/app_components/ag_grid/model_wrapper_ssrm.jsx",
+"line": 384,
+"column": 42,
+"lineNumber": 384,
+"columnNumber": 42
+},
+"benign": false
+},
+{
+"t": 22.73,
+"ctx": "ssrm",
+"type": "log",
+"text": "{filter_instance: Object, col_id: name, type: filterModified}",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/app_components/ag_grid/model_wrapper_ssrm.jsx",
+"line": 402,
+"column": 42,
+"lineNumber": 402,
+"columnNumber": 42
+},
+"benign": false
+},
+{
+"t": 23.47,
+"ctx": "ssrm",
+"type": "log",
+"text": "{source: columnFilter, after_data_change: undefined, after_floating_filter: undefined, col_ids: Array(1), type: filterChanged}",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/app_components/ag_grid/model_wrapper_ssrm.jsx",
+"line": 392,
+"column": 42,
+"lineNumber": 392,
+"columnNumber": 42
+},
+"benign": false
+},
+{
+"t": 27.23,
+"ctx": "ssrm",
+"type": "log",
+"text": "{col_id: name, source: COLUMN_MENU, type: filterOpened}",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/app_components/ag_grid/model_wrapper_ssrm.jsx",
+"line": 384,
+"column": 42,
+"lineNumber": 384,
+"columnNumber": 42
+},
+"benign": false
+},
+{
+"t": 27.3,
+"ctx": "ssrm",
+"type": "log",
+"text": "{filter_instance: Object, col_id: name, type: filterModified}",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/app_components/ag_grid/model_wrapper_ssrm.jsx",
+"line": 402,
+"column": 42,
+"lineNumber": 402,
+"columnNumber": 42
+},
+"benign": false
+},
+{
+"t": 28.06,
+"ctx": "ssrm",
+"type": "log",
+"text": "{source: columnFilter, after_data_change: undefined, after_floating_filter: undefined, col_ids: Array(1), type: filterChanged}",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/app_components/ag_grid/model_wrapper_ssrm.jsx",
+"line": 392,
+"column": 42,
+"lineNumber": 392,
+"columnNumber": 42
+},
+"benign": false
+},
+{
+"t": 39.59,
+"ctx": "ssrm",
+"type": "log",
+"text": "{source: advancedFilter, after_data_change: undefined, after_floating_filter: undefined, col_ids: Array(0), type: filterChanged}",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/app_components/ag_grid/model_wrapper_ssrm.jsx",
+"line": 392,
+"column": 42,
+"lineNumber": 392,
+"columnNumber": 42
+},
+"benign": false
+},
+{
+"t": 44.45,
+"ctx": "ssrm",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3317/model-ssrm",
+"location": {
+"url": "http://localhost:3317/utils/state.js",
+"line": 788,
+"column": 14,
+"lineNumber": 788,
+"columnNumber": 14
+},
+"benign": false
+}
+]
+}

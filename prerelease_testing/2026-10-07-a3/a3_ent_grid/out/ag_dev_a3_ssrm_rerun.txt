@@ -1,0 +1,35 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=a3_ent_grid-demo versions=0.10.0a3 0.9.7a5
+[NOTE] guard: 0.10.0a3 0.9.7a5
+[NOTE] db rows at start: 96
+[PASS] ssrm: logged-out initial data request made: ['http://localhost:8317/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=sTLnPPjrOGeoRCNvAA
+[PASS] ssrm: datasource URL carries endpoint_kwargs (state, sid) + SSRM params: {'startRow': '0', 'endRow': '50', 'sortModel': '[]', 'filterModel': '{}', 'rowGroupCols': '[]', 'groupKeys': '[]', 'valueCols': '[]', 'pivotMode': 'false', 'pivotCols': '[]', 'state': 'reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n', 'sid': 'sTLnPPjrOGeoRCNvAAAD'}
+[PASS] ssrm: logged out shows no rows: 0
+[PASS] ssrm: Generate Friends inserted 50 rows into sqlite: {'before': 96, 'after': 146}
+[NOTE] ssrm rows right after generate (demo only calls setRowCount, no SSRM refresh): 22
+[PASS] ssrm: login (backend var) survives reload: Logout button shown after reload
+[PASS] ssrm: rows render on reload right after generate (row_count_cached interval=10s): 
+[PASS] ssrm: rows rendered after generate: 22
+[PASS] ssrm: sort asc request carries sortModel(age): ['[{"sort":"asc","type":"default","colId":"age"}]']
+[PASS] ssrm: sort asc first row has min age from db: {'first_rows': [18, 18, 19, 19, 19, 20, 20, 20], 'db_min': 18}
+[PASS] ssrm: sort desc first row has max age: {'first_rows': [80, 80, 80, 79, 79, 77, 77, 77], 'db_max': 80}
+[PASS] ssrm: filter request carries filterModel(name): ['{"name":{"filterType":"text","type":"contains","filter":"Hect"}}']
+[FAIL] ssrm: filtered rows all match and count matches db: {'sub': 'Hect', 'shown': 22, 'blank_rows': 21, 'db_matches': 1, 'sample': ['Hector Rasmussen', '', '', '', '']}
+[PASS] ssrm: editing a cell updates sqlite: {'id': '5', 'db_name': 'QA Edited SSRM'}
+[PASS] ssrm: edited value visible after refresh: ['QA Edited SSRM', 'Cynthia Walker', 'Ashley Fischer', 'Brenda Smith', 'Jorge Duarte']
+[PASS] ssrm: selection -> selected_items computed var renders 2 badges: ['QA Edited SSRM', 'Cynthia Walker']
+[PASS] ssrm: enable_advanced_filter switch shows advanced filter bar: 1
+[PASS] ssrm: logout refreshes grid to empty: 0
+[NOTE] db rows at end: 146
+{
+ "checks_failed": [
+  "ssrm: filtered rows all match and count matches db"
+ ],
+ "n_checks": 17,
+ "console_total": 45,
+ "console_benign": 36,
+ "console_errors": 0,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}

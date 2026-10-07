@@ -1,0 +1,255 @@
+{
+ "tag": "ck-cold",
+ "results": [
+  {
+   "name": "render: switch + select + 6-part digital clock",
+   "status": "pass",
+   "detail": "['1', ':', '43', ':', '01', 'PM']",
+   "t": 10.081
+  },
+  {
+   "name": "stopped on load (on_load sets running=False)",
+   "status": "pass",
+   "detail": "['1', ':', '43', ':', '01', 'PM'] -> ['1', ':', '43', ':', '01', 'PM']",
+   "t": 12.399
+  },
+  {
+   "name": "initial zone US/Pacific shown in select",
+   "status": "pass",
+   "detail": "US/Pacific",
+   "t": 12.417
+  },
+  {
+   "name": "switch on -> background tick task advances seconds",
+   "status": "pass",
+   "detail": "['1', ':', '43', ':', '06', 'PM'] -> ['1', ':', '43', ':', '09', 'PM']",
+   "t": 16.729
+  },
+  {
+   "name": "time correct for US/Pacific",
+   "status": "pass",
+   "detail": "['1', ':', '43', ':', '09', 'PM']",
+   "t": 16.729
+  },
+  {
+   "name": "zone change to Asia/Tokyo applies while ticking",
+   "status": "pass",
+   "detail": "['5', ':', '43', ':', '09', 'AM']",
+   "t": 17.081
+  },
+  {
+   "name": "still ticking after zone change",
+   "status": "pass",
+   "detail": "['5', ':', '43', ':', '09', 'AM'] -> ['5', ':', '43', ':', '11', 'AM']",
+   "t": 19.645
+  },
+  {
+   "name": "rx.Cookie zone written (Asia/Tokyo)",
+   "status": "pass",
+   "detail": "{'reflex___state____state.clock___clock____state.zone_rx_state_': 'Asia%2FTokyo'}",
+   "t": 19.651
+  },
+  {
+   "name": "reload: zone cookie sticks (Asia/Tokyo)",
+   "status": "pass",
+   "detail": "Asia/Tokyo",
+   "t": 20.66
+  },
+  {
+   "name": "reload: switch reset to off by on_load",
+   "status": "pass",
+   "detail": "unchecked",
+   "t": 20.668
+  },
+  {
+   "name": "reload: clock not ticking",
+   "status": "pass",
+   "detail": "['5', ':', '43', ':', '13', 'AM'] -> ['5', ':', '43', ':', '13', 'AM']",
+   "t": 22.88
+  },
+  {
+   "name": "reload: displayed time is Tokyo (refresh() on load)",
+   "status": "pass",
+   "detail": "['5', ':', '43', ':', '13', 'AM']",
+   "t": 22.88
+  },
+  {
+   "name": "switch off stops the tick loop",
+   "status": "pass",
+   "detail": "['5', ':', '43', ':', '17', 'AM'] -> ['5', ':', '43', ':', '17', 'AM']",
+   "t": 28.317
+  },
+  {
+   "name": "zone change while stopped (Europe/Paris)",
+   "status": "pass",
+   "detail": "Europe/Paris ['10', ':', '43', ':', '17', 'PM']",
+   "t": 28.594
+  },
+  {
+   "name": "fresh context: default zone US/Pacific (no cookie)",
+   "status": "pass",
+   "detail": "US/Pacific",
+   "t": 30.847
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 31.544
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 31.544
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 6.596,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 7.22,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 7.331,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 7.679,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 19.8,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 19.928,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 20.08,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 20.373,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 20.373,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "ctx2",
+   "t": 28.85,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "ctx2",
+   "t": 29.307,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "ctx2",
+   "t": 29.419,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "ctx2",
+   "t": 29.974,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "ctx2",
+   "t": 30.885,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 7.328,
+   "dir": "open",
+   "payload": "ws://localhost:8226/_event/?token=af59f05c-427e-414e-b4f2-45145ccf8e8a&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 7.331,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"Mgp1YKVstnc8MgObAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 7.812,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"84bf8e1f4d8d92a0\",\"b084fc0c68f7c73a\",\"acacd92ef1e8487e\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 8.198,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"ye0xlXG8tJo7phkSAAAB\"}"
+  },
+  "{\"page\": \"main\", \"t\": 8.297, \"dir\": \"in\", \"len\": 1784, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8226\\\",\\\"origin\\\":\\\"http://localhost:3226\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_vers...",
+  {
+   "page": "main",
+   "t": 8.297,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.298,
+   "dir": "in",
+   "len": 346,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":1,\"minute\":43,\"second\":1,\"meridiem\":\"PM\",\"minute_display\":\"43\",\"second_display\":\"01\",\"hour_rotation\":\"rotate(300deg)\",\"minute_rotation\":\"rotate(168.51599999999996deg)\",\"second_rotation\":\"rotate(-83.988deg)\"},\"running_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.298,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  "... 39 more frames trimmed"
+ ],
+ "notes": {
+  "zone_cookie": {
+   "reflex___state____state.clock___clock____state.zone_rx_state_": "Asia%2FTokyo"
+  },
+  "final_zone_cookie": {
+   "reflex___state____state.clock___clock____state.zone_rx_state_": "Europe%2FParis"
+  }
+ }
+}

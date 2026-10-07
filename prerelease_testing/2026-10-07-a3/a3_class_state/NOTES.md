@@ -149,9 +149,23 @@ prod `/favicon.ico` 404. Server logs: the known #7499 `Expected field 'St.ls_dec
 a3_class_state-1 N-005 fixed · -2 N-039 fixed · -3 N-008 fixed · -4 N-006 changed (message fixed, silent paths remain) ·
 -5 N-004 behaves as documented · -6 N-040 unchanged (documented) · -7 NEW low: undo-stack restore loses/leaks defaults in 4 patch
 patterns (regression vs a2) · -8 NEW low: None/non-str storage assignment still drops storage · -9 NEW low (docs): ComponentState
-named storage shares one browser key · -10 NEW low: concurrent assign/restore not thread-safe.
+named storage shares one browser key · -10 NEW low: concurrent assign/restore not thread-safe · -11 NEW low: AppHarness second app
+crashes on a shared-module state (0.10 vs 0.9.12; not #7495).
+
+### AppHarness: one shared state module, three apps in one pytest process (`harness/`)
+Venvs (PyPI): `a3_class_state-{a3h,a2h,s912h}` = `reflex[db,testing]==<ver>` (+ reflex-base, pydantic<2.14, greenlet for 0.9.12) + pytest + playwright 1.63.0.
+```bash
+cd $W/harness && H_ASSIGN=1 H_VENV=a3_class_state-a3h H_FP=3110 H_BP=8110 PYTHONPATH=$PWD/shared \
+  $SB/envs/a3_class_state-a3h/bin/python -m pytest -s -p no:cacheprovider test_shared_state_harness.py   # H_ASSIGN=0: no class assignments
+```
+| | app A (assigns 10/"dark-a") | app B (no assignment) | app C (assigns 20/"dark-c") |
+|---|---|---|---|
+| a3 (H_ASSIGN=1 and 0) | pass: 10/dark-a, bump works, LocalStorage `h_theme` persists | **crash**: `TypeError: Cannot read properties of undefined (reading '$$typeof')` at `useContext` (B's `.web/utils/context.jsx` lacks the shared_cfg StateContext) | same crash |
+| a2 | pass (theme not storage: N-005) | same crash | same crash |
+| 0.9.12 | renders static 10/dark-a, bump no-op (N-041) | renders A's leftover 10/dark-a, bump no-op | renders 20/dark-c |
+→ finding a3_class_state-11 (0.10 regression vs 0.9.12, unrelated to #7495; same on a2). Class-default mechanics across re-imported
+app modules are fine at Python level (`adv7495.py` module_reload_reuse: bounded undo stack, patch/undo correct).
 
 ## Not covered
-- A real AppHarness run reusing one state module across two apps (covered only by the Python-level module-reload case).
 - Disk store across real server restarts (`reflex run` wipes `.states` at start; covered at Python level with StateManagerDisk).
 - clse2e in prod (storage options are compiled the same way; core_a2/n005/csbox ran in prod+redis).

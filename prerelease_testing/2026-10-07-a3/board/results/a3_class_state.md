@@ -1,0 +1,58 @@
+CLUSTER: a3_class_state
+SUMMARY: All four targeted fixes landed in the published reflex/reflex-base 0.10.0a3. N-005 (storage kept on plain class assignment) is fixed in Python and end-to-end (dev, and prod+Redis with 9 workers). N-039 (patch/restore) is fixed on Python 3.11–3.14. N-008 (dev guard) is fixed. N-006's message is fixed, but its silent `str()`/`%s`/`!s` paths remain. N-004 behaves exactly as the new #7494 note documents (Redis, disk store, pickle level), and N-040 is unchanged and now documented. Every positive control still reproduced on 0.10.0a2 first. The adversarial hunt found five new low-severity issues. Only one is a regression vs a2: the undo stack pops the latest entry instead of restoring what was saved, so four test-patching patterns silently lose or leak a configured default. The other four: `None`/non-str values still drop browser storage; ComponentState instances share one named storage key; concurrent assign/restore is not thread-safe; and a second AppHarness app crashes on 0.10 (that last one is not caused by #7495).
+ARTIFACTS: /home/user/reflex/prerelease_testing/2026-10-07-a3/a3_class_state/ (NOTES.md has the rerun commands; inbox files board/findings-inbox/a3_class_state-1..11.md)
+TESTS:
+- [pass] positive controls on 0.10.0a2 (harness sanity): N-005 matrix (str-annotated plain value → is_client_storage False, compiled None), core_a2 /storage e2e (ls_plain_key/lscs_key/ck_key never written), n005/csbox e2e, N-008 (`_sneaky__name` accepted), N-006 (old message), N-039 (test_min 1 failed/1 passed/1 error; t1 matrix 15/15/15), N-040 (179/255, 42), N-004 (a2→0.9.12 StateSchemaMismatchError): all reproduce exactly as reported
+- [pass] N-005 Python: storage_assign_matrix on a3: 3 storage types × str/storage annotation × 6 assignment kinds keep is_client_storage and declared name/options; storage-annotated plain value now accepted (a2 TypeError); cs_storage_default_probe plain → LocalStorage box_pref; derive_g_assign/derive_i_storage_legacy storage kept
+- [pass] N-005 e2e core_a2 (/, /cs, /storage, /dunder) a3 dev 3101/8101 and prod+redis 3104 (9 granian workers): ls_plain_key, lscs_key, cookie ck_key written, a new tab restores them, reset writes assigned defaults back, fresh browser writes nothing on first load; F-004/cs/EditableText/dunder identical to a2
+- [pass] N-005 e2e n005 app (drive_stor.py) a3 dev and prod+redis: 8/8 persisted in a new tab (a2: 4/8)
+- [pass] N-005 extra e2e apps/clse2e a3 dev: LocalStorage(sync=True) still syncs across tabs after a plain assignment; cookie keeps SameSite=Strict + max_age 3600; storage-annotated var accepts a plain value and persists; SessionStorage kept (a2: none of these stored)
+- [anomaly] csbox (ComponentState + named LocalStorage + `cls.pref = initial`) a3 dev and prod+redis: the `plain` instance persists now, but it shares `box_pref` with the unconfigured instance, so a same-session reload shows the other instance's choice (0.9.12 shares the key too) → finding 9
+- [fail] clse2e `Optional[str]` LocalStorage assigned `None`: k_opt never written, a new tab shows "" (same on a2; 0.9.12 kept storage) → finding 8
+- [pass] N-039 on a3 with Python 3.11/3.12/3.13/3.14: test_min.py 2 passed; test_min_t1 2 passed; t1 matrix monkeypatch/mock 0 errors/0 leaks/15 visible; getattr-restore 0/0/15; delattr 0/0/0; test_t1_pytest.py 22 passed (a2 8 failed, 6 errors); test_monkeypatch_other_attrs 10/10; blast radius clean; spec_mock_restore clean
+- [pass] N-008 dev: `_sneaky__name` raises; own/mixin/base/_Under/__Dunder/ComponentState-template/local and clash-renamed local mangled names accepted; non-state helper `_Helper__h` and `_OtherState__x` raise (as on 0.9.12); prod has no guard (since a1)
+- [anomaly] N-006: message names default_value()/ClassVar/state var; `str(S._x)+"px"`, `"%s" % S._x`, `f"{S._x!s}"` still silently embed `Field(default=16, ...)`; `rx.box(id=S._label)` still a cryptic TypeError
+- [pass] N-040 probes: a3 identical to a2 (179/255 raise, 42 ran user code) on 3.11–3.14; documented now in base_vars.md
+- [pass] N-004 pickle matrix: schema hash a3 == a2 (bbd147dc…); a3↔a2 load both ways; 0.9.12→a3 loads; a3→0.9.12 StateSchemaMismatchError (documented); a3 pickle contains only field values (no dirty_vars/dirty_substates/_backend_vars, no _replaced_defaults); a3 loads 0.9.12/a2 pickles, drops stale keys, re-serializes cleanly
+- [pass] N-004 disk store (StateManagerDisk, shared dir, writer×reader over a3/a2/0.9.12): a3/a2 interchangeable, 0.9.12→a3 kept, a3→0.9.12 silently fresh and then overwritten (as documented)
+- [pass] N-004 fleet e2e (prod, one Redis, same token): 0.9.12→a3 kept, a3→a3 kept, a3→0.9.12 fresh state with no traceback and nothing logged, 0.9.12→a3 kept, a3→a2 kept, a2→a3 kept, a3 d5→d7 kept; fleet-state schema hash identical on a2/a3
+- [pass] #7495 adversarial cases: `del State.x` with nothing assigned is a no-op (a2 deleted the descriptor); parent-via-child/grandchild/mixin/shadowing/ComponentState patches restore; reset() after assignment and after restore; storage factories (declared/assigned) called exactly once at assignment; storage options (Cookie max_age/path/same_site/secure, LocalStorage sync, SessionStorage) kept; pickles carry no undo stack; schema unchanged by assignment; module reloaded 20× keeps a bounded stack; dynamic add_var + assign/del fine; non-LIFO mock start/stop ends at the original
+- [fail] #7495 undo-stack edge cases (pytest file probes/undo_edge/test_undo_edge.py, a3 4 failed/4 passed; a2 1 failed + 1 error): configured default lost after a rejected mock.patch.object(…, Var) / mocker.patch.object(…, rx.field()) and after monkeypatch.delattr; patched value leaks when code under test assigns inside the patch window → finding 7
+- [anomaly] `S.x = 10; S.x = S.x` silently undoes to the original (self-assignment = undo, as documented); >16 nested patches cannot reach the original (documented limit); a str var with a non-storage declared default_factory now has the factory called when a plain str is assigned (raising factory → raw RuntimeError instead of TypeError; a2 accepted) → noted in finding 7
+- [anomaly] 8 threads × 1500 assign/restore: no exception but the final default is corrupted (count 31376/70773, stale patched factory), on 3.11/3.12/3.14; a2 also corrupted, with 12000 TypeErrors → finding 10
+- [fail] AppHarness, 3 apps in one process sharing a state module: on a3 (with and without class assignments) and on a2, apps B and C never hydrate because `useContext` is undefined (their compiled context.jsx lacks the shared state's context); 0.9.12 renders all three → finding 11 (not caused by #7495)
+- [pass] console/server logs: only benign lines, prod /favicon.ico 404, and the known #7499 "Expected field 'St.ls_declared_fac' to receive type LocalStorage" lines (same count on a2); no tracebacks
+REVERIFIED:
+- N-005: fixed — str-annotated plain value/plain factory keeps storage, name and options in Python and e2e (core_a2 /storage writes ls_plain_key, lscs_key, ck_key; n005 8/8; dev and prod+redis)
+- N-039: fixed — monkeypatch/mock.patch.object/pytest-mock/substate/delattr round trip 0 errors/0 leaks across 15 var kinds on Python 3.11–3.14; test_min.py 2 passed
+- N-008: fixed — `self._sneaky__name = 1` raises SetUndefinedStateVarError in dev; mixin/base/_Under mangled names allowed
+- N-006: changed — the BackendVarFormatError text names default_value()/ClassVar/state var; the silent str()/%s/!s paths and the `id=` TypeError are unchanged
+- N-004: changed (documented as breaking change) — 0.9.12→a3 loads, a3→0.9.12 resets cleanly (Redis e2e and disk), a2↔a3 keep sessions, identical schema hash a2/a3, no _PREVIOUS_RELEASE_PICKLE_KEYS or _replaced_defaults in a3 pickles
+- N-040: still-broken (unchanged, now documented) — t2 matrix 179/255 raise, 42 ran user code, same as a2
+ISSUES:
+- TITLE: #7495 undo stack pops the latest entry instead of restoring what was saved: rejected mock.patch.object with a Var/Field, monkeypatch.delattr, and an assignment made inside a patch window silently lose a configured default or leak the patched one
+  SEVERITY: low
+  REGRESSION: no (0.9.12 ignores class assignments; regression vs 0.10.0a2: yes, a2 kept the config in cases a/b/d)
+  REPRO: venv: `uv --no-config pip install --prerelease=allow 'reflex[db]==0.10.0a3' 'reflex-base==0.10.0a3' 'pydantic<2.14' pytest pytest-mock`; from a3_class_state/probes/undo_edge: `EXPECT_VENV=<venv> <venv>/bin/python -I -m pytest -p no:cacheprovider -p no:randomly -rA -q test_undo_edge.py` → 4 failed (sentinels see 0, 0, 99, 0 instead of the configured 10)
+  EVIDENCE: a3_class_state/logs/adv/test_undo_edge.txt; logs/adv/adv7495.a3.txt; root cause reflex_base/vars/base.py 4895-4896 (validation raises before _keep_default at 4903/4918), 4926-4939 (__delattr__ pops), 4888 (identity restore pops the last entry)
+- TITLE: The N-005 fix covers only str values: assigning None to an Optional[str] browser-storage var (or a non-str value to a Union var) still silently drops storage
+  SEVERITY: low
+  REGRESSION: yes (0.9.12 ignored the assignment and kept storage; same as a2)
+  REPRO: `class St(rx.State): opt: Optional[str] = rx.LocalStorage("d", name="k_opt")`; `St.opt = None` → `_compile_client_storage_recursive(St)` has no entry; e2e a3_class_state/apps/clse2e (dev) + bin/drive_clse2e.py: k_opt never written, a new tab shows ""
+  EVIDENCE: a3_class_state/out/e2e/clse2e-a3-dev.json; logs/adv/adv7495.a3.txt (storage_optional_none, storage_union_annotation_nonstr)
+- TITLE: ComponentState + named storage var + `cls.x = initial` (the a3 changelog's example) makes every instance share one browser key; a reload shows another instance's value
+  SEVERITY: low
+  REGRESSION: no (0.9.12 shares the key too; a2 avoided it only because N-005 broke storage)
+  REPRO: reverify_hydration src/csbox + drivers/csbox_check.py on a3 (dev 3103/8103 or prod+redis): choose on all boxes, reload → `none` shows "user-plain"; a single localStorage `box_pref`
+  EVIDENCE: a3_class_state/out/e2e/csbox-{a3-dev,a3-prod-redis,alpha2-dev,stable-dev}.json
+- TITLE: Concurrent class-default assign/restore from several threads leaves a stale patched default (not thread-safe)
+  SEVERITY: low
+  REGRESSION: no (a2 also corrupted, plus TypeErrors)
+  REPRO: from a3_class_state/probes: `EXPECT_VENV=a3_class_state-a3 $SB/envs/a3_class_state-a3/bin/python -I adv7495.py thread_stress` → count ≠ 0, `_f` left with a thread's factory
+  EVIDENCE: a3_class_state/logs/adv/adv7495.{a3,a3-py311,a3-py314}.txt
+- TITLE: AppHarness: a second app in one pytest process that renders a state from a shared module crashes on first render (missing StateContext) on 0.10; 0.9.12 renders
+  SEVERITY: low
+  REGRESSION: yes (vs 0.9.12; same on a2; unrelated to #7495; related to N-041/N-003)
+  REPRO: venv `reflex[db,testing]==0.10.0a3` + `reflex-base==0.10.0a3` + `pydantic<2.14` + pytest + `playwright==1.63.0`; from a3_class_state/harness: `H_ASSIGN=0 H_VENV=<venv> H_FP=3110 H_BP=8110 PYTHONPATH=$PWD/shared <venv>/bin/python -m pytest -s -p no:cacheprovider test_shared_state_harness.py` → 2 failed, 1 passed; `TypeError: Cannot read properties of undefined (reading '$$typeof') at exports.useContext`
+  EVIDENCE: a3_class_state/logs/adv/harness-a3_class_state-a3h-assign{0,1}.log, harness-a3_class_state-a2h.log, harness-a3_class_state-s912h.log
+NOT_COVERED: Disk store across real server restarts: `reflex run` wipes `.states` at startup, so this was covered with StateManagerDisk at Python level. clse2e was not run in prod (core_a2/n005/csbox did run in prod+redis). Free-threaded Python builds were not tried. The known #7498/#7499 storage issues were observed only and not re-reported.

@@ -1,0 +1,207 @@
+{
+ "tag": "gh-up-prod",
+ "results": [
+  {
+   "name": "persist: selected users restored from LocalStorage written by previous run",
+   "status": "pass",
+   "detail": "chips=['alice', 'carol'] localstorage=['alice', 'carol']",
+   "t": 7.445
+  },
+  {
+   "name": "persist: user stats restored (textarea JSON + chart)",
+   "status": "pass",
+   "detail": "logins=['alice', 'carol'] expected(LocalStorage)=['alice', 'carol'] bars=8",
+   "t": 7.466
+  },
+  {
+   "name": "persist: alice NOT refetched on load (data came from LocalStorage)",
+   "status": "pass",
+   "detail": "before={'alice': 3, 'bob': 1, 'ghost1': 542, 'carol': 1} after={'alice': 3, 'bob': 1, 'ghost1': 542, 'carol': 1}",
+   "t": 7.627
+  },
+  {
+   "name": "persist: add carol after restart",
+   "status": "pass",
+   "detail": "logins=['alice', 'carol']",
+   "t": 8.025
+  },
+  {
+   "name": "persist: remove ghost1",
+   "status": "pass",
+   "detail": "['alice', 'carol']",
+   "t": 8.041
+  },
+  {
+   "name": "reload: users + stats restored from LocalStorage",
+   "status": "pass",
+   "detail": "chips=['alice', 'carol'] logins=['alice', 'carol'] expected=['alice', 'carol']/['alice', 'carol']",
+   "t": 10.516
+  },
+  {
+   "name": "reload: no refetch for users already in user_stats_json",
+   "status": "pass",
+   "detail": "refetched={} (ghost* refetch is expected app behaviour)",
+   "t": 10.516
+  },
+  {
+   "name": "widget: dynamic route renders heading (param lower-cased)",
+   "status": "pass",
+   "detail": "",
+   "t": 11.114
+  },
+  {
+   "name": "widget: chart bars + legend",
+   "status": "pass",
+   "detail": "bars=4",
+   "t": 11.548
+  },
+  {
+   "name": "widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12)",
+   "status": "anomaly",
+   "detail": "['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']",
+   "t": 11.685
+  },
+  {
+   "name": "widget: last_fetch LocalStorage written",
+   "status": "pass",
+   "detail": "",
+   "t": 11.711
+  },
+  {
+   "name": "widget: reload within 60s served from LocalStorage cache (no refetch)",
+   "status": "pass",
+   "detail": "first load fetched 0, reload fetched 0, bars=4",
+   "t": 14.162
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 14.713
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 14.713
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 9.437,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 10.65,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 11.844,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 4.412,
+   "dir": "open",
+   "payload": "ws://localhost:3224/_event/?token=413ef6f4-01ec-426a-b6b5-16d4bba35dd8&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 4.412,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"aIr7xOEBsdcXdTCmAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  "{\"page\": \"main\", \"t\": 4.635, \"dir\": \"out\", \"len\": 1839, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_\\\":\\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"Alice\\\\\\\", \\\\\\\"login\\\\\\\": \\\\\\\"alice\\\\\\\", \\\\\\\"contributionsCollection\\\\\\\": {\\\\\\\"totalCommitContributions\\\\\\\": 491, \\\\\\\"totalPullRequestReviewContributions\\\\\\\": 54}, \\\\\\\"repositoriesContributedTo\\\\\\\": 26, \\\\\\\"pullRequests...",
+  {
+   "page": "main",
+   "t": 4.69,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Ntwtfks4qLoi0wzdAAAB\"}"
+  },
+  "{\"page\": \"main\", \"t\": 4.691, \"dir\": \"in\", \"len\": 3209, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3224\\\",\\\"origin\\\":\\\"http://localhost:3224\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_vers...",
+  "{\"page\": \"main\", \"t\": 4.691, \"dir\": \"in\", \"len\": 1456, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.github_stats___github_stats____state\\\":{\\\"selected_users_json_rx_state_\\\":\\\"[\\\\\\\"alice\\\\\\\", \\\\\\\"carol\\\\\\\"]\\\",\\\"user_stats_json_rx_state_\\\":\\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"Alice\\\\\\\", \\\\\\\"login\\\\\\\": \\\\\\\"alice\\\\\\\", \\\\\\\"contributionsCollection\\\\\\\": {\\\\\\\"totalCommitContributions\\\\\\\": 491, \\\\\\\"totalPullRequestReviewContributions\\\\\\\": 54}, \\\\\\\"repositoriesContributedTo\\\\\\\": 26, \\\\\\\"pullRe...",
+  {
+   "page": "main",
+   "t": 4.691,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  "{\"page\": \"main\", \"t\": 4.691, \"dir\": \"in\", \"len\": 1744, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.github_stats___github_stats____state\\\":{\\\"selected_users_rx_state_\\\":[\\\"alice\\\",\\\"carol\\\"],\\\"user_stats_rx_state_\\\":[{\\\"name\\\":\\\"Alice\\\",\\\"login\\\":\\\"alice\\\",\\\"contributionsCollection\\\":{\\\"totalCommitContributions\\\":491,\\\"totalPullRequestReviewContributions\\\":54},\\\"repositoriesContributedTo\\\":26,\\\"pullRequests\\\":252,\\\"mergedPullRequests\\\":191,\\\"openIssues\\\":38,\\\"closedIssu...",
+  "... 41 more frames trimmed"
+ ],
+ "notes": {
+  "stub_counts_start": {
+   "alice": 3,
+   "bob": 1,
+   "ghost1": 542,
+   "carol": 1
+  },
+  "localstorage_before_load": null,
+  "localstorage_on_load": {
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}]",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": "[\"alice\", \"carol\"]",
+   "theme": "system",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": "[\"alice\", 1791405482.8062935]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mergedPullRequests\": 191, \"openIssues\": 38, \"closedIssues\": 25, \"followers\": 185, \"repositoryDiscussions\": 7, \"repositoryDiscussionComments\": 19}, {\"name\": \"Carol\", \"login\": \"carol\", \"contributionsCollection\": {\"totalCommitContributions\": 319, \"totalPullRequestReviewContributions\": 20}, \"repositoriesContributedTo\": 17, \"pullRequests\": 245, \"mergedPullRequests\": 91, \"openIssues\": 23, \"closedIssues\": 77, \"followers\": 302, \"repositoryDiscussions\": 16, \"repositoryDiscussionComments\": 6}]"
+  },
+  "prev_selected_users": [
+   "alice",
+   "carol"
+  ],
+  "reload_refetched": {},
+  "widget_theme_classes": [
+   "radix-themes css-0 light root=true",
+   "radix-themes css-0 root=false"
+  ],
+  "widget_localstorage": {
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestRevie",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": "[\"alice\", \"carol\"]",
+   "theme": "system",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": "[\"alice\", 1791405482.8062935]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestRevie"
+  },
+  "widget_counts": {
+   "before": {
+    "alice": 3,
+    "bob": 1,
+    "ghost1": 542,
+    "carol": 1
+   },
+   "after_first": {
+    "alice": 3,
+    "bob": 1,
+    "ghost1": 542,
+    "carol": 1
+   },
+   "after_reload": {
+    "alice": 3,
+    "bob": 1,
+    "ghost1": 542,
+    "carol": 1
+   }
+  },
+  "final_localstorage": {
+   "reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mer",
+   "reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_": "[\"alice\", \"carol\"]",
+   "theme": "system",
+   "reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_": "[\"alice\", 1791405482.8062935]",
+   "last_compiled_theme": "system",
+   "reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_": "[{\"name\": \"Alice\", \"login\": \"alice\", \"contributionsCollection\": {\"totalCommitContributions\": 491, \"totalPullRequestReviewContributions\": 54}, \"repositoriesContributedTo\": 26, \"pullRequests\": 252, \"mer"
+  }
+ }
+}

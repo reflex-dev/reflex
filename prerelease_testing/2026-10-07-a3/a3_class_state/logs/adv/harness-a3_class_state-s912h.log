@@ -1,0 +1,78 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/harness
+plugins: platformdirs-4.12.3, anyio-4.15.1
+collected 3 items
+
+test_shared_state_harness.py ────────────────────────────── Initializing happa ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [7341]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8110 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3110/
+
+INFO:     127.0.0.1:39762 - "WebSocket /_event/?token=6616ed48-f270-4f72-a832-cb061235e924&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:39770 - "WebSocket /_event/?token=43a95119-577a-48ee-afa0-ec5e8eecf618&EIO=4&transport=websocket" [accepted]
+
+RESULT A: {'field_defaults': (0, "'light'", 'LocalStorage'), 'is_client_storage': True, 'initial': ('10', 'dark-a'), 'after_bump': ('10', 'dark-a'), 'localStorage_h_theme': 'light+', 'new_tab': ('10', 'dark-a'), 'errors': []}
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [7341]
+.────────────────────────────── Initializing happb ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+INFO:     Started server process [7341]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8110 (Press CTRL+C to quit)
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3110/
+
+INFO:     127.0.0.1:34294 - "WebSocket /_event/?token=c4bad8ce-67b2-4f61-ccf9-cfb1886e40b0&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:34302 - "WebSocket /_event/?token=4c42f42d-3591-43a9-eea8-f77f74a34c89&EIO=4&transport=websocket" [accepted]
+
+RESULT B: {'field_defaults': (0, "'light'", 'LocalStorage'), 'is_client_storage': True, 'initial': ('10', 'dark-a'), 'after_bump': ('10', 'dark-a'), 'localStorage_h_theme': None, 'new_tab': ('10', 'dark-a'), 'errors': []}
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [7341]
+.────────────────────────────── Initializing happc ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [7341]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8110 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3110/
+
+INFO:     127.0.0.1:48248 - "WebSocket /_event/?token=89ae601f-2dfa-42c9-c16c-81fe273e0f7c&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:48258 - "WebSocket /_event/?token=1a189bf2-e46c-46cb-cdf1-60adc14fc3cb&EIO=4&transport=websocket" [accepted]
+
+RESULT C: {'field_defaults': (0, "'light'", 'LocalStorage'), 'is_client_storage': True, 'initial': ('20', 'dark-c'), 'after_bump': ('20', 'dark-c'), 'localStorage_h_theme': None, 'new_tab': ('20', 'dark-c'), 'errors': []}
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [7341]
+.
+
+========================= 3 passed in 96.49s (0:01:36) =========================

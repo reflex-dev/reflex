@@ -9,7 +9,7 @@ EXCL=(--exclude=.web --exclude=node_modules --exclude=.states --exclude=assets/e
 cp -r $W/drivers/. $DEST/drivers/; cp -r $W/scripts/. $DEST/scripts/; cp -r $W/bin/. $DEST/bin/
 rm -rf $DEST/drivers/__pycache__ $DEST/scripts/__pycache__
 # outputs: JSON + JPEG only (PNG converted, quality 60)
-( cd $W/out && find . -type f \( -name "*.md" -o -name "*.txt" -o -name "*.jpg" \) | tar -cf - -T - ) | ( cd $DEST/out && tar -xf - )
+( cd $W/out && find . -type f \( -name "*.md" -o -name "*.txt" -o -name "*.jpg" \) -not -path "./ag_dev_a3*/ag_grid-smoke-route_*" -not -path "./*_smoke/*" -not -name "warm-*" | tar -cf - -T - ) | ( cd $DEST/out && tar -xf - )
 $SB/envs/driver/bin/python -I $W/bin/compact_json.py $W/out $DEST/out
 # screenshots of repeat scenarios (same page state as another shot) are not copied, to keep DEST small
 ( cd $W/out && find . -name "*.png" | grep -vE '/(s3_|s4_|s5_|s6_|s7_|s10_|r1b_|r2b_|r2c_|r2d_|r2e_|r3b_|r5b_)' ) | while read -r f; do
@@ -19,4 +19,7 @@ done
 for f in $W/logs/*.log; do
   grep -vE "gzip:|^Debug: build/client/assets|^\s*$|^Debug: Copying|^\.web/build/client/" "$f" | head -c 200000 > $DEST/logs/$(basename $f)
 done
+du -sh $DEST
+# shrink large JPEGs copied verbatim (qa_common drivers write 1400px JPEGs)
+find $DEST/out -name "*.jpg" -size +45k | while read -r f; do convert "$f" -resize '640x>' -quality 40 "$f"; done
 du -sh $DEST

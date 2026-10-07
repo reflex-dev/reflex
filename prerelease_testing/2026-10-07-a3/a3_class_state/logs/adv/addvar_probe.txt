@@ -1,0 +1,24 @@
+reflex 0.10.0a3
+add_var('dyn', int, 3)                           -> None
+fresh .dyn                                       -> 3
+Dyn.dyn is a Var                                 -> True
+Dyn.dyn = 7 -> fresh                             -> 7
+del Dyn.dyn -> fresh                             -> 3
+add_var('dyn2', str, 'x') then Dyn.dyn2 = 'y'    -> 'y'
+instance write dyn2                              -> 'z'
+reflex 0.10.0a2
+add_var('dyn', int, 3)                           -> None
+fresh .dyn                                       -> 3
+Dyn.dyn is a Var                                 -> True
+Dyn.dyn = 7 -> fresh                             -> 7
+del Dyn.dyn -> fresh                             -> EXC AttributeError: 'Dyn' object has no attribute 'dyn'
+add_var('dyn2', str, 'x') then Dyn.dyn2 = 'y'    -> 'y'
+instance write dyn2                              -> 'z'
+reflex 0.9.12
+add_var('dyn', int, 3)                           -> None
+fresh .dyn                                       -> 3
+Dyn.dyn is a Var                                 -> True
+Dyn.dyn = 7 -> fresh                             -> 3
+del Dyn.dyn -> fresh                             -> 3
+add_var('dyn2', str, 'x') then Dyn.dyn2 = 'y'    -> 'x'
+instance write dyn2                              -> 'z'

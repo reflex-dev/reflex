@@ -1,0 +1,200 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/harness
+plugins: platformdirs-4.12.3, anyio-4.15.1
+collected 3 items
+
+test_shared_state_harness.py ────────────────────────────── Initializing happa ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [3983]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8110 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3110/
+
+INFO:     127.0.0.1:57700 - "WebSocket /_event/?token=bd0f9019-d388-4b49-ad98-43696452f023&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:57710 - "WebSocket /_event/?token=87170ce9-ed3b-47fd-9ddd-027ccc23fca1&EIO=4&transport=websocket" [accepted]
+
+RESULT A: {'field_defaults': (10, "'dark-a'", 'str'), 'is_client_storage': False, 'initial': ('10', 'dark-a'), 'after_bump': ('11', 'dark-a+'), 'localStorage_h_theme': None, 'new_tab': ('10', 'dark-a'), 'errors': []}
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3983]
+.────────────────────────────── Initializing happb ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [3983]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8110 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3110/
+
+INFO:     127.0.0.1:58016 - "WebSocket /_event/?token=653b8bde-7d55-4d95-a3f2-efaa7decaace&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3983]
+F────────────────────────────── Initializing happc ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [3983]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8110 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3110/
+
+INFO:     127.0.0.1:49628 - "WebSocket /_event/?token=f0a72232-bd0a-4e3d-e0af-f8a47e337686&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3983]
+F
+
+=================================== FAILURES ===================================
+_______________________________ test_app[B-AppB] _______________________________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f886cad55e0>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-121'), _retention_count=3, _retention_policy='all')
+tag = 'B', src = <function AppB at 0x7f886a17fba0>
+
+    @pytest.mark.parametrize("tag,src", [("A", AppA), ("B", AppB), ("C", AppC)])
+    def test_app(tmp_path_factory, tag, src):
+        with PinnedHarness.create(root=tmp_path_factory.mktemp(f"h{tag}"), app_source=src, app_name=f"happ{tag.lower()}") as h:
+>           _drive(h, tag)
+
+test_shared_state_harness.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test_shared_state_harness.py:103: in _drive
+    pg.wait_for_function("() => document.querySelector('#hyd')?.textContent === 'H:yes'", timeout=60000)
+../../../envs/a3_class_state-a2h/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12809: in wait_for_function
+    self._sync(
+../../../envs/a3_class_state-a2h/lib/python3.12/site-packages/playwright/_impl/_page.py:1153: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../envs/a3_class_state-a2h/lib/python3.12/site-packages/playwright/_impl/_frame.py:941: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+../../../envs/a3_class_state-a2h/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f88623a7890>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f8862087b00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 60000ms exceeded.
+
+../../../envs/a3_class_state-a2h/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+------------------------------ Captured log call -------------------------------
+ERROR    reflex.app:app.py:135 [Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '$$typeof')
+TypeError: Cannot read properties of undefined (reading '$$typeof')
+    at exports.useContext (http://localhost:3110/node_modules/.vite/deps/react.js?v=6303f54e:726:12)
+    at Bare (http://localhost:3110/app_components/happb/happb.jsx:24:65)
+    at Object.react_stack_bottom_frame (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=6303f54e:14142:12)
+    at renderWithHooks (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=6303f54e:4400:19)
+    at updateFunctionComponent (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=6303f54e:5775:16)
+    at updateSimpleMemoComponent (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=6303f54e:5633:11)
+    at updateMemoComponent (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=6303f54e:5608:290)
+    at beginWork (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=6303f54e:6461:21)
+    at runWithFiberInDEV (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=6303f54e:944:66)
+    at performUnitOfWork (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=6303f54e:9148:92)
+_______________________________ test_app[C-AppC] _______________________________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f886cad55e0>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-121'), _retention_count=3, _retention_policy='all')
+tag = 'C', src = <function AppC at 0x7f886a17fc40>
+
+    @pytest.mark.parametrize("tag,src", [("A", AppA), ("B", AppB), ("C", AppC)])
+    def test_app(tmp_path_factory, tag, src):
+        with PinnedHarness.create(root=tmp_path_factory.mktemp(f"h{tag}"), app_source=src, app_name=f"happ{tag.lower()}") as h:
+>           _drive(h, tag)
+
+test_shared_state_harness.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test_shared_state_harness.py:103: in _drive
+    pg.wait_for_function("() => document.querySelector('#hyd')?.textContent === 'H:yes'", timeout=60000)
+../../../envs/a3_class_state-a2h/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12809: in wait_for_function
+    self._sync(
+../../../envs/a3_class_state-a2h/lib/python3.12/site-packages/playwright/_impl/_page.py:1153: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../envs/a3_class_state-a2h/lib/python3.12/site-packages/playwright/_impl/_frame.py:941: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+../../../envs/a3_class_state-a2h/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f88622ca4b0>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f8862083b00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 60000ms exceeded.
+
+../../../envs/a3_class_state-a2h/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+------------------------------ Captured log call -------------------------------
+ERROR    reflex.app:app.py:135 [Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '$$typeof')
+TypeError: Cannot read properties of undefined (reading '$$typeof')
+    at exports.useContext (http://localhost:3110/node_modules/.vite/deps/react.js?v=2b642cc8:726:12)
+    at Bare (http://localhost:3110/app_components/happc/happc.jsx:24:65)
+    at Object.react_stack_bottom_frame (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=2b642cc8:14142:12)
+    at renderWithHooks (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=2b642cc8:4400:19)
+    at updateFunctionComponent (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=2b642cc8:5775:16)
+    at updateSimpleMemoComponent (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=2b642cc8:5633:11)
+    at updateMemoComponent (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=2b642cc8:5608:290)
+    at beginWork (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=2b642cc8:6461:21)
+    at runWithFiberInDEV (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=2b642cc8:944:66)
+    at performUnitOfWork (http://localhost:3110/node_modules/.vite/deps/react-dom_client.js?v=2b642cc8:9148:92)
+=========================== short test summary info ============================
+FAILED test_shared_state_harness.py::test_app[B-AppB] - playwright._impl._err...
+FAILED test_shared_state_harness.py::test_app[C-AppC] - playwright._impl._err...
+=================== 2 failed, 1 passed in 178.94s (0:02:58) ====================
