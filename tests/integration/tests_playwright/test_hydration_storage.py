@@ -1,9 +1,10 @@
 """Browser regressions for client-storage writes during hydration and assigned defaults."""
 
-from collections.abc import Generator
+import re
+from collections.abc import Callable, Generator
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page, WebSocketRoute, expect
 
 from reflex.testing import AppHarness, AppHarnessProd
 
@@ -101,6 +102,31 @@ def HydrationStorageApp():
                 rx.button("Change", on_click=cls.change, id="change-pref"),
             )
 
+    class SyncState(rx.State):
+        value: str = rx.LocalStorage("", name="hydrate-sync", sync=True)
+
+        @rx.event
+        def set_value(self, value: str):
+            """Store a value that other tabs pick up.
+
+            Args:
+                value: The value to store.
+            """
+            self.value = value
+
+    def synced():
+        """Display a browser storage var synced across tabs.
+
+        Returns:
+            The page component.
+        """
+        return rx.box(
+            rx.text(SyncState.value, id="sync-value"),
+            rx.button("Old", on_click=SyncState.set_value("old"), id="set-old"),
+            rx.button("New", on_click=SyncState.set_value("new"), id="set-new"),
+            rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
+        )
+
     def index():
         """Display hydration and normalized storage values.
 
@@ -133,6 +159,7 @@ def HydrationStorageApp():
     app.add_page(index)
     app.add_page(index, route="/loaded", on_load=StorageState.load)
     app.add_page(assigned, route="/assigned")
+    app.add_page(synced, route="/synced")
 
 
 @pytest.fixture(scope="module", params=[AppHarness, AppHarnessProd])
@@ -262,3 +289,166 @@ def test_assigned_storage_default_persists(
     for var in VARS:
         expect(page.locator(f"#assigned-{var}")).to_have_text("changed")
     assert page.evaluate("sessionStorage.getItem('assigned-session')") == "changed"
+
+
+# Records every localStorage write of the synced var.
+RECORD_SYNC_WRITES = """
+window.syncWrites = [];
+const setItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function (key, value) {
+    if (key === "hydrate-sync") {
+        window.syncWrites.push(value);
+    }
+    return setItem.call(this, key, value);
+};
+"""
+
+
+def wait_until(page: Page, condition: Callable[[], bool]):
+    """Wait for a condition while Playwright keeps dispatching websocket messages.
+
+    Args:
+        page: The page whose event loop dispatches the messages.
+        condition: The condition to wait for.
+
+    Raises:
+        TimeoutError: If the condition does not hold within 10 seconds.
+    """
+    for _ in range(100):
+        if condition():
+            return
+        page.wait_for_timeout(100)
+    msg = "Condition not met within 10 seconds."
+    raise TimeoutError(msg)
+
+
+def test_synced_storage_echo_keeps_newer_value(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A booting tab does not write back a synced value another tab changed meanwhile.
+
+    The second tab boots with the stored value while its websocket replies are
+    held back; the first tab then stores a newer value. Once the replies arrive,
+    the second tab must not write the value it booted with over the newer one,
+    which would also echo it back to the first tab through a storage event.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    assert hydration_storage_app.frontend_url is not None
+    url = f"{hydration_storage_app.frontend_url.rstrip('/')}/synced"
+    page.goto(url)
+    expect(page.locator("#hydrated")).to_have_text("true")
+    page.locator("#set-old").click()
+    page.wait_for_function("localStorage.getItem('hydrate-sync') === 'old'")
+
+    sent: list[str] = []
+    held: list[str | bytes] = []
+    routes: list[WebSocketRoute] = []
+
+    def hold_replies(route: WebSocketRoute):
+        """Forward the page's messages; hold back the server's event replies.
+
+        Args:
+            route: The intercepted websocket.
+        """
+        server = route.connect_to_server()
+        routes.append(route)
+
+        def to_server(message: str | bytes):
+            sent.append(str(message))
+            server.send(message)
+
+        def to_page(message: str | bytes):
+            if routes and '"event"' in str(message):
+                held.append(message)
+            else:
+                route.send(message)
+
+        route.on_message(to_server)
+        server.on_message(to_page)
+
+    other = page.context.new_page()
+    other.add_init_script(RECORD_SYNC_WRITES)
+    other.route_web_socket(re.compile(r".*/_event"), hold_replies)
+    other.goto(url)
+    # The boot event is sent once the page's effects, storage listener included, ran.
+    wait_until(
+        other,
+        lambda: any("hydrate_and_load" in m and '"old"' in m for m in sent),
+    )
+
+    page.locator("#set-new").click()
+    page.wait_for_function("localStorage.getItem('hydrate-sync') === 'new'")
+    wait_until(
+        other,
+        lambda: any("update_vars_internal" in m and '"new"' in m for m in sent),
+    )
+
+    route = routes.pop()
+    for message in held:
+        route.send(message)
+    expect(other.locator("#hydrated")).to_have_text("true")
+    expect(other.locator("#sync-value")).to_have_text("new")
+    expect(page.locator("#sync-value")).to_have_text("new")
+    other.wait_for_timeout(500)
+    assert "old" not in other.evaluate("window.syncWrites")
+    assert page.evaluate("localStorage.getItem('hydrate-sync')") == "new"
+
+
+def test_synced_storage_event_sends_stored_value(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A late storage event syncs the value stored now, not the value in the event.
+
+    A tab can get the event of another tab's write after a later write, so the
+    event's ``newValue`` may already be stale.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    assert hydration_storage_app.frontend_url is not None
+    page.add_init_script(RECORD_SYNC_WRITES)
+    page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/synced")
+    expect(page.locator("#hydrated")).to_have_text("true")
+    page.evaluate("""() => {
+        localStorage.setItem('hydrate-sync', 'stored');
+        window.syncWrites.length = 0;
+        window.dispatchEvent(new StorageEvent('storage', {
+            key: 'hydrate-sync', oldValue: '', newValue: 'late',
+        }));
+    }""")
+    expect(page.locator("#sync-value")).to_have_text("stored")
+    page.wait_for_timeout(500)
+    assert page.evaluate("window.syncWrites") == []
+    assert page.evaluate("localStorage.getItem('hydrate-sync')") == "stored"
+
+
+def test_synced_storage_resyncs_after_crossed_echo(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A synced var whose echo crossed a newer stored value sends that value again.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    assert hydration_storage_app.frontend_url is not None
+    page.add_init_script(RECORD_SYNC_WRITES)
+    page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/synced")
+    expect(page.locator("#hydrated")).to_have_text("true")
+    # The event sends "sent"; another tab stores "newer" before its echo arrives.
+    page.evaluate("""() => {
+        localStorage.setItem('hydrate-sync', 'sent');
+        window.syncWrites.length = 0;
+        window.dispatchEvent(new StorageEvent('storage', {
+            key: 'hydrate-sync', oldValue: '', newValue: 'sent',
+        }));
+        localStorage.setItem('hydrate-sync', 'newer');
+    }""")
+    expect(page.locator("#sync-value")).to_have_text("newer")
+    page.wait_for_timeout(500)
+    assert page.evaluate("window.syncWrites") == ["newer"]
+    assert page.evaluate("localStorage.getItem('hydrate-sync')") == "newer"

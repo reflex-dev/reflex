@@ -53,6 +53,14 @@ let backend_state_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
+// The event that applies browser storage values changed in another tab.
+const UPDATE_VARS_INTERNAL =
+  "reflex___state____update_vars_internal_state.update_vars_internal";
+
+// Browser storage values this tab sent to the backend, oldest first, by state
+// key. The backend echoes them back, so that get_delta overrides see them.
+const sentStorageValues = {};
+
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
 // unrelated to the Reflex route, so the backend's on_load and dynamic-route
@@ -514,6 +522,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   // Send the event to the server.
   if (socket) {
     const routed_event = withRouterData(event, params);
+    recordSentStorageValues(routed_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(routed_event);
     socket.emit("event", routed_event);
@@ -702,6 +711,7 @@ export const connect = async (
   // the backend as CompileVars.CONNECT_AUTH_EVENT.
   const bootAuth = (first) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
     return { event: boot_event };
@@ -893,7 +903,20 @@ export const connect = async (
             on_hydrated_queue.length = 0;
           }
         }
-        applyClientStorageDelta(client_storage, update.delta);
+        const resync = applyClientStorageDelta(client_storage, update.delta);
+        if (resync) {
+          queueEvents(
+            [
+              ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
+                vars: resync,
+              }),
+            ],
+            socket,
+            false,
+            navigate,
+            params,
+          ).catch(reportStateUpdateError);
+        }
       }
       if (update.events && update.events.length > 0) {
         queueEvents(update.events, socket, false, navigate, params).catch(
@@ -1038,9 +1061,48 @@ export const hydrateClientStorage = (client_storage) => {
 };
 
 /**
+ * Remember the browser storage values an event sends to the backend.
+ * @param event The event about to be sent.
+ */
+const recordSentStorageValues = (event) => {
+  if (
+    event.name !== `${app.state_name}.hydrate_and_load` &&
+    event.name !== `${app.state_name}.${UPDATE_VARS_INTERNAL}`
+  ) {
+    return;
+  }
+  for (const [state_key, value] of Object.entries(event.payload.vars ?? {})) {
+    const sent = (sentStorageValues[state_key] ??= []);
+    sent.push(value);
+    // An echo a get_delta override dropped never arrives to consume its value.
+    if (sent.length > 16) {
+      sent.shift();
+    }
+  }
+};
+
+/**
+ * Consume the echo of a browser storage value this tab sent to the backend.
+ * Values sent before it are dropped too, as their echoes have passed.
+ * @param state_key The state key of the browser storage var.
+ * @param value The value the backend sent for it.
+ * @returns Whether the value echoes one this tab sent.
+ */
+const consumeStorageEcho = (state_key, value) => {
+  const sent = sentStorageValues[state_key];
+  const index = sent ? sent.indexOf(value) : -1;
+  if (index !== -1) {
+    sent.splice(0, index + 1);
+  }
+  return index !== -1;
+};
+
+/**
  * Update client storage values based on backend state delta.
  * @param client_storage The client storage object from context.js
  * @param delta The state update from the backend
+ * @returns The synced localStorage values to send again, as the backend echoed
+ *   older ones, or undefined.
  */
 const applyClientStorageDelta = (client_storage, delta) => {
   // find the main state and check for is_hydrated
@@ -1059,34 +1121,48 @@ const applyClientStorageDelta = (client_storage, delta) => {
     }
   }
   // Save known client storage values to cookies and localStorage.
+  let resync;
   for (const substate in delta) {
     for (const key in delta[substate]) {
       const state_key = `${substate}.${key}`;
+      const value = delta[substate][key];
+      // Rewriting a value this tab sent would overwrite a newer one another
+      // tab stored meanwhile and, for a synced var, echo it to the other tabs.
+      // A cookie is still rewritten, which renews its max_age.
+      const echo = consumeStorageEcho(state_key, value);
       if (client_storage.cookies && state_key in client_storage.cookies) {
         const cookie_options = { ...client_storage.cookies[state_key] };
         const cookie_name = cookie_options.name || state_key;
         delete cookie_options.name; // name is not a valid cookie option
-        cookies.set(cookie_name, delta[substate][key], cookie_options);
+        cookies.set(cookie_name, value, cookie_options);
+      } else if (typeof window === "undefined") {
+        continue;
       } else if (
         client_storage.local_storage &&
-        state_key in client_storage.local_storage &&
-        typeof window !== "undefined"
+        state_key in client_storage.local_storage
       ) {
         const options = client_storage.local_storage[state_key];
-        localStorage.setItem(options.name || state_key, delta[substate][key]);
+        const name = options.name || state_key;
+        if (!echo) {
+          localStorage.setItem(name, value);
+        } else if (options.sync) {
+          // Another tab may have stored a newer value after this tab sent it.
+          const stored = localStorage.getItem(name);
+          if (stored !== value) {
+            (resync ??= {})[state_key] = stored;
+          }
+        }
       } else if (
+        !echo &&
         client_storage.session_storage &&
-        state_key in client_storage.session_storage &&
-        typeof window !== "undefined"
+        state_key in client_storage.session_storage
       ) {
         const session_options = client_storage.session_storage[state_key];
-        sessionStorage.setItem(
-          session_options.name || state_key,
-          delta[substate][key],
-        );
+        sessionStorage.setItem(session_options.name || state_key, value);
       }
     }
   }
+  return resync;
 };
 
 /**
@@ -1267,11 +1343,12 @@ export const useEventLoop = (
     const handleStorage = (e) => {
       if (storage_to_state_map[e.key]) {
         const vars = {};
-        vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = ReflexEvent(
-          `${app.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars },
-        );
+        // A tab gets the events of other tabs' writes after its own newer
+        // write too, so send the value stored now rather than e.newValue.
+        vars[storage_to_state_map[e.key]] = localStorage.getItem(e.key);
+        const event = ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
+          vars: vars,
+        });
         addEvents([event], e);
       }
     };
