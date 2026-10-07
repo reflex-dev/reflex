@@ -1,0 +1,22 @@
+## written repro
+reflex 0.10.0a2 default=0: saved count=42 schema=bbd147dc3cdaec5701080b994dc1875a
+reflex 0.9.12 default=0: StateSchemaMismatchError: 
+## full matrix
+saved=alpha2(d0) -> reflex 0.10.0a2 default=0: LOADED count=42 label='saved' _secret='be'
+saved=alpha2(d0) -> reflex 0.10.0a2 default=5: LOADED count=42 label='saved' _secret='be'
+saved=alpha2(d0) -> reflex 0.10.0a1 default=0: StateSchemaMismatchError: 
+saved=alpha2(d0) -> reflex 0.10.0a1 default=5: StateSchemaMismatchError: 
+saved=alpha2(d0) -> reflex 0.9.12 default=0: StateSchemaMismatchError: 
+saved=alpha2(d0) -> reflex 0.9.12 default=5: StateSchemaMismatchError: 
+saved=alpha(d0) -> reflex 0.10.0a2 default=0: LOADED count=42 label='saved' _secret='be'
+saved=alpha(d0) -> reflex 0.10.0a2 default=5: StateSchemaMismatchError: 
+saved=alpha(d0) -> reflex 0.10.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=alpha(d0) -> reflex 0.10.0a1 default=5: StateSchemaMismatchError: 
+saved=alpha(d0) -> reflex 0.9.12 default=0: LOADED count=42 label='saved' _secret='be'
+saved=alpha(d0) -> reflex 0.9.12 default=5: StateSchemaMismatchError: 
+saved=stable(d0) -> reflex 0.10.0a2 default=0: LOADED count=42 label='saved' _secret='be'
+saved=stable(d0) -> reflex 0.10.0a2 default=5: StateSchemaMismatchError: 
+saved=stable(d0) -> reflex 0.10.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=stable(d0) -> reflex 0.10.0a1 default=5: StateSchemaMismatchError: 
+saved=stable(d0) -> reflex 0.9.12 default=0: LOADED count=42 label='saved' _secret='be'
+saved=stable(d0) -> reflex 0.9.12 default=5: StateSchemaMismatchError: 

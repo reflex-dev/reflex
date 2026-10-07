@@ -36,7 +36,7 @@ train) and 0.9.12.
 | F-004 class-level assignment replaces descriptor | MED regression | **fixed** (#7461: descriptor kept, fresh/pickled instances read the assigned default, dev writes and `reset()` work, e2e dev and prod+redis) — new gaps N-004/N-005 | reverify_core |
 | F-005 sqlmodel<0.0.45 cap | MED regression | **fixed** (sqlmodel 0.0.48 resolves; `UTCDateTime()` migrations apply on a fresh db; aware round trip identical to 0.9.12+0.0.47) — with caveats: N-001 below, and a1→a2 `uv -U` upgraders of a naive-datetime app silently change semantics with no release note for #7462 (N-002) | reverify_db_install |
 | F-006 component floors unchanged | MED release-eng | **fixed** (every pip/uv upgrade variant from 0.9.12 moves all 13 component packages; fresh `pip install reflex==0.10.0a2` without `--pre` resolves the full train; formapp submits the fixed #7227 payload) | reverify_db_install |
-| F-007 npm SIGTERM hang | MED pre-existing | **still broken** (3/3 on a2; a1 and 0.9.12 identical; bun clean) | reverify_db_install |
+| F-007 npm SIGTERM hang | MED pre-existing | **still broken on Linux** (3/3 on a2; a1 and 0.9.12 identical; bun clean). On macOS arm64 (other session, `macos_lifecycle`): a1 and a2 exit cleanly in <0.3 s, 0.9.12 still hangs — platform-scoped; the Linux finding stands | reverify_db_install, macos_lifecycle |
 | F-008 >1 MB storage reconnect storm | MED pre-existing | pending | reverify_hydration |
 | F-010 pre-connect nav on_load | LOW pre-existing | pending | reverify_hydration |
 | F-011 forward-ref TypeError | LOW regression | **still broken** | reverify_core |
@@ -115,7 +115,38 @@ train) and 0.9.12.
 - Assigning on a mixin only affects states defined afterwards (`U1/U2/U3` → `(5, 1, 7)`); a runtime `type(self).count = 77`
   is per worker process (dev 77, prod with 6 granian workers: a new tab sees 20). Script: `derive_g_assign.py`; e2e `/cs` `reconf_b`.
 
+### N-010: DataEditor `get_cell_content`/data callback escapes the `rx.foreach` variable scope — zero editors render, page falls into the error boundary (MEDIUM, pre-existing)
+- Item: `dataeditor` (other session, macOS; Chromium + WebKit) | Regression: no (0.9.12, a1 and a2 identical, dev and prod) | Verifier: that session's own independent control (a memo-wrapped foreach renders)
+- Repro: `prerelease_testing/2026-10-07/board/findings-inbox/dataeditor-1.md` (bootstrap_from_freezes.sh, `/de-foreach`, `focused_driver.py --groups de_foreach`).
+- Root cause guess: published `reflex_components_dataeditor/dataeditor.py:472-499` `add_hooks` emits a `getData` callback that references the foreach item var outside the map lambda. Evidence: `dataeditor/de/runs/alpha2-dev/results.json`, `shots/alpha2-dev-de-foreach.png`.
+
+### N-011: Starting a DataEditor edit by typing (without Enter) loses the leading characters (MEDIUM, pre-existing)
+- Item: `dataeditor` | Regression: no (all trains, dev and prod; human-speed 120 ms/char typing "Slow" yields "low"; pressing one key, waiting 800 ms, then typing works).
+- Repro: inbox `dataeditor-2.md`; `typing_driver.py`. Root cause unknown (the first overlay editor is lazily imported in the Glide bundle).
+
+### N-012: DataEditor with `on_delete` bound dispatches the selection, then throws `TypeError: undefined.length` and never clears the cell (MEDIUM, pre-existing)
+- Item: `dataeditor` | Regression: no (stable and a2; only with `on_delete` bound).
+- Repro: inbox `dataeditor-3.md`. Root cause guess: `dataeditor.py:365` exposes a plain EventHandler; the generated `onDelete` callback returns `addEvents` (async) where Glide expects a boolean/GridSelection, so it calls `shiftSelection` on the promise and reads `columns.length`.
+
+### N-013: Escape right after opening a single-image preview leaves the carousel open (LOW, pre-existing)
+- Item: `dataeditor` | Regression: no. Repro: inbox `dataeditor-4.md` (`--groups de_overlay`). Multi-image preview after clicking an arrow, and text-editor Escape, work.
+
+### N-014: Radix form controls' synthetic clicks throw `undefined[0]` when a DataEditor is on the page (LOW, pre-existing)
+- Item: `dataeditor` | Regression: no (a1/a2/stable; controls still update; no-grid control clean).
+- Root cause guess: Glide's global click handler treats a non-MouseEvent as a TouchEvent and reads `ev.changedTouches[0]`; Radix hidden inputs dispatch a plain `Event('click')`. Repro: inbox `dataeditor-5.md` (`delete_app` fixture + `drive_form_grid.py`).
+
+Also from `dataeditor` (other session): named `rx.select` payloads submit correctly on all three trains and both engines (the 10-06 `f_select` lead was an id-only select: stable submits `null`, the alphas omit the key — usage context, not a release bug); nested-dialog form event propagation predates the train and `stop_propagation` prevents it; exact wheel diffs of dataeditor 0.10.0a1, react-player 0.10.0a1, sonner 0.10.0a1 and lucide 1.1.0a1 show only Python/sibling floor changes.
+
 ## Cluster summaries
+
+### `dataeditor` (other session, macOS arm64, Chromium + WebKit) — done
+170 editor assertions (139 pass / 31 fail) and 438 forms/misc assertions (392 / 46) on 0.10.0a2 with 0.10.0a1 and 0.9.12
+baselines, dev and prod. Five pre-existing component defects (N-010..N-014), no new 0.10 regression. Charts, Plotly,
+Shiki/Markdown/Moment, Unicode downloads, match/memo updates, toast/icon all pass. Results: `board/results/dataeditor.md`.
+
+### `macos_lifecycle` (other session, macOS 26.6.2 arm64, Node 26.8.1 / npm 11.19.0) — done
+0.10.0a2 passes browser startup, Unicode paths and input, reload, HMR, npm and bun dev, bun prod smoke. F-007 does not
+reproduce on macOS with a1 or a2 (clean exit in <0.3 s); 0.9.12 still hangs. Results: `board/results/macos_lifecycle.md`.
 
 ### `reverify_core` (pass: 16, anomaly: 6, fail: 2) — done
 F-001 changed-and-documented (enterprise half fixed), F-004 fixed; F-011/012/013/014/016/018 unchanged. #7461 (class

@@ -1,0 +1,73 @@
+{
+ "0_initial": {
+  "a_plain": "assigned",
+  "b_facplain": "assigned",
+  "c_facls": "assigned",
+  "d_lsval": "assigned",
+  "e_ctrl": "d",
+  "f_ck_plain": "assigned",
+  "g_ck_lsval": "assigned",
+  "cs_value": "cs-initial"
+ },
+ "0_storage": {
+  "local": {
+   "theme": "system",
+   "last_compiled_theme": "system"
+  },
+  "cookie": ""
+ },
+ "1_after_change": {
+  "a_plain": "changed-a_plain",
+  "b_facplain": "changed-b_facplain",
+  "c_facls": "changed-c_facls",
+  "d_lsval": "changed-d_lsval",
+  "e_ctrl": "changed-e_ctrl",
+  "f_ck_plain": "changed-f_ck_plain",
+  "g_ck_lsval": "changed-g_ck_lsval",
+  "cs_value": "changed-cs"
+ },
+ "1_storage": {
+  "local": {
+   "k_lsval": "changed-d_lsval",
+   "theme": "system",
+   "k_ctrl": "changed-e_ctrl",
+   "last_compiled_theme": "system",
+   "k_facls": "changed-c_facls"
+  },
+  "cookie": "k_ck_val=changed-g_ck_lsval"
+ },
+ "2_new_tab_same_browser": {
+  "a_plain": "assigned",
+  "b_facplain": "assigned",
+  "c_facls": "changed-c_facls",
+  "d_lsval": "changed-d_lsval",
+  "e_ctrl": "changed-e_ctrl",
+  "f_ck_plain": "assigned",
+  "g_ck_lsval": "changed-g_ck_lsval",
+  "cs_value": "cs-initial"
+ },
+ "3_reload_tab1_same_token": {
+  "a_plain": "changed-a_plain",
+  "b_facplain": "changed-b_facplain",
+  "c_facls": "changed-c_facls",
+  "d_lsval": "changed-d_lsval",
+  "e_ctrl": "changed-e_ctrl",
+  "f_ck_plain": "changed-f_ck_plain",
+  "g_ck_lsval": "changed-g_ck_lsval",
+  "cs_value": "changed-cs"
+ },
+ "persisted_in_new_tab": {
+  "a_plain": false,
+  "b_facplain": false,
+  "c_facls": true,
+  "d_lsval": true,
+  "e_ctrl": true,
+  "f_ck_plain": false,
+  "g_ck_lsval": true,
+  "cs_value": false
+ },
+ "console": [
+  "[tab2] log: Disconnect websocket on pagehide",
+  "[tab1] log: Disconnect websocket on page navigation"
+ ]
+}
