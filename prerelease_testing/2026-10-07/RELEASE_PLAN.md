@@ -1,7 +1,6 @@
 # Release plan — what blocks 0.10.0 after the 2026-10-07 re-verification (train r/pre-2026.10.06-37579583012)
 
-Written at 2026-10-07 ~14:00 UTC with one independent verification (N-032 / N-033) still running; its verdict is
-folded in when it lands. Rubric (from the testing skill): fix before release = confirmed regression vs 0.9.12,
+Written at 2026-10-07 ~14:10 UTC after every cluster and all seven independent verifications completed. Rubric (from the testing skill): fix before release = confirmed regression vs 0.9.12,
 security-relevant, significant user impact, or trivially small. Each entry names the rubric arm that put it there.
 Repros and evidence: [FINDINGS.md](./FINDINGS.md). The 10-06 plan is superseded by this one; items it listed that
 the new train fixed (F-001 enterprise half, F-002, F-003, F-004, F-005, F-006) are not repeated.
@@ -27,8 +26,9 @@ the new train fixed (F-001 enterprise half, F-002, F-003, F-004, F-005, F-006) a
   only hides the ordering). Separately, reflex-enterprise can drop the `typeof __reflex` guard in
   `formatColumnDefs` (`aggrid.py:2286-2290`) so already-shipped wheels stop depending on boot order. Regression
   arm + significant user impact (documented pattern, prod).
-- **N-032** (HIGH, regression since a1, verification pending) — enterprise OIDC: logout in one tab leaves other
-  tabs signed in; a tab booting with a stale `latest_access_token_hash_ls` is never corrected because the single
+- **N-032** (HIGH, regression since a1, CONFIRMED) — enterprise OIDC: logout in one tab leaves other tabs signed
+  in (race-free form: log out in tab 2, press Back in tab 1 → still alice, 0/3 on a2 vs 3/3 on 0.9.12); a tab
+  booting with a stale `latest_access_token_hash_ls` is never corrected because the single
   `hydrate_and_load` bypasses `OIDCAuthState.get_delta` (`reflex/state.py` `_apply_client_storage_vars` →
   `_clean()` → `dict()`). Regression + security-relevant arm. Decision needed on the fix side (below): either
   reflex runs the client-storage reconciliation through `get_delta` (or an explicit hook) during boot, or
@@ -84,9 +84,12 @@ the new train fixed (F-001 enterprise half, F-002, F-003, F-004, F-005, F-006) a
   F-016 (ty arity), F-018 (React 19.3 console error on reflex-clerk), F-019 (stale frontend gets no signal).
 
 ### reflex-enterprise
-- **N-033** (HIGH, pre-existing, verification pending) — prod + Redis + default granian workers: `POST
-  /_reflex/cookies/sync` 405 on most workers (`auth/cookie.py` `ensure_handlers_registered` registers the route
-  lazily per worker); token cookies lost in ~3/4 logins. Register the route at app construction. Worth fixing in
+- **N-033** (HIGH, pre-existing, CONFIRMED) — prod + Redis + default granian workers: `POST
+  /_reflex/cookies/sync` 405 on every worker that has not yet built a sync (`auth/cookie.py:374-385`
+  `ensure_handlers_registered` registers the route lazily per worker, only from `sync()`); ~100 % of logins lose
+  their token cookies right after a start/deploy/respawn, and a second tab can then start an endless
+  `update_vars_internal` → reconcile → 405 ping-pong (~115 POST/s). Register the route eagerly at app
+  construction or in `AuthPlugin.post_compile`. Worth fixing in
   the enterprise release that accompanies 0.10.0 because every multi-worker prod deployment hits it.
 - N-034 background-task deltas on protected states withheld; N-035 JWKS not refreshed on key rotation;
   N-036 expired/revoked tokens keep authorizing (1800 s userinfo cache); N-037 scope-denied MCP handler returns
@@ -125,8 +128,8 @@ the new train fixed (F-001 enterprise half, F-002, F-003, F-004, F-005, F-006) a
 1. Merge #7466 (N-001); consider the 0.9.13 backport.
 2. Land the `window.__reflex`-before-first-render change (N-025) and re-run `ent_grid/verification` (one command
    per build in its NOTES.md); publish an enterprise wheel without the `formatColumnDefs` guard.
-3. Decide and land the boot-time reconciliation for N-032 once its verification lands; re-run
-   `ent_auth/scripts/stale_hash_probe.py` and `xtab_probe.py` (and the verifier's fixture).
+3. Decide and land the boot-time reconciliation for N-032; re-run `ent_auth/scripts/stale_hash_probe.py`,
+   `xtab_probe.py` and the verifier's `ent_auth/verification/drivers/vdrv.py away|stale|xtab`.
 4. N-004, N-005, N-039, N-008 and the documentation items, then cut 0.10.0a3 and re-run the 10-07 re-verification
    table (every cluster has rerun commands in its NOTES.md; the `board/` protocol lets several sessions share it).
 5. File the "after release" lists as issues with the FINDINGS.md links.

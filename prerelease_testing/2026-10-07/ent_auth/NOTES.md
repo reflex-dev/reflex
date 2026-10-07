@@ -441,3 +441,28 @@ cd $W/scripts; export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1;
 - `CI=true $SB/envs/<venv>/bin/python -I $W/scripts/layers_dynimport_check.py /envs/<venv>/` prints
   `const LayersControl.BaseLayer = ClientSide(...)` (invalid JS) on 0.9.12/a1/a2; an app using those classes
   500s on every route in dev. `on_layeradd` never fires (`$PY layeradd_debug.py http://localhost:3344` with mapsapp).
+
+## VERIFICATION
+
+Independent verifier pass (own minimal app + driver, ports 3720/8720/8721, redis 8739, mock IdP 8738);
+full write-up, rerun commands, app, drivers, frames, screenshots and server logs in `verification/`
+(`verification/NOTES.md`).
+
+- **I-1 / A-1 (cross-tab logout): CONFIRMED, regression since 0.10.0a1, mechanism CONFIRMED.**
+  Two-tab flow, tab1 logged out: a2 dev Redis 1/6, a2 prod Redis (1 worker) 3/6, a2 dev memory 4/4,
+  a1 dev Redis 5/11, 0.9.12 dev Redis 6/6. Every "stayed" repetition = the cross-tab race (tab1's cookie
+  sync carries the old cookies and re-writes the old hash); the race also happens on 0.9.12 (6/6) but is
+  healed there by tab2's return boot (`hydrate` + `update_vars_internal` → `OIDCAuthState.get_delta` →
+  `reconcile_tokens_after_sync` → hash ""). On 0.10 the boot is one `hydrate_and_load` whose
+  `_apply_client_storage_vars` + `_clean()` (reflex/state.py:2367-2368 in a2) keeps the browser value
+  out of every `get_delta` override (also shown core-only, without enterprise).
+  Race-free deterministic form (worse than claimed): clean logout in tab2 while tab1 is on another site,
+  tab1 presses Back → still alice, protected event runs: 0.9.12 3/3 signed out, a1 0/3, a2 dev 0/3,
+  a2 prod 0/3. Blast radius in the wheel: only the OIDC hash reconciliation (the enforcement delta filter
+  also wraps `dict`, so protected-field withholding at boot is intact). Judged a release blocker for 0.10.0
+  final (reflex + enterprise pair).
+- **I-2 / A-2 (prod multi-worker 405): CONFIRMED, NARROWED, not a regression.** Fresh 9-worker a2 prod:
+  27/27 POSTs 405 (8 pids); logins with token cookies 1/6; afterwards 7 of 9 pids answer 400. Rate decays
+  with warm-up (3/4 after ~25 logins); `GRANIAN_WORKERS=1` 5/5; 0.9.12 identical (27/27 405, 1/6).
+  New side effect: after a failed-sync login, a second tab can start a sustained cross-tab ping-pong of
+  cookie syncs (~115 POSTs/s for 40 s in 1 of 3 a2 tries; also on 0.9.12) or log the first tab out.

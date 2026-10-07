@@ -554,11 +554,101 @@ def run_logout_cookies(browser, base, label, rep, max_attempts=8):
     return r
 
 
+def run_away(browser, base, label, rep):
+    """Realistic deterministic form: tab1 (alice, /vault) follows a link to another site; the user
+    logs out normally in tab2 (real UI + IdP end_session); tab1 presses Back. Is tab1 signed out?"""
+    log = []
+    ctx = new_context(browser, log)
+    r = {"rep": rep}
+    try:
+        t1 = Tab(ctx, "tab1", log)
+        r["login"] = login(t1, base)
+        wait_for(lambda: t1.ls_hash(), 15)
+        pause(1.5)
+        t1.page.goto(IDP + "/")  # another origin: the app page is gone, no storage events reach it
+        t2 = Tab(ctx, "tab2", log)
+        t2.page.goto(base + "/vault")
+        r["tab2_logged_in"] = bool(wait_for(lambda: t2.text("#who", 500) == "alice", 30))
+        pause(1.5)
+        t2.page.click("#logout")
+        t2.page.wait_for_url(IDP + "/oauth2/end_session**", timeout=30000)
+        t2.page.get_by_role("button", name="End session").click()
+        wait_for(lambda: t2.page.url.startswith(base) and t2.path() == "/", 30)
+        pause(3)
+        r["cookies_after_logout"] = oidc_cookies(ctx)
+        r["ls_hash_after_logout"] = short(t2.ls_hash())
+        t2.page.close()
+        PUMP["page"] = t1.page
+        idx = len(log)
+        t1.page.go_back()
+        pause(6)
+        r["tab1_back_url"] = t1.page.url
+        r["tab1_boot_events"] = boot_events(log, "tab1", idx)
+        r["tab1_who"] = t1.text("#who", 1500)
+        if t1.path() == "/vault":
+            c0 = t1.text("#clicks", 1000)
+            try:
+                t1.page.click("#add", timeout=3000)
+            except Exception:
+                pass
+            pause(3)
+            r["tab1_add"] = [c0, t1.text("#clicks", 1000), t1.page.locator(".entry").all_inner_texts() if t1.path() == "/vault" else []]
+        r["tab1_path_final"] = t1.path()
+        r["tab1_logged_out"] = r["tab1_path_final"] == "/login"
+        t1.page.screenshot(path=str(SHOTS / f"{label}-away-{rep}-tab1.png"))
+    except Exception as e:
+        r["error"] = repr(e)[:300]
+    finally:
+        r["_full_log"] = log
+        ctx.close()
+    return r
+
+
+def run_storm(browser, base, label, rep, max_attempts=6, window=40):
+    """A-2 side effect: after a login whose cookie sync got 405 (no token cookies), open a second
+    tab and count cookie-sync POSTs / websocket events per 5 s for `window` seconds."""
+    r = {"rep": rep}
+    for attempt in range(max_attempts):
+        log = []
+        ctx = new_context(browser, log)
+        try:
+            t = Tab(ctx, "login", log)
+            r["attempts"] = attempt + 1
+            if not login(t, base):
+                continue
+            pause(3)
+            if oidc_cookies(ctx):
+                continue  # sync succeeded; we want the failed-sync case
+            r["login_syncs"] = [(e["status"], e.get("pid")) for e in log if e.get("kind") == "cookie_sync"]
+            t2 = Tab(ctx, "newtab", log)
+            t0 = time.time() * 1000
+            t2.page.goto(base + "/vault")
+            pause(window)
+            buckets = {}
+            for e in log:
+                if (e.get("t") or 0) < t0:
+                    continue
+                b = int((e["t"] - t0) // 5000) * 5
+                if e.get("kind") == "cookie_sync":
+                    buckets.setdefault(b, [0, 0])[0] += 1
+                elif e.get("kind") == "ws" and e.get("dir") == "sent":
+                    buckets.setdefault(b, [0, 0])[1] += 1
+            r["per_5s_[syncs,ws_events]"] = {f"{k}-{k + 5}s": v for k, v in sorted(buckets.items())}
+            r["newtab_path"] = t2.path()
+            r["login_tab_who"] = t.text("#who", 1000)
+            return r
+        except Exception as e:
+            r["error"] = repr(e)[:300]
+        finally:
+            ctx.close()
+    return r
+
+
 def main():
     mode, base, label, n = sys.argv[1], sys.argv[2].rstrip("/"), sys.argv[3], int(sys.argv[4])
     OUT.mkdir(exist_ok=True)
     SHOTS.mkdir(exist_ok=True)
-    fn = {"xtab": run_xtab, "stale": run_stale, "logins": run_login, "logoutcookies": run_logout_cookies}[mode]
+    fn = {"xtab": run_xtab, "stale": run_stale, "logins": run_login, "logoutcookies": run_logout_cookies, "away": run_away, "storm": run_storm}[mode]
     results = []
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=CHROMIUM)
@@ -578,6 +668,11 @@ def main():
     elif mode == "stale":
         s = {k: sum(1 for r in results if r.get(k)) for k in ("p1_corrected", "p2_corrected", "p3_logged_out", "p4_logged_out")}
         print(f"SUMMARY {label} stale: {json.dumps(s)} of {len(results)}")
+    elif mode == "storm":
+        print(f"SUMMARY {label} storm: see per-5s counts above")
+    elif mode == "away":
+        lo = sum(1 for r in results if r.get("tab1_logged_out"))
+        print(f"SUMMARY {label} away: tab1 logged out after Back {lo}/{len(results)}")
     elif mode == "logoutcookies":
         left = sum(1 for r in results if r.get("cookies_after_logout"))
         relog = sum(1 for r in results if r.get("newtab_who") == "alice")
