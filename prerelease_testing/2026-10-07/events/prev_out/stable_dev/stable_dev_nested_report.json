@@ -1,0 +1,388 @@
+{
+ "label": "stable_dev_nested",
+ "base": "http://localhost:3464",
+ "results": [
+  {
+   "name": "nested.match_list_branch",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "console:match_list_branch:log": 1,
+     "console:match_list_branch:debug": 2,
+     "console:match_list_branch:info": 1,
+     "ws:match_list_branch:sent": 280178
+    },
+    "order": "",
+    "expected": "M1,M2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": false,
+    "exc_list": "",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=0 frontend=0"
+   },
+   "t": 45.159
+  },
+  {
+   "name": "nested.deep50_nested_match",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "console:deep50_nested_match:log": 1,
+     "console:deep50_nested_match:debug": 2,
+     "console:deep50_nested_match:info": 1,
+     "ws:deep50_nested_match:sent": 438590
+    },
+    "order": "",
+    "expected": "Z49,Z48,Z47,Z46,Z45,Z44,Z43,Z42,Z41,Z40,Z39,Z38,Z37,Z36,Z35,Z34,Z33,Z32,Z31,Z30,Z29,Z28,Z27,Z26,Z25,Z24,Z23,Z22,Z21,Z20,Z19,Z18,Z17,Z16,Z15,Z14,Z13,Z12,Z11,Z10,Z9,Z8,Z7,Z6,Z5,Z4,Z3,Z2,Z1,Z0",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": false,
+    "exc_list": "",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=0 frontend=0"
+   },
+   "t": 131.512
+  },
+  {
+   "name": "nested.backend_failure_mid_list_flat",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:backend_failure_mid_list_flat:log": 1,
+     "console:backend_failure_mid_list_flat:debug": 2,
+     "console:backend_failure_mid_list_flat:info": 1,
+     "ws:backend_failure_mid_list_flat:sent": 13
+    },
+    "order": "P1,P2,P3",
+    "expected": "P1,P2,P3",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=1 frontend=0"
+   },
+   "t": 157.226
+  },
+  {
+   "name": "nested.backend_failure_mid_nested_list",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "console:backend_failure_mid_nested_list:log": 1,
+     "console:backend_failure_mid_nested_list:debug": 2,
+     "console:backend_failure_mid_nested_list:info": 1,
+     "ws:backend_failure_mid_nested_list:sent": 275479
+    },
+    "order": "",
+    "expected": "Q1,Q2",
+    "backend_exc_records": 0,
+    "expected_exc": 1,
+    "ordinary_after_ok": false,
+    "exc_list": "",
+    "handler_counts_before": "backend=1 frontend=0",
+    "handler_counts_after": "backend=1 frontend=0"
+   },
+   "t": 211.452
+  },
+  {
+   "name": "nested.malformed_event_mid_nested_list",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "console:malformed_event_mid_nested_list:log": 1,
+     "console:malformed_event_mid_nested_list:debug": 2,
+     "console:malformed_event_mid_nested_list:info": 1,
+     "ws:malformed_event_mid_nested_list:sent": 133253
+    },
+    "order": "",
+    "expected": "W1,W2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": false,
+    "exc_list": "",
+    "handler_counts_before": "backend=1 frontend=0",
+    "handler_counts_after": "backend=1 frontend=0"
+   },
+   "t": 260.256
+  },
+  {
+   "name": "nested.handler_returns_nested_list",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "console:handler_returns_nested_list:log": 1,
+     "console:handler_returns_nested_list:debug": 2,
+     "console:handler_returns_nested_list:info": 1,
+     "ws:handler_returns_nested_list:sent": 10
+    },
+    "order": "",
+    "expected": "A,B,C,D",
+    "backend_exc_records": 1,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "TypeError: Your handler NestState.ret_nested must only return/yield: None, Events or other",
+    "handler_counts_before": "backend=1 frontend=0",
+    "handler_counts_after": "backend=2 frontend=0"
+   },
+   "t": 284.149
+  },
+  {
+   "name": "nested.handler_yields_nested_list",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "console:handler_yields_nested_list:log": 1,
+     "console:handler_yields_nested_list:debug": 2,
+     "console:handler_yields_nested_list:info": 1,
+     "ws:handler_yields_nested_list:sent": 10
+    },
+    "order": "",
+    "expected": "Y1,Y2",
+    "backend_exc_records": 1,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "TypeError: Your handler NestState.yield_nested must only return/yield: None, Events or othe",
+    "handler_counts_before": "backend=2 frontend=0",
+    "handler_counts_after": "backend=3 frontend=0"
+   },
+   "t": 289.122
+  },
+  {
+   "name": "nested.handler_returns_flat_with_failing",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:handler_returns_flat_with_failing:log": 1,
+     "console:handler_returns_flat_with_failing:debug": 2,
+     "console:handler_returns_flat_with_failing:info": 1,
+     "ws:handler_returns_flat_with_failing:sent": 10
+    },
+    "order": "R1,R2",
+    "expected": "R1,R2",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=3 frontend=0",
+    "handler_counts_after": "backend=4 frontend=0"
+   },
+   "t": 294.212
+  },
+  {
+   "name": "nested.call_script_throws_mid_nested_list",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "console:call_script_throws_mid_nested_list:log": 1,
+     "console:call_script_throws_mid_nested_list:debug": 2,
+     "console:call_script_throws_mid_nested_list:info": 1,
+     "ws:call_script_throws_mid_nested_list:sent": 400681
+    },
+    "order": "",
+    "expected": "C1,C2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": false,
+    "exc_list": "",
+    "handler_counts_before": "backend=4 frontend=0",
+    "handler_counts_after": "backend=4 frontend=0"
+   },
+   "t": 360.687
+  },
+  {
+   "name": "nested.call_script_callback_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:call_script_callback_list:log": 1,
+     "console:call_script_callback_list:debug": 2,
+     "console:call_script_callback_list:info": 1,
+     "ws:call_script_callback_list:sent": 11
+    },
+    "order": "cbv,CB2",
+    "expected": "cbv,CB2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=4 frontend=0",
+    "handler_counts_after": "backend=4 frontend=0"
+   },
+   "t": 386.206
+  },
+  {
+   "name": "nested.run_script_mid_nested_list",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "console:run_script_mid_nested_list:log": 1,
+     "console:run_script_mid_nested_list:debug": 2,
+     "console:run_script_mid_nested_list:info": 1,
+     "ws:run_script_mid_nested_list:sent": 575091
+    },
+    "order": "",
+    "expected": "RS1,RS2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": false,
+    "exc_list": "",
+    "handler_counts_before": "backend=4 frontend=0",
+    "handler_counts_after": "backend=4 frontend=0"
+   },
+   "t": 477.529
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 59.105,
+   "tag": "match_list_branch",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  },
+  {
+   "t": 151.96,
+   "tag": "deep50_nested_match",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  },
+  {
+   "t": 157.229,
+   "tag": "backend_failure_mid_list_flat",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  },
+  {
+   "t": 228.916,
+   "tag": "backend_failure_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  },
+  {
+   "t": 279.017,
+   "tag": "malformed_event_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  },
+  {
+   "t": 284.154,
+   "tag": "handler_returns_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  },
+  {
+   "t": 289.131,
+   "tag": "handler_yields_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  },
+  {
+   "t": 294.217,
+   "tag": "handler_returns_flat_with_failing",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  },
+  {
+   "t": 381.091,
+   "tag": "call_script_throws_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  },
+  {
+   "t": 386.209,
+   "tag": "call_script_callback_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  },
+  {
+   "t": 509.566,
+   "tag": "run_script_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/nested"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "counters": {
+  "console:match_list_branch:log": 2,
+  "console:match_list_branch:debug": 2,
+  "ws:match_list_branch:recv": 12,
+  "console:match_list_branch:info": 1,
+  "ws:match_list_branch:sent": 551879,
+  "console:deep50_nested_match:log": 2,
+  "console:deep50_nested_match:debug": 2,
+  "ws:deep50_nested_match:recv": 13,
+  "console:deep50_nested_match:info": 1,
+  "ws:deep50_nested_match:sent": 821411,
+  "console:backend_failure_mid_list_flat:log": 2,
+  "console:backend_failure_mid_list_flat:debug": 2,
+  "ws:backend_failure_mid_list_flat:recv": 16,
+  "console:backend_failure_mid_list_flat:info": 1,
+  "ws:backend_failure_mid_list_flat:sent": 13,
+  "console:backend_failure_mid_nested_list:log": 2,
+  "console:backend_failure_mid_nested_list:debug": 2,
+  "ws:backend_failure_mid_nested_list:recv": 12,
+  "console:backend_failure_mid_nested_list:info": 1,
+  "ws:backend_failure_mid_nested_list:sent": 619170,
+  "console:malformed_event_mid_nested_list:log": 2,
+  "console:malformed_event_mid_nested_list:debug": 2,
+  "ws:malformed_event_mid_nested_list:recv": 11,
+  "console:malformed_event_mid_nested_list:info": 1,
+  "ws:malformed_event_mid_nested_list:sent": 408590,
+  "console:handler_returns_nested_list:log": 2,
+  "console:handler_returns_nested_list:debug": 2,
+  "ws:handler_returns_nested_list:recv": 13,
+  "console:handler_returns_nested_list:info": 1,
+  "ws:handler_returns_nested_list:sent": 10,
+  "console:handler_yields_nested_list:log": 2,
+  "console:handler_yields_nested_list:debug": 2,
+  "ws:handler_yields_nested_list:recv": 13,
+  "console:handler_yields_nested_list:info": 1,
+  "ws:handler_yields_nested_list:sent": 10,
+  "console:handler_returns_flat_with_failing:log": 2,
+  "console:handler_returns_flat_with_failing:debug": 2,
+  "ws:handler_returns_flat_with_failing:recv": 15,
+  "console:handler_returns_flat_with_failing:info": 1,
+  "ws:handler_returns_flat_with_failing:sent": 10,
+  "console:call_script_throws_mid_nested_list:log": 2,
+  "console:call_script_throws_mid_nested_list:debug": 2,
+  "ws:call_script_throws_mid_nested_list:recv": 13,
+  "console:call_script_throws_mid_nested_list:info": 1,
+  "ws:call_script_throws_mid_nested_list:sent": 769845,
+  "console:call_script_callback_list:log": 2,
+  "console:call_script_callback_list:debug": 2,
+  "ws:call_script_callback_list:recv": 14,
+  "console:call_script_callback_list:info": 1,
+  "ws:call_script_callback_list:sent": 11,
+  "console:run_script_mid_nested_list:log": 2,
+  "console:run_script_mid_nested_list:debug": 2,
+  "ws:run_script_mid_nested_list:recv": 14,
+  "console:run_script_mid_nested_list:info": 1,
+  "ws:run_script_mid_nested_list:sent": 1070943
+ },
+ "extra": {}
+}

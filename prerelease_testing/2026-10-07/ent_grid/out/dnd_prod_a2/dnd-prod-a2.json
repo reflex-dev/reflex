@@ -1,0 +1,838 @@
+{
+ "name": "dnd-prod-a2",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 2.99,
+   "name": "index lists the 3 demo pages",
+   "ok": true,
+   "detail": [
+    "Drag and Drop Basic Demo",
+    "Drag and Drop Foreach Demo",
+    "Kanban Board Demo"
+   ]
+  },
+  {
+   "t": 5.07,
+   "name": "basic: 4 drop targets, card in target 0, blue backgrounds",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 5.93,
+   "name": "basic: hovered target turns green while dragging (collected_params.is_over)",
+   "ok": true,
+   "detail": [
+    "rgb(0, 0, 255)",
+    "rgb(0, 0, 255)",
+    "rgb(0, 128, 0)",
+    "rgb(0, 0, 255)"
+   ]
+  },
+  {
+   "t": 7.14,
+   "name": "basic: drop moves card to target 2 (State.card_pos)",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 7.15,
+   "name": "basic: on_drop toast 'Dropped in position 2'",
+   "ok": true,
+   "detail": [
+    "Dropped in position 2"
+   ]
+  },
+  {
+   "t": 8.98,
+   "name": "basic: second drag to target 3",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 10.54,
+   "name": "basic: drop outside a target leaves the card in place",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 12.61,
+   "name": "basic: card position survives reload (same tab state)",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 14.76,
+   "name": "foreach: 4 drop targets, card in target 0, blue backgrounds",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 15.57,
+   "name": "foreach: hovered target turns green while dragging (collected_params.is_over)",
+   "ok": true,
+   "detail": [
+    "rgb(0, 0, 255)",
+    "rgb(0, 0, 255)",
+    "rgb(0, 128, 0)",
+    "rgb(0, 0, 255)"
+   ]
+  },
+  {
+   "t": 16.78,
+   "name": "foreach: drop moves card to target 2 (State.card_pos)",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 16.81,
+   "name": "foreach: on_drop toast 'Dropped in position 2'",
+   "ok": true,
+   "detail": [
+    "Dropped in position 2"
+   ]
+  },
+  {
+   "t": 18.68,
+   "name": "foreach: second drag to target 3",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 20.29,
+   "name": "foreach: drop outside a target leaves the card in place",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 22.35,
+   "name": "foreach: card position survives reload (same tab state)",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 24.82,
+   "name": "basic: a new browser context starts with card at target 0",
+   "ok": true,
+   "detail": [
+    {
+     "has_card": true,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    },
+    {
+     "has_card": false,
+     "bg": "rgb(0, 0, 255)"
+    }
+   ]
+  },
+  {
+   "t": 25.06,
+   "name": "demo dropdown navigates to /kanban",
+   "ok": true,
+   "detail": "http://localhost:3311/kanban"
+  },
+  {
+   "t": 27.77,
+   "name": "kanban: first load does not write the LocalStorage default (F-002 class)",
+   "ok": true,
+   "detail": {
+    "theme": "system"
+   }
+  },
+  {
+   "t": 29.27,
+   "name": "kanban: two columns created via form",
+   "ok": true,
+   "detail": [
+    {
+     "col": "Todo",
+     "items": []
+    },
+    {
+     "col": "Done",
+     "items": []
+    }
+   ]
+  },
+  {
+   "t": 31.83,
+   "name": "kanban: items added to columns",
+   "ok": true,
+   "detail": [
+    {
+     "col": "Todo",
+     "items": [
+      "Alpha",
+      "Beta"
+     ]
+    },
+    {
+     "col": "Done",
+     "items": [
+      "Gamma"
+     ]
+    }
+   ]
+  },
+  {
+   "t": 31.83,
+   "name": "kanban: on_save wrote kanban_data_json to localStorage",
+   "ok": true,
+   "detail": [
+    "{\"columns\": [{\"id\": \"084a675d-f350-411a-aafb-6fdb91a2dd3e\", \"title\": \"Todo\", \"description\": \"\", \"order\": 0}, {\"id\": \"94ce3b83-2eb1-49ac-b058-059a7064f94f\", \"title\": \"Done\", \"description\": \"\", \"order\":"
+   ]
+  },
+  {
+   "t": 34.02,
+   "name": "kanban: drag item Alpha onto Done column header moves it to Done (position 0)",
+   "ok": true,
+   "detail": [
+    {
+     "col": "Todo",
+     "items": [
+      "Beta"
+     ]
+    },
+    {
+     "col": "Done",
+     "items": [
+      "Alpha",
+      "Gamma"
+     ]
+    }
+   ]
+  },
+  {
+   "t": 34.04,
+   "name": "kanban: draggable on_end toast 'You dropped <id>'",
+   "ok": true,
+   "detail": [
+    "You dropped 306905e4-236c-4263-ae49-d4b3a6f2d702"
+   ]
+  },
+  {
+   "t": 36.11,
+   "name": "kanban: same-column reorder (Gamma to top of Done)",
+   "ok": true,
+   "detail": [
+    {
+     "col": "Todo",
+     "items": [
+      "Beta"
+     ]
+    },
+    {
+     "col": "Done",
+     "items": [
+      "Gamma",
+      "Alpha"
+     ]
+    }
+   ]
+  },
+  {
+   "t": 37.99,
+   "name": "kanban: dragging column Done onto Todo reorders columns",
+   "ok": true,
+   "detail": [
+    {
+     "col": "Done",
+     "items": [
+      "Gamma",
+      "Alpha"
+     ]
+    },
+    {
+     "col": "Todo",
+     "items": [
+      "Beta"
+     ]
+    }
+   ]
+  },
+  {
+   "t": 40.73,
+   "name": "kanban: board restored from LocalStorage after reload (on_load)",
+   "ok": true,
+   "detail": {
+    "before": [
+     {
+      "col": "Done",
+      "items": [
+       "Gamma",
+       "Alpha"
+      ]
+     },
+     {
+      "col": "Todo",
+      "items": [
+       "Beta"
+      ]
+     }
+    ],
+    "after": [
+     {
+      "col": "Done",
+      "items": [
+       "Gamma",
+       "Alpha"
+      ]
+     },
+     {
+      "col": "Todo",
+      "items": [
+       "Beta"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "t": 43.68,
+   "name": "kanban: second tab loads the same board from LocalStorage",
+   "ok": true,
+   "detail": [
+    "Done",
+    "Todo"
+   ]
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4",
+  "kanban localStorage after first load: {\"theme\": \"system\"}"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 27,
+  "console_total": 9,
+  "console_benign": 0,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 3.0,
+   "ctx": "dnd",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3311/",
+   "location": {
+    "url": "http://localhost:3311/assets/createLucideIcon-D0OZ3lau.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 10.55,
+   "ctx": "dnd",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3311/basic/",
+   "location": {
+    "url": "http://localhost:3311/assets/createLucideIcon-D0OZ3lau.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 12.62,
+   "ctx": "dnd",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3311/basic/",
+   "location": {
+    "url": "http://localhost:3311/assets/createLucideIcon-D0OZ3lau.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 20.29,
+   "ctx": "dnd",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3311/foreach/",
+   "location": {
+    "url": "http://localhost:3311/assets/createLucideIcon-D0OZ3lau.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 25.07,
+   "ctx": "dnd",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3311/foreach/",
+   "location": {
+    "url": "http://localhost:3311/assets/createLucideIcon-D0OZ3lau.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 38.09,
+   "ctx": "dnd",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3311/kanban/",
+   "location": {
+    "url": "http://localhost:3311/assets/createLucideIcon-D0OZ3lau.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 43.83,
+   "ctx": "dnd",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3311/kanban/",
+   "location": {
+    "url": "http://localhost:3311/assets/createLucideIcon-D0OZ3lau.js",
+    "line": 1,
+    "column": 11410,
+    "lineNumber": 1,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 43.83,
+   "ctx": "dnd",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3311/kanban/",
+   "location": {
+    "url": "http://localhost:3311/assets/createLucideIcon-D0OZ3lau.js",
+    "line": 1,
+    "column": 11410,
+    "lineNumber": 1,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 43.89,
+   "ctx": "dnd-tab2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3311/kanban",
+   "location": {
+    "url": "http://localhost:3311/assets/createLucideIcon-D0OZ3lau.js",
+    "line": 1,
+    "column": 11410,
+    "lineNumber": 1,
+    "columnNumber": 11410
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3311/_event/?token=434bd5e2-7c17-4b85-88a1-2d93af66bfe0&EIO=4&transport=websocket": {
+   "ctx": "dnd",
+   "sent": 25,
+   "recv": 43,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"817df45aeb042708\",\"b084fc0c68f7c73a\",\"9b195f3199ebeaa6\",\"4475ff6e5ac5630c\",\"9b195f3199ebeaa6\",\"373044bf3534b604\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"817df45aeb042708\",\"b084fc0c68f7c73a\",\"9b195f3199ebeaa6\",\"4475ff6e5ac5630c\",\"9b195f3199ebeaa6\",\"373044bf3534b604\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/basic/\",\"asPath\":\"/basic/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___basic____dnd_state.set_card_pos\",\"payload\":{\"pos\":2},\"router_data\":{\"pathname\":\"/basic/\",\"asPath\":\"/basic/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___basic____dnd_state.set_card_pos\",\"payload\":{\"pos\":3},\"router_data\":{\"pathname\":\"/basic/\",\"asPath\":\"/basic/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"817df45aeb042708\",\"b084fc0c68f7c73a\",\"9b195f3199ebeaa6\",\"4475ff6e5ac5630c\",\"9b195f3199ebeaa6\",\"373044bf3534b604\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/basic/\",\"asPath\":\"/basic/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"817df45aeb042708\",\"b084fc0c68f7c73a\",\"9b195f3199ebeaa6\",\"4475ff6e5ac5630c\",\"9b195f3199ebeaa6\",\"373044bf3534b604\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/foreach/\",\"asPath\":\"/foreach/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___foreach____dnd_foreach_state.set_card_pos\",\"payload\":{\"pos\":2},\"router_data\":{\"pathname\":\"/foreach/\",\"asPath\":\"/foreach/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___foreach____dnd_foreach_state.set_card_pos\",\"payload\":{\"pos\":3},\"router_data\":{\"pathname\":\"/foreach/\",\"asPath\":\"/foreach/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"817df45aeb042708\",\"b084fc0c68f7c73a\",\"9b195f3199ebeaa6\",\"4475ff6e5ac5630c\",\"9b195f3199ebeaa6\",\"373044bf3534b604\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/foreach/\",\"asPath\":\"/foreach/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"817df45aeb042708\",\"b084fc0c68f7c73a\",\"9b195f3199ebeaa6\",\"4475ff6e5ac5630c\",\"9b195f3199ebeaa6\",\"373044bf3534b604\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/kanban/\",\"asPath\":\"/kanban/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___kanban____kanban_state.new_column\",\"payload\":{\"form_data\":{\"name\":\"Todo\"}},\"router_data\":{\"pathname\":\"/kanban/\",\"asPath\":\"/kanban/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___kanban____kanban_state.new_column\",\"payload\":{\"form_data\":{\"name\":\"Done\"}},\"router_data\":{\"pathname\":\"/kanban/\",\"asPath\":\"/kanban/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___kanban____kanban_state.new_item\",\"payload\":{\"form_data\":{\"name\":\"Alpha\",\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"}},\"router_data\":{\"pathname\":\"/kanban/\",\"asPath\":\"/kanban/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___kanban____kanban_state.new_item\",\"payload\":{\"form_data\":{\"name\":\"Beta\",\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"}},\"router_data\":{\"pathname\":\"/kanban/\",\"asPath\":\"/kanban/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___kanban____kanban_state.new_item\",\"payload\":{\"form_data\":{\"name\":\"Gamma\",\"column_id\":\"94ce3b83-2eb1-49ac-b058-059a7064f94f\"}},\"router_data\":{\"pathname\":\"/kanban/\",\"asPath\":\"/kanban/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___kanban____kanban_state.on_item_drop\",\"payload\":{\"column_id\":\"94ce3b83-2eb1-49ac-b058-059a7064f94f\",\"replace_position\":0,\"dropped_item_data\":{\"id\":\"306905e4-236c-4263-ae49-d4b3a6f2d702\"}},\"router_data\":{\"pathname\":\"/kanban/\",\"asPath\":\"/kanban/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___kanban____kanban_state.on_item_drop\",\"payload\":{\"column_id\":\"94ce3b83-2eb1-49ac-b058-059a7064f94f\",\"replace_position\":0,\"dropped_item_data\":{\"id\":\"5f7e8d6c-d15c-45cd-aaea-a02808843240\"}},\"router_data\":{\"pathname\":\"/kanban/\",\"asPath\":\"/kanban/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.dnd___kanban____kanban_state.on_column_drop\",\"payload\":{\"replace_position\":0,\"dropped_column_data\":{\"id\":\"94ce3b83-2eb1-49ac-b058-059a7064f94f\"}},\"router_data\":{\"pathname\":\"/kanban/\",\"asPath\":\"/kanban/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.dnd___kanban____kanban_state.kanban_data_json_rx_state_\":\"{\\\"columns\\\": [{\\\"id\\\": \\\"084a675d-f350-411a-aafb-6fdb91a2dd3e\\\", \\\"title\\\": \\\"Todo\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 1}, {\\\"id\\\": \\\"94ce3b83-2eb1-49ac-b058-059a7064f94f\\\", \\\"title\\\": \\\"Done\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 0}], \\\"items\\\": [{\\\"id\\\": \\\"306905e4-236c-4263-ae49-d4b3a6f2d702\\\", \\\"title\\\": \\\"Alpha\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 1, \\\"column_id\\\": \\\"94ce3b83-2eb1-49ac-b058-059a7064f94f\\\"}, {\\\"id\\\": \\\"8"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"KAzW6wKoCnxG8jSRAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"fYZy8Mt6GVepugSNAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3311\",\"origin\":\"http://localhost:3311\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"zGupZDhBkpMbEIs61zUe5Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"BQZrlTZJhcekqB61AAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"bNeg18FXJtwszFkRAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3311\",\"origin\":\"http://localhost:3311\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"rIVbUUDrPHXroh4bRSQpKQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___basic____dnd_state\":{\"card_pos_rx_state_\":2}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___basic____dnd_state\":{\"card_pos_rx_state_\":3}}}]",
+    "0{\"sid\":\"dyAoCaglQ2n-f-wnAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"VP5HVqjDZDfMnChEAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3311\",\"origin\":\"http://localhost:3311\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"jIxUJ5uAtK+j7T6EGDx4IQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"i2wggpagCUssa0q7AAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"ZLwFqVHku9yhSmccAAAH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3311\",\"origin\":\"http://localhost:3311\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"bsp1T3BPNXinH/K0295Ucw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___foreach____dnd_foreach_state\":{\"card_pos_rx_state_\":2}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___foreach____dnd_foreach_state\":{\"card_pos_rx_state_\":3}}}]",
+    "0{\"sid\":\"tbDnI1RfWh0Hgxx-AAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Kn2s2yV2aNvT6_kIAAAJ\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3311\",\"origin\":\"http://localhost:3311\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"3fqLvW7fTVMTQNjx6cKJQg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"7k8YoiPdWfe29o2_AAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"28AMKe8McN1rzmxGAAAN\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3311\",\"origin\":\"http://localhost:3311\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"PaNAI1yN5yyJBZqVhf7NrQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___kanban____kanban_state\":{\"kanban_data_json_rx_state_\":\"{\\\"columns\\\": [{\\\"id\\\": \\\"084a675d-f350-411a-aafb-6fdb91a2dd3e\\\", \\\"title\\\": \\\"Todo\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 0}], \\\"items\\\": []}\",\"columns_rx_state_\":{\"084a675d-f350-411a-aafb-6fdb91a2dd3e\":{\"id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\",\"title\":\"Todo\",\"description\":\"\",\"order\":0}},\"ordered_columns_rx_state_\":[{\"id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\",\"title\":\"Todo\",\"description\":\"\",\"order\":0}]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___kanban____kanban_state\":{\"kanban_data_json_rx_state_\":\"{\\\"columns\\\": [{\\\"id\\\": \\\"084a675d-f350-411a-aafb-6fdb91a2dd3e\\\", \\\"title\\\": \\\"Todo\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 0}, {\\\"id\\\": \\\"94ce3b83-2eb1-49ac-b058-059a7064f94f\\\", \\\"title\\\": \\\"Done\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 1}], \\\"items\\\": []}\",\"columns_rx_state_\":{\"084a675d-f350-411a-aafb-6fdb91a2dd3e\":{\"id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\",\"title\":\"Todo\",\"description\":\"\",\"order\":0},\"94ce3b83-2eb1-49ac-b058-059a7064f94f\":{\"id\":\"94ce3b83-2eb1-49ac-b058-059a7064f94f\",\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___kanban____kanban_state\":{\"items_rx_state_\":{\"306905e4-236c-4263-ae49-d4b3a6f2d702\":{\"id\":\"306905e4-236c-4263-ae49-d4b3a6f2d702\",\"title\":\"Alpha\",\"description\":\"\",\"order\":0,\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"}},\"ordered_items_by_column_id_rx_state_\":{\"084a675d-f350-411a-aafb-6fdb91a2dd3e\":[{\"id\":\"306905e4-236c-4263-ae49-d4b3a6f2d702\",\"title\":\"Alpha\",\"description\":\"\",\"order\":0,\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"}]},\"kanban_data_json_rx_state_\":\"{\\\"columns\\\": [{\\\"id\\\": \\\"084a675d-f350-411a-aafb-6fdb91a2dd3e\\\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___kanban____kanban_state\":{\"items_rx_state_\":{\"306905e4-236c-4263-ae49-d4b3a6f2d702\":{\"id\":\"306905e4-236c-4263-ae49-d4b3a6f2d702\",\"title\":\"Alpha\",\"description\":\"\",\"order\":0,\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"},\"805226af-3f82-45a5-919c-32a3e923eb80\":{\"id\":\"805226af-3f82-45a5-919c-32a3e923eb80\",\"title\":\"Beta\",\"description\":\"\",\"order\":1,\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"}},\"ordered_items_by_column_id_rx_state_\":{\"084a675d-f350-411a-aafb-6fdb91a2dd3e\":[{\"id\":\"306905e4-236c-4263-ae49-d4b3a6f2d702\",\"title\":\"Alph",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___kanban____kanban_state\":{\"items_rx_state_\":{\"306905e4-236c-4263-ae49-d4b3a6f2d702\":{\"id\":\"306905e4-236c-4263-ae49-d4b3a6f2d702\",\"title\":\"Alpha\",\"description\":\"\",\"order\":0,\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"},\"805226af-3f82-45a5-919c-32a3e923eb80\":{\"id\":\"805226af-3f82-45a5-919c-32a3e923eb80\",\"title\":\"Beta\",\"description\":\"\",\"order\":1,\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"},\"5f7e8d6c-d15c-45cd-aaea-a02808843240\":{\"id\":\"5f7e8d6c-d15c-45cd-aaea-a02808843240\",\"title\":\"Gamma\",\"description\":\"\",\"order\":0,\"column_id\":",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___kanban____kanban_state\":{\"items_rx_state_\":{\"306905e4-236c-4263-ae49-d4b3a6f2d702\":{\"id\":\"306905e4-236c-4263-ae49-d4b3a6f2d702\",\"title\":\"Alpha\",\"description\":\"\",\"order\":0,\"column_id\":\"94ce3b83-2eb1-49ac-b058-059a7064f94f\"},\"805226af-3f82-45a5-919c-32a3e923eb80\":{\"id\":\"805226af-3f82-45a5-919c-32a3e923eb80\",\"title\":\"Beta\",\"description\":\"\",\"order\":1,\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"},\"5f7e8d6c-d15c-45cd-aaea-a02808843240\":{\"id\":\"5f7e8d6c-d15c-45cd-aaea-a02808843240\",\"title\":\"Gamma\",\"description\":\"\",\"order\":1,\"column_id\":",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___kanban____kanban_state\":{\"items_rx_state_\":{\"306905e4-236c-4263-ae49-d4b3a6f2d702\":{\"id\":\"306905e4-236c-4263-ae49-d4b3a6f2d702\",\"title\":\"Alpha\",\"description\":\"\",\"order\":1,\"column_id\":\"94ce3b83-2eb1-49ac-b058-059a7064f94f\"},\"805226af-3f82-45a5-919c-32a3e923eb80\":{\"id\":\"805226af-3f82-45a5-919c-32a3e923eb80\",\"title\":\"Beta\",\"description\":\"\",\"order\":1,\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"},\"5f7e8d6c-d15c-45cd-aaea-a02808843240\":{\"id\":\"5f7e8d6c-d15c-45cd-aaea-a02808843240\",\"title\":\"Gamma\",\"description\":\"\",\"order\":0,\"column_id\":",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___kanban____kanban_state\":{\"kanban_data_json_rx_state_\":\"{\\\"columns\\\": [{\\\"id\\\": \\\"084a675d-f350-411a-aafb-6fdb91a2dd3e\\\", \\\"title\\\": \\\"Todo\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 1}, {\\\"id\\\": \\\"94ce3b83-2eb1-49ac-b058-059a7064f94f\\\", \\\"title\\\": \\\"Done\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 0}], \\\"items\\\": [{\\\"id\\\": \\\"306905e4-236c-4263-ae49-d4b3a6f2d702\\\", \\\"title\\\": \\\"Alpha\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 1, \\\"column_id\\\": \\\"94ce3b83-2eb1-49ac-b058-059a7064f94f\\\"}, {\\\"id\\\": \\\"805226af-3f82-45a5-919c-32a3e923eb80\\\", \\\"title\\\": \\\"Beta\\",
+    "0{\"sid\":\"82k0jhTgGvyPtcyFAAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"vkgIU6G-qrWZYkmcAAAP\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3311\",\"origin\":\"http://localhost:3311\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"fcwipC0jiQnLCFCNPs091Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___kanban____kanban_state\":{\"items_rx_state_\":{\"306905e4-236c-4263-ae49-d4b3a6f2d702\":{\"id\":\"306905e4-236c-4263-ae49-d4b3a6f2d702\",\"title\":\"Alpha\",\"description\":\"\",\"order\":1,\"column_id\":\"94ce3b83-2eb1-49ac-b058-059a7064f94f\"},\"805226af-3f82-45a5-919c-32a3e923eb80\":{\"id\":\"805226af-3f82-45a5-919c-32a3e923eb80\",\"title\":\"Beta\",\"description\":\"\",\"order\":1,\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"},\"5f7e8d6c-d15c-45cd-aaea-a02808843240\":{\"id\":\"5f7e8d6c-d15c-45cd-aaea-a02808843240\",\"title\":\"Gamma\",\"description\":\"\",\"order\":0,\"column_id\":",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  },
+  "ws://localhost:3311/_event/?token=cf02b18c-3884-488f-c41e-2ace10800950&EIO=4&transport=websocket": {
+   "ctx": "dnd-tab2",
+   "sent": 2,
+   "recv": 6,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"817df45aeb042708\",\"b084fc0c68f7c73a\",\"9b195f3199ebeaa6\",\"4475ff6e5ac5630c\",\"9b195f3199ebeaa6\",\"373044bf3534b604\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/basic/\",\"asPath\":\"/basic/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/kanban\",\"asPath\":\"/kanban\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"LZbw76X-k3o3C9QxAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"FJ0ErV_3wDWk_XycAAAL\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3311\",\"origin\":\"http://localhost:3311\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"aXpBf+vhkxVC3fJ9rdFkRA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3311\",\"path\":\"/kanban\",\"raw_path\":\"/kanban\",\"full_path\":\"http://localhost:3311/kanban\",\"full_raw_path\":\"http://localhost:3311/kanban\",\"params\":{}},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3311\",\"origin\":\"http://localhost:3311\",\"path\":\"/kanban\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3311/kanban\"},\"rx_router_route_id_rx_state_\":\"/kanban\",\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": false
+  },
+  "ws://localhost:3311/_event/?token=8898414d-5954-4982-c072-92cda2d8f030&EIO=4&transport=websocket": {
+   "ctx": "dnd",
+   "sent": 1,
+   "recv": 6,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.dnd___kanban____kanban_state.kanban_data_json_rx_state_\":\"{\\\"columns\\\": [{\\\"id\\\": \\\"084a675d-f350-411a-aafb-6fdb91a2dd3e\\\", \\\"title\\\": \\\"Todo\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 1}, {\\\"id\\\": \\\"94ce3b83-2eb1-49ac-b058-059a7064f94f\\\", \\\"title\\\": \\\"Done\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 0}], \\\"items\\\": [{\\\"id\\\": \\\"306905e4-236c-4263-ae49-d4b3a6f2d702\\\", \\\"title\\\": \\\"Alpha\\\", \\\"description\\\": \\\"\\\", \\\"order\\\": 1, \\\"column_id\\\": \\\"94ce3b83-2eb1-49ac-b058-059a7064f94f\\\"}, {\\\"id\\\": \\\"8"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"rwSbhmRrZpOoOUcMAAAQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"qt4W574YPYWJNkK4AAAR\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3311\",\"origin\":\"http://localhost:3311\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"WDBIlJ8mLeMkNMsgslfrbA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dnd___kanban____kanban_state\":{\"items_rx_state_\":{\"306905e4-236c-4263-ae49-d4b3a6f2d702\":{\"id\":\"306905e4-236c-4263-ae49-d4b3a6f2d702\",\"title\":\"Alpha\",\"description\":\"\",\"order\":1,\"column_id\":\"94ce3b83-2eb1-49ac-b058-059a7064f94f\"},\"805226af-3f82-45a5-919c-32a3e923eb80\":{\"id\":\"805226af-3f82-45a5-919c-32a3e923eb80\",\"title\":\"Beta\",\"description\":\"\",\"order\":1,\"column_id\":\"084a675d-f350-411a-aafb-6fdb91a2dd3e\"},\"5f7e8d6c-d15c-45cd-aaea-a02808843240\":{\"id\":\"5f7e8d6c-d15c-45cd-aaea-a02808843240\",\"title\":\"Gamma\",\"description\":\"\",\"order\":0,\"column_id\":",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": false
+  }
+ },
+ "requests": [
+  {
+   "t": 0.78,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/",
+   "method": "GET"
+  },
+  {
+   "t": 3.0,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/basic",
+   "method": "GET"
+  },
+  {
+   "t": 3.01,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/basic/",
+   "method": "GET"
+  },
+  {
+   "t": 10.55,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/basic/",
+   "method": "GET"
+  },
+  {
+   "t": 12.63,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/foreach",
+   "method": "GET"
+  },
+  {
+   "t": 12.64,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/foreach/",
+   "method": "GET"
+  },
+  {
+   "t": 20.3,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/foreach/",
+   "method": "GET"
+  },
+  {
+   "t": 22.53,
+   "ctx": "dnd-tab2",
+   "url": "http://localhost:3311/basic",
+   "method": "GET"
+  },
+  {
+   "t": 22.54,
+   "ctx": "dnd-tab2",
+   "url": "http://localhost:3311/basic/",
+   "method": "GET"
+  },
+  {
+   "t": 25.07,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/kanban",
+   "method": "GET"
+  },
+  {
+   "t": 25.1,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/kanban/",
+   "method": "GET"
+  },
+  {
+   "t": 38.09,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/kanban/",
+   "method": "GET"
+  },
+  {
+   "t": 40.83,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/kanban",
+   "method": "GET"
+  },
+  {
+   "t": 40.85,
+   "ctx": "dnd",
+   "url": "http://localhost:3311/kanban/",
+   "method": "GET"
+  }
+ ]
+}

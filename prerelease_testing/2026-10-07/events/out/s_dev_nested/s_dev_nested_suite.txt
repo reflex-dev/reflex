@@ -1,0 +1,29 @@
+--- t_nested_cases
+[FAIL   ] nested.match_list_branch: {"capture_counters": {"console:match_list_branch:log": 1, "console:match_list_branch:debug": 2, "console:match_list_branch:info": 1, "ws:match_list_branch:sent": 244718}, "order": "", "expected": "M1,M2", "backend_exc_records": 0, "expected_exc": 0, "ordinary_after_ok": false, "exc_list": "", "handler_counts_before": "backend=6 frontend=0", "handler_counts_after": "backend=6 frontend=0"}
+[FAIL   ] nested.deep50_nested_match: {"capture_counters": {"console:deep50_nested_match:log": 1, "console:deep50_nested_match:debug": 2, "console:deep50_nested_match:info": 1, "ws:deep50_nested_match:sent": 729087}, "order": "", "expected": "Z49,Z48,Z47,Z46,Z45,Z44,Z43,Z42,Z41,Z40,Z39,Z38,Z37,Z36,Z35,Z34,Z33,Z32,Z31,Z30,Z29,Z28,Z27,Z26,Z25,Z24,Z23,Z22,Z21,Z20,Z19,Z18,Z17,Z16,Z15,Z14,Z13,Z12,Z11,Z10,Z9,Z8,Z7,Z6,Z5,Z4,Z3,Z2,Z1,Z0", "backend_exc_records": 0, "expected_exc": 0, "ordinary_after_ok": false, "exc_list": "", "handler_counts_before": "backend=6 frontend=0", "handler_counts_after": "backend=6 frontend=0"}
+[PASS   ] nested.backend_failure_mid_list_flat: {"capture_counters": {"console:backend_failure_mid_list_flat:log": 1, "console:backend_failure_mid_list_flat:debug": 2, "console:backend_failure_mid_list_flat:info": 1, "ws:backend_failure_mid_list_flat:sent": 13}, "order": "P1,P2,P3", "expected": "P1,P2,P3", "backend_exc_records": 1, "expected_exc": 1, "ordinary_after_ok": true, "exc_list": "RuntimeError: boom-intentional", "handler_counts_before": "backend=6 frontend=0", "handler_counts_after": "backend=7 frontend=0"}
+node:events:505
+    throw er; // Unhandled 'error' event
+    ^
+
+Error: write EINVAL
+    at afterWriteDispatched (node:internal/stream_base_commons:159:15)
+    at writevGeneric (node:internal/stream_base_commons:142:3)
+    at Socket._writeGeneric (node:net:1260:11)
+    at Socket._writev (node:net:1269:8)
+    at doWrite (node:internal/streams/writable:598:12)
+    at clearBuffer (node:internal/streams/writable:777:5)
+    at onwrite (node:internal/streams/writable:655:7)
+    at WritableState.onwrite [as callback] (node:internal/streams/writable:351:26)
+    at WriteWrap.onWriteComplete [as oncomplete] (node:internal/stream_base_commons:105:10)
+Emitted 'error' event on Socket instance at:
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  errno: -22,
+  code: 'EINVAL',
+  syscall: 'write'
+}
+
+Node.js v24.21.0
+[FAIL   ] nested.backend_failure_mid_nested_list: {"exception": "Exception: Locator.count: Connection closed while reading from the driver", "capture_counters": {"console:backend_failure_mid_nested_list:log": 1, "console:backend_failure_mid_nested_list:debug": 2, "console:backend_failure_mid_nested_list:info": 1, "ws:backend_failure_mid_nested_list:sent": 2562889}}

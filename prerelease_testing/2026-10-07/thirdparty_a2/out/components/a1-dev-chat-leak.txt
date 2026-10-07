@@ -1,0 +1,17 @@
+fresh /chat shows INITIAL-GREETING: False
+fresh /chat-initial shows INITIAL-GREETING: True
+session B /chat-initial sees session A's /chat-initial message: True
+session B /chat sees session A's /chat message: False
+session B /chat sees session A's /chat-initial message: False
+--- /chat-initial body in session B ---
+home
+/chat-initial
+Built with
+
+INITIAL-GREETING
+
+from-A-initial-a1
+
+Pass the process argument to connect the chat to a model.
+
+Send

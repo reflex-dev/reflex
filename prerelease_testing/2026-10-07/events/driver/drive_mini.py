@@ -17,7 +17,7 @@ base, outdir, label = sys.argv[1], Path(sys.argv[2]), sys.argv[3]
 only = set(sys.argv[4].split(",")) if len(sys.argv) > 4 else None
 h = Harness(base, outdir, label)
 
-MARKERS = ["A-set", "AY-set", "B-partial", "direct-partial", "async-partial", "gen-flushed", "gen-partial",
+MARKERS = ["bg-inside-partial", "bg-before-raise", "A-set", "AY-set", "B-partial", "direct-partial", "async-partial", "gen-flushed", "gen-partial",
            "onload-partial", "a:after-yield", "b:after-yield", "a:start", "b:start", "b:end", "a:end"]
 
 
@@ -217,6 +217,8 @@ CASES = {
     "direct_raises": lambda: chain_case("direct_raises", "direct", {"status": "direct-partial"}),
     "async_raises": lambda: chain_case("async_raises", "async", {"status": "async-partial"}),
     "gen_yield_then_raise": lambda: chain_case("gen_yield_then_raise", "gen", {"status": "gen-flushed", "items": "gen-partial"}),
+    "bg_raise_inside": lambda: chain_case("bg_raise_inside", "bg-inside", {"status": "bg-inside-partial"}),
+    "bg_raise_after": lambda: chain_case("bg_raise_after", "bg-after", {"status": "bg-before-raise"}),
     "onload_initial": lambda: onload_case("onload_initial", via_nav=False),
     "onload_via_nav": lambda: onload_case("onload_via_nav", via_nav=True),
     "sup_cancel": sup_case,

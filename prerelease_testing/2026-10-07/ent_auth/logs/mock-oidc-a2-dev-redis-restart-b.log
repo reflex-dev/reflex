@@ -1,0 +1,7 @@
+Local OIDC provider http://localhost:8358 max_age=3600 refresh=True pid=1804
+127.0.0.1 - - [07/Oct/2026 11:55:05] "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+token endpoint error invalid_grant
+127.0.0.1 - - [07/Oct/2026 11:55:11] "[31m[1mPOST /oauth2/token HTTP/1.1[0m" 400 -
+127.0.0.1 - - [07/Oct/2026 11:55:18] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3340/callback&scope=openid+email+profile&state=zQXwOku5s7hKhhQxySKQGlsbtj-QOAp-kfPntXa_UaXTGcAFtaYVaeVU10szhSnuPwPuJ9CPfv0jj35uY3UWVg&code_challenge=bK8VasnyodDx76GTuw3F-ieBv3wuV8Vd04ETphpZy6w&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:55:19] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3340/callback&scope=openid+email+profile&state=zQXwOku5s7hKhhQxySKQGlsbtj-QOAp-kfPntXa_UaXTGcAFtaYVaeVU10szhSnuPwPuJ9CPfv0jj35uY3UWVg&code_challenge=bK8VasnyodDx76GTuw3F-ieBv3wuV8Vd04ETphpZy6w&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [07/Oct/2026 11:55:19] "POST /oauth2/token HTTP/1.1" 200 -

@@ -1,0 +1,586 @@
+{
+ "name": "mantine-dev-a2",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 3.95,
+   "name": "index lists the demo pages",
+   "ok": true,
+   "detail": [
+    "Dates",
+    "Pill",
+    "Tags Input",
+    "QA Mantine"
+   ]
+  },
+  {
+   "t": 6.6,
+   "name": "dates: 12 picker cards render",
+   "ok": true,
+   "detail": 12
+  },
+  {
+   "t": 6.73,
+   "name": "dates: DatePicker day click -> on_change toast with ISO date",
+   "ok": true,
+   "detail": [
+    "Date selected: 2026-10-15"
+   ]
+  },
+  {
+   "t": 6.85,
+   "name": "dates: MonthPicker -> toast 'Month selected: YYYY-03-01'",
+   "ok": true,
+   "detail": [
+    "Month selected: 2026-03-01",
+    "Date selected: 2026-10-15"
+   ]
+  },
+  {
+   "t": 6.92,
+   "name": "dates: YearPicker -> toast 'Year selected: YYYY-01-01'",
+   "ok": true,
+   "detail": [
+    "Year selected: 2027-01-01",
+    "Month selected: 2026-03-01",
+    "Date selected: 2026-10-15"
+   ]
+  },
+  {
+   "t": 7.81,
+   "name": "dates: DatePickerInput popover day -> toast and input shows the date",
+   "ok": true,
+   "detail": {
+    "toasts": [
+     "Date selected: 2026-10-20",
+     "Year selected: 2027-01-01",
+     "Month selected: 2026-03-01",
+     "Date selected: 2026-10-15"
+    ],
+    "input": "DatePickerInput\n\nPick a Date\nOctober 20, 2026"
+   }
+  },
+  {
+   "t": 7.96,
+   "name": "dates: preset 'Tomorrow' (dayjs Var) -> toast with tomorrow",
+   "ok": true,
+   "detail": [
+    "Date selected: 2026-10-08",
+    "Date selected: 2026-10-20",
+    "Year selected: 2027-01-01",
+    "Month selected: 2026-03-01",
+    "Date selected: 2026-10-15"
+   ]
+  },
+  {
+   "t": 8.01,
+   "name": "dates: TimeInput typing -> on_change toast with time",
+   "ok": true,
+   "detail": [
+    "Time selected: 10:30",
+    "Date selected: 2026-10-08",
+    "Date selected: 2026-10-20",
+    "Year selected: 2027-01-01",
+    "Month selected: 2026-03-01",
+    "Date selected: 2026-10-15"
+   ]
+  },
+  {
+   "t": 10.63,
+   "name": "pill: 7 pills render",
+   "ok": true,
+   "detail": 7
+  },
+  {
+   "t": 10.69,
+   "name": "pill: remove button -> on_remove toast 'Removed'",
+   "ok": true,
+   "detail": [
+    "Removed"
+   ]
+  },
+  {
+   "t": 13.31,
+   "name": "tags-input: initial State.tags rendered",
+   "ok": true,
+   "detail": [
+    "Tag1",
+    "Tag2"
+   ]
+  },
+  {
+   "t": 14.24,
+   "name": "tags-input: typing + Enter adds a tag via on_change -> State",
+   "ok": true,
+   "detail": [
+    "Tag1",
+    "Tag2",
+    "Tag3"
+   ]
+  },
+  {
+   "t": 15.08,
+   "name": "tags-input: pill remove updates State",
+   "ok": true,
+   "detail": [
+    "Tag2",
+    "Tag3"
+   ]
+  },
+  {
+   "t": 15.98,
+   "name": "tags-input: duplicate tag rejected",
+   "ok": true,
+   "detail": [
+    "Tag2",
+    "Tag3"
+   ]
+  },
+  {
+   "t": 18.35,
+   "name": "tags-input: tags survive reload (session state)",
+   "ok": true,
+   "detail": [
+    "Tag2",
+    "Tag3"
+   ]
+  },
+  {
+   "t": 22.18,
+   "name": "qa: Autocomplete on_option_submit -> State",
+   "ok": true,
+   "detail": "fruit: Banana"
+  },
+  {
+   "t": 23.5,
+   "name": "qa: MultiSelect on_change -> State list",
+   "ok": true,
+   "detail": "picks: React,Vue"
+  },
+  {
+   "t": 24.26,
+   "name": "qa: RingProgress label follows State (30 -> 50)",
+   "ok": true,
+   "detail": "50%"
+  },
+  {
+   "t": 25.11,
+   "name": "qa: JsonInput on_change -> State and format_on_blur reformats",
+   "ok": true,
+   "detail": {
+    "state": "json: { \"b\": [ 1, 2 ] }",
+    "input": "{\n  \"b\": [\n    1,\n    2\n  ]\n}"
+   }
+  },
+  {
+   "t": 25.75,
+   "name": "qa: JsonInput shows validation_error on invalid JSON",
+   "ok": true,
+   "detail": [
+    "Invalid JSON"
+   ]
+  },
+  {
+   "t": 26.58,
+   "name": "qa: Collapse in_=State.opened toggles content",
+   "ok": true,
+   "detail": {
+    "before": false,
+    "after": true
+   }
+  },
+  {
+   "t": 26.58,
+   "name": "qa: NumberFormatter renders State-derived value",
+   "ok": true,
+   "detail": "Fruit\n\nfruit: Banana\n\nFrameworks\nReact\nVue\n\npicks: React,Vue\n\n50%\n\nbump\nJSON\n\nInvalid JSON\n\njson: {bad json\n\n$ 50,000\ntoggle collapse\n\ncollapsed content"
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4",
+  "TimeInput element: <input class=\"m_468e7eda m_8fb7ebe7 mantine-Input-input mantine-TimeInput-input\" data-variant=\"default\" step=\"60\" aria-invalid=\"false\" id=\"mantine-f2ejypl6x\" type=\"time\">",
+  "multiselect dropdown visible options: ['React', 'Vue', 'Svelte']",
+  "ring sections stroke-dasharray: ['131.94689145077132, 131.94689145077132', '131.94689145077132, 131.94689145077132']"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 22,
+  "console_total": 30,
+  "console_benign": 24,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 1,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [
+   {
+    "t": 22.72,
+    "ctx": "mantine",
+    "error": "Cannot read properties of null (reading 'name')",
+    "url": "http://localhost:3315/qa-mantine"
+   }
+  ],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 3.96,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3315/",
+   "location": {
+    "url": "http://localhost:3315/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 8.15,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3315/dates",
+   "location": {
+    "url": "http://localhost:3315/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 10.69,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3315/pill",
+   "location": {
+    "url": "http://localhost:3315/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 15.98,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3315/tags-input",
+   "location": {
+    "url": "http://localhost:3315/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 18.36,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3315/tags-input",
+   "location": {
+    "url": "http://localhost:3315/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 26.62,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3315/qa-mantine",
+   "location": {
+    "url": "http://localhost:3315/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3315/?token=qWxts0DdL7xq": {
+   "ctx": "mantine",
+   "sent": 1,
+   "recv": 6,
+   "sent_samples": [
+    "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"error\",\"data\":{\"name\":\"Error\",\"message\":\"ResizeObserver loop completed with undelivered notifications.\",\"stack\":\"Error: ResizeObserver loop completed with undelivered notifications.\\n    at http://localhost:3315/@vite/client:363:50\"}}}"
+   ],
+   "recv_samples": [
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  "ws://localhost:8315/_event/?token=a86dee02-5edf-4802-d372-62caac305414&EIO=4&transport=websocket": {
+   "ctx": "mantine",
+   "sent": 20,
+   "recv": 33,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/dates\",\"asPath\":\"/dates\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/pill\",\"asPath\":\"/pill\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/tags-input\",\"asPath\":\"/tags-input\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___tags_input____tags_input_state.update_tags\",\"payload\":{\"tags\":[\"Tag1\",\"Tag2\",\"Tag3\"]},\"router_data\":{\"pathname\":\"/tags-input\",\"asPath\":\"/tags-input\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___tags_input____tags_input_state.update_tags\",\"payload\":{\"tags\":[\"Tag2\",\"Tag3\"]},\"router_data\":{\"pathname\":\"/tags-input\",\"asPath\":\"/tags-input\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/tags-input\",\"asPath\":\"/tags-input\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/qa-mantine\",\"asPath\":\"/qa-mantine\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_fruit\",\"payload\":{\"value\":\"Banana\"},\"router_data\":{\"pathname\":\"/qa-mantine\",\"asPath\":\"/qa-mantine\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_picks\",\"payload\":{\"value\":[\"React\",\"Vue\"]},\"router_data\":{\"pathname\":\"/qa-mantine\",\"asPath\":\"/qa-mantine\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.bump\",\"router_data\":{\"pathname\":\"/qa-mantine\",\"asPath\":\"/qa-mantine\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_json_text\",\"payload\":{\"value\":\"{\\\"b\\\": [1,2]}\"},\"router_data\":{\"pathname\":\"/qa-mantine\",\"asPath\":\"/qa-mantine\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_json_text\",\"payload\":{\"value\":\"{\\n  \\\"b\\\": [\\n    1,\\n    2\\n  ]\\n}\"},\"router_data\":{\"pathname\":\"/qa-mantine\",\"asPath\":\"/qa-mantine\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_json_text\",\"payload\":{\"value\":\"{bad json\"},\"router_data\":{\"pathname\":\"/qa-mantine\",\"asPath\":\"/qa-mantine\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.toggle\",\"router_data\":{\"pathname\":\"/qa-mantine\",\"asPath\":\"/qa-mantine\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"YtJOs4zc2__oOUf_AAA-\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"gKJBjY26Vhk4Y-V3AAA_\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8315\",\"origin\":\"http://localhost:3315\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"t3xsUZs46icreyDfDsBfdg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"Hr8iVXK1pFwy99c8AABA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"LVzclPtve7MOD-jsAABB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8315\",\"origin\":\"http://localhost:3315\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"2Gut034KYDhBlIVd7o/4mg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"PZcn7U1zIW6lDoPKAABC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"0v7dR3PReGz2t9GzAABD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8315\",\"origin\":\"http://localhost:3315\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"U8/84if8XDsDDy+zqY8L2A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"PZcMX_D9v30L9-UEAABE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"MZ7xZZOcPUHn958MAABF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8315\",\"origin\":\"http://localhost:3315\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"nL2zAFE5bIZmWJwI9on0QQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___tags_input____tags_input_state\":{\"tags_rx_state_\":[\"Tag1\",\"Tag2\",\"Tag3\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___tags_input____tags_input_state\":{\"tags_rx_state_\":[\"Tag2\",\"Tag3\"]}}}]",
+    "0{\"sid\":\"j_bqwt04n-OYwLN5AABG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"yP8-VIpnlm_6CcOCAABH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8315\",\"origin\":\"http://localhost:3315\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"yGZ+4j6ExPj229PUOmLUWA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"fH2tVkk1ui7mYnCvAABI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"s16r-X55N5Y802AAAABJ\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8315\",\"origin\":\"http://localhost:3315\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Ot7y/T6qPDRHyxdvNM1x3A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"fruit_rx_state_\":\"Banana\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"picks_rx_state_\":[\"React\",\"Vue\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"progress_rx_state_\":50}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"json_text_rx_state_\":\"{\\\"b\\\": [1,2]}\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"json_text_rx_state_\":\"{\\n  \\\"b\\\": [\\n    1,\\n    2\\n  ]\\n}\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"json_text_rx_state_\":\"{bad json\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"opened_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 0.69,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/",
+   "method": "GET"
+  },
+  {
+   "t": 0.87,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 0.88,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 0.89,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 1.28,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/app/routes/_index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 3.96,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/dates",
+   "method": "GET"
+  },
+  {
+   "t": 4.1,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 4.1,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 4.1,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 4.22,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/app/routes/[dates]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 8.15,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/pill",
+   "method": "GET"
+  },
+  {
+   "t": 8.27,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 8.27,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 8.3,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 8.36,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/app/routes/[pill]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 10.69,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/tags-input",
+   "method": "GET"
+  },
+  {
+   "t": 10.84,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 10.84,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 10.85,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 10.95,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/app/routes/[tags-input]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 15.99,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/tags-input",
+   "method": "GET"
+  },
+  {
+   "t": 16.08,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 16.08,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 16.11,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 16.16,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/app/routes/[tags-input]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 18.36,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/qa-mantine",
+   "method": "GET"
+  },
+  {
+   "t": 18.45,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 18.45,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 18.45,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 18.52,
+   "ctx": "mantine",
+   "url": "http://localhost:3315/app/routes/[qa-mantine]._index.jsx?import",
+   "method": "GET"
+  }
+ ]
+}

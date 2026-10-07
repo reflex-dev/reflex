@@ -1,0 +1,226 @@
+────────────────────────────── Initializing evapp ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized evapp. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 30/29 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:05
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8465/
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+EVLOG 1791359219.361 BACKEND_EXC #1 RuntimeError: boom-intentional
+EVLOG 1791359219.364 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 510, in _execute_event \n     await process_event( \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 326, in process_event \n     events = fn(state, **payload) \n              ^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events2/run/a2_prod/evapp/evapp.py", line 385, in boom \n     raise RuntimeError("boom-intentional") \n RuntimeError: boom-intentional \n 
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+EVLOG 1791359224.124 BACKEND_EXC #2 RuntimeError: boom-intentional
+EVLOG 1791359224.125 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 510, in _execute_event \n     await process_event( \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 326, in process_event \n     events = fn(state, **payload) \n              ^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events2/run/a2_prod/evapp/evapp.py", line 385, in boom \n     raise RuntimeError("boom-intentional") \n RuntimeError: boom-intentional \n 
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+EVLOG 1791359228.968 FRONTEND_EXC #1 Exception: TypeError: Cannot create property 'router_data' on number '5'
+TypeError: Cannot create property 'router_data' on number '5'
+    at withRouterData (http://localhost:8465/assets/text-field-6x7oF2qu.js:2
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+EVLOG 1791359233.707 BACKEND_EXC #3 TypeError: Your handler NestState.ret_nested must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references). Returned events of types <class 'reflex_base.event.EventSpec'>, <class 'list'>, <class 'reflex_base.event.EventSpec'>.
+EVLOG 1791359233.707 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 363, in process_event \n     await chain_updates( \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 248, in chain_updates \n     _check_valid_yield(events, handler_name=handler_name), \n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 108, in _check_valid_yield \n     raise TypeError(msg) \n TypeError: Your handler NestState.ret_nested must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references). Returned events of types <class 'reflex_base.event.EventSpec'>, <class 'list'>, <class 'reflex_base.event.EventSpec'>. \n 
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+EVLOG 1791359238.491 BACKEND_EXC #4 TypeError: Your handler NestState.yield_nested must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references). Returned events of types <class 'reflex_base.event.EventSpec'>, <class 'list'>.
+EVLOG 1791359238.492 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 343, in process_event \n     await chain_updates( \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 248, in chain_updates \n     _check_valid_yield(events, handler_name=handler_name), \n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 108, in _check_valid_yield \n     raise TypeError(msg) \n TypeError: Your handler NestState.yield_nested must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references). Returned events of types <class 'reflex_base.event.EventSpec'>, <class 'list'>. \n 
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+EVLOG 1791359243.295 BACKEND_EXC #5 RuntimeError: boom-intentional
+EVLOG 1791359243.296 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 510, in _execute_event \n     await process_event( \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 326, in process_event \n     events = fn(state, **payload) \n              ^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events2/run/a2_prod/evapp/evapp.py", line 385, in boom \n     raise RuntimeError("boom-intentional") \n RuntimeError: boom-intentional \n 
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+EVLOG 1791359248.036 FRONTEND_EXC #2 Exception: Error: cs-boom
+Error: cs-boom
+    at eval (eval at applyEvent (http://localhost:8465/assets/text-field-6x7oF2qu.js:2:8331), <anonymous>:1:7)
+    at applyEvent (http://localhost:8465/assets/text-field-
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+EVLOG 1791359294.689 TYPELOG_MARK A
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x1' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x2' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x3' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x4' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x5' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x6' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x7' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x8' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x9' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x10' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x11' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x12' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x13' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x14' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x15' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x16' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x17' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x18' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x19' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x20' of type <class 'str'>.
+EVLOG 1791359296.259 TYPELOG_MARK B
+EVLOG 1791359299.324 TYPELOG_MARK C
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+EVLOG 1791359302.439 TYPELOG_MARK D
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+EVLOG 1791359308.873 BACKEND_EXC #6 AttributeError: 'ApiSV' object has no attribute 'set__secret'
+EVLOG 1791359308.878 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 510, in _execute_event \n     await process_event( \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 326, in process_event \n     events = fn(state, **payload) \n              ^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex/state.py", line 229, in setvar \n     getattr(self, constants.SETTER_PREFIX + var_name)(value) \n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n AttributeError: 'ApiSV' object has no attribute 'set__secret' \n 
+EVLOG 1791359310.158 BACKEND_EXC #7 AttributeError: 'ApiSV' object has no attribute 'set_nonexistent'
+EVLOG 1791359310.164 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 510, in _execute_event \n     await process_event( \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 326, in process_event \n     events = fn(state, **payload) \n              ^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex/state.py", line 229, in setvar \n     getattr(self, constants.SETTER_PREFIX + var_name)(value) \n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' \n 
+EVLOG 1791359311.424 BACKEND_EXC #8 AttributeError: 'ApiSV' object has no attribute 'set_secret_view'
+EVLOG 1791359311.431 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 510, in _execute_event \n     await process_event( \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 326, in process_event \n     events = fn(state, **payload) \n              ^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex/state.py", line 229, in setvar \n     getattr(self, constants.SETTER_PREFIX + var_name)(value) \n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n AttributeError: 'ApiSV' object has no attribute 'set_secret_view'. Did you mean: 'secret_view'? \n 
+Error processing event queue entry for 
+Event(name='reflex___state____state.evapp___evapp____api_sv.no_such_handler', 
+router_data={'pathname': '/api', 'asPath': '/api/', 'sid': 
+'sM3d60e9ZBrw3MtWAAA7', 'headers': {'host': 'localhost:8466', 'connection': 
+'Upgrade', 'pragma': 'no-cache', 'cache-control': 'no-cache', 'user-agent': 
+'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) 
+HeadlessChrome/141.0.0.0 Safari/537.36', 'upgrade': 'websocket', 'origin': 
+'http://localhost:8465', 'sec-websocket-version': '13', 'accept-encoding': 
+'gzip, deflate, br, zstd', 'accept-language': 'en-US,en;q=0.9', 
+'sec-websocket-key': 'TDismKNw2qAOuIxjZDEVbQ==', 'sec-websocket-extensions': 
+'permessage-deflate; client_max_window_bits', 'sec-websocket-protocol': 
+'0.10.0a2', 'asgi-scope-client': '127.0.0.1'}, 'ip': '127.0.0.1', 'query': {}, 
+'token': '0f96b11a-1559-441b-a358-c143d51af081'}, payload={}) 
+[txid=f11cadd74982]:
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 852, in _process_queue
+    registered_handler = RegistrationContext.get().event_handlers[
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'reflex___state____state.evapp___evapp____api_sv.no_such_handler'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 859, in _process_queue
+    raise KeyError(msg) from ke
+KeyError: 'No registered handler found for event: reflex___state____state.evapp___evapp____api_sv.no_such_handler'
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.

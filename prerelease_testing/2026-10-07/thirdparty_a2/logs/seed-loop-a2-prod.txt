@@ -1,0 +1,4 @@
+UP after 6s (http://localhost:3510/)
+seed=0 mode=prod a2  RESULT tp_ls_cv='' ui='ls_cv=' cv="cv_check=value=''" after_2nd_reload_tp_ls_cv=''
+UP after 7s (http://localhost:3510/)
+seed=4 mode=prod a2  RESULT tp_ls_cv='' ui='ls_cv=' cv="cv_check=value=''" after_2nd_reload_tp_ls_cv=''

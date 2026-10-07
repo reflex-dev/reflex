@@ -1,0 +1,384 @@
+{
+ "checks": [
+  {
+   "name": "/hotkey builds+renders",
+   "ok": true,
+   "detail": "/hotkey"
+  },
+  {
+   "name": "global_hotkey_watcher delivers keys + modifiers",
+   "ok": true,
+   "detail": "a,shift+Shift,shift+B,Escape"
+  },
+  {
+   "name": "/intersection builds+renders",
+   "ok": true,
+   "detail": "/intersection"
+  },
+  {
+   "name": "intersection_observer on_intersect/on_non_intersect",
+   "ok": true,
+   "detail": "before='seen=0 unseen=1' in='seen=1 unseen=1' out='seen=1 unseen=2'"
+  },
+  {
+   "name": "/audio builds+renders",
+   "ok": true,
+   "detail": "/audio"
+  },
+  {
+   "name": "audio capture start/stop -> on_data_available",
+   "ok": false,
+   "detail": "TIMEOUT(last=\"chunks=0 total=0 codec= started=false error={'isTrusted': False, 'data': {}}\")"
+  },
+  {
+   "name": "/webcam skipped (TP_SKIP)",
+   "ok": true,
+   "detail": "page left out of the app"
+  },
+  {
+   "name": "/icons builds+renders",
+   "ok": true,
+   "detail": "/icons"
+  },
+  {
+   "name": "simpleicons render",
+   "ok": true,
+   "detail": "svg+img=4"
+  },
+  {
+   "name": "/monaco skipped (TP_SKIP)",
+   "ok": true,
+   "detail": "page left out of the app"
+  },
+  {
+   "name": "/calendar builds+renders",
+   "ok": true,
+   "detail": "/calendar"
+  },
+  {
+   "name": "react-calendar renders day tiles",
+   "ok": true,
+   "detail": "tiles=35"
+  },
+  {
+   "name": "calendar on_change -> state",
+   "ok": false,
+   "detail": "TIMEOUT(last='picked=')"
+  },
+  {
+   "name": "/pyplot builds+renders",
+   "ok": true,
+   "detail": "/pyplot"
+  },
+  {
+   "name": "pyplot renders PNG data URI and updates",
+   "ok": true,
+   "detail": "len1=10574 len2=9858"
+  },
+  {
+   "name": "/recaptcha builds+renders",
+   "ok": true,
+   "detail": "/recaptcha"
+  },
+  {
+   "name": "recaptcha widget mounted (iframe present or script attempted)",
+   "ok": true,
+   "detail": "['http://localhost:3510/recaptcha/']"
+  },
+  {
+   "name": "/motion builds+renders",
+   "ok": true,
+   "detail": "/motion"
+  },
+  {
+   "name": "framer-motion div animates (style set)",
+   "ok": true,
+   "detail": "opacity: 1; transform: scale(1.5);"
+  },
+  {
+   "name": "/type-animation builds+renders",
+   "ok": true,
+   "detail": "/type-animation"
+  },
+  {
+   "name": "type animation types text",
+   "ok": true,
+   "detail": "Second line"
+  },
+  {
+   "name": "/image-zoom builds+renders",
+   "ok": true,
+   "detail": "/image-zoom"
+  },
+  {
+   "name": "image zoom opens modal",
+   "ok": true,
+   "detail": "modal-like elements=2"
+  },
+  {
+   "name": "/color-picker builds+renders",
+   "ok": true,
+   "detail": "/color-picker"
+  },
+  {
+   "name": "color picker on_change -> state",
+   "ok": true,
+   "detail": "#2878c9"
+  },
+  {
+   "name": "/qrcode builds+renders",
+   "ok": true,
+   "detail": "/qrcode"
+  },
+  {
+   "name": "qrcode re-renders on state change",
+   "ok": true,
+   "detail": "len1=15814 len2=11110"
+  },
+  {
+   "name": "/dynoselect builds",
+   "ok": false,
+   "detail": "VarTypeError: Unsupported Operand type(s) for []: ObjectCastedVar, Field"
+  },
+  {
+   "name": "/chat builds+renders",
+   "ok": true,
+   "detail": "/chat"
+  },
+  {
+   "name": "reflex-chat default process appends assistant reply",
+   "ok": true,
+   "detail": "TIMEOUT(last='home\\n/chat\\nBuilt with\\n\\nhello bot\\n\\nPass the process argument to connect the chat to a model.\\n\\nSend\\nBuilt with Reflex')"
+  },
+  {
+   "name": "/chat-initial builds+renders",
+   "ok": true,
+   "detail": "/chat-initial"
+  },
+  {
+   "name": "reflex-chat initial_messages rendered",
+   "ok": true,
+   "detail": "home\n/chat-initial\nBuilt with\n\nINITIAL-GREETING\n\nSend\nBuilt with Reflex"
+  },
+  {
+   "name": "/clerk skipped (TP_SKIP)",
+   "ok": true,
+   "detail": "page left out of the app"
+  },
+  {
+   "name": "errors page",
+   "ok": true,
+   "detail": "1 errors"
+  }
+ ],
+ "anomalies": {
+  "console_nonbenign": [
+   {
+    "where": "/hotkey",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "benign": false
+   },
+   {
+    "where": "/recaptcha",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   }
+  ],
+  "page_errors": [
+   {
+    "where": "/audio",
+    "page": "main",
+    "error": "Failed to execute 'importScripts' on 'WorkerGlobalScope': The script at 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js' failed to load."
+   },
+   {
+    "where": "/audio",
+    "page": "main",
+    "error": "Cannot read properties of null (reading 'name')"
+   }
+  ],
+  "failed_requests": [
+   {
+    "where": "/audio",
+    "page": "main",
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "/recaptcha",
+    "page": "main",
+    "url": "https://www.google.com/recaptcha/api.js?onload=onloadcallback&render=explicit",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "/hotkey",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "benign": false
+  },
+  {
+   "where": "/intersection",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/audio",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/icons",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/icons",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  },
+  {
+   "where": "/calendar",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/pyplot",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/recaptcha",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/recaptcha",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "/motion",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/type-animation",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/image-zoom",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/color-picker",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/qrcode",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/dynoselect",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "log",
+   "text": "_call_script SyntaxError: missing ) after argument list\n    at applyEvent (http://localhost:3510/assets/state-D2yVvqnS.js:2:8350)\n    at processEvent (http://localhost:3510/assets/state-D2yVvqnS.js:2:9962)\n    at queueEvents (http://localhost:3510/assets/state-D2yVvqnS.js:2:9692)\n    at Socket.<anonymous> (http://localhost:3510/assets/state-D2yVvqnS.js:2:13229)\n    at Emitter.emit (http://localhost:3510/assets/state-D2yVvqnS.js:1:5902)\n    at Socket.emitEvent (http://localhost:3510/assets/state-D2yVvqnS.js:1:37564)\n    at Socket.onevent (http://localhost:3510/assets/state-D2yVvqnS.js:1:37371)\n    at Socket.onpacket (http://localhost:3510/assets/state-D2yVvqnS.js:1:37021)\n    at Emitter.emit (http://localhost:3510/assets/state-D2yVvqnS.js:1:5902)\n    at http://localhost:3510/assets/state-D2yVvqnS.js:1:43092",
+   "benign": false
+  },
+  {
+   "where": "/chat",
+   "page": "main",
+   "type": "log",
+   "text": "_call_script SyntaxError: missing ) after argument list\n    at applyEvent (http://localhost:3510/assets/state-D2yVvqnS.js:2:8350)\n    at processEvent (http://localhost:3510/assets/state-D2yVvqnS.js:2:9962)\n    at queueEvents (http://localhost:3510/assets/state-D2yVvqnS.js:2:9692)\n    at Socket.<anonymous> (http://localhost:3510/assets/state-D2yVvqnS.js:2:13229)\n    at Emitter.emit (http://localhost:3510/assets/state-D2yVvqnS.js:1:5902)\n    at Socket.emitEvent (http://localhost:3510/assets/state-D2yVvqnS.js:1:37564)\n    at Socket.onevent (http://localhost:3510/assets/state-D2yVvqnS.js:1:37371)\n    at Socket.onpacket (http://localhost:3510/assets/state-D2yVvqnS.js:1:37021)\n    at Emitter.emit (http://localhost:3510/assets/state-D2yVvqnS.js:1:5902)\n    at http://localhost:3510/assets/state-D2yVvqnS.js:1:43092",
+   "benign": false
+  },
+  {
+   "where": "/chat-initial",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "errors",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "errors",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [
+  {
+   "where": "/audio",
+   "page": "main",
+   "url": "https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "/recaptcha",
+   "page": "main",
+   "url": "https://www.google.com/recaptcha/api.js?onload=onloadcallback&render=explicit",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "bad_responses_all": [],
+ "ws": []
+}

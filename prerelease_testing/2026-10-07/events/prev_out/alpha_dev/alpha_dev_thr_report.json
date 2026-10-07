@@ -1,0 +1,107 @@
+{
+ "label": "alpha_dev_thr",
+ "base": "http://localhost:3460",
+ "results": [
+  {
+   "name": "throttle.throttle200_supersedes_typing",
+   "status": "pass",
+   "details": {
+    "typing_seconds": 0.69,
+    "received": [
+     "a",
+     "abcdefg",
+     "abcdefghijklmn",
+     "abcdefghijklmnopqrst"
+    ],
+    "applied": [
+     "abcdefghijklmnopqrst"
+    ],
+    "final_value_reached_backend": true,
+    "input_value": "abcdefghijklmnopqrst",
+    "timeline": {
+     "thr-received": [
+      [
+       0.01,
+       "a|abcdefg|abcdefghijklmn|abcdefghijklmnopqrst"
+      ]
+     ],
+     "thr-applied": [
+      [
+       0.02,
+       ""
+      ],
+      [
+       0.48,
+       "abcdefghijklmnopqrst"
+      ]
+     ]
+    }
+   },
+   "t": 5.568
+  },
+  {
+   "name": "throttle.debounce300_supersedes_typing",
+   "status": "pass",
+   "details": {
+    "received": [
+     "abcdefghijklmnopqrst"
+    ]
+   },
+   "t": 7.768
+  },
+  {
+   "name": "temporal.sigstop_3s_socket_still_open",
+   "status": "pass",
+   "details": {
+    "hits": "T1,N1,T2,N2",
+    "expected": "T1,N1,T2,N2",
+    "stopped_pids": [
+     4414,
+     4563
+    ],
+    "note": "socket.io client still reports connected during a 3s stop, so temporal events are sent and delivered late"
+   },
+   "t": 12.586
+  },
+  {
+   "name": "temporal.offline_disconnect",
+   "status": "fail",
+   "details": {
+    "hits": "T3,N3,T4,N4",
+    "expected": "N3,N4 (temporal dropped, normal delivered in order after reconnect)",
+    "ws_closed_while_offline": false
+   },
+   "t": 18.06
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 7.786,
+   "tag": "thr",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/throttle"
+  },
+  {
+   "t": 12.589,
+   "tag": "temporal",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/throttle"
+  },
+  {
+   "t": 18.064,
+   "tag": "temporal-offline",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/throttle"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "extra": {}
+}

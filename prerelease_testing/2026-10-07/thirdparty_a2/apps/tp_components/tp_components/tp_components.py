@@ -6,10 +6,14 @@ component shows the error on its own page (id=page_error) instead of breaking th
 
 from __future__ import annotations
 
+import os
 import traceback
 from typing import Any
 
 import reflex as rx
+
+# Optional: TP_SKIP="clerk,webcam" leaves those pages out (the clerk page breaks `reflex run --env prod`'s build).
+SKIP = {s.strip().strip("/") for s in os.environ.get("TP_SKIP", "").split(",") if s.strip()}
 
 ERRORS: dict[str, str] = {}
 PAGES: list[str] = []
@@ -17,6 +21,8 @@ PAGE_FNS: dict[str, Any] = {}
 
 
 def guard(route: str, build):
+    if route.strip("/") in SKIP:
+        return None
     PAGES.append(route)
 
     def page() -> rx.Component:

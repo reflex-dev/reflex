@@ -1,0 +1,67 @@
+| check | a2 dev | a2 prod | 0.9.12 dev | 0.9.12 prod | a1 dev (10-06) |
+|---|---|---|---|---|---|
+| sup.slow_rapid_clicks | pass | pass | pass | pass | pass |
+| sup.cancelled_unyielded_mutation | anomaly | anomaly | anomaly | anomaly | anomaly |
+| sup.background_plus_supersedes | pass | pass | pass | pass | pass |
+| sup.bg_cancel_while_holding_lock | pass | pass | pass | pass | pass |
+| sup.cpu_bound_non_yielding | info | info | info | info | info |
+| sup.sync_generator_blocking_sleep | info | info | info | info | info |
+| sup.chained_child_cancelled | pass | pass | pass | pass | pass |
+| sup.component_state_instances_independent | pass | pass | pass | pass | pass |
+| sup.component_state_self_supersede | pass | pass | pass | pass | pass |
+| deco.late_marker_before_first_use | pass | pass | pass | pass | pass |
+| deco.late_marker_after_is_background_read | fail | fail | pass | pass | fail |
+| deco.functools_wraps_inner | pass | pass | pass | pass | pass |
+| deco.functools_wraps_outer | pass | pass | pass | pass | pass |
+| deco.trace_wrapper_executed | info | info | info | info | info |
+| deco.mixin_background_two_substates | pass | pass | pass | pass | pass |
+| deco.pkg_redecorated_early | pass | pass | pass | pass | pass |
+| deco.pkg_redecorated_late | pass | pass | pass | pass | pass |
+| nested.match_list_branch | pass | pass | fail | - | pass |
+| nested.deep50_nested_match | pass | pass | fail | - | pass |
+| nested.backend_failure_mid_list_flat | pass | pass | pass | - | pass |
+| nested.backend_failure_mid_nested_list | pass | pass | fail | - | pass |
+| nested.malformed_event_mid_nested_list | pass | pass | fail | - | pass |
+| nested.handler_returns_nested_list | fail | fail | fail | - | fail |
+| nested.handler_yields_nested_list | fail | fail | fail | - | fail |
+| nested.handler_returns_flat_with_failing | pass | pass | pass | - | pass |
+| nested.call_script_throws_mid_nested_list | pass | pass | fail | - | pass |
+| nested.call_script_callback_list | pass | pass | pass | - | pass |
+| nested.run_script_mid_nested_list | pass | pass | fail | - | pass |
+| nested.prevent_default_inside_nested_list | pass | pass | - | - | pass |
+| nested.issue7319_ctrl_b_shortcut | pass | pass | - | - | pass |
+| throttle.throttle200_supersedes_typing | pass | pass | pass | pass | pass |
+| throttle.leading_edge_drops_final_value | anomaly | anomaly | anomaly | anomaly | anomaly |
+| throttle.debounce300_supersedes_typing | pass | pass | pass | pass | pass |
+| temporal.sigstop_3s_socket_still_open | pass | pass | pass | pass | pass |
+| temporal.proxy_drop_socket_closed | pass | pass | pass | pass | - |
+| t_temporal_proxy_drop [console] | anomaly | anomaly | anomaly | anomaly | - |
+| vars.initial | pass | pass | fail | fail | pass |
+| vars.initial.utf16_vs_codepoints | anomaly | anomaly | anomaly | anomaly | anomaly |
+| vars.step_neg3 | pass | pass | fail | fail | pass |
+| vars.step_neg3.utf16_vs_codepoints | anomaly | anomaly | anomaly | anomaly | anomaly |
+| vars.bounds_7_2_step_neg3 | pass | pass | fail | fail | pass |
+| vars.bounds_7_2_step_neg3.utf16_vs_codepoints | anomaly | anomaly | anomaly | anomaly | anomaly |
+| vars.bounds_neg8_neg2_step2 | pass | pass | fail | fail | pass |
+| vars.bounds_neg8_neg2_step2.utf16_vs_codepoints | anomaly | anomaly | anomaly | anomaly | anomaly |
+| vars.bounds_neg8_neg2_step_neg3 | pass | pass | fail | fail | pass |
+| vars.bounds_neg8_neg2_step_neg3.utf16_vs_codepoints | anomaly | anomaly | anomaly | anomaly | anomaly |
+| vars.objkey_z | pass | pass | fail | fail | pass |
+| vars.objkey_z.utf16_vs_codepoints | anomaly | anomaly | anomaly | anomaly | anomaly |
+| vars.objkey_missing | pass | pass | fail | fail | pass |
+| vars.objkey_missing.utf16_vs_codepoints | anomaly | anomaly | anomaly | anomaly | anomaly |
+| vars.deep_equals_state_client_computed_cond_match | pass | pass | - | - | pass |
+| typelog.counts | info | info | info | info | info |
+| api.bg_get_state_get_var_value_sibling | pass | pass | pass | pass | pass |
+| api.raw_setvar_events | pass | pass | pass | pass | pass |
+| api.raw_setvar_is_hydrated_false | info | info | info | info | info |
+| api.reset_client_storage_substates | pass | pass | pass | pass | pass |
+| api.dataclass_nested_inplace_mutation | pass | pass | pass | pass | pass |
+| api.undeclared_attribute_assignment | info | info | info | info | info |
+| bind.instance_access_and_inheritance | info | info | info | info | info |
+| bind.foreach_args_0_to_5_and_lambdas | pass | pass | pass | pass | pass |
+| priv.dunder_attrs_in_handlers | pass | pass | fail | fail | - |
+| t_sup_slow [console] | - | anomaly | - | anomaly | - |
+| t_vars [console] | - | anomaly | - | anomaly | - |
+| temporal.offline_disconnect | - | - | - | - | fail |
+| temporal.ping_timeout_disconnect | - | - | - | - | pass |

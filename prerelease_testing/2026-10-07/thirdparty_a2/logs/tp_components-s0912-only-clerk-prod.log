@@ -1,0 +1,96 @@
+DeprecationWarning: state_auto_setters has been deprecated in version 0.9.0. 
+auto setters will be removed; use explicit event handlers instead. It will be 
+completely removed in 1.0. (rxconfig.py:3)
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n1.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+Instantiating components directly is not supported. Use `Calendar.create` method
+instead.
+[tp_components] page /dynoselect failed to build: EventFnArgMismatchError: Event on_open_auto_focus only provides 0 arguments, but <function Dynoselect.get_component.<locals>.<lambda> at 0x7fca33ed6340> requires at least 1 arguments to be passed to the event handler.
+See https://reflex.dev/docs/events/event-arguments/
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n2.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n3.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 49/48 0:00:00
+Creating Production Build failed with exit code 1
+$ react-router build
+Using Vite Environment API
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 1944 modules transformed.
+rendering chunks...
+✗ Build failed in 9.10s
+Build failed with 1 error:
+
+[31m[MISSING_EXPORT] [0m"Event" is not exported by "utils/state.js".
+   [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m app/routes/[clerk]._index.jsx:5:10
+[38;5;246m][0m
+   [38;5;246m│[0m
+ [38;5;246m5 │[0m 
+[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249m
+t[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0mEvent[38;5;249m,[0m[38;5;249m
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mf[0m[38;5;249ms[0m[38;5;249m 
+[0m[38;5;249m}[0m[38;5;249m 
+[0m[38;5;249mf[0m[38;5;249mr[0m[38;5;249mo[0m[38;5;249mm[0m[38;5;249m 
+[0m[38;5;249m"[0m[38;5;249m$[0m[38;5;249m/[0m[38;5;249mu[0m[38;5;249mt[0m[38;5;2
+49mi[0m[38;5;249ml[0m[38;5;249ms[0m[38;5;249m/[0m[38;5;249ms[0m[38;5;249mt[0m[38
+;5;249ma[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249m"[0m[38;5;249m;[0m
+ [38;5;240m  │[0m          ──┬──  
+ [38;5;240m  │[0m            ╰──── Missing export
+[38;5;246m───╯[0m
+
+    at aggregateBindingErrorsIntoJsError 
+(file:///tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+atchpad/apps/thirdparty_a2/run/s0912/tp_components/.web/node_modules/rolldown/di
+st/shared/error-Bj1xBdEY.mjs:49:18)
+    at unwrapBindingResult 
+(file:///tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+atchpad/apps/thirdparty_a2/run/s0912/tp_components/.web/node_modules/rolldown/di
+st/shared/error-Bj1xBdEY.mjs:19:128)
+    at #build 
+(file:///tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+atchpad/apps/thirdparty_a2/run/s0912/tp_components/.web/node_modules/rolldown/di
+st/shared/rolldown-jmAeXo_f.mjs:133:34)
+    at async buildEnvironment 
+(file:///tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+atchpad/apps/thirdparty_a2/run/s0912/tp_components/.web/node_modules/vite/dist/n
+ode/chunks/node.js:33821:66)
+    at async Object.build 
+(file:///tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+atchpad/apps/thirdparty_a2/run/s0912/tp_components/.web/node_modules/vite/dist/n
+ode/chunks/node.js:34242:19)
+    at async buildApp 
+(file:///tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+atchpad/apps/thirdparty_a2/run/s0912/tp_components/.web/node_modules/@react-rout
+er/dev/dist/vite.js:1543:8)
+    at async buildApp 
+(file:///tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+atchpad/apps/thirdparty_a2/run/s0912/tp_components/.web/node_modules/@react-rout
+er/dev/dist/vite.js:800:6)
+    at async Object.buildApp 
+(file:///tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+atchpad/apps/thirdparty_a2/run/s0912/tp_components/.web/node_modules/@react-rout
+er/dev/dist/vite.js:2211:8)
+    at async Object.buildApp 
+(file:///tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+atchpad/apps/thirdparty_a2/run/s0912/tp_components/.web/node_modules/vite/dist/n
+ode/chunks/node.js:34238:38)
+    at async build 
+(file:///tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+atchpad/apps/thirdparty_a2/run/s0912/tp_components/.web/node_modules/@react-rout
+er/dev/dist/build-CsJF5XUO.js:16:2) {
+  errors: [Getter/Setter]
+}
+error: script "export" exited with code 1
+
+
+
+Run with --loglevel debug  for the full log.
+Creating Production Build:  ━━━━━━━━━━━━━━━━━╸                   50% 2/4 0:00:10

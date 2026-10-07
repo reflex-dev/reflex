@@ -1,0 +1,788 @@
+{
+ "label": "stable_dev_rest",
+ "base": "http://localhost:3464",
+ "results": [
+  {
+   "name": "throttle.throttle200_supersedes_typing",
+   "status": "pass",
+   "details": {
+    "typing_seconds": 0.66,
+    "received": [
+     "a",
+     "abcdefgh",
+     "abcdefghijklmno"
+    ],
+    "applied": [
+     "abcdefghijklmno"
+    ],
+    "final_value_reached_backend": false,
+    "input_value": "abcdefghijklmnopqrst",
+    "timeline": {
+     "thr-received": [
+      [
+       0.01,
+       "a|abcdefgh|abcdefghijklmno"
+      ]
+     ],
+     "thr-applied": [
+      [
+       0.01,
+       ""
+      ],
+      [
+       0.24,
+       "abcdefghijklmno"
+      ]
+     ]
+    }
+   },
+   "t": 7.097
+  },
+  {
+   "name": "throttle.leading_edge_drops_final_value",
+   "status": "anomaly",
+   "details": {
+    "note": "throttle has no trailing call: the last keystrokes never reach the backend",
+    "last_received": "abcdefghijklmno",
+    "input_value": "abcdefghijklmnopqrst"
+   },
+   "t": 7.099
+  },
+  {
+   "name": "throttle.debounce300_supersedes_typing",
+   "status": "pass",
+   "details": {
+    "received": [
+     "abcdefghijklmnopqrst"
+    ]
+   },
+   "t": 9.321
+  },
+  {
+   "name": "temporal.sigstop_3s_socket_still_open",
+   "status": "pass",
+   "details": {
+    "hits": "T1,N1,T2,N2",
+    "expected": "T1,N1,T2,N2",
+    "stopped_pids": [
+     19440,
+     19504
+    ],
+    "note": "socket.io client still reports connected during a 3s stop, so temporal events are sent and delivered late"
+   },
+   "t": 14.078
+  },
+  {
+   "name": "vars.initial",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 16.3
+  },
+  {
+   "name": "vars.initial.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 16.3
+  },
+  {
+   "name": "vars.step_neg3",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 17.086
+  },
+  {
+   "name": "vars.step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 17.086
+  },
+  {
+   "name": "vars.bounds_7_2_step_neg3",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 17.881
+  },
+  {
+   "name": "vars.bounds_7_2_step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 17.881
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step2",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 18.689
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step2.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 18.689
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step_neg3",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 19.473
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 19.473
+  },
+  {
+   "name": "vars.objkey_z",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 20.291
+  },
+  {
+   "name": "vars.objkey_z.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 20.291
+  },
+  {
+   "name": "vars.objkey_missing",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 21.09
+  },
+  {
+   "name": "vars.objkey_missing.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 21.09
+  },
+  {
+   "name": "typelog.counts",
+   "status": "info",
+   "details": {
+    "bump_x20": {
+     "bad_inner": 20,
+     "bad_inner_const": 0,
+     "bad_outer": 20,
+     "bad_uncached": 21,
+     "nums_field": 0
+    },
+    "assign_inner_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 0,
+     "bad_uncached": 21,
+     "nums_field": 20
+    },
+    "assign_outer_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 0,
+     "bad_uncached": 21,
+     "nums_field": 20
+    },
+    "ui_nums": "\"notalist\"",
+    "ui_bad_outer": "\"x20\"",
+    "segments_found": [
+     true,
+     true,
+     true
+    ]
+   },
+   "t": 34.121
+  },
+  {
+   "name": "api.bg_get_state_get_var_value_sibling",
+   "status": "pass",
+   "details": {
+    "report": "out=ImmutableStateError in=10 in2=11 ; after=ImmutableStateError",
+    "in_lock_expected": "in=10 in2=11",
+    "ui_sibling_x": "11",
+    "outside_lock_get_var_value": "out=ImmutableStateError"
+   },
+   "t": 35.788
+  },
+  {
+   "name": "api.raw_setvar_events",
+   "status": "pass",
+   "details": {
+    "api-setvar-pub": {
+     "ok": true,
+     "new_backend_exc": 0,
+     "exc_tail": "",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-secret": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-missing": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-computed": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": " attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-raw-missing-handler": {
+     "ok": null,
+     "new_backend_exc": 0,
+     "exc_tail": " attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    }
+   },
+   "t": 43.491
+  },
+  {
+   "name": "api.raw_setvar_is_hydrated_false",
+   "status": "info",
+   "details": {
+    "new_backend_exc": 0,
+    "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+    "still_interactive": true,
+    "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events_vars/out/stable_dev/stable_dev_rest_setvar_is_hydrated.png"
+   },
+   "t": 45.155
+  },
+  {
+   "name": "api.reset_client_storage_substates",
+   "status": "pass",
+   "details": {
+    "before": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-default"
+    },
+    "mutated": {
+     "reset-ls": "ls-changed",
+     "reset-ck": "ck-changed",
+     "reset-plain": "plain-changed",
+     "reset-sub": "sub-changed",
+     "reset-cs-val": "cs-changed"
+    },
+    "storage_mutated": {
+     "ls": "ls-changed",
+     "cookie": "ev_ck=ck-changed"
+    },
+    "after_reset": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-changed"
+    },
+    "storage_after_reset": {
+     "ls": "ls-default",
+     "cookie": "ev_ck=ck-default"
+    },
+    "after_reload": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-changed"
+    }
+   },
+   "t": 49.298
+  },
+  {
+   "name": "api.dataclass_nested_inplace_mutation",
+   "status": "pass",
+   "details": {
+    "initial": [
+     "[]",
+     "[[1]]"
+    ],
+    "after_2_mutations": [
+     "[0,1]",
+     "[[1,7,7]]"
+    ],
+    "snapshot": {
+     "gv_type": "Box",
+     "gv": {
+      "name": "box",
+      "items": [
+       0,
+       1
+      ],
+      "nested": [
+       [
+        1,
+        7,
+        7
+       ]
+      ]
+     },
+     "dict_type": "Box",
+     "dict": {
+      "name": "box",
+      "items": [
+       0,
+       1
+      ],
+      "nested": [
+       [
+        1,
+        7,
+        7
+       ]
+      ]
+     }
+    },
+    "other_session": [
+     "[]",
+     "[[1]]"
+    ]
+   },
+   "t": 53.241
+  },
+  {
+   "name": "api.undeclared_attribute_assignment",
+   "status": "info",
+   "details": {
+    "report_after_assign": "",
+    "backend_exc": 1,
+    "exc_tail": "SetUndefinedStateVarError: The state variable 'undeclared_attr' has not been defined in 'UndeclState'. All",
+    "report_after_readback": "readback=MISSING",
+    "undeclared_name_in_ws_delta": false
+   },
+   "t": 57.442
+  },
+  {
+   "name": "bind.instance_access_and_inheritance",
+   "status": "info",
+   "details": {
+    "bind-inherited-template": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-template-via-self": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-parent-via-self": {
+     "p_log_added": "bump:self=BindParent ; after_bump",
+     "p_count": "1",
+     "c_count": "1",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-bg-parent": {
+     "p_log_added": "bump:self=BindParent ; bump:self=BindParent",
+     "p_count": "3",
+     "c_count": "1",
+     "c_log": "bg_outside=no-error",
+     "new_exc": 0,
+     "exc_tail": ""
+    }
+   },
+   "t": 65.26
+  },
+  {
+   "name": "bind.foreach_args_0_to_5_and_lambdas",
+   "status": "pass",
+   "details": {
+    "got": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ],
+    "expected": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ]
+   },
+   "t": 68.522
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 9.326,
+   "tag": "thr",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/throttle"
+  },
+  {
+   "t": 14.08,
+   "tag": "temporal",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/throttle"
+  },
+  {
+   "t": 21.268,
+   "tag": "vars",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/vars"
+  },
+  {
+   "t": 34.125,
+   "tag": "typelog",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/typelog"
+  },
+  {
+   "t": 35.791,
+   "tag": "api-sib",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/api"
+  },
+  {
+   "t": 45.159,
+   "tag": "api-setvar",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/api"
+  },
+  {
+   "t": 48.002,
+   "tag": "api-reset",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3464/utils/state.js:631",
+   "url": "http://localhost:3464/api"
+  },
+  {
+   "t": 49.301,
+   "tag": "api-reset",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/api"
+  },
+  {
+   "t": 53.243,
+   "tag": "api-dc-2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/api"
+  },
+  {
+   "t": 53.263,
+   "tag": "api-dc",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/api"
+  },
+  {
+   "t": 57.445,
+   "tag": "api-undecl",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/api"
+  },
+  {
+   "t": 68.526,
+   "tag": "bind",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3464/utils/state.js:643",
+   "url": "http://localhost:3464/bind"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "counters": {
+  "console:thr:log": 2,
+  "console:thr:debug": 2,
+  "ws:thr:recv": 14,
+  "console:thr:info": 1,
+  "ws:thr:sent": 10,
+  "console:temporal:log": 2,
+  "console:temporal:debug": 2,
+  "ws:temporal:recv": 13,
+  "console:temporal:info": 1,
+  "ws:temporal:sent": 10,
+  "console:vars:log": 2,
+  "console:vars:debug": 2,
+  "ws:vars:recv": 16,
+  "console:vars:info": 1,
+  "ws:vars:sent": 13,
+  "console:typelog:log": 2,
+  "console:typelog:debug": 2,
+  "ws:typelog:recv": 67,
+  "console:typelog:info": 1,
+  "ws:typelog:sent": 68,
+  "console:api-sib:log": 2,
+  "console:api-sib:debug": 2,
+  "ws:api-sib:recv": 9,
+  "console:api-sib:info": 1,
+  "ws:api-sib:sent": 5,
+  "console:api-setvar:log": 2,
+  "console:api-setvar:debug": 2,
+  "ws:api-setvar:recv": 13,
+  "console:api-setvar:info": 1,
+  "ws:api-setvar:sent": 11,
+  "console:api-reset:log": 4,
+  "console:api-reset:debug": 4,
+  "ws:api-reset:recv": 18,
+  "console:api-reset:info": 2,
+  "ws:api-reset:sent": 14,
+  "console:api-dc:log": 2,
+  "console:api-dc:debug": 2,
+  "ws:api-dc:recv": 10,
+  "console:api-dc:info": 1,
+  "ws:api-dc:sent": 7,
+  "console:api-dc-2:log": 2,
+  "console:api-dc-2:debug": 2,
+  "ws:api-dc-2:recv": 7,
+  "console:api-dc-2:info": 1,
+  "ws:api-dc-2:sent": 4,
+  "console:api-undecl:log": 2,
+  "console:api-undecl:debug": 2,
+  "ws:api-undecl:recv": 9,
+  "console:api-undecl:info": 1,
+  "ws:api-undecl:sent": 6,
+  "console:bind:log": 2,
+  "console:bind:debug": 2,
+  "ws:bind:recv": 26,
+  "console:bind:info": 1,
+  "ws:bind:sent": 21
+ },
+ "extra": {}
+}

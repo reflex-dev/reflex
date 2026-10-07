@@ -5,6 +5,10 @@ import json
 import sys
 import traceback
 from pathlib import Path
+
+import reflex  # ENT_AUTH_VENV_GUARD
+
+assert "/scratchpad/envs/ent_auth2-drv/" in reflex.__file__, reflex.__file__
 from types import SimpleNamespace
 
 from playwright.sync_api import sync_playwright

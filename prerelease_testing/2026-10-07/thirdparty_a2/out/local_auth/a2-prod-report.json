@@ -1,0 +1,519 @@
+{
+ "checks": [
+  {
+   "name": "index heading",
+   "ok": true,
+   "detail": "http://localhost:3510/"
+  },
+  {
+   "name": "index shows Login link when anonymous",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "require_login redirects anonymous to /login",
+   "ok": true,
+   "detail": "http://localhost:3510/login"
+  },
+  {
+   "name": "register page reached",
+   "ok": true,
+   "detail": "http://localhost:3510/register"
+  },
+  {
+   "name": "password mismatch error",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "registration success message",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "redirected to /login after registration",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "duplicate username rejected",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "bad password error",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "login redirects back to /need2login (redirect_to)",
+   "ok": true,
+   "detail": "http://localhost:3510/need2login/"
+  },
+  {
+   "name": "protected content visible",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Logout link visible when authenticated",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ProtectedState.on_load data",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "user-info username",
+   "ok": true,
+   "detail": "Username: alice374375\n\nNo extra UserInfo for 1\n\nBuilt with Reflex"
+  },
+  {
+   "name": "user-info without extra info",
+   "ok": true,
+   "detail": "Username: alice374375\n\nNo extra UserInfo for 1\n\nBuilt with Reflex"
+  },
+  {
+   "name": "still logged in after reload",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "second tab (same context) shares login",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "fresh context is anonymous -> /login",
+   "ok": true,
+   "detail": "http://localhost:3510/login"
+  },
+  {
+   "name": "after logout index shows Login link",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "after logout /protected -> /login",
+   "ok": true,
+   "detail": "http://localhost:3510/login"
+  },
+  {
+   "name": "second tab logged out after reload",
+   "ok": true,
+   "detail": "http://localhost:3510/login"
+  },
+  {
+   "name": "custom registration success",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "custom user info email",
+   "ok": true,
+   "detail": "Username: bob374375\n\nEmail: bob374375@example.com\n\nAccount Created From: 127.0.0.1\n\nBuilt with Reflex"
+  },
+  {
+   "name": "custom user info created_from_ip",
+   "ok": true,
+   "detail": "Username: bob374375\n\nEmail: bob374375@example.com\n\nAccount Created From: 127.0.0.1\n\nBuilt with Reflex"
+  },
+  {
+   "name": "whoami LoginState sees parent computed var",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "whoami MyLocalAuthState sees user",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "whoami email (substate computed var)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "whoami probe handler (get_state + inherited computed)",
+   "ok": true,
+   "detail": "user=bob374375 id=2 auth=True same_token=True email=bob374375@example.com"
+  },
+  {
+   "name": "whoami after logout: email cleared",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "whoami after user switch shows U1",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "whoami after user switch: no email for U1",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "whoami probe after switch",
+   "ok": true,
+   "detail": "user=alice374375 id=1 auth=True same_token=True email=None"
+  },
+  {
+   "name": "subclass override of _validate_fields honoured via self.handle_registration()",
+   "ok": false,
+   "detail": "error_message='<gone>' success='<gone>' url=http://localhost:3510/login"
+  },
+  {
+   "name": "short-password user NOT created by strict register (DB)",
+   "ok": false,
+   "detail": "db row=(3, 'short374375', 1)"
+  },
+  {
+   "name": "short session login",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "short session authenticated",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "new tab while session valid -> protected content",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "new tab after session expiry -> /login",
+   "ok": true,
+   "detail": "http://localhost:3510/login"
+  }
+ ],
+ "anomalies": {
+  "console_nonbenign": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "need2login-anon",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "need2login-anon",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "register",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "register",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "register",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "register-dup",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "register-dup",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "register-dup",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "login-bad",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "login-bad",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "protected",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "user-info",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "reload",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "fresh-context",
+   "page": "ctxB",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "fresh-context",
+   "page": "ctxB",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  },
+  {
+   "where": "logout",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "logout",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "logout",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  },
+  {
+   "where": "logout",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "logout",
+   "page": "tab2",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "logout",
+   "page": "tab2",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "logout",
+   "page": "tab2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  },
+  {
+   "where": "custom-register",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "custom-register",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "custom-register",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "custom-register",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "custom-register",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "whoami",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "whoami",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "whoami",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "whoami",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "strict-register",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "strict-register",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "strict-register",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "strict-register",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "expiry",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "expiry",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "expiry",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "expiry",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "expiry",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "expiry",
+   "page": "tab3",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  },
+  {
+   "where": "expiry",
+   "page": "tab4",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "expiry",
+   "page": "tab4",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  },
+  {
+   "where": "end",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [],
+ "bad_responses_all": [],
+ "ws": [],
+ "users": [
+  "alice374375",
+  "bob374375",
+  "short374375",
+  "carol374375"
+ ]
+}

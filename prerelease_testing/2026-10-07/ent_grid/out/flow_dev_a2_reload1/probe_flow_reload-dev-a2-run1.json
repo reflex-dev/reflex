@@ -1,0 +1,426 @@
+{
+ "name": "probe_flow_reload-dev-a2-run1",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 19.0,
+   "name": "flow overview: moved node position survives reload",
+   "ok": true,
+   "detail": {
+    "before reload": {
+     "1-2": [
+      -124.246,
+      160.583
+     ],
+     "1-3 present": 1,
+     "emoji": "\ud83d\udd25",
+     "nodes": 11
+    },
+    "after reload 1": {
+     "1-2": [
+      -124.246,
+      160.583
+     ],
+     "1-3 present": 1,
+     "emoji": "\ud83d\udd25",
+     "nodes": 11
+    },
+    "reload 1: frames mentioning overview_state": 1,
+    "reload 1: frame sample": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8312\",\"origin\":\"http://localhost:3312\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"FKLuueczyWTD7RXN6d1SZw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "reload 1: events sent during boot": [
+     "reflex___state____state.hydrate_and_load"
+    ],
+    "after reload 2": {
+     "1-2": [
+      -124.246,
+      160.583
+     ],
+     "1-3 present": 1,
+     "emoji": "\ud83d\udd25",
+     "nodes": 11
+    },
+    "reload 2: frames mentioning overview_state": 1,
+    "reload 2: frame sample": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8312\",\"origin\":\"http://localhost:3312\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Ztu3FWuEV5Qr+BtrUMtC/g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "reload 2: events sent during boot": [
+     "reflex___state____state.hydrate_and_load"
+    ],
+    "after client-side nav back": {
+     "1-2": [
+      -124.246,
+      160.583
+     ],
+     "1-3 present": 1,
+     "emoji": "\ud83d\udd25",
+     "nodes": 11
+    }
+   }
+  },
+  {
+   "t": 19.0,
+   "name": "flow overview: emoji (State.emoji) survives reload",
+   "ok": true,
+   "detail": {
+    "before reload": {
+     "1-2": [
+      -124.246,
+      160.583
+     ],
+     "1-3 present": 1,
+     "emoji": "\ud83d\udd25",
+     "nodes": 11
+    },
+    "after reload 1": {
+     "1-2": [
+      -124.246,
+      160.583
+     ],
+     "1-3 present": 1,
+     "emoji": "\ud83d\udd25",
+     "nodes": 11
+    },
+    "reload 1: frames mentioning overview_state": 1,
+    "reload 1: frame sample": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8312\",\"origin\":\"http://localhost:3312\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"FKLuueczyWTD7RXN6d1SZw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "reload 1: events sent during boot": [
+     "reflex___state____state.hydrate_and_load"
+    ],
+    "after reload 2": {
+     "1-2": [
+      -124.246,
+      160.583
+     ],
+     "1-3 present": 1,
+     "emoji": "\ud83d\udd25",
+     "nodes": 11
+    },
+    "reload 2: frames mentioning overview_state": 1,
+    "reload 2: frame sample": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8312\",\"origin\":\"http://localhost:3312\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Ztu3FWuEV5Qr+BtrUMtC/g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "reload 2: events sent during boot": [
+     "reflex___state____state.hydrate_and_load"
+    ],
+    "after client-side nav back": {
+     "1-2": [
+      -124.246,
+      160.583
+     ],
+     "1-3 present": 1,
+     "emoji": "\ud83d\udd25",
+     "nodes": 11
+    }
+   }
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4",
+  "{\"before reload\": {\"1-2\": [-124.246, 160.583], \"1-3 present\": 1, \"emoji\": \"\ud83d\udd25\", \"nodes\": 11}, \"after reload 1\": {\"1-2\": [-124.246, 160.583], \"1-3 present\": 1, \"emoji\": \"\ud83d\udd25\", \"nodes\": 11}, \"reload 1: frames mentioning overview_state\": 1, \"reload 1: frame sample\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8312\\\",\\\"origin\\\":\\\"http://localhost:3312\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"FKLuueczyWTD7RXN6d1SZw==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"gzip, deflate, br, zstd\\\",\\\"accept_language\\\":\\\"en-US,en;q=0.9\\\",\", \"reload 1: events sent during boot\": [\"reflex___state____state.hydrate_and_load\"], \"after reload 2\": {\"1-2\": [-124.246, 160.583], \"1-3 present\": 1, \"emoji\": \"\ud83d\udd25\", \"nodes\": 11}, \"reload 2: frames mentioning overview_state\": 1, \"reload 2: frame sample\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8312\\\",\\\"origin\\\":\\\"http://localhost:3312\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"Ztu3FWuEV5Qr+BtrUMtC/g==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"gzip, deflate, br, zstd\\\",\\\"accept_language\\\":\\\"en-US,en;q=0.9\\\",\", \"reload 2: events sent during boot\": [\"reflex___state____state.hydrate_and_load\"], \"after client-side nav back\": {\"1-2\": [-124.246, 160.583], \"1-3 present\": 1, \"emoji\": \"\ud83d\udd25\", \"nodes\": 11}}"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 2,
+  "console_total": 20,
+  "console_benign": 16,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 8.37,
+   "ctx": "flow-reload",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3312/overview",
+   "location": {
+    "url": "http://localhost:3312/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 11.9,
+   "ctx": "flow-reload",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3312/overview",
+   "location": {
+    "url": "http://localhost:3312/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 15.26,
+   "ctx": "flow-reload",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3312/overview",
+   "location": {
+    "url": "http://localhost:3312/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 19.03,
+   "ctx": "flow-reload",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3312/overview",
+   "location": {
+    "url": "http://localhost:3312/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3312/?token=THGyi6ekAKup": {
+   "ctx": "flow-reload",
+   "sent": 0,
+   "recv": 4,
+   "sent_samples": [],
+   "recv_samples": [
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  "ws://localhost:8312/_event/?token=479903ef-1072-4a30-e436-ad0126e6fa56&EIO=4&transport=websocket": {
+   "ctx": "flow-reload",
+   "sent": 34,
+   "recv": 43,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"aa034ec922f5829c\",\"b084fc0c68f7c73a\",\"8ac1dd7cf873b879\",\"8372c5bea575f0d8\",\"a4c80c5f0519b466\",\"12a0e6c2128f54af\",\"90679af495d1339d\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/overview\",\"asPath\":\"/overview\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_emoji\",\"payload\":{\"emoji\":\"\ud83d\udd25\"},\"router_data\":{\"pathname\":\"/overview\",\"asPath\":\"/overview\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.flow___overview____overview_state.set_nodes\",\"payload\":{\"nodes\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"aa034ec922f5829c\",\"b084fc0c68f7c73a\",\"8ac1dd7cf873b879\",\"8372c5bea575f0d8\",\"a4c80c5f0519b466\",\"12a0e6c2128f54af\",\"90679af495d1339d\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/overview\",\"asPath\":\"/overview\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"aa034ec922f5829c\",\"b084fc0c68f7c73a\",\"8ac1dd7cf873b879\",\"8372c5bea575f0d8\",\"a4c80c5f0519b466\",\"12a0e6c2128f54af\",\"90679af495d1339d\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/overview\",\"asPath\":\"/overview\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"aa034ec922f5829c\",\"b084fc0c68f7c73a\",\"8ac1dd7cf873b879\",\"8372c5bea575f0d8\",\"a4c80c5f0519b466\",\"12a0e6c2128f54af\",\"90679af495d1339d\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/overview\",\"asPath\":\"/overview\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"3DbfYp8qofpVlr4CAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"l0eoaE6yLPuS8kqCAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8312\",\"origin\":\"http://localhost:3312\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"+Aoge15qx0C8wa9QxRERaw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"emoji_rx_state_\":\"\ud83d\udd25\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.flow___overview____overview_state\":{\"nodes_rx_state_\":[{\"id\":\"annotation-1\",\"type\":\"annotation\",\"draggable\":false,\"selectable\":false,\"data\":{\"level\":1,\"label\":\"Built-in node and edge types. Draggable, deletable and connectable!\",\"arrowStyle\":{\"right\":0,\"bottom\":0,\"transform\":\"translate(-30px,10px) rotate(-80deg)\"}},\"position\":{\"x\":-200,\"y\":-30},\"measured\":{\"width\":200,\"height\":184}},{\"id\":\"1-1\",\"type\":\"input\",\"data\":{\"label\":\"Input Node\"},\"position\":{\"x\":150,\"y\":0},\"measured\":{\"width\":150,\"height\":40}},{\"id\":\"1-2\",\"type\":\"default\",\"data\":{\"",
+    "0{\"sid\":\"Ve4s6tR8-sWDWVPOAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"0jnlJOADoit4M3WQAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8312\",\"origin\":\"http://localhost:3312\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"FKLuueczyWTD7RXN6d1SZw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"I66VPNmQBCa4COUbAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"6aMlqNuOVyNERPnXAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8312\",\"origin\":\"http://localhost:3312\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Ztu3FWuEV5Qr+BtrUMtC/g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"4dcThXIEu97w-hvfAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"t8cvdFHiiKfvu9UxAAAH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8312\",\"origin\":\"http://localhost:3312\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"4yQjnKkKl19ioimqAc8YRA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true,\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3312\",\"path\":\"/overview\",\"raw_path\":\"/overview\",\"full_path\":\"http://localhost:3312/overview\",\"full_raw_path\":\"http://localhost:3312/overview\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/overview\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3312\",\"origin\":\"http://localhost:3312\",\"path\":\"/overview\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3312/overview\"}}}}]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 1.42,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/overview",
+   "method": "GET"
+  },
+  {
+   "t": 3.05,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 3.05,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 3.06,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 3.54,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/app/routes/[overview]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 8.37,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/overview",
+   "method": "GET"
+  },
+  {
+   "t": 8.52,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 8.53,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 8.54,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 8.68,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/app/routes/[overview]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 11.9,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/overview",
+   "method": "GET"
+  },
+  {
+   "t": 12.01,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 12.01,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 12.02,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 12.08,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/app/routes/[overview]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 15.26,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/",
+   "method": "GET"
+  },
+  {
+   "t": 15.38,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 15.38,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 15.39,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 15.43,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/app/routes/_index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 16.83,
+   "ctx": "flow-reload",
+   "url": "http://localhost:3312/app/routes/[overview]._index.jsx?import",
+   "method": "GET"
+  }
+ ]
+}

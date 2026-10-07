@@ -1,6 +1,13 @@
-Local OIDC provider http://localhost:8358 max_age=75 refresh=True pid=24179
-127.0.0.1 - - [07/Oct/2026 11:47:39] "GET /.well-known/openid-configuration HTTP/1.1" 200 -
-127.0.0.1 - - [07/Oct/2026 11:47:40] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3340/callback&scope=openid+email+profile&state=0XfgBC7umu4vwMkKpwX3DF4rWO0_61ol1ica_CeckhaE8idLXUlEuB_GORjJS3I9Nzv3ieFnbn9KHWmUiVQGvQ&code_challenge=_pjtx3gjcg-BoiHODGUgjJmR_VABkt2lL3Gm6KCkV6Q&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
-127.0.0.1 - - [07/Oct/2026 11:47:40] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
-127.0.0.1 - - [07/Oct/2026 11:47:40] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3340/callback&scope=openid+email+profile&state=0XfgBC7umu4vwMkKpwX3DF4rWO0_61ol1ica_CeckhaE8idLXUlEuB_GORjJS3I9Nzv3ieFnbn9KHWmUiVQGvQ&code_challenge=_pjtx3gjcg-BoiHODGUgjJmR_VABkt2lL3Gm6KCkV6Q&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
-127.0.0.1 - - [07/Oct/2026 11:47:40] "POST /oauth2/token HTTP/1.1" 200 -
+Local OIDC provider http://localhost:8358 max_age=75 refresh=True pid=26954
+127.0.0.1 - - [07/Oct/2026 11:49:29] "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:49:36] "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:49:36] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3340/callback&scope=openid+email+profile&state=FVrkXUWIfAA8CmxLXKmmXT9j-dn1nPkPoZGC0O96DRlssg5RSITD_ZH56wlFLsWKHHfteBOAEjBzWXPoouBjxA&code_challenge=r2JYpnQ1oj5Xx604ee93h4-wPbhqFCZdN5aBEck_IPg&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:49:37] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [07/Oct/2026 11:49:37] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3340/callback&scope=openid+email+profile&state=FVrkXUWIfAA8CmxLXKmmXT9j-dn1nPkPoZGC0O96DRlssg5RSITD_ZH56wlFLsWKHHfteBOAEjBzWXPoouBjxA&code_challenge=r2JYpnQ1oj5Xx604ee93h4-wPbhqFCZdN5aBEck_IPg&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [07/Oct/2026 11:49:37] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:49:37] "GET /jwks HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:49:37] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:50:01] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:50:01] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:51:12] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:51:12] "GET /userinfo HTTP/1.1" 200 -

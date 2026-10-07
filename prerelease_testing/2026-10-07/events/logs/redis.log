@@ -1,0 +1,9 @@
+16703:C 07 Oct 2026 11:41:54.166 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+16703:C 07 Oct 2026 11:41:54.166 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=16703, just started
+16703:C 07 Oct 2026 11:41:54.166 # Configuration loaded
+16703:M 07 Oct 2026 11:41:54.166 * monotonic clock: POSIX clock_gettime
+16703:M 07 Oct 2026 11:41:54.167 # Warning: Could not create server TCP listening socket ::*:8479: unable to bind socket, errno: 97
+16703:M 07 Oct 2026 11:41:54.167 * Running mode=standalone, port=8479.
+16703:M 07 Oct 2026 11:41:54.167 # Server initialized
+16703:M 07 Oct 2026 11:41:54.167 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+16703:M 07 Oct 2026 11:41:54.167 * Ready to accept connections

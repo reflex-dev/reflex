@@ -186,3 +186,91 @@ cookies get cleared; behaviour is identical on 0.9.12.) Logs: `logs/hydtoken-*.{
   — the MCP client is not told the call was refused.
 - Server log noise: anonymous read of the protected resource logs an ERROR with a full traceback
   (`Error reading resource ... requires an authenticated session`) — the client gets a clean error.
+
+## 5. Token expiry / revocation / provider restart (dev, Redis)
+
+`scripts/expiry_matrix.sh <venv> <appdir> <label> <scenario...>` restarts the mock IdP with the
+scenario's token lifetime, THEN restarts the app, then runs `scripts/drive_expiry.py` for that scenario
+(`EXPIRY_MOCK_EXTERNAL=1`). The restart order matters — see "JWKS" below; the first attempt without it is
+kept as `logs/expiry-a2-dev-redis-jwks-cached-attempt.out` (every login failed).
+
+| scenario | 0.10.0a2 + wheel | 0.9.12 + wheel |
+|---|---|---|
+| proactive: 75 s tokens with refresh token, idle 120 s | refreshed in the background (mock log: token+userinfo at +24 s and +95 s), still Alice, protected event allowed, reload OK | (not re-run) |
+| expire_norefresh: 30 s token, NO refresh token, idle 40 s, then protected event | **still logged in, protected event ALLOWED** (no redirect, no error) | identical |
+| expire_closed_tab: 40 s tokens, tab closed 50 s, new tab → /dashboard | logged in (new tab's cookie sync refreshed the token: 2nd token+userinfo in mock log) | (not re-run) |
+| revoke: `POST /users/alice/revoke-tokens` at the IdP (204) | protected event still allowed, reload still logged in; `force_refresh` → refresh 400 `invalid_grant` → "resetting auth (user will be logged out)" but the page stays on /dashboard until the next reload → /login | identical |
+| restart_provider: IdP restarted (new signing key, empty token store) | existing session keeps working (reveal allowed); refresh → 400 → reset; **a fresh login after the restart fails** silently back to "Sign in" | identical |
+
+Observations (all pre-existing, enterprise-side, identical on 0.9.12 → not regressions):
+- An expired access token without a refresh token keeps authorizing protected events: the session is
+  not re-validated until the userinfo cache (`USERINFO_CACHE_INTERVAL = 1800 s`) lapses. IdP-side
+  revocation is likewise only noticed at the next refresh.
+- JWKS is cached for the app process lifetime: after the IdP rotates its signing key (here: restart of
+  the mock), every new login fails with `InvalidKeyIdError: No key for kid ...` → "Tokens failed
+  validation immediately after the exchange; resetting session (user will NOT be logged in)" (server
+  log `logs/entauth-dev-redis-a2-dev-redis-expiry-restart_provider.log`, also `logs/entauth-dev-redis-a2-p3.log`).
+  The user just lands back on "Sign in" with no message. Only an app restart recovers. Real IdPs rotate
+  keys, so this is worth an enterprise ticket (unknown-`kid` → refetch JWKS).
+- No tracebacks reach the browser in any scenario; server logs carry ERROR+traceback for the refresh
+  400 and the kid failure.
+Logs: `logs/expiry-{a2,s912w}-dev-redis*.{out,json}`, `logs/mock-oidc-*-<scenario>.log`,
+`logs/entauth-dev-redis-*-expiry-<scenario>.log`.
+
+## 7. PROD (single port 8341, Redis): multi-worker cookie sync 405 (pre-existing, enterprise)
+
+`reflex run --env prod` with `REFLEX_REDIS_URL` spawns **9 granian workers** on this 4-CPU box
+(`(cpu_count*2)+1`, same default on 0.9.12, 0.10.0a1, 0.10.0a2; log `logs/entauth-prod-redis-a2-9w.log`:
+"Spawning worker-1 … worker-9").
+
+- `POST /_reflex/cookies/sync` answers **405 Method Not Allowed** on most workers and 400/200 on
+  others: 18 identical curl POSTs → mix of 405/400 on a2, all 405 on a fresh 0.9.12 server.
+  Cause (wheel source `reflex_enterprise/auth/cookie.py`): `HTTPCookie.ensure_handlers_registered()`
+  inserts the `/_reflex/cookies/sync` route LAZILY, the first time a process builds an
+  `HTTPCookie.sync()` event; a worker that has not done that yet falls through to the static-file app (405).
+- Browser effect (`scripts/prod_sync_probe.py <base> <label> N`, fresh context per attempt): login itself
+  "works" (the tab's server-side session holds the tokens) but the token cookies are never written in
+  most attempts: a2 3/4 attempts sync=405 → no `_oidc_*` cookies; 0.9.12 3/4 the same. Consequences: a
+  new tab / new window is logged out, cross-tab hash/cookie reconciliation cannot work, refreshed tokens
+  are never persisted to the browser.
+- Not a regression (0.9.12 + wheel identical: `logs/prodsync-s912w-prod-redis-9w.out`), but every
+  production enterprise-auth deployment with Redis (= multi-worker by default) is affected.
+- Repro: `infra.sh start`; `VENV=alpha2-ent APP_DIR=entauth APP_BP=8341 scripts/start_app.sh prod logs/x.log`;
+  `for i in $(seq 18); do curl -s --noproxy '*' -o /dev/null -w '%{http_code} ' -X POST http://localhost:8341/_reflex/cookies/sync -H 'Content-Type: application/json' -d '{}'; done`
+  (expect 400 "No client token in request" from every worker; observed mostly 405).
+- Prod also 307-redirects `/dashboard` → `/dashboard/` (all versions); the first prod driver run failed
+  only on exact-URL waits (`logs/drive-auth-a2-prod-redis-9w-exacturl.out`) — drivers now accept the slash.
+
+The rest of the prod suite therefore runs with `GRANIAN_WORKERS=1` (honoured by `reflex/utils/exec.py`)
+so that it tests the framework rather than this enterprise bug.
+
+## 8. PROD suite on 0.10.0a2 (single port 8341, Redis, `GRANIAN_WORKERS=1`)
+
+`GRANIAN_WORKERS=1 scripts/prod_suite.sh alpha2-ent entauth a2-prod-redis` → `logs/prod-suite-a2.out`
+(server log `logs/entauth-prod-redis-a2-prod-redis.log`, prod build by vite 8 in ~5 s):
+
+| check | result |
+|---|---|
+| `drive_auth_redis.py` cycle (Alice → protected events → reload → bg list persisted → public nav + reload with protected sync/async computed vars → logout → Bob, no Alice data in page/storage/Redis) | PASS (`logs/drive-auth-a2-prod-redis.out`, `logs/auth-a2-prod-redis.json`) |
+| pubnav (#252 under Redis, 2 reloads) | PASS |
+| twotab / xtab | tab1 NOT logged out after tab2 logout (same regression as §2) |
+| `xtab_probe.py` ×5 | tab1 logged out **3/5** (`logs/xtab-a2-prod-redis-rep-*.json`) |
+| `stale_hash_probe.py` ×2 | boot corrections 0/2 + 0/2, live-update control 2/2 (same as dev) |
+| `hydration_token_probe.py` reload_writes / newtab_writes | PASS — no empty hash writes, no token cookie deletions |
+| `bglive_probe.py` direct | not live (same as dev, §3) |
+| MCP OAuth + anonymous (`/_reflex/mcp/`) | identical to dev except the no-slash `/_reflex/mcp` → 405 in prod (known/deferred; dev 307). Rate limits, upload tickets, 2×20 parallel bumps = 40, scope-denied handler silently "succeeds" (as in dev) |
+| console | only the benign `/favicon.ico` 404 (app has no favicon), mock IdP pico.css tunnel errors, keepalive cookie-sync ERR_ABORTED on navigation |
+
+Extra-scopes variant (`AUTH_EXTRA_SCOPES=1` → `AuthPlugin(extra_scopes=["offline_access","address"])`),
+`drive_auth_redis.py ... extrascope`: authorize request carries `scope=openid+email+profile+offline_access+address`,
+login, `force_refresh` → "refreshed", reload keeps Alice — PASS in dev (`logs/drive-auth-a2-dev-redis-extrascope.out`)
+and prod (`logs/drive-auth-a2-prod-redis-extrascope.out`).
+
+Background-task workaround (§3): after these prod/dev runs the app got `ListWorker.fill_loaded`
+(`scripts/patch_bgloaded.py`), which calls `await self.get_state(AuthUserState)` inside EVERY
+`async with self:` block. With that, protected background deltas ARE delivered live (progress 0→2/3→5
+within 1 s) in dev and prod (`logs/bglive-a2-{dev,prod}-redis-loaded.out`), while the plain `fill`
+still is not. So the enterprise delta filter only sees the user when `AuthUserState` happens to be
+loaded in the background task's state tree (`_userinfo_for_state` → "None when … the substate is not
+loaded"). `apps/entauth/` in DEST contains this patched version; the original is `run/entauth.py.orig`
+in the work dir (identical except for `fill_loaded` + its button).

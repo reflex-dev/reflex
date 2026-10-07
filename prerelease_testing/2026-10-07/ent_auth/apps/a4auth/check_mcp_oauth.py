@@ -6,6 +6,10 @@ import hashlib
 import json
 import re
 from pathlib import Path
+
+import reflex  # ENT_AUTH_VENV_GUARD
+
+assert "/scratchpad/envs/ent_auth2-drv/" in reflex.__file__, reflex.__file__
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx

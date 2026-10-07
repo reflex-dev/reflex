@@ -99,3 +99,88 @@ Baselines: same app copied to `baseline/ag_grid_s912` (port 3302, venv ent_grid-
 - `/model`, `/model-auth`, `/model-ssrm`, `/qa-model-workaround` load and serve data on a2 dev+prod (no `from_request` AttributeError: F-001 enterprise consequence fixed).
 - Console: `AG Grid: warning #129 headerCheckbox is only available if using clientSide or serverSide rowModelType, you are using infinite`
   on `/model-auth` (both versions; demo config).
+
+## 2. dnd demo (`apps/dnd`, react-dnd HTML5 backend) — PASS on a2 dev + prod
+
+```
+scripts/start_server.sh ent_grid-a2 $W/dnd logs/dnd-dev-a2.log http://localhost:3310/ -- --frontend-port 3310 --backend-port 8310 --loglevel debug
+python scripts/drive_dnd.py http://localhost:3310 out/dnd_dev_a2 ent_grid-a2 dev-a2
+# prod: --env prod --frontend-port 3311 --backend-port 3311 ; out/dnd_prod_a2
+```
+27/27 checks in dev and in prod, 0 console errors/warnings, 0 failed requests, no server tracebacks. Real pointer drags
+(mouse down → stepped moves → jiggle inside the target → up): /basic and /foreach (`@rx.memo` targets inside `rx.foreach`):
+hovered target turns green via `DropTarget.collected_params.is_over`, drop moves the card (State.card_pos), `on_drop`
+toast, drop outside a target is a no-op, position survives reload, a new browser context starts at 0, demo dropdown
+navigation. /kanban: first load does NOT write the `kanban_data_json` LocalStorage default (F-002 class OK on a2), columns
+and items via forms, item drag across columns (`can_drop` rxe.static callback), same-column reorder, column drag reorder,
+`on_end` toast, board restored from LocalStorage after reload (on_load + backend `_columns`/`_items` dataclasses with a
+`__drag_type__` dunder class attribute), second tab sees the same board.
+- Driver note: without the in-target jiggle the `is_over` colour sample is taken before react-dnd processed a dragover
+  (first attempt showed 2 not-ok checks); with it 27/27 — driver timing, not a bug.
+- Benign: console `log` lines "Disconnect websocket on page navigation" / "... on pagehide" (reflex info logs, every page).
+- Benign/pre-existing: compile progress shows `100% 18/17` (the counter overshoots its total by one on every app and on 0.9.12 too: ag_grid 50/49, core_rerender 14/13).
+- No baseline needed (nothing failed).
+
+## 3. flow demo (`apps/flow`, React Flow) — a2 dev 22/22; prod 20/22 with the SAME 2 not-ok on 0.9.12 prod
+
+```
+scripts/start_server.sh ent_grid-a2 $W/flow logs/flow-dev-a2.log http://localhost:3312/ -- --frontend-port 3312 --backend-port 8312 --loglevel debug
+python scripts/drive_flow.py http://localhost:3312 out/flow_dev_a2 ent_grid-a2 dev-a2
+# prod a2: port 3313 (out/flow_prod_a2); baseline 0.9.12 prod: copy to baseline/flow_s912, venv ent_grid-s912, port 3314 (out/flow_prod_s912)
+python scripts/probe_flow_reload.py http://localhost:3313 out/flow_prod_a2_reloadN ent_grid-a2 prod-a2-runN
+```
+Covered (all pass on a2 dev and prod): 11 nodes / 6 edges, minimap/controls/background, pointer drag of a node
+(controlled `on_nodes_change` → `set_nodes(apply_node_changes(...))`), toolbar emoji → State, button-edge × (rx.run_script
+set_edges/get_edges), dimension input → `set_dimensions` resizes the node, select + Backspace deletes a node, zoom-in control,
+add-node-on-edge-drop (`on_connect_end` + `screen_to_flow_position`, two drops), a new session starts with the initial node
+(no cross-session leak of the `default_factory=lambda: initial_nodes` list), connection-limit (second connection refused),
+custom node colour input → label, background `bg_color`, minimap `node_color` ArgsFunctionOperation + `rx.match` on a State
+var, `on_connect` adds an animated edge, drag-handle (label does not drag, handle does), intersections highlight via throttled
+`on_node_drag` + `get_intersecting_nodes`.
+
+### 3a. pre-existing (0.9.12 prod identical), prod only: controlled React Flow edits are reverted by a page reload
+- Move a node on /overview, reload the tab (prod): the node is back at its initial position, and the BACKEND state is
+  overwritten too (a 2nd reload/client nav also shows the default). a2 prod 5/5 runs (once it survived reload 1 and
+  reverted on reload 2), 0.9.12 prod 3/3 (`out/flow_prod_s912_reload{1,2,3}`); a2 dev 3/3 survive (`out/flow_dev_a2_reload*`).
+- Mechanism (websocket capture in `probe_flow_reload-*.json`): the prerendered page mounts React Flow with the compiled
+  default `nodes` (no `measured`), React Flow emits dimension changes, and `set_nodes(apply_node_changes(OverviewState.nodes,
+  changes))` is built from the stale client copy and sent right after `hydrate_and_load` (0.9.12: after `hydrate` +
+  `on_load_internal`), so the backend is reset to the defaults (`"id":"1-2",...,"position":{"x":0,"y":100},"measured":{...}`).
+  In dev the route renders after hydration with already-measured nodes, so no change event is sent.
+- Not a regression (same on 0.9.12); worth a docs/enterprise note: events whose payload is computed from State vars during
+  mount in prod use the compiled defaults, not the session state.
+- Driver notes: the index shows 7 links in prod (the rxe "Built with Reflex" badge link appears in prod only, both versions);
+  a pointer click on the first × lands on an overlapping edge-interaction path (both versions, demo layout), so the driver
+  dispatches the click on the button; Backspace-delete waits for `.selected` (controlled selection round trip).
+
+## 4. mantine demo (`apps/mantine`) — PASS 22/22 on a2 dev, a2 prod and 0.9.12 prod; one pre-existing reflex page error
+
+The demo only registers /dates, /pill, /tags-input (accordion/action-icon/alert/anchor/angle-slider/aspect-ratio pages are
+commented out upstream: those components do not exist in `rxe.mantine` 0.9.7a4). This cluster added
+`mantine/qa_mantine.py` (/qa-mantine): Autocomplete, MultiSelect, RingProgress, JsonInput, NumberFormatter and Collapse bound
+to State.
+```
+scripts/start_server.sh ent_grid-a2 $W/mantine logs/mantine-dev-a2.log http://localhost:3315/ -- --frontend-port 3315 --backend-port 8315 --loglevel debug
+python scripts/drive_mantine.py http://localhost:3315 out/mantine_dev_a2 ent_grid-a2 dev-a2
+python scripts/probe_mantine_pageerror.py http://localhost:3315 ent_grid-a2
+# prod a2: port 3316 (out/mantine_prod_a2); 0.9.12 prod: copy to baseline/mantine_s912, venv ent_grid-s912, port 3317 (out/mantine_prod_s912)
+```
+Checks: 12 date cards; DatePicker / MonthPicker / YearPicker / DatePickerInput popover / preset buttons built from
+`rx.Var("dayjs()...")` / TimeInput (`type=time`) all fire their `on_change` toasts with the right ISO values; pills + `on_remove`;
+TagsInput controlled by State (add with Enter, remove, duplicate rejected, survives reload); QA page: Autocomplete
+`on_option_submit` → State, MultiSelect `on_change` → list State, RingProgress label/sections from State, JsonInput `on_change`
++ `format_on_blur` + `validation_error`, Collapse `in_` from State, NumberFormatter of a State expression.
+
+### 4a. pre-existing (identical on 0.9.12): reflex's global `window.onerror` throws on error events without an Error object
+- Clicking an option in the Mantine MultiSelect triggers the browser's benign "ResizeObserver loop completed with undelivered
+  notifications" ErrorEvent (its `error` argument is `null`). Reflex's handler in `.web/utils/state.js`
+  (`window.onerror = function (msg, url, lineNo, columnNo, error) { ... info: error.name + ": " + error.message ... }`)
+  dereferences `error` and throws `TypeError: Cannot read properties of null (reading 'name')` (page error
+  `at window.onerror (utils/state.js:1195)` in dev; same in prod and on 0.9.12 prod — `out/mantine_*/mantine-*.json` page_errors,
+  `scripts/probe_mantine_pageerror.py` output). Effect: an uncaught page error on every such event and nothing reported to
+  `handle_frontend_exception`; the same applies to cross-origin "Script error." events. In dev vite also logs
+  `[vite] (client) [Unhandled error] Error: ResizeObserver loop ...` in the server log.
+- Enterprise gap (not reflex): `rxe.mantine.autocomplete` has no `on_change` trigger (only `on_option_submit`, `on_position_change`),
+  so a controlled `value=` Autocomplete cannot be built; passing `on_change` raises
+  `ValueError: The Autocomplete does not take in an on_change event trigger` at compile.
+- Driver notes: the MultiSelect `id` lands on the inner input covered by the wrapper (click via focus + ArrowDown, then click the visible option).

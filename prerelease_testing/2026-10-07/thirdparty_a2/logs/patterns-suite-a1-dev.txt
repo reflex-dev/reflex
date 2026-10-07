@@ -1,0 +1,20 @@
+UP after 8s (http://localhost:3500/)
+FAIL computed-var reset of LocalStorage reaches browser :: tp_ls_cv='bad' ui='ls_cv=bad' cv='cv_check=cleared-in-computed-var'
+PASS on_load reset (to default '') of LocalStorage reaches browser :: tp_ls_onload='' ui='ls_onload='
+PASS on_load reset (to default '') of Cookie reaches browser :: cookie='tp_ck_onload=' ui='ck_onload='
+PASS on_load set to non-default of LocalStorage reaches browser :: tp_ls_nd='fixed'
+PASS event-handler reset (to default '') of LocalStorage reaches browser :: tp_ls_event=''
+PASS mixin A independent counter + mixin computed var + backend var + background :: A count=12 doubled=24 hits=3
+PASS mixin B independent counter + overridden computed var :: B count=1 doubled=20 hits=1
+PASS inherited handler + get_state + setvar + dynamic type() state all respond :: {"inherit items after pkg_add+add_twice": "items=z:base,x:base,y:base n=3", "inherit user_items": "user.items=z:base,x:base,y:base n=3", "inherit extra after add_twice": "extra=secret=pkg-secret n=3", "inherit note after touch_other": "note=other h
+FAIL class-level backend constants read as values :: class-level: _LABEL=Field(default='label-const', is_var=True, annotated_type=<class 'str'>) _SIZE=Field(default=16, is_var=True, annotated_type=<class 'int'>) _OPTS=Field(default_factory=functools.partial(<function deepcopy at 0x7f949321b4c0>, {'a': 'A'}), is_var=True, annotat
+FAIL component built from class-level constant :: component-from-constant error: ChildrenTypeError: Component Text received child Field(default='label-const', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. Accepted types are other components, state vars, or primitive Python types (dict 
+PASS instance-level constants + classmethod-assigned static :: shown=label-const|16|A|cache='configured-at-import'
+SUMMARY checks=11 failed=3 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+PASS F-004 shown_1 keeps class-assigned backend default :: shown=label-const|16|A|cache='configured-at-import'
+FAIL F-004 shown_2_after_4.5s keeps class-assigned backend default :: shown=label-const|16|A|cache=None
+PASS F-004 shown_new_client keeps class-assigned backend default :: shown=label-const|16|A|cache='configured-at-import'
+FAIL F-004 shown_new_client_after_4.5s keeps class-assigned backend default :: shown=label-const|16|A|cache=None
+SUMMARY checks=4 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+storage_only: RESULT tp_ls_cv='bad' ui='ls_cv=bad' cv='cv_check=cleared-in-computed-var' after_2nd_reload_tp_ls_cv='bad'
+stopped 13327

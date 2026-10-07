@@ -1,0 +1,278 @@
+{
+ "label": "mini_s_dev_bg",
+ "base": "http://localhost:3470",
+ "results": [
+  {
+   "name": "chain.bg_raise_inside",
+   "status": "pass",
+   "details": {
+    "initial_roundtrip_ok": true,
+    "ping_roundtrip_ok": true,
+    "toast_visible_before_ping": true,
+    "partial_visible_with_error": {
+     "status": true
+    },
+    "partial_visible_after_next_event": {
+     "status": true
+    },
+    "partial_persisted_after_reload": {
+     "status": true
+    },
+    "ui_after_reload": {
+     "status": "bg-inside-partial",
+     "items": "",
+     "pings": "3",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "client_server_diverged": {
+     "status": false
+    },
+    "ui_before_ping": {
+     "status": "bg-inside-partial",
+     "items": "",
+     "pings": "1",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "ui_after_ping": {
+     "status": "bg-inside-partial",
+     "items": "",
+     "pings": "2",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "timeline": {
+     "status": [
+      [
+       0.04,
+       "bg-inside-partial"
+      ]
+     ],
+     "items": [
+      [
+       0.06,
+       ""
+      ]
+     ]
+    },
+    "t_click": 3.394,
+    "t_ping": 6.627,
+    "first_recv_frame_with_marker": {
+     "t": 3.461,
+     "dt_from_click": 0.067,
+     "after_ping": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"bg-inside-partial\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 3.456,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.bg_raise_inside\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 3.461,
+      "dir": "recv",
+      "markers": [
+       "bg-inside-partial"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"bg-inside-partial\"}}}]"
+     },
+     {
+      "t": 3.462,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: bg-inside-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback"
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 6.67,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 6.677,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 8.75
+  },
+  {
+   "name": "chain.bg_raise_after",
+   "status": "pass",
+   "details": {
+    "initial_roundtrip_ok": true,
+    "ping_roundtrip_ok": true,
+    "toast_visible_before_ping": true,
+    "partial_visible_with_error": {
+     "status": true
+    },
+    "partial_visible_after_next_event": {
+     "status": true
+    },
+    "partial_persisted_after_reload": {
+     "status": true
+    },
+    "ui_after_reload": {
+     "status": "bg-before-raise",
+     "items": "",
+     "pings": "3",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "client_server_diverged": {
+     "status": false
+    },
+    "ui_before_ping": {
+     "status": "bg-before-raise",
+     "items": "",
+     "pings": "1",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "ui_after_ping": {
+     "status": "bg-before-raise",
+     "items": "",
+     "pings": "2",
+     "load-note": "none",
+     "sup-log": ""
+    },
+    "timeline": {
+     "status": [
+      [
+       0.01,
+       "bg-before-raise"
+      ]
+     ],
+     "items": [
+      [
+       0.01,
+       ""
+      ]
+     ]
+    },
+    "t_click": 10.178,
+    "t_ping": 13.339,
+    "first_recv_frame_with_marker": {
+     "t": 10.25,
+     "dt_from_click": 0.072,
+     "after_ping": false,
+     "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"bg-before-raise\"}}}]"
+    },
+    "frames_until_ping": [
+     {
+      "t": 10.225,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.bg_raise_after\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 10.25,
+      "dir": "recv",
+      "markers": [
+       "bg-before-raise"
+      ],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"status_rx_state_\":\"bg-before-raise\"}}}]"
+     },
+     {
+      "t": 10.25,
+      "dir": "recv",
+      "markers": [],
+      "toast": true,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"RuntimeError: bg-after-intentional\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\""
+     }
+    ],
+    "frames_after_ping": [
+     {
+      "t": 13.359,
+      "dir": "sent",
+      "markers": [],
+      "toast": false,
+      "pings_in": false,
+      "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.mini___mini____chain_state.ping\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+     },
+     {
+      "t": 13.369,
+      "dir": "recv",
+      "markers": [],
+      "toast": false,
+      "pings_in": true,
+      "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mini___mini____chain_state\":{\"pings_rx_state_\":2}}}]"
+     }
+    ]
+   },
+   "t": 15.482
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 7.377,
+   "tag": "bg_raise_inside",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3470/utils/state.js:631",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 8.801,
+   "tag": "bg_raise_inside",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 14.088,
+   "tag": "bg_raise_after",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:3470/utils/state.js:631",
+   "url": "http://localhost:3470/"
+  },
+  {
+   "t": 15.488,
+   "tag": "bg_raise_after",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:643",
+   "url": "http://localhost:3470/"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "counters": {
+  "console:bg_raise_inside:log": 4,
+  "console:bg_raise_inside:debug": 4,
+  "ws:bg_raise_inside:recv": 15,
+  "console:bg_raise_inside:info": 2,
+  "ws:bg_raise_inside:sent": 11,
+  "console:bg_raise_after:log": 4,
+  "console:bg_raise_after:debug": 4,
+  "ws:bg_raise_after:recv": 15,
+  "console:bg_raise_after:info": 2,
+  "ws:bg_raise_after:sent": 11
+ },
+ "extra": {}
+}

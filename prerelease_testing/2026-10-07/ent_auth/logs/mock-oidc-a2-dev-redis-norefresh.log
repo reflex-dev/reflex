@@ -1,0 +1,5 @@
+Local OIDC provider http://localhost:8358 max_age=30 refresh=False pid=25363
+127.0.0.1 - - [07/Oct/2026 11:48:27] "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:48:27] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3340/callback&scope=openid+email+profile&state=foaNY4eTY2_tq8Hr2bsb4vOzVIIwXH5-fPLLvJJPgdLeM0_XwtEFWLjz4EW7xbbBL3Z-MaDmlRq-5DEWcQvjcg&code_challenge=ZNqDTL7VmCCuDDKiKO78hKotiXp49dIydAHiqsm0dUg&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:48:28] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3340/callback&scope=openid+email+profile&state=foaNY4eTY2_tq8Hr2bsb4vOzVIIwXH5-fPLLvJJPgdLeM0_XwtEFWLjz4EW7xbbBL3Z-MaDmlRq-5DEWcQvjcg&code_challenge=ZNqDTL7VmCCuDDKiKO78hKotiXp49dIydAHiqsm0dUg&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [07/Oct/2026 11:48:28] "POST /oauth2/token HTTP/1.1" 200 -

@@ -1,0 +1,29 @@
+{
+ "label": "alpha_dev_nested_ctrlb",
+ "base": "http://localhost:3460",
+ "results": [
+  {
+   "name": "nested.issue7319_ctrl_b_shortcut",
+   "status": "pass",
+   "details": {
+    "order": "K1,K2",
+    "ordinary_after_ok": true
+   },
+   "t": 4.145
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 4.15,
+   "tag": "ctrlb",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "extra": {}
+}

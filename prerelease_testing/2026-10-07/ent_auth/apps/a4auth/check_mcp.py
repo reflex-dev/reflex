@@ -4,12 +4,16 @@ import asyncio
 import json
 from pathlib import Path
 
+import reflex  # ENT_AUTH_VENV_GUARD
+
+assert "/scratchpad/envs/ent_auth2-drv/" in reflex.__file__, reflex.__file__
+
 import httpx
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
 ROOT = Path(__file__).resolve().parent
-BASE = "http://localhost:8132"
+BASE = "http://localhost:8346"  # ent_auth cluster port (10-05 used 8132)
 
 
 def text_value(result) -> object:

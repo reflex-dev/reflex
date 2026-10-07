@@ -63,6 +63,20 @@ class ChainState(rx.State):
         mark("gen_yield_then_raise (raising)")
         raise RuntimeError("gen-intentional")
 
+    @rx.event(background=True)
+    async def bg_raise_inside(self):
+        async with self:
+            self.status = "bg-inside-partial"
+            mark("bg_raise_inside (raising inside async with self)")
+            raise RuntimeError("bg-inside-intentional")
+
+    @rx.event(background=True)
+    async def bg_raise_after(self):
+        async with self:
+            self.status = "bg-before-raise"
+        mark("bg_raise_after (raising outside the lock)")
+        raise RuntimeError("bg-after-intentional")
+
     @rx.event
     def ping(self):
         self.pings += 1
@@ -133,6 +147,8 @@ def panel() -> rx.Component:
             rx.button("direct raise", on_click=ChainState.direct_raises, id="direct"),
             rx.button("async raise", on_click=ChainState.async_raises, id="async"),
             rx.button("gen yield then raise", on_click=ChainState.gen_yield_then_raise, id="gen"),
+            rx.button("bg raise inside", on_click=ChainState.bg_raise_inside, id="bg-inside"),
+            rx.button("bg raise after", on_click=ChainState.bg_raise_after, id="bg-after"),
             rx.button("ping", on_click=ChainState.ping, id="ping"),
             rx.button("reset", on_click=ChainState.reset_all, id="reset"),
         ),

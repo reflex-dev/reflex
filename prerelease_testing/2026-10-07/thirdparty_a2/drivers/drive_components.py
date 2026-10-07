@@ -5,10 +5,14 @@ Usage: drive_components.py <base_url> <out_dir> <label>
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 from tpdrive import Capture, browser, safe, wait_text
+
+# Same variable the app reads: pages left out of the app (they break the prod build on every version).
+SKIP = {s.strip().strip("/") for s in os.environ.get("TP_SKIP", "").split(",") if s.strip()}
 
 BASE = sys.argv[1].rstrip("/")
 OUT = Path(sys.argv[2])
@@ -23,6 +27,9 @@ def shot(page, name):
 
 def visit(page, route, ready=None, wait=1500):
     cap.label = route
+    if route.strip("/") in SKIP:
+        cap.check(f"{route} skipped (TP_SKIP)", True, "page left out of the app")
+        return False
     page.goto(BASE + route, wait_until="networkidle")
     t = wait_text(page, "#page_title", route.replace("-", "."), timeout=10)
     page.wait_for_timeout(wait)
@@ -170,7 +177,10 @@ with browser(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-medi
 
     def _blk15():
         if visit(page, "/dynoselect"):
-            cap.check("dynoselect usable", False, "built?")
+            # the page only gets here when the package builds; then try to use it
+            body = page.locator("body").inner_text()
+            cap.check("dynoselect builds (open the select)", "Pick a fruit" in body or "Apple" in body, body[:300])
+            shot(page, "dynoselect")
     safe(cap, 'block "/dynoselect"', _blk15)
 
     def _blk16():

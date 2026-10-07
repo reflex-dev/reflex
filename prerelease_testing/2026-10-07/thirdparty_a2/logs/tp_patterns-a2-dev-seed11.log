@@ -1,0 +1,9 @@
+DeprecationWarning: state_auto_setters has been deprecated in version 0.9.0. 
+auto setters will be removed; use explicit event handlers instead. It will be 
+completely removed in 1.0. (rxconfig.py:3)
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 25/24 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3500/
+Backend running at: http://0.0.0.0:8500
+Info: Reflex app stopped.

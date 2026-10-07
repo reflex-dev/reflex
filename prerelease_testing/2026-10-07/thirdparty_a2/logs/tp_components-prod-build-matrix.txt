@@ -1,0 +1,45 @@
+== a2 only-monaco (skip clerk,webcam)
+SERVER DIED after 20s (http://localhost:3510/)
+Creating Production Build failed with exit code 1
+Error: Prerender: Request failed for /monaco/: Prerender (html): Received a 500 
+== a2 only-webcam (skip clerk,monaco)
+SERVER DIED after 22s (http://localhost:3510/)
+Creating Production Build failed with exit code 1
+ReferenceError: muted is not defined
+Error: Prerender: Request failed for /webcam/: Prerender (html): Received a 500 
+== a2 only-clerk (skip monaco,webcam)
+SERVER DIED after 12s (http://localhost:3510/)
+Creating Production Build failed with exit code 1
+✗ Build failed in 4.95s
+Build failed with 1 error:
+[31m[MISSING_EXPORT] [0m"Event" is not exported by "utils/state.js".
+== a1 only-monaco (skip clerk,webcam)
+SERVER DIED after 14s (http://localhost:3510/)
+Creating Production Build failed with exit code 1
+Error: Prerender: Request failed for /monaco/: Prerender (html): Received a 500 
+== a1 only-webcam (skip clerk,monaco)
+SERVER DIED after 18s (http://localhost:3510/)
+Creating Production Build failed with exit code 1
+ReferenceError: muted is not defined
+Error: Prerender: Request failed for /webcam/: Prerender (html): Received a 500 
+== a1 only-clerk (skip monaco,webcam)
+SERVER DIED after 17s (http://localhost:3510/)
+Creating Production Build failed with exit code 1
+✗ Build failed in 9.18s
+Build failed with 1 error:
+[31m[MISSING_EXPORT] [0m"Event" is not exported by "utils/state.js".
+== s0912 only-monaco (skip clerk,webcam)
+SERVER DIED after 20s (http://localhost:3510/)
+Creating Production Build failed with exit code 1
+Error: Prerender: Request failed for /monaco/: Prerender (html): Received a 500 
+== s0912 only-webcam (skip clerk,monaco)
+SERVER DIED after 21s (http://localhost:3510/)
+Creating Production Build failed with exit code 1
+ReferenceError: muted is not defined
+Error: Prerender: Request failed for /webcam/: Prerender (html): Received a 500 
+== s0912 only-clerk (skip monaco,webcam)
+SERVER DIED after 16s (http://localhost:3510/)
+Creating Production Build failed with exit code 1
+✗ Build failed in 9.10s
+Build failed with 1 error:
+[31m[MISSING_EXPORT] [0m"Event" is not exported by "utils/state.js".

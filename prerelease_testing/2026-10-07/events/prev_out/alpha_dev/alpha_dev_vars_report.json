@@ -1,0 +1,210 @@
+{
+ "label": "alpha_dev_vars",
+ "base": "http://localhost:3460",
+ "results": [
+  {
+   "name": "vars.initial",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 3.394
+  },
+  {
+   "name": "vars.initial.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 3.394
+  },
+  {
+   "name": "vars.step_neg3",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 4.277
+  },
+  {
+   "name": "vars.step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 4.277
+  },
+  {
+   "name": "vars.bounds_7_2_step_neg3",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 5.114
+  },
+  {
+   "name": "vars.bounds_7_2_step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 5.114
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step2",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 6.015
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step2.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 6.015
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step_neg3",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 6.838
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 6.838
+  },
+  {
+   "name": "vars.objkey_z",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 7.827
+  },
+  {
+   "name": "vars.objkey_z.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 7.827
+  },
+  {
+   "name": "vars.objkey_missing",
+   "status": "pass",
+   "details": {
+    "mismatches": {},
+    "checked": 20
+   },
+   "t": 8.71
+  },
+  {
+   "name": "vars.objkey_missing.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 8.71
+  },
+  {
+   "name": "vars.deep_equals_state_client_computed_cond_match",
+   "status": "pass",
+   "details": {
+    "initial": {
+     "v-deq-cs": "eq",
+     "v-deq-comp": "eq",
+     "v-deq-match": "M-eq"
+    },
+    "after_mutate_left": {
+     "v-deq-cs": "neq",
+     "v-deq-comp": "eq",
+     "v-deq-match": "M-neq",
+     "v-left": "{\"a\":[1,2,9],\"b\":[3]}"
+    },
+    "after_client_set": {
+     "v-deq-cs": "eq",
+     "v-csdict": "{\"a\":[1,2,9],\"b\":[3]}"
+    }
+   },
+   "t": 10.578
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 10.682,
+   "tag": "vars",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/vars"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "extra": {}
+}

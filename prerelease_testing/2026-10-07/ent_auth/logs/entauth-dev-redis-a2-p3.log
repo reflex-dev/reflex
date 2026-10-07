@@ -505,3 +505,327 @@ s, use
                              immediately after the exchange;                    
                              resetting session (user will NOT be                
                              logged in).                                        
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/07/26 11:48:28] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    WARNING  22b89574-1b5f-4322-cba8-1c3d53093ed9  state.py:2514
+                             [txid=84c5383aa8c44cce955e58a9c1659fe              
+                             f] ─ Failed to verify id_token /                   
+                             compute at_hash while setting tokens;              
+                             continuing without an expected                     
+                             at_hash.                                           
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/reflex_ │              
+                             │ enterprise/auth/oidc/state.py:250 │              
+                             │ 8 in _set_tokens                  │              
+                             │                                   │              
+                             │   2505 │   │   # compute at_hash  │              
+                             │   2506 │   │   if id_token is not │              
+                             │   2507 │   │   │   try:           │              
+                             │ ❱ 2508 │   │   │   │   token = aw │              
+                             │   2509 │   │   │   │   alg = toke │              
+                             │   2510 │   │   │   │   at_hash =  │              
+                             │   2511 │   │   │   │   # store ex │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/reflex_ │              
+                             │ enterprise/auth/oidc/state.py:953 │              
+                             │  in _verify_jwt                   │              
+                             │                                   │              
+                             │    950 │   │   Returns:           │              
+                             │    951 │   │   │   The verified T │              
+                             │    952 │   │   """                │              
+                             │ ❱  953 │   │   return await verif │              
+                             │    954 │   │   │   token_json,    │              
+                             │    955 │   │   │   issuer=await s │              
+                             │    956 │   │   │   audience=await │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/reflex_ │              
+                             │ enterprise/auth/oidc/utils.py:183 │              
+                             │  in verify_jwt                    │              
+                             │                                   │              
+                             │   180 │   key_set = jwk.KeySet.im │              
+                             │   181 │                           │              
+                             │   182 │   # Decode and validate t │              
+                             │ ❱ 183 │   token = jwt.decode(toke │              
+                             │   184 │                           │              
+                             │   185 │   stripped_issuer = issue │              
+                             │   186                             │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /jwt.py:110 in decode             │              
+                             │                                   │              
+                             │   107 │   if isinstance(registry, │              
+                             │   108 │   │   header, payload = _ │              
+                             │   109 │   else:                   │              
+                             │ ❱ 110 │   │   header, payload = _ │              
+                             │   111 │                           │              
+                             │   112 │   try:                    │              
+                             │   113 │   │   claims: Claims = js │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /jwt.py:131 in _decode_jws        │              
+                             │                                   │              
+                             │   128 def _decode_jws(            │              
+                             │   129 │   value: bytes, key: KeyF │              
+                             │       JWSRegistry | None = None   │              
+                             │   130 ) -> tuple[Header, bytes]:  │              
+                             │ ❱ 131 │   jws_obj = deserialize_c │              
+                             │   132 │   assert jws_obj.payload  │              
+                             │   133 │   return jws_obj.headers( │              
+                             │   134                             │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /jws.py:185 in                    │              
+                             │ deserialize_compact               │              
+                             │                                   │              
+                             │   182 │   :return: object of the  │              
+                             │   183 │   """                     │              
+                             │   184 │   obj = extract_compact(t │              
+                             │ ❱ 185 │   if not validate_compact │              
+                             │   186 │   │   raise BadSignatureE │              
+                             │   187 │   return obj              │              
+                             │   188                             │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /jws.py:151 in validate_compact   │              
+                             │                                   │              
+                             │   148 │   if public_key is None:  │              
+                             │   149 │   │   raise MissingKeyErr │              
+                             │   150 │                           │              
+                             │ ❱ 151 │   key: Key = guess_key(pu │              
+                             │   152 │   alg.check_key(key)      │              
+                             │   153 │   return verify_compact(o │              
+                             │   154                             │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /jwk.py:99 in guess_key           │              
+                             │                                   │              
+                             │    96 │   │   │   return_key.ensu │              
+                             │    97 │   │   │   obj.set_kid(cas │              
+                             │    98 │   │   else:               │              
+                             │ ❱  99 │   │   │   return_key = re │              
+                             │   100 │   │   return return_key   │              
+                             │   101 │   else:                   │              
+                             │   102 │   │   raise ValueError("I │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /_keys.py:149 in get_by_kid       │              
+                             │                                   │              
+                             │   146 │   │                       │              
+                             │   147 │   │   if keys:            │              
+                             │   148 │   │   │   return keys[0]  │              
+                             │ ❱ 149 │   │   raise InvalidKeyIdE │              
+                             │   150 │                           │              
+                             │   151 │   def pick_random_key(sel │              
+                             │       None = None) -> Key | None: │              
+                             │   152 │   │   key_types = self.al │              
+                             ╰───────────────────────────────────╯              
+                             InvalidKeyIdError: invalid_key_id: No              
+                             key for kid:                                       
+                             '6wE8N6cWbyt0WMQe1xc16DKVLrxqlpzh4PvJ              
+                             _-4OZps'                                           
+                    ERROR    22b89574-1b5f-4322-cba8-1c3d53093ed9  state.py:1091
+                             [txid=84c5383aa8c44cce955e58a9c1659fe              
+                             f] ── ID Token verification failed:                
+                             invalid_key_id: No key for kid:                    
+                             '6wE8N6cWbyt0WMQe1xc16DKVLrxqlpzh4PvJ              
+                             _-4OZps'                                           
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/reflex_ │              
+                             │ enterprise/auth/oidc/state.py:113 │              
+                             │ 1 in _error_context               │              
+                             │                                   │              
+                             │   1128 │   │   self._logger.debug │              
+                             │   1129 │   │   exceptions = []    │              
+                             │   1130 │   │   try:               │              
+                             │ ❱ 1131 │   │   │   yield exceptio │              
+                             │   1132 │   │   except NestedExcep │              
+                             │   1133 │   │   │   exceptions.app │              
+                             │   1134 │   │   │   # No re-loggin │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/reflex_ │              
+                             │ enterprise/auth/oidc/state.py:980 │              
+                             │  in _validate_tokens              │              
+                             │                                   │              
+                             │    977 │   │   │   │   # every st │              
+                             │    978 │   │   │   │   expected_e │              
+                             │    979 │   │   │   ) as errors:   │              
+                             │ ❱  980 │   │   │   │   await self │              
+                             │    981 │   │   except NestedExcep │              
+                             │    982 │   │   │   # Verification │              
+                             │    983 │   │   │   return False   │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/reflex_ │              
+                             │ enterprise/auth/oidc/state.py:953 │              
+                             │  in _verify_jwt                   │              
+                             │                                   │              
+                             │    950 │   │   Returns:           │              
+                             │    951 │   │   │   The verified T │              
+                             │    952 │   │   """                │              
+                             │ ❱  953 │   │   return await verif │              
+                             │    954 │   │   │   token_json,    │              
+                             │    955 │   │   │   issuer=await s │              
+                             │    956 │   │   │   audience=await │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/reflex_ │              
+                             │ enterprise/auth/oidc/utils.py:183 │              
+                             │  in verify_jwt                    │              
+                             │                                   │              
+                             │   180 │   key_set = jwk.KeySet.im │              
+                             │   181 │                           │              
+                             │   182 │   # Decode and validate t │              
+                             │ ❱ 183 │   token = jwt.decode(toke │              
+                             │   184 │                           │              
+                             │   185 │   stripped_issuer = issue │              
+                             │   186                             │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /jwt.py:110 in decode             │              
+                             │                                   │              
+                             │   107 │   if isinstance(registry, │              
+                             │   108 │   │   header, payload = _ │              
+                             │   109 │   else:                   │              
+                             │ ❱ 110 │   │   header, payload = _ │              
+                             │   111 │                           │              
+                             │   112 │   try:                    │              
+                             │   113 │   │   claims: Claims = js │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /jwt.py:131 in _decode_jws        │              
+                             │                                   │              
+                             │   128 def _decode_jws(            │              
+                             │   129 │   value: bytes, key: KeyF │              
+                             │       JWSRegistry | None = None   │              
+                             │   130 ) -> tuple[Header, bytes]:  │              
+                             │ ❱ 131 │   jws_obj = deserialize_c │              
+                             │   132 │   assert jws_obj.payload  │              
+                             │   133 │   return jws_obj.headers( │              
+                             │   134                             │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /jws.py:185 in                    │              
+                             │ deserialize_compact               │              
+                             │                                   │              
+                             │   182 │   :return: object of the  │              
+                             │   183 │   """                     │              
+                             │   184 │   obj = extract_compact(t │              
+                             │ ❱ 185 │   if not validate_compact │              
+                             │   186 │   │   raise BadSignatureE │              
+                             │   187 │   return obj              │              
+                             │   188                             │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /jws.py:151 in validate_compact   │              
+                             │                                   │              
+                             │   148 │   if public_key is None:  │              
+                             │   149 │   │   raise MissingKeyErr │              
+                             │   150 │                           │              
+                             │ ❱ 151 │   key: Key = guess_key(pu │              
+                             │   152 │   alg.check_key(key)      │              
+                             │   153 │   return verify_compact(o │              
+                             │   154                             │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /jwk.py:99 in guess_key           │              
+                             │                                   │              
+                             │    96 │   │   │   return_key.ensu │              
+                             │    97 │   │   │   obj.set_kid(cas │              
+                             │    98 │   │   else:               │              
+                             │ ❱  99 │   │   │   return_key = re │              
+                             │   100 │   │   return return_key   │              
+                             │   101 │   else:                   │              
+                             │   102 │   │   raise ValueError("I │              
+                             │                                   │              
+                             │ /tmp/claude-0/-home-user-reflex/b │              
+                             │ d1e0d91-2710-5ba9-a996-a9166a9394 │              
+                             │ 28/scratchpad/envs/alpha2-ent/lib │              
+                             │ /python3.12/site-packages/joserfc │              
+                             │ /_keys.py:149 in get_by_kid       │              
+                             │                                   │              
+                             │   146 │   │                       │              
+                             │   147 │   │   if keys:            │              
+                             │   148 │   │   │   return keys[0]  │              
+                             │ ❱ 149 │   │   raise InvalidKeyIdE │              
+                             │   150 │                           │              
+                             │   151 │   def pick_random_key(sel │              
+                             │       None = None) -> Key | None: │              
+                             │   152 │   │   key_types = self.al │              
+                             ╰───────────────────────────────────╯              
+                             InvalidKeyIdError: invalid_key_id: No              
+                             key for kid:                                       
+                             '6wE8N6cWbyt0WMQe1xc16DKVLrxqlpzh4PvJ              
+                             _-4OZps'                                           
+                    WARNING  22b89574-1b5f-4322-cba8-1c3d53093ed9  state.py:2525
+                             [txid=84c5383aa8c44cce955e58a9c1659fe              
+                             f] ─ Tokens failed validation                      
+                             immediately after the exchange;                    
+                             resetting session (user will NOT be                
+                             logged in).                                        
+[INFO] Stopping worker-1
+[10/07/26 11:49:24] INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

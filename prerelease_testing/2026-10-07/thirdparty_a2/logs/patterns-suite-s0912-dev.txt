@@ -1,0 +1,30 @@
+=== s0912 dev seed 0
+UP after 6s (http://localhost:3500/)
+PASS computed-var reset of LocalStorage reaches browser :: tp_ls_cv='' ui='ls_cv=' cv='cv_check=cleared-in-computed-var'
+FAIL mixin B independent counter + overridden computed var :: B count=1 doubled=2 hits=1
+PASS class-level backend constants read as values :: class-level: _LABEL='label-const' _SIZE=16 _OPTS={'a': 'A'} _CACHE='configured-at-import'
+PASS component built from class-level constant :: label-const
+FAIL instance-level constants + classmethod-assigned static :: shown=label-const|16|A|cache=None
+SUMMARY checks=11 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+FAIL F-004 shown_1 keeps class-assigned backend default :: shown=label-const|16|A|cache=None
+FAIL F-004 shown_2_after_4.5s keeps class-assigned backend default :: shown=label-const|16|A|cache=None
+FAIL F-004 shown_new_client keeps class-assigned backend default :: shown=label-const|16|A|cache=None
+FAIL F-004 shown_new_client_after_4.5s keeps class-assigned backend default :: shown=label-const|16|A|cache=None
+SUMMARY checks=4 failed=4 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+storage_only: RESULT tp_ls_cv='' ui='ls_cv=' cv='cv_check=cleared-in-computed-var' after_2nd_reload_tp_ls_cv=''
+stopped 14741
+=== s0912 dev seed 4
+UP after 4s (http://localhost:3500/)
+PASS computed-var reset of LocalStorage reaches browser :: tp_ls_cv='' ui='ls_cv=' cv='cv_check=cleared-in-computed-var'
+FAIL mixin B independent counter + overridden computed var :: B count=1 doubled=2 hits=1
+PASS class-level backend constants read as values :: class-level: _LABEL='label-const' _SIZE=16 _OPTS={'a': 'A'} _CACHE='configured-at-import'
+PASS component built from class-level constant :: label-const
+FAIL instance-level constants + classmethod-assigned static :: shown=label-const|16|A|cache=None
+SUMMARY checks=11 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+FAIL F-004 shown_1 keeps class-assigned backend default :: shown=label-const|16|A|cache=None
+FAIL F-004 shown_2_after_4.5s keeps class-assigned backend default :: shown=label-const|16|A|cache=None
+FAIL F-004 shown_new_client keeps class-assigned backend default :: shown=label-const|16|A|cache=None
+FAIL F-004 shown_new_client_after_4.5s keeps class-assigned backend default :: shown=label-const|16|A|cache=None
+SUMMARY checks=4 failed=4 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+storage_only: RESULT tp_ls_cv='bad' ui='ls_cv=bad' cv='cv_check=cleared-in-computed-var' after_2nd_reload_tp_ls_cv='bad'
+stopped 16096

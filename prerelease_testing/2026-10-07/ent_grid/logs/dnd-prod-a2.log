@@ -1,0 +1,528 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:3)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_grid-a2/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='dnd', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'disable_plugins', 'loglevel', 'app_name', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a2 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/ent_grid-a2/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3311
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3311
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3311 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 3311 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 3311 is not in use.
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> 
+rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/basic.py:23)
+DeprecationWarning: `@rx.memo` on `card_foreach` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (dnd/foreach.py:23)
+DeprecationWarning: `@rx.memo` on `target_foreach` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `pos`. Until
+removal, a missing return defaults to `rx.Component` and missing or bare-type 
+parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. 
+(dnd/foreach.py:35)
+DeprecationWarning: `@rx.memo` on `item_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `item`, 
+`dragging`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:270)
+DeprecationWarning: `@rx.memo` on `item_card_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `item`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:280)
+DeprecationWarning: `@rx.memo` on `item_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `column_id`, `replace_position`, `child_before`, `child_after`. 
+Until removal, a missing return defaults to `rx.Component` and missing or 
+bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed
+in 1.0. (dnd/kanban.py:300)
+DeprecationWarning: `@rx.memo` on `column_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `replace_position`, `child_before`, `child_after`. Until removal, a
+missing return defaults to `rx.Component` and missing or bare-type parameters 
+are coerced to `rx.Var[...]`. It will be completely removed in 1.0. 
+(dnd/kanban.py:330)
+DeprecationWarning: `@rx.memo` on `kanban_column` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `col`, 
+`dragging`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:363)
+DeprecationWarning: `@rx.memo` on `kanban_column_drop_target` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on 
+parameter(s) `col`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (dnd/kanban.py:408)
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Passing base-component prop(s) `key` to `@rx.memo` 
+`kanban_column_drop_target` without an `rx.RestProp` has been deprecated in 
+version 0.9.3. Declare an `rx.RestProp` parameter to keep passing base props 
+like `key` to the rendered component. It will be completely removed in 1.0. 
+(dnd/kanban.py:442)
+DeprecationWarning: Passing base-component prop(s) `key` to `@rx.memo` 
+`item_card_drop_target` without an `rx.RestProp` has been deprecated in version 
+0.9.3. Declare an `rx.RestProp` parameter to keep passing base props like `key` 
+to the rendered component. It will be completely removed in 1.0. 
+(dnd/kanban.py:378)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_grid-a2/lib/python3.12/site-packages/reflex_components_radix/plugin.py
+:76)
+Debug: [timing] Compile pages: 0.20s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/react-form@0.1.16', '@radix-ui/themes@3.3.0', 'lucide-react@1.26.0',
+'react-dnd', 'react-dnd-html5-backend', 'react-error-boundary@6.1.6', 
+'react-syntax-highlighter@16.1.1', 
+'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/ent_grid/dnd/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/ent_grid/dnd/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 1200 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+gzip: 10.01 kB
+gzip: 84.10 kB
+gzip:  0.14 kB
+gzip:  0.18 kB
+gzip:  0.19 kB
+gzip:  0.21 kB
+gzip:  0.22 kB
+gzip:  0.20 kB
+gzip:  0.24 kB
+gzip:  0.20 kB
+gzip:  0.25 kB
+gzip:  0.20 kB
+gzip:  0.24 kB
+gzip:  0.23 kB
+gzip:  0.27 kB
+gzip:  0.24 kB
+gzip:  0.27 kB
+gzip:  0.25 kB
+gzip:  0.24 kB
+gzip:  0.27 kB
+gzip:  0.31 kB
+gzip:  0.29 kB
+gzip:  0.27 kB
+gzip:  0.27 kB
+gzip:  0.32 kB
+gzip:  0.31 kB
+gzip:  0.27 kB
+gzip:  0.36 kB
+gzip:  0.31 kB
+gzip:  0.36 kB
+gzip:  0.31 kB
+gzip:  0.37 kB
+gzip:  0.38 kB
+gzip:  0.31 kB
+gzip:  0.32 kB
+gzip:  0.28 kB
+gzip:  0.37 kB
+gzip:  0.38 kB
+gzip:  0.33 kB
+gzip:  0.38 kB
+gzip:  0.28 kB
+gzip:  0.43 kB
+gzip:  0.31 kB
+gzip:  0.36 kB
+gzip:  0.42 kB
+gzip:  0.42 kB
+gzip:  0.37 kB
+gzip:  0.40 kB
+gzip:  0.45 kB
+gzip:  0.44 kB
+gzip:  0.38 kB
+gzip:  0.31 kB
+gzip:  0.43 kB
+gzip:  0.51 kB
+gzip:  0.48 kB
+gzip:  0.44 kB
+gzip:  0.44 kB
+gzip:  0.45 kB
+gzip:  0.49 kB
+gzip:  0.49 kB
+gzip:  0.51 kB
+gzip:  0.43 kB
+gzip:  0.44 kB
+gzip:  0.43 kB
+gzip:  0.52 kB
+gzip:  0.45 kB
+gzip:  0.53 kB
+gzip:  0.50 kB
+gzip:  0.62 kB
+gzip:  0.45 kB
+gzip:  0.50 kB
+gzip:  0.46 kB
+gzip:  0.59 kB
+gzip:  0.54 kB
+gzip:  0.60 kB
+gzip:  0.44 kB
+gzip:  0.56 kB
+gzip:  0.58 kB
+gzip:  0.58 kB
+gzip:  0.49 kB
+gzip:  0.55 kB
+gzip:  0.55 kB
+gzip:  0.53 kB
+gzip:  0.56 kB
+gzip:  0.54 kB
+gzip:  0.60 kB
+gzip:  0.55 kB
+gzip:  0.58 kB
+gzip:  0.63 kB
+gzip:  0.61 kB
+gzip:  0.64 kB
+gzip:  0.58 kB
+gzip:  0.53 kB
+gzip:  0.61 kB
+gzip:  0.54 kB
+gzip:  0.63 kB
+gzip:  0.65 kB
+gzip:  0.60 kB
+gzip:  0.60 kB
+gzip:  0.64 kB
+gzip:  0.54 kB
+gzip:  0.56 kB
+gzip:  0.57 kB
+gzip:  0.56 kB
+gzip:  0.72 kB
+gzip:  0.58 kB
+gzip:  0.61 kB
+gzip:  0.52 kB
+gzip:  0.69 kB
+gzip:  0.65 kB
+gzip:  0.70 kB
+gzip:  0.60 kB
+gzip:  0.62 kB
+gzip:  0.72 kB
+gzip:  0.52 kB
+gzip:  0.58 kB
+gzip:  0.67 kB
+gzip:  0.70 kB
+gzip:  0.59 kB
+gzip:  0.69 kB
+gzip:  0.63 kB
+gzip:  0.72 kB
+gzip:  0.75 kB
+gzip:  0.73 kB
+gzip:  0.79 kB
+gzip:  0.68 kB
+gzip:  0.53 kB
+gzip:  0.68 kB
+gzip:  0.72 kB
+gzip:  0.63 kB
+gzip:  0.64 kB
+gzip:  0.61 kB
+gzip:  0.72 kB
+gzip:  0.72 kB
+gzip:  0.72 kB
+gzip:  0.68 kB
+gzip:  0.57 kB
+gzip:  0.65 kB
+gzip:  0.66 kB
+gzip:  0.67 kB
+gzip:  0.72 kB
+gzip:  0.67 kB
+gzip:  0.66 kB
+gzip:  0.67 kB
+gzip:  0.69 kB
+gzip:  0.65 kB
+gzip:  0.73 kB
+gzip:  0.74 kB
+gzip:  0.85 kB
+gzip:  0.77 kB
+gzip:  0.81 kB
+gzip:  0.66 kB
+gzip:  0.84 kB
+gzip:  0.64 kB
+gzip:  0.69 kB
+gzip:  0.76 kB
+gzip:  0.64 kB
+gzip:  0.65 kB
+gzip:  0.91 kB
+gzip:  0.72 kB
+gzip:  0.77 kB
+gzip:  0.71 kB
+gzip:  0.70 kB
+gzip:  0.83 kB
+gzip:  0.67 kB
+gzip:  0.66 kB
+gzip:  0.64 kB
+gzip:  0.79 kB
+gzip:  0.77 kB
+gzip:  0.81 kB
+gzip:  0.83 kB
+gzip:  0.75 kB
+gzip:  0.74 kB
+gzip:  0.69 kB
+gzip:  0.65 kB
+gzip:  0.89 kB
+gzip:  0.88 kB
+gzip:  0.88 kB
+gzip:  0.82 kB
+gzip:  0.95 kB
+gzip:  0.79 kB
+gzip:  0.66 kB
+gzip:  0.74 kB
+gzip:  0.76 kB
+gzip:  0.85 kB
+gzip:  0.67 kB
+gzip:  0.78 kB
+gzip:  0.79 kB
+gzip:  0.90 kB
+gzip:  0.88 kB
+gzip:  0.86 kB
+gzip:  0.84 kB
+gzip:  0.89 kB
+gzip:  0.89 kB
+gzip:  0.95 kB
+gzip:  0.70 kB
+gzip:  0.81 kB
+gzip:  0.95 kB
+gzip:  0.95 kB
+gzip:  1.05 kB
+gzip:  1.10 kB
+gzip:  1.07 kB
+gzip:  0.81 kB
+gzip:  1.11 kB
+gzip:  1.01 kB
+gzip:  0.82 kB
+gzip:  1.15 kB
+gzip:  0.98 kB
+gzip:  0.91 kB
+gzip:  0.78 kB
+gzip:  0.89 kB
+gzip:  0.91 kB
+gzip:  0.99 kB
+gzip:  1.13 kB
+gzip:  1.24 kB
+gzip:  1.03 kB
+gzip:  1.07 kB
+gzip:  1.07 kB
+gzip:  0.98 kB
+gzip:  0.66 kB
+gzip:  1.07 kB
+gzip:  0.79 kB
+gzip:  0.91 kB
+gzip:  1.02 kB
+gzip:  1.06 kB
+gzip:  0.97 kB
+gzip:  1.13 kB
+gzip:  1.13 kB
+gzip:  0.87 kB
+gzip:  0.96 kB
+gzip:  1.14 kB
+gzip:  1.14 kB
+gzip:  1.17 kB
+gzip:  1.00 kB
+gzip:  1.15 kB
+gzip:  1.31 kB
+gzip:  1.20 kB
+gzip:  1.23 kB
+gzip:  1.06 kB
+gzip:  1.35 kB
+gzip:  1.20 kB
+gzip:  0.89 kB
+gzip:  1.24 kB
+gzip:  1.29 kB
+gzip:  1.25 kB
+gzip:  1.22 kB
+gzip:  1.20 kB
+gzip:  1.22 kB
+gzip:  1.08 kB
+gzip:  1.19 kB
+gzip:  1.10 kB
+gzip:  1.13 kB
+gzip:  1.07 kB
+gzip:  1.34 kB
+gzip:  1.29 kB
+gzip:  1.27 kB
+gzip:  1.29 kB
+gzip:  1.59 kB
+gzip:  1.30 kB
+gzip:  1.18 kB
+gzip:  1.35 kB
+gzip:  1.11 kB
+gzip:  1.60 kB
+gzip:  1.62 kB
+gzip:  1.68 kB
+gzip:  1.55 kB
+gzip:  1.66 kB
+gzip:  1.70 kB
+gzip:  1.91 kB
+gzip:  1.57 kB
+gzip:  1.54 kB
+gzip:  1.70 kB
+gzip:  1.74 kB
+gzip:  1.54 kB
+gzip:  1.24 kB
+gzip:  1.12 kB
+gzip:  1.56 kB
+gzip:  1.67 kB
+gzip:  2.12 kB
+gzip:  1.99 kB
+gzip:  1.68 kB
+gzip:  1.75 kB
+gzip:  2.03 kB
+gzip:  1.67 kB
+gzip:  2.08 kB
+gzip:  1.76 kB
+gzip:  1.86 kB
+gzip:  1.96 kB
+gzip:  2.71 kB
+gzip:  2.46 kB
+gzip:  2.27 kB
+gzip:  3.09 kB
+gzip:  2.08 kB
+gzip:  2.57 kB
+gzip:  2.43 kB
+gzip:  3.10 kB
+gzip:  3.61 kB
+gzip:  3.59 kB
+gzip:  3.82 kB
+gzip:  4.07 kB
+gzip:  3.52 kB
+gzip:  2.53 kB
+gzip:  5.40 kB
+gzip:  4.29 kB
+gzip:  4.15 kB
+gzip:  3.49 kB
+gzip:  5.96 kB
+gzip:  8.12 kB
+gzip:  7.95 kB
+gzip: 11.19 kB
+gzip: 11.17 kB
+gzip: 12.91 kB
+gzip: 18.22 kB
+gzip: 28.73 kB
+gzip: 66.25 kB
+gzip: 62.22 kB
+gzip: 83.90 kB
+Debug: 
+Debug: ✓ built in 2.53s
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug: ✓ 32 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: 
+Debug: computing gzip size...
+gzip:  0.30 kB
+gzip: 84.10 kB
+gzip:  0.20 kB
+gzip: 23.02 kB
+Debug: 
+Debug: ✓ built in 558ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /foreach -> build/client/foreach/index.html
+Debug: Prerender (html): /kanban -> build/client/kanban/index.html
+Debug: Prerender (html): /basic -> build/client/basic/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:04
+Debug: Copying .web/build/client/foreach/index.html to 
+.web/build/client/foreach.html
+Debug: Copying .web/build/client/kanban/index.html to 
+.web/build/client/kanban.html
+Debug: Copying .web/build/client/basic/index.html to 
+.web/build/client/basic.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/ent_grid/dnd/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/ent_grid/dnd/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3311/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 27780)
+[INFO] Listening at: http://0.0.0.0:3311
+[INFO] Spawning worker-1 with PID: 27911
+Warning: Page basic is being redefined with the same component.
+Warning: Page foreach is being redefined with the same component.
+Warning: Page kanban is being redefined with the same component.
+Warning: Page index is being redefined with the same component.
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

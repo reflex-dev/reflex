@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 import reflex as rx
@@ -18,7 +19,9 @@ class State(rx.State):
 
     @rx.var(cache=True)
     def is_prod_mode(self) -> bool:
-        return is_prod_mode()
+        # ML_FORCE_DEV=1 (thirdparty cluster): behave like dev (no captcha/mailgun, link printed to the
+        # server log) even when running `--env prod`, so the prod build can be driven without Google/Mailgun.
+        return is_prod_mode() and not os.environ.get("ML_FORCE_DEV")
 
     @rx.event
     async def handle_submit_login(self, form_data: dict[str, Any]):

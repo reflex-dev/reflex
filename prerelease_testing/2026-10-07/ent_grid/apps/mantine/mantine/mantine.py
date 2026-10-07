@@ -15,6 +15,7 @@ from .common import DemoState, demo
 from .dates import dates_page
 from .pill_demo import pill_page
 from .tags_input import tags_input_page
+from .qa_mantine import qa_mantine_page  # noqa: F401  (QA page added by ent_grid)
 
 __all__ = [
     # "accordion_page",

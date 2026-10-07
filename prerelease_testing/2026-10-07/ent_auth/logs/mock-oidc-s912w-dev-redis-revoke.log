@@ -1,0 +1,12 @@
+Local OIDC provider http://localhost:8358 max_age=3600 refresh=True pid=3269
+127.0.0.1 - - [07/Oct/2026 11:57:09] "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:57:20] "GET /.well-known/openid-configuration HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:57:20] "GET /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3340/callback&scope=openid+email+profile&state=5632v3-VD6ACQjWCSKurl0G_VKDeaZU7vINJt5cmP4uuVJUoPuJw4uY284d3jaLKQUHCtd0P1xttIpLXFZbaOg&code_challenge=Xcc3Ou6T4EzER3jkP3F6vAHgLfPo8P2_4-Mfk0UPUE0&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:57:21] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [07/Oct/2026 11:57:21] "[32mPOST /oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http://localhost:3340/callback&scope=openid+email+profile&state=5632v3-VD6ACQjWCSKurl0G_VKDeaZU7vINJt5cmP4uuVJUoPuJw4uY284d3jaLKQUHCtd0P1xttIpLXFZbaOg&code_challenge=Xcc3Ou6T4EzER3jkP3F6vAHgLfPo8P2_4-Mfk0UPUE0&code_challenge_method=S256&response_type=code&response_mode=query HTTP/1.1[0m" 302 -
+127.0.0.1 - - [07/Oct/2026 11:57:21] "POST /oauth2/token HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:57:21] "GET /jwks HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:57:21] "GET /userinfo HTTP/1.1" 200 -
+127.0.0.1 - - [07/Oct/2026 11:57:21] "[35m[1mPOST /users/alice/revoke-tokens HTTP/1.1[0m" 204 -
+token endpoint error invalid_grant
+127.0.0.1 - - [07/Oct/2026 11:57:25] "[31m[1mPOST /oauth2/token HTTP/1.1[0m" 400 -

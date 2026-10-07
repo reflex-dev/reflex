@@ -1,0 +1,59 @@
+{
+ "checks": [
+  {
+   "name": "form renders in prod",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "submit without a solved captcha is rejected",
+   "ok": true,
+   "detail": "Enter your email to log in\n\nCaptcha verification failed. Please try again.\n\nSend Magic Link\nBuilt with Reflex"
+  },
+  {
+   "name": "stays on the login page",
+   "ok": true,
+   "detail": "http://localhost:3510/"
+  }
+ ],
+ "anomalies": {
+  "console_nonbenign": [
+   {
+    "where": "start",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   }
+  ],
+  "page_errors": [],
+  "failed_requests": [
+   {
+    "where": "start",
+    "page": "main",
+    "url": "https://www.google.com/recaptcha/api.js?onload=onloadcallback&render=explicit",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "start",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [
+  {
+   "where": "start",
+   "page": "main",
+   "url": "https://www.google.com/recaptcha/api.js?onload=onloadcallback&render=explicit",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "bad_responses_all": [],
+ "ws": []
+}

@@ -1,0 +1,449 @@
+{
+ "name": "mantine-prod-a2",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 2.96,
+   "name": "index lists the demo pages",
+   "ok": true,
+   "detail": [
+    "Dates",
+    "Pill",
+    "Tags Input",
+    "QA Mantine"
+   ]
+  },
+  {
+   "t": 5.2,
+   "name": "dates: 12 picker cards render",
+   "ok": true,
+   "detail": 12
+  },
+  {
+   "t": 5.33,
+   "name": "dates: DatePicker day click -> on_change toast with ISO date",
+   "ok": true,
+   "detail": [
+    "Date selected: 2026-10-15"
+   ]
+  },
+  {
+   "t": 5.41,
+   "name": "dates: MonthPicker -> toast 'Month selected: YYYY-03-01'",
+   "ok": true,
+   "detail": [
+    "Month selected: 2026-03-01",
+    "Date selected: 2026-10-15"
+   ]
+  },
+  {
+   "t": 5.49,
+   "name": "dates: YearPicker -> toast 'Year selected: YYYY-01-01'",
+   "ok": true,
+   "detail": [
+    "Year selected: 2027-01-01",
+    "Month selected: 2026-03-01",
+    "Date selected: 2026-10-15"
+   ]
+  },
+  {
+   "t": 6.21,
+   "name": "dates: DatePickerInput popover day -> toast and input shows the date",
+   "ok": true,
+   "detail": {
+    "toasts": [
+     "Date selected: 2026-10-20",
+     "Year selected: 2027-01-01",
+     "Month selected: 2026-03-01",
+     "Date selected: 2026-10-15"
+    ],
+    "input": "DatePickerInput\n\nPick a Date\nOctober 20, 2026"
+   }
+  },
+  {
+   "t": 6.42,
+   "name": "dates: preset 'Tomorrow' (dayjs Var) -> toast with tomorrow",
+   "ok": true,
+   "detail": [
+    "Date selected: 2026-10-08",
+    "Date selected: 2026-10-20",
+    "Year selected: 2027-01-01",
+    "Month selected: 2026-03-01",
+    "Date selected: 2026-10-15"
+   ]
+  },
+  {
+   "t": 6.49,
+   "name": "dates: TimeInput typing -> on_change toast with time",
+   "ok": true,
+   "detail": [
+    "Time selected: 10:30",
+    "Date selected: 2026-10-08",
+    "Date selected: 2026-10-20",
+    "Year selected: 2027-01-01",
+    "Month selected: 2026-03-01",
+    "Date selected: 2026-10-15"
+   ]
+  },
+  {
+   "t": 8.96,
+   "name": "pill: 7 pills render",
+   "ok": true,
+   "detail": 7
+  },
+  {
+   "t": 9.04,
+   "name": "pill: remove button -> on_remove toast 'Removed'",
+   "ok": true,
+   "detail": [
+    "Removed"
+   ]
+  },
+  {
+   "t": 11.2,
+   "name": "tags-input: initial State.tags rendered",
+   "ok": true,
+   "detail": [
+    "Tag1",
+    "Tag2"
+   ]
+  },
+  {
+   "t": 12.17,
+   "name": "tags-input: typing + Enter adds a tag via on_change -> State",
+   "ok": true,
+   "detail": [
+    "Tag1",
+    "Tag2",
+    "Tag3"
+   ]
+  },
+  {
+   "t": 13.02,
+   "name": "tags-input: pill remove updates State",
+   "ok": true,
+   "detail": [
+    "Tag2",
+    "Tag3"
+   ]
+  },
+  {
+   "t": 13.9,
+   "name": "tags-input: duplicate tag rejected",
+   "ok": true,
+   "detail": [
+    "Tag2",
+    "Tag3"
+   ]
+  },
+  {
+   "t": 15.98,
+   "name": "tags-input: tags survive reload (session state)",
+   "ok": true,
+   "detail": [
+    "Tag2",
+    "Tag3"
+   ]
+  },
+  {
+   "t": 19.54,
+   "name": "qa: Autocomplete on_option_submit -> State",
+   "ok": true,
+   "detail": "fruit: Banana"
+  },
+  {
+   "t": 20.83,
+   "name": "qa: MultiSelect on_change -> State list",
+   "ok": true,
+   "detail": "picks: React,Vue"
+  },
+  {
+   "t": 21.6,
+   "name": "qa: RingProgress label follows State (30 -> 50)",
+   "ok": true,
+   "detail": "50%"
+  },
+  {
+   "t": 22.45,
+   "name": "qa: JsonInput on_change -> State and format_on_blur reformats",
+   "ok": true,
+   "detail": {
+    "state": "json: { \"b\": [ 1, 2 ] }",
+    "input": "{\n  \"b\": [\n    1,\n    2\n  ]\n}"
+   }
+  },
+  {
+   "t": 23.1,
+   "name": "qa: JsonInput shows validation_error on invalid JSON",
+   "ok": true,
+   "detail": [
+    "Invalid JSON"
+   ]
+  },
+  {
+   "t": 23.93,
+   "name": "qa: Collapse in_=State.opened toggles content",
+   "ok": true,
+   "detail": {
+    "before": false,
+    "after": true
+   }
+  },
+  {
+   "t": 23.94,
+   "name": "qa: NumberFormatter renders State-derived value",
+   "ok": true,
+   "detail": "Fruit\n\nfruit: Banana\n\nFrameworks\nReact\nVue\n\npicks: React,Vue\n\n50%\n\nbump\nJSON\n\nInvalid JSON\n\njson: {bad json\n\n$ 50,000\ntoggle collapse\n\ncollapsed content"
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4",
+  "TimeInput element: <input class=\"m_468e7eda m_8fb7ebe7 mantine-Input-input mantine-TimeInput-input\" data-variant=\"default\" step=\"60\" type=\"time\" aria-invalid=\"false\" id=\"mantine-n4wssg8tg\">",
+  "multiselect dropdown visible options: ['React', 'Vue', 'Svelte']",
+  "ring sections stroke-dasharray: ['131.94689145077132, 131.94689145077132', '131.94689145077132, 131.94689145077132']"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 22,
+  "console_total": 6,
+  "console_benign": 0,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 1,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [
+   {
+    "t": 20.05,
+    "ctx": "mantine",
+    "error": "Cannot read properties of null (reading 'name')",
+    "url": "http://localhost:3316/qa-mantine/"
+   }
+  ],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 2.96,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3316/",
+   "location": {
+    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 6.82,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3316/dates/",
+   "location": {
+    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 9.05,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3316/pill/",
+   "location": {
+    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 13.9,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3316/tags-input/",
+   "location": {
+    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 15.98,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3316/tags-input/",
+   "location": {
+    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 23.99,
+   "ctx": "mantine",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3316/qa-mantine/",
+   "location": {
+    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "line": 1,
+    "column": 11410,
+    "lineNumber": 1,
+    "columnNumber": 11410
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3316/_event/?token=a596171c-d0e6-4c1d-ce56-e1d1e8ffb97f&EIO=4&transport=websocket": {
+   "ctx": "mantine",
+   "sent": 20,
+   "recv": 33,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/dates/\",\"asPath\":\"/dates/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/pill/\",\"asPath\":\"/pill/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/tags-input/\",\"asPath\":\"/tags-input/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___tags_input____tags_input_state.update_tags\",\"payload\":{\"tags\":[\"Tag1\",\"Tag2\",\"Tag3\"]},\"router_data\":{\"pathname\":\"/tags-input/\",\"asPath\":\"/tags-input/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___tags_input____tags_input_state.update_tags\",\"payload\":{\"tags\":[\"Tag2\",\"Tag3\"]},\"router_data\":{\"pathname\":\"/tags-input/\",\"asPath\":\"/tags-input/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/tags-input/\",\"asPath\":\"/tags-input/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_fruit\",\"payload\":{\"value\":\"Banana\"},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_picks\",\"payload\":{\"value\":[\"React\",\"Vue\"]},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.bump\",\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_json_text\",\"payload\":{\"value\":\"{\\\"b\\\": [1,2]}\"},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_json_text\",\"payload\":{\"value\":\"{\\n  \\\"b\\\": [\\n    1,\\n    2\\n  ]\\n}\"},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_json_text\",\"payload\":{\"value\":\"{bad json\"},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.toggle\",\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"cfjYk_EJHuWZRExoAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"G0IdKlXJ8qHCcA4mAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"WYt5taK0+0AtcaFMQSyqGA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"Uplr5ijpaylPaNIQAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"aj0AKbqbquIO9GJqAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Za8YcqQzWKepcGVEo1xOGg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"wj2wuYGODDUjPikKAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"a3mc1VQRJbHcoJ8RAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"LY++uPMBJZavX3IKS9HP7w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"hXxrrkSlA2P0NmYLAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"hgE6p9i_BNt1-swKAAAH\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"BUtWaYHI/AqS4zbWDLB4FQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___tags_input____tags_input_state\":{\"tags_rx_state_\":[\"Tag1\",\"Tag2\",\"Tag3\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___tags_input____tags_input_state\":{\"tags_rx_state_\":[\"Tag2\",\"Tag3\"]}}}]",
+    "0{\"sid\":\"dnrPSg7Lgn6Dcnj5AAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"aGG52gwyKSPCurWMAAAJ\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Yxee6IGCP/QTnocCyXjQqw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"eivXoKyl_KpUxmgMAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"IfDR2DKdbnh4sywSAAAL\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Kdq87IB9zcCl71FCTtbfCw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"fruit_rx_state_\":\"Banana\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"picks_rx_state_\":[\"React\",\"Vue\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"progress_rx_state_\":50}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"json_text_rx_state_\":\"{\\\"b\\\": [1,2]}\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"json_text_rx_state_\":\"{\\n  \\\"b\\\": [\\n    1,\\n    2\\n  ]\\n}\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"json_text_rx_state_\":\"{bad json\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"opened_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 0.74,
+   "ctx": "mantine",
+   "url": "http://localhost:3316/",
+   "method": "GET"
+  },
+  {
+   "t": 2.97,
+   "ctx": "mantine",
+   "url": "http://localhost:3316/dates",
+   "method": "GET"
+  },
+  {
+   "t": 2.97,
+   "ctx": "mantine",
+   "url": "http://localhost:3316/dates/",
+   "method": "GET"
+  },
+  {
+   "t": 6.82,
+   "ctx": "mantine",
+   "url": "http://localhost:3316/pill",
+   "method": "GET"
+  },
+  {
+   "t": 6.88,
+   "ctx": "mantine",
+   "url": "http://localhost:3316/pill/",
+   "method": "GET"
+  },
+  {
+   "t": 9.05,
+   "ctx": "mantine",
+   "url": "http://localhost:3316/tags-input",
+   "method": "GET"
+  },
+  {
+   "t": 9.07,
+   "ctx": "mantine",
+   "url": "http://localhost:3316/tags-input/",
+   "method": "GET"
+  },
+  {
+   "t": 13.9,
+   "ctx": "mantine",
+   "url": "http://localhost:3316/tags-input/",
+   "method": "GET"
+  },
+  {
+   "t": 15.99,
+   "ctx": "mantine",
+   "url": "http://localhost:3316/qa-mantine",
+   "method": "GET"
+  },
+  {
+   "t": 15.99,
+   "ctx": "mantine",
+   "url": "http://localhost:3316/qa-mantine/",
+   "method": "GET"
+  }
+ ]
+}

@@ -1,0 +1,519 @@
+{
+ "label": "alpha_dev_sup",
+ "base": "http://localhost:3460",
+ "results": [
+  {
+   "name": "sup.slow_rapid_clicks",
+   "status": "pass",
+   "details": {
+    "final": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "expected": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "timeline": [
+     [
+      0.01,
+      "a0,b0"
+     ],
+     [
+      0.12,
+      "a0,b0,c0"
+     ],
+     [
+      1.07,
+      "a0,b0,c0,c1"
+     ],
+     [
+      2.05,
+      "a0,b0,c0,c1,c2"
+     ],
+     [
+      3.04,
+      "a0,b0,c0,c1,c2,c3"
+     ],
+     [
+      4.03,
+      "a0,b0,c0,c1,c2,c3,c4"
+     ],
+     [
+      5.02,
+      "a0,b0,c0,c1,c2,c3,c4,cdone"
+     ]
+    ]
+   },
+   "t": 10.981
+  },
+  {
+   "name": "sup.cancelled_unyielded_mutation",
+   "status": "anomaly",
+   "details": {
+    "final": "astart,aunflushed,bstart,bunflushed,bend",
+    "cancelled_handler_mutation_after_last_yield_visible": true,
+    "timeline": [
+     [
+      0.01,
+      "astart"
+     ],
+     [
+      0.11,
+      "astart,aunflushed,bstart"
+     ],
+     [
+      3.04,
+      "astart,aunflushed,bstart,bunflushed,bend"
+     ]
+    ]
+   },
+   "t": 18.16
+  },
+  {
+   "name": "sup.background_plus_supersedes",
+   "status": "pass",
+   "details": {
+    "final": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "expected": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "timeline": [
+     [
+      0.01,
+      "a0,b0"
+     ],
+     [
+      0.11,
+      "a0,b0,c0"
+     ],
+     [
+      1.08,
+      "a0,b0,c0,c1"
+     ],
+     [
+      2.05,
+      "a0,b0,c0,c1,c2"
+     ],
+     [
+      3.03,
+      "a0,b0,c0,c1,c2,c3"
+     ],
+     [
+      4.11,
+      "a0,b0,c0,c1,c2,c3,c4"
+     ],
+     [
+      5.07,
+      "a0,b0,c0,c1,c2,c3,c4,cdone"
+     ]
+    ]
+   },
+   "t": 28.185
+  },
+  {
+   "name": "sup.bg_cancel_while_holding_lock",
+   "status": "pass",
+   "details": {
+    "final": "ain,bin,bin2,ping-1,bdone,ping-2",
+    "a_in_kept": true,
+    "timeline": [
+     [
+      0.01,
+      "ain"
+     ],
+     [
+      1.7,
+      "ain,bin,bin2,ping-1,bdone"
+     ]
+    ]
+   },
+   "t": 36.13
+  },
+  {
+   "name": "sup.cpu_bound_non_yielding",
+   "status": "info",
+   "details": {
+    "final": "astart,aend,bstart,bend,cstart,cend",
+    "timeline": [
+     [
+      0.0,
+      ""
+     ],
+     [
+      1.32,
+      "astart,aend"
+     ],
+     [
+      2.81,
+      "astart,aend,bstart,bend"
+     ],
+     [
+      4.31,
+      "astart,aend,bstart,bend,cstart,cend"
+     ]
+    ]
+   },
+   "t": 45.933
+  },
+  {
+   "name": "sup.sync_generator_blocking_sleep",
+   "status": "info",
+   "details": {
+    "final": "a0,a1,b0,b1,b2,b3,bdone",
+    "timeline": [
+     [
+      0.0,
+      "a0"
+     ],
+     [
+      0.32,
+      "a0,a1"
+     ],
+     [
+      0.96,
+      "a0,a1,b0"
+     ],
+     [
+      1.5,
+      "a0,a1,b0,b1,b2"
+     ],
+     [
+      2.14,
+      "a0,a1,b0,b1,b2,b3"
+     ],
+     [
+      2.78,
+      "a0,a1,b0,b1,b2,b3,bdone"
+     ]
+    ]
+   },
+   "t": 53.117
+  },
+  {
+   "name": "sup.chained_child_cancelled",
+   "status": "pass",
+   "details": {
+    "final": "a0,a1,b0,b1,b2,b3,bdone",
+    "parent_log": "aP,bP",
+    "b0_seconds_after_click": 0.14,
+    "child_a_cancelled": true,
+    "timeline": [
+     [
+      0.01,
+      "a0,a1"
+     ],
+     [
+      0.14,
+      "a0,a1,b0"
+     ],
+     [
+      1.07,
+      "a0,a1,b0,b1"
+     ],
+     [
+      2.09,
+      "a0,a1,b0,b1,b2"
+     ],
+     [
+      3.09,
+      "a0,a1,b0,b1,b2,b3"
+     ],
+     [
+      4.08,
+      "a0,a1,b0,b1,b2,b3,bdone"
+     ]
+    ]
+   },
+   "t": 63.1
+  },
+  {
+   "name": "sup.component_state_instances_independent",
+   "status": "pass",
+   "details": {
+    "A": "A0,A1,A2,Adone",
+    "B": "B0,B1,B2,Bdone",
+    "timeline": {
+     "cs-log-A": [
+      [
+       0.01,
+       "A0"
+      ],
+      [
+       0.69,
+       "A0,A1"
+      ],
+      [
+       1.71,
+       "A0,A1,A2"
+      ],
+      [
+       2.71,
+       "A0,A1,A2,Adone"
+      ]
+     ],
+     "cs-log-B": [
+      [
+       0.01,
+       ""
+      ],
+      [
+       2.71,
+       "B0"
+      ],
+      [
+       3.71,
+       "B0,B1"
+      ],
+      [
+       4.72,
+       "B0,B1,B2"
+      ],
+      [
+       5.73,
+       "B0,B1,B2,Bdone"
+      ]
+     ]
+    }
+   },
+   "t": 73.482
+  },
+  {
+   "name": "sup.component_state_self_supersede",
+   "status": "pass",
+   "details": {
+    "A": "A0,A0,A1,A2,Adone",
+    "expected": "A0,A0,A1,A2,Adone"
+   },
+   "t": 79.117
+  },
+  {
+   "name": "deco.late_marker_before_first_use",
+   "status": "pass",
+   "details": {
+    "final": "late:start,ping1,late:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.01,
+      "late:start"
+     ],
+     [
+      0.11,
+      "late:start,ping1"
+     ],
+     [
+      1.31,
+      "late:start,ping1,late:end"
+     ]
+    ]
+   },
+   "t": 84.36
+  },
+  {
+   "name": "deco.late_marker_after_is_background_read",
+   "status": "fail",
+   "details": {
+    "final": "lateread:start,lateread:end,ping1",
+    "ran_as_background": false,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.01,
+      ""
+     ],
+     [
+      1.32,
+      "lateread:start,lateread:end,ping1"
+     ]
+    ]
+   },
+   "t": 87.963
+  },
+  {
+   "name": "deco.functools_wraps_inner",
+   "status": "pass",
+   "details": {
+    "final": "wrapinner:start,ping1,wrapinner:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      "wrapinner:start"
+     ],
+     [
+      0.11,
+      "wrapinner:start,ping1"
+     ],
+     [
+      1.31,
+      "wrapinner:start,ping1,wrapinner:end"
+     ]
+    ]
+   },
+   "t": 91.413
+  },
+  {
+   "name": "deco.functools_wraps_outer",
+   "status": "pass",
+   "details": {
+    "final": "wrapouter:start,ping1,wrapouter:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      "wrapouter:start"
+     ],
+     [
+      0.11,
+      "wrapouter:start,ping1"
+     ],
+     [
+      1.29,
+      "wrapouter:start,ping1,wrapouter:end"
+     ]
+    ]
+   },
+   "t": 94.869
+  },
+  {
+   "name": "deco.trace_wrapper_executed",
+   "status": "info",
+   "details": {
+    "log": "wrapouter:start,ping1,wrapouter:end,trace=wrapped_inner/wrapped_outer"
+   },
+   "t": 94.998
+  },
+  {
+   "name": "deco.mixin_background_two_substates",
+   "status": "pass",
+   "details": {
+    "A": "A:start,pingA,A:end",
+    "B": "B:start,B:end",
+    "B_started_before_A_end": true,
+    "timeline": {
+     "mix-a-log": [
+      [
+       0.0,
+       "A:start"
+      ],
+      [
+       0.11,
+       "A:start,pingA"
+      ],
+      [
+       1.22,
+       "A:start,pingA,A:end"
+      ]
+     ],
+     "mix-b-log": [
+      [
+       0.01,
+       "B:start"
+      ],
+      [
+       1.44,
+       "B:start,B:end"
+      ]
+     ]
+    }
+   },
+   "t": 98.439
+  },
+  {
+   "name": "deco.pkg_redecorated_early",
+   "status": "pass",
+   "details": {
+    "added": "pkg:start,ping,pkg:end",
+    "new_backend_errors": 0
+   },
+   "t": 101.423
+  },
+  {
+   "name": "deco.pkg_redecorated_late",
+   "status": "pass",
+   "details": {
+    "added": "pkg:start,ping,pkg:end",
+    "new_backend_errors": 0
+   },
+   "t": 104.427
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 11.001,
+   "tag": "sup-slow",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 18.165,
+   "tag": "sup-partial",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 28.188,
+   "tag": "sup-bg",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 36.133,
+   "tag": "sup-lock",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 45.936,
+   "tag": "sup-cpu",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 53.12,
+   "tag": "sup-gen",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 63.106,
+   "tag": "sup-chain",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 79.122,
+   "tag": "sup-cs",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/sup"
+  },
+  {
+   "t": 104.502,
+   "tag": "deco",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/deco"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "extra": {}
+}

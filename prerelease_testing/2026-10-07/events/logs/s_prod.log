@@ -1,0 +1,1096 @@
+────────────────────────────── Initializing evapp ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized evapp. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 30/29 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8465/
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+EVLOG 1791374944.768 TYPELOG_MARK A
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s1']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x1' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s2']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x2' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s3']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x3' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s4']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x4' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s5']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x5' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s6']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x6' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s7']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x7' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s8']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x8' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s9']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x9' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s10']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x10' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s11']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x11' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s12']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x12' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s13']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x13' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s14']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x14' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s15']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x15' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s16']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x16' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s17']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x17' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s18']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x18' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s19']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x19' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s20']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x20' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+EVLOG 1791374947.282 TYPELOG_MARK B
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got '['a']' 
+of type '<class 'list'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+EVLOG 1791374950.347 TYPELOG_MARK C
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Expected field 'TypeLogState.nums' to receive type 'list[int]', but got 
+'notalist' of type '<class 'str'>'.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+EVLOG 1791374953.265 TYPELOG_MARK D
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+EVLOG 1791374959.419 BACKEND_EXC #1 AttributeError: 'ApiSV' object has no attribute 'set__secret'
+EVLOG 1791374959.423 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 308, in process_event \n     events = fn(**payload) \n              ^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 238, in setvar \n     getattr(self, constants.SETTER_PREFIX + var_name)(value) \n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 1959, in _get_attribute \n     value = super().__getattribute__(name) \n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n AttributeError: 'ApiSV' object has no attribute 'set__secret' \n 
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+EVLOG 1791374960.669 BACKEND_EXC #2 AttributeError: 'ApiSV' object has no attribute 'set_nonexistent'
+EVLOG 1791374960.673 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 308, in process_event \n     events = fn(**payload) \n              ^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 238, in setvar \n     getattr(self, constants.SETTER_PREFIX + var_name)(value) \n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 1959, in _get_attribute \n     value = super().__getattribute__(name) \n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' \n 
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+EVLOG 1791374961.920 BACKEND_EXC #3 AttributeError: 'ApiSV' object has no attribute 'set_secret_view'
+EVLOG 1791374961.924 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 308, in process_event \n     events = fn(**payload) \n              ^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 238, in setvar \n     getattr(self, constants.SETTER_PREFIX + var_name)(value) \n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 1959, in _get_attribute \n     value = super().__getattribute__(name) \n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ \n AttributeError: 'ApiSV' object has no attribute 'set_secret_view'. Did you mean: 'secret_view'? \n 
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Error processing event queue entry for 
+Event(name='reflex___state____state.evapp___evapp____api_sv.no_such_handler', 
+router_data={'pathname': '/api', 'asPath': '/api/', 'sid': 
+'n6ZScR5cbX9srb5RAAAh', 'headers': {'host': 'localhost:8466', 'connection': 
+'Upgrade', 'pragma': 'no-cache', 'cache-control': 'no-cache', 'user-agent': 
+'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) 
+HeadlessChrome/141.0.0.0 Safari/537.36', 'upgrade': 'websocket', 'origin': 
+'http://localhost:8465', 'sec-websocket-version': '13', 'accept-encoding': 
+'gzip, deflate, br, zstd', 'accept-language': 'en-US,en;q=0.9', 
+'sec-websocket-key': 'EgJtBxw0Hh4HolakJBIVTQ==', 'sec-websocket-extensions': 
+'permessage-deflate; client_max_window_bits', 'sec-websocket-protocol': 
+'0.9.12', 'asgi-scope-client': '127.0.0.1'}, 'ip': '127.0.0.1', 'query': {}, 
+'token': '625b4a10-37cb-4de3-e532-2ae77843da1c'}, payload={}) 
+[txid=706ec55e87ba]:
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 817, in _process_queue
+    registered_handler = RegistrationContext.get().event_handlers[
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'reflex___state____state.evapp___evapp____api_sv.no_such_handler'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 824, in _process_queue
+    raise KeyError(msg) from ke
+KeyError: 'No registered handler found for event: reflex___state____state.evapp___evapp____api_sv.no_such_handler'
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+EVLOG 1791374974.065 BACKEND_EXC #4 SetUndefinedStateVarError: The state variable 'undeclared_attr' has not been defined in 'UndeclState'. All state variables must be declared before they can be set.
+EVLOG 1791374974.066 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 308, in process_event \n     events = fn(**payload) \n              ^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events2/run/s_prod/evapp/evapp.py", line 802, in assign_undeclared \n     self.undeclared_attr = 42 \n     ^^^^^^^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 2026, in __setattr__ \n     raise SetUndefinedStateVarError(msg) \n reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable 'undeclared_attr' has not been defined in 'UndeclState'. All state variables must be declared before they can be set. \n 
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+EVLOG 1791374991.313 BACKEND_EXC #5 SetUndefinedStateVarError: The state variable '_PrivMixin__scratch' has not been defined in 'PrivA'. All state variables must be declared before they can be set.
+EVLOG 1791374991.313 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 308, in process_event \n     events = fn(**payload) \n              ^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events2/run/s_prod/evapp/evapp.py", line 979, in mix_scratch \n     self.__scratch = v \n     ^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 2026, in __setattr__ \n     raise SetUndefinedStateVarError(msg) \n reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable '_PrivMixin__scratch' has not been defined in 'PrivA'. All state variables must be declared before they can be set. \n 
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+EVLOG 1791374991.752 BACKEND_EXC #6 SetUndefinedStateVarError: The state variable '_PrivMixin__scratch' has not been defined in 'PrivB'. All state variables must be declared before they can be set.
+EVLOG 1791374991.753 BACKEND_EXC_TB   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/event/processor/base_state_processor.py", line 308, in process_event \n     events = fn(**payload) \n              ^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events2/run/s_prod/evapp/evapp.py", line 979, in mix_scratch \n     self.__scratch = v \n     ^^^^^^^^^^^^^^ \n   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 2026, in __setattr__ \n     raise SetUndefinedStateVarError(msg) \n reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable '_PrivMixin__scratch' has not been defined in 'PrivB'. All state variables must be declared before they can be set. \n 
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner' must return a value of type 'list[int]', 
+got '['s0']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_inner_const' must return a value of type 
+'list[int]', got '['const']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_outer' must return a value of type '<class 
+'int'>', got 'x0' of type <class 'str'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Computed var 'TypeLogState.bad_uncached' must return a value of type 
+'list[int]', got '['u']' of type <class 'list'>.
+Info: Reflex app stopped.

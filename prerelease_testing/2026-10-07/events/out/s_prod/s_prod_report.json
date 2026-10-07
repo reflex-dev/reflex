@@ -1,0 +1,1591 @@
+{
+ "label": "s_prod",
+ "base": "http://localhost:8465",
+ "results": [
+  {
+   "name": "sup.slow_rapid_clicks",
+   "status": "pass",
+   "details": {
+    "final": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "expected": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "timeline": [
+     [
+      0.01,
+      "a0,b0"
+     ],
+     [
+      0.11,
+      "a0,b0,c0"
+     ],
+     [
+      1.04,
+      "a0,b0,c0,c1"
+     ],
+     [
+      2.02,
+      "a0,b0,c0,c1,c2"
+     ],
+     [
+      3.1,
+      "a0,b0,c0,c1,c2,c3"
+     ],
+     [
+      4.1,
+      "a0,b0,c0,c1,c2,c3,c4"
+     ],
+     [
+      5.07,
+      "a0,b0,c0,c1,c2,c3,c4,cdone"
+     ]
+    ]
+   },
+   "t": 10.647
+  },
+  {
+   "name": "t_sup_slow [console]",
+   "status": "anomaly",
+   "details": {
+    "console": [
+     {
+      "t": 1.031,
+      "tag": "sup-slow",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "loc": "http://localhost:8465/favicon.ico:0",
+      "url": "http://localhost:8465/sup/"
+     }
+    ],
+    "page_errors": []
+   },
+   "t": 10.677
+  },
+  {
+   "name": "sup.cancelled_unyielded_mutation",
+   "status": "anomaly",
+   "details": {
+    "final": "astart,aunflushed,bstart,bunflushed,bend",
+    "cancelled_handler_mutation_after_last_yield_visible": true,
+    "timeline": [
+     [
+      0.0,
+      "astart"
+     ],
+     [
+      0.11,
+      "astart,aunflushed,bstart"
+     ],
+     [
+      3.04,
+      "astart,aunflushed,bstart,bunflushed,bend"
+     ]
+    ]
+   },
+   "t": 17.439
+  },
+  {
+   "name": "sup.background_plus_supersedes",
+   "status": "pass",
+   "details": {
+    "final": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "expected": "a0,b0,c0,c1,c2,c3,c4,cdone",
+    "timeline": [
+     [
+      0.0,
+      "a0,b0"
+     ],
+     [
+      0.11,
+      "a0,b0,c0"
+     ],
+     [
+      1.1,
+      "a0,b0,c0,c1"
+     ],
+     [
+      2.07,
+      "a0,b0,c0,c1,c2"
+     ],
+     [
+      3.04,
+      "a0,b0,c0,c1,c2,c3"
+     ],
+     [
+      4.12,
+      "a0,b0,c0,c1,c2,c3,c4"
+     ],
+     [
+      5.09,
+      "a0,b0,c0,c1,c2,c3,c4,cdone"
+     ]
+    ]
+   },
+   "t": 27.469
+  },
+  {
+   "name": "sup.bg_cancel_while_holding_lock",
+   "status": "pass",
+   "details": {
+    "final": "ain,bin,bin2,ping-1,bdone,ping-2",
+    "a_in_kept": true,
+    "timeline": [
+     [
+      0.0,
+      "ain"
+     ],
+     [
+      1.74,
+      "ain,bin,bin2,ping-1,bdone"
+     ]
+    ]
+   },
+   "t": 35.113
+  },
+  {
+   "name": "sup.cpu_bound_non_yielding",
+   "status": "info",
+   "details": {
+    "final": "astart,aend,bstart,bend,cstart,cend",
+    "timeline": [
+     [
+      0.01,
+      ""
+     ],
+     [
+      1.32,
+      "astart,aend"
+     ],
+     [
+      2.84,
+      "astart,aend,bstart,bend"
+     ],
+     [
+      4.26,
+      "astart,aend,bstart,bend,cstart,cend"
+     ]
+    ]
+   },
+   "t": 43.925
+  },
+  {
+   "name": "sup.sync_generator_blocking_sleep",
+   "status": "info",
+   "details": {
+    "final": "a0,a1,b0,b1,b2,b3,bdone",
+    "timeline": [
+     [
+      0.01,
+      "a0"
+     ],
+     [
+      0.33,
+      "a0,a1,b0"
+     ],
+     [
+      0.98,
+      "a0,a1,b0,b1"
+     ],
+     [
+      1.52,
+      "a0,a1,b0,b1,b2"
+     ],
+     [
+      2.16,
+      "a0,a1,b0,b1,b2,b3"
+     ],
+     [
+      2.7,
+      "a0,a1,b0,b1,b2,b3,bdone"
+     ]
+    ]
+   },
+   "t": 50.87
+  },
+  {
+   "name": "sup.chained_child_cancelled",
+   "status": "pass",
+   "details": {
+    "final": "a0,a1,b0,b1,b2,b3,bdone",
+    "parent_log": "aP,bP",
+    "b0_seconds_after_click": 0.12,
+    "child_a_cancelled": true,
+    "timeline": [
+     [
+      0.0,
+      "a0,a1"
+     ],
+     [
+      0.12,
+      "a0,a1,b0"
+     ],
+     [
+      1.02,
+      "a0,a1,b0,b1"
+     ],
+     [
+      2.04,
+      "a0,a1,b0,b1,b2"
+     ],
+     [
+      3.09,
+      "a0,a1,b0,b1,b2,b3"
+     ],
+     [
+      4.11,
+      "a0,a1,b0,b1,b2,b3,bdone"
+     ]
+    ]
+   },
+   "t": 60.695
+  },
+  {
+   "name": "sup.component_state_instances_independent",
+   "status": "pass",
+   "details": {
+    "A": "A0,A1,A2,Adone",
+    "B": "B0,B1,B2,Bdone",
+    "timeline": {
+     "cs-log-A": [
+      [
+       0.01,
+       "A0"
+      ],
+      [
+       0.68,
+       "A0,A1"
+      ],
+      [
+       1.69,
+       "A0,A1,A2"
+      ],
+      [
+       2.74,
+       "A0,A1,A2,Adone"
+      ]
+     ],
+     "cs-log-B": [
+      [
+       0.01,
+       ""
+      ],
+      [
+       2.74,
+       "B0"
+      ],
+      [
+       3.77,
+       "B0,B1"
+      ],
+      [
+       4.78,
+       "B0,B1,B2"
+      ],
+      [
+       5.71,
+       "B0,B1,B2,Bdone"
+      ]
+     ]
+    }
+   },
+   "t": 70.777
+  },
+  {
+   "name": "sup.component_state_self_supersede",
+   "status": "pass",
+   "details": {
+    "A": "A0,A0,A1,A2,Adone",
+    "expected": "A0,A0,A1,A2,Adone"
+   },
+   "t": 76.454
+  },
+  {
+   "name": "deco.late_marker_before_first_use",
+   "status": "pass",
+   "details": {
+    "final": "late:start,ping1,late:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.01,
+      "late:start"
+     ],
+     [
+      0.12,
+      "late:start,ping1"
+     ],
+     [
+      1.3,
+      "late:start,ping1,late:end"
+     ]
+    ]
+   },
+   "t": 81.036
+  },
+  {
+   "name": "deco.late_marker_after_is_background_read",
+   "status": "pass",
+   "details": {
+    "final": "lateread:start,ping1,lateread:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.01,
+      "lateread:start"
+     ],
+     [
+      0.12,
+      "lateread:start,ping1"
+     ],
+     [
+      1.31,
+      "lateread:start,ping1,lateread:end"
+     ]
+    ]
+   },
+   "t": 84.519
+  },
+  {
+   "name": "deco.functools_wraps_inner",
+   "status": "pass",
+   "details": {
+    "final": "wrapinner:start,ping1,wrapinner:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      "wrapinner:start"
+     ],
+     [
+      0.11,
+      "wrapinner:start,ping1"
+     ],
+     [
+      1.28,
+      "wrapinner:start,ping1,wrapinner:end"
+     ]
+    ]
+   },
+   "t": 88.065
+  },
+  {
+   "name": "deco.functools_wraps_outer",
+   "status": "pass",
+   "details": {
+    "final": "wrapouter:start,ping1,wrapouter:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      "wrapouter:start"
+     ],
+     [
+      0.11,
+      "wrapouter:start,ping1"
+     ],
+     [
+      1.29,
+      "wrapouter:start,ping1,wrapouter:end"
+     ]
+    ]
+   },
+   "t": 91.435
+  },
+  {
+   "name": "deco.trace_wrapper_executed",
+   "status": "info",
+   "details": {
+    "log": "wrapouter:start,ping1,wrapouter:end,trace=wrapped_inner/wrapped_outer"
+   },
+   "t": 91.477
+  },
+  {
+   "name": "deco.mixin_background_two_substates",
+   "status": "pass",
+   "details": {
+    "A": "A:start,pingA,A:end",
+    "B": "B:start,B:end",
+    "B_started_before_A_end": true,
+    "timeline": {
+     "mix-a-log": [
+      [
+       0.0,
+       "A:start"
+      ],
+      [
+       0.11,
+       "A:start,pingA"
+      ],
+      [
+       1.14,
+       "A:start,pingA,A:end"
+      ]
+     ],
+     "mix-b-log": [
+      [
+       0.01,
+       "B:start"
+      ],
+      [
+       1.37,
+       "B:start,B:end"
+      ]
+     ]
+    }
+   },
+   "t": 94.934
+  },
+  {
+   "name": "deco.pkg_redecorated_early",
+   "status": "pass",
+   "details": {
+    "added": "pkg:start,ping,pkg:end",
+    "new_backend_errors": 0
+   },
+   "t": 97.929
+  },
+  {
+   "name": "deco.pkg_redecorated_late",
+   "status": "pass",
+   "details": {
+    "added": "pkg:start,ping,pkg:end",
+    "new_backend_errors": 0
+   },
+   "t": 100.938
+  },
+  {
+   "name": "throttle.throttle200_supersedes_typing",
+   "status": "pass",
+   "details": {
+    "typing_seconds": 0.67,
+    "received": [
+     "a",
+     "abcdefg",
+     "abcdefghijklmn"
+    ],
+    "applied": [
+     "abcdefghijklmn"
+    ],
+    "final_value_reached_backend": false,
+    "input_value": "abcdefghijklmnopqrst",
+    "timeline": {
+     "thr-received": [
+      [
+       0.0,
+       "a|abcdefg|abcdefghijklmn"
+      ]
+     ],
+     "thr-applied": [
+      [
+       0.01,
+       ""
+      ],
+      [
+       0.23,
+       "abcdefghijklmn"
+      ]
+     ]
+    }
+   },
+   "t": 105.521
+  },
+  {
+   "name": "throttle.leading_edge_drops_final_value",
+   "status": "anomaly",
+   "details": {
+    "note": "throttle has no trailing call: the last keystrokes never reach the backend",
+    "last_received": "abcdefghijklmn",
+    "input_value": "abcdefghijklmnopqrst"
+   },
+   "t": 105.524
+  },
+  {
+   "name": "throttle.debounce300_supersedes_typing",
+   "status": "pass",
+   "details": {
+    "received": [
+     "abcdefghijklmnopqrst"
+    ]
+   },
+   "t": 107.733
+  },
+  {
+   "name": "temporal.sigstop_3s_socket_still_open",
+   "status": "pass",
+   "details": {
+    "hits": "T1,N1,T2,N2",
+    "expected": "T1,N1,T2,N2",
+    "stopped_pids": [
+     14487
+    ],
+    "note": "socket.io client still reports connected during a 3s stop, so temporal events are sent and delivered late"
+   },
+   "t": 112.213
+  },
+  {
+   "name": "temporal.proxy_drop_socket_closed",
+   "status": "pass",
+   "details": {
+    "hits_after_reconnect": "N3,N4",
+    "expected": "N3,N4",
+    "hits_while_down": "",
+    "client_ws_closed_after_s": 0.1,
+    "delivered_s_after_up": 0.54,
+    "temporal_after_reconnect": "N3,N4,T1",
+    "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events2/out/s_prod/s_prod_temporal_proxy_down.png"
+   },
+   "t": 118.179
+  },
+  {
+   "name": "t_temporal_proxy_drop [console]",
+   "status": "anomaly",
+   "details": {
+    "console": [
+     {
+      "t": 113.331,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+      "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 113.538,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+      "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 113.937,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+      "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 114.208,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+      "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 114.54,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+      "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 114.71,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+      "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 115.013,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+      "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 115.542,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+      "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+      "url": "http://localhost:8465/throttle/"
+     },
+     {
+      "t": 115.908,
+      "tag": "temporal-proxy",
+      "type": "error",
+      "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+      "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+      "url": "http://localhost:8465/throttle/"
+     }
+    ],
+    "page_errors": []
+   },
+   "t": 118.198
+  },
+  {
+   "name": "vars.initial",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 120.046
+  },
+  {
+   "name": "vars.initial.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 120.046
+  },
+  {
+   "name": "vars.step_neg3",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 120.92
+  },
+  {
+   "name": "vars.step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 120.92
+  },
+  {
+   "name": "vars.bounds_7_2_step_neg3",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 121.706
+  },
+  {
+   "name": "vars.bounds_7_2_step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 121.706
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step2",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 122.54
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step2.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 122.54
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step_neg3",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 123.378
+  },
+  {
+   "name": "vars.bounds_neg8_neg2_step_neg3.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 123.379
+  },
+  {
+   "name": "vars.objkey_z",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 124.19
+  },
+  {
+   "name": "vars.objkey_z.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 124.19
+  },
+  {
+   "name": "vars.objkey_missing",
+   "status": "fail",
+   "details": {
+    "mismatches": {
+     "v-rev-foreach": {
+      "got": [],
+      "exp": [
+       "9",
+       "8",
+       "7",
+       "6",
+       "5",
+       "4",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     }
+    },
+    "checked": 13
+   },
+   "t": 124.997
+  },
+  {
+   "name": "vars.objkey_missing.utf16_vs_codepoints",
+   "status": "anomaly",
+   "details": {
+    "v-emoji-rev": {
+     "got": "b\ufffd\ufffda",
+     "exp": "b\ud83d\ude00a"
+    },
+    "v-emoji-len": {
+     "got": "4",
+     "exp": "3"
+    }
+   },
+   "t": 124.997
+  },
+  {
+   "name": "t_vars [console]",
+   "status": "anomaly",
+   "details": {
+    "console": [],
+    "page_errors": [
+     {
+      "t": 118.446,
+      "tag": "vars",
+      "error": "Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "url": "http://localhost:8465/vars/"
+     }
+    ]
+   },
+   "t": 125.192
+  },
+  {
+   "name": "typelog.counts",
+   "status": "info",
+   "details": {
+    "bump_x20": {
+     "bad_inner": 20,
+     "bad_inner_const": 0,
+     "bad_outer": 20,
+     "bad_uncached": 21,
+     "nums_field": 0
+    },
+    "assign_inner_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 0,
+     "bad_uncached": 21,
+     "nums_field": 20
+    },
+    "assign_outer_x20": {
+     "bad_inner": 0,
+     "bad_inner_const": 0,
+     "bad_outer": 0,
+     "bad_uncached": 21,
+     "nums_field": 20
+    },
+    "ui_nums": "\"notalist\"",
+    "ui_bad_outer": "\"x20\"",
+    "segments_found": [
+     true,
+     true,
+     true
+    ]
+   },
+   "t": 137.445
+  },
+  {
+   "name": "api.bg_get_state_get_var_value_sibling",
+   "status": "pass",
+   "details": {
+    "report": "out=ImmutableStateError in=10 in2=11 ; after=ImmutableStateError",
+    "in_lock_expected": "in=10 in2=11",
+    "ui_sibling_x": "11",
+    "outside_lock_get_var_value": "out=ImmutableStateError"
+   },
+   "t": 138.663
+  },
+  {
+   "name": "api.raw_setvar_events",
+   "status": "pass",
+   "details": {
+    "api-setvar-pub": {
+     "ok": true,
+     "new_backend_exc": 0,
+     "exc_tail": "",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-secret": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-missing": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-setvar-computed": {
+     "ok": null,
+     "new_backend_exc": 1,
+     "exc_tail": " attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    },
+    "api-raw-missing-handler": {
+     "ok": null,
+     "new_backend_exc": 0,
+     "exc_tail": " attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+     "secret_ui": "secret0",
+     "pub_ui": "pub-raw"
+    }
+   },
+   "t": 146.052
+  },
+  {
+   "name": "api.raw_setvar_is_hydrated_false",
+   "status": "info",
+   "details": {
+    "new_backend_exc": 0,
+    "exc_tail": "AttributeError: 'ApiSV' object has no attribute 'set__secret' | AttributeError: 'ApiSV' object has no attribute 'set_nonexistent' | AttributeError: 'ApiSV' object has no attribute 'set_secret_view'",
+    "still_interactive": true,
+    "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/events2/out/s_prod/s_prod_setvar_is_hydrated.png"
+   },
+   "t": 147.717
+  },
+  {
+   "name": "api.reset_client_storage_substates",
+   "status": "pass",
+   "details": {
+    "before": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-default"
+    },
+    "mutated": {
+     "reset-ls": "ls-changed",
+     "reset-ck": "ck-changed",
+     "reset-plain": "plain-changed",
+     "reset-sub": "sub-changed",
+     "reset-cs-val": "cs-changed"
+    },
+    "storage_mutated": {
+     "ls": "ls-changed",
+     "cookie": "ev_ck=ck-changed"
+    },
+    "after_reset": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-changed"
+    },
+    "storage_after_reset": {
+     "ls": "ls-default",
+     "cookie": "ev_ck=ck-default"
+    },
+    "after_reload": {
+     "reset-ls": "ls-default",
+     "reset-ck": "ck-default",
+     "reset-plain": "plain-default",
+     "reset-sub": "sub-default",
+     "reset-cs-val": "cs-changed"
+    }
+   },
+   "t": 151.448
+  },
+  {
+   "name": "api.dataclass_nested_inplace_mutation",
+   "status": "pass",
+   "details": {
+    "initial": [
+     "[]",
+     "[[1]]"
+    ],
+    "after_2_mutations": [
+     "[0,1]",
+     "[[1,7,7]]"
+    ],
+    "snapshot": {
+     "gv_type": "Box",
+     "gv": {
+      "name": "box",
+      "items": [
+       0,
+       1
+      ],
+      "nested": [
+       [
+        1,
+        7,
+        7
+       ]
+      ]
+     },
+     "dict_type": "Box",
+     "dict": {
+      "name": "box",
+      "items": [
+       0,
+       1
+      ],
+      "nested": [
+       [
+        1,
+        7,
+        7
+       ]
+      ]
+     }
+    },
+    "other_session": [
+     "[]",
+     "[[1]]"
+    ]
+   },
+   "t": 154.626
+  },
+  {
+   "name": "api.undeclared_attribute_assignment",
+   "status": "info",
+   "details": {
+    "report_after_assign": "",
+    "backend_exc": 1,
+    "exc_tail": "SetUndefinedStateVarError: The state variable 'undeclared_attr' has not been defined in 'UndeclState'. All",
+    "report_after_readback": "readback=MISSING",
+    "undeclared_name_in_ws_delta": false
+   },
+   "t": 158.475
+  },
+  {
+   "name": "bind.instance_access_and_inheritance",
+   "status": "info",
+   "details": {
+    "bind-inherited-template": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-template-via-self": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-parent-via-self": {
+     "p_log_added": "bump:self=BindParent ; after_bump",
+     "p_count": "1",
+     "c_count": "1",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-bg-parent": {
+     "p_log_added": "bump:self=BindParent ; bump:self=BindParent",
+     "p_count": "3",
+     "c_count": "1",
+     "c_log": "bg_outside=no-error",
+     "new_exc": 0,
+     "exc_tail": ""
+    }
+   },
+   "t": 165.79
+  },
+  {
+   "name": "bind.foreach_args_0_to_5_and_lambdas",
+   "status": "pass",
+   "details": {
+    "got": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ],
+    "expected": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ]
+   },
+   "t": 168.936
+  },
+  {
+   "name": "priv.dunder_attrs_in_handlers",
+   "status": "fail",
+   "details": {
+    "after_4_bumps": {
+     "count": "3",
+     "note": "count=3 last=3 limit=3 ver=v1",
+     "view": "view last=unset"
+    },
+    "private_only": {
+     "note": "count=3 last=3 limit=3 ver=v1",
+     "view": "view last=unset",
+     "recv_frames": 0,
+     "frames_mention_last_seen": false,
+     "frames_mention_privA_delta": false,
+     "frames": []
+    },
+    "readback": "readback last=P",
+    "view_after_readback": "view last=unset",
+    "mix_out_after_scratch": [
+     "",
+     ""
+    ],
+    "mix_out_after_read": [
+     "read=MISSING",
+     "read=MISSING"
+    ],
+    "new_backend_exc": 2,
+    "exc_list": "SetUndefinedStateVarError: The state variable '_PrivMixin__scratch' has not been defined in 'PrivA'. All st | SetUndefinedStateVarError: The state variable '_PrivMixin__scratch' has not been defined in 'PrivB'. All st",
+    "after_reload": {
+     "count": "3",
+     "note": "readback last=P",
+     "view": "view last=unset",
+     "mixA": "read=MISSING"
+    }
+   },
+   "t": 176.108
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 1.031,
+   "tag": "sup-slow",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "loc": "http://localhost:8465/favicon.ico:0",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 10.654,
+   "tag": "sup-slow",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 17.443,
+   "tag": "sup-partial",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 27.476,
+   "tag": "sup-bg",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 35.117,
+   "tag": "sup-lock",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 43.931,
+   "tag": "sup-cpu",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 50.874,
+   "tag": "sup-gen",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 60.7,
+   "tag": "sup-chain",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 76.459,
+   "tag": "sup-cs",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/sup/"
+  },
+  {
+   "t": 101.024,
+   "tag": "deco",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/deco/"
+  },
+  {
+   "t": 107.737,
+   "tag": "thr",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 112.216,
+   "tag": "temporal",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 113.331,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 113.538,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 113.937,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 114.208,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 114.54,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 114.71,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_SOCKET_NOT_CONNECTED",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 115.013,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 115.542,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 115.908,
+   "tag": "temporal-proxy",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8466/_event/?token=3bdf8b13-6d8f-410e-9f39-227cfea396c7&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:0",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 118.183,
+   "tag": "temporal-proxy",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/throttle/"
+  },
+  {
+   "t": 125.188,
+   "tag": "vars",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/vars/"
+  },
+  {
+   "t": 137.449,
+   "tag": "typelog",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/typelog/"
+  },
+  {
+   "t": 138.677,
+   "tag": "api-sib",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 147.721,
+   "tag": "api-setvar",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 150.265,
+   "tag": "api-reset",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 151.455,
+   "tag": "api-reset",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 154.63,
+   "tag": "api-dc-2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 154.655,
+   "tag": "api-dc",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 158.478,
+   "tag": "api-undecl",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/api/"
+  },
+  {
+   "t": 168.939,
+   "tag": "bind",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/bind/"
+  },
+  {
+   "t": 174.914,
+   "tag": "priv",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/priv/"
+  },
+  {
+   "t": 176.111,
+   "tag": "priv",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:8465/assets/text-field-DK6fJTVF.js:1",
+   "url": "http://localhost:8465/priv/"
+  }
+ ],
+ "page_errors": [
+  {
+   "t": 118.446,
+   "tag": "vars",
+   "error": "Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+   "url": "http://localhost:8465/vars/"
+  }
+ ],
+ "failed_requests": [],
+ "http_errors": [],
+ "counters": {
+  "console:sup-slow:error": 1,
+  "ws:sup-slow:recv": 18,
+  "ws:sup-slow:sent": 11,
+  "console:sup-slow:log": 1,
+  "ws:sup-partial:recv": 13,
+  "ws:sup-partial:sent": 10,
+  "console:sup-partial:log": 1,
+  "ws:sup-bg:recv": 18,
+  "ws:sup-bg:sent": 11,
+  "console:sup-bg:log": 1,
+  "ws:sup-lock:recv": 15,
+  "ws:sup-lock:sent": 12,
+  "console:sup-lock:log": 1,
+  "ws:sup-cpu:recv": 13,
+  "ws:sup-cpu:sent": 11,
+  "console:sup-cpu:log": 1,
+  "ws:sup-gen:recv": 17,
+  "ws:sup-gen:sent": 10,
+  "console:sup-gen:log": 1,
+  "ws:sup-chain:recv": 19,
+  "ws:sup-chain:sent": 10,
+  "console:sup-chain:log": 1,
+  "ws:sup-cs:recv": 24,
+  "ws:sup-cs:sent": 13,
+  "console:sup-cs:log": 1,
+  "ws:deco:recv": 34,
+  "ws:deco:sent": 24,
+  "console:deco:log": 1,
+  "ws:thr:recv": 13,
+  "ws:thr:sent": 10,
+  "console:thr:log": 1,
+  "ws:temporal:recv": 12,
+  "ws:temporal:sent": 10,
+  "console:temporal:log": 1,
+  "ws:temporal-proxy:recv": 15,
+  "ws:temporal-proxy:sent": 12,
+  "console:temporal-proxy:error": 9,
+  "console:temporal-proxy:log": 1,
+  "pageerror:vars": 1,
+  "ws:vars:recv": 15,
+  "ws:vars:sent": 13,
+  "console:vars:log": 1,
+  "ws:typelog:recv": 66,
+  "ws:typelog:sent": 68,
+  "console:typelog:log": 1,
+  "ws:api-sib:recv": 8,
+  "ws:api-sib:sent": 5,
+  "console:api-sib:log": 1,
+  "ws:api-setvar:recv": 12,
+  "ws:api-setvar:sent": 11,
+  "console:api-setvar:log": 1,
+  "ws:api-reset:recv": 16,
+  "ws:api-reset:sent": 14,
+  "console:api-reset:log": 2,
+  "ws:api-dc:recv": 9,
+  "ws:api-dc:sent": 7,
+  "ws:api-dc-2:recv": 6,
+  "ws:api-dc-2:sent": 4,
+  "console:api-dc-2:log": 1,
+  "console:api-dc:log": 1,
+  "ws:api-undecl:recv": 8,
+  "ws:api-undecl:sent": 6,
+  "console:api-undecl:log": 1,
+  "ws:bind:recv": 25,
+  "ws:bind:sent": 21,
+  "console:bind:log": 1,
+  "ws:priv:recv": 20,
+  "ws:priv:sent": 19,
+  "console:priv:log": 2
+ },
+ "extra": {}
+}

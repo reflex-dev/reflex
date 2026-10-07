@@ -37,7 +37,16 @@ def stop_mock():
         time.sleep(0.2)
 
 
-def start_mock(max_age=3600, no_refresh=False, tag=""):
+EXTERNAL = os.environ.get("EXPIRY_MOCK_EXTERNAL") == "1"
+
+
+def start_mock(max_age=3600, no_refresh=False, tag="", force=False):
+    """(Re)start the mock IdP.  With EXPIRY_MOCK_EXTERNAL=1 the wrapper (expiry_matrix.sh) has already
+    started it with this scenario's parameters AND restarted the app afterwards: the app caches the IdP's
+    JWKS, and every mock process signs with a fresh RSA key, so a mock restart under a running app makes
+    every later login fail (InvalidKeyIdError).  Only restart_provider restarts it on purpose (force=True)."""
+    if EXTERNAL and not force:
+        return None
     stop_mock()
     env = dict(os.environ, MOCK_OIDC_PORT="8358", MOCK_OIDC_MAX_AGE=str(max_age))
     env.pop("MOCK_OIDC_NO_REFRESH", None)
@@ -160,7 +169,7 @@ def scen_revoke(browser, obs):
 def scen_restart_provider(browser, obs):
     start_mock(max_age=3600, tag="restart-a")
     ctx, page = fresh_login(browser, obs)
-    start_mock(max_age=3600, tag="restart-b")  # new process: new signing key, empty token store
+    start_mock(max_age=3600, tag="restart-b", force=True)  # new process: new signing key, empty token store
     page.reload()
     page.wait_for_timeout(5000)
     obs["reload_after_restart_url"] = page.url
@@ -203,8 +212,9 @@ def main():
             slim["console_errors"] = [c for c in obs.get("console", []) if c["type"] == "error" and "TUNNEL" not in c["text"]][:10]
             print(json.dumps(slim, default=str)[:5000], flush=True)
         browser.close()
-    start_mock(max_age=3600, tag="final")
-    save(f"expiry-{LABEL}.json", results)
+    if not EXTERNAL:
+        start_mock(max_age=3600, tag="final")
+    save(f"expiry-{LABEL}-{'_'.join(SCEN)}.json", results)
 
 
 main()

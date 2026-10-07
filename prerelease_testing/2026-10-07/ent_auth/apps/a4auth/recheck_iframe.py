@@ -5,6 +5,10 @@ import re
 import traceback
 from pathlib import Path
 
+import reflex  # ENT_AUTH_VENV_GUARD
+
+assert "/scratchpad/envs/ent_auth2-drv/" in reflex.__file__, reflex.__file__
+
 from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parent

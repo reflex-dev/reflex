@@ -1,0 +1,94 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3470/
+Backend running at: http://0.0.0.0:8470
+MINI 1791375198.097 ping 1
+MINI 1791375198.165 bg_raise_inside (raising inside async with self)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 528, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 322, in process_event
+    events = await fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/events2/run/mini_a2_dev_redis/mini/mini.py", line 71, in bg_raise_inside
+    raise RuntimeError("bg-inside-intentional")
+RuntimeError: bg-inside-intentional
+
+
+MINI 1791375201.258 ping 2
+MINI 1791375202.850 ping 3
+MINI 1791375204.522 ping 1
+MINI 1791375204.581 bg_raise_after (raising outside the lock)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 528, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 322, in process_event
+    events = await fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/events2/run/mini_a2_dev_redis/mini/mini.py", line 78, in bg_raise_after
+    raise RuntimeError("bg-after-intentional")
+RuntimeError: bg-after-intentional
+
+
+MINI 1791375207.741 ping 2
+MINI 1791375209.250 ping 3
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

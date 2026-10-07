@@ -1,0 +1,610 @@
+{
+ "checks": [
+  {
+   "name": "index renders",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "index link Protected Page",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "index link Partially Protected Page",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "index link Custom Login Button",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "index link Custom Scope",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "/protected anonymous: no protected content",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "/partially-protected renders",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "/custom-button shows custom login button",
+   "ok": true,
+   "detail": "Google Login \ud83d\ude80\nBuilt with Reflex"
+  },
+  {
+   "name": "custom login button click handled (popup or no reflex error)",
+   "ok": true,
+   "detail": "popups=['https://accounts.google.com/signin/oauth/error?authError=Cg5pbnZhbGlkX2NsaWVudBIfVGhlIE9BdXRoIGNsaWVudCB3YXMgbm90IGZvdW5kLiCRAw&flowName=GeneralOAuthLite&client_id=123456789012-dummyclientid.apps.googleusercontent.com&as=S-1255588713:1791374715535366&aes=AVQXgOCDqAOK-lIMa6kIQ4er-a3E']"
+  },
+  {
+   "name": "/custom-scope (on_load DriveState + get_state(GoogleAuthState)) renders login button",
+   "ok": true,
+   "detail": "Login with Drive API scope\nBuilt with Reflex"
+  },
+  {
+   "name": "token_response_json LocalStorage key discoverable",
+   "ok": false,
+   "detail": "{\"theme\": \"system\"}"
+  },
+  {
+   "name": "bogus token cleared from LocalStorage by tokeninfo computed var",
+   "ok": true,
+   "detail": "reflex___state____state.reflex_google_auth___state____google_auth_state.token_response_json_rx_state_=''"
+  },
+  {
+   "name": "bogus token does not unlock /protected",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "anomalies": {
+  "console_nonbenign": [
+   {
+    "where": "protected",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 403 ()",
+    "benign": false
+   },
+   {
+    "where": "protected",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   },
+   {
+    "where": "protected",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   },
+   {
+    "where": "partially",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 403 ()",
+    "benign": false
+   },
+   {
+    "where": "partially",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   },
+   {
+    "where": "partially",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   },
+   {
+    "where": "after-inject",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 403 ()",
+    "benign": false
+   },
+   {
+    "where": "after-inject",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   },
+   {
+    "where": "after-inject",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   }
+  ],
+  "page_errors": [
+   {
+    "where": "protected",
+    "page": "main",
+    "error": "gis is not defined"
+   },
+   {
+    "where": "partially",
+    "page": "main",
+    "error": "gis is not defined"
+   },
+   {
+    "where": "after-inject",
+    "page": "main",
+    "error": "gis is not defined"
+   }
+  ],
+  "failed_requests": [
+   {
+    "where": "protected",
+    "page": "main",
+    "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.sXJlnxl1ifM.L.W.O/am=AAAAAYIAZhMF/d=1/rs=AF0KOtXaorXBcIxvWJBL-2PEsVKHo8E9CA/m=credential_button_library",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "protected",
+    "page": "main",
+    "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.o3L34wTzb5M.O/am=AAAAAIIAZhMF/d=1/rs=AF0KOtXAdKkwLV5a8k9Hp0bznko8uzSLkg/m=credential_button_library",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "partially",
+    "page": "main",
+    "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.sXJlnxl1ifM.L.W.O/am=AAAAAYIAZhMF/d=1/rs=AF0KOtXaorXBcIxvWJBL-2PEsVKHo8E9CA/m=credential_button_library",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "partially",
+    "page": "main",
+    "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.o3L34wTzb5M.O/am=AAAAAIIAZhMF/d=1/rs=AF0KOtXAdKkwLV5a8k9Hp0bznko8uzSLkg/m=credential_button_library",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "after-inject",
+    "page": "main",
+    "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.sXJlnxl1ifM.L.W.O/am=AAAAAYIARhMF/d=1/rs=AF0KOtV1BAeyodO_xN0k9_sx8Kzon_TRlA/m=credential_button_library",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "after-inject",
+    "page": "main",
+    "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.o3L34wTzb5M.O/am=AAAAAIIARhMF/d=1/rs=AF0KOtUS2yO44HmLf4CBx-J_tilwHJ_B2Q/m=credential_button_library",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "bad_responses": [
+   {
+    "where": "protected",
+    "page": "main",
+    "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_708730_794549&cas=DppZj0QUkroZbRz9ibbepM7VsSwoVOsaXpVyLT4%2BefM",
+    "status": 403
+   },
+   {
+    "where": "partially",
+    "page": "main",
+    "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_713346_32627&cas=2KRBa4FWRQMuTI8QG5%2BJWHF2zp9U33gkuscwaZzrKKE",
+    "status": 403
+   },
+   {
+    "where": "after-inject",
+    "page": "main",
+    "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_721266_18868&cas=G0dPOid4lz84VXTZs9TaOmenqrOj%2Bh6tG%2BX16Cp%2Bah0",
+    "status": 403
+   }
+  ]
+ },
+ "console_all": [
+  {
+   "where": "protected",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  },
+  {
+   "where": "protected",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 403 ()",
+   "benign": false
+  },
+  {
+   "where": "protected",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "protected",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "partially",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "partially",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 403 ()",
+   "benign": false
+  },
+  {
+   "where": "partially",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "partially",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "custom-button",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "custom-scope",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "inject-bogus-token",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "after-inject",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "after-inject",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 403 ()",
+   "benign": false
+  },
+  {
+   "where": "after-inject",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "after-inject",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "after-inject",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [
+  {
+   "where": "protected",
+   "page": "main",
+   "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.sXJlnxl1ifM.L.W.O/am=AAAAAYIAZhMF/d=1/rs=AF0KOtXaorXBcIxvWJBL-2PEsVKHo8E9CA/m=credential_button_library",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "protected",
+   "page": "main",
+   "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.o3L34wTzb5M.O/am=AAAAAIIAZhMF/d=1/rs=AF0KOtXAdKkwLV5a8k9Hp0bznko8uzSLkg/m=credential_button_library",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "partially",
+   "page": "main",
+   "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.sXJlnxl1ifM.L.W.O/am=AAAAAYIAZhMF/d=1/rs=AF0KOtXaorXBcIxvWJBL-2PEsVKHo8E9CA/m=credential_button_library",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "partially",
+   "page": "main",
+   "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.o3L34wTzb5M.O/am=AAAAAIIAZhMF/d=1/rs=AF0KOtXAdKkwLV5a8k9Hp0bznko8uzSLkg/m=credential_button_library",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "after-inject",
+   "page": "main",
+   "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.sXJlnxl1ifM.L.W.O/am=AAAAAYIARhMF/d=1/rs=AF0KOtV1BAeyodO_xN0k9_sx8Kzon_TRlA/m=credential_button_library",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "after-inject",
+   "page": "main",
+   "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.o3L34wTzb5M.O/am=AAAAAIIARhMF/d=1/rs=AF0KOtUS2yO44HmLf4CBx-J_tilwHJ_B2Q/m=credential_button_library",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "bad_responses_all": [
+  {
+   "where": "protected",
+   "page": "main",
+   "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_708730_794549&cas=DppZj0QUkroZbRz9ibbepM7VsSwoVOsaXpVyLT4%2BefM",
+   "status": 403
+  },
+  {
+   "where": "partially",
+   "page": "main",
+   "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_713346_32627&cas=2KRBa4FWRQMuTI8QG5%2BJWHF2zp9U33gkuscwaZzrKKE",
+   "status": 403
+  },
+  {
+   "where": "after-inject",
+   "page": "main",
+   "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_721266_18868&cas=G0dPOid4lz84VXTZs9TaOmenqrOj%2Bh6tG%2BX16Cp%2Bah0",
+   "status": 403
+  }
+ ],
+ "ws": [
+  {
+   "where": "index",
+   "dir": "recv",
+   "data": "0{\"sid\":\"JkFDLFpCbvXHz49RAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "where": "index",
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"46e01ab41cc0ed7d\",\"b084fc0c68f7c73a\",\"1b19163150fc95c4\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"c145cc9eaf3241f2\",\"f310d3fe9e0127a7\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "where": "protected",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"O3YuCBxhsKPbc69NAAAB\"}"
+  },
+  {
+   "where": "protected",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Ogu54f3/la92a1vL/DFivQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"Ogu54f3/la92a1vL/DFivQ==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3510\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3510/index\",\"full_raw_path\":\"http://localhost:3510/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"db2963b3-56f5-412f-8b9c-7ead3ed7d47f\",\"cl"
+  },
+  {
+   "where": "protected",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "where": "protected",
+   "dir": "sent",
+   "data": "41/_event,"
+  },
+  {
+   "where": "protected",
+   "dir": "recv",
+   "data": "0{\"sid\":\"4wBHJQ50hTUnNcP-AAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "where": "protected",
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"46e01ab41cc0ed7d\",\"b084fc0c68f7c73a\",\"1b19163150fc95c4\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"c145cc9eaf3241f2\",\"f310d3fe9e0127a7\"]},\"router_data\":{\"pathname\":\"/protected/\",\"asPath\":\"/protected/\"}}}"
+  },
+  {
+   "where": "protected",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"mz3vfN64HwStfqqtAAAD\"}"
+  },
+  {
+   "where": "protected",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"JyZQExq2dT+9d9gVXF095Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"JyZQExq2dT+9d9gVXF095Q==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3510\",\"path\":\"/protected\",\"raw_path\":\"/protected/\",\"full_path\":\"http://localhost:3510/protected\",\"full_raw_path\":\"http://localhost:3510/protected/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/protected\",\"rx_router_session_rx_state_\":{\"client_token\":\"db2963b3-"
+  },
+  {
+   "where": "protected",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "where": "partially",
+   "dir": "sent",
+   "data": "41/_event,"
+  },
+  {
+   "where": "partially",
+   "dir": "recv",
+   "data": "0{\"sid\":\"zfRN9X2mAGOKD1JVAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "where": "partially",
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"46e01ab41cc0ed7d\",\"b084fc0c68f7c73a\",\"1b19163150fc95c4\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"c145cc9eaf3241f2\",\"f310d3fe9e0127a7\"]},\"router_data\":{\"pathname\":\"/partially-protected/\",\"asPath\":\"/partially-protected/\"}}}"
+  },
+  {
+   "where": "partially",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"vp30-fBs8bL_wUoKAAAF\"}"
+  },
+  {
+   "where": "partially",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791374708726,\\\"i_b\\\":\\\"8ZsyyUw18musTPpNUUZKJcfonm80UukNcsK52CbvPn0\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791374708726}\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"M6NbIsCfJEKzRcpTmzRa3A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791374708726,\\\"i_b\\\":\\\"8ZsyyUw18musTPpNUUZKJcfonm80UukNcsK52CbvPn0\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791374708726}\",\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"M6NbIsCfJEKzRcpTmzRa3A==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0"
+  },
+  {
+   "where": "partially",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "where": "custom-button",
+   "dir": "sent",
+   "data": "41/_event,"
+  },
+  {
+   "where": "custom-button",
+   "dir": "recv",
+   "data": "0{\"sid\":\"q3ghuVzO_IhkkVu8AAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "where": "custom-button",
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"46e01ab41cc0ed7d\",\"b084fc0c68f7c73a\",\"1b19163150fc95c4\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"c145cc9eaf3241f2\",\"f310d3fe9e0127a7\"]},\"router_data\":{\"pathname\":\"/custom-button/\",\"asPath\":\"/custom-button/\"}}}"
+  },
+  {
+   "where": "custom-button",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"PCWgLQee-IQ2WZUOAAAH\"}"
+  },
+  {
+   "where": "custom-button",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791374713343,\\\"i_b\\\":\\\"8ZsyyUw18musTPpNUUZKJcfonm80UukNcsK52CbvPn0\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791374713343}\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"D4Co0qmE6JN4Wn8Wh2YP1g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791374713343,\\\"i_b\\\":\\\"8ZsyyUw18musTPpNUUZKJcfonm80UukNcsK52CbvPn0\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791374713343}\",\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"D4Co0qmE6JN4Wn8Wh2YP1g==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0"
+  },
+  {
+   "where": "custom-button",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "where": "custom-scope",
+   "dir": "sent",
+   "data": "41/_event,"
+  },
+  {
+   "where": "custom-scope",
+   "dir": "recv",
+   "data": "0{\"sid\":\"5epNT_t2eoUaPGuaAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "where": "custom-scope",
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"46e01ab41cc0ed7d\",\"b084fc0c68f7c73a\",\"1b19163150fc95c4\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"c145cc9eaf3241f2\",\"f310d3fe9e0127a7\"]},\"router_data\":{\"pathname\":\"/custom-scope/\",\"asPath\":\"/custom-scope/\"}}}"
+  },
+  {
+   "where": "custom-scope",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"IfqxZp_iXdF5OTrVAAAJ\"}"
+  },
+  {
+   "where": "custom-scope",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791374713343,\\\"i_b\\\":\\\"8ZsyyUw18musTPpNUUZKJcfonm80UukNcsK52CbvPn0\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791374713343}\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CBgToxM62dAFlj4pDSDMhw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791374713343,\\\"i_b\\\":\\\"8ZsyyUw18musTPpNUUZKJcfonm80UukNcsK52CbvPn0\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791374713343}\",\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"CBgToxM62dAFlj4pDSDMhw==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0"
+  },
+  {
+   "where": "custom-scope",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "where": "custom-scope",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "where": "custom-scope",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.google_auth_demo___google_auth_demo____drive_state\":{\"loading_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "where": "custom-scope",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.google_auth_demo___google_auth_demo____drive_state\":{\"loading_rx_state_\":false,\"app_data_rx_state_\":\"\"},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "where": "custom-scope",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "where": "inject-bogus-token",
+   "dir": "sent",
+   "data": "41/_event,"
+  },
+  {
+   "where": "inject-bogus-token",
+   "dir": "recv",
+   "data": "0{\"sid\":\"WHqiAmeLL66kt2bbAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "where": "inject-bogus-token",
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"46e01ab41cc0ed7d\",\"b084fc0c68f7c73a\",\"1b19163150fc95c4\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"c145cc9eaf3241f2\",\"f310d3fe9e0127a7\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "where": "inject-bogus-token",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"kqp7oxZ0MffBEy8hAAAL\"}"
+  },
+  {
+   "where": "inject-bogus-token",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791374713343,\\\"i_b\\\":\\\"8ZsyyUw18musTPpNUUZKJcfonm80UukNcsK52CbvPn0\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791374713343}\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"l5+r3rDRd23Czmf14hQn6A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791374713343,\\\"i_b\\\":\\\"8ZsyyUw18musTPpNUUZKJcfonm80UukNcsK52CbvPn0\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791374713343}\",\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"l5+r3rDRd23Czmf14hQn6A==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0"
+  },
+  {
+   "where": "inject-bogus-token",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  },
+  {
+   "where": "after-inject",
+   "dir": "sent",
+   "data": "41/_event,"
+  },
+  {
+   "where": "after-inject",
+   "dir": "recv",
+   "data": "0{\"sid\":\"1kBywxU9vgK2LbKvAAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "where": "after-inject",
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_google_auth___state____google_auth_state.token_response_json_rx_state_\":\"{\\\"id_token\\\": \\\"abc.def.ghi\\\", \\\"access_token\\\": \\\"ya29.bogus\\\", \\\"scope\\\": \\\"openid email\\\"}\"},\"hashes\":[\"46e01ab41cc0ed7d\",\"b084fc0c68f7c73a\",\"1b19163150fc95c4\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"c145cc9eaf3241f2\",\"f310d3fe9e0127a7\"]},\"router_data\":{\"pathname\":\"/protected/\",\"asPath\":\"/protected/\"}}}"
+  },
+  {
+   "where": "after-inject",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"RssXj4vhSd4qZhujAAAN\"}"
+  },
+  {
+   "where": "after-inject",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791374713343,\\\"i_b\\\":\\\"8ZsyyUw18musTPpNUUZKJcfonm80UukNcsK52CbvPn0\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791374713343}\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ZGqpDtDLXpx7Dp3G8XlBTw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"cookie\":\"g_state={\\\"i_l\\\":0,\\\"i_ll\\\":1791374713343,\\\"i_b\\\":\\\"8ZsyyUw18musTPpNUUZKJcfonm80UukNcsK52CbvPn0\\\",\\\"i_e\\\":{\\\"enable_itp_optimization\\\":24},\\\"i_et\\\":1791374713343}\",\"host\":\"localhost:3510\",\"origin\":\"http://localhost:3510\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"ZGqpDtDLXpx7Dp3G8XlBTw==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0"
+  },
+  {
+   "where": "after-inject",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_google_auth___state____google_auth_state\":{\"token_response_json_rx_state_\":\"\",\"tokeninfo_rx_state_\":{},\"user_email_rx_state_\":\"\",\"id_token_rx_state_\":\"\",\"access_token_rx_state_\":\"\",\"user_name_rx_state_\":\"\",\"id_token_json_rx_state_\":\"\",\"scopes_rx_state_\":[]},\"reflex___state____state.reflex_google_auth___state____google_auth_state.google_auth_demo___google_auth_demo____state\":{\"protected_content_rx_state_\":\"Not logged in.\"}}}]"
+  }
+ ]
+}
