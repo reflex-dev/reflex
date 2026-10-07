@@ -182,19 +182,25 @@ def test_class_assignment_keeps_accepted_callables():
 
 
 def test_class_assignment_accepts_type_parameter_defaults():
-    """A field annotated with a type parameter takes any default."""
+    """A field annotated with a type parameter checks a default against its bound."""
     E = TypeVar("E")
+    N = TypeVar("N", bound=int)
 
-    class GenericState(BaseState, Generic[E]):
+    class GenericState(BaseState, Generic[E, N]):
         _value: E = None  # pyright: ignore[reportAssignmentType]
+        _count: N = 0  # pyright: ignore[reportAssignmentType]
 
-    class IntState(GenericState[int]):
+    class IntState(GenericState[int, int]):
         pass
 
     IntState._value = 5  # pyright: ignore[reportAttributeAccessIssue]
     assert IntState()._value == 5
     GenericState._value = "text"  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
     assert IntState()._value == "text"
+    with pytest.raises(TypeError, match="Invalid default"):
+        GenericState._count = "text"  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
+    GenericState._count = 5  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
+    assert IntState()._count == 5
 
 
 @pytest.mark.parametrize("name", ["_value", "value"])

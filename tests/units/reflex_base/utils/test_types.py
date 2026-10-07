@@ -160,12 +160,21 @@ def test_isinstance_resolves_type_alias(alias_cls: type) -> None:
     assert not _isinstance(1, maybe, nested=1, treat_var_as_type=False)
 
 
-def test_isinstance_accepts_type_parameter() -> None:
-    """A bare type parameter, which a field never resolves, accepts any value."""
+def test_isinstance_checks_type_parameter_bounds() -> None:
+    """A type parameter, which a field never resolves, checks only its bound."""
     t = TypeVar("t")
+    bounded = TypeVar("bounded", bound=str)
+    constrained = TypeVar("constrained", int, str)
+    forward = TypeVar("forward", bound="Unresolvable")  # noqa: F821  # pyright: ignore[reportUndefinedVariable]
     assert _isinstance(1, t, nested=1, treat_var_as_type=False)
     assert _isinstance("x", t | None, nested=1, treat_var_as_type=False)
     assert not _isinstance("x", list[t], nested=1, treat_var_as_type=False)  # pyright: ignore[reportGeneralTypeIssues]
+    assert _isinstance("x", bounded, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1, bounded, nested=1, treat_var_as_type=False)
+    assert _isinstance(1, constrained, nested=1, treat_var_as_type=False)
+    assert _isinstance("x", constrained, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1.5, constrained, nested=1, treat_var_as_type=False)
+    assert _isinstance(object(), forward, nested=1, treat_var_as_type=False)
 
 
 @pytest.mark.parametrize("alias_cls", _type_alias_types())

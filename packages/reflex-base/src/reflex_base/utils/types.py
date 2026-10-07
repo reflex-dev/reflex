@@ -1000,9 +1000,28 @@ def _isinstance(
                     treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
                 )
             if isinstance(cls, TypeVar):
-                # A field annotated with a type parameter never resolves it,
-                # so any value satisfies the annotation.
-                return True
+                # A field never resolves its type parameter, so a value only
+                # has to satisfy the bound or one of the constraints. A string
+                # bound cannot be resolved here and accepts anything.
+                bounds = (
+                    (cls.__bound__,)
+                    if cls.__bound__ is not None
+                    else cls.__constraints__
+                )
+                return (
+                    not bounds
+                    or any(isinstance(bound, (str, ForwardRef)) for bound in bounds)
+                    or any(
+                        _isinstance(
+                            obj,
+                            bound,
+                            nested=nested,
+                            treat_var_as_type=treat_var_as_type,
+                            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                        )
+                        for bound in bounds
+                    )
+                )
             raise
 
     args = _get_args_cached(cls)
