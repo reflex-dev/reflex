@@ -81,7 +81,19 @@ train) and 0.9.12.
 
 ### N-004: State saved by 0.10.0a2 is discarded by 0.9.12 and 0.10.0a1 workers (rolling deploy / rollback silently resets sessions) (MEDIUM)
 - Cluster: `reverify_core` | Regression vs 0.10.0a1: yes (a1-saved state still loads on 0.9.12, as the #7312 changelog
-  promises; a2's schema hash — "Defaults are no longer part of the saved-state schema", #7461 — breaks that) | Verifier: pending
+  promises; a2's schema hash — "Defaults are no longer part of the saved-state schema", #7461 — breaks that) | Verifier: **CONFIRMED** (medium)
+- Verification: full 3×3 save/load matrix reproduced; loading an a2 pickle on 0.9.12/a1 with the hash check skipped works
+  completely (values, backend var, mutation, dirty tracking, re-serialization), so the hash is the ONLY incompatibility — a2 even
+  ships `_PREVIOUS_RELEASE_PICKLE_KEYS` for old workers, which the new hash makes useless. E2E with one Redis and one token:
+  0.9.12→a2, a1→a2, a1→0.9.12, a2→a2 across a default change all keep the session; a2→0.9.12 and a2→a1 lose it (user '', count
+  reset) every time an old worker serves the token, the old worker writes the fresh state back and a2 accepts it, so the
+  a2-era data is gone for good, with nothing logged. PR #7461 only claims the forward direction. Root cause (alpha2):
+  `reflex/state.py:2102-2122` `_to_schema` now hashes only (name, type); `_serialize` (`:2141`) writes `(new_hash, state)`;
+  `_deserialize` (`:2210-2218`) accepts the new or the legacy hash, but nothing ever writes the legacy hash; 0.9.12
+  (`state.py:2864`) and a1 (`:2213`) only accept their own default-including hash and `istate/manager/redis.py` swallows the
+  mismatch into a fresh state. Fix idea: write the legacy hash in the tuple and carry the new hash inside the pickled dict
+  (old workers tolerate extra keys); or drop the #7312 rolling-deploy sentence and document that rollback loses sessions.
+  Evidence: `reverify_core/verification/n004-schema-rollback/` (fleet_app, bin/phase.sh, drivers/drive_fleet.py, logs/pickle_matrix.txt).
 - Repro: `cd reverify_core/scripts/schema; SCHEMA_DEFAULT=0 $SB/envs/alpha2/bin/python derive_h_schema.py alpha2 save s.bin;
   SCHEMA_DEFAULT=0 $SB/envs/stable/bin/python derive_h_schema.py stable load s.bin` → `StateSchemaMismatchError`; an a1-saved
   file loads (count=42). E2E: `core_a2` `/schema` in prod with one Redis: a2 → stop → 0.9.12 comes back fresh (count 5);
@@ -91,7 +103,20 @@ train) and 0.9.12.
   loading new states is still in the 0.10.0 notes; either drop/qualify it for a2 or restore compatibility.
 
 ### N-005: Assigning a plain default to a LocalStorage/Cookie var (incl. the documented ComponentState `cls.value = initial` pattern) silently drops browser persistence (MEDIUM)
-- Cluster: `reverify_core` | Regression: no (new #7461 behaviour; 0.9.12 ignored the assignment and kept storage) | Verifier: pending
+- Cluster: `reverify_core` | Regression: no (new #7461 behaviour; 0.9.12 ignored the assignment and kept storage) | Verifier: **CONFIRMED** (medium)
+- Verification matrix (3 storage types × str/storage-type annotation × 6 assignment kinds × 3 versions): with the documented
+  `v: str = rx.LocalStorage(...)` declaration, a plain value or a factory returning a plain value silently turns the var into
+  an ordinary var (`_is_client_storage` False, absent from the compiled `clientStorage`, never written to the browser, a new
+  tab shows the default; a same-token reload hides it); a factory returning `rx.LocalStorage(..., name=...)` or a storage value
+  keeps storage; `rx.LocalStorage("x")` without a name keeps storage but drops the declared key name. With a storage-type
+  annotation a plain value raises `TypeError: Invalid default` — loud, and inconsistent with the silent `str` path. The
+  documented ComponentState example (`docs/state_structure/component_state.md:83-111`) uses a plain var and is NOT affected;
+  only that pattern combined with a storage declaration loses storage; `docs/vars/base_vars.md:76-96` warns about nothing.
+  Root cause (alpha2): `reflex_base/vars/base.py:4764-4817` `BaseStateMeta.__setattr__` replaces the storage default (the
+  only carrier of the storage classification and options); `reflex/state.py:1606-1625` `_is_client_storage` and
+  `reflex/compiler/utils.py:308-333` look only at `field.default` or a storage-typed annotation. Fix: wrap an accepted plain
+  value/factory result in the declared storage class with its options, or raise like the storage-annotated path.
+  Evidence: `reverify_core/verification/n005-storage-assign/` (scripts/storage_assign_matrix.py, app, drivers/drive_stor.py).
 - Repro: `class St(rx.State): v: str = rx.LocalStorage("d", name="k")`; `St.v = "x"` → `St._is_client_storage("v")` is False and the
   var is absent from compiled storage; same for `rx.Cookie`, a factory returning a plain str, and `cls.value = initial` in
   `ComponentState.get_component`. Workaround: assign `rx.LocalStorage("x", name="k")`. Scripts: `reverify_core/scripts/derive_g_assign.py`
