@@ -1,0 +1,31 @@
+{
+  "checked_at_utc": "2026-10-07T15:20:40.515337+00:00",
+  "source": "https://pypi.org/pypi/reflex/json",
+  "stable_info_version": "0.9.12",
+  "zero_ten_releases": {
+    "0.10.0a1": [
+      {
+        "filename": "reflex-0.10.0a1-py3-none-any.whl",
+        "upload_time": "2026-10-05T21:52:32.427779Z",
+        "yanked": false
+      },
+      {
+        "filename": "reflex-0.10.0a1.tar.gz",
+        "upload_time": "2026-10-05T21:52:33.960827Z",
+        "yanked": false
+      }
+    ],
+    "0.10.0a2": [
+      {
+        "filename": "reflex-0.10.0a2-py3-none-any.whl",
+        "upload_time": "2026-10-07T05:38:58.577865Z",
+        "yanked": false
+      },
+      {
+        "filename": "reflex-0.10.0a2.tar.gz",
+        "upload_time": "2026-10-07T05:39:00.831013Z",
+        "yanked": false
+      }
+    ]
+  }
+}

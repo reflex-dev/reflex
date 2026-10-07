@@ -1,0 +1,49 @@
+{
+  "checked_at_utc": "2026-10-07T15:27:33.422321+00:00",
+  "source_archive": "tested-source.json.gz",
+  "files": [
+    {
+      "file": "cli_entry.py",
+      "ast_equal": true,
+      "tested_sha256": "c1a4ef04af81e618991d4ae4ea001503e3bda789cf7e62e45806b616510350de",
+      "formatted_sha256": "7cd055d8ec1960a5cfc28234b133986e1fe1fdb02a40834e908a3a585e0b9d1f"
+    },
+    {
+      "file": "fixtures.py",
+      "ast_equal": true,
+      "tested_sha256": "9d9a56b9be0c71216002f85ca011a602cbfe257ba60d89a311894d7208b07a49",
+      "formatted_sha256": "f751f9451927658eb44a38d241d67c5ca8359b6f98cedfb5a5f3a85d08bfb2ea"
+    },
+    {
+      "file": "guard.py",
+      "ast_equal": true,
+      "tested_sha256": "951bb607f5ca730b0aa6bb5c825501d5547ba5da28a2a231c5ec93849e807bf5",
+      "formatted_sha256": "a4df8c6026cdccdf6d8d5b184f14048f16c0b7e403eb850f66256711b127b81c"
+    },
+    {
+      "file": "hosting.py",
+      "ast_equal": true,
+      "tested_sha256": "9df25ba86894da03297bfb66aa865c607f70ff120f4e1a394feeac528e6b8736",
+      "formatted_sha256": "2ddac4b9c3ca3fd66f2b7ecd61f1eccfca9237c60a4d846f2659152beaef2f85"
+    },
+    {
+      "file": "release_baseline.py",
+      "ast_equal": true,
+      "tested_sha256": "30b7dcec38773917e2156895b59843ce76b9e78ddfa80e0c76d506d0fa113438",
+      "formatted_sha256": "c546fe33c290ac58565e9c0df7d577448449ea016f9b62bd6bb180a2cdd93f6f"
+    },
+    {
+      "file": "release_docgen.py",
+      "ast_equal": true,
+      "tested_sha256": "4c240a85174903e3bbcc6fcb73d2254451a3e751a477f2c2592d18d32965c13c",
+      "formatted_sha256": "12b1c8b258affaeed48c8be06f1da352ef27592bdb023ab96e0b7f7fc0825485"
+    },
+    {
+      "file": "release_entry.py",
+      "ast_equal": true,
+      "tested_sha256": "90fd3eeaeab439da48a7a1125180abe0dc9ba971e6cd9f0cb19faf3d12269d1a",
+      "formatted_sha256": "0cfa518d62cd9f914e70681b52eeb857673b0ce834e23e52696e46a5e706eea7"
+    }
+  ],
+  "note": "Parent readability-only Ruff formatting preserves every tested AST; exact tested bytes remain archived."
+}

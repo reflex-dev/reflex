@@ -1,0 +1,27 @@
+{
+  "alpha2-dev-3": {
+    "rxconfig.py": "a039bf692db4f1deacdd22026fdedf607534ba4cde67460cb4f75eab6bcf478c",
+    "telemetry_app/__init__.py": "d7b8d16fe243c9955713b42d1f7f0084734d3b1c861f3f123632d11c4194c6c5",
+    "telemetry_app/telemetry_app.py": "9cbc2f32fadf8ab2baf0a836b3ae143104b54900d3133a72720f37a36f53ee7d"
+  },
+  "alpha2-dev-2": {
+    "rxconfig.py": "a039bf692db4f1deacdd22026fdedf607534ba4cde67460cb4f75eab6bcf478c",
+    "telemetry_app/__init__.py": "d7b8d16fe243c9955713b42d1f7f0084734d3b1c861f3f123632d11c4194c6c5",
+    "telemetry_app/telemetry_app.py": "9cbc2f32fadf8ab2baf0a836b3ae143104b54900d3133a72720f37a36f53ee7d"
+  },
+  "alpha2-prod-2": {
+    "rxconfig.py": "a039bf692db4f1deacdd22026fdedf607534ba4cde67460cb4f75eab6bcf478c",
+    "telemetry_app/__init__.py": "d7b8d16fe243c9955713b42d1f7f0084734d3b1c861f3f123632d11c4194c6c5",
+    "telemetry_app/telemetry_app.py": "9cbc2f32fadf8ab2baf0a836b3ae143104b54900d3133a72720f37a36f53ee7d"
+  },
+  "alpha2-dev-1": {
+    "rxconfig.py": "a039bf692db4f1deacdd22026fdedf607534ba4cde67460cb4f75eab6bcf478c",
+    "telemetry_app/__init__.py": "d7b8d16fe243c9955713b42d1f7f0084734d3b1c861f3f123632d11c4194c6c5",
+    "telemetry_app/telemetry_app.py": "59cb09186776e8c001aae780ac2ae8d9ac229b2bbff83ec0a4be0cf973d43a16"
+  },
+  "alpha2-prod-1": {
+    "rxconfig.py": "a039bf692db4f1deacdd22026fdedf607534ba4cde67460cb4f75eab6bcf478c",
+    "telemetry_app/__init__.py": "d7b8d16fe243c9955713b42d1f7f0084734d3b1c861f3f123632d11c4194c6c5",
+    "telemetry_app/telemetry_app.py": "9cbc2f32fadf8ab2baf0a836b3ae143104b54900d3133a72720f37a36f53ee7d"
+  }
+}

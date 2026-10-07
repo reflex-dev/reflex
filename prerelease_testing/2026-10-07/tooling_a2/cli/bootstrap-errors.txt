@@ -1,0 +1,1 @@
+First venv attempt omitted UV_CACHE_DIR and uv refused inaccessible default cache /Users/masen/.cache/uv/sdists-v9/.git. No environment was created. Retried with task scratch cache successfully. This is a harness environment error, not a package finding.

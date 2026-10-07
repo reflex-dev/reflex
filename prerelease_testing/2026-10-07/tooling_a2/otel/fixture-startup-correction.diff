@@ -1,0 +1,22 @@
+--- initial/telemetry_app.py
++++ corrected/telemetry_app.py
+@@ -109,16 +109,16 @@
+     )
+ 
+ 
+-def handle_error(error: Exception):
++def handle_error(exception: Exception):
+     """Show a controlled toast for the synthetic handler failure.
+ 
+     Args:
+-        error: Exception captured by the framework.
++        exception: Exception captured by the framework.
+ 
+     Returns:
+         A toast event that leaves the inventory usable.
+     """
+-    return rx.toast.error(str(error))
++    return rx.toast.error(str(exception))
+ 
+ 
+ app = rx.App(backend_exception_handler=handle_error)

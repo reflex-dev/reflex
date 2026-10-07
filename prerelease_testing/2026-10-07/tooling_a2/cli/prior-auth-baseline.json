@@ -1,0 +1,65 @@
+{
+  "source": "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-05/tooling/results.json",
+  "provenance": {
+    "python": "/private/tmp/reflex-pre-20261005-root/bin/python",
+    "reflex": "/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/reflex/__init__.py",
+    "versions": {
+      "reflex": "0.10.0a1",
+      "reflex-base": "0.10.0a1",
+      "reflex-docgen": "0.10.0a1",
+      "reflex-hosting-cli": "0.1.73a1",
+      "reflex-release": "0.1.2a1"
+    }
+  },
+  "cases": [
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "apps",
+        "list",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nThe access token from the REFLEX_ACCESS_TOKEN environment variable was rejected:\naccess denied (auth request id: 8e6daccff8314b64be4d75235d50e5d4)\n",
+      "scenario": "expired",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex-enterprise"
+        }
+      ],
+      "login_hint_present": false
+    },
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "apps",
+        "stop",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nYou are not authenticated. Run `reflex login` to authenticate.\n",
+      "scenario": "expires_after_auth",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex-enterprise"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/stop"
+        }
+      ],
+      "login_hint_present": true
+    }
+  ]
+}

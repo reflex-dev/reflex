@@ -1,0 +1,309 @@
+{
+  "label": "alpha2-prod-1",
+  "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/tooling_otel/alpha2-prod-1",
+  "metadata": {
+    "python": "3.11.16 (main, Aug 12 2026, 23:03:19) [Clang 21.0.0 (clang-2100.1.1.101)]",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/lib/python3.11/site-packages/reflex/__init__.py",
+    "otel_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/lib/python3.11/site-packages/reflex_otel/__init__.py",
+    "packages": {
+      "opentelemetry-sdk": "1.45.1",
+      "reflex-components-code": "0.10.0a2",
+      "watchfiles": "1.3.0",
+      "reflex-otel": "0.2.0a1",
+      "click": "8.5.0",
+      "packaging": "26.3",
+      "protobuf": "7.36.2",
+      "simple-websocket": "1.1.0",
+      "Pygments": "2.21.0",
+      "wrapt": "2.5.0",
+      "reflex-components-core": "0.10.0a2",
+      "requests": "2.34.2",
+      "rich": "15.0.0",
+      "reflex-components-lucide": "1.1.0a1",
+      "opentelemetry-proto": "1.45.1",
+      "opentelemetry-api": "1.45.1",
+      "asgiref": "3.12.1",
+      "httpcore": "1.0.9",
+      "platformdirs": "4.12.3",
+      "reflex-components-gridjs": "0.10.0a2",
+      "bidict": "0.24.1",
+      "python-socketio": "5.17.0",
+      "reflex": "0.10.0a2",
+      "reflex-hosting-cli": "0.2.0a1",
+      "googleapis-common-protos": "1.75.5",
+      "reflex-components-dataeditor": "0.10.0a1",
+      "urllib3": "2.8.0",
+      "h11": "0.16.0",
+      "redis": "7.4.1",
+      "mdurl": "0.1.2",
+      "python-multipart": "0.0.32",
+      "reflex-components-plotly": "0.10.0a2",
+      "opentelemetry-instrumentation-asgi": "0.66b1",
+      "certifi": "2026.7.22",
+      "opentelemetry-exporter-http-transport": "0.66b1",
+      "reflex-components-react-player": "0.10.0a1",
+      "opentelemetry-semantic-conventions": "0.66b1",
+      "reflex-components-radix": "0.10.0a2",
+      "markdown-it-py": "4.2.0",
+      "opentelemetry-exporter-otlp-proto-http": "1.45.1",
+      "starlette": "1.7.0",
+      "reflex-components-recharts": "0.10.0a2",
+      "opentelemetry-instrumentation": "0.66b1",
+      "python-engineio": "4.14.0",
+      "reflex-components-sonner": "0.10.0a1",
+      "opentelemetry-exporter-otlp-common": "0.66b1",
+      "httpx": "0.28.1",
+      "typing_extensions": "4.16.0",
+      "reflex-components-moment": "0.10.0a2",
+      "wsproto": "1.3.2",
+      "opentelemetry-exporter-otlp-proto-common": "1.45.1",
+      "reflex-build-sdk": "0.1.0a1",
+      "opentelemetry-util-http": "0.66b1",
+      "charset-normalizer": "3.5.2",
+      "anyio": "4.15.1",
+      "reflex-base": "0.10.0a2",
+      "granian": "2.8.4",
+      "idna": "3.20",
+      "reflex-components-markdown": "0.10.0a2"
+    }
+  },
+  "processes": [
+    {
+      "name": "collector",
+      "pid": 54995,
+      "command": [
+        "uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/collector.py",
+        "--out",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/runs/alpha2-prod-1/collector.jsonl"
+      ],
+      "started": 1791363989.7661629,
+      "stopping": 1791364038.955384,
+      "before_cleanup": [
+        "54995 54986 54995 Ss   uv --no-config run --no-project --python /private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/bin/python python /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/collector.py --out /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/runs/alpha2-prod-1/collector.jsonl",
+        "54996 54995 54995 S    /opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/Resources/Python.app/Contents/MacOS/Python /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/collector.py --out /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/runs/alpha2-prod-1/collector.jsonl"
+      ],
+      "after_cleanup": [],
+      "returncode": 143
+    },
+    {
+      "name": "server",
+      "pid": 55039,
+      "command": [
+        "uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/bin/python",
+        "reflex",
+        "run",
+        "--env",
+        "prod",
+        "--frontend-port",
+        "8586",
+        "--backend-port",
+        "8586",
+        "--loglevel",
+        "debug"
+      ],
+      "started": 1791364025.480531,
+      "stopping": 1791364154.707781,
+      "before_cleanup": [
+        "55039 54986 55039 Ss   uv --no-config run --no-project --python /private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/bin/python reflex run --env prod --frontend-port 8586 --backend-port 8586 --loglevel debug",
+        "55040 55039 55039 S    /opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/Resources/Python.app/Contents/MacOS/Python /private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/bin/reflex run --env prod --frontend-port 8586 --backend-port 8586 --loglevel debug",
+        "55066 55040 55039 S    /opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/Resources/Python.app/Contents/MacOS/Python -Wdefault -c from multiprocessing.resource_tracker import main;main(11)",
+        "55067 55040 55039 S    /opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/Resources/Python.app/Contents/MacOS/Python -Wdefault -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=12, pipe_handle=14) --multiprocessing-fork"
+      ],
+      "after_cleanup": [],
+      "returncode": 0
+    },
+    {
+      "name": "collector",
+      "pid": 55109,
+      "command": [
+        "uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/collector.py",
+        "--out",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/runs/alpha2-prod-1/collector.jsonl"
+      ],
+      "started": 1791364048.527223,
+      "stopping": 1791364101.318274,
+      "before_cleanup": [
+        "55109 54986 55109 Ss   uv --no-config run --no-project --python /private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/bin/python python /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/collector.py --out /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/runs/alpha2-prod-1/collector.jsonl",
+        "55111 55109 55109 S    /opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/Resources/Python.app/Contents/MacOS/Python /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/collector.py --out /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/runs/alpha2-prod-1/collector.jsonl"
+      ],
+      "after_cleanup": [],
+      "returncode": 143
+    },
+    {
+      "name": "collector",
+      "pid": 55409,
+      "command": [
+        "uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/collector.py",
+        "--out",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/runs/alpha2-prod-1/collector.jsonl"
+      ],
+      "started": 1791364110.924404,
+      "stopping": 1791364156.906484,
+      "before_cleanup": [
+        "55409 54986 55409 Ss   uv --no-config run --no-project --python /private/tmp/reflex-prerelease-macos-pass2/envs/otel-a2/bin/python python /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/collector.py --out /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/runs/alpha2-prod-1/collector.jsonl",
+        "55410 55409 55409 S    /opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/Resources/Python.app/Contents/MacOS/Python /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/collector.py --out /Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/otel/runs/alpha2-prod-1/collector.jsonl"
+      ],
+      "after_cleanup": [],
+      "returncode": 143
+    }
+  ],
+  "browsers": {
+    "chromium": {
+      "passed": true,
+      "checks": 26,
+      "failed": [],
+      "driver_error": null,
+      "anomalies": 12
+    },
+    "webkit": {
+      "passed": true,
+      "checks": 26,
+      "failed": [],
+      "driver_error": null,
+      "anomalies": 19
+    }
+  },
+  "listeners_after_cleanup": "",
+  "compile_spans": [
+    {
+      "collected": 1791364026.384968,
+      "name": "reflex.compile.pages",
+      "service": "qa-backend",
+      "resource": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "cf427797-3d09-496d-a459-cca8fc3ea74e",
+        "service.name": "qa-backend"
+      },
+      "trace_id": "ef4827a0c6c9d9205de58ac6169a1900",
+      "span_id": "85e80b02b8420c1f",
+      "parent_id": "ee55d213273a7694",
+      "kind": "INTERNAL",
+      "attributes": {},
+      "status": {},
+      "events": [],
+      "start": "1791364026175125000",
+      "end": "1791364026198285000"
+    },
+    {
+      "collected": 1791364026.806349,
+      "name": "reflex.compile.install_frontend_packages",
+      "service": "qa-backend",
+      "resource": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "cf427797-3d09-496d-a459-cca8fc3ea74e",
+        "service.name": "qa-backend"
+      },
+      "trace_id": "ef4827a0c6c9d9205de58ac6169a1900",
+      "span_id": "cbf4f23164253bf9",
+      "parent_id": "ee55d213273a7694",
+      "kind": "INTERNAL",
+      "attributes": {},
+      "status": {},
+      "events": [],
+      "start": "1791364026215380000",
+      "end": "1791364026658402000"
+    },
+    {
+      "collected": 1791364026.806349,
+      "name": "reflex.compile.write",
+      "service": "qa-backend",
+      "resource": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "cf427797-3d09-496d-a459-cca8fc3ea74e",
+        "service.name": "qa-backend"
+      },
+      "trace_id": "ef4827a0c6c9d9205de58ac6169a1900",
+      "span_id": "552fb1b3d2950f23",
+      "parent_id": "ee55d213273a7694",
+      "kind": "INTERNAL",
+      "attributes": {},
+      "status": {},
+      "events": [],
+      "start": "1791364026660202000",
+      "end": "1791364026662948000"
+    },
+    {
+      "collected": 1791364026.806349,
+      "name": "reflex.compile",
+      "service": "qa-backend",
+      "resource": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "cf427797-3d09-496d-a459-cca8fc3ea74e",
+        "service.name": "qa-backend"
+      },
+      "trace_id": "ef4827a0c6c9d9205de58ac6169a1900",
+      "span_id": "ee55d213273a7694",
+      "parent_id": "",
+      "kind": "INTERNAL",
+      "attributes": {
+        "reflex.compile.dry_run": false,
+        "reflex.compile.trigger": "initial"
+      },
+      "status": {},
+      "events": [],
+      "start": "1791364026174204000",
+      "end": "1791364026663288000"
+    },
+    {
+      "collected": 1791364030.56437,
+      "name": "reflex.compile",
+      "service": "qa-backend",
+      "resource": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+        "service.name": "qa-backend"
+      },
+      "trace_id": "51f032c9c9840000745c32d004ef23c6",
+      "span_id": "2d6a8c3f384118f6",
+      "parent_id": "",
+      "kind": "INTERNAL",
+      "attributes": {
+        "reflex.compile.dry_run": false,
+        "reflex.compile.trigger": "backend_startup"
+      },
+      "status": {},
+      "events": [],
+      "start": "1791364030495206000",
+      "end": "1791364030496406000"
+    }
+  ],
+  "all_span_count": 196,
+  "passed": true
+}

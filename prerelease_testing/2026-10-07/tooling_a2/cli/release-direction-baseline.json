@@ -1,0 +1,564 @@
+{
+  "cases": [
+    {
+      "case": "together",
+      "version": "0.1.2a1",
+      "expected_success": true,
+      "pass": true,
+      "outputs": {
+        "packages": "[{\"package\": \"demo-core\", \"version\": \"1.0.0\", \"tag\": \"demo-core-v1.0.0\"}]",
+        "any": "true",
+        "last_packages": "[{\"package\": \"demo-app\", \"version\": \"1.0.0\", \"tag\": \"demo-app-v1.0.0\"}]",
+        "any_last": "true"
+      },
+      "result": {
+        "command": [
+          "/Users/masen/.local/bin/uv",
+          "--no-config",
+          "run",
+          "--no-project",
+          "--python",
+          "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-release-old/bin/python",
+          "python",
+          "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+          "--root",
+          "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+          "detect",
+          "--ref-name",
+          "main"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "case": "together",
+      "version": "0.2.0a1",
+      "expected_success": true,
+      "pass": true,
+      "outputs": {
+        "packages": "[{\"package\": \"demo-core\", \"version\": \"1.0.0\", \"tag\": \"demo-core-v1.0.0\"}]",
+        "any": "true",
+        "last_packages": "[{\"package\": \"demo-app\", \"version\": \"1.0.0\", \"tag\": \"demo-app-v1.0.0\"}]",
+        "any_last": "true"
+      },
+      "result": {
+        "command": [
+          "/Users/masen/.local/bin/uv",
+          "--no-config",
+          "run",
+          "--no-project",
+          "--python",
+          "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+          "python",
+          "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+          "--root",
+          "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+          "detect",
+          "--ref-name",
+          "main"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "case": "only-last",
+      "version": "0.1.2a1",
+      "expected_success": true,
+      "pass": true,
+      "outputs": {
+        "packages": "[]",
+        "any": "false",
+        "last_packages": "[{\"package\": \"demo-app\", \"version\": \"1.0.0\", \"tag\": \"demo-app-v1.0.0\"}]",
+        "any_last": "true"
+      },
+      "result": {
+        "command": [
+          "/Users/masen/.local/bin/uv",
+          "--no-config",
+          "run",
+          "--no-project",
+          "--python",
+          "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-release-old/bin/python",
+          "python",
+          "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+          "--root",
+          "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+          "detect",
+          "--ref-name",
+          "main"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "case": "only-last",
+      "version": "0.2.0a1",
+      "expected_success": true,
+      "pass": true,
+      "outputs": {
+        "packages": "[]",
+        "any": "false",
+        "last_packages": "[{\"package\": \"demo-app\", \"version\": \"1.0.0\", \"tag\": \"demo-app-v1.0.0\"}]",
+        "any_last": "true"
+      },
+      "result": {
+        "command": [
+          "/Users/masen/.local/bin/uv",
+          "--no-config",
+          "run",
+          "--no-project",
+          "--python",
+          "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+          "python",
+          "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+          "--root",
+          "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+          "detect",
+          "--ref-name",
+          "main"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "case": "early-independent",
+      "version": "0.1.2a1",
+      "expected_success": false,
+      "pass": true,
+      "outputs": {
+        "packages": "[{\"package\": \"demo-core\", \"version\": \"1.1.0\", \"tag\": \"demo-core-v1.1.0\"}]",
+        "any": "true",
+        "last_packages": "[{\"package\": \"demo-app\", \"version\": \"1.0.0\", \"tag\": \"demo-app-v1.0.0\"}]",
+        "any_last": "true"
+      },
+      "result": {
+        "command": [
+          "/Users/masen/.local/bin/uv",
+          "--no-config",
+          "run",
+          "--no-project",
+          "--python",
+          "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-release-old/bin/python",
+          "python",
+          "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+          "--root",
+          "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+          "detect",
+          "--ref-name",
+          "main"
+        ],
+        "returncode": 1,
+        "stdout": "::error::demo-core v1.1.0 is due but its lockstep partner demo-app is neither due at v1.1.0 nor already tagged demo-app-v1.1.0; publishing would break their exact pin. Re-run the Dispatch release workflow: selecting either member materializes the whole group, writing an empty changelog entry for members that have no news fragments.\n",
+        "stderr": "Error: lockstep invariant violated; no package was published\n"
+      }
+    },
+    {
+      "case": "early-independent",
+      "version": "0.2.0a1",
+      "expected_success": true,
+      "pass": true,
+      "outputs": {
+        "packages": "[{\"package\": \"demo-core\", \"version\": \"1.1.0\", \"tag\": \"demo-core-v1.1.0\"}]",
+        "any": "true",
+        "last_packages": "[{\"package\": \"demo-app\", \"version\": \"1.0.0\", \"tag\": \"demo-app-v1.0.0\"}]",
+        "any_last": "true"
+      },
+      "result": {
+        "command": [
+          "/Users/masen/.local/bin/uv",
+          "--no-config",
+          "run",
+          "--no-project",
+          "--python",
+          "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+          "python",
+          "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+          "--root",
+          "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+          "detect",
+          "--ref-name",
+          "main"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "case": "unmet-late",
+      "version": "0.1.2a1",
+      "expected_success": false,
+      "pass": true,
+      "outputs": {
+        "packages": "[{\"package\": \"demo-core\", \"version\": \"1.1.0\", \"tag\": \"demo-core-v1.1.0\"}]",
+        "any": "true",
+        "last_packages": "[{\"package\": \"demo-app\", \"version\": \"1.2.0\", \"tag\": \"demo-app-v1.2.0\"}]",
+        "any_last": "true"
+      },
+      "result": {
+        "command": [
+          "/Users/masen/.local/bin/uv",
+          "--no-config",
+          "run",
+          "--no-project",
+          "--python",
+          "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-release-old/bin/python",
+          "python",
+          "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+          "--root",
+          "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+          "detect",
+          "--ref-name",
+          "main"
+        ],
+        "returncode": 1,
+        "stdout": "::error::demo-app v1.2.0 is due but its lockstep partner demo-core is neither due at v1.2.0 nor already tagged demo-core-v1.2.0; publishing would break their exact pin. Re-run the Dispatch release workflow: selecting either member materializes the whole group, writing an empty changelog entry for members that have no news fragments.\n::error::demo-core v1.1.0 is due but its lockstep partner demo-app is neither due at v1.1.0 nor already tagged demo-app-v1.1.0; publishing would break their exact pin. Re-run the Dispatch release workflow: selecting either member materializes the whole group, writing an empty changelog entry for members that have no news fragments.\n",
+        "stderr": "Error: lockstep invariant violated; no package was published\n"
+      }
+    },
+    {
+      "case": "unmet-late",
+      "version": "0.2.0a1",
+      "expected_success": false,
+      "pass": true,
+      "outputs": {
+        "packages": "[{\"package\": \"demo-core\", \"version\": \"1.1.0\", \"tag\": \"demo-core-v1.1.0\"}]",
+        "any": "true",
+        "last_packages": "[{\"package\": \"demo-app\", \"version\": \"1.2.0\", \"tag\": \"demo-app-v1.2.0\"}]",
+        "any_last": "true"
+      },
+      "result": {
+        "command": [
+          "/Users/masen/.local/bin/uv",
+          "--no-config",
+          "run",
+          "--no-project",
+          "--python",
+          "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+          "python",
+          "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+          "--root",
+          "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+          "detect",
+          "--ref-name",
+          "main"
+        ],
+        "returncode": 1,
+        "stdout": "::error::demo-app v1.2.0 needs demo-core at v1.2.0, which is neither in this batch nor tagged demo-core-v1.2.0\n",
+        "stderr": "Error: lockstep invariant violated; no package was published\n"
+      }
+    },
+    {
+      "case": "symmetric-mismatch",
+      "version": "0.1.2a1",
+      "expected_success": false,
+      "pass": true,
+      "outputs": {
+        "packages": "[{\"package\": \"demo-app\", \"version\": \"1.0.0\", \"tag\": \"demo-app-v1.0.0\"}, {\"package\": \"demo-core\", \"version\": \"1.1.0\", \"tag\": \"demo-core-v1.1.0\"}]",
+        "any": "true",
+        "last_packages": "[]",
+        "any_last": "false"
+      },
+      "result": {
+        "command": [
+          "/Users/masen/.local/bin/uv",
+          "--no-config",
+          "run",
+          "--no-project",
+          "--python",
+          "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-release-old/bin/python",
+          "python",
+          "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+          "--root",
+          "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+          "detect",
+          "--ref-name",
+          "main"
+        ],
+        "returncode": 1,
+        "stdout": "::error::demo-core v1.1.0 is due but its lockstep partner demo-app is neither due at v1.1.0 nor already tagged demo-app-v1.1.0; publishing would break their exact pin. Re-run the Dispatch release workflow: selecting either member materializes the whole group, writing an empty changelog entry for members that have no news fragments.\n",
+        "stderr": "Error: lockstep invariant violated; no package was published\n"
+      }
+    },
+    {
+      "case": "symmetric-mismatch",
+      "version": "0.2.0a1",
+      "expected_success": false,
+      "pass": true,
+      "outputs": {
+        "packages": "[{\"package\": \"demo-app\", \"version\": \"1.0.0\", \"tag\": \"demo-app-v1.0.0\"}, {\"package\": \"demo-core\", \"version\": \"1.1.0\", \"tag\": \"demo-core-v1.1.0\"}]",
+        "any": "true",
+        "last_packages": "[]",
+        "any_last": "false"
+      },
+      "result": {
+        "command": [
+          "/Users/masen/.local/bin/uv",
+          "--no-config",
+          "run",
+          "--no-project",
+          "--python",
+          "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+          "python",
+          "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+          "--root",
+          "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+          "detect",
+          "--ref-name",
+          "main"
+        ],
+        "returncode": 1,
+        "stdout": "::error::demo-core v1.1.0 needs demo-app at v1.1.0, which is neither in this batch nor tagged demo-app-v1.1.0\n",
+        "stderr": "Error: lockstep invariant violated; no package was published\n"
+      }
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "git",
+        "init",
+        "-b",
+        "main"
+      ],
+      "returncode": 0,
+      "stdout": "Initialized empty Git repository in /private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline/.git/\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "user.name=Tooling Fixture",
+        "-c",
+        "user.email=fixture@example.test",
+        "commit",
+        "--allow-empty",
+        "-m",
+        "Local release baseline"
+      ],
+      "returncode": 0,
+      "stdout": "[main (root-commit) 4bbb1dd] Local release baseline\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-release-old/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "tag",
+        "demo-core-v1.0.0"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-release-old/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-release-old/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "returncode": 1,
+      "stdout": "::error::demo-core v1.1.0 is due but its lockstep partner demo-app is neither due at v1.1.0 nor already tagged demo-app-v1.1.0; publishing would break their exact pin. Re-run the Dispatch release workflow: selecting either member materializes the whole group, writing an empty changelog entry for members that have no news fragments.\n",
+      "stderr": "Error: lockstep invariant violated; no package was published\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-release-old/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "returncode": 1,
+      "stdout": "::error::demo-app v1.2.0 is due but its lockstep partner demo-core is neither due at v1.2.0 nor already tagged demo-core-v1.2.0; publishing would break their exact pin. Re-run the Dispatch release workflow: selecting either member materializes the whole group, writing an empty changelog entry for members that have no news fragments.\n::error::demo-core v1.1.0 is due but its lockstep partner demo-app is neither due at v1.1.0 nor already tagged demo-app-v1.1.0; publishing would break their exact pin. Re-run the Dispatch release workflow: selecting either member materializes the whole group, writing an empty changelog entry for members that have no news fragments.\n",
+      "stderr": "Error: lockstep invariant violated; no package was published\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "returncode": 1,
+      "stdout": "::error::demo-app v1.2.0 needs demo-core at v1.2.0, which is neither in this batch nor tagged demo-core-v1.2.0\n",
+      "stderr": "Error: lockstep invariant violated; no package was published\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-release-old/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "returncode": 1,
+      "stdout": "::error::demo-core v1.1.0 is due but its lockstep partner demo-app is neither due at v1.1.0 nor already tagged demo-app-v1.1.0; publishing would break their exact pin. Re-run the Dispatch release workflow: selecting either member materializes the whole group, writing an empty changelog entry for members that have no news fragments.\n",
+      "stderr": "Error: lockstep invariant violated; no package was published\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-direction-baseline",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "returncode": 1,
+      "stdout": "::error::demo-core v1.1.0 needs demo-app at v1.1.0, which is neither in this batch nor tagged demo-app-v1.1.0\n",
+      "stderr": "Error: lockstep invariant violated; no package was published\n"
+    }
+  ],
+  "scope": "local detection only; no remote configured, upload, push, or publication"
+}

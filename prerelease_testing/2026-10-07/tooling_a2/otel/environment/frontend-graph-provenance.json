@@ -1,0 +1,5 @@
+{
+  "original_bun_lock_sha256": "ed7807a5d25579969feda224622dc1c608186b0f0641414e6249892ec36bc848",
+  "normalization": "Removed JSON trailing commas only; retained complete dependency graph/integrities.",
+  "packages": 266
+}

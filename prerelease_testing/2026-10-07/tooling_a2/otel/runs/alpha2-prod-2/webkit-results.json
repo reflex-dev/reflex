@@ -1,0 +1,525 @@
+{
+  "engine": "webkit",
+  "checks": [
+    {
+      "name": "initial",
+      "passed": true,
+      "expected": [
+        "0",
+        "0",
+        "0",
+        "idle"
+      ],
+      "actual": [
+        "0",
+        "0",
+        "0",
+        "idle"
+      ]
+    },
+    {
+      "name": "foreground-and-chain",
+      "passed": true,
+      "expected": [
+        "1",
+        "1",
+        "0",
+        "idle"
+      ],
+      "actual": [
+        "1",
+        "1",
+        "0",
+        "idle"
+      ]
+    },
+    {
+      "name": "background-completion",
+      "passed": true,
+      "expected": [
+        "1",
+        "1",
+        "3",
+        "done"
+      ],
+      "actual": [
+        "1",
+        "1",
+        "3",
+        "done"
+      ]
+    },
+    {
+      "name": "routed-event",
+      "passed": true,
+      "expected": [
+        "2",
+        "2",
+        "3",
+        "done"
+      ],
+      "actual": [
+        "2",
+        "2",
+        "3",
+        "done"
+      ]
+    },
+    {
+      "name": "recovery-after-handler-error",
+      "passed": true,
+      "expected": [
+        "3",
+        "3",
+        "3",
+        "done"
+      ],
+      "actual": [
+        "3",
+        "3",
+        "3",
+        "done"
+      ]
+    },
+    {
+      "name": "browser-export-before-outage",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "backend-export-before-outage",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "foreground-during-refusal",
+      "passed": true,
+      "expected": [
+        "4",
+        "4",
+        "3",
+        "done"
+      ],
+      "actual": [
+        "4",
+        "4",
+        "3",
+        "done"
+      ]
+    },
+    {
+      "name": "background-during-refusal",
+      "passed": true,
+      "expected": [
+        "4",
+        "4",
+        "6",
+        "done"
+      ],
+      "actual": [
+        "4",
+        "4",
+        "6",
+        "done"
+      ]
+    },
+    {
+      "name": "foreground-after-export-failure",
+      "passed": true,
+      "expected": [
+        "5",
+        "5",
+        "6",
+        "done"
+      ],
+      "actual": [
+        "5",
+        "5",
+        "6",
+        "done"
+      ]
+    },
+    {
+      "name": "foreground-after-restore",
+      "passed": true,
+      "expected": [
+        "6",
+        "6",
+        "6",
+        "done"
+      ],
+      "actual": [
+        "6",
+        "6",
+        "6",
+        "done"
+      ]
+    },
+    {
+      "name": "qa-frontend-fresh-export-before-reload",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "qa-backend-fresh-export-before-reload",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "restored-trace-link-before-reload",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "reload-retains-all-events",
+      "passed": true,
+      "expected": [
+        "6",
+        "6",
+        "6",
+        "done"
+      ],
+      "actual": [
+        "6",
+        "6",
+        "6",
+        "done"
+      ]
+    },
+    {
+      "name": "fresh-interaction-after-restore",
+      "passed": true,
+      "expected": [
+        "7",
+        "7",
+        "6",
+        "done"
+      ],
+      "actual": [
+        "7",
+        "7",
+        "6",
+        "done"
+      ]
+    },
+    {
+      "name": "producer-consumer-trace-link",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "chained-event-parent",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "background-attribute",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "handler-error-status",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "successful-event-status",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "session-pseudonym",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "raw-token-not-exported",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "payload-not-exported",
+      "passed": true,
+      "expected": false,
+      "actual": false
+    },
+    {
+      "name": "react-render-span",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "web-vital-span",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "socket-connect-span",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "browser-export-restored",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "backend-export-restored",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    }
+  ],
+  "started": 1791364478.8988612,
+  "browser_version": "26.6",
+  "outage_started": 1791364487.8715022,
+  "collector_restored": 1791364533.182847,
+  "span_count": 99,
+  "token_sha256_16": "e054d6573e3ae495",
+  "linked_add_spans": [
+    {
+      "collected": 1791364480.3555431,
+      "name": "reflex___state____state.telemetry_app___telemetry_app____inventory.add",
+      "service": "qa-backend",
+      "resource": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+        "service.name": "qa-backend"
+      },
+      "trace_id": "ac66b9cbdd061e0ac249a9e8bdc878ed",
+      "span_id": "57908d3b27c72f86",
+      "parent_id": "f5082cb6bfb0cd1c",
+      "kind": "CONSUMER",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.telemetry_app___telemetry_app____inventory.add",
+        "reflex.event.background": false,
+        "reflex.event.txid": "9ff5793657ec",
+        "session.id": "e054d6573e3ae495",
+        "code.function.name": "telemetry_app.telemetry_app.Inventory.add"
+      },
+      "status": {},
+      "events": [],
+      "start": "1791364480296305000",
+      "end": "1791364480296772000"
+    },
+    {
+      "collected": 1791364481.195638,
+      "name": "reflex___state____state.telemetry_app___telemetry_app____inventory.add",
+      "service": "qa-backend",
+      "resource": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+        "service.name": "qa-backend"
+      },
+      "trace_id": "1b2599086aece9a79ce5924f7ade94d0",
+      "span_id": "c6268378adf22457",
+      "parent_id": "7bc559fe8474aec4",
+      "kind": "CONSUMER",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.telemetry_app___telemetry_app____inventory.add",
+        "reflex.event.background": false,
+        "reflex.event.txid": "800e54f5cbec",
+        "session.id": "e054d6573e3ae495",
+        "code.function.name": "telemetry_app.telemetry_app.Inventory.add"
+      },
+      "status": {},
+      "events": [],
+      "start": "1791364481023314000",
+      "end": "1791364481023645000"
+    },
+    {
+      "collected": 1791364481.3985338,
+      "name": "reflex___state____state.telemetry_app___telemetry_app____inventory.add",
+      "service": "qa-backend",
+      "resource": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+        "service.name": "qa-backend"
+      },
+      "trace_id": "e0a20a111bb86078af008c8c3beb88f9",
+      "span_id": "23e5e9810c0ac6ea",
+      "parent_id": "bbfcf93d47c58cd4",
+      "kind": "CONSUMER",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.telemetry_app___telemetry_app____inventory.add",
+        "reflex.event.background": false,
+        "reflex.event.txid": "cd4505f17262",
+        "session.id": "e054d6573e3ae495",
+        "code.function.name": "telemetry_app.telemetry_app.Inventory.add"
+      },
+      "status": {},
+      "events": [],
+      "start": "1791364481257164000",
+      "end": "1791364481257511000"
+    },
+    {
+      "collected": 1791364533.408534,
+      "name": "reflex___state____state.telemetry_app___telemetry_app____inventory.add",
+      "service": "qa-backend",
+      "resource": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+        "service.name": "qa-backend"
+      },
+      "trace_id": "d41173a21f6c63bef81c54e35ab0bc73",
+      "span_id": "4d1bd174de713a5c",
+      "parent_id": "db15da59230caf5a",
+      "kind": "CONSUMER",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.telemetry_app___telemetry_app____inventory.add",
+        "reflex.event.background": false,
+        "reflex.event.txid": "9634b1fc2c4d",
+        "session.id": "e054d6573e3ae495",
+        "code.function.name": "telemetry_app.telemetry_app.Inventory.add"
+      },
+      "status": {},
+      "events": [],
+      "start": "1791364533214872000",
+      "end": "1791364533215498000"
+    },
+    {
+      "collected": 1791364538.6169379,
+      "name": "reflex___state____state.telemetry_app___telemetry_app____inventory.add",
+      "service": "qa-backend",
+      "resource": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+        "service.name": "qa-backend"
+      },
+      "trace_id": "e8657f46afbdd606efed25fea29f2141",
+      "span_id": "17e7eadd28a7cdb1",
+      "parent_id": "69badedf4b8da5eb",
+      "kind": "CONSUMER",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.telemetry_app___telemetry_app____inventory.add",
+        "reflex.event.background": false,
+        "reflex.event.txid": "69acea76817b",
+        "session.id": "e054d6573e3ae495",
+        "code.function.name": "telemetry_app.telemetry_app.Inventory.add"
+      },
+      "status": {},
+      "events": [],
+      "start": "1791364538461126000",
+      "end": "1791364538461434000"
+    }
+  ],
+  "anomalies": [
+    {
+      "type": "error",
+      "text": "Could not connect to the server.",
+      "time": 1791364490.173389
+    },
+    {
+      "type": "pageerror",
+      "text": "/localhost:8588/v1/traces due to access control checks.",
+      "time": 1791364490.1736739
+    },
+    {
+      "type": "requestfailed",
+      "url": "http://localhost:8588/v1/traces",
+      "failure": "Could not connect to the server.",
+      "time": 1791364490.173888
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: Could not connect to the server.",
+      "time": 1791364490.173951
+    },
+    {
+      "type": "error",
+      "text": "Could not connect to the server.",
+      "time": 1791364491.103816
+    },
+    {
+      "type": "pageerror",
+      "text": "/localhost:8588/v1/traces due to access control checks.",
+      "time": 1791364491.103955
+    },
+    {
+      "type": "requestfailed",
+      "url": "http://localhost:8588/v1/traces",
+      "failure": "Could not connect to the server.",
+      "time": 1791364491.104108
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: Could not connect to the server.",
+      "time": 1791364491.104165
+    },
+    {
+      "type": "error",
+      "text": "Could not connect to the server.",
+      "time": 1791364492.842123
+    },
+    {
+      "type": "pageerror",
+      "text": "/localhost:8588/v1/traces due to access control checks.",
+      "time": 1791364492.842237
+    },
+    {
+      "type": "requestfailed",
+      "url": "http://localhost:8588/v1/traces",
+      "failure": "Could not connect to the server.",
+      "time": 1791364492.842449
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: Could not connect to the server.",
+      "time": 1791364492.842514
+    },
+    {
+      "type": "error",
+      "text": "Could not connect to the server.",
+      "time": 1791364495.3731751
+    },
+    {
+      "type": "pageerror",
+      "text": "/localhost:8588/v1/traces due to access control checks.",
+      "time": 1791364495.373516
+    },
+    {
+      "type": "requestfailed",
+      "url": "http://localhost:8588/v1/traces",
+      "failure": "Could not connect to the server.",
+      "time": 1791364495.3738592
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: Could not connect to the server.",
+      "time": 1791364495.3739688
+    },
+    {
+      "type": "requestfailed",
+      "url": "http://localhost:8588/v1/traces",
+      "failure": "cancelled",
+      "time": 1791364538.2749681
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,2244 @@
+{
+  "provenance": {
+    "python": "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+    "modules": {
+      "reflex": "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/lib/python3.12/site-packages/reflex/__init__.py",
+      "reflex_build_sdk": "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/lib/python3.12/site-packages/reflex_build_sdk/__init__.py"
+    },
+    "versions": {
+      "reflex": "0.10.0a2",
+      "reflex-base": "0.10.0a2",
+      "reflex-hosting-cli": "0.2.0a1",
+      "reflex-build-sdk": "0.1.0a1",
+      "reflex-release": "0.2.0a1",
+      "reflex-docgen": "0.10.0a2"
+    }
+  },
+  "origin": "http://127.0.0.1:8580",
+  "cases": [
+    {
+      "name": "owned-origin-preflight",
+      "scenario": "success",
+      "health": {
+        "fixture": "tooling-a2-owned",
+        "port": 8580
+      },
+      "nonlocal_guard": "blocked before connect",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/__fixture__/health",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "fixture": "tooling-a2-owned",
+            "port": 8580
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        }
+      ]
+    },
+    {
+      "name": "cli-start-preflight",
+      "scenario": "success",
+      "args": [
+        "cloud",
+        "apps",
+        "start",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "start",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"started\": true, \"message\": \"app started\"}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/start",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "message": "Server sentence must not become CLI result"
+          }
+        }
+      ],
+      "document": {
+        "app_id": "11111111-1111-4111-8111-111111111111",
+        "started": true,
+        "message": "app started"
+      },
+      "pass": true
+    },
+    {
+      "name": "history-full",
+      "scenario": "full",
+      "args": [
+        "cloud",
+        "apps",
+        "history",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "history",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "[{\"id\": \"44444444-4444-4444-8444-444444444444\", \"status\": \"Running\", \"url\": \"https://qa.example.test\", \"python version\": \"3.13.7\", \"reflex version\": \"0.10.0a1\", \"vm type\": \"Two cores / 4 GB\", \"timestamp\": \"2026-10-05T12:34:56+00:00\", \"description\": \"Promoted release\", \"can rollback\": true}]\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/history",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": [
+            {
+              "id": "44444444-4444-4444-8444-444444444444",
+              "url": "https://qa.example.test",
+              "backend_url": "https://api.example.test",
+              "status": "Running",
+              "pause_reason": null,
+              "failure_code": null,
+              "failure_reason": null,
+              "description": "Promoted release",
+              "reflex_version": "0.10.0a1",
+              "python_version": "3.13.7",
+              "timestamp": "2026-10-05T12:34:56+00:00",
+              "last_updated": null,
+              "deployment_user": null,
+              "last_updated_by": null,
+              "vm_type": {
+                "id": "c2m4",
+                "name": "Two cores / 4 GB",
+                "cpu": 2.0,
+                "ram": 4.0
+              },
+              "environment_id": null,
+              "environment_name": "production",
+              "promoted_from_deployment_id": null,
+              "can_rollback": true
+            }
+          ]
+        }
+      ],
+      "document": [
+        {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "status": "Running",
+          "url": "https://qa.example.test",
+          "python version": "3.13.7",
+          "reflex version": "0.10.0a1",
+          "vm type": "Two cores / 4 GB",
+          "timestamp": "2026-10-05T12:34:56+00:00",
+          "description": "Promoted release",
+          "can rollback": true
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "history-nullable",
+      "scenario": "nullable",
+      "args": [
+        "cloud",
+        "apps",
+        "history",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "history",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "[{\"id\": \"44444444-4444-4444-8444-444444444444\", \"status\": \"Running\", \"url\": null, \"python version\": \"3.13.7\", \"reflex version\": \"0.10.0a1\", \"vm type\": null, \"timestamp\": \"2026-10-05T12:34:56+00:00\", \"description\": \"\", \"can rollback\": false}]\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/history",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": [
+            {
+              "id": "44444444-4444-4444-8444-444444444444",
+              "url": null,
+              "backend_url": "https://api.example.test",
+              "status": "Running",
+              "pause_reason": null,
+              "failure_code": null,
+              "failure_reason": null,
+              "description": null,
+              "reflex_version": "0.10.0a1",
+              "python_version": "3.13.7",
+              "timestamp": "2026-10-05T12:34:56+00:00",
+              "last_updated": null,
+              "deployment_user": null,
+              "last_updated_by": null,
+              "vm_type": null,
+              "environment_id": null,
+              "environment_name": "production",
+              "promoted_from_deployment_id": null,
+              "can_rollback": false
+            }
+          ]
+        }
+      ],
+      "document": [
+        {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "status": "Running",
+          "url": null,
+          "python version": "3.13.7",
+          "reflex version": "0.10.0a1",
+          "vm type": null,
+          "timestamp": "2026-10-05T12:34:56+00:00",
+          "description": "",
+          "can rollback": false
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "inspect-full",
+      "scenario": "full",
+      "args": [
+        "cloud",
+        "apps",
+        "inspect",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "inspect",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"id\": \"11111111-1111-4111-8111-111111111111\", \"name\": \"qa-app\", \"description\": \"Local fixture\", \"project_id\": \"22222222-2222-4222-8222-222222222222\", \"org_id\": \"11111111-1111-4111-8111-111111111111\", \"provider\": \"gcp\", \"full_deploy\": true, \"min_instances\": 1, \"max_instances\": 4, \"disable_secrets\": false, \"weekly_report_enabled\": false, \"source_thread_id\": null, \"unreleased_provider\": null, \"has_deployments\": true, \"backend_url\": \"https://api.example.test\", \"latest_deployment\": {\"id\": \"44444444-4444-4444-8444-444444444444\", \"url\": \"https://qa.example.test\", \"status\": \"Running\", \"pause_reason\": null, \"reflex_version\": \"0.10.0a1\", \"python_version\": \"3.13.7\", \"timestamp\": \"2026-10-05T12:34:56+00:00\", \"regions\": [\"sjc\", \"lhr\"], \"vm_type_name\": \"Two cores / 4 GB\", \"vm_type_cpu\": 2.0, \"vm_type_ram\": 4.0, \"strategy\": \"rolling\", \"persist\": true, \"screenshot_uri\": null, \"last_updated\": \"2026-10-05T12:34:56+00:00\", \"last_updated_by\": {\"id\": \"11111111-1111-4111-8111-111111111111\", \"username\": \"qa@example.test\"}}, \"any_environment_live\": true, \"any_environment_stopped\": false, \"any_environment_paused\": false, \"any_environment_credit_paused\": false}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "id": "11111111-1111-4111-8111-111111111111",
+            "name": "qa-app",
+            "description": "Local fixture",
+            "project_id": "22222222-2222-4222-8222-222222222222",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "provider": "gcp",
+            "full_deploy": true,
+            "min_instances": 1,
+            "max_instances": 4,
+            "disable_secrets": false,
+            "weekly_report_enabled": false,
+            "source_thread_id": null,
+            "unreleased_provider": null,
+            "has_deployments": true,
+            "backend_url": "https://api.example.test",
+            "any_environment_live": true,
+            "any_environment_stopped": false,
+            "any_environment_paused": false,
+            "any_environment_credit_paused": false,
+            "latest_deployment": {
+              "id": "44444444-4444-4444-8444-444444444444",
+              "url": "https://qa.example.test",
+              "status": "Running",
+              "pause_reason": null,
+              "reflex_version": "0.10.0a1",
+              "python_version": "3.13.7",
+              "timestamp": "2026-10-05T12:34:56+00:00",
+              "regions": [
+                "sjc",
+                "lhr"
+              ],
+              "vm_type_name": "Two cores / 4 GB",
+              "vm_type_cpu": 2.0,
+              "vm_type_ram": 4.0,
+              "strategy": "rolling",
+              "persist": true,
+              "screenshot_uri": null,
+              "last_updated": "2026-10-05T12:34:56+00:00",
+              "last_updated_by": {
+                "id": "11111111-1111-4111-8111-111111111111",
+                "username": "qa@example.test"
+              }
+            }
+          }
+        }
+      ],
+      "document": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "name": "qa-app",
+        "description": "Local fixture",
+        "project_id": "22222222-2222-4222-8222-222222222222",
+        "org_id": "11111111-1111-4111-8111-111111111111",
+        "provider": "gcp",
+        "full_deploy": true,
+        "min_instances": 1,
+        "max_instances": 4,
+        "disable_secrets": false,
+        "weekly_report_enabled": false,
+        "source_thread_id": null,
+        "unreleased_provider": null,
+        "has_deployments": true,
+        "backend_url": "https://api.example.test",
+        "latest_deployment": {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "url": "https://qa.example.test",
+          "status": "Running",
+          "pause_reason": null,
+          "reflex_version": "0.10.0a1",
+          "python_version": "3.13.7",
+          "timestamp": "2026-10-05T12:34:56+00:00",
+          "regions": [
+            "sjc",
+            "lhr"
+          ],
+          "vm_type_name": "Two cores / 4 GB",
+          "vm_type_cpu": 2.0,
+          "vm_type_ram": 4.0,
+          "strategy": "rolling",
+          "persist": true,
+          "screenshot_uri": null,
+          "last_updated": "2026-10-05T12:34:56+00:00",
+          "last_updated_by": {
+            "id": "11111111-1111-4111-8111-111111111111",
+            "username": "qa@example.test"
+          }
+        },
+        "any_environment_live": true,
+        "any_environment_stopped": false,
+        "any_environment_paused": false,
+        "any_environment_credit_paused": false
+      },
+      "pass": true
+    },
+    {
+      "name": "inspect-nullable",
+      "scenario": "nullable",
+      "args": [
+        "cloud",
+        "apps",
+        "inspect",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "inspect",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"id\": \"11111111-1111-4111-8111-111111111111\", \"name\": \"qa-app\", \"description\": \"Local fixture\", \"project_id\": \"22222222-2222-4222-8222-222222222222\", \"org_id\": \"11111111-1111-4111-8111-111111111111\", \"provider\": \"gcp\", \"full_deploy\": true, \"min_instances\": 1, \"max_instances\": 4, \"disable_secrets\": false, \"weekly_report_enabled\": false, \"source_thread_id\": null, \"unreleased_provider\": null, \"has_deployments\": false, \"backend_url\": null, \"latest_deployment\": null, \"any_environment_live\": false, \"any_environment_stopped\": false, \"any_environment_paused\": false, \"any_environment_credit_paused\": false}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "id": "11111111-1111-4111-8111-111111111111",
+            "name": "qa-app",
+            "description": "Local fixture",
+            "project_id": "22222222-2222-4222-8222-222222222222",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "provider": "gcp",
+            "full_deploy": true,
+            "min_instances": 1,
+            "max_instances": 4,
+            "disable_secrets": false,
+            "weekly_report_enabled": false,
+            "source_thread_id": null,
+            "unreleased_provider": null,
+            "has_deployments": false,
+            "backend_url": null,
+            "any_environment_live": false,
+            "any_environment_stopped": false,
+            "any_environment_paused": false,
+            "any_environment_credit_paused": false,
+            "latest_deployment": null
+          }
+        }
+      ],
+      "document": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "name": "qa-app",
+        "description": "Local fixture",
+        "project_id": "22222222-2222-4222-8222-222222222222",
+        "org_id": "11111111-1111-4111-8111-111111111111",
+        "provider": "gcp",
+        "full_deploy": true,
+        "min_instances": 1,
+        "max_instances": 4,
+        "disable_secrets": false,
+        "weekly_report_enabled": false,
+        "source_thread_id": null,
+        "unreleased_provider": null,
+        "has_deployments": false,
+        "backend_url": null,
+        "latest_deployment": null,
+        "any_environment_live": false,
+        "any_environment_stopped": false,
+        "any_environment_paused": false,
+        "any_environment_credit_paused": false
+      },
+      "pass": true
+    },
+    {
+      "name": "history-empty",
+      "scenario": "empty",
+      "args": [
+        "cloud",
+        "apps",
+        "history",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "history",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "[]\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/history",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": []
+        }
+      ],
+      "document": [],
+      "pass": true
+    },
+    {
+      "name": "token-full",
+      "scenario": "full",
+      "args": [
+        "cloud",
+        "create-token",
+        "requested-token",
+        "--duration",
+        "90",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "create-token",
+        "requested-token",
+        "--duration",
+        "90",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"name\": \"server-renamed-token\", \"token\": \"created-fixture-token\", \"expires_at\": \"2026-10-12T12:34:56+00:00\"}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/user/token/create",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": {
+            "name": "requested-token",
+            "expiration": 90
+          },
+          "response_status": 200,
+          "response_body": {
+            "name": "server-renamed-token",
+            "token": "created-fixture-token",
+            "expiration": "2026-10-12T12:34:56+00:00"
+          }
+        }
+      ],
+      "document": {
+        "name": "server-renamed-token",
+        "token": "created-fixture-token",
+        "expires_at": "2026-10-12T12:34:56+00:00"
+      },
+      "pass": true
+    },
+    {
+      "name": "token-nullable",
+      "scenario": "nullable",
+      "args": [
+        "cloud",
+        "create-token",
+        "requested-token",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "create-token",
+        "requested-token",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"name\": \"server-renamed-token\", \"token\": \"created-fixture-token\", \"expires_at\": null}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/user/token/create",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": {
+            "name": "requested-token",
+            "expiration": 90
+          },
+          "response_status": 200,
+          "response_body": {
+            "name": "server-renamed-token",
+            "token": "created-fixture-token",
+            "expiration": null
+          }
+        }
+      ],
+      "document": {
+        "name": "server-renamed-token",
+        "token": "created-fixture-token",
+        "expires_at": null
+      },
+      "pass": true
+    },
+    {
+      "name": "token-invalid-duration",
+      "scenario": "full",
+      "args": [
+        "cloud",
+        "create-token",
+        "requested-token",
+        "--duration",
+        "0",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "create-token",
+        "requested-token",
+        "--duration",
+        "0",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nUsage: cli_entry.py cloud create-token [OPTIONS] NAME\nTry 'cli_entry.py cloud create-token --help' for help.\n\nError: Invalid value for '--duration': 0 is not in the range 1<=x<=90.\n",
+      "requests": [],
+      "pass": true
+    },
+    {
+      "name": "secrets-json",
+      "scenario": "full",
+      "args": [
+        "cloud",
+        "secrets",
+        "update",
+        "11111111-1111-4111-8111-111111111111",
+        "--env",
+        "ALPHA=sentinel-only-for-fixture",
+        "--env",
+        "EQUALS=fixture=a=b",
+        "--env",
+        "EMPTY=",
+        "--reboot",
+        "--json",
+        "--loglevel",
+        "debug",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "secrets",
+        "update",
+        "11111111-1111-4111-8111-111111111111",
+        "--env",
+        "ALPHA=sentinel-only-for-fixture",
+        "--env",
+        "EQUALS=fixture=a=b",
+        "--env",
+        "EMPTY=",
+        "--reboot",
+        "--json",
+        "--loglevel",
+        "debug",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"updated\": [\"ALPHA\", \"EMPTY\", \"EQUALS\"], \"rebooted\": true}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nDebug: Using REFLEX_ACCESS_TOKEN from environment\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/secrets?reboot=true",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": {
+            "secrets": {
+              "ALPHA": "sentinel-only-for-fixture",
+              "EQUALS": "fixture=a=b",
+              "EMPTY": ""
+            }
+          },
+          "response_status": 200,
+          "response_body": {
+            "message": "Fixture secrets accepted"
+          }
+        }
+      ],
+      "document": {
+        "app_id": "11111111-1111-4111-8111-111111111111",
+        "updated": [
+          "ALPHA",
+          "EMPTY",
+          "EQUALS"
+        ],
+        "rebooted": true
+      },
+      "pass": true
+    },
+    {
+      "name": "secrets-envfile",
+      "scenario": "full",
+      "args": [
+        "cloud",
+        "secrets",
+        "update",
+        "11111111-1111-4111-8111-111111111111",
+        "--envfile",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/a2-run1/.env",
+        "--env",
+        "IGNORED=ignored-cli-value",
+        "--no-reboot",
+        "--json",
+        "--loglevel",
+        "debug",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "secrets",
+        "update",
+        "11111111-1111-4111-8111-111111111111",
+        "--envfile",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/a2-run1/.env",
+        "--env",
+        "IGNORED=ignored-cli-value",
+        "--no-reboot",
+        "--json",
+        "--loglevel",
+        "debug",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"updated\": [\"EMPTY\", \"FILE_ONLY\"], \"rebooted\": false}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nDebug: Using REFLEX_ACCESS_TOKEN from environment\nWarning: --envfile is set; ignoring --env\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/secrets?reboot=false",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": {
+            "secrets": {
+              "FILE_ONLY": "file-only-value",
+              "EMPTY": ""
+            }
+          },
+          "response_status": 200,
+          "response_body": {
+            "message": "Fixture secrets accepted"
+          }
+        }
+      ],
+      "document": {
+        "app_id": "11111111-1111-4111-8111-111111111111",
+        "updated": [
+          "EMPTY",
+          "FILE_ONLY"
+        ],
+        "rebooted": false
+      },
+      "pass": true
+    },
+    {
+      "name": "secrets-human",
+      "scenario": "full",
+      "args": [
+        "cloud",
+        "secrets",
+        "update",
+        "11111111-1111-4111-8111-111111111111",
+        "--env",
+        "ALPHA=sentinel-only-for-fixture",
+        "--env",
+        "EMPTY=",
+        "--no-reboot",
+        "--loglevel",
+        "debug",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "secrets",
+        "update",
+        "11111111-1111-4111-8111-111111111111",
+        "--env",
+        "ALPHA=sentinel-only-for-fixture",
+        "--env",
+        "EMPTY=",
+        "--no-reboot",
+        "--loglevel",
+        "debug",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "Debug: Using REFLEX_ACCESS_TOKEN from environment\nSuccess: Updated 2 secrets (ALPHA, EMPTY). Not rebooting; run with --reboot or \nredeploy to apply.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/secrets?reboot=false",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": {
+            "secrets": {
+              "ALPHA": "sentinel-only-for-fixture",
+              "EMPTY": ""
+            }
+          },
+          "response_status": 200,
+          "response_body": {
+            "message": "Fixture secrets accepted"
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "secrets-refused",
+      "scenario": "refused",
+      "args": [
+        "cloud",
+        "secrets",
+        "update",
+        "11111111-1111-4111-8111-111111111111",
+        "--env",
+        "ALPHA=sentinel-only-for-fixture",
+        "--json",
+        "--loglevel",
+        "debug",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "secrets",
+        "update",
+        "11111111-1111-4111-8111-111111111111",
+        "--env",
+        "ALPHA=sentinel-only-for-fixture",
+        "--json",
+        "--loglevel",
+        "debug",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nDebug: Using REFLEX_ACCESS_TOKEN from environment\nFixture request is forbidden\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/secrets?reboot=false",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": {
+            "secrets": {
+              "ALPHA": "sentinel-only-for-fixture"
+            }
+          },
+          "response_status": 403,
+          "response_body": {
+            "detail": "Fixture request is forbidden"
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "secrets-empty-list",
+      "scenario": "empty",
+      "args": [
+        "cloud",
+        "secrets",
+        "list",
+        "11111111-1111-4111-8111-111111111111",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "secrets",
+        "list",
+        "11111111-1111-4111-8111-111111111111",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "This app has no secrets.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/secrets",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "permissions-full",
+      "scenario": "full",
+      "args": [
+        "cloud",
+        "project",
+        "role-permissions",
+        "33333333-3333-4333-8333-333333333333",
+        "--project-id",
+        "22222222-2222-4222-8222-222222222222",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "project",
+        "role-permissions",
+        "33333333-3333-4333-8333-333333333333",
+        "--project-id",
+        "22222222-2222-4222-8222-222222222222",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "[\"can_deploy\", \"can_view_secret_keys\"]\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/project/22222222-2222-4222-8222-222222222222/role/33333333-3333-4333-8333-333333333333",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": [
+            {
+              "name": "can_deploy",
+              "id": 1
+            },
+            {
+              "name": "can_view_secret_keys",
+              "id": 2
+            }
+          ]
+        }
+      ],
+      "document": [
+        "can_deploy",
+        "can_view_secret_keys"
+      ],
+      "pass": true
+    },
+    {
+      "name": "permissions-nullable",
+      "scenario": "nullable",
+      "args": [
+        "cloud",
+        "project",
+        "role-permissions",
+        "33333333-3333-4333-8333-333333333333",
+        "--project-id",
+        "22222222-2222-4222-8222-222222222222",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "project",
+        "role-permissions",
+        "33333333-3333-4333-8333-333333333333",
+        "--project-id",
+        "22222222-2222-4222-8222-222222222222",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "[]\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/project/22222222-2222-4222-8222-222222222222/role/33333333-3333-4333-8333-333333333333",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": null
+        }
+      ],
+      "document": [],
+      "pass": true
+    },
+    {
+      "name": "cli-success-apps-stop",
+      "scenario": "success",
+      "args": [
+        "cloud",
+        "apps",
+        "stop",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "stop",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"stopped\": true, \"message\": \"app stopped\"}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/stop",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "message": "Server sentence must not become CLI result"
+          }
+        }
+      ],
+      "document": {
+        "app_id": "11111111-1111-4111-8111-111111111111",
+        "stopped": true,
+        "message": "app stopped"
+      },
+      "pass": true
+    },
+    {
+      "name": "cli-refused-apps-start",
+      "scenario": "refused",
+      "args": [
+        "cloud",
+        "apps",
+        "start",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "start",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nFixture request is forbidden\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/start",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 403,
+          "response_body": {
+            "detail": "Fixture request is forbidden"
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "cli-refused-apps-stop",
+      "scenario": "refused",
+      "args": [
+        "cloud",
+        "apps",
+        "stop",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "stop",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nFixture request is forbidden\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/stop",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 403,
+          "response_body": {
+            "detail": "Fixture request is forbidden"
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "cli-refused-vmtypes",
+      "scenario": "refused",
+      "args": [
+        "cloud",
+        "vmtypes",
+        "--json"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "vmtypes",
+        "--json"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nFixture request is forbidden\n",
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/deployments/vm_types",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 403,
+          "response_body": {
+            "detail": "Fixture request is forbidden"
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "cli-refused-regions",
+      "scenario": "refused",
+      "args": [
+        "cloud",
+        "regions",
+        "--json"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "regions",
+        "--json"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nFixture request is forbidden\n",
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/deployments/regions",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 403,
+          "response_body": {
+            "detail": "Fixture request is forbidden"
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "cli-missing-apps-delete",
+      "scenario": "missing",
+      "args": [
+        "cloud",
+        "apps",
+        "delete",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "delete",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"deleted\": false, \"message\": \"No application found with ID '11111111-1111-4111-8111-111111111111'\"}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nNo application found with ID '11111111-1111-4111-8111-111111111111'\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 404,
+          "response_body": {
+            "detail": "Fixture app was not found"
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "cli-expired-apps-list",
+      "scenario": "expired",
+      "args": [
+        "cloud",
+        "apps",
+        "list",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "list",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nThe access token from the REFLEX_ACCESS_TOKEN environment variable was rejected:\naccess denied (auth request id: 7bd4949999334addaeea06422879c43f)\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 401,
+          "response_body": {
+            "detail": "Token has expired"
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "cli-expires_after_auth-apps-stop",
+      "scenario": "expires_after_auth",
+      "args": [
+        "cloud",
+        "apps",
+        "stop",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "stop",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nYou are not authenticated. Run `reflex login` to authenticate.\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/stop",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 401,
+          "response_body": {
+            "detail": "Token has expired"
+          }
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "cli-success-apps-logs",
+      "scenario": "success",
+      "args": [
+        "cloud",
+        "apps",
+        "logs",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "logs",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"entries\": [{\"ns\": 1791203696000000000, \"timestamp\": \"2026-10-05T12:34:56Z\", \"name\": \"qa-app\", \"message\": \"first\", \"details\": null, \"log_level\": null, \"region\": null, \"deployment_id\": null, \"event_id\": null, \"stream_id\": null, \"revision_id\": null}, {\"ns\": 1791203696000000000, \"timestamp\": \"2026-10-05T12:34:56Z\", \"name\": \"qa-app\", \"message\": \"second\", \"details\": null, \"log_level\": null, \"region\": null, \"deployment_id\": null, \"event_id\": null, \"stream_id\": null, \"revision_id\": null}], \"cursor\": null, \"error\": null}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/logsv2?order=newest_first",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": [
+            [
+              {
+                "ns": 1791203696000000000,
+                "name": "qa-app",
+                "timestamp": "2026-10-05T12:34:56Z",
+                "message": "first"
+              }
+            ],
+            "next page+/=?&x"
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/logsv2?order=newest_first&cursor=next+page%2B%2F%3D%3F%26x",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": [
+            [
+              {
+                "ns": 1791203696000000000,
+                "name": "qa-app",
+                "timestamp": "2026-10-05T12:34:56Z",
+                "message": "second"
+              }
+            ],
+            null
+          ]
+        }
+      ],
+      "document": {
+        "app_id": "11111111-1111-4111-8111-111111111111",
+        "entries": [
+          {
+            "ns": 1791203696000000000,
+            "timestamp": "2026-10-05T12:34:56Z",
+            "name": "qa-app",
+            "message": "first",
+            "details": null,
+            "log_level": null,
+            "region": null,
+            "deployment_id": null,
+            "event_id": null,
+            "stream_id": null,
+            "revision_id": null
+          },
+          {
+            "ns": 1791203696000000000,
+            "timestamp": "2026-10-05T12:34:56Z",
+            "name": "qa-app",
+            "message": "second",
+            "details": null,
+            "log_level": null,
+            "region": null,
+            "deployment_id": null,
+            "event_id": null,
+            "stream_id": null,
+            "revision_id": null
+          }
+        ],
+        "cursor": null,
+        "error": null
+      },
+      "pass": true
+    },
+    {
+      "name": "cli-empty-page-apps-logs",
+      "scenario": "empty-page",
+      "args": [
+        "cloud",
+        "apps",
+        "logs",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "logs",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"entries\": [], \"cursor\": null, \"error\": null}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/logsv2?order=newest_first",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": [
+            [],
+            "next page+/=?&x"
+          ]
+        }
+      ],
+      "document": {
+        "app_id": "11111111-1111-4111-8111-111111111111",
+        "entries": [],
+        "cursor": null,
+        "error": null
+      },
+      "pass": true
+    },
+    {
+      "name": "sdk-http-400",
+      "scenario": "sdk-status-400",
+      "exception_type": "BadRequestError",
+      "status_code": 400,
+      "detail": "Fixture status boundary",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 400,
+          "response_body": {
+            "detail": "Fixture status boundary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "sdk-http-401",
+      "scenario": "sdk-status-401",
+      "exception_type": "AuthenticationError",
+      "status_code": 401,
+      "detail": "Fixture status boundary",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 401,
+          "response_body": {
+            "detail": "Fixture status boundary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "sdk-http-403",
+      "scenario": "sdk-status-403",
+      "exception_type": "PermissionDeniedError",
+      "status_code": 403,
+      "detail": "Fixture status boundary",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 403,
+          "response_body": {
+            "detail": "Fixture status boundary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "sdk-http-404",
+      "scenario": "sdk-status-404",
+      "exception_type": "NotFoundError",
+      "status_code": 404,
+      "detail": "Fixture status boundary",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 404,
+          "response_body": {
+            "detail": "Fixture status boundary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "sdk-http-409",
+      "scenario": "sdk-status-409",
+      "exception_type": "ConflictError",
+      "status_code": 409,
+      "detail": "Fixture status boundary",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 409,
+          "response_body": {
+            "detail": "Fixture status boundary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "sdk-http-422",
+      "scenario": "sdk-status-422",
+      "exception_type": "UnprocessableEntityError",
+      "status_code": 422,
+      "detail": "Fixture status boundary",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 422,
+          "response_body": {
+            "detail": "Fixture status boundary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "sdk-http-429",
+      "scenario": "sdk-status-429",
+      "exception_type": "RateLimitError",
+      "status_code": 429,
+      "detail": "Fixture status boundary",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 429,
+          "response_body": {
+            "detail": "Fixture status boundary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "sdk-http-500",
+      "scenario": "sdk-status-500",
+      "exception_type": "InternalServerError",
+      "status_code": 500,
+      "detail": "Fixture status boundary",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 500,
+          "response_body": {
+            "detail": "Fixture status boundary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "sdk-invalid-json",
+      "scenario": "sdk-invalid-json",
+      "exception_type": "APIResponseValidationError",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": "not-json"
+        }
+      ]
+    },
+    {
+      "name": "sdk-invalid-model",
+      "scenario": "sdk-invalid-model",
+      "exception_type": "APIResponseValidationError",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "id": "not-a-uuid"
+          }
+        }
+      ]
+    },
+    {
+      "name": "sdk-sync-pagination",
+      "scenario": "success",
+      "messages": [
+        "first",
+        "second"
+      ],
+      "second_query": {
+        "search": [
+          "caf\u00e9 + /"
+        ],
+        "order": [
+          "oldest_first"
+        ],
+        "limit": [
+          "50"
+        ],
+        "cursor": [
+          "next page+/=?&x"
+        ]
+      },
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/logsv2?search=caf%C3%A9+%2B+%2F&order=oldest_first&limit=50",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": [
+            [
+              {
+                "ns": 1791203696000000000,
+                "name": "qa-app",
+                "timestamp": "2026-10-05T12:34:56Z",
+                "message": "first"
+              }
+            ],
+            "next page+/=?&x"
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/logsv2?search=caf%C3%A9+%2B+%2F&order=oldest_first&limit=50&cursor=next+page%2B%2F%3D%3F%26x",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": [
+            [
+              {
+                "ns": 1791203696000000000,
+                "name": "qa-app",
+                "timestamp": "2026-10-05T12:34:56Z",
+                "message": "second"
+              }
+            ],
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sdk-async-pagination",
+      "scenario": "success",
+      "messages": [
+        "first",
+        "second"
+      ],
+      "second_query": {
+        "search": [
+          "caf\u00e9 + /"
+        ],
+        "order": [
+          "oldest_first"
+        ],
+        "limit": [
+          "50"
+        ],
+        "cursor": [
+          "next page+/=?&x"
+        ]
+      },
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/logsv2?search=caf%C3%A9+%2B+%2F&order=oldest_first&limit=50",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": [
+            [
+              {
+                "ns": 1791203696000000000,
+                "name": "qa-app",
+                "timestamp": "2026-10-05T12:34:56Z",
+                "message": "first"
+              }
+            ],
+            "next page+/=?&x"
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/logsv2?search=caf%C3%A9+%2B+%2F&order=oldest_first&limit=50&cursor=next+page%2B%2F%3D%3F%26x",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": [
+            [
+              {
+                "ns": 1791203696000000000,
+                "name": "qa-app",
+                "timestamp": "2026-10-05T12:34:56Z",
+                "message": "second"
+              }
+            ],
+            null
+          ]
+        }
+      ]
+    }
+  ],
+  "cleanup": {
+    "server_thread_alive": false,
+    "server_socket_fd": -1
+  }
+}

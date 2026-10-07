@@ -1,0 +1,126 @@
+{
+  "provenance": {
+    "python": "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+    "modules": {
+      "reflex": "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/lib/python3.12/site-packages/reflex/__init__.py",
+      "reflex_build_sdk": "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/lib/python3.12/site-packages/reflex_build_sdk/__init__.py"
+    },
+    "versions": {
+      "reflex": "0.10.0a2",
+      "reflex-base": "0.10.0a2",
+      "reflex-hosting-cli": "0.2.0a1",
+      "reflex-build-sdk": "0.1.0a1",
+      "reflex-release": "0.2.0a1",
+      "reflex-docgen": "0.10.0a2"
+    }
+  },
+  "origin": "http://127.0.0.1:8580",
+  "cases": [
+    {
+      "name": "owned-origin-preflight",
+      "scenario": "success",
+      "health": {
+        "fixture": "tooling-a2-owned",
+        "port": 8580
+      },
+      "nonlocal_guard": "blocked before connect",
+      "pass": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/__fixture__/health",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "fixture": "tooling-a2-owned",
+            "port": 8580
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        }
+      ]
+    },
+    {
+      "name": "cli-start-preflight",
+      "scenario": "success",
+      "args": [
+        "cloud",
+        "apps",
+        "start",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/cli_entry.py",
+        "cloud",
+        "apps",
+        "start",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"started\": true, \"message\": \"app started\"}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "user_id": "11111111-1111-4111-8111-111111111111",
+            "org_id": "11111111-1111-4111-8111-111111111111",
+            "email": "qa@example.test",
+            "tier": "Enterprise"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/start",
+          "host": "127.0.0.1:8580",
+          "authorization": null,
+          "body": null,
+          "response_status": 200,
+          "response_body": {
+            "message": "Server sentence must not become CLI result"
+          }
+        }
+      ],
+      "document": {
+        "app_id": "11111111-1111-4111-8111-111111111111",
+        "started": true,
+        "message": "app started"
+      },
+      "pass": true
+    }
+  ],
+  "cleanup": {
+    "server_thread_alive": false,
+    "server_socket_fd": -1
+  }
+}

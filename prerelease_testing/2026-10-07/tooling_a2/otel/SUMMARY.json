@@ -1,0 +1,1809 @@
+{
+  "runs": [
+    {
+      "label": "alpha2-dev-1",
+      "passed": false,
+      "runner_error": "RuntimeError: server exited 1",
+      "cleanup_empty": true,
+      "browsers": {},
+      "compile_spans": [],
+      "server_diagnostics": [
+        "Traceback (most recent call last):",
+        "ValueError: Provided custom backend exception handler `handle_error` does not take the required argument `exception`"
+      ]
+    },
+    {
+      "label": "alpha2-dev-2",
+      "passed": true,
+      "runner_error": null,
+      "cleanup_empty": true,
+      "browsers": {
+        "chromium": {
+          "passed": true,
+          "checks": 26,
+          "failed": [],
+          "anomalies": 13,
+          "anomaly_types": {
+            "requestfailed": 7,
+            "error": 6
+          },
+          "pre_outage_backend_event_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "pre_outage_expected_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "one_span_per_handler_before_outage": true,
+          "tokens_captured": 2,
+          "raw_tokens_absent_from_full_requests": true,
+          "before_reload_recovery_checked": false,
+          "outage_started": 1791363840.196982,
+          "collector_restored": 1791363885.516105
+        },
+        "webkit": {
+          "passed": true,
+          "checks": 26,
+          "failed": [],
+          "anomalies": 28,
+          "anomaly_types": {
+            "warning": 6,
+            "error": 10,
+            "pageerror": 5,
+            "requestfailed": 7
+          },
+          "pre_outage_backend_event_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "pre_outage_expected_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "one_span_per_handler_before_outage": true,
+          "tokens_captured": 2,
+          "raw_tokens_absent_from_full_requests": true,
+          "before_reload_recovery_checked": false,
+          "outage_started": 1791363903.283563,
+          "collector_restored": 1791363948.6067069
+        }
+      },
+      "compile_spans": [
+        {
+          "collected": 1791363825.850504,
+          "name": "reflex.compile.pages",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "b92674fc-9a0b-42cc-b8da-1018c345e5c6",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "6b53809ae6e989c8d21005fb5860d4b1",
+          "span_id": "21ad8387fa8f694f",
+          "parent_id": "987662bb917f10c7",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791363825627761000",
+          "end": "1791363825657002000"
+        },
+        {
+          "collected": 1791363827.492811,
+          "name": "reflex.compile.install_frontend_packages",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "b92674fc-9a0b-42cc-b8da-1018c345e5c6",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "6b53809ae6e989c8d21005fb5860d4b1",
+          "span_id": "7342587098ddbe38",
+          "parent_id": "987662bb917f10c7",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791363825672195000",
+          "end": "1791363827484124000"
+        },
+        {
+          "collected": 1791363827.492811,
+          "name": "reflex.compile.write",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "b92674fc-9a0b-42cc-b8da-1018c345e5c6",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "6b53809ae6e989c8d21005fb5860d4b1",
+          "span_id": "1792d9a49c649ee9",
+          "parent_id": "987662bb917f10c7",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791363827486026000",
+          "end": "1791363827488842000"
+        },
+        {
+          "collected": 1791363827.492811,
+          "name": "reflex.compile",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "b92674fc-9a0b-42cc-b8da-1018c345e5c6",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "6b53809ae6e989c8d21005fb5860d4b1",
+          "span_id": "987662bb917f10c7",
+          "parent_id": "",
+          "kind": "INTERNAL",
+          "attributes": {
+            "reflex.compile.dry_run": false,
+            "reflex.compile.trigger": "initial"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791363825626907000",
+          "end": "1791363827489143000"
+        },
+        {
+          "collected": 1791363829.164973,
+          "name": "reflex.compile",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "754be8f9-9dbb-438f-b519-565cb782972f",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "af22db1ac817d61498f1e9bf30290262",
+          "span_id": "0c93b22499fff4a1",
+          "parent_id": "",
+          "kind": "INTERNAL",
+          "attributes": {
+            "reflex.compile.dry_run": false,
+            "reflex.compile.trigger": "backend_startup"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791363829120331000",
+          "end": "1791363829122080000"
+        }
+      ],
+      "requests": 29,
+      "content_types": {
+        "application/x-protobuf": 21,
+        "application/json": 8
+      },
+      "spans": 181,
+      "services": {
+        "qa-backend": 43,
+        "qa-frontend": 138
+      },
+      "kinds": {
+        "INTERNAL": 129,
+        "CONSUMER": 24,
+        "PRODUCER": 24,
+        "SERVER": 4
+      },
+      "span_names": {
+        "reflex.compile.pages": 1,
+        "reflex.compile.install_frontend_packages": 1,
+        "reflex.compile.write": 1,
+        "reflex.compile": 2,
+        "reflex___state____state.hydrate_and_load": 8,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.set_note": 4,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.add": 20,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.audit": 10,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.replenish": 4,
+        "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal": 8,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.fail": 4,
+        "web_vital.TTFB": 4,
+        "react.render": 93,
+        "socket.connect": 4,
+        "web_vital.FCP": 4,
+        "web_vital.LCP": 4,
+        "socket.disconnect": 2,
+        "web_vital.INP": 2,
+        "web_vital.CLS": 1,
+        "HTTP /_event/": 4
+      },
+      "compile_child_links_valid": true,
+      "valid_trace_and_span_ids": true,
+      "browser_public_header_present": true,
+      "asgi_server_spans": [
+        {
+          "collected": 1791363885.852313,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "754be8f9-9dbb-438f-b519-565cb782972f",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "feed825efe9cbe1f52bfb5f0efb857c3",
+          "span_id": "b1f52a50c42103c9",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "62140",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791363832152534000",
+          "end": "1791363885712134000"
+        },
+        {
+          "collected": 1791363892.75344,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "754be8f9-9dbb-438f-b519-565cb782972f",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "0fdfc71f2dbd97d8208e28d49c0eb80d",
+          "span_id": "086d4c82682853b1",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "62249",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791363885749580000",
+          "end": "1791363892548102000"
+        },
+        {
+          "collected": 1791363948.799946,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "754be8f9-9dbb-438f-b519-565cb782972f",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "eafc566a4861109e041f993e0933a947",
+          "span_id": "c376db46a3326556",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "62273",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791363895019842000",
+          "end": "1791363948786173000"
+        },
+        {
+          "collected": 1791363955.8761148,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "754be8f9-9dbb-438f-b519-565cb782972f",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "7148231fd7e94bff1a441b3a899fbe4a",
+          "span_id": "46475031303af860",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "62395",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791363948869085000",
+          "end": "1791363955681836000"
+        }
+      ],
+      "payload_markers_absent_from_full_requests": true,
+      "server_diagnostics": [
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        " OtelExportError: OtelPlugin: exporting browser spans to ",
+        "error (TypeError: Failed to fetch). A collector on another origin must allow ",
+        "OtelExportError: OtelPlugin: exporting browser spans to ",
+        "error (TypeError: Failed to fetch). A collector on another origin must allow ",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        " OtelExportError: OtelPlugin: exporting browser spans to ",
+        "error (TypeError: Load failed). A collector on another origin must allow CORS ",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown."
+      ]
+    },
+    {
+      "label": "alpha2-dev-3",
+      "passed": true,
+      "runner_error": null,
+      "cleanup_empty": true,
+      "browsers": {
+        "chromium": {
+          "passed": true,
+          "checks": 29,
+          "failed": [],
+          "anomalies": 12,
+          "anomaly_types": {
+            "requestfailed": 7,
+            "error": 5
+          },
+          "pre_outage_backend_event_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "pre_outage_expected_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "one_span_per_handler_before_outage": true,
+          "tokens_captured": 2,
+          "raw_tokens_absent_from_full_requests": true,
+          "before_reload_recovery_checked": true,
+          "outage_started": 1791364239.617301,
+          "collector_restored": 1791364284.917724
+        },
+        "webkit": {
+          "passed": true,
+          "checks": 29,
+          "failed": [],
+          "anomalies": 23,
+          "anomaly_types": {
+            "warning": 6,
+            "error": 8,
+            "pageerror": 4,
+            "requestfailed": 5
+          },
+          "pre_outage_backend_event_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "pre_outage_expected_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "one_span_per_handler_before_outage": true,
+          "tokens_captured": 2,
+          "raw_tokens_absent_from_full_requests": true,
+          "before_reload_recovery_checked": true,
+          "outage_started": 1791364307.57059,
+          "collector_restored": 1791364352.880625
+        }
+      },
+      "compile_spans": [
+        {
+          "collected": 1791364226.765926,
+          "name": "reflex.compile.pages",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "380633cf-b808-488d-8063-97fb6d267092",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "2255205a870ec996cd88e78cc4ba7cc3",
+          "span_id": "e2f2347d2e2797ec",
+          "parent_id": "aece09d88717beef",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791364226553417000",
+          "end": "1791364226578663000"
+        },
+        {
+          "collected": 1791364227.8291378,
+          "name": "reflex.compile.install_frontend_packages",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "380633cf-b808-488d-8063-97fb6d267092",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "2255205a870ec996cd88e78cc4ba7cc3",
+          "span_id": "83d7a0221bc21fb8",
+          "parent_id": "aece09d88717beef",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791364226595626000",
+          "end": "1791364227820603000"
+        },
+        {
+          "collected": 1791364227.8291378,
+          "name": "reflex.compile.write",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "380633cf-b808-488d-8063-97fb6d267092",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "2255205a870ec996cd88e78cc4ba7cc3",
+          "span_id": "72a7a80c550d661c",
+          "parent_id": "aece09d88717beef",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791364227822721000",
+          "end": "1791364227826189000"
+        },
+        {
+          "collected": 1791364227.8291378,
+          "name": "reflex.compile",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "380633cf-b808-488d-8063-97fb6d267092",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "2255205a870ec996cd88e78cc4ba7cc3",
+          "span_id": "aece09d88717beef",
+          "parent_id": "",
+          "kind": "INTERNAL",
+          "attributes": {
+            "reflex.compile.dry_run": false,
+            "reflex.compile.trigger": "initial"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364226552403000",
+          "end": "1791364227826582000"
+        },
+        {
+          "collected": 1791364228.510474,
+          "name": "reflex.compile",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "d953efef-d312-4779-a347-75e68d6e6bee",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "1ac333508eb592e1cc67b4301aefd645",
+          "span_id": "fc06db94f8387404",
+          "parent_id": "",
+          "kind": "INTERNAL",
+          "attributes": {
+            "reflex.compile.dry_run": false,
+            "reflex.compile.trigger": "backend_startup"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364228461521000",
+          "end": "1791364228462684000"
+        }
+      ],
+      "requests": 34,
+      "content_types": {
+        "application/x-protobuf": 22,
+        "application/json": 12
+      },
+      "spans": 200,
+      "services": {
+        "qa-backend": 43,
+        "qa-frontend": 157
+      },
+      "kinds": {
+        "INTERNAL": 144,
+        "CONSUMER": 24,
+        "PRODUCER": 28,
+        "SERVER": 4
+      },
+      "span_names": {
+        "reflex.compile.pages": 1,
+        "reflex.compile.install_frontend_packages": 1,
+        "reflex.compile.write": 1,
+        "reflex.compile": 2,
+        "reflex___state____state.hydrate_and_load": 8,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.set_note": 4,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.add": 22,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.audit": 10,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.replenish": 5,
+        "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal": 8,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.fail": 4,
+        "web_vital.TTFB": 4,
+        "react.render": 108,
+        "socket.connect": 4,
+        "web_vital.FCP": 4,
+        "web_vital.LCP": 4,
+        "socket.disconnect": 2,
+        "web_vital.INP": 2,
+        "web_vital.CLS": 1,
+        "HTTP /_event/": 4,
+        "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception": 1
+      },
+      "compile_child_links_valid": true,
+      "valid_trace_and_span_ids": true,
+      "browser_public_header_present": true,
+      "asgi_server_spans": [
+        {
+          "collected": 1791364290.307942,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "d953efef-d312-4779-a347-75e68d6e6bee",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "f157343a6bf6078892b3b46c8385aa4f",
+          "span_id": "802e36a71350288b",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "63384",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364231594645000",
+          "end": "1791364290253507000"
+        },
+        {
+          "collected": 1791364297.189949,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "d953efef-d312-4779-a347-75e68d6e6bee",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "d25df330eb64026a30bbde2fd214677f",
+          "span_id": "a6a55d81d1724d74",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "63541",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364290293298000",
+          "end": "1791364297104470000"
+        },
+        {
+          "collected": 1791364358.243961,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "d953efef-d312-4779-a347-75e68d6e6bee",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "8dcfbe39bd1417901109db1277aa1d19",
+          "span_id": "82df6789dc371ed3",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "63567",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364299343022000",
+          "end": "1791364358223862000"
+        },
+        {
+          "collected": 1791364365.323425,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "d953efef-d312-4779-a347-75e68d6e6bee",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "347b0b99baea19850dfe8086dd77def2",
+          "span_id": "ead5a80bb112f4c0",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "63673",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364358311380000",
+          "end": "1791364365117862000"
+        }
+      ],
+      "payload_markers_absent_from_full_requests": true,
+      "server_diagnostics": [
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        " OtelExportError: OtelPlugin: exporting browser spans to ",
+        "http://localhost:8588/v1/traces failed: Fetch request errored (AbortError: ",
+        "OtelExportError: OtelPlugin: exporting browser spans to ",
+        "http://localhost:8588/v1/traces failed: Fetch request errored (AbortError: ",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        " OtelExportError: OtelPlugin: exporting browser spans to ",
+        "http://localhost:8588/v1/traces failed: Fetch request errored (AbortError: Fetch",
+        "Failed to export spans batch due to timeout, max retries or shutdown."
+      ]
+    },
+    {
+      "label": "alpha2-prod-1",
+      "passed": true,
+      "runner_error": null,
+      "cleanup_empty": true,
+      "browsers": {
+        "chromium": {
+          "passed": true,
+          "checks": 26,
+          "failed": [],
+          "anomalies": 12,
+          "anomaly_types": {
+            "requestfailed": 7,
+            "error": 5
+          },
+          "pre_outage_backend_event_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "pre_outage_expected_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "one_span_per_handler_before_outage": true,
+          "tokens_captured": 1,
+          "raw_tokens_absent_from_full_requests": true,
+          "before_reload_recovery_checked": false,
+          "outage_started": 1791364038.955368,
+          "collector_restored": 1791364084.238772
+        },
+        "webkit": {
+          "passed": true,
+          "checks": 26,
+          "failed": [],
+          "anomalies": 19,
+          "anomaly_types": {
+            "error": 8,
+            "pageerror": 4,
+            "requestfailed": 7
+          },
+          "pre_outage_backend_event_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "pre_outage_expected_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "one_span_per_handler_before_outage": true,
+          "tokens_captured": 1,
+          "raw_tokens_absent_from_full_requests": true,
+          "before_reload_recovery_checked": false,
+          "outage_started": 1791364101.31826,
+          "collector_restored": 1791364146.650489
+        }
+      },
+      "compile_spans": [
+        {
+          "collected": 1791364026.384968,
+          "name": "reflex.compile.pages",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "cf427797-3d09-496d-a459-cca8fc3ea74e",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "ef4827a0c6c9d9205de58ac6169a1900",
+          "span_id": "85e80b02b8420c1f",
+          "parent_id": "ee55d213273a7694",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791364026175125000",
+          "end": "1791364026198285000"
+        },
+        {
+          "collected": 1791364026.806349,
+          "name": "reflex.compile.install_frontend_packages",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "cf427797-3d09-496d-a459-cca8fc3ea74e",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "ef4827a0c6c9d9205de58ac6169a1900",
+          "span_id": "cbf4f23164253bf9",
+          "parent_id": "ee55d213273a7694",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791364026215380000",
+          "end": "1791364026658402000"
+        },
+        {
+          "collected": 1791364026.806349,
+          "name": "reflex.compile.write",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "cf427797-3d09-496d-a459-cca8fc3ea74e",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "ef4827a0c6c9d9205de58ac6169a1900",
+          "span_id": "552fb1b3d2950f23",
+          "parent_id": "ee55d213273a7694",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791364026660202000",
+          "end": "1791364026662948000"
+        },
+        {
+          "collected": 1791364026.806349,
+          "name": "reflex.compile",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "cf427797-3d09-496d-a459-cca8fc3ea74e",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "ef4827a0c6c9d9205de58ac6169a1900",
+          "span_id": "ee55d213273a7694",
+          "parent_id": "",
+          "kind": "INTERNAL",
+          "attributes": {
+            "reflex.compile.dry_run": false,
+            "reflex.compile.trigger": "initial"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364026174204000",
+          "end": "1791364026663288000"
+        },
+        {
+          "collected": 1791364030.56437,
+          "name": "reflex.compile",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "51f032c9c9840000745c32d004ef23c6",
+          "span_id": "2d6a8c3f384118f6",
+          "parent_id": "",
+          "kind": "INTERNAL",
+          "attributes": {
+            "reflex.compile.dry_run": false,
+            "reflex.compile.trigger": "backend_startup"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364030495206000",
+          "end": "1791364030496406000"
+        }
+      ],
+      "requests": 30,
+      "content_types": {
+        "application/x-protobuf": 20,
+        "application/json": 10
+      },
+      "spans": 196,
+      "services": {
+        "qa-backend": 48,
+        "qa-frontend": 148
+      },
+      "kinds": {
+        "INTERNAL": 135,
+        "SERVER": 9,
+        "CONSUMER": 24,
+        "PRODUCER": 28
+      },
+      "span_names": {
+        "reflex.compile.pages": 1,
+        "reflex.compile.install_frontend_packages": 1,
+        "reflex.compile.write": 1,
+        "reflex.compile": 2,
+        "GET /": 5,
+        "reflex___state____state.hydrate_and_load": 8,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.set_note": 4,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.add": 22,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.audit": 10,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.replenish": 5,
+        "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal": 8,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.fail": 4,
+        "web_vital.FCP": 4,
+        "web_vital.TTFB": 4,
+        "react.render": 99,
+        "socket.connect": 4,
+        "web_vital.LCP": 4,
+        "socket.disconnect": 2,
+        "web_vital.INP": 2,
+        "web_vital.CLS": 1,
+        "HTTP /_event/": 4,
+        "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception": 1
+      },
+      "compile_child_links_valid": true,
+      "valid_trace_and_span_ids": true,
+      "browser_public_header_present": true,
+      "asgi_server_spans": [
+        {
+          "collected": 1791364030.56437,
+          "name": "GET /",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "0bbe61ecc518617bbf726b5853ecade7",
+          "span_id": "9d99f623623bd2c0",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "http",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/",
+            "http.request.method": "GET",
+            "user_agent.original": "Python-urllib/3.12",
+            "client.address": "127.0.0.1",
+            "client.port": "62488",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364030501348000",
+          "end": "1791364030552873000"
+        },
+        {
+          "collected": 1791364031.1893609,
+          "name": "GET /",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "ecf2740987c61bc0ac01be89d80bde1c",
+          "span_id": "4774b34968017811",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "http",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/",
+            "http.request.method": "GET",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "62493",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364030996168000",
+          "end": "1791364030997104000"
+        },
+        {
+          "collected": 1791364084.52745,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "f880f56a3883e4e3b93e7d90fc7710ab",
+          "span_id": "793a012f306e3088",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "62505",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364031040919000",
+          "end": "1791364084423494000"
+        },
+        {
+          "collected": 1791364084.52745,
+          "name": "GET /",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "c422f5e8660c3eefec0100b95178236e",
+          "span_id": "fab8a9789b0c4193",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "http",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/",
+            "http.request.method": "GET",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "62669",
+            "http.response.status_code": "304"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364084425697000",
+          "end": "1791364084427119000"
+        },
+        {
+          "collected": 1791364091.4100711,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "60dc55db33f6149225110422a4b8f3e0",
+          "span_id": "b7e2814220e07677",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "62685",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364084447156000",
+          "end": "1791364091252425000"
+        },
+        {
+          "collected": 1791364093.084435,
+          "name": "GET /",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "1a7bcd3b8787b229dc01a99e3e7d1de7",
+          "span_id": "cd076f57aeb5f6f6",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "http",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/",
+            "http.request.method": "GET",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "62699",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364093073029000",
+          "end": "1791364093073900000"
+        },
+        {
+          "collected": 1791364146.868191,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "50cc39ba39699ae29e19ae2544ae2eae",
+          "span_id": "a6846af121bbef2d",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "62707",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364093181848000",
+          "end": "1791364146824721000"
+        },
+        {
+          "collected": 1791364146.868191,
+          "name": "GET /",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "1cf650cf80c0a0fd45d6cd5041944553",
+          "span_id": "85bbe9dfc9dc9248",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "http",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/",
+            "http.request.method": "GET",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "62796",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364146828316000",
+          "end": "1791364146829423000"
+        },
+        {
+          "collected": 1791364153.739305,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "f78be603-33db-43bd-af5f-f1968531296a",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "f4901b0ef843dc67f57cbbd9dd9dd11e",
+          "span_id": "6a03a7f429ea9f34",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "62799",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364146869266000",
+          "end": "1791364153681251000"
+        }
+      ],
+      "payload_markers_absent_from_full_requests": true,
+      "server_diagnostics": [
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        " OtelExportError: OtelPlugin: exporting browser spans to ",
+        "http://localhost:8588/v1/traces failed: Fetch request errored (AbortError: ",
+        "OtelExportError: OtelPlugin: exporting browser spans to ",
+        "http://localhost:8588/v1/traces failed: Fetch request errored (AbortError: ",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        " OtelExportError: OtelPlugin: exporting browser spans to ",
+        "http://localhost:8588/v1/traces failed: Fetch request errored (AbortError: Fetch",
+        "Failed to export spans batch due to timeout, max retries or shutdown."
+      ]
+    },
+    {
+      "label": "alpha2-prod-2",
+      "passed": true,
+      "runner_error": null,
+      "cleanup_empty": true,
+      "browsers": {
+        "chromium": {
+          "passed": true,
+          "checks": 29,
+          "failed": [],
+          "anomalies": 13,
+          "anomaly_types": {
+            "requestfailed": 7,
+            "error": 6
+          },
+          "pre_outage_backend_event_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "pre_outage_expected_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "one_span_per_handler_before_outage": true,
+          "tokens_captured": 1,
+          "raw_tokens_absent_from_full_requests": true,
+          "before_reload_recovery_checked": true,
+          "outage_started": 1791364420.421193,
+          "collector_restored": 1791364465.7052002
+        },
+        "webkit": {
+          "passed": true,
+          "checks": 29,
+          "failed": [],
+          "anomalies": 17,
+          "anomaly_types": {
+            "error": 8,
+            "pageerror": 4,
+            "requestfailed": 5
+          },
+          "pre_outage_backend_event_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "pre_outage_expected_counts": {
+            "add": 3,
+            "audit": 3,
+            "replenish": 1,
+            "fail": 1
+          },
+          "one_span_per_handler_before_outage": true,
+          "tokens_captured": 1,
+          "raw_tokens_absent_from_full_requests": true,
+          "before_reload_recovery_checked": true,
+          "outage_started": 1791364487.8715022,
+          "collector_restored": 1791364533.182847
+        }
+      },
+      "compile_spans": [
+        {
+          "collected": 1791364407.706311,
+          "name": "reflex.compile.pages",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "5475d0e1-c34a-4879-b9c0-e405a61af502",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "b7d1efbb1cd69750e4ef059694f4597b",
+          "span_id": "b6a12694d4fa5ecf",
+          "parent_id": "256ffc83733c688c",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791364407499081000",
+          "end": "1791364407522296000"
+        },
+        {
+          "collected": 1791364408.120805,
+          "name": "reflex.compile.install_frontend_packages",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "5475d0e1-c34a-4879-b9c0-e405a61af502",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "b7d1efbb1cd69750e4ef059694f4597b",
+          "span_id": "a6ddd184168541ea",
+          "parent_id": "256ffc83733c688c",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791364407539166000",
+          "end": "1791364407985713000"
+        },
+        {
+          "collected": 1791364408.120805,
+          "name": "reflex.compile.write",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "5475d0e1-c34a-4879-b9c0-e405a61af502",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "b7d1efbb1cd69750e4ef059694f4597b",
+          "span_id": "ddfaeb9ecea21ea6",
+          "parent_id": "256ffc83733c688c",
+          "kind": "INTERNAL",
+          "attributes": {},
+          "status": {},
+          "events": [],
+          "start": "1791364407987375000",
+          "end": "1791364407990363000"
+        },
+        {
+          "collected": 1791364408.120805,
+          "name": "reflex.compile",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "5475d0e1-c34a-4879-b9c0-e405a61af502",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "b7d1efbb1cd69750e4ef059694f4597b",
+          "span_id": "256ffc83733c688c",
+          "parent_id": "",
+          "kind": "INTERNAL",
+          "attributes": {
+            "reflex.compile.dry_run": false,
+            "reflex.compile.trigger": "initial"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364407498177000",
+          "end": "1791364407990641000"
+        },
+        {
+          "collected": 1791364411.903064,
+          "name": "reflex.compile",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "eae8764e56a5e0b8d0bc6f1ef57dbd54",
+          "span_id": "d4cb8b45da7bcbfe",
+          "parent_id": "",
+          "kind": "INTERNAL",
+          "attributes": {
+            "reflex.compile.dry_run": false,
+            "reflex.compile.trigger": "backend_startup"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364411818852000",
+          "end": "1791364411819865000"
+        }
+      ],
+      "requests": 36,
+      "content_types": {
+        "application/x-protobuf": 24,
+        "application/json": 12
+      },
+      "spans": 192,
+      "services": {
+        "qa-backend": 48,
+        "qa-frontend": 144
+      },
+      "kinds": {
+        "INTERNAL": 131,
+        "SERVER": 9,
+        "CONSUMER": 24,
+        "PRODUCER": 28
+      },
+      "span_names": {
+        "reflex.compile.pages": 1,
+        "reflex.compile.install_frontend_packages": 1,
+        "reflex.compile.write": 1,
+        "reflex.compile": 2,
+        "GET /": 5,
+        "reflex___state____state.hydrate_and_load": 8,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.set_note": 4,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.add": 22,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.audit": 10,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.replenish": 5,
+        "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal": 8,
+        "reflex___state____state.telemetry_app___telemetry_app____inventory.fail": 4,
+        "web_vital.FCP": 4,
+        "web_vital.TTFB": 4,
+        "react.render": 95,
+        "socket.connect": 4,
+        "web_vital.LCP": 4,
+        "socket.disconnect": 2,
+        "web_vital.INP": 2,
+        "web_vital.CLS": 1,
+        "HTTP /_event/": 4,
+        "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception": 1
+      },
+      "compile_child_links_valid": true,
+      "valid_trace_and_span_ids": true,
+      "browser_public_header_present": true,
+      "asgi_server_spans": [
+        {
+          "collected": 1791364412.116288,
+          "name": "GET /",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "c16053ca1e86f58030ab936a83525dfa",
+          "span_id": "9d852b6c4a3cb990",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "http",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/",
+            "http.request.method": "GET",
+            "user_agent.original": "Python-urllib/3.12",
+            "client.address": "127.0.0.1",
+            "client.port": "63759",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364411903312000",
+          "end": "1791364411920226000"
+        },
+        {
+          "collected": 1791364412.536696,
+          "name": "GET /",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "c52935a25e47a9cdba8e43ec8ced079f",
+          "span_id": "ed348c39f19654c1",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "http",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/",
+            "http.request.method": "GET",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "63763",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364412469307000",
+          "end": "1791364412470213000"
+        },
+        {
+          "collected": 1791364471.1651862,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "8c2ddca0129e028334520431e88ba45c",
+          "span_id": "c129c6e7134dc403",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "63775",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364412514698000",
+          "end": "1791364471030988000"
+        },
+        {
+          "collected": 1791364471.1651862,
+          "name": "GET /",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "4574ba79b8bfa118a529f900b7cc070c",
+          "span_id": "62118f55a76b6988",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "http",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/",
+            "http.request.method": "GET",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "63878",
+            "http.response.status_code": "304"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364471032043000",
+          "end": "1791364471033142000"
+        },
+        {
+          "collected": 1791364478.0695848,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "492dcfdcbca9c6c7c769deb3cb234502",
+          "span_id": "1f1a2ca68724c144",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+            "client.address": "127.0.0.1",
+            "client.port": "63892",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364471052378000",
+          "end": "1791364477859158000"
+        },
+        {
+          "collected": 1791364479.72306,
+          "name": "GET /",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "f37c1b830785a4e0cfdd6ed45b50e1ee",
+          "span_id": "8472063badcb28bf",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "http",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/",
+            "http.request.method": "GET",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "63909",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364479712309000",
+          "end": "1791364479713054000"
+        },
+        {
+          "collected": 1791364538.401868,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "152f53a52c4675559aebd532ceceabf8",
+          "span_id": "0fc60e5b7b68f0bc",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "63917",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364479823450000",
+          "end": "1791364538274699000"
+        },
+        {
+          "collected": 1791364538.401868,
+          "name": "GET /",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "c25cc7c4b3dfdff8bda3b9759bb6130a",
+          "span_id": "522124b7e636e46d",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "http",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/",
+            "http.request.method": "GET",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "64019",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364538279466000",
+          "end": "1791364538280660000"
+        },
+        {
+          "collected": 1791364545.305658,
+          "name": "HTTP /_event/",
+          "service": "qa-backend",
+          "resource": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.45.1",
+            "service.instance.id": "34633863-5d58-4e62-a059-5e40deb0de69",
+            "service.name": "qa-backend"
+          },
+          "trace_id": "1b29eba3ae034c1b69fadee379d69b49",
+          "span_id": "4f92a49976cef115",
+          "parent_id": "",
+          "kind": "SERVER",
+          "attributes": {
+            "url.scheme": "ws",
+            "server.address": "0.0.0.0:8586",
+            "server.port": "8586",
+            "network.protocol.version": "1.1",
+            "url.path": "/_event/",
+            "user_agent.original": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+            "client.address": "127.0.0.1",
+            "client.port": "64022",
+            "url.query": "token=REDACTED&EIO=4&transport=websocket",
+            "http.response.status_code": "200"
+          },
+          "status": {},
+          "events": [],
+          "start": "1791364538320893000",
+          "end": "1791364545102542000"
+        }
+      ],
+      "payload_markers_absent_from_full_requests": true,
+      "server_diagnostics": [
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        " OtelExportError: OtelPlugin: exporting browser spans to ",
+        "error (TypeError: Failed to fetch). A collector on another origin must allow ",
+        "OtelExportError: OtelPlugin: exporting browser spans to ",
+        "error (TypeError: Failed to fetch). A collector on another origin must allow ",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        "Failed to export spans batch due to timeout, max retries or shutdown.",
+        " OtelExportError: OtelPlugin: exporting browser spans to ",
+        "http://localhost:8588/v1/traces failed: Fetch request errored (AbortError: Fetch",
+        "Failed to export spans batch due to timeout, max retries or shutdown."
+      ]
+    }
+  ],
+  "browser_checks": 220,
+  "browser_passed": 220,
+  "executions": 8
+}

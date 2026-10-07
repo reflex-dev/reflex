@@ -1,0 +1,397 @@
+{
+  "completed_at_utc": "2026-10-07T09:11:30.714791+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "classification": "No new package defect found in tested contracts; expected directional release change verified.",
+  "versions": {
+    "reflex": "0.10.0a2",
+    "reflex-base": "0.10.0a2",
+    "reflex-hosting-cli": "0.2.0a1",
+    "reflex-build-sdk": "0.1.0a1",
+    "reflex-release": "0.2.0a1",
+    "reflex-docgen": "0.10.0a2"
+  },
+  "final_cases": {
+    "hosting_cli_sdk": 41,
+    "release_docgen": 11,
+    "old_new_release_baseline": 10
+  },
+  "all_final_case_assertions_pass": true,
+  "local_origin": "http://127.0.0.1:8580",
+  "hosting_requests": 66,
+  "credential_boundary": "REFLEX_DIR and credential constants redirected before CLI import; audit hook blocks nonfixture credential opens and nonfixture socket connects; actual X-API-TOKEN checked for env, stored-file, and explicit SDK token cases.",
+  "known_existing_auth_guidance": {
+    "initial_401_has_login_hint": false,
+    "post_auth_401_has_login_hint": true,
+    "baseline": "reflex-hosting-cli0.1.73a1 recorded2026-10-05; prior-auth-baseline.json"
+  },
+  "release_change": {
+    "early_member_independent": {
+      "0.1.2a1": "rejected",
+      "0.2.0a1": "accepted"
+    },
+    "unmet_late_dependency": "rejected by both",
+    "symmetric_mismatch": "rejected by both",
+    "only_late_with_early_already_tagged": "accepted by both"
+  },
+  "retained_fixture_errors": [
+    "bootstrap-errors.txt: omitted scratch uv cache on first venv attempt",
+    "release-docgen-a2-run1.json: old symmetric lockstep oracle rejected newly intended early independence",
+    "release-docgen-a2-run1.json: negative docgen control dereferenced absent optional frontmatter"
+  ],
+  "earlier_passes": [
+    "preflight-a2.json",
+    "hosting-a2-run1.json",
+    "hosting-a2-run2.json"
+  ],
+  "final_raw_evidence": [
+    "hosting-a2-run3.json",
+    "release-docgen-a2-run2.json",
+    "release-direction-baseline.json"
+  ],
+  "source_sha256": {
+    "cli_entry.py": "c1a4ef04af81e618991d4ae4ea001503e3bda789cf7e62e45806b616510350de",
+    "fixtures.py": "9d9a56b9be0c71216002f85ca011a602cbfe257ba60d89a311894d7208b07a49",
+    "guard.py": "951bb607f5ca730b0aa6bb5c825501d5547ba5da28a2a231c5ec93849e807bf5",
+    "hosting.py": "9df25ba86894da03297bfb66aa865c607f70ff120f4e1a394feeac528e6b8736",
+    "release_baseline.py": "30b7dcec38773917e2156895b59843ce76b9e78ddfa80e0c76d506d0fa113438",
+    "release_docgen.py": "4c240a85174903e3bbcc6fcb73d2254451a3e751a477f2c2592d18d32965c13c",
+    "release_entry.py": "90fd3eeaeab439da48a7a1125180abe0dc9ba971e6cd9f0cb19faf3d12269d1a"
+  },
+  "hosting_cases": [
+    {
+      "name": "owned-origin-preflight",
+      "pass": true,
+      "returncode": null,
+      "request_count": 2,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "cli-start-preflight",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 94,
+      "stderr_chars": 59
+    },
+    {
+      "name": "cli-stored-token",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 94,
+      "stderr_chars": 59
+    },
+    {
+      "name": "sdk-missing-token",
+      "pass": true,
+      "returncode": null,
+      "request_count": 0,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "history-full",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 292,
+      "stderr_chars": 59
+    },
+    {
+      "name": "history-nullable",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 242,
+      "stderr_chars": 59
+    },
+    {
+      "name": "inspect-full",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 1155,
+      "stderr_chars": 59
+    },
+    {
+      "name": "inspect-nullable",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 606,
+      "stderr_chars": 59
+    },
+    {
+      "name": "history-empty",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 3,
+      "stderr_chars": 59
+    },
+    {
+      "name": "token-full",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 110,
+      "stderr_chars": 59
+    },
+    {
+      "name": "token-nullable",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 87,
+      "stderr_chars": 59
+    },
+    {
+      "name": "token-invalid-duration",
+      "pass": true,
+      "returncode": 2,
+      "request_count": 0,
+      "stdout_chars": 0,
+      "stderr_chars": 240
+    },
+    {
+      "name": "secrets-json",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 110,
+      "stderr_chars": 109
+    },
+    {
+      "name": "secrets-envfile",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 105,
+      "stderr_chars": 151
+    },
+    {
+      "name": "secrets-human",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 149,
+      "stderr_chars": 59
+    },
+    {
+      "name": "secrets-refused",
+      "pass": true,
+      "returncode": 1,
+      "request_count": 2,
+      "stdout_chars": 0,
+      "stderr_chars": 138
+    },
+    {
+      "name": "secrets-empty-list",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 25,
+      "stderr_chars": 59
+    },
+    {
+      "name": "permissions-full",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 39,
+      "stderr_chars": 59
+    },
+    {
+      "name": "permissions-nullable",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 3,
+      "stderr_chars": 59
+    },
+    {
+      "name": "cli-success-apps-stop",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 94,
+      "stderr_chars": 59
+    },
+    {
+      "name": "cli-refused-apps-start",
+      "pass": true,
+      "returncode": 1,
+      "request_count": 2,
+      "stdout_chars": 0,
+      "stderr_chars": 88
+    },
+    {
+      "name": "cli-refused-apps-stop",
+      "pass": true,
+      "returncode": 1,
+      "request_count": 2,
+      "stdout_chars": 0,
+      "stderr_chars": 88
+    },
+    {
+      "name": "cli-refused-vmtypes",
+      "pass": true,
+      "returncode": 1,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 88
+    },
+    {
+      "name": "cli-refused-regions",
+      "pass": true,
+      "returncode": 1,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 88
+    },
+    {
+      "name": "cli-missing-apps-delete",
+      "pass": true,
+      "returncode": 1,
+      "request_count": 2,
+      "stdout_chars": 151,
+      "stderr_chars": 127
+    },
+    {
+      "name": "cli-expired-apps-list",
+      "pass": true,
+      "returncode": 1,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 206
+    },
+    {
+      "name": "cli-expires_after_auth-apps-stop",
+      "pass": true,
+      "returncode": 1,
+      "request_count": 2,
+      "stdout_chars": 0,
+      "stderr_chars": 122
+    },
+    {
+      "name": "cli-success-apps-logs",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 3,
+      "stdout_chars": 570,
+      "stderr_chars": 59
+    },
+    {
+      "name": "cli-empty-page-apps-logs",
+      "pass": true,
+      "returncode": 0,
+      "request_count": 2,
+      "stdout_chars": 97,
+      "stderr_chars": 59
+    },
+    {
+      "name": "sdk-http-400",
+      "pass": true,
+      "returncode": null,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-http-401",
+      "pass": true,
+      "returncode": null,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-http-403",
+      "pass": true,
+      "returncode": null,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-http-404",
+      "pass": true,
+      "returncode": null,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-http-409",
+      "pass": true,
+      "returncode": null,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-http-422",
+      "pass": true,
+      "returncode": null,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-http-429",
+      "pass": true,
+      "returncode": null,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-http-500",
+      "pass": true,
+      "returncode": null,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-invalid-json",
+      "pass": true,
+      "returncode": null,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-invalid-model",
+      "pass": true,
+      "returncode": null,
+      "request_count": 1,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-sync-pagination",
+      "pass": true,
+      "returncode": null,
+      "request_count": 2,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    },
+    {
+      "name": "sdk-async-pagination",
+      "pass": true,
+      "returncode": null,
+      "request_count": 2,
+      "stdout_chars": 0,
+      "stderr_chars": 0
+    }
+  ],
+  "limits": [
+    "No real cloud deployment/upload or service contacted",
+    "No GitHub Actions execution, publishing, pushes, or remote Git configured",
+    "Local HTTP wire fixture cannot establish real cloud authorization policy",
+    "SDK retry/backoff, streaming watch, and disconnect timing not exercised",
+    "Prior project deploy-refusal cases not rerun; no deploy command invoked"
+  ]
+}

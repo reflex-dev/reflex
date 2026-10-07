@@ -1,0 +1,1057 @@
+{
+  "provenance": {
+    "python": "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+    "versions": {
+      "reflex": "0.10.0a2",
+      "reflex-base": "0.10.0a2",
+      "reflex-release": "0.2.0a1",
+      "reflex-docgen": "0.10.0a2"
+    },
+    "paths": {
+      "reflex_docgen": "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/lib/python3.12/site-packages/reflex_docgen/__init__.py",
+      "reflex_release": "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/lib/python3.12/site-packages/reflex_release/__init__.py"
+    }
+  },
+  "cases": [
+    {
+      "name": "release-dispatch-19",
+      "package_count": 19,
+      "input_count": 20,
+      "boolean_count": 19,
+      "inputs": {
+        "action": {
+          "description": "Release action",
+          "required": "true",
+          "type": "choice",
+          "default": "continued-prerelease",
+          "options": [
+            "new-prerelease-patch",
+            "new-prerelease-minor",
+            "new-prerelease-major",
+            "continued-prerelease",
+            "release-from-prerelease",
+            "release-post",
+            "release-patch",
+            "release-minor",
+            "release-major"
+          ]
+        },
+        "sample_00": {
+          "description": "sample-00",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_01": {
+          "description": "sample-01",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_02": {
+          "description": "sample-02",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_03": {
+          "description": "sample-03",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_04": {
+          "description": "sample-04",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_05": {
+          "description": "sample-05",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_06": {
+          "description": "sample-06",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_07": {
+          "description": "sample-07",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_08": {
+          "description": "sample-08",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_09": {
+          "description": "sample-09",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_10": {
+          "description": "sample-10",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_11": {
+          "description": "sample-11",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_12": {
+          "description": "sample-12",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_13": {
+          "description": "sample-13",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_14": {
+          "description": "sample-14",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_15": {
+          "description": "sample-15",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_16": {
+          "description": "sample-16",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_17": {
+          "description": "sample-17",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_18": {
+          "description": "sample-18",
+          "type": "boolean",
+          "default": "false"
+        }
+      },
+      "drift_detected_and_repaired": true,
+      "pass": true
+    },
+    {
+      "name": "release-dispatch-20",
+      "package_count": 20,
+      "input_count": 21,
+      "boolean_count": 20,
+      "inputs": {
+        "action": {
+          "description": "Release action",
+          "required": "true",
+          "type": "choice",
+          "default": "continued-prerelease",
+          "options": [
+            "new-prerelease-patch",
+            "new-prerelease-minor",
+            "new-prerelease-major",
+            "continued-prerelease",
+            "release-from-prerelease",
+            "release-post",
+            "release-patch",
+            "release-minor",
+            "release-major"
+          ]
+        },
+        "sample_00": {
+          "description": "sample-00",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_01": {
+          "description": "sample-01",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_02": {
+          "description": "sample-02",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_03": {
+          "description": "sample-03",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_04": {
+          "description": "sample-04",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_05": {
+          "description": "sample-05",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_06": {
+          "description": "sample-06",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_07": {
+          "description": "sample-07",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_08": {
+          "description": "sample-08",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_09": {
+          "description": "sample-09",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_10": {
+          "description": "sample-10",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_11": {
+          "description": "sample-11",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_12": {
+          "description": "sample-12",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_13": {
+          "description": "sample-13",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_14": {
+          "description": "sample-14",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_15": {
+          "description": "sample-15",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_16": {
+          "description": "sample-16",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_17": {
+          "description": "sample-17",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_18": {
+          "description": "sample-18",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_19": {
+          "description": "sample-19",
+          "type": "boolean",
+          "default": "false"
+        }
+      },
+      "drift_detected_and_repaired": true,
+      "pass": true
+    },
+    {
+      "name": "release-dispatch-24",
+      "package_count": 24,
+      "input_count": 25,
+      "boolean_count": 24,
+      "inputs": {
+        "action": {
+          "description": "Release action",
+          "required": "true",
+          "type": "choice",
+          "default": "continued-prerelease",
+          "options": [
+            "new-prerelease-patch",
+            "new-prerelease-minor",
+            "new-prerelease-major",
+            "continued-prerelease",
+            "release-from-prerelease",
+            "release-post",
+            "release-patch",
+            "release-minor",
+            "release-major"
+          ]
+        },
+        "sample_00": {
+          "description": "sample-00",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_01": {
+          "description": "sample-01",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_02": {
+          "description": "sample-02",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_03": {
+          "description": "sample-03",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_04": {
+          "description": "sample-04",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_05": {
+          "description": "sample-05",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_06": {
+          "description": "sample-06",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_07": {
+          "description": "sample-07",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_08": {
+          "description": "sample-08",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_09": {
+          "description": "sample-09",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_10": {
+          "description": "sample-10",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_11": {
+          "description": "sample-11",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_12": {
+          "description": "sample-12",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_13": {
+          "description": "sample-13",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_14": {
+          "description": "sample-14",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_15": {
+          "description": "sample-15",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_16": {
+          "description": "sample-16",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_17": {
+          "description": "sample-17",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_18": {
+          "description": "sample-18",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_19": {
+          "description": "sample-19",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_20": {
+          "description": "sample-20",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_21": {
+          "description": "sample-21",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_22": {
+          "description": "sample-22",
+          "type": "boolean",
+          "default": "false"
+        },
+        "sample_23": {
+          "description": "sample-23",
+          "type": "boolean",
+          "default": "false"
+        }
+      },
+      "drift_detected_and_repaired": true,
+      "pass": true
+    },
+    {
+      "name": "release-dispatch-25",
+      "package_count": 25,
+      "input_count": 2,
+      "boolean_count": 0,
+      "inputs": {
+        "action": {
+          "description": "Release action",
+          "required": "true",
+          "type": "choice",
+          "default": "continued-prerelease",
+          "options": [
+            "new-prerelease-patch",
+            "new-prerelease-minor",
+            "new-prerelease-major",
+            "continued-prerelease",
+            "release-from-prerelease",
+            "release-post",
+            "release-patch",
+            "release-minor",
+            "release-major"
+          ]
+        },
+        "packages": {
+          "description": "Packages to release (comma-separated; empty auto-selects)",
+          "required": "false",
+          "type": "string",
+          "default": ""
+        }
+      },
+      "drift_detected_and_repaired": true,
+      "pass": true
+    },
+    {
+      "name": "release-lockstep-publish-last",
+      "pass": false,
+      "error": "AssertionError({'returncode': 0, 'outputs': {'packages': '[{\"package\": \"demo-core\", \"version\": \"1.1.0\", \"tag\": \"demo-core-v1.1.0\"}]', 'any': 'true', 'last_packages': '[{\"package\": \"demo-app\", \"version\": \"1.0.0\", \"tag\": \"demo-app-v1.0.0\"}]', 'any_last': 'true'}, 'stderr': 'WARN `--no-project` was provided, but no project was found\\n'})",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_docgen.py\", line 77, in record\n    row.update(function())\n               ^^^^^^^^^^\n  File \"/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_docgen.py\", line 171, in lockstep\n    assert mismatched[\"returncode\"] != 0 and \"lockstep\" in mismatched[\"stderr\"].lower(), mismatched\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: {'returncode': 0, 'outputs': {'packages': '[{\"package\": \"demo-core\", \"version\": \"1.1.0\", \"tag\": \"demo-core-v1.1.0\"}]', 'any': 'true', 'last_packages': '[{\"package\": \"demo-app\", \"version\": \"1.0.0\", \"tag\": \"demo-app-v1.0.0\"}]', 'any_last': 'true'}, 'stderr': 'WARN `--no-project` was provided, but no project was found\\n'}\n"
+    },
+    {
+      "name": "docgen-''-'\\n'",
+      "prefix": "''",
+      "newline": "'\\n'",
+      "source": "---\ntitle: \"Caf\u00e9 metadata\"\ndescription: SEO description\nimage: /social.png\n---\n# Visible heading\n\nBody with --- inline.\n\n```yaml\ntitle: Keep code content\n```",
+      "parsed": "Document(frontmatter=FrontMatter(components=(), only_low_level=False, title='Caf\u00e9 metadata', component_previews=(), description='SEO description', image='/social.png', metadata={'title': 'Caf\u00e9 metadata', 'description': 'SEO description', 'image': '/social.png'}), blocks=(HeadingBlock(level=1, children=(TextSpan(text='Visible heading'),)), TextBlock(children=(TextSpan(text='Body with --- inline.'),)), CodeBlock(language='yaml', flags=(), content='title: Keep code content')))",
+      "pass": true
+    },
+    {
+      "name": "docgen-'\\ufeff'-'\\n'",
+      "prefix": "'\\ufeff'",
+      "newline": "'\\n'",
+      "source": "\ufeff---\ntitle: \"Caf\u00e9 metadata\"\ndescription: SEO description\nimage: /social.png\n---\n# Visible heading\n\nBody with --- inline.\n\n```yaml\ntitle: Keep code content\n```",
+      "parsed": "Document(frontmatter=FrontMatter(components=(), only_low_level=False, title='Caf\u00e9 metadata', component_previews=(), description='SEO description', image='/social.png', metadata={'title': 'Caf\u00e9 metadata', 'description': 'SEO description', 'image': '/social.png'}), blocks=(HeadingBlock(level=1, children=(TextSpan(text='Visible heading'),)), TextBlock(children=(TextSpan(text='Body with --- inline.'),)), CodeBlock(language='yaml', flags=(), content='title: Keep code content')))",
+      "pass": true
+    },
+    {
+      "name": "docgen-' \\n\\t'-'\\r\\n'",
+      "prefix": "' \\n\\t'",
+      "newline": "'\\r\\n'",
+      "source": " \n\t---\r\ntitle: \"Caf\u00e9 metadata\"\r\ndescription: SEO description\r\nimage: /social.png\r\n---\r\n# Visible heading\r\n\r\nBody with --- inline.\r\n\r\n```yaml\r\ntitle: Keep code content\r\n```",
+      "parsed": "Document(frontmatter=FrontMatter(components=(), only_low_level=False, title='Caf\u00e9 metadata', component_previews=(), description='SEO description', image='/social.png', metadata={'title': 'Caf\u00e9 metadata', 'description': 'SEO description', 'image': '/social.png'}), blocks=(HeadingBlock(level=1, children=(TextSpan(text='Visible heading'),)), TextBlock(children=(TextSpan(text='Body with --- inline.'),)), CodeBlock(language='yaml', flags=(), content='title: Keep code content\\r')))",
+      "pass": true
+    },
+    {
+      "name": "docgen-'\\ufeff \\r\\n'-'\\r\\n'",
+      "prefix": "'\\ufeff \\r\\n'",
+      "newline": "'\\r\\n'",
+      "source": "\ufeff \r\n---\r\ntitle: \"Caf\u00e9 metadata\"\r\ndescription: SEO description\r\nimage: /social.png\r\n---\r\n# Visible heading\r\n\r\nBody with --- inline.\r\n\r\n```yaml\r\ntitle: Keep code content\r\n```",
+      "parsed": "Document(frontmatter=FrontMatter(components=(), only_low_level=False, title='Caf\u00e9 metadata', component_previews=(), description='SEO description', image='/social.png', metadata={'title': 'Caf\u00e9 metadata', 'description': 'SEO description', 'image': '/social.png'}), blocks=(HeadingBlock(level=1, children=(TextSpan(text='Visible heading'),)), TextBlock(children=(TextSpan(text='Body with --- inline.'),)), CodeBlock(language='yaml', flags=(), content='title: Keep code content\\r')))",
+      "pass": true
+    },
+    {
+      "name": "docgen-'\\ufeff\\t \\r\\n\\r\\n'-'\\r\\n'",
+      "prefix": "'\\ufeff\\t \\r\\n\\r\\n'",
+      "newline": "'\\r\\n'",
+      "source": "\ufeff\t \r\n\r\n---\r\ntitle: \"Caf\u00e9 metadata\"\r\ndescription: SEO description\r\nimage: /social.png\r\n---\r\n# Visible heading\r\n\r\nBody with --- inline.\r\n\r\n```yaml\r\ntitle: Keep code content\r\n```",
+      "parsed": "Document(frontmatter=FrontMatter(components=(), only_low_level=False, title='Caf\u00e9 metadata', component_previews=(), description='SEO description', image='/social.png', metadata={'title': 'Caf\u00e9 metadata', 'description': 'SEO description', 'image': '/social.png'}), blocks=(HeadingBlock(level=1, children=(TextSpan(text='Visible heading'),)), TextBlock(children=(TextSpan(text='Body with --- inline.'),)), CodeBlock(language='yaml', flags=(), content='title: Keep code content\\r')))",
+      "pass": true
+    },
+    {
+      "name": "docgen-body-not-frontmatter",
+      "pass": false,
+      "error": "AttributeError(\"'NoneType' object has no attribute 'title'\")",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_docgen.py\", line 77, in record\n    row.update(function())\n               ^^^^^^^^^^\n  File \"/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_docgen.py\", line 205, in body_control\n    assert document.frontmatter.title != \"Body field\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'title'\n"
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-19",
+        "init"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "[tool.reflex-release] already configured; leaving it untouched.\nadded [tool.towncrier] to pyproject.toml\nnews directory ready: packages/sample-00/news\nnews directory ready: packages/sample-01/news\nnews directory ready: packages/sample-02/news\nnews directory ready: packages/sample-03/news\nnews directory ready: packages/sample-04/news\nnews directory ready: packages/sample-05/news\nnews directory ready: packages/sample-06/news\nnews directory ready: packages/sample-07/news\nnews directory ready: packages/sample-08/news\nnews directory ready: packages/sample-09/news\nnews directory ready: packages/sample-10/news\nnews directory ready: packages/sample-11/news\nnews directory ready: packages/sample-12/news\nnews directory ready: packages/sample-13/news\nnews directory ready: packages/sample-14/news\nnews directory ready: packages/sample-15/news\nnews directory ready: packages/sample-16/news\nnews directory ready: packages/sample-17/news\nnews directory ready: packages/sample-18/news\nwrote .github/workflows/changelog.yml\nwrote .github/workflows/dispatch_release.yml\nwrote .github/workflows/release_from_changelog.yml\nwrote .github/workflows/publish.yml\n\nWarning: the workflows invoke this tool unpinned (`uvx reflex-release`), so the release path resolves whatever version is newest at run time. Pin it: set cli-command to `uvx reflex-release@<version>` and re-run sync.\n\nRemaining setup (GitHub settings, once per repository):\n  1. Create the `pypi` environment and add required reviewers. Every\n     upload waits for one of them to approve it, so that list is who\n     can release.\n  2. Configure PyPI trusted publishing for each distribution:\n     workflow `publish.yml`, environment `pypi`. Naming the\n     environment is what makes the approval gate load-bearing: without\n     it, any job in publish.yml can mint an upload token.\n  3. Enable 'Allow GitHub Actions to create and approve pull requests'\n     in Settings -> Actions -> General.\n  4. Create the `skip-changelog` and `changelog-version-edit` labels.\n  5. Protect `main` and restrict who may push\n     `r/pre-**`, `r/hotfix/**` and `release/**`\n     to maintainers plus the github-actions[bot] app.\n  6. Give every package a version derived from git tags (see the README\n     section 'Tag-derived versions').\n\nRead the README's 'Security model' section before the first release:\nbranch rules are only enforced if a ruleset restricts who may create\nthe publishing branches.\n\nThen cut a release from the Actions tab: Dispatch release.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-19",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "All 4 scaffolded workflows are up to date.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-19",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 1,
+      "stdout": "::group::.github/workflows/dispatch_release.yml is out of date\n--- a/.github/workflows/dispatch_release.yml\n+++ b/.github/workflows/dispatch_release.yml\n@@ -231,5 +231,3 @@\n           REPINNED_JSON: ${{ steps.materialize.outputs.repinned }}\n         shell: bash\n         run: uvx reflex-release open-release-pr\n-\n-# deliberate fixture drift\n\n::endgroup::\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nError: 1 scaffolded workflow(s) are out of date: dispatch_release.yml. Run `uvx reflex-release sync` and commit the result.\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-19",
+        "sync"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "updated .github/workflows/dispatch_release.yml\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-19",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "All 4 scaffolded workflows are up to date.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-20",
+        "init"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "[tool.reflex-release] already configured; leaving it untouched.\nadded [tool.towncrier] to pyproject.toml\nnews directory ready: packages/sample-00/news\nnews directory ready: packages/sample-01/news\nnews directory ready: packages/sample-02/news\nnews directory ready: packages/sample-03/news\nnews directory ready: packages/sample-04/news\nnews directory ready: packages/sample-05/news\nnews directory ready: packages/sample-06/news\nnews directory ready: packages/sample-07/news\nnews directory ready: packages/sample-08/news\nnews directory ready: packages/sample-09/news\nnews directory ready: packages/sample-10/news\nnews directory ready: packages/sample-11/news\nnews directory ready: packages/sample-12/news\nnews directory ready: packages/sample-13/news\nnews directory ready: packages/sample-14/news\nnews directory ready: packages/sample-15/news\nnews directory ready: packages/sample-16/news\nnews directory ready: packages/sample-17/news\nnews directory ready: packages/sample-18/news\nnews directory ready: packages/sample-19/news\nwrote .github/workflows/changelog.yml\nwrote .github/workflows/dispatch_release.yml\nwrote .github/workflows/release_from_changelog.yml\nwrote .github/workflows/publish.yml\n\nWarning: the workflows invoke this tool unpinned (`uvx reflex-release`), so the release path resolves whatever version is newest at run time. Pin it: set cli-command to `uvx reflex-release@<version>` and re-run sync.\n\nRemaining setup (GitHub settings, once per repository):\n  1. Create the `pypi` environment and add required reviewers. Every\n     upload waits for one of them to approve it, so that list is who\n     can release.\n  2. Configure PyPI trusted publishing for each distribution:\n     workflow `publish.yml`, environment `pypi`. Naming the\n     environment is what makes the approval gate load-bearing: without\n     it, any job in publish.yml can mint an upload token.\n  3. Enable 'Allow GitHub Actions to create and approve pull requests'\n     in Settings -> Actions -> General.\n  4. Create the `skip-changelog` and `changelog-version-edit` labels.\n  5. Protect `main` and restrict who may push\n     `r/pre-**`, `r/hotfix/**` and `release/**`\n     to maintainers plus the github-actions[bot] app.\n  6. Give every package a version derived from git tags (see the README\n     section 'Tag-derived versions').\n\nRead the README's 'Security model' section before the first release:\nbranch rules are only enforced if a ruleset restricts who may create\nthe publishing branches.\n\nThen cut a release from the Actions tab: Dispatch release.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-20",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "All 4 scaffolded workflows are up to date.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-20",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 1,
+      "stdout": "::group::.github/workflows/dispatch_release.yml is out of date\n--- a/.github/workflows/dispatch_release.yml\n+++ b/.github/workflows/dispatch_release.yml\n@@ -236,5 +236,3 @@\n           REPINNED_JSON: ${{ steps.materialize.outputs.repinned }}\n         shell: bash\n         run: uvx reflex-release open-release-pr\n-\n-# deliberate fixture drift\n\n::endgroup::\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nError: 1 scaffolded workflow(s) are out of date: dispatch_release.yml. Run `uvx reflex-release sync` and commit the result.\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-20",
+        "sync"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "updated .github/workflows/dispatch_release.yml\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-20",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "All 4 scaffolded workflows are up to date.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-24",
+        "init"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "[tool.reflex-release] already configured; leaving it untouched.\nadded [tool.towncrier] to pyproject.toml\nnews directory ready: packages/sample-00/news\nnews directory ready: packages/sample-01/news\nnews directory ready: packages/sample-02/news\nnews directory ready: packages/sample-03/news\nnews directory ready: packages/sample-04/news\nnews directory ready: packages/sample-05/news\nnews directory ready: packages/sample-06/news\nnews directory ready: packages/sample-07/news\nnews directory ready: packages/sample-08/news\nnews directory ready: packages/sample-09/news\nnews directory ready: packages/sample-10/news\nnews directory ready: packages/sample-11/news\nnews directory ready: packages/sample-12/news\nnews directory ready: packages/sample-13/news\nnews directory ready: packages/sample-14/news\nnews directory ready: packages/sample-15/news\nnews directory ready: packages/sample-16/news\nnews directory ready: packages/sample-17/news\nnews directory ready: packages/sample-18/news\nnews directory ready: packages/sample-19/news\nnews directory ready: packages/sample-20/news\nnews directory ready: packages/sample-21/news\nnews directory ready: packages/sample-22/news\nnews directory ready: packages/sample-23/news\nwrote .github/workflows/changelog.yml\nwrote .github/workflows/dispatch_release.yml\nwrote .github/workflows/release_from_changelog.yml\nwrote .github/workflows/publish.yml\n\nWarning: the workflows invoke this tool unpinned (`uvx reflex-release`), so the release path resolves whatever version is newest at run time. Pin it: set cli-command to `uvx reflex-release@<version>` and re-run sync.\n\nRemaining setup (GitHub settings, once per repository):\n  1. Create the `pypi` environment and add required reviewers. Every\n     upload waits for one of them to approve it, so that list is who\n     can release.\n  2. Configure PyPI trusted publishing for each distribution:\n     workflow `publish.yml`, environment `pypi`. Naming the\n     environment is what makes the approval gate load-bearing: without\n     it, any job in publish.yml can mint an upload token.\n  3. Enable 'Allow GitHub Actions to create and approve pull requests'\n     in Settings -> Actions -> General.\n  4. Create the `skip-changelog` and `changelog-version-edit` labels.\n  5. Protect `main` and restrict who may push\n     `r/pre-**`, `r/hotfix/**` and `release/**`\n     to maintainers plus the github-actions[bot] app.\n  6. Give every package a version derived from git tags (see the README\n     section 'Tag-derived versions').\n\nRead the README's 'Security model' section before the first release:\nbranch rules are only enforced if a ruleset restricts who may create\nthe publishing branches.\n\nThen cut a release from the Actions tab: Dispatch release.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-24",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "All 4 scaffolded workflows are up to date.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-24",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 1,
+      "stdout": "::group::.github/workflows/dispatch_release.yml is out of date\n--- a/.github/workflows/dispatch_release.yml\n+++ b/.github/workflows/dispatch_release.yml\n@@ -256,5 +256,3 @@\n           REPINNED_JSON: ${{ steps.materialize.outputs.repinned }}\n         shell: bash\n         run: uvx reflex-release open-release-pr\n-\n-# deliberate fixture drift\n\n::endgroup::\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nError: 1 scaffolded workflow(s) are out of date: dispatch_release.yml. Run `uvx reflex-release sync` and commit the result.\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-24",
+        "sync"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "updated .github/workflows/dispatch_release.yml\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-24",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "All 4 scaffolded workflows are up to date.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-25",
+        "init"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "[tool.reflex-release] already configured; leaving it untouched.\nadded [tool.towncrier] to pyproject.toml\nnews directory ready: packages/sample-00/news\nnews directory ready: packages/sample-01/news\nnews directory ready: packages/sample-02/news\nnews directory ready: packages/sample-03/news\nnews directory ready: packages/sample-04/news\nnews directory ready: packages/sample-05/news\nnews directory ready: packages/sample-06/news\nnews directory ready: packages/sample-07/news\nnews directory ready: packages/sample-08/news\nnews directory ready: packages/sample-09/news\nnews directory ready: packages/sample-10/news\nnews directory ready: packages/sample-11/news\nnews directory ready: packages/sample-12/news\nnews directory ready: packages/sample-13/news\nnews directory ready: packages/sample-14/news\nnews directory ready: packages/sample-15/news\nnews directory ready: packages/sample-16/news\nnews directory ready: packages/sample-17/news\nnews directory ready: packages/sample-18/news\nnews directory ready: packages/sample-19/news\nnews directory ready: packages/sample-20/news\nnews directory ready: packages/sample-21/news\nnews directory ready: packages/sample-22/news\nnews directory ready: packages/sample-23/news\nnews directory ready: packages/sample-24/news\nwrote .github/workflows/changelog.yml\nwrote .github/workflows/dispatch_release.yml\nwrote .github/workflows/release_from_changelog.yml\nwrote .github/workflows/publish.yml\n\nWarning: the workflows invoke this tool unpinned (`uvx reflex-release`), so the release path resolves whatever version is newest at run time. Pin it: set cli-command to `uvx reflex-release@<version>` and re-run sync.\n\nRemaining setup (GitHub settings, once per repository):\n  1. Create the `pypi` environment and add required reviewers. Every\n     upload waits for one of them to approve it, so that list is who\n     can release.\n  2. Configure PyPI trusted publishing for each distribution:\n     workflow `publish.yml`, environment `pypi`. Naming the\n     environment is what makes the approval gate load-bearing: without\n     it, any job in publish.yml can mint an upload token.\n  3. Enable 'Allow GitHub Actions to create and approve pull requests'\n     in Settings -> Actions -> General.\n  4. Create the `skip-changelog` and `changelog-version-edit` labels.\n  5. Protect `main` and restrict who may push\n     `r/pre-**`, `r/hotfix/**` and `release/**`\n     to maintainers plus the github-actions[bot] app.\n  6. Give every package a version derived from git tags (see the README\n     section 'Tag-derived versions').\n\nRead the README's 'Security model' section before the first release:\nbranch rules are only enforced if a ruleset restricts who may create\nthe publishing branches.\n\nThen cut a release from the Actions tab: Dispatch release.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-25",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "All 4 scaffolded workflows are up to date.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-25",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 1,
+      "stdout": "::group::.github/workflows/dispatch_release.yml is out of date\n--- a/.github/workflows/dispatch_release.yml\n+++ b/.github/workflows/dispatch_release.yml\n@@ -142,5 +142,3 @@\n           REPINNED_JSON: ${{ steps.materialize.outputs.repinned }}\n         shell: bash\n         run: uvx reflex-release open-release-pr\n-\n-# deliberate fixture drift\n\n::endgroup::\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nError: 1 scaffolded workflow(s) are out of date: dispatch_release.yml. Run `uvx reflex-release sync` and commit the result.\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-25",
+        "sync"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "updated .github/workflows/dispatch_release.yml\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/packages-25",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "All 4 scaffolded workflows are up to date.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep",
+        "init"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "[tool.reflex-release] already configured; leaving it untouched.\nadded [tool.towncrier] to pyproject.toml\nnews directory ready: packages/demo-app/news\nnews directory ready: packages/demo-core/news\nwrote .github/workflows/changelog.yml\nwrote .github/workflows/dispatch_release.yml\nwrote .github/workflows/release_from_changelog.yml\nwrote .github/workflows/publish.yml\n\nWarning: the workflows invoke this tool unpinned (`uvx reflex-release`), so the release path resolves whatever version is newest at run time. Pin it: set cli-command to `uvx reflex-release@<version>` and re-run sync.\n\nRemaining setup (GitHub settings, once per repository):\n  1. Create the `pypi` environment and add required reviewers. Every\n     upload waits for one of them to approve it, so that list is who\n     can release.\n  2. Configure PyPI trusted publishing for each distribution:\n     workflow `publish.yml`, environment `pypi`. Naming the\n     environment is what makes the approval gate load-bearing: without\n     it, any job in publish.yml can mint an upload token.\n  3. Enable 'Allow GitHub Actions to create and approve pull requests'\n     in Settings -> Actions -> General.\n  4. Create the `skip-changelog` and `changelog-version-edit` labels.\n  5. Protect `main` and restrict who may push\n     `r/pre-**`, `r/hotfix/**` and `release/**`\n     to maintainers plus the github-actions[bot] app.\n  6. Give every package a version derived from git tags (see the README\n     section 'Tag-derived versions').\n\nRead the README's 'Security model' section before the first release:\nbranch rules are only enforced if a ruleset restricts who may create\nthe publishing branches.\n\nThen cut a release from the Actions tab: Dispatch release.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep",
+        "sync",
+        "--check"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "All 4 scaffolded workflows are up to date.\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "git",
+        "init",
+        "-b",
+        "main"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep",
+      "returncode": 0,
+      "stdout": "Initialized empty Git repository in /private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep/.git/\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "user.name=Tooling Fixture",
+        "-c",
+        "user.email=fixture@example.test",
+        "commit",
+        "--allow-empty",
+        "-m",
+        "Local fixture only"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep",
+      "returncode": 0,
+      "stdout": "[main (root-commit) 0fd1f92] Local fixture only\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "git",
+        "tag",
+        "demo-core-v1.0.0"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep",
+        "pin-lockstep",
+        "--package",
+        "demo-app",
+        "--version",
+        "1.0.0"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nPinned \"demo-core == 1.0.0\" in /private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep/packages/demo-app/pyproject.toml\n"
+    },
+    {
+      "command": [
+        "/Users/masen/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/tooling-cli-a2/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/tooling_a2/cli/release_entry.py",
+        "--root",
+        "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1/lockstep",
+        "detect",
+        "--ref-name",
+        "main"
+      ],
+      "cwd": "/private/tmp/reflex-prerelease-macos-pass2/tooling-cli/release-docgen-a2-run1",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n"
+    }
+  ]
+}

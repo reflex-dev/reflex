@@ -1,0 +1,212 @@
+[
+  {
+    "name": "history-full",
+    "scenario": "full",
+    "args": [
+      "cloud",
+      "apps",
+      "history",
+      "11111111-1111-4111-8111-111111111111",
+      "--json",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "history-nullable",
+    "scenario": "nullable",
+    "args": [
+      "cloud",
+      "apps",
+      "history",
+      "11111111-1111-4111-8111-111111111111",
+      "--json",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "inspect-full",
+    "scenario": "full",
+    "args": [
+      "cloud",
+      "apps",
+      "inspect",
+      "11111111-1111-4111-8111-111111111111",
+      "--json",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "inspect-nullable",
+    "scenario": "nullable",
+    "args": [
+      "cloud",
+      "apps",
+      "inspect",
+      "11111111-1111-4111-8111-111111111111",
+      "--json",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "history-empty",
+    "scenario": "empty",
+    "args": [
+      "cloud",
+      "apps",
+      "history",
+      "11111111-1111-4111-8111-111111111111",
+      "--json",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "token-full",
+    "scenario": "full",
+    "args": [
+      "cloud",
+      "create-token",
+      "requested-token",
+      "--duration",
+      "90",
+      "--json",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "token-nullable",
+    "scenario": "nullable",
+    "args": [
+      "cloud",
+      "create-token",
+      "requested-token",
+      "--json",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "token-invalid-duration",
+    "scenario": "full",
+    "args": [
+      "cloud",
+      "create-token",
+      "requested-token",
+      "--duration",
+      "0",
+      "--json",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "secrets-json",
+    "scenario": "full",
+    "args": [
+      "cloud",
+      "secrets",
+      "update",
+      "11111111-1111-4111-8111-111111111111",
+      "--env",
+      "ALPHA=sentinel-only-for-fixture",
+      "--env",
+      "EQUALS=fixture=a=b",
+      "--env",
+      "EMPTY=",
+      "--reboot",
+      "--json",
+      "--loglevel",
+      "debug",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "secrets-envfile",
+    "scenario": "full",
+    "args": [
+      "cloud",
+      "secrets",
+      "update",
+      "11111111-1111-4111-8111-111111111111",
+      "--envfile",
+      "/private/tmp/reflex-hosting-extended-3vic_q1q/.env",
+      "--env",
+      "IGNORED=ignored-cli-value",
+      "--no-reboot",
+      "--json",
+      "--loglevel",
+      "debug",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "secrets-human",
+    "scenario": "full",
+    "args": [
+      "cloud",
+      "secrets",
+      "update",
+      "11111111-1111-4111-8111-111111111111",
+      "--env",
+      "ALPHA=sentinel-only-for-fixture",
+      "--env",
+      "EMPTY=",
+      "--no-reboot",
+      "--loglevel",
+      "debug",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "secrets-refused",
+    "scenario": "refused",
+    "args": [
+      "cloud",
+      "secrets",
+      "update",
+      "11111111-1111-4111-8111-111111111111",
+      "--env",
+      "ALPHA=sentinel-only-for-fixture",
+      "--json",
+      "--loglevel",
+      "debug",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "secrets-empty-list",
+    "scenario": "empty",
+    "args": [
+      "cloud",
+      "secrets",
+      "list",
+      "11111111-1111-4111-8111-111111111111",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "permissions-full",
+    "scenario": "full",
+    "args": [
+      "cloud",
+      "project",
+      "role-permissions",
+      "33333333-3333-4333-8333-333333333333",
+      "--project-id",
+      "22222222-2222-4222-8222-222222222222",
+      "--json",
+      "--no-interactive"
+    ]
+  },
+  {
+    "name": "permissions-nullable",
+    "scenario": "nullable",
+    "args": [
+      "cloud",
+      "project",
+      "role-permissions",
+      "33333333-3333-4333-8333-333333333333",
+      "--project-id",
+      "22222222-2222-4222-8222-222222222222",
+      "--json",
+      "--no-interactive"
+    ]
+  }
+]
