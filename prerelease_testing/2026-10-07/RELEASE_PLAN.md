@@ -146,7 +146,7 @@ Fix-before-release items, assigned to @masenf, each with a fix branch in progres
 |---|---|---|
 | N-025 | [reflex#7468](https://github.com/reflex-dev/reflex/issues/7468) | `claude/n025-reflex-before-render` — PR #7492 **closed by the maintainer** (16:40 UTC): fixed on the enterprise side instead, [reflex-enterprise#273](https://github.com/reflex-dev/reflex-enterprise/pull/273), because moving `window.__reflex` out of the useEffect would negate that change's benefits |
 | N-032 | [reflex#7469](https://github.com/reflex-dev/reflex/issues/7469) | `claude/n032-boot-reconcile` — PR #7493 **merged** 2026-10-07 17:57 UTC |
-| N-004 | [reflex#7470](https://github.com/reflex-dev/reflex/issues/7470) (closed, not planned) | `claude/n004-pickle-compat` — PR #7494 **re-scoped by the maintainer** to a breaking-change declaration (fragment + Self Hosting note) plus dropping the previous-release pickle entries; green and approved at 2f241fa4e, waiting on merge |
+| N-004 | [reflex#7470](https://github.com/reflex-dev/reflex/issues/7470) (closed, not planned) | `claude/n004-pickle-compat` — PR #7494 **re-scoped by the maintainer** to a breaking-change declaration (fragment + Self Hosting note) plus dropping the previous-release pickle entries; **merged** 2026-10-07 19:07 UTC |
 | N-005 | [reflex#7471](https://github.com/reflex-dev/reflex/issues/7471) | `claude/class-assignment` — PR #7495 green at 1dcb035a6 (19:07 UTC), no open threads, waiting on approval + merge |
 | N-039 | [reflex#7472](https://github.com/reflex-dev/reflex/issues/7472) | `claude/class-assignment` — PR #7495, as above |
 | N-008 | [reflex#7473](https://github.com/reflex-dev/reflex/issues/7473) | `claude/class-assignment` — PR #7495, as above |
