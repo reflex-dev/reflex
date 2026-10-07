@@ -1,6 +1,6 @@
 """Tests for reflex_base.client_state."""
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from reflex_base.client_state import ClientStateVar, _recovered_event_arg, client_state
@@ -154,9 +154,21 @@ def test_set_bound_value() -> None:
     assert str(cs.set(42)) == "(() => (setCounter(42)))"
 
 
-def test_set_carries_hook_import_and_app_wrap() -> None:
-    """The setter must drag in its own hook, import and provider."""
-    cs = client_state(0, name="counter")
+@pytest.mark.parametrize("name", ["counter", None])
+def test_set_carries_hook_import_and_app_wrap(name: str | None) -> None:
+    """The setter must drag in its own hook, import and provider.
+
+    A component that only sets the value (a sibling of the one rendering it)
+    compiles into its own memo body, so the setter has to bring the hook that
+    binds the slot. Unlike the ``useState`` implementation this replaced, that
+    is right for a scoped var too: the slot lives in the shared scope store,
+    not in a private per-component copy, so a setter-only writer is seen by
+    every reader in the scope.
+
+    Args:
+        name: A name makes the var global; ``None`` scopes it.
+    """
+    cs = client_state(0, name=name)
     for setter in (cs.set, cs.set(42)):
         var_data = setter._get_all_var_data()
         assert var_data is not None
@@ -524,6 +536,17 @@ def test_state_var_default_brings_its_state_wiring() -> None:
     hooks = _hooks_ending_with_client_state(cs)
     assert any("useContext(StateContexts" in hook for hook in hooks[:-1])
 
+    # Every accessor compiled into its own memo body needs the state context
+    # too, or a setter-only sibling emits ``useClientState(<state>.seed)`` with
+    # nothing declaring ``<state>``.
+    default_var_data = cast("Var", ClientStateDefaultState.seed)._get_all_var_data()
+    assert default_var_data is not None
+    for var in (cs, cs.value, cs.set, cs.set("changed")):
+        var_data = var._get_all_var_data()
+        assert var_data is not None
+        assert var_data.state == default_var_data.state
+        assert set(default_var_data.hooks) <= set(var_data.hooks)
+
 
 def test_retrieve_with_callback_serializes_the_handler() -> None:
     """``retrieve(callback)`` embeds the queued-events callback in the payload."""
@@ -644,3 +667,22 @@ def test_prefix_must_be_an_identifier(bad: str) -> None:
     """The prefix is emitted as part of a JS identifier, so it has to be one."""
     with pytest.raises(ValueError, match="prefix"):
         client_state(0, prefix=bad)
+
+
+def test_client_state_inside_a_memo_body_reaches_the_app_wraps() -> None:
+    """A var used only inside an ``@rx.memo`` body still mounts its provider.
+
+    The body compiles into its own module, so nothing in the page tree ever
+    sees the ``useClientState`` hook; the wrapper has to surface the provider
+    its ``VarData`` requests.
+    """
+
+    @rx.memo
+    def toggle() -> rx.Component:
+        local = client_state(False)
+        return rx.el.button("toggle", on_click=local.set(True))
+
+    assert (
+        CLIENT_STATE_APP_WRAP_PRIORITY,
+        "ClientStateProvider",
+    ) in toggle()._get_app_wrap_components()

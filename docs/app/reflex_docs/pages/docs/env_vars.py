@@ -6,7 +6,7 @@ import inspect
 from typing import Any, List, Optional, Tuple
 
 import reflex as rx
-from reflex.config import EnvironmentVariables
+from reflex_base.environment import EnvironmentVariables
 from reflex_docgen import FieldDocumentation
 
 from reflex_docs.docgen_pipeline import render_markdown
@@ -83,7 +83,7 @@ def env_vars_page():
     return toc, rx.el.div(
         h1_comp(text="Environment Variables"),
         rx.el.p(
-            "reflex.config.EnvironmentVariables",
+            f"{EnvironmentVariables.__module__}.{EnvironmentVariables.__qualname__}",
             class_name="mb-5 font-mono text-sm text-muted-foreground",
         ),
         render_markdown(

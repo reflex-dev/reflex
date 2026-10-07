@@ -11,8 +11,6 @@ on:
       - "**/*.md"
   pull_request:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
 
 permissions:
   contents: read
@@ -22,13 +20,36 @@ defaults:
     shell: bash
 
 jobs:
+  # This filter cannot live on the pull_request trigger: a workflow that a path
+  # filter skips never reports its checks at all, so a branch rule requiring
+  # them blocks the merge forever. Filtered out here, the jobs below skip
+  # instead, and a skipped job reports as a pass.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/changed_paths
+        id: filter
+        with:
+          paths-ignore: |
+            **/*.md
+
   unit-tests:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
     runs-on: ${{ matrix.os }}
 
     # Service containers to run with `runner-job`
@@ -45,6 +66,22 @@ jobs:
         ports:
           # Maps port 6379 on service container to the host
           - 6379:6379
+      # reflex-workflow is built on Postgres and most of its suite needs a real
+      # one; without this those tests skip, and the examples are not even
+      # collected. Sixteen because that is the oldest the engine is reviewed
+      # against, so a newer server's leniency cannot hide anything.
+      postgres:
+        image: ${{ matrix.os == 'ubuntu-latest' && 'postgres:16' || '' }}
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: reflex_workflow
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -79,6 +116,15 @@ jobs:
           export REFLEX_REDIS_URL=redis://localhost:6379
           export REFLEX_OPLOCK_ENABLED=true
           uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+      - name: Run workflow unit tests w/ postgres
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          export PYTHONUNBUFFERED=1
+          export REFLEX_TEST_POSTGRES=postgresql://postgres:postgres@localhost:5432/reflex_workflow
+          # Appended: this runs one package, and every step above replaces the
+          # coverage data rather than adding to it, so the report that follows
+          # would otherwise be of this package alone.
+          uv run pytest tests/units/reflex_workflow --cov --cov-append --no-cov-on-fail --cov-report=
       - name: Generate coverage report
         run: uv run coverage html
 
@@ -86,6 +132,8 @@ jobs:
     # Unit tests for the javascript Reflex ships in
     # `reflex-base/.templates/web`, which the python suites can only reach
     # through compiled output.
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -108,7 +156,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -131,3 +179,18 @@ jobs:
         run: |
           export PYTHONUNBUFFERED=1
           uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+
+  # The one status check the branch rules require from this workflow. Naming the
+  # jobs above directly does not survive: check names follow the matrix and the
+  # display names, and a job that a filter skips must not block the merge.
+  unit-tests-gate:
+    needs: [changes, unit-tests, js-unit-tests, unit-tests-macos]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci_gate
+        with:
+          needs: ${{ toJSON(needs) }}

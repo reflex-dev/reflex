@@ -1,7 +1,10 @@
 """Tests for agent-facing static file generation."""
 
+import re
 from pathlib import Path
 from types import SimpleNamespace
+
+from reflex_base.environment import EnvironmentVariables
 
 from agent_files._plugin import (
     MarkdownFileEntry,
@@ -251,7 +254,11 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
         "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
         "# Environment Variables\n\n"
     )
-    assert "`reflex.config.EnvironmentVariables`" in env_vars
+    assert (
+        f"`{EnvironmentVariables.__module__}.{EnvironmentVariables.__qualname__}`"
+        in env_vars
+    )
+    assert "`reflex.config.EnvironmentVariables`" not in env_vars
 
     # Dynamic API-reference pages must land in the llms.txt index.
     _, llms_txt = generate_llms_txt(dynamic_api_reference_index_entries(raw_files))
@@ -406,3 +413,31 @@ def test_txt_assets_do_not_duplicate_frontend_mount(monkeypatch):
         Path("public/llms.txt"): "index",
         Path("public/llms-full.txt"): "full",
     }
+
+
+def test_dynamic_api_reference_files_match_the_generated_pages(monkeypatch):
+    """The markdown assets mirror the reference pages the docs site builds."""
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
+
+    from reflex_docs.pages.docs.apiref import pages
+
+    files = dict(generate_dynamic_api_reference_files())
+    assert {Path(page.path.strip("/") + ".md") for page in pages} == set(files)
+
+
+def test_llms_txt_orders_api_reference_like_the_sidebar(monkeypatch):
+    """The llms.txt API reference index follows apiref.section_order."""
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
+
+    from reflex_docs.pages.docs.apiref import section_order
+
+    _, llms_txt = generate_llms_txt([
+        MarkdownIndexEntry(
+            url_path=Path(f"api-reference/{slug}.md"),
+            title=slug,
+            section="API Reference",
+        )
+        for slug in reversed(section_order)
+    ])
+
+    assert re.findall(r"api-reference/([\w-]+)\.md\)", llms_txt) == list(section_order)

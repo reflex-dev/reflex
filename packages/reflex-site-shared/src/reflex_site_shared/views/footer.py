@@ -304,17 +304,16 @@ def footer_index(
                             ],
                         ),
                         footer_link_flex(
-                            "Migration",
+                            "Comparison",
                             [
-                                footer_link("From No-Code", "/migration/no-code/"),
-                                footer_link("From Low-Code", "/migration/low-code/"),
+                                footer_link("From no/low-code", "/compare/no-code/"),
                                 footer_link(
-                                    "From Other Frameworks",
-                                    "/migration/other-frameworks/",
+                                    "Frameworks",
+                                    "/compare/frameworks/",
                                 ),
                                 footer_link(
-                                    "From Other AI Tools",
-                                    "/migration/other-ai-tools/",
+                                    "From other AI tools",
+                                    "/compare/other-ai-tools/",
                                 ),
                             ],
                         ),

@@ -6,10 +6,27 @@ import reflex as rx
 
 
 def test_experimental_import_is_the_promoted_class() -> None:
-    """``reflex.experimental.client_state`` re-exports the reflex-base class."""
+    """``reflex.experimental.client_state`` builds the reflex-base class."""
     from reflex.experimental.client_state import ClientStateVar
 
-    assert ClientStateVar is rx.ClientStateVar
+    assert issubclass(ClientStateVar, rx.ClientStateVar)
+    assert isinstance(ClientStateVar.create("legacy_cls", default=0), rx.ClientStateVar)
+
+
+def test_legacy_create_keeps_the_original_argument_order(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """``ClientStateVar.create(var_name, default=...)`` still works and warns."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    cs = ClientStateVar.create("sibling", default="a")
+    assert cs._state_name == "sibling"
+    assert cs._is_global
+    assert "ClientStateVar.create" in caplog.text
+
+    scoped = ClientStateVar.create("scoped", default="a", global_ref=False)
+    assert scoped._state_name != "scoped"
+    assert not scoped._is_global
 
 
 def test_experimental_namespace_factory_still_works() -> None:

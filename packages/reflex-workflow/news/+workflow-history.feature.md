@@ -1,0 +1,1 @@
+Map `AttemptLog` onto your base and the engine records what each step attempt did — the step, the attempt number, the outcome, the error and how long it took — readable with `await run.history()`. Each record is written in the same transaction as the step it describes.

@@ -24,7 +24,6 @@ from reflex_base.components.memo import (
     _analyze_params,
     _LazyBody,
     _MemoCallBinding,
-    _strip_optional,
     component_hash,
     memo_tag,
 )
@@ -40,6 +39,7 @@ from reflex_base.vars.base import Var
 from reflex_base.vars.function import FunctionStringVar, FunctionVar
 from reflex_base.vars.object import ObjectVar
 from reflex_components_core.base.bare import Bare
+from reflex_components_core.core.upload import UploadFilesProvider
 from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
@@ -1675,41 +1675,6 @@ def test_component_memo_rejects_event_handler_with_default():
             return rx.button("hi")
 
 
-def test_strip_optional_unwraps_none_union():
-    """`_strip_optional` collapses a ``X | None`` union to ``X``; any other
-    annotation passes through unchanged.
-    """
-    assert _strip_optional(int | None) is int
-    var = rx.Var[str]
-    assert _strip_optional(var) is var
-
-
-def test_analyze_params_unwraps_optional_event_handler_default(
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """Regression: on Python 3.10 ``get_type_hints`` rewrites ``event: EH = None``
-    to ``Optional[EH]``. With that shim active, ``_analyze_params`` must still see
-    the ``EventHandler`` underneath and reject the default (it silently passed on
-    3.10 before the fix, since ``Optional[...]`` is not recognized as an EH).
-
-    Force the shim on so this exercises the path on every Python version, not
-    only the <=3.10 interpreters that actually wrap the annotation.
-    """
-    monkeypatch.setattr(
-        "reflex_base.components.memo._GET_TYPE_HINTS_WRAPS_NONE_DEFAULT", True
-    )
-
-    def fn(event=None) -> rx.Component:
-        return rx.button("hi")
-
-    # Python <=3.10 wraps a ``= None`` param into a union with ``None`` (its
-    # ``get_type_hints`` adds ``Optional``); the ``EventHandler`` underneath
-    # must still be recognized so the default is rejected.
-    wrapped_hints = {"event": EventHandler | None}
-    with pytest.raises(TypeError, match="default"):
-        _analyze_params(fn, for_component=True, hints=wrapped_hints)
-
-
 def test_component_memo_rejects_event_handler_named_children():
     """A `children` parameter must not be an EventHandler."""
     with pytest.raises(TypeError, match="children"):
@@ -2324,6 +2289,29 @@ def test_memo_tag_separates_identically_rendering_classes():
     assert memo_tag(alpha) != memo_tag(beta)
 
 
+def test_memo_tag_does_not_repeat_memo_component_tag():
+    """A memo component's tag is in its class name, so the memo tag holds it once."""
+
+    @rx.memo
+    def tag_probe(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    component = tag_probe(label="x")
+    assert isinstance(component, MemoComponent)
+    assert component.tag
+
+    assert memo_tag(component).lower().count(component.tag.lower()) == 1
+
+
+def test_memo_tag_keeps_tag_of_class_named_with_tag_suffix():
+    """Only memo component classes drop the tag; other classes keep it."""
+
+    class Card_Button(Component):
+        tag = "Button"
+
+    assert "card_button_button_" in memo_tag(Card_Button.create()).lower()
+
+
 def test_custom_wrapper_named_memo_is_not_treated_as_react_memo():
     """A custom wrapper may share React's name and still have side effects."""
     wrapper = FunctionStringVar.create(
@@ -2338,3 +2326,122 @@ def test_custom_wrapper_named_memo_is_not_treated_as_react_memo():
     files, _ = compiler.compile_memo_components((definition,))
     code = "\n".join(content for _, content in files)
     assert "/*#__PURE__*/" not in code
+
+
+class _ProviderProbe(Component):
+    """A component that requests an app wrap via the class-level hook."""
+
+    library = "provider-probe"
+    tag = "ProviderProbe"
+
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
+        """Request the probe provider at the app root.
+
+        Returns:
+            The app wrap components.
+        """
+        return {(60, "ProbeProvider"): Bare.create("probe-provider")}
+
+
+def test_memo_collects_app_wraps_from_nested_body_children():
+    """A memo body's descendants contribute their app wraps, not just its root.
+
+    The body compiles into its own module, so nothing else in the compile tree
+    ever sees those descendants -- the wrapper has to stand in for them.
+    """
+
+    @rx.memo
+    def nested_provider_memo() -> rx.Component:
+        return rx.box(rx.box(_ProviderProbe.create()))
+
+    assert (60, "ProbeProvider") in nested_provider_memo()._get_app_wrap_components()
+
+
+def test_memo_collects_app_wraps_from_body_root():
+    """A memo body whose root requests an app wrap still contributes it."""
+
+    @rx.memo
+    def root_provider_memo() -> rx.Component:
+        return _ProviderProbe.create()
+
+    assert (60, "ProbeProvider") in root_provider_memo()._get_app_wrap_components()
+
+
+def test_memo_collects_var_declared_app_wraps_from_body():
+    """``VarData.app_wraps`` inside a memo body reach the app root too.
+
+    ``rx.upload`` requests ``UploadFilesProvider`` through the var data on the
+    upload-context hook rather than a class-level hook, so a class-only copy
+    drops it at every depth -- including the body root.
+    """
+
+    @rx.memo
+    def upload_memo() -> rx.Component:
+        return rx.box(rx.upload(rx.text("drop"), id="memo-upload"))
+
+    wraps = upload_memo()._get_app_wrap_components()
+    assert any(
+        isinstance(wrapper, UploadFilesProvider) for wrapper in wraps.values()
+    ), wraps
+
+
+def test_memo_app_wraps_are_distinct_per_wrapper_class():
+    """Two memos must not share one ``_get_app_wrap_components`` function.
+
+    The page collector dedupes by ``type(comp)._get_app_wrap_components``
+    identity, so a single shared function would make only the first memo on a
+    page contribute its wraps.
+    """
+
+    @rx.memo
+    def first_provider_memo() -> rx.Component:
+        return rx.box(_ProviderProbe.create())
+
+    @rx.memo
+    def second_provider_memo() -> rx.Component:
+        return rx.box(rx.text("no provider here"))
+
+    first, second = first_provider_memo(), second_provider_memo()
+    assert (
+        type(first)._get_app_wrap_components
+        is not type(second)._get_app_wrap_components
+    )
+    assert (60, "ProbeProvider") in first._get_app_wrap_components()
+    assert (60, "ProbeProvider") not in second._get_app_wrap_components()
+
+
+def test_memo_app_wraps_reach_all_app_wrap_components():
+    """``_get_all_app_wrap_components`` sees a memo's body wraps.
+
+    ``App._app_root`` expands the app-wrap chain through this method, and that
+    chain contains memo components (the toaster provider, the sticky badge).
+    """
+
+    @rx.memo
+    def chained_provider_memo() -> rx.Component:
+        return rx.box(_ProviderProbe.create())
+
+    assert (60, "ProbeProvider") in rx.box(
+        chained_provider_memo()
+    )._get_all_app_wrap_components()
+
+
+def test_memo_app_wraps_survive_self_referencing_body():
+    """A memo whose body holds an instance of itself must not recurse forever.
+
+    Collecting the body's wraps walks the body, which reaches that inner
+    instance, which is asked for its own body's wraps -- the same body. Without
+    a re-entrancy guard the walk never bottoms out.
+    """
+
+    @rx.memo
+    def recursive_provider_memo(items: rx.Var[list[int]]) -> rx.Component:
+        return rx.box(
+            _ProviderProbe.create(),
+            rx.foreach(items, lambda _item: recursive_provider_memo(items=items)),
+        )
+
+    instance = recursive_provider_memo(items=Var(_js_expr="items", _var_type=list[int]))
+
+    assert (60, "ProbeProvider") in instance._get_app_wrap_components()

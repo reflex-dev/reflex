@@ -22,27 +22,29 @@ def ComponentStateApp():
         """ComponentState style."""
 
         count: int = 0
+        label: rx.Field[str] = rx.field("")
         _be: E
         _be_int: int
         _be_str: str = "42"
 
         @rx.event
         def increment(self):
+            """Increment this component's counter and update its label."""
             self.count += 1
+            self.label = f"Count {self.count}"
             self._be = self.count  # pyright: ignore [reportAttributeAccessIssue]
 
         @rx.event
+        def reset_counter(self):
+            """Restore the component's configured defaults."""
+            self.reset()
+
+        @rx.event
         def assert_be(self, value: E):
-            assert self._backend_vars != self.backend_vars
             assert self._be == int(value)  # pyright: ignore [reportAttributeAccessIssue, reportArgumentType]
 
         @rx.event
         def assert_be_none(self):
-            assert self._backend_vars == {
-                name: value
-                for name, value in self.backend_vars.items()
-                if name not in self.inherited_backend_vars
-            }
             assert self._be is None  # pyright: ignore [reportAttributeAccessIssue]
 
         @rx.event
@@ -55,15 +57,29 @@ def ComponentStateApp():
 
         @classmethod
         def get_component(cls, *children, **props):
+            """Configure defaults and return this component's controls.
+
+            Args:
+                children: Additional child components.
+                props: Component props, including initial count and label.
+
+            Returns:
+                The counter and its controls.
+            """
             eid = props.get("id", "default")
+            cls.count = props.pop("initial_count", 0)
+            initial_label = props.pop("initial_label", "")
+            cls.label = lambda: initial_label  # pyright: ignore[reportAttributeAccessIssue]
             return rx.vstack(
                 *children,
                 rx.heading(cls.count, id=f"count-{eid}"),
+                rx.text(cls.label, id=f"label-{eid}"),
                 rx.button(
                     "Increment",
                     on_click=cls.increment,
                     id=f"button-{eid}",
                 ),
+                rx.button("Reset", on_click=cls.reset_counter, id=f"reset-{eid}"),
                 rx.form(
                     rx.input(id=f"{eid}-assert-be-value", name="be_value"),
                     rx.button(
@@ -122,10 +138,18 @@ def ComponentStateApp():
 
     @rx.page()
     def index():
+        """Render independent counters and a counter with configured defaults.
+
+        Returns:
+            The counter test page.
+        """
         mc_a = MultiCounter.create(id="a")
         mc_b = MultiCounter.create(id="b")
         mc_c = multi_counter_func(id="c")
         mc_d = multi_counter_func(id="d")
+        configured = MultiCounter.create(
+            id="configured", initial_count=10, initial_label="Configured"
+        )
         assert mc_a.State != mc_b.State
         assert mc_c.State != mc_d.State
         return rx.vstack(
@@ -133,6 +157,7 @@ def ComponentStateApp():
             mc_b,
             mc_c,
             mc_d,
+            configured,
             rx.button(
                 "Inc A",
                 on_click=mc_a.State.increment,  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]

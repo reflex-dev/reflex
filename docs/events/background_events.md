@@ -25,13 +25,17 @@ task is running, **outside of the context block, Vars accessed by the background
 task may be _stale_**. Attempting to modify the state from a background task
 outside of the context block will raise an `ImmutableStateError` exception.
 
+This also applies to mutable values nested inside `self.router`, including legacy
+`self.router.page.params`. A reference obtained inside the context block cannot
+be mutated after leaving it.
+
 In the following example, the `my_task` event handler is decorated with
 `@rx.event(background=True)` and increments the `counter` variable every half second, as
 long as certain conditions are met. While it is running, the UI remains
 interactive and continues to process events normally.
 
 ```md alert info
-# Background events are similar to simple Task Queues like [Celery](https://www.fullstackpython.com/celery.html) allowing asynchronous events.
+# Background events run in the application backend; they are not a durable job queue. Use a separate worker and persistent job records when work needs restart recovery or guaranteed retries. See [performance and execution](/docs/advanced-onboarding/performance-and-execution/) for execution tradeoffs.
 ```
 
 ```python demo exec id=background_demo

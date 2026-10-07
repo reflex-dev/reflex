@@ -1,10 +1,34 @@
+---
+meta_description: Self-host a Reflex Python app on your own cloud or behind a company VPN. Compare managed hosting, configure production, export the frontend, and run containers.
+---
+
 ```python exec
 import reflex as rx
 ```
 
 # Self Hosting
 
-Use `reflex deploy` for the managed workflow. Follow this page when you need to run the frontend and backend on your own infrastructure.
+Use `reflex deploy` for the managed workflow. Follow this page when you need to **self-host**: run the frontend and backend on your own infrastructure, including your own cloud account, an on-premise server, or a private network behind a company VPN.
+
+## Key takeaways
+
+- Deploy the same Reflex project to managed hosting or infrastructure you control; configure each environment's URLs, secrets, and data services.
+- Serve the app from a single production server, or export a static frontend and run the Python backend separately.
+- For a private deployment, make both frontend and backend reachable on the intended network and configure WebSocket proxying.
+- Moving from managed hosting also requires transferring persistent data, secrets, domains, and any external service configuration.
+- You operate the servers, TLS, monitoring, backups, and updates in a self-hosted environment.
+
+## Managed vs. self-hosted
+
+| Deployment choice | Managed (`reflex deploy`) | Self-hosted |
+| --- | --- | --- |
+| Setup | Deploy through the managed workflow | Provision and configure your environment |
+| Infrastructure | Reflex-managed hosting | Your cloud account, private network, or on-premise servers |
+| Operations | Managed app deployment and hosting tools | Your team manages processes, networking, updates, and backups |
+| Best fit | Teams that want managed hosting | Teams that need control over infrastructure and network access |
+| Migration | Start with a standard Reflex project | Deploy the project and migrate its configuration and data |
+
+## Before you start
 
 Clone your code to a server and install the [requirements](/docs/getting-started/installation/).
 
@@ -158,3 +182,22 @@ Finally, you can start your Reflex container service as follows.
 ```bash
 docker run -d -p 8080:8080 --name app reflex-project:latest
 ```
+
+<!-- faqs-start -->
+<!-- faqs-visible -->
+
+## FAQ
+
+### Can a Reflex app run entirely behind a company VPN?
+
+Yes. Self-host both the frontend and backend on infrastructure reachable through your VPN or private network. Configure internal DNS, TLS, and WebSocket routing as needed. External APIs, authentication services, fonts, and other resources used by the app still need network access or local alternatives; self-hosting alone does not make an app air-gapped.
+
+### Can I run separate development, staging, and production environments?
+
+Yes. Use separate deployments with per-environment configuration, secrets, database URLs, and backend addresses. A self-hosted Reflex app can run as a production server or as a static frontend with a separate Python backend.
+
+### Can I start on managed hosting and move to self-hosting later?
+
+Yes. You can deploy the same Reflex project on your own infrastructure. Plan the transfer of persistent data, secrets, domains, and integrations, and update environment-specific configuration such as the API URL. Test the self-hosted deployment before switching traffic.
+
+<!-- faqs-end -->

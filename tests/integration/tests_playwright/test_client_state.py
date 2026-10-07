@@ -239,9 +239,17 @@ def ClientStateLateMountApp():
     import reflex as rx
 
     flag = rx.client_state("", name="flag")
+    # Only ever written from the frontend; the reader mounts afterwards.
+    shared = rx.client_state("initial", name="shared")
 
     class LateMountState(rx.State):
         mounted: bool = False
+        show: bool = False
+        default_text: str = "from backend"
+
+        @rx.event
+        def reveal(self):
+            self.show = True
 
         @rx.event(background=True)
         async def go(self):
@@ -266,8 +274,50 @@ def ClientStateLateMountApp():
             rx.cond(LateMountState.mounted, rx.el.div(flag.value, id="late")),
         )
 
+    # Seeded from backend state, with a sibling that only ever sets it.
+    backend_default = rx.client_state(LateMountState.default_text, name="seeded")
+
+    def setter_first() -> rx.Component:
+        return rx.el.div(
+            rx.input(
+                value=LateMountState.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
+            rx.el.button("set", on_click=shared.set("clicked"), id="setter"),
+            rx.el.button("reveal", on_click=LateMountState.reveal, id="reveal"),
+            rx.cond(LateMountState.show, rx.el.div(shared.value, id="late-reader")),
+        )
+
+    def backend_default_page() -> rx.Component:
+        return rx.el.div(
+            rx.input(
+                value=LateMountState.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
+            rx.input(value=backend_default.value, read_only=True, id="backend-reader"),
+            rx.el.button("set", on_click=backend_default.set("changed"), id="setter"),
+        )
+
     app = rx.App()
     app.add_page(index, route="/")
+    app.add_page(setter_first, route="/setter-first")
+    app.add_page(backend_default_page, route="/backend-default")
+
+
+def _page_errors(page: Page) -> list[str]:
+    """Record uncaught frontend errors raised on the page.
+
+    Args:
+        page: Playwright page.
+
+    Returns:
+        A list that is appended to as errors occur.
+    """
+    errors: list[str] = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    return errors
 
 
 @pytest.fixture(scope="module")
@@ -320,3 +370,56 @@ def test_late_mounted_consumer_reads_the_current_value(
     # ... and follows the push back to the default.
     expect(page.locator("#always")).to_have_text("")
     expect(page.locator("#late")).to_have_text("")
+
+
+def test_setter_works_before_any_reader_mounts(
+    client_state_late_mount_app: AppHarness, page: Page
+) -> None:
+    """A setter-only component owns its slot binding; no reader needs to exist.
+
+    Ported from reflex-dev/reflex#7286. The old setter referenced a function a
+    *reader's* ``useState`` hook defined, so with the reader behind a cond the
+    click threw. The setter now carries its own ``useClientState`` hook.
+
+    Args:
+        client_state_late_mount_app: Running app harness.
+        page: Playwright page.
+    """
+    assert client_state_late_mount_app.frontend_url is not None
+    errors = _page_errors(page)
+    page.goto(
+        client_state_late_mount_app.frontend_url.removesuffix("/") + "/setter-first"
+    )
+    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#late-reader")).to_have_count(0)
+
+    page.click("#setter")
+    page.click("#reveal")
+    expect(page.locator("#late-reader")).to_have_text("clicked")
+    assert errors == []
+
+
+def test_setter_only_sibling_with_backend_default(
+    client_state_late_mount_app: AppHarness, page: Page
+) -> None:
+    """A var seeded from backend state works with a setter-only sibling.
+
+    Ported from reflex-dev/reflex#7286: the default's state context hook has to
+    travel with the setter, or its memo body references the state without
+    declaring it.
+
+    Args:
+        client_state_late_mount_app: Running app harness.
+        page: Playwright page.
+    """
+    assert client_state_late_mount_app.frontend_url is not None
+    errors = _page_errors(page)
+    page.goto(
+        client_state_late_mount_app.frontend_url.removesuffix("/") + "/backend-default"
+    )
+    expect(page.locator("#token")).not_to_have_value("")
+
+    expect(page.locator("#backend-reader")).to_have_value("from backend")
+    page.click("#setter")
+    expect(page.locator("#backend-reader")).to_have_value("changed")
+    assert errors == []

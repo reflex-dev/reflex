@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 from collections.abc import Callable
 from typing import Any, cast
 
@@ -19,9 +21,11 @@ from reflex_base.event import (
     on_submit_event,
     on_submit_string_event,
 )
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
+    EventHandlerTypeError,
     EventHandlerValueError,
 )
 from reflex_base.vars.base import Field, LiteralVar, Var, field
@@ -252,6 +256,65 @@ def test_state_event_handler_type_hints_are_stable_after_class_patch():
 
     call_event_handler(handler(), args_spec)
     assert handler.prevent_default._type_hints is handler._type_hints
+
+
+def test_backend_var_event_arg_reports_repr():
+    """A backend var passed as an event arg reports its repr, not a format error."""
+
+    class S(BaseState):
+        _secret: int = 42
+
+        @event
+        def on_event(self, value: int):
+            pass
+
+    with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
+        S.on_event(S._secret)
+    with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
+        cast(EventSpec, S.on_event()).add_args(S._secret)  # pyright: ignore[reportArgumentType]
+
+
+class BackendTriggerState(BaseState):
+    """A state with a backend var, for event trigger misuse tests."""
+
+    _secret: int = 42
+
+    @event
+    def on_upload(self, files: list[rx.UploadFile]):
+        """Receive uploaded files.
+
+        Args:
+            files: The uploaded files.
+        """
+
+
+@pytest.mark.parametrize(
+    ("value", "match"),
+    [
+        (BackendTriggerState._secret, r"Invalid event chain: Field\(default=42"),
+        ([BackendTriggerState._secret], r"Invalid event: Field\(default=42"),
+        (lambda: BackendTriggerState._secret, r"-> Field\(default=42"),
+    ],
+)
+def test_backend_var_event_trigger_reports_repr(value: Any, match: str):
+    """Binding a backend var as an event trigger reports its repr, not a format error.
+
+    Args:
+        value: The misused event trigger value.
+        match: The expected error message pattern.
+    """
+    with pytest.raises(ValueError, match=match):
+        EventChain.create(value=value, args_spec=lambda: ())
+
+
+def test_backend_var_upload_progress_reports_repr():
+    """A backend var passed as on_upload_progress reports its repr."""
+    upload = rx.upload_files(
+        upload_id="u",
+        on_upload_progress=BackendTriggerState._secret,  # pyright: ignore[reportArgumentType]
+    )
+    with pytest.raises(ValueError, match=r"^Field\(default=42.* is not a valid"):
+        upload.as_event_spec(handler=cast(EventHandler, BackendTriggerState.on_upload))
 
 
 def test_state_event_handler_caches_unresolved_type_hints():
@@ -619,6 +682,49 @@ def test_remove_local_storage():
         format.format_event(spec)
         == 'ReflexEvent("_remove_local_storage", {key:"testkey"})'
     )
+
+
+def _download_var_data_url() -> Var:
+    """Build the data: URL an ``rx.download`` of a list-typed Var produces.
+
+    Returns:
+        The ``url`` argument of the download event.
+    """
+    data = Var(_js_expr="data", _var_type=list[dict[str, str]]).guess_type()
+    return rx.download(data=data, filename="data.json").args[0][1]
+
+
+def test_download_var_data_is_percent_encoded():
+    """A Var passed as download data is percent-encoded into its data: URL."""
+    assert str(_download_var_data_url()) == (
+        '(pyAnd(((typeof(data))?.valueOf?.() === "string"?.valueOf?.()), '
+        '() => (data.startsWith("data:"))) ? data : '
+        '("data:text/plain,"+(encodeURIComponent((JSON.stringify(data))))))'
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+def test_download_var_data_url_keeps_hash_and_percent():
+    """The downloaded bytes are exactly the JSON, even with ``#`` or ``%`` in it.
+
+    Unencoded, a ``#`` ends the data: URL there (the rest of the file is lost)
+    and ``%XX`` sequences are percent-decoded.
+    """
+    rows = [{"address": "12 Main St #4", "note": "100%25 sure"}]
+    script = (
+        "const pyAnd = (a, b) => (a ? b() : a);\n"
+        f"const data = {json.dumps(rows)};\n"
+        f"fetch({_download_var_data_url()!s})"
+        ".then((r) => r.text()).then((t) => process.stdout.write(t));\n"
+    )
+    result = subprocess.run(
+        ["node", "-e", script],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    assert result.stdout == json.dumps(rows, separators=(",", ":"))
 
 
 def test_event_actions():
@@ -1399,3 +1505,90 @@ def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
         log._reset()
     assert "expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> ()" in out
     assert "\\" not in out
+
+
+def test_event_chain_cache_lives_on_the_registration_context(
+    forked_registration_context: RegistrationContext,
+):
+    """Bound chains are shared per context and leave the handler stateless."""
+
+    class ChainState(BaseState):
+        @event
+        def handler(self):
+            pass
+
+    def args_spec():
+        return ()
+
+    chain = EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+    with forked_registration_context.fork():
+        forked = EventChain.create(
+            ChainState.handler, args_spec=args_spec, key="on_click"
+        )
+        assert forked is not chain
+        assert (
+            EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+            is forked
+        )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+
+    def retains(value: Any) -> bool:
+        if isinstance(value, dict):
+            value = tuple(value.values())
+        if isinstance(value, (tuple, list)):
+            return any(retains(item) for item in value)
+        return value is chain
+
+    assert not any(retains(value) for value in vars(ChainState.handler).values())
+
+
+def test_event_chain_create_shares_chains_bound_from_one_handler():
+    """A handler bound to one trigger yields one chain for every call site."""
+
+    class ChainState(BaseState):
+        @event
+        def handler(self):
+            pass
+
+    def args_spec():
+        return ()
+
+    chain = EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+    assert isinstance(chain, EventChain)
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_blur")
+        is not chain
+    )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=lambda: (), key="on_click")
+        is not chain
+    )
+    with_actions = EventChain.create(
+        ChainState.handler, args_spec=args_spec, key="on_click", event_actions={"x": 1}
+    )
+    assert with_actions is not chain
+    # The event_actions call above must not replace the cached chain.
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+    bound_chains = RegistrationContext.ensure_context()._bound_event_chains
+    cached = len(bound_chains)
+    assert (
+        EventChain.create(
+            ChainState.handler.prevent_default, args_spec=args_spec, key="on_click"
+        )
+        is not chain
+    )
+    assert len(bound_chains) == cached
+    assert (
+        EventChain.create([ChainState.handler], args_spec=args_spec, key="on_click")
+        is not chain
+    )

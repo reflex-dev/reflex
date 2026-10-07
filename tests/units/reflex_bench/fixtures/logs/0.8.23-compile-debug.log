@@ -1,0 +1,74 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var
+TELEMETRY_ENABLED=false
+Debug: Evaluating page: index
+Debug: Evaluating page: 404
+Debug: Slowest pages:
+index: 9.6ms
+404: 0.2ms
+Debug: [timing] Evaluate Pages (Frontend): 0.01s
+Debug: [timing] Collect all imports and app wraps: 0.00s
+Debug: [timing] Auto-memoize StatefulComponents: 0.00s
+Debug: [timing] Copy assets: 0.00s
+Debug: [timing] Compile to Javascript: 0.00s
+[17:14:27] Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 21/21 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps']
+Debug: Installing base frontend packages
+Debug: bun install v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [32]
+Debug: warn: incorrect peer dependency "react@19.2.1"
+Debug: Saved lockfile
+Debug:
+Debug: + @emotion/react@11.14.0
+Debug: + @react-router/dev@7.10.1
+Debug: + @react-router/fs-routes@7.10.1
+Debug: + autoprefixer@10.4.22
+Debug: + postcss@8.5.6 (v8.5.28 available)
+Debug: + postcss-import@16.1.1
+Debug: + vite@7.2.10
+Debug: + @react-router/node@7.10.1
+Debug: + isbot@5.1.32 (v5.2.2 available)
+Debug: + json5@2.2.3
+Debug: + react@19.2.1 (v19.3.0 available)
+Debug: + react-dom@19.2.1
+Debug: + react-helmet@6.1.0
+Debug: + react-router@7.10.1 (v8.4.0 available)
+Debug: + react-router-dom@7.10.1
+Debug: + sirv-cli@3.0.1
+Debug: + socket.io-client@4.8.1
+Debug: + universal-cookie@7.2.2
+Debug:
+Debug: 180 packages installed [376.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps',
+'-d', 'tailwindcss@4.1.17', '@tailwindcss/postcss@4.1.17',
+'@tailwindcss/typography@0.5.19']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug:
+Debug: installed tailwindcss@4.1.17
+Debug: installed @tailwindcss/postcss@4.1.17
+Debug: installed @tailwindcss/typography@0.5.19
+Debug:
+Debug: 19 packages installed [27.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps',
+'@radix-ui/themes@3.2.1', 'lucide-react@0.556.0', 'sonner@2.0.7',
+'react-error-boundary@6.0.0']
+Debug: Installing frontend packages from config and components
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug:
+Debug: installed @radix-ui/themes@3.2.1
+Debug: installed lucide-react@0.556.0
+Debug: installed sonner@2.0.7
+Debug: installed react-error-boundary@6.0.0
+Debug:
+Debug: 80 packages installed [86.00ms]
+Debug: [timing] Install Frontend Packages: 0.51s
+Debug: [timing] Write to Disk: 0.00s
+Success: App compiled successfully in 0.820 seconds.

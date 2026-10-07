@@ -5,7 +5,7 @@ import subprocess
 import sys
 import typing
 from collections.abc import Callable
-from typing import Literal, TypeVar
+from typing import Annotated, Literal, Protocol, TypeVar, runtime_checkable
 
 import pytest
 from reflex_base.utils.types import (
@@ -18,13 +18,11 @@ from reflex_base.utils.types import (
     resolve_type_alias,
     typehint_issubclass,
 )
-from typing_extensions import ParamSpec, TypeAliasType, TypeVarTuple, Unpack
+from typing_extensions import ParamSpec, TypeAliasType, TypeVarTuple
 
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
-Handlers = TypeAliasType(
-    "Handlers", tuple[Callable[P, int], Unpack[Ts]], type_params=(P, Ts)
-)
+Handlers = TypeAliasType("Handlers", tuple[Callable[P, int], *Ts], type_params=(P, Ts))
 
 
 def test_types_import_keeps_optional_orm_lazy():
@@ -126,8 +124,8 @@ def test_asgi_aliases_keep_their_names():
 def test_resolve_type_alias_substitutes_param_spec():
     """A ParamSpec is substituted even next to a TypeVarTuple.
 
-    That combination falls back to manual substitution on 3.10 and 3.11, which
-    has to treat a ParamSpec as a type parameter too.
+    That combination falls back to manual substitution on 3.11, which has to
+    treat a ParamSpec as a type parameter too.
     """
     resolved = resolve_type_alias(Handlers[[str], bool, float])
     assert resolved == tuple[Callable[[str], int], bool, float]
@@ -160,6 +158,43 @@ def test_isinstance_resolves_type_alias(alias_cls: type) -> None:
     assert _isinstance(None, maybe, nested=1, treat_var_as_type=False)
     assert _isinstance("x", maybe, nested=1, treat_var_as_type=False)
     assert not _isinstance(1, maybe, nested=1, treat_var_as_type=False)
+
+
+def test_isinstance_checks_type_parameter_bounds() -> None:
+    """A type parameter, which a field never resolves, checks only its bound."""
+    t = TypeVar("t")
+    bounded = TypeVar("bounded", bound=str)
+    constrained = TypeVar("constrained", int, str)
+    forward = TypeVar("forward", bound="Unresolvable")  # noqa: F821  # pyright: ignore[reportUndefinedVariable]
+    assert _isinstance(1, t, nested=1, treat_var_as_type=False)
+    assert _isinstance("x", t | None, nested=1, treat_var_as_type=False)
+    assert not _isinstance("x", list[t], nested=1, treat_var_as_type=False)  # pyright: ignore[reportGeneralTypeIssues]
+    assert _isinstance("x", bounded, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1, bounded, nested=1, treat_var_as_type=False)
+    assert _isinstance(1, constrained, nested=1, treat_var_as_type=False)
+    assert _isinstance("x", constrained, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1.5, constrained, nested=1, treat_var_as_type=False)
+    assert _isinstance(object(), forward, nested=1, treat_var_as_type=False)
+
+
+def test_isinstance_accepts_unchecked_protocol() -> None:
+    """A protocol without runtime_checkable cannot be checked, so it accepts any value."""
+    t_co = TypeVar("t_co", covariant=True)
+
+    class Reader(Protocol):
+        def read(self) -> str: ...
+
+    class Source(Protocol[t_co]):
+        def get(self) -> t_co: ...
+
+    @runtime_checkable
+    class CheckedReader(Protocol):
+        def read(self) -> str: ...
+
+    bounded = TypeVar("bounded", bound=Reader)
+    for annotation in (Reader, Reader | None, bounded, Source[int]):
+        assert _isinstance(object(), annotation, nested=1, treat_var_as_type=False)
+    assert not _isinstance(object(), CheckedReader, nested=1, treat_var_as_type=False)
 
 
 @pytest.mark.parametrize("alias_cls", _type_alias_types())
@@ -196,3 +231,53 @@ def test_typehint_issubclass_resolves_type_alias(alias_cls: type) -> None:
     assert typehint_issubclass(maybe, maybe)
     assert not typehint_issubclass(maybe, str)
     assert typehint_issubclass(str, maybe)
+
+
+@pytest.mark.parametrize("alias_cls", _type_alias_types())
+def test_resolve_type_alias_unwraps_annotated(alias_cls: type) -> None:
+    """``Annotated`` metadata is stripped, including around and inside aliases."""
+    assert resolve_type_alias(Annotated[int, "meta"]) is int
+    assert resolve_type_alias(Annotated[Annotated[int, "a"], "b"]) is int
+    assert resolve_type_alias(Annotated[int | str, "meta"]) == int | str
+    # An alias on either side of the annotation resolves through it.
+    assert resolve_type_alias(Annotated[alias_cls("Name", str), "meta"]) is str
+    assert resolve_type_alias(alias_cls("Meta", Annotated[str, "meta"])) is str
+    # A union member keeps resolving.
+    assert resolve_type_alias(Annotated[int, "meta"] | str) == int | str
+
+
+def test_typehint_issubclass_unwraps_annotated() -> None:
+    """``Annotated`` compares as the type it annotates, on either side."""
+    assert typehint_issubclass(Annotated[int, "meta"], int)
+    assert typehint_issubclass(int, Annotated[int, "meta"])
+    assert typehint_issubclass(Annotated[int, "a"], Annotated[int, "b"])
+    assert not typehint_issubclass(Annotated[str, "meta"], int)
+    # The union member-wise comparison must see a union, not the metadata.
+    assert typehint_issubclass(Annotated[int | str, "meta"], int | str)
+    assert typehint_issubclass(int, Annotated[int | str, "meta"])
+    assert not typehint_issubclass(Annotated[int | str, "meta"], int)
+    assert typehint_issubclass(list[Annotated[int, "meta"]], list[int])
+
+
+def test_annotated_attributes_do_not_unwrap_user_classes() -> None:
+    """User-defined metadata attributes must not identify an Annotated hint."""
+
+    class MetadataType:
+        __metadata__ = ("custom",)
+        __origin__ = int
+
+    assert resolve_type_alias(MetadataType) is MetadataType
+
+
+def test_isinstance_unwraps_annotated() -> None:
+    """``_isinstance`` validates against the annotated type, not the metadata."""
+    assert _isinstance(1, Annotated[int, "meta"], nested=1, treat_var_as_type=False)
+    assert not _isinstance(
+        "x", Annotated[int, "meta"], nested=1, treat_var_as_type=False
+    )
+    assert _isinstance(
+        {"a": 1}, dict[str, Annotated[int, "meta"]], nested=2, treat_var_as_type=False
+    )
+    assert not _isinstance(
+        {"a": "x"}, dict[str, Annotated[int, "meta"]], nested=2, treat_var_as_type=False
+    )

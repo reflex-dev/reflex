@@ -1,7 +1,6 @@
 import reflex as rx
 from reflex_site_shared.constants import OG_IMAGE_URL
-from reflex_site_shared.meta.meta import create_meta_tags
-from reflex_site_shared.utils.url import public_url
+from reflex_site_shared.route import Route
 from reflex_site_shared.views.marketing_footer import marketing_footer
 
 from reflex_docs.pages.docs_landing.views import (
@@ -18,27 +17,12 @@ from reflex_docs.pages.docs_landing.views.cta import docs_cta
 from reflex_docs.views.docs_navbar import docs_navbar
 
 
-@rx.page(
-    route="/",
-    title="Reflex Documentation - Build Web Apps in Pure Python",
-    # og:image is emitted once by the compiler from `image`; drop it from the
-    # create_meta_tags list to avoid a favicon-default + preview duplicate.
-    image=OG_IMAGE_URL,
-    meta=[
-        rx.el.link(rel="alternate", type="text/markdown", href=public_url("/index.md"))
-    ]
-    + [
-        m
-        for m in create_meta_tags(
-            title="Reflex Documentation - Build Web Apps in Pure Python",
-            description="Reflex documentation: tutorials, API reference, and guides for building full-stack Python web apps. Get started in minutes.",
-            image=OG_IMAGE_URL,
-            url=public_url("/"),
-        )
-        if not (isinstance(m, dict) and m.get("property") == "og:image")
-    ],
-)
-def docs_landing() -> rx.Component:
+def _docs_landing() -> rx.Component:
+    """Render the documentation homepage.
+
+    Returns:
+        The documentation landing page component.
+    """
     return rx.el.div(
         docs_navbar(),
         rx.el.main(
@@ -59,3 +43,12 @@ def docs_landing() -> rx.Component:
         ),
         class_name="flex flex-col w-full justify-center items-center relative bg-background",
     )
+
+
+docs_landing = Route(
+    path="/",
+    title="Reflex Documentation - Build Web Apps in Pure Python",
+    description="Reflex documentation: tutorials, API reference, and guides for building full-stack Python web apps. Get started in minutes.",
+    image=OG_IMAGE_URL,
+    component=_docs_landing,
+)
