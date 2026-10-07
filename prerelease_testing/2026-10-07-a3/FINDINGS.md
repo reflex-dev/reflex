@@ -26,7 +26,7 @@ Previous pass (a2 train): [../2026-10-07/FINDINGS.md](../2026-10-07/FINDINGS.md)
 | id | a2-pass status | a3 result | evidence | item |
 |---|---|---|---|---|
 | N-001 greenlet missing from `reflex[db]` | HIGH, all fresh installs | **fixed**: fresh `reflex[db]==0.10.0a3` with uv and pip on 3.11–3.14 resolves greenlet 3.5.6 + SQLAlchemy 2.1.4 through the extra (8/8); `rx.Model`, `reflex db init/makemigrations/migrate` and prod CRUD work | `a3_preflight/logs/03-*`, `04-*`, `dbcli-prod.*` | a3_preflight |
-| N-025 prod AG Grid Var `column_defs` empty | HIGH regression | _pending_ | | a3_ent_grid |
+| N-025 prod AG Grid Var `column_defs` empty | HIGH regression | **fixed with reflex a3 + enterprise 0.9.7a5** (enterprise-side fix): verifier fixture entv s1–s13 render in prod and dev (state grid 2h/6c, memo grids, `/onload`, second context, detail grid Count/Value), aggrid_min 4/4, demo `probe_state_coldefs` 7/7 (a2 3/7). **Still broken with enterprise 0.9.7a4 on a3** (state grid 0h/0c, memo grids empty, detail headers []): users must upgrade reflex-enterprise together with reflex. a5 also fixes reflex a2 and keeps 0.9.12 working. Positive control on a2 + a4 still reproduced first | `a3_ent_grid/NOTES.md`, `out/` | a3_ent_grid |
 | N-032 OIDC cross-tab logout | HIGH regression | _pending_ | | a3_ent_auth |
 | N-004 0.10 state unreadable by 0.9 | MEDIUM, decided: document | **behaves as documented** (#7494): 0.9.12 → a3 keeps sessions; a3 → 0.9.12 resets cleanly (fresh state, nothing logged) on Redis and disk; a2 ↔ a3 interchangeable (schema hash identical); a3 pickles hold only field values (no `_PREVIOUS_RELEASE_PICKLE_KEYS`, no undo stack) | `a3_class_state` pickle matrix, disk store, fleet e2e | a3_class_state |
 | N-005 plain default drops storage | MEDIUM | **fixed** for `str` values: 3 storage types × str/storage annotation × 6 assignment kinds keep storage, name and options; e2e dev + prod/Redis (9 workers) writes `ls_plain_key`, `lscs_key`, `ck_key`, n005 8/8 (a2 4/8). Gap: `None` / non-str values still drop storage (A3-02) | `a3_class_state/out/e2e/`, `logs/` | a3_class_state |
@@ -65,6 +65,19 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
 - Item `a3_class_state` (inbox 11). `a3_class_state/harness/test_shared_state_harness.py`: 2 failed, 1 passed on a3 and a2; 0.9.12 passes.
 
 ## Cluster summaries
+
+### `a3_ent_grid` — done (positive control on a2 + a4 reproduced first)
+N-025 fixed on a3 + a5 (prod and dev), and on a2 + a5; 0.9.12 + a5 unaffected; a3 + a4 still broken (the reflex side did not change:
+`corev` probes on a3 prod are identical to a2, render-before-`window.__reflex` ordering unchanged). enterprise#273 regression hunt
+(new `entr` fixture: literal and State column defs with lambda `rx.badge` / formatter / getter / tooltip / `@rx.memo` cells,
+`cell_class_rules`, pinned rows, grouping, `rx.cond`, computed-var defs, master/detail with lambda renderers, memo grids; prod
+load/reload/client nav and dev; a3, a2, 0.9.12): all render, 0 page errors, no ReferenceError, 0 of 583 traced renderer calls ran
+before `window.__reflex`. AG Grid demo a3 + a5: prod smoke 20/20, features 46/47, model 24/29 (same failures as a2 and 0.9.12);
+F-001 enterprise half still holds; dev numbers equal a2 after re-running load-induced timeouts (load average 23–30). dnd 27/27 prod and
+dev (kanban first load writes no LocalStorage default, so #7493 did not bring F-002 back), flow 20/22 prod (same as a2 and 0.9.12),
+mantine 23/23, maps route smoke 4/4. `REFLEX_FRONTEND_LAZY_BUNDLED_LIBRARIES=true` still crashes lambda→Radix renderers with React #130
+(unchanged from a2; the flag is no longer needed as a workaround). Pre-existing on 0.9.12 + a5: `rx.badge(params.value)` shows a
+JSON-quoted value, AG Grid warning #306 for `tooltip_field`. Notes: `a3_ent_grid/NOTES.md`.
 
 ### `a3_class_state` — done (positive controls on a2 all reproduced first)
 N-005, N-039 and N-008 fixed; N-006 changed (message fixed, silent `str()` paths remain); N-004 behaves exactly as the #7494 note says
