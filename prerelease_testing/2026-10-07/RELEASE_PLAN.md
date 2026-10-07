@@ -133,3 +133,35 @@ the new train fixed (F-001 enterprise half, F-002, F-003, F-004, F-005, F-006) a
 4. N-004, N-005, N-039, N-008 and the documentation items, then cut 0.10.0a3 and re-run the 10-07 re-verification
    table (every cluster has rerun commands in its NOTES.md; the `board/` protocol lets several sessions share it).
 5. File the "after release" lists as issues with the FINDINGS.md links.
+
+## Issues filed (2026-10-07, after the campaign)
+
+Fix-before-release items, assigned to @masenf, each with a fix branch in progress (worktrees from `main`):
+
+| finding | issue | fix branch |
+|---|---|---|
+| N-025 | [reflex#7468](https://github.com/reflex-dev/reflex/issues/7468) | `claude/n025-reflex-before-render` |
+| N-032 | [reflex#7469](https://github.com/reflex-dev/reflex/issues/7469) | `claude/n032-boot-reconcile` |
+| N-004 | [reflex#7470](https://github.com/reflex-dev/reflex/issues/7470) | `claude/n004-pickle-compat` |
+| N-005 | [reflex#7471](https://github.com/reflex-dev/reflex/issues/7471) | `claude/class-assignment` |
+| N-039 | [reflex#7472](https://github.com/reflex-dev/reflex/issues/7472) | `claude/class-assignment` |
+| N-008 | [reflex#7473](https://github.com/reflex-dev/reflex/issues/7473) | `claude/class-assignment` |
+| docs (N-002, N-007, N-009, N-024, N-040) | [reflex#7474](https://github.com/reflex-dev/reflex/issues/7474) | `claude/docs-0.10-migration` |
+| N-006 | [reflex#7475](https://github.com/reflex-dev/reflex/issues/7475) | `claude/docs-0.10-migration` |
+| N-001 | PR [reflex#7466](https://github.com/reflex-dev/reflex/pull/7466) | `claude/db-extra-greenlet` |
+
+Filed for after the release — reflex: N-020 [#7476](https://github.com/reflex-dev/reflex/issues/7476), N-017 [#7477](https://github.com/reflex-dev/reflex/issues/7477),
+N-019 [#7478](https://github.com/reflex-dev/reflex/issues/7478), N-003/N-041 [#7479](https://github.com/reflex-dev/reflex/issues/7479),
+N-018 [#7480](https://github.com/reflex-dev/reflex/issues/7480), N-023 [#7481](https://github.com/reflex-dev/reflex/issues/7481),
+N-028 [#7482](https://github.com/reflex-dev/reflex/issues/7482), N-043 [#7483](https://github.com/reflex-dev/reflex/issues/7483),
+N-015 [#7484](https://github.com/reflex-dev/reflex/issues/7484), F-007 [#7485](https://github.com/reflex-dev/reflex/issues/7485),
+F-008 [#7486](https://github.com/reflex-dev/reflex/issues/7486), F-010 [#7487](https://github.com/reflex-dev/reflex/issues/7487),
+F-011 [#7488](https://github.com/reflex-dev/reflex/issues/7488), F-012 [#7489](https://github.com/reflex-dev/reflex/issues/7489),
+F-014 [#7490](https://github.com/reflex-dev/reflex/issues/7490); N-021/N-022 added as a comment on the existing
+[#6122](https://github.com/reflex-dev/reflex/issues/6122#issuecomment-6040383717) (see also #7248 / PR #7412).
+Not filed: N-016 (tracked by the existing #7253), F-019 (existing #5534 / #5394), F-013 / F-015 / F-016 (cosmetic),
+F-018 (reflex-clerk only), N-040 (folded into #7474).
+reflex-enterprise: N-025 and N-032 enterprise sides, N-033, N-034, N-035, N-036, N-037, N-027, N-029, N-026, N-030, N-031, N-038
+(issue numbers in the campaign status file; the two cross-reference issues are assigned to @masenf).
+reflex-chat: F-009. Not filed (no access to the repos): reflex-clerk `set_clerk_session` Field TypeError, N-042 (monaco /
+webcam / clerk prod builds).
