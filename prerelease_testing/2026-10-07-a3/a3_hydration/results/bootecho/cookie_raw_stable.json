@@ -1,0 +1,29 @@
+{
+ "{\"a\":1}": {
+  "shown": "{\"a\":1}",
+  "raw_after": [
+   "%7B%22a%22%3A1%7D"
+  ],
+  "expires_after": [
+   -1
+  ]
+ },
+ "%41BC": {
+  "shown": "ABC",
+  "raw_after": [
+   "ABC"
+  ],
+  "expires_after": [
+   -1
+  ]
+ },
+ "plain-value": {
+  "shown": "plain-value",
+  "raw_after": [
+   "plain-value"
+  ],
+  "expires_after": [
+   -1
+  ]
+ }
+}

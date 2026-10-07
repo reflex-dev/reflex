@@ -1,0 +1,2781 @@
+{
+ "fresh_index": {
+  "label": "fresh_index",
+  "tab": "fresh_index",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "theme": "system"
+   },
+   "session": {},
+   "token": "1a5ca187-644b-424b-e253-07cbad3e724f",
+   "cookies": {}
+  },
+  "deltas": [
+   {
+    "t": 0.295,
+    "len": 1882,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 0.296,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 2,
+  "frames_in": 4,
+  "bytes_in": 2118,
+  "frames_out": 1,
+  "bytes_out": 366,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____prefs.note_len": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"1a5ca187\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"1a5ca187\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 2,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [
+   "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "fresh_onload": {
+  "label": "fresh_onload",
+  "tab": "fresh_onload",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_srv": "srv-onload-1",
+    "theme": "system"
+   },
+   "session": {},
+   "token": "86200d2b-794f-49fe-8976-0835190db852",
+   "cookies": {
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 0.197,
+    "len": 1913,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 0.197,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 0.198,
+    "len": 176,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.loads": 1,
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1"
+    }
+   },
+   {
+    "t": 0.198,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 4,
+  "frames_in": 6,
+  "bytes_in": 2414,
+  "frames_out": 1,
+  "bytes_out": 380,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"86200d2b\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"86200d2b\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"86200d2b\"}",
+   "ONLOAD {\"before_ck\": \"srvck-default\", \"before_ls\": \"srv-default\", \"tok\": \"86200d2b\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"86200d2b\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"86200d2b\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 5,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "fresh_plainload": {
+  "label": "fresh_plainload",
+  "tab": "fresh_plainload",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "theme": "system"
+   },
+   "session": {},
+   "token": "649ccb98-3cf7-4a19-81a9-07231c898f18",
+   "cookies": {}
+  },
+  "deltas": [
+   {
+    "t": 0.173,
+    "len": 1934,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 0.173,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 0.173,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 3,
+  "frames_in": 5,
+  "bytes_in": 2259,
+  "frames_out": 1,
+  "bytes_out": 386,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____prefs.note_len": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/plainload/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"649ccb98\"}",
+   "GD {\"path\": \"/plainload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"649ccb98\"}",
+   "GD {\"path\": \"/plainload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"649ccb98\"}",
+   "ONLOAD_NOOP {\"srv_ls\": \"srv-default\", \"tok\": \"649ccb98\"}",
+   "GD {\"path\": \"/plainload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"649ccb98\"}",
+   "GD {\"path\": \"/plainload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"649ccb98\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 5,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "user_first": {
+  "label": "user_first",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "theme": "system"
+   },
+   "session": {},
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {}
+  },
+  "deltas": [
+   {
+    "t": 0.151,
+    "len": 1882,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 0.152,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 2,
+  "frames_in": 4,
+  "bytes_in": 2118,
+  "frames_out": 1,
+  "bytes_out": 366,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____prefs.note_len": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 2,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "click#set-user": {
+  "label": "click#set-user",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+user-dark",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_theme": "user-dark",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413440.9,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 1.826,
+    "len": 506,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.clicks": 1,
+     "bootecho___bootecho____prefs.note_len": "N:9:user-note",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+user-dark"
+    }
+   }
+  ],
+  "n_deltas": 1,
+  "frames_in": 1,
+  "bytes_in": 506,
+  "frames_out": 1,
+  "bytes_out": 136,
+  "out_events": [
+   {
+    "event": "set_user",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"sub_combo\": \"sub-default+user-dark\"}, \"st\": \"SubPrefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"note_len\": \"N:9:user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 2,
+   "SubPrefs": 1,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "click#set-user-sub": {
+  "label": "click#set-user-sub",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413440.9,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417041.8,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 2.725,
+    "len": 226,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck"
+    }
+   }
+  ],
+  "n_deltas": 1,
+  "frames_in": 1,
+  "bytes_in": 226,
+  "frames_out": 1,
+  "bytes_out": 173,
+  "out_events": [
+   {
+    "event": "set_user_sub",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____sub_prefs.sub_ls": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 2,
+   "SubPrefs": 1,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "click#box-a-choose": {
+  "label": "click#box-a-choose",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413440.9,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417041.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410442.7,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 3.592,
+    "len": 152,
+    "root_is_h": "-",
+    "vars": {
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user"
+    }
+   }
+  ],
+  "n_deltas": 1,
+  "frames_in": 1,
+  "bytes_in": 152,
+  "frames_out": 1,
+  "bytes_out": 141,
+  "out_events": [
+   {
+    "event": "choose",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 1,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "click#box-b-choose": {
+  "label": "click#box-b-choose",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413440.9,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417041.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410442.7,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410443.6,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 4.534,
+    "len": 152,
+    "root_is_h": "-",
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user"
+    }
+   }
+  ],
+  "n_deltas": 1,
+  "frames_in": 1,
+  "bytes_in": 152,
+  "frames_out": 1,
+  "bytes_out": 141,
+  "out_events": [
+   {
+    "event": "choose",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 1,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "click#good-tok": {
+  "label": "click#good-tok",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413440.9,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417041.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410442.7,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410443.6,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 5.429,
+    "len": 139,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   }
+  ],
+  "n_deltas": 1,
+  "frames_in": 1,
+  "bytes_in": 139,
+  "frames_out": 1,
+  "bytes_out": 136,
+  "out_events": [
+   {
+    "event": "set_good",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "bootecho___bootecho____guard.tok": 1
+  },
+  "gd_traces": [
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 1,
+   "SubPrefs": 0,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "user_after_clicks": {
+  "label": "user_after_clicks",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413440.9,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417041.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410442.7,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410443.6,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [],
+  "n_deltas": 0,
+  "frames_in": 0,
+  "bytes_in": 0,
+  "frames_out": 0,
+  "bytes_out": 0,
+  "out_events": [],
+  "var_counts": {},
+  "gd_traces": [],
+  "gd_calls": {
+   "Prefs": 0,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "user_reload1": {
+  "label": "user_reload1",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"mklg8snd9t8\":200}"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413448.7,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417048.7,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410448.7,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410448.7,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 9.558,
+    "len": 3136,
+    "root_is_h": false,
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.clicks": 1,
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.note_len": "N:9:user-note",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____guard.tok": "good-123",
+     "bootecho___bootecho____guard.tok_ok": true
+    }
+   },
+   {
+    "t": 9.558,
+    "len": 914,
+    "root_is_h": true,
+    "vars": {
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   }
+  ],
+  "n_deltas": 2,
+  "frames_in": 4,
+  "bytes_in": 4198,
+  "frames_out": 2,
+  "bytes_out": 1462,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": {
+     "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+     "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+     "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+     "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+     "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+     "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+     "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+     "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+     "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+     "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+     "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123",
+     "reflex___state____state.bootecho___bootecho____prefs.sess_rx_state_": "user-sess"
+    }
+   }
+  ],
+  "var_counts": {
+   "reflex___istate___dynamic____box_n2.bck": 2,
+   "reflex___istate___dynamic____box_n2.pref": 2,
+   "bootecho___bootecho____prefs.ck": 2,
+   "bootecho___bootecho____prefs.ck_combo": 2,
+   "bootecho___bootecho____prefs.ckopt": 2,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 2,
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____prefs.sess": 2,
+   "bootecho___bootecho____prefs.theme": 2,
+   "bootecho___bootecho____prefs.theme_upper": 2,
+   "bootecho___bootecho____sub_prefs.sub_ck": 2,
+   "bootecho___bootecho____sub_prefs.sub_combo": 2,
+   "bootecho___bootecho____sub_prefs.sub_ls": 2,
+   "reflex___istate___dynamic____box_n1.bck": 2,
+   "reflex___istate___dynamic____box_n1.pref": 2,
+   "bootecho___bootecho____guard.tok": 2,
+   "bootecho___bootecho____guard.tok_ok": 2
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 3,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "cookie_slide": {
+  "before": {
+   "be_ckopt": 1791413440.9,
+   "be_ck": -1,
+   "be_sub_ck": 1791417041.8,
+   "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": 1791410442.7,
+   "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": 1791410443.6
+  },
+  "after": {
+   "be_ckopt": 1791413448.7,
+   "be_ck": -1,
+   "be_sub_ck": 1791417048.7,
+   "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": 1791410448.7,
+   "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": 1791410448.7
+  },
+  "delta_s": {
+   "be_ckopt": 7.8,
+   "be_ck": 0,
+   "be_sub_ck": 6.9,
+   "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": 6.0,
+   "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": 5.1
+  }
+ },
+ "user_reload2": {
+  "label": "user_reload2",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"mklg8snd9t8\":198}"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413450.4,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417050.4,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410450.4,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410450.4,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 11.311,
+    "len": 3136,
+    "root_is_h": false,
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.clicks": 1,
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.note_len": "N:9:user-note",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____guard.tok": "good-123",
+     "bootecho___bootecho____guard.tok_ok": true
+    }
+   },
+   {
+    "t": 11.311,
+    "len": 914,
+    "root_is_h": true,
+    "vars": {
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   }
+  ],
+  "n_deltas": 2,
+  "frames_in": 4,
+  "bytes_in": 4198,
+  "frames_out": 2,
+  "bytes_out": 1462,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": {
+     "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+     "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+     "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+     "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+     "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+     "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+     "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+     "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+     "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+     "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+     "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123",
+     "reflex___state____state.bootecho___bootecho____prefs.sess_rx_state_": "user-sess"
+    }
+   }
+  ],
+  "var_counts": {
+   "reflex___istate___dynamic____box_n2.bck": 2,
+   "reflex___istate___dynamic____box_n2.pref": 2,
+   "bootecho___bootecho____prefs.ck": 2,
+   "bootecho___bootecho____prefs.ck_combo": 2,
+   "bootecho___bootecho____prefs.ckopt": 2,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 2,
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____prefs.sess": 2,
+   "bootecho___bootecho____prefs.theme": 2,
+   "bootecho___bootecho____prefs.theme_upper": 2,
+   "bootecho___bootecho____sub_prefs.sub_ck": 2,
+   "bootecho___bootecho____sub_prefs.sub_combo": 2,
+   "bootecho___bootecho____sub_prefs.sub_ls": 2,
+   "reflex___istate___dynamic____box_n1.bck": 2,
+   "reflex___istate___dynamic____box_n1.pref": 2,
+   "bootecho___bootecho____guard.tok": 2,
+   "bootecho___bootecho____guard.tok_ok": 2
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 3,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "user_probe": {
+  "label": "user_probe",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"mklg8snd9t8\":198}"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413450.4,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417050.4,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410450.4,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410450.4,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [],
+  "n_deltas": 0,
+  "frames_in": 0,
+  "bytes_in": 0,
+  "frames_out": 1,
+  "bytes_out": 133,
+  "out_events": [
+   {
+    "event": "probe",
+    "payload": null
+   }
+  ],
+  "var_counts": {},
+  "gd_traces": [
+   "PROBE {\"ck\": \"user-ck\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"note_len\": \"N:9:user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 1,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "nav_onload": {
+  "label": "nav_onload",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_srv": "srv-onload-1",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"mklg8snd9t8\":198}"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413452.9,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417052.9,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410452.9,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410452.9,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 13.84,
+    "len": 1331,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   },
+   {
+    "t": 13.843,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 13.845,
+    "len": 176,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.loads": 1,
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1"
+    }
+   },
+   {
+    "t": 13.846,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 4,
+  "frames_in": 4,
+  "bytes_in": 1684,
+  "frames_out": 2,
+  "bytes_out": 1442,
+  "out_events": [
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+      "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+      "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+      "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123",
+      "reflex___state____state.bootecho___bootecho____prefs.sess_rx_state_": "user-sess"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "bootecho___bootecho____guard.tok": 1,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "ONLOAD {\"before_ck\": \"srvck-default\", \"before_ls\": \"srv-default\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 5,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "nav_plainload": {
+  "label": "nav_plainload",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_srv": "srv-onload-1",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"mklg8snd9t8\":198}"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413454.5,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417054.5,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410454.5,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410454.5,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 15.406,
+    "len": 1477,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   },
+   {
+    "t": 15.408,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 15.408,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 3,
+  "frames_in": 3,
+  "bytes_in": 1654,
+  "frames_out": 2,
+  "bytes_out": 1626,
+  "out_events": [
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+      "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+      "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ck_rx_state_": "srvck-onload-1",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+      "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ls_rx_state_": "srv-onload-1",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123",
+      "reflex___state____state.bootecho___bootecho____prefs.sess_rx_state_": "user-sess"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "bootecho___bootecho____guard.tok": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "ONLOAD_NOOP {\"srv_ls\": \"srv-onload-1\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 5,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "nav_home": {
+  "label": "nav_home",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_srv": "srv-onload-1",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"mklg8snd9t8\":198}"
+   },
+   "token": "51a8225d-559c-40c5-c6c6-08dbcbaadee3",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413456.1,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417056.1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410456.1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410456.1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 16.967,
+    "len": 1429,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   },
+   {
+    "t": 16.968,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 2,
+  "frames_in": 2,
+  "bytes_in": 1517,
+  "frames_out": 2,
+  "bytes_out": 1590,
+  "out_events": [
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+      "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+      "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ck_rx_state_": "srvck-onload-1",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+      "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ls_rx_state_": "srv-onload-1",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123",
+      "reflex___state____state.bootecho___bootecho____prefs.sess_rx_state_": "user-sess"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "bootecho___bootecho____guard.tok": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"51a8225d\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"51a8225d\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 3,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "user_tab2": {
+  "label": "user_tab2",
+  "tab": "user_tab2",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "sess-default",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "0",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_srv": "srv-onload-1",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {},
+   "token": "506eeff1-ef0d-4160-f2a8-fea0caa80ea7",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791413457.8,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791417057.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410457.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791410457.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 0.161,
+    "len": 3263,
+    "root_is_h": false,
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.note_len": "N:9:user-note",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____guard.tok": "good-123",
+     "bootecho___bootecho____guard.tok_ok": true
+    }
+   },
+   {
+    "t": 0.162,
+    "len": 1010,
+    "root_is_h": true,
+    "vars": {
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   }
+  ],
+  "n_deltas": 2,
+  "frames_in": 4,
+  "bytes_in": 4421,
+  "frames_out": 1,
+  "bytes_out": 1542,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": {
+     "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+     "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+     "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+     "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+     "reflex___state____state.bootecho___bootecho____srv.srv_ck_rx_state_": "srvck-onload-1",
+     "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+     "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+     "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+     "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+     "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+     "reflex___state____state.bootecho___bootecho____srv.srv_ls_rx_state_": "srv-onload-1",
+     "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+     "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123"
+    }
+   }
+  ],
+  "var_counts": {
+   "reflex___istate___dynamic____box_n2.bck": 2,
+   "reflex___istate___dynamic____box_n2.pref": 2,
+   "bootecho___bootecho____prefs.ck": 2,
+   "bootecho___bootecho____prefs.ck_combo": 2,
+   "bootecho___bootecho____prefs.ckopt": 2,
+   "bootecho___bootecho____prefs.note": 2,
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____prefs.theme": 2,
+   "bootecho___bootecho____prefs.theme_upper": 2,
+   "bootecho___bootecho____sub_prefs.sub_ck": 2,
+   "bootecho___bootecho____sub_prefs.sub_combo": 2,
+   "bootecho___bootecho____sub_prefs.sub_ls": 2,
+   "bootecho___bootecho____srv.srv_ck": 2,
+   "bootecho___bootecho____srv.srv_ls": 2,
+   "reflex___istate___dynamic____box_n1.bck": 2,
+   "reflex___istate___dynamic____box_n1.pref": 2,
+   "bootecho___bootecho____guard.tok": 2,
+   "bootecho___bootecho____guard.tok_ok": 2
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:9:user-note\"}, \"st\": \"Prefs\", \"tok\": \"506eeff1\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"506eeff1\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"506eeff1\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"506eeff1\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"506eeff1\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 3,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "bad_tok_reload": {
+  "label": "bad_tok_reload",
+  "tab": "badtok",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_tok": "",
+    "theme": "system"
+   },
+   "session": {
+    "react-router-scroll-positions": "{\"1rcjsnm4jgg\":0}"
+   },
+   "token": "a91b5242-3283-4f59-b709-bd866f875423",
+   "cookies": {}
+  },
+  "deltas": [
+   {
+    "t": 1.907,
+    "len": 1867,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "bad-xyz"
+    }
+   },
+   {
+    "t": 1.907,
+    "len": 189,
+    "root_is_h": true,
+    "vars": {
+     "bootecho___bootecho____guard.tok_ok": false,
+     "bootecho___bootecho____guard.tok": ""
+    }
+   }
+  ],
+  "n_deltas": 2,
+  "frames_in": 4,
+  "bytes_in": 2204,
+  "frames_out": 2,
+  "bytes_out": 464,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": {
+     "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "bad-xyz"
+    }
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 2,
+   "bootecho___bootecho____guard.tok_ok": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a91b5242\"}",
+   "GD {\"seen\": {\"SANITISED\": true, \"tok\": \"bad-xyz\", \"tok_ok\": false}, \"st\": \"Guard\", \"tok\": \"a91b5242\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a91b5242\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 2,
+   "SubPrefs": 0,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "bad_tok_reload2": {
+  "label": "bad_tok_reload2",
+  "tab": "badtok",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_tok": "",
+    "theme": "system"
+   },
+   "session": {
+    "react-router-scroll-positions": "{\"1rcjsnm4jgg\":0}"
+   },
+   "token": "a91b5242-3283-4f59-b709-bd866f875423",
+   "cookies": {}
+  },
+  "deltas": [
+   {
+    "t": 3.727,
+    "len": 1784,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 3.727,
+    "len": 189,
+    "root_is_h": true,
+    "vars": {
+     "bootecho___bootecho____guard.tok_ok": false,
+     "bootecho___bootecho____guard.tok": ""
+    }
+   }
+  ],
+  "n_deltas": 2,
+  "frames_in": 4,
+  "bytes_in": 2121,
+  "frames_out": 2,
+  "bytes_out": 457,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": {
+     "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": ""
+    }
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "bootecho___bootecho____guard.tok": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a91b5242\"}",
+   "GD {\"seen\": {\"tok\": \"\", \"tok_ok\": false}, \"st\": \"Guard\", \"tok\": \"a91b5242\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a91b5242\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 2,
+   "SubPrefs": 0,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "server_wins": {
+  "label": "server_wins",
+  "tab": "srv",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_srv": "srv-onload-1",
+    "theme": "system"
+   },
+   "session": {
+    "react-router-scroll-positions": "{\"q5jjn0dllis\":0}"
+   },
+   "token": "e30adf13-f456-40c7-d81d-a9f9784eb8bd",
+   "cookies": {
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 1.886,
+    "len": 1990,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____srv.srv_ck": "browser-old",
+     "bootecho___bootecho____srv.srv_ls": "browser-old"
+    }
+   },
+   {
+    "t": 1.89,
+    "len": 152,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.srv_ck": "browser-old",
+     "bootecho___bootecho____srv.srv_ls": "browser-old"
+    }
+   },
+   {
+    "t": 1.89,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 1.89,
+    "len": 176,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.loads": 1,
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1"
+    }
+   },
+   {
+    "t": 1.89,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 5,
+  "frames_in": 7,
+  "bytes_in": 2643,
+  "frames_out": 2,
+  "bytes_out": 567,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": {
+     "reflex___state____state.bootecho___bootecho____srv.srv_ck_rx_state_": "browser-old",
+     "reflex___state____state.bootecho___bootecho____srv.srv_ls_rx_state_": "browser-old"
+    }
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____srv.srv_ck": 3,
+   "bootecho___bootecho____srv.srv_ls": 3,
+   "bootecho___bootecho____srv.loads": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"e30adf13\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"e30adf13\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"e30adf13\"}",
+   "ONLOAD {\"before_ck\": \"browser-old\", \"before_ls\": \"browser-old\", \"tok\": \"e30adf13\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"e30adf13\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"e30adf13\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 5,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "server_wins_reload": {
+  "label": "server_wins_reload",
+  "tab": "srv",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-onload-2",
+   "srv-ck": "srvck-onload-2",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_srv": "srv-onload-2",
+    "theme": "system"
+   },
+   "session": {
+    "react-router-scroll-positions": "{\"q5jjn0dllis\":0,\"aomq2uc49nk\":0}"
+   },
+   "token": "e30adf13-f456-40c7-d81d-a9f9784eb8bd",
+   "cookies": {
+    "be_srv_ck": {
+     "value": "srvck-onload-2",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 3.61,
+    "len": 2020,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____srv.loads": 1,
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1"
+    }
+   },
+   {
+    "t": 3.611,
+    "len": 156,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1"
+    }
+   },
+   {
+    "t": 3.611,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 3.611,
+    "len": 176,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.loads": 2,
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-2",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-2"
+    }
+   },
+   {
+    "t": 3.611,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 5,
+  "frames_in": 7,
+  "bytes_in": 2677,
+  "frames_out": 2,
+  "bytes_out": 571,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": {
+     "reflex___state____state.bootecho___bootecho____srv.srv_ck_rx_state_": "srvck-onload-1",
+     "reflex___state____state.bootecho___bootecho____srv.srv_ls_rx_state_": "srv-onload-1"
+    }
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____srv.loads": 2,
+   "bootecho___bootecho____srv.srv_ck": 3,
+   "bootecho___bootecho____srv.srv_ls": 3
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"e30adf13\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"e30adf13\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"e30adf13\"}",
+   "ONLOAD {\"before_ck\": \"srvck-onload-1\", \"before_ls\": \"srv-onload-1\", \"tok\": \"e30adf13\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"e30adf13\"}",
+   "GD {\"path\": \"/onload/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"e30adf13\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 5,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "cv_boot": {
+  "label": "cv_boot",
+  "tab": "cv",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "blue",
+   "note": "hello",
+   "sess": "sess-default",
+   "ck": "c1",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:BLUE",
+   "note-len": "N:5:hello",
+   "ck-combo": "c1|ckopt-default",
+   "sub-ls": "subval",
+   "sub-ck": "subck-default",
+   "sub-combo": "subval+blue",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_note": "hello",
+    "be_sub_ls": "subval",
+    "be_theme": "blue",
+    "theme": "system"
+   },
+   "session": {
+    "react-router-scroll-positions": "{\"hima9oeskao\":0}"
+   },
+   "token": "d0b0843e-62f2-4798-cb6a-39129a39d8fa",
+   "cookies": {
+    "be_ck": {
+     "value": "c1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 1.876,
+    "len": 2199,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____prefs.ck": "c1",
+     "bootecho___bootecho____prefs.ck_combo": "c1|ckopt-default",
+     "bootecho___bootecho____prefs.note": "hello",
+     "bootecho___bootecho____prefs.note_len": "N:5:hello",
+     "bootecho___bootecho____prefs.theme": "blue",
+     "bootecho___bootecho____prefs.theme_upper": "T:BLUE",
+     "bootecho___bootecho____sub_prefs.sub_combo": "subval+blue",
+     "bootecho___bootecho____sub_prefs.sub_ls": "subval"
+    }
+   },
+   {
+    "t": 1.878,
+    "len": 442,
+    "root_is_h": true,
+    "vars": {
+     "bootecho___bootecho____prefs.note": "hello",
+     "bootecho___bootecho____prefs.theme": "blue",
+     "bootecho___bootecho____prefs.theme_upper": "T:BLUE",
+     "bootecho___bootecho____prefs.ck": "c1",
+     "bootecho___bootecho____prefs.ck_combo": "c1|ckopt-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "subval+blue",
+     "bootecho___bootecho____sub_prefs.sub_ls": "subval"
+    }
+   }
+  ],
+  "n_deltas": 2,
+  "frames_in": 4,
+  "bytes_in": 2789,
+  "frames_out": 2,
+  "bytes_out": 728,
+  "out_events": [
+   {
+    "connect": "hydrate_and_load",
+    "vars": {
+     "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "c1",
+     "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "blue",
+     "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "hello",
+     "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "subval"
+    }
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____prefs.ck": 2,
+   "bootecho___bootecho____prefs.ck_combo": 2,
+   "bootecho___bootecho____prefs.note": 2,
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____prefs.theme": 2,
+   "bootecho___bootecho____prefs.theme_upper": 2,
+   "bootecho___bootecho____sub_prefs.sub_combo": 2,
+   "bootecho___bootecho____sub_prefs.sub_ls": 2
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:5:hello\"}, \"st\": \"Prefs\", \"tok\": \"d0b0843e\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"d0b0843e\"}",
+   "GD {\"seen\": {\"sub_combo\": \"subval+blue\", \"sub_ls\": \"subval\"}, \"st\": \"SubPrefs\", \"tok\": \"d0b0843e\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"c1\", \"ck_combo\": \"c1|ckopt-default\", \"note\": \"hello\", \"theme\": \"blue\", \"theme_upper\": \"T:BLUE\"}, \"st\": \"Prefs\", \"tok\": \"d0b0843e\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 3,
+   "SubPrefs": 1,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "ui_at_first_hydrated": {
+   "theme": "blue",
+   "theme-upper": "T:BLUE",
+   "note-len": "N:5:hello",
+   "ck-combo": "c1|ckopt-default",
+   "sub-combo": "subval+blue"
+  }
+ }
+}

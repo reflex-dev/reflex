@@ -8,5 +8,5 @@ cd $W
 items=""
 for d in src drivers scripts probes srv.sh cv/bin cv/drivers results trimmed shots; do [ -e $d ] && items="$items $d"; done
 tar -cf - --exclude='.web' --exclude='node_modules' --exclude='.states' --exclude='assets/external' --exclude='*.db' \
-  --exclude='reflex.lock' --exclude='__pycache__' --exclude='*.pid' --exclude='*.raw.json' $items | tar -xf - -C $DEST
+  --exclude='reflex.lock' --exclude='__pycache__' --exclude='*.pid' --exclude='*.raw.json' --exclude='*.png' $items | tar -xf - -C $DEST
 du -sh $DEST

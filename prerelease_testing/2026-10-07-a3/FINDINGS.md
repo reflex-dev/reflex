@@ -25,6 +25,7 @@ Previous pass (a2 train): [../2026-10-07/FINDINGS.md](../2026-10-07/FINDINGS.md)
 ## Re-verification table (must-fix findings of the a2 pass)
 | id | a2-pass status | a3 result | evidence | item |
 |---|---|---|---|---|
+| F-002 / F-003 (a2-pass fixed; #7493 risk) | fixed in a2 | **still fixed**: positive controls catch 0.10.0a1's 8-key write-back and F-003 cases; a3 fresh profiles write nothing (dev, prod, prod/Redis; LS, SS, cookie options, `sync=True`, substates, ComponentState, local-auth, google-auth); cvstore a–j identical to a2 on seeds 0/4 | `a3_hydration/NOTES.md` | a3_hydration |
 | N-001 greenlet missing from `reflex[db]` | HIGH, all fresh installs | **fixed**: fresh `reflex[db]==0.10.0a3` with uv and pip on 3.11–3.14 resolves greenlet 3.5.6 + SQLAlchemy 2.1.4 through the extra (8/8); `rx.Model`, `reflex db init/makemigrations/migrate` and prod CRUD work | `a3_preflight/logs/03-*`, `04-*`, `dbcli-prod.*` | a3_preflight |
 | N-025 prod AG Grid Var `column_defs` empty | HIGH regression | **fixed with reflex a3 + enterprise 0.9.7a5** (enterprise-side fix): verifier fixture entv s1–s13 render in prod and dev (state grid 2h/6c, memo grids, `/onload`, second context, detail grid Count/Value), aggrid_min 4/4, demo `probe_state_coldefs` 7/7 (a2 3/7). **Still broken with enterprise 0.9.7a4 on a3** (state grid 0h/0c, memo grids empty, detail headers []): users must upgrade reflex-enterprise together with reflex. a5 also fixes reflex a2 and keeps 0.9.12 working. Positive control on a2 + a4 still reproduced first | `a3_ent_grid/NOTES.md`, `out/` | a3_ent_grid |
 | N-032 OIDC cross-tab logout | HIGH regression | **fixed with reflex a3** (reflex-side #7493; a5 alone does not fix a2: 0/3): `away` (Back-button) signed out 3/3 in dev Redis, prod Redis (1 worker) and dev memory (a2 0/3); stale-hash probes 3/3/3 (a2 0/0/0); two-tab `xtab` 6/6, 6/6, 4/4 with every race healed; explorer probes 3/3/3 and 5/5 (a2 3/7); core `get_delta` override sees the boot value once in dev and prod, like 0.9.12. Positive control on a2 + a4 reproduced first. Side effect A3-09 | `a3_ent_auth/NOTES.md`, `logs/` | a3_ent_auth |
@@ -127,7 +128,33 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
 - Filed: [reflex-enterprise#274](https://github.com/reflex-dev/reflex-enterprise/issues/274) (2026-10-07). N-033's a3 re-check added to
   [reflex-enterprise#262](https://github.com/reflex-dev/reflex-enterprise/issues/262#issuecomment-6047554210).
 
+### A3-11: `sync=True` LocalStorage: the #7493 boot echo writes back the stale value a tab read at connect time, so a change made in another tab while tabs are booting starts an endless cross-tab storage ping-pong (MEDIUM, regression vs a2, not vs 0.9.12; pending verification)
+- Item `a3_hydration` (inbox 1). `src/bootecho`, `scripts/run_storm.sh a3 dev 8 3142 8142 S 6`: tab 0 sets the synced `be_theme` 5× 250 ms
+  apart while 6 more tabs load in the same browser context. a3: endless ping-pong dev 6/9 (+3/3 long runs), prod 2/5; a2 0/15; 0.9.12
+  9/10. Long runs: 8k–39k websocket frames per 5 s for 60 s, tabs stuck on mixed s2–s4 (the user's last value s5 is lost), backend
+  ~50–70 % CPU. Two-tab form with inbound messages held: transient revert 1/2 (a2 0/2). Cause: `reflex/state.py:2401` + `2420-2422`
+  re-mark the applied browser values dirty after the snapshot → the boot delta carries the value read at CONNECT → `state.js:896/1076`
+  `localStorage.setItem` of the stale value → `storage` event in the other tabs (`state.js:1267`) → `update_vars_internal` → deltas write
+  back again. #7493 restored 0.9.12's boot echo, and with it 0.9.12's storm; a2 was immune because it echoed nothing.
+
+### A3-12: `sync=True` LocalStorage written concurrently by several tabs (an on_load that stamps a synced var, a browser session restore) loops forever between the tabs (MEDIUM, pre-existing on 0.9.12, a2 and a3; pending verification)
+- Item `a3_hydration` (inbox 2). `src/syncstamp` (`Stamp.last = rx.LocalStorage("", name="ss_last", sync=True)` set to a per-tab value in
+  `/stamp`'s on_load), `scripts/run_stamp.sh a3 dev 4 3142 8142 /stamp 6`: 3–6 tabs → a3 41k–234k, a2 118k–137k, 0.9.12 40k–64k frames
+  per 5 s; the control `/same` (same value from every tab) stays quiet. The volume crashed the Playwright driver in 4/12 runs.
+
 ## Cluster summaries
+
+### `a3_hydration` — done (positive controls catch a1's F-002/F-003 and 0.9.12's storm first)
+F-002 and F-003 stay fixed; the whole reverify_hydration suite (f1combo, mini, cvstore a–j, hydapp s1–s13, reconnect, Redis restart,
+token leak, prenav, preconnect, csbox) matches a2 field by field in dev, prod and prod/Redis. #7493 works as designed and restores
+0.9.12's boot semantics: `get_delta` overrides see the browser's storage values once (a2: never), a sanitising override now reaches
+localStorage, a fresh browser gets nothing written, computed vars over storage vars are right at first hydration, on_load values win;
+returning-user boot = 4 frames / 2 deltas (= a2; 0.9.12 6/4). By design (as on 0.9.12, not a2): every storage value is sent twice at
+boot (+826 B / +24 % for the bootecho page), every returning visit rewrites every storage value, so a cookie's `max_age` expiry slides and
+raw cookie values set outside reflex come back URL-encoded. reflex-local-auth 0.5.0 36/38 (known demo pitfall) + 14/14 storage checks,
+reflex-google-auth bogus-token clearing: identical on a3, a2 and 0.9.12. Unchanged: F-008 (>1 MB storage storm), F-010 (prenav
+on_load), N-015, N-016; F-017 not reproduced. New: A3-11 (medium, regression vs a2), A3-12 (medium, pre-existing).
+Notes: `a3_hydration/NOTES.md`.
 
 ### `a3_ent_auth` — done (positive controls on a2 + a4 / a5 reproduced first)
 N-032 fixed on a3 (+ a5) in dev Redis, prod Redis and dev memory; the boot now sends `hydrate_and_load`, then
