@@ -1,0 +1,300 @@
+[
+  {
+    "scenario": "reload_writes",
+    "label": "a2-prod-redis",
+    "tab1_diag": {
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+          "url": "http://localhost:8341/dashboard/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/dashboard/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/dashboard/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/dashboard"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 22,
+        "received": 55
+      }
+    },
+    "cookies_after_login": {
+      "_oidc_generic_access_token_data_partitioned": {
+        "len": 87,
+        "partitionKey": "http://localhost",
+        "sameSite": "None",
+        "secure": true,
+        "httpOnly": true
+      },
+      "_oidc_generic_id_token_partitioned": {
+        "len": 781,
+        "partitionKey": "http://localhost",
+        "sameSite": "None",
+        "secure": true,
+        "httpOnly": true
+      },
+      "_oidc_generic_refresh_token_partitioned": {
+        "len": 48,
+        "partitionKey": "http://localhost",
+        "sameSite": "None",
+        "secure": true,
+        "httpOnly": true
+      },
+      "_oidc_generic_granted_scopes_partitioned": {
+        "len": 22,
+        "partitionKey": "http://localhost",
+        "sameSite": "None",
+        "secure": true,
+        "httpOnly": true
+      }
+    },
+    "steps": [
+      {
+        "reload": 0,
+        "cookies": [
+          "_oidc_generic_access_token_data_partitioned",
+          "_oidc_generic_granted_scopes_partitioned",
+          "_oidc_generic_id_token_partitioned",
+          "_oidc_generic_refresh_token_partitioned"
+        ]
+      },
+      {
+        "reload": 1,
+        "cookies": [
+          "_oidc_generic_access_token_data_partitioned",
+          "_oidc_generic_granted_scopes_partitioned",
+          "_oidc_generic_id_token_partitioned",
+          "_oidc_generic_refresh_token_partitioned"
+        ]
+      },
+      {
+        "after_public_roundtrip": true,
+        "cookies": [
+          "_oidc_generic_access_token_data_partitioned",
+          "_oidc_generic_granted_scopes_partitioned",
+          "_oidc_generic_id_token_partitioned",
+          "_oidc_generic_refresh_token_partitioned"
+        ]
+      }
+    ],
+    "violations": [],
+    "all_hash_writes": [
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "e47f877c5f2016b4d58ad07ee1eb955e3abd21f24607709ee6c2b6ed4b89a2dc",
+        "href": "/callback/?code=M9j87ossotbW8YI0auuCpjhHuCD7ZkZE1I",
+        "t": 0.958,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "e47f877c5f2016b4d58ad07ee1eb955e3abd21f24607709ee6c2b6ed4b89a2dc",
+        "href": "/dashboard/",
+        "t": 1.004,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "e47f877c5f2016b4d58ad07ee1eb955e3abd21f24607709ee6c2b6ed4b89a2dc",
+        "href": "/",
+        "t": 5.788,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "e47f877c5f2016b4d58ad07ee1eb955e3abd21f24607709ee6c2b6ed4b89a2dc",
+        "href": "/dashboard",
+        "t": 5.985,
+        "tab": "tab1"
+      }
+    ],
+    "sync_responses": [
+      {
+        "t": 0.959,
+        "tab": "tab1",
+        "kind": "cookie-sync",
+        "status": 200,
+        "req_cookies_nonempty": [],
+        "set_cookie": [
+          {
+            "name": "_oidc_generic_access_token_data_partitioned",
+            "empty": false,
+            "max_age_0": false,
+            "val_len": 87
+          },
+          {
+            "name": "_oidc_generic_id_token_partitioned",
+            "empty": false,
+            "max_age_0": false,
+            "val_len": 781
+          },
+          {
+            "name": "_oidc_generic_refresh_token_partitioned",
+            "empty": false,
+            "max_age_0": false,
+            "val_len": 48
+          },
+          {
+            "name": "_oidc_generic_granted_scopes_partitioned",
+            "empty": false,
+            "max_age_0": false,
+            "val_len": 22
+          }
+        ]
+      }
+    ],
+    "ok": true,
+    "duration": 7.6
+  },
+  {
+    "scenario": "newtab_writes",
+    "label": "a2-prod-redis",
+    "tab1_diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/list/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 12,
+        "received": 29
+      }
+    },
+    "tab2_diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 2,
+        "received": 7
+      }
+    },
+    "tab3_diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/dashboard/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 1,
+        "received": 7
+      }
+    },
+    "tab1_url_after_click": "http://localhost:8341/list/",
+    "violations": [],
+    "all_hash_writes": [
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "815f8d72f065c3f7c66e705a30cfff55f6d7c06c2477f78c3c5198d9181e6867",
+        "href": "/callback/?code=F70MlPoR7OITPrsH3RDnixWMaqUMCePoPl",
+        "t": 0.806,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "815f8d72f065c3f7c66e705a30cfff55f6d7c06c2477f78c3c5198d9181e6867",
+        "href": "/list/",
+        "t": 0.829,
+        "tab": "tab1"
+      }
+    ],
+    "cookies_end": [
+      "_oidc_generic_access_token_data_partitioned",
+      "_oidc_generic_granted_scopes_partitioned",
+      "_oidc_generic_id_token_partitioned",
+      "_oidc_generic_refresh_token_partitioned"
+    ],
+    "ok": true,
+    "duration": 6.4
+  }
+]

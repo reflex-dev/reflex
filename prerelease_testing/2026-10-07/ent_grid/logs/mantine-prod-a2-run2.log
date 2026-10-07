@@ -1,0 +1,23 @@
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:5)
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_grid-a2/lib/python3.12/site-packages/reflex_components_radix/plugin.py
+:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:06
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3316/
+Warning: Page dates is being redefined with the same component.
+Warning: Page pill is being redefined with the same component.
+Warning: Page tags-input is being redefined with the same component.
+Warning: Page qa-mantine is being redefined with the same component.
+Warning: Page index is being redefined with the same component.
+Info: Reflex app stopped.

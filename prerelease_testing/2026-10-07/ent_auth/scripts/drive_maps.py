@@ -2,6 +2,7 @@
 200 circle markers re-rendered from a State list every second by a background task.
 
 Usage: drive_maps.py <base_url> <label>
+rxe.map does not put its `id` on the Leaflet container (it keys the JS map ref), so selectors are page-global (one map per page).
 External tile hosts are blocked by the sandbox proxy (tiles 'fail' with ERR_TUNNEL_CONNECTION_FAILED);
 checks use the Leaflet DOM (tile <img> src, overlay-pane paths, marker icons) instead of pixels.
 """
@@ -56,10 +57,10 @@ def case_markers(browser):
     """)
     page.goto(BASE + "/")
     wait_hydrated(page)
-    n_paths = page.locator("#markers-map .leaflet-overlay-pane path").count()
+    n_paths = page.locator(".leaflet-overlay-pane path").count()
     check("markers_200_rendered", n_paths == 200, n_paths=n_paths, n_text=page.locator("#n-markers").inner_text())
     # drag the State-positioned marker
-    sel = '#markers-map img.leaflet-marker-icon[title="drag-me"]'
+    sel = 'img.leaflet-marker-icon[title="drag-me"]'
     expect(page.locator(sel)).to_be_visible()
     before = page.locator(sel).bounding_box()
     drag(page, sel, 120, 60)
@@ -77,7 +78,7 @@ def case_markers(browser):
     after2 = page.locator(sel).bounding_box()
     check("second_drag_no_snap_back", last2 != last, last_drag=last2, pos=[round(after2["x"]), round(after2["y"])], expected_near=[round(after["x"] - 60), round(after["y"] - 40)])
     # no-arg dragend handler
-    drag(page, '#markers-map img.leaflet-marker-icon[title="drag-noarg"]', 50, 50)
+    drag(page, 'img.leaflet-marker-icon[title="drag-noarg"]', 50, 50)
     expect(page.locator("#drag-noarg-count")).to_contain_text("1", timeout=10_000)
     check("drag_end_noarg", True, text=page.locator("#drag-noarg-count").inner_text())
     # marker click handler
@@ -85,7 +86,7 @@ def case_markers(browser):
     page.wait_for_timeout(800)
     check("marker_click", "clicks=1" in page.locator("#clicks").inner_text().replace(" ", ""), text=page.locator("#clicks").inner_text())
     # ticker: 200 markers re-rendered every second from a background task
-    first_d = page.locator("#markers-map .leaflet-overlay-pane path").first.get_attribute("d")
+    first_d = page.locator(".leaflet-overlay-pane path").first.get_attribute("d")
     lt_before = page.evaluate("() => window.__lt.length")
     page.locator("#start").click()
     samples = []
@@ -93,8 +94,8 @@ def case_markers(browser):
     while time.time() - t0 < 11:
         page.wait_for_timeout(1000)
         samples.append([round(time.time() - t0, 1), page.locator("#tick").inner_text(), page.locator("#running").inner_text(),
-                        page.locator("#markers-map .leaflet-overlay-pane path").count(),
-                        page.locator("#markers-map .leaflet-overlay-pane path").first.get_attribute("d")[:18]])
+                        page.locator(".leaflet-overlay-pane path").count(),
+                        page.locator(".leaflet-overlay-pane path").first.get_attribute("d")[:18]])
     res["ticker_samples"] = samples
     ds = {s[4] for s in samples}
     counts = {s[3] for s in samples}
@@ -114,13 +115,22 @@ def case_markers(browser):
     # reload: State (drag position, tick) restored
     page.reload()
     wait_hydrated(page)
-    check("reload_restores_state", page.locator("#tick").inner_text().replace(" ", "") == "tick=16" and page.locator("#markers-map .leaflet-overlay-pane path").count() == 200,
+    check("reload_restores_state", page.locator("#tick").inner_text().replace(" ", "") == "tick=16" and page.locator(".leaflet-overlay-pane path").count() == 200,
           tick=page.locator("#tick").inner_text(), last_drag=page.locator("#last-drag").inner_text())
     page.screenshot(path=str(W / "screenshots" / f"{LABEL}-maps-markers.png"))
     ctx.close()
 
 
+def tile_srcs(page, host):
+    return page.locator(".leaflet-tile-pane img").evaluate_all(f"els => els.map(e => e.src).filter(s => s.includes('{host}')).length")
+
+
 def case_layers(browser):
+    """State-driven base layer / overlay switching next to an (empty) rxe.map.layers_control.
+
+    rxe.map does not expose LayersControl.BaseLayer/Overlay (see NOTES.md), so the Leaflet radio control
+    cannot be populated; this checks that switching TileLayers / overlays from State re-renders the map.
+    """
     ctx = browser.new_context(viewport={"width": 1300, "height": 900})
     page = ctx.new_page()
     page.set_default_timeout(T)
@@ -130,33 +140,34 @@ def case_layers(browser):
     page.on("request", lambda r: tile_reqs.append(r.url) if "tile." in r.url else None)
     page.goto(BASE + "/layers")
     wait_hydrated(page)
-    ctl = page.locator("#layers-map .leaflet-control-layers")
-    expect(ctl).to_be_visible()
-    labels = ctl.locator("label").all_inner_texts()
-    check("layers_control_rendered", any("OSM" in x for x in labels) and any("Topo" in x for x in labels), labels=[x.strip() for x in labels])
-    osm_tiles = page.locator("#layers-map .leaflet-tile-pane img").evaluate_all("els => els.map(e => e.src).filter(s => s.includes('openstreetmap')).length")
+    check("layers_control_rendered", page.locator(".leaflet-control-layers").count() == 1,
+          n=page.locator(".leaflet-control-layers").count())
+    osm0 = tile_srcs(page, "openstreetmap")
     adds0 = page.locator("#layer-adds").inner_text()
     n_req0 = len(tile_reqs)
-    ctl.locator("label", has_text="Topo").locator("input").check()
-    page.wait_for_timeout(2000)
-    topo_tiles = page.locator("#layers-map .leaflet-tile-pane img").evaluate_all("els => els.map(e => e.src).filter(s => s.includes('opentopomap')).length")
-    osm_after = page.locator("#layers-map .leaflet-tile-pane img").evaluate_all("els => els.map(e => e.src).filter(s => s.includes('openstreetmap')).length")
-    check("base_layer_switch", topo_tiles > 0 and osm_after == 0, osm_tiles_before=osm_tiles, topo_tiles=topo_tiles, osm_after=osm_after,
+    page.locator("#base-topo").click()
+    page.wait_for_timeout(2500)
+    topo, osm1 = tile_srcs(page, "opentopomap"), tile_srcs(page, "openstreetmap")
+    check("base_layer_switch_from_state", topo > 0 and osm1 == 0, osm_before=osm0, topo_after=topo, osm_after=osm1,
           topo_requests=sum(1 for u in tile_reqs[n_req0:] if "opentopomap" in u))
     adds1 = page.locator("#layer-adds").inner_text()
     check("on_layeradd_event", adds1 != adds0, before=adds0, after=adds1)
-    n_circle = page.locator("#layers-map .leaflet-overlay-pane path").count()
-    ctl.locator("label", has_text="Circle").locator("input").uncheck()
-    page.wait_for_timeout(800)
-    n_circle_off = page.locator("#layers-map .leaflet-overlay-pane path").count()
-    ctl.locator("label", has_text="Marker").locator("input").check()
-    page.wait_for_timeout(800)
-    n_marker = page.locator('#layers-map img.leaflet-marker-icon[title="overlay-marker"]').count()
-    check("overlay_toggle", n_circle == 1 and n_circle_off == 0 and n_marker == 1, circle_on=n_circle, circle_off=n_circle_off, marker_on=n_marker)
-    ctl.locator("label", has_text="OSM").locator("input").check()
+    n_circle = page.locator(".leaflet-overlay-pane path").count()
+    page.locator("#toggle-circle").click()
     page.wait_for_timeout(1000)
-    back = page.locator("#layers-map .leaflet-tile-pane img").evaluate_all("els => els.map(e => e.src).filter(s => s.includes('openstreetmap')).length")
-    check("base_layer_switch_back", back > 0, osm_tiles=back)
+    n_off = page.locator(".leaflet-overlay-pane path").count()
+    page.locator("#toggle-circle").click()
+    page.wait_for_timeout(1000)
+    n_on = page.locator(".leaflet-overlay-pane path").count()
+    check("overlay_toggle_from_state", n_circle == 1 and n_off == 0 and n_on == 1, initial=n_circle, off=n_off, on_again=n_on)
+    page.locator("#base-osm").click()
+    page.wait_for_timeout(1500)
+    check("base_layer_switch_back", tile_srcs(page, "openstreetmap") > 0 and tile_srcs(page, "opentopomap") == 0,
+          osm=tile_srcs(page, "openstreetmap"), topo=tile_srcs(page, "opentopomap"))
+    page.reload()
+    wait_hydrated(page)
+    check("layers_state_after_reload", page.locator("#base-layer").inner_text().replace(" ", "") == "base=osm" and
+          page.locator(".leaflet-overlay-pane path").count() == 1, base=page.locator("#base-layer").inner_text())
     page.screenshot(path=str(W / "screenshots" / f"{LABEL}-maps-layers.png"))
     ctx.close()
 

@@ -3,13 +3,13 @@
  "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
  "checks": [
   {
-   "t": 2.8,
+   "t": 2.82,
    "name": "index: 2 charts render (composed + options)",
    "ok": true,
    "detail": 2
   },
   {
-   "t": 2.81,
+   "t": 2.85,
    "name": "composed: 6 columns + 6 line markers; options chart: pie 3 slices",
    "ok": true,
    "detail": [
@@ -19,25 +19,25 @@
    ]
   },
   {
-   "t": 3.77,
+   "t": 3.83,
    "name": "composed: shared tooltip lists both series on hover",
    "ok": true,
    "detail": " Mar\u25cf 2025: 1\u25cf 2026: 3"
   },
   {
-   "t": 4.81,
+   "t": 4.9,
    "name": "composed: line point click -> series events.click -> State.on_point_click",
    "ok": true,
    "detail": "Clicked Mar: 3 units"
   },
   {
-   "t": 5.65,
+   "t": 5.75,
    "name": "composed: legend click hides the 2025 series",
    "ok": true,
    "detail": "hidden"
   },
   {
-   "t": 6.29,
+   "t": 6.4,
    "name": "composed: exporting context menu opens with download items",
    "ok": true,
    "detail": [
@@ -53,7 +53,7 @@
    ]
   },
   {
-   "t": 7.41,
+   "t": 7.54,
    "name": "composed: chart colours follow the color mode toggle",
    "ok": true,
    "detail": {
@@ -68,25 +68,31 @@
    }
   },
   {
-   "t": 9.24,
+   "t": 9.38,
    "name": "index: State.last_point survives reload",
    "ok": true,
    "detail": ""
   },
   {
-   "t": 11.06,
+   "t": 11.3,
+   "name": "index: a second browser context shows the default text (session isolation)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 13.12,
    "name": "qa: line series data from State renders 3 points",
    "ok": true,
    "detail": 3
   },
   {
-   "t": 12.09,
+   "t": 14.16,
    "name": "qa: pushing to State.data adds a point (4)",
    "ok": true,
    "detail": 4
   },
   {
-   "t": 13.14,
+   "t": 15.19,
    "name": "qa: title child component + options dict follow State (both retitled, pie 3 slices)",
    "ok": true,
    "detail": {
@@ -98,7 +104,7 @@
    }
   },
   {
-   "t": 15.27,
+   "t": 17.32,
    "name": "qa: after reload charts show the session state (4 points, retitled)",
    "ok": true,
    "detail": {
@@ -116,11 +122,11 @@
  ],
  "summary": {
   "checks_failed": [],
-  "n_checks": 12,
-  "console_total": 9,
+  "n_checks": 13,
+  "console_total": 11,
   "console_benign": 0,
   "console_errors": 1,
-  "console_warnings": 4,
+  "console_warnings": 5,
   "page_errors": 0,
   "failed_requests": 0,
   "http_errors": 0
@@ -128,7 +134,7 @@
  "anomalies": {
   "console_errors": [
    {
-    "t": 0.8,
+    "t": 0.83,
     "ctx": "hc",
     "type": "error",
     "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -145,13 +151,13 @@
   ],
   "console_warnings": [
    {
-    "t": 0.9,
+    "t": 0.91,
     "ctx": "hc",
     "type": "warning",
     "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
     "url": "http://localhost:3319/",
     "location": {
-     "url": "http://localhost:3319/assets/highcharts-9fx0Y2Ln.js",
+     "url": "http://localhost:3319/assets/highcharts-l8JK3auh.js",
      "line": 0,
      "column": 8967,
      "lineNumber": 0,
@@ -160,13 +166,13 @@
     "benign": false
    },
    {
-    "t": 7.59,
+    "t": 7.74,
     "ctx": "hc",
     "type": "warning",
     "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
     "url": "http://localhost:3319/",
     "location": {
-     "url": "http://localhost:3319/assets/highcharts-9fx0Y2Ln.js",
+     "url": "http://localhost:3319/assets/highcharts-l8JK3auh.js",
      "line": 0,
      "column": 8967,
      "lineNumber": 0,
@@ -175,13 +181,13 @@
     "benign": false
    },
    {
-    "t": 9.36,
-    "ctx": "hc",
+    "t": 9.75,
+    "ctx": "hc-ctx2",
     "type": "warning",
     "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
-    "url": "http://localhost:3319/qa/",
+    "url": "http://localhost:3319/",
     "location": {
-     "url": "http://localhost:3319/assets/highcharts-9fx0Y2Ln.js",
+     "url": "http://localhost:3319/assets/highcharts-l8JK3auh.js",
      "line": 0,
      "column": 8967,
      "lineNumber": 0,
@@ -190,13 +196,28 @@
     "benign": false
    },
    {
-    "t": 13.3,
+    "t": 11.46,
     "ctx": "hc",
     "type": "warning",
     "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
     "url": "http://localhost:3319/qa/",
     "location": {
-     "url": "http://localhost:3319/assets/highcharts-9fx0Y2Ln.js",
+     "url": "http://localhost:3319/assets/highcharts-l8JK3auh.js",
+     "line": 0,
+     "column": 8967,
+     "lineNumber": 0,
+     "columnNumber": 8967
+    },
+    "benign": false
+   },
+   {
+    "t": 15.35,
+    "ctx": "hc",
+    "type": "warning",
+    "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
+    "url": "http://localhost:3319/qa/",
+    "location": {
+     "url": "http://localhost:3319/assets/highcharts-l8JK3auh.js",
      "line": 0,
      "column": 8967,
      "lineNumber": 0,
@@ -211,7 +232,7 @@
  },
  "console_all": [
   {
-   "t": 0.8,
+   "t": 0.83,
    "ctx": "hc",
    "type": "error",
    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -226,58 +247,28 @@
    "benign": false
   },
   {
-   "t": 0.9,
+   "t": 0.91,
    "ctx": "hc",
    "type": "warning",
    "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
    "url": "http://localhost:3319/",
    "location": {
-    "url": "http://localhost:3319/assets/highcharts-9fx0Y2Ln.js",
+    "url": "http://localhost:3319/assets/highcharts-l8JK3auh.js",
     "line": 0,
     "column": 8967,
     "lineNumber": 0,
     "columnNumber": 8967
-   },
-   "benign": false
-  },
-  {
-   "t": 7.46,
-   "ctx": "hc",
-   "type": "log",
-   "text": "Disconnect websocket on page navigation",
-   "url": "http://localhost:3319/",
-   "location": {
-    "url": "http://localhost:3319/assets/icon-button-BPTNvdkk.js",
-    "line": 1,
-    "column": 11226,
-    "lineNumber": 1,
-    "columnNumber": 11226
    },
    "benign": false
   },
   {
    "t": 7.59,
    "ctx": "hc",
-   "type": "warning",
-   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
-   "url": "http://localhost:3319/",
-   "location": {
-    "url": "http://localhost:3319/assets/highcharts-9fx0Y2Ln.js",
-    "line": 0,
-    "column": 8967,
-    "lineNumber": 0,
-    "columnNumber": 8967
-   },
-   "benign": false
-  },
-  {
-   "t": 9.24,
-   "ctx": "hc",
    "type": "log",
    "text": "Disconnect websocket on page navigation",
    "url": "http://localhost:3319/",
    "location": {
-    "url": "http://localhost:3319/assets/icon-button-BPTNvdkk.js",
+    "url": "http://localhost:3319/assets/icon-button-D9Nrk_-S.js",
     "line": 1,
     "column": 11226,
     "lineNumber": 1,
@@ -286,13 +277,13 @@
    "benign": false
   },
   {
-   "t": 9.36,
+   "t": 7.74,
    "ctx": "hc",
    "type": "warning",
    "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
-   "url": "http://localhost:3319/qa/",
+   "url": "http://localhost:3319/",
    "location": {
-    "url": "http://localhost:3319/assets/highcharts-9fx0Y2Ln.js",
+    "url": "http://localhost:3319/assets/highcharts-l8JK3auh.js",
     "line": 0,
     "column": 8967,
     "lineNumber": 0,
@@ -301,13 +292,43 @@
    "benign": false
   },
   {
-   "t": 13.18,
+   "t": 9.75,
+   "ctx": "hc-ctx2",
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
+   "url": "http://localhost:3319/",
+   "location": {
+    "url": "http://localhost:3319/assets/highcharts-l8JK3auh.js",
+    "line": 0,
+    "column": 8967,
+    "lineNumber": 0,
+    "columnNumber": 8967
+   },
+   "benign": false
+  },
+  {
+   "t": 11.3,
+   "ctx": "hc-ctx2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3319/",
+   "location": {
+    "url": "http://localhost:3319/assets/icon-button-D9Nrk_-S.js",
+    "line": 1,
+    "column": 11410,
+    "lineNumber": 1,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 11.33,
    "ctx": "hc",
    "type": "log",
    "text": "Disconnect websocket on page navigation",
-   "url": "http://localhost:3319/qa/",
+   "url": "http://localhost:3319/",
    "location": {
-    "url": "http://localhost:3319/assets/icon-button-BPTNvdkk.js",
+    "url": "http://localhost:3319/assets/icon-button-D9Nrk_-S.js",
     "line": 1,
     "column": 11226,
     "lineNumber": 1,
@@ -316,13 +337,13 @@
    "benign": false
   },
   {
-   "t": 13.3,
+   "t": 11.46,
    "ctx": "hc",
    "type": "warning",
    "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
    "url": "http://localhost:3319/qa/",
    "location": {
-    "url": "http://localhost:3319/assets/highcharts-9fx0Y2Ln.js",
+    "url": "http://localhost:3319/assets/highcharts-l8JK3auh.js",
     "line": 0,
     "column": 8967,
     "lineNumber": 0,
@@ -331,13 +352,43 @@
    "benign": false
   },
   {
-   "t": 15.27,
+   "t": 15.23,
+   "ctx": "hc",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3319/qa/",
+   "location": {
+    "url": "http://localhost:3319/assets/icon-button-D9Nrk_-S.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 15.35,
+   "ctx": "hc",
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.",
+   "url": "http://localhost:3319/qa/",
+   "location": {
+    "url": "http://localhost:3319/assets/highcharts-l8JK3auh.js",
+    "line": 0,
+    "column": 8967,
+    "lineNumber": 0,
+    "columnNumber": 8967
+   },
+   "benign": false
+  },
+  {
+   "t": 17.33,
    "ctx": "hc",
    "type": "log",
    "text": "Disconnect websocket on pagehide",
    "url": "http://localhost:3319/qa/",
    "location": {
-    "url": "http://localhost:3319/assets/icon-button-BPTNvdkk.js",
+    "url": "http://localhost:3319/assets/icon-button-D9Nrk_-S.js",
     "line": 1,
     "column": 11410,
     "lineNumber": 1,
@@ -347,7 +398,7 @@
   }
  ],
  "websockets": {
-  "ws://localhost:3319/_event/?token=19850d35-7b24-4b24-c1ee-c1019495c8dd&EIO=4&transport=websocket": {
+  "ws://localhost:3319/_event/?token=25b46be2-b3e1-4ff7-923a-d23a274a4e7f&EIO=4&transport=websocket": {
    "ctx": "hc",
    "sent": 10,
    "recv": 19,
@@ -358,62 +409,68 @@
     "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3975edc6f31a4b39\",\"b084fc0c68f7c73a\",\"87429be55fc6e135\",\"902d0a636d00a7a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
     "41/_event,",
     "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3975edc6f31a4b39\",\"b084fc0c68f7c73a\",\"87429be55fc6e135\",\"902d0a636d00a7a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/qa/\",\"asPath\":\"/qa/\"}}}",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.highcharts___highcharts____qa_highcharts_state.push\",\"router_data\":{\"pathname\":\"/qa/\",\"asPath\":\"/qa/\"}}]",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.highcharts___highcharts____qa_highcharts_state.retitle\",\"router_data\":{\"pathname\":\"/qa/\",\"asPath\":\"/qa/\"}}]",
-    "41/_event,",
-    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3975edc6f31a4b39\",\"b084fc0c68f7c73a\",\"87429be55fc6e135\",\"902d0a636d00a7a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/qa/\",\"asPath\":\"/qa/\"}}}"
+    "...[10 items]"
    ],
    "recv_samples": [
-    "0{\"sid\":\"i3jVpBUTyevLz5d9AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"fPyMYvqvnHbkEGAIAAAB\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3319\",\"origin\":\"http://localhost:3319\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"o4Nhj9LIwoUT9PL+RoSxSQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "0{\"sid\":\"5vIkKWY7wdWHDMcoAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"5_fQfKy-T-t6QLLYAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3319\",\"origin\":\"http://localhost:3319\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13...[600 chars]",
     "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
     "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___highcharts____highcharts_state\":{\"last_point_rx_state_\":\"Clicked Mar: 3 units\"}}}]",
-    "0{\"sid\":\"ezp7rlZU4nOeh4YPAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"Ty4kfQISaHYWpnbvAAAD\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3319\",\"origin\":\"http://localhost:3319\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CFOywGqNhcE+7SFhw3jHDA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "0{\"sid\":\"52RfJ8FrgeWLQxc1AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"KRVVN1uyIM1V4MP3AAAF\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3319\",\"origin\":\"http://localhost:3319\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"2wSEWu3Jv/Bjk0qThhFLLg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___highcharts____qa_highcharts_state\":{\"data_rx_state_\":[1,2,3,4]}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___highcharts____qa_highcharts_state\":{\"pie_rx_state_\":[{\"name\":\"A\",\"y\":10},{\"name\":\"B\",\"y\":30},{\"name\":\"C\",\"y\":60}],\"title_rx_state_\":\"QA retitled\"}}}]",
-    "0{\"sid\":\"NRgGBY4aDqW_5IOkAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"Jxqhcfb8Sco5XtsUAAAH\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3319\",\"origin\":\"http://localhost:3319\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"nHRVXIwUi/SSFCRLW7suLg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    "0{\"sid\":\"VRn3sqjXr54yRBYUAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "...[19 items]"
    ],
    "closed": true
+  },
+  "ws://localhost:3319/_event/?token=de496709-97bf-4bba-c4a8-0fa668bde365&EIO=4&transport=websocket": {
+   "ctx": "hc-ctx2",
+   "sent": 1,
+   "recv": 4,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3975edc6f31a4b39\",\"b084fc0c68f7c73a\",\"87429be55fc6e135\",\"902d0a636d00a7a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"t16o1WlfOUaUUzsoAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"3X8AaoZucK7t4gopAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3319\",\"origin\":\"http://localhost:3319\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13...[600 chars]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": false
   }
  },
  "requests": [
   {
-   "t": 0.59,
+   "t": 0.68,
    "ctx": "hc",
    "url": "http://localhost:3319/",
    "method": "GET"
   },
   {
-   "t": 7.46,
+   "t": 7.59,
    "ctx": "hc",
    "url": "http://localhost:3319/",
    "method": "GET"
   },
   {
-   "t": 9.24,
+   "t": 9.47,
+   "ctx": "hc-ctx2",
+   "url": "http://localhost:3319/",
+   "method": "GET"
+  },
+  {
+   "t": 11.33,
    "ctx": "hc",
    "url": "http://localhost:3319/qa",
    "method": "GET"
   },
   {
-   "t": 9.25,
+   "t": 11.34,
    "ctx": "hc",
    "url": "http://localhost:3319/qa/",
    "method": "GET"
   },
   {
-   "t": 13.18,
+   "t": 15.23,
    "ctx": "hc",
    "url": "http://localhost:3319/qa/",
    "method": "GET"

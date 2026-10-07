@@ -6,7 +6,6 @@ import math
 import random
 
 import reflex_enterprise as rxe
-from reflex_enterprise.components.map.controls import LayersControlBaseLayer, LayersControlOverlay
 from reflex_enterprise.components.map.types import LatLng, latlng, locate_options
 
 import reflex as rx
@@ -47,6 +46,16 @@ class MapState(rx.State):
     loc_found: str = ""
     layer_adds: int = 0
     clicks: int = 0
+    base_layer: str = "osm"
+    show_circle: bool = True
+
+    @rx.event
+    def set_base(self, name: str):
+        self.base_layer = name
+
+    @rx.event
+    def toggle_circle(self):
+        self.show_circle = not self.show_circle
 
     @rx.event
     def on_drag_end(self, pos: dict):
@@ -145,21 +154,30 @@ def index() -> rx.Component:
 
 @rx.page(route="/layers")
 def layers() -> rx.Component:
+    # rxe.map does not expose LayersControl.BaseLayer/Overlay (commented out in reflex_enterprise.components.map,
+    # and using the classes directly emits invalid JS `const LayersControl.BaseLayer = ...` that breaks the whole
+    # app -- see NOTES.md). Base-layer / overlay switching is therefore driven from State here, next to an
+    # (empty) rxe.map.layers_control.
     return rx.vstack(
         status(),
         rx.text("layer adds=", MapState.layer_adds, id="layer-adds"),
+        rx.text("base=", MapState.base_layer, id="base-layer"),
+        rx.hstack(
+            rx.button("OSM", id="base-osm", on_click=MapState.set_base("osm")),
+            rx.button("Topo", id="base-topo", on_click=MapState.set_base("topo")),
+            rx.button("toggle circle", id="toggle-circle", on_click=MapState.toggle_circle),
+        ),
         rxe.map(
-            rxe.map.layers_control(
-                LayersControlBaseLayer.create(rxe.map.tile_layer(url=OSM), name="OSM", checked=True),
-                LayersControlBaseLayer.create(rxe.map.tile_layer(url=TOPO), name="Topo"),
-                LayersControlOverlay.create(
-                    rxe.map.circle(center=latlng(lat=CENTER[0], lng=CENTER[1]), radius=1500,
-                                   path_options=rxe.map.path_options(color="#ff0000", fill_color="#ff3333", fill_opacity=0.5)),
-                    name="Circle", checked=True,
-                ),
-                LayersControlOverlay.create(rxe.map.marker(position=latlng(lat=CENTER[0], lng=CENTER[1]), custom_attrs={"title": "overlay-marker"}), name="Marker", checked=False),
-                position="topright",
-                collapsed=False,
+            rxe.map.layers_control(position="topright", collapsed=False),
+            rx.cond(
+                MapState.base_layer == "osm",
+                rxe.map.tile_layer(url=OSM),
+                rxe.map.tile_layer(url=TOPO),
+            ),
+            rx.cond(
+                MapState.show_circle,
+                rxe.map.circle(center=latlng(lat=CENTER[0], lng=CENTER[1]), radius=1500,
+                               path_options=rxe.map.path_options(color="#ff0000", fill_color="#ff3333", fill_opacity=0.5)),
             ),
             id="layers-map",
             center=latlng(lat=CENTER[0], lng=CENTER[1]),

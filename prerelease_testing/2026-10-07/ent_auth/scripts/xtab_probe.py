@@ -20,6 +20,11 @@ from common import CHROMIUM, W, attach, end_session, login, storage_snapshot  # 
 from instrument import Recorder  # noqa: E402
 
 BASE = sys.argv[1].rstrip("/")
+
+
+def U(path):
+    """URL matcher tolerant of the trailing slash prod static serving adds (307 /dashboard -> /dashboard/)."""
+    return re.compile(re.escape(BASE + path) + r"/?(\?.*)?$")
 LABEL = sys.argv[2]
 T = 45_000
 HASH_KEY_PART = "latest_access_token_hash_ls"
@@ -84,7 +89,7 @@ def run_once(browser, i):
             page1.goto(BASE + "/list")
             page1.wait_for_url(re.compile("/login"), timeout=T)
             login(page1, "alice")
-            page1.wait_for_url(BASE + "/list", timeout=T)
+            page1.wait_for_url(U("/list"), timeout=T)
             expect(page1.locator("#list-user")).to_have_text("alice", timeout=T)
             expect(page1.locator("#item-count")).not_to_have_text("-1", timeout=T)
             obs["t_login_done"] = rec._now()

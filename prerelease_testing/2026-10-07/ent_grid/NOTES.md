@@ -53,6 +53,18 @@ Baselines: same app copied to `baseline/ag_grid_s912` (port 3302, venv ent_grid-
 | a2 prod + `REFLEX_FRONTEND_LAZY_BUNDLED_LIBRARIES=true` | — | — | — | 6/6 (fixed) but `/formatters` crashes (React #130) |
 
 ### 1a. FAIL (regression since 0.10.0a1, prod only): AG Grid with `column_defs` from a State var renders NO columns on a full page load
+- **Minimal repro** (`apps/aggrid_min`, 30 lines): one `rxe.ag_grid(column_defs=GridState.cols, row_data=GridState.rows)` and one
+  identical grid with literal `column_defs`.
+  ```
+  scripts/start_server.sh alpha2-ent $W/aggrid_min logs/aggrid_min-prod-alpha2ent.log http://localhost:3309/ -- --env prod --frontend-port 3309 --backend-port 3309
+  NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python scripts/probe_aggrid_min.py http://localhost:3309 out/aggrid_min_prod_alpha2ent alpha2-ent prod-alpha2ent
+  ```
+  | run | State-var grid headers (load / reload) | literal grid |
+  |---|---|---|
+  | 0.10.0a2 prod (shared `alpha2-ent`) | `[]` / `[]` — empty box, no rows (`out/aggrid_min_prod_alpha2ent/*after-reload.jpg`) | Make, Price |
+  | 0.10.0a2 prod (`ent_grid-a2`) | `[]` / `[]` | Make, Price |
+  | 0.10.0a2 dev | Make, Price / Make, Price | Make, Price |
+  | 0.9.12 prod + same wheel (`baseline/aggrid_min_s912`) | Make, Price / Make, Price | Make, Price |
 - `/master-detail` left grid (`column_defs=MasterDetailState.column_defs`), `/qa-grid-memo` (`@rx.memo` grid with
   `State.fields.foreach(...)` column defs, two `rx.ComponentState` grids): header row empty and rows without cells
   (screenshot `out/ag_prod_a2/probe_state_coldefs-prod-a2-master-detail-full-load.jpg`; 0.9.12 prod
@@ -60,9 +72,10 @@ Baselines: same app copied to `baseline/ag_grid_s912` (port 3302, venv ent_grid-
   (`out/ag_prod_a2_run{1,2,3}`), on a1 prod (`out/ag_prod_a1`), never on 0.9.12 prod, never in dev.
 - The grid recovers only when that substate changes (toggle a field) or after client-side navigation to the page.
   A reload does NOT fix it (unless the state differs from its compiled default).
-- The four prod-only not-ok checks of the 10-06 partial run (`master_detail: scenario completed`,
-  `memo grid: column defs from State.fields.foreach`, `qa_memo: scenario completed`) are all this bug (the driver waits
-  for a group-expand cell / a name cell that never renders). They are real, not driver timing.
+- Of the four prod-only not-ok checks of the 10-06 partial run, three (`master_detail: scenario completed`,
+  `memo grid: column defs from State.fields.foreach`, `qa_memo: scenario completed`) are this bug (the driver waits
+  for a group-expand cell / a name cell that never renders) — real, not driver timing; the fourth (`clipboard ... gold
+  row0 -> row4`) also fails on 0.9.12 and in a2 dev (see 1b).
 - Root cause (from the compiled output): enterprise compiles a Var `column_defs` to `formatColumnDefs(state.column_defs)`;
   `formatColumnDefs` returns `[]` when `typeof __reflex === 'undefined'`. Reflex sets `window.__reflex` in a `useEffect` of
   `ReflexProviders` (`.web/app/root.jsx`, identical in 0.9.12 and 0.10), which runs AFTER the page's first render. On 0.9.12
@@ -78,6 +91,18 @@ Baselines: same app copied to `baseline/ag_grid_s912` (port 3302, venv ent_grid-
   python scripts/probe_core_rerender.py http://localhost:3305 out/core_rerender_prod_a2 alpha2 prod-a2
   # baseline: copy to baseline/core_rerender_s912, venv `stable`, port 3306
   ```
+- Which change: the boot websocket deltas (`scripts/probe_boot_frames.py`, full frames, core_rerender app, prod):
+  0.9.12 sends `hydrate` + `on_load_internal` and its first delta carries EVERY substate (incl. the untouched one) →
+  `applyDelta` gives each substate context a new object → every consumer re-renders once after mount;
+  0.10.0a2 sends one `hydrate_and_load` and its deltas carry only the root state and the substate changed by on_load
+  (`delta substates=['reflex___state____state']`, then `[...touched]`) — i.e. #7064 "sending only values that differ from
+  compiled defaults". So since #7064, a consumer of an unchanged substate is rendered exactly once in prod (the SSR-hydrated
+  render, before `ReflexProviders`' effect assigns `window.__reflex`). (The `boot hydrate frames mentioning ...: 0` lines in
+  `probe_state_coldefs-*.json` are not evidence either way: that probe truncated frames to 4000 chars.)
+- Fix options for the release: assign `window.__reflex` before children render (module scope / layout effect / render
+  phase of ReflexProviders, as the lazy path already does) so render-time readers see it, and/or have enterprise's
+  `formatColumnDefs` not depend on `__reflex` (it only reads `jsx`/`Fragment` from it). Any user code reading
+  `window.__reflex` during render is affected the same way.
 - Workaround: `frontend_lazy_bundled_libraries=True` (new 0.10 config; `window.__reflex` is then assigned at module scope)
   fixes the State-var grids (`out/ag_prod_a2_lazyflag`), but then `/formatters` crashes ("An error occurred while rendering
   this page", Minified React error #130, `out/ag_prod_a2_lazyflag/formatters-lazyflag-0.jpg`) because the demo's
@@ -153,7 +178,7 @@ var, `on_connect` adds an animated edge, drag-handle (label does not drag, handl
   a pointer click on the first × lands on an overlapping edge-interaction path (both versions, demo layout), so the driver
   dispatches the click on the button; Backspace-delete waits for `.selected` (controlled selection round trip).
 
-## 4. mantine demo (`apps/mantine`) — PASS 22/22 on a2 dev, a2 prod and 0.9.12 prod; one pre-existing reflex page error
+## 4. mantine demo (`apps/mantine`) — PASS: a2 dev 22/22, a2 prod 23/23 (second-context check added in the last run), 0.9.12 prod 22/22; one pre-existing reflex page error
 
 The demo only registers /dates, /pill, /tags-input (accordion/action-icon/alert/anchor/angle-slider/aspect-ratio pages are
 commented out upstream: those components do not exist in `rxe.mantine` 0.9.7a4). This cluster added
@@ -185,7 +210,7 @@ TagsInput controlled by State (add with Enter, remove, duplicate rejected, survi
   `ValueError: The Autocomplete does not take in an on_change event trigger` at compile.
 - Driver notes: the MultiSelect `id` lands on the inner input covered by the wrapper (click via focus + ArrowDown, then click the visible option).
 
-## 5. highcharts demo (`apps/highcharts`) — PASS 12/12 on a2 dev and a2 prod
+## 5. highcharts demo (`apps/highcharts`) — PASS: a2 dev 12/12, a2 prod 13/13 (second-context check added in the last run)
 
 This cluster appended a `/qa` page to `highcharts/highcharts.py` (series `data` and an `options` dict built from State vars,
 updated by buttons).
@@ -232,3 +257,44 @@ set_status 200, unknown handler 404 (dev) / 405 (prod single-port), private `_re
   (message also has a doubled period: `received extra argument bogus..`); each also logs `Warning: Attempting to send delta to
   disconnected client '<token>'` (API sessions have no websocket).
 - `Warning: Database is not initialized, run reflex db init first.` at startup (demo uses `TicketRecord.create_all()` instead of alembic; both versions).
+
+
+## 7. rxe.App specifics (`apps/rxeapp`) and `reflex export`
+
+`rxeapp`: `rxe.App(head_components=rxe.google_font("Inter", weights=[400, 700]), style={"font_family": "Inter, sans-serif"})`,
+rxconfig `show_built_with_reflex=False`.
+```
+scripts/start_server.sh ent_grid-a2 $W/rxeapp logs/rxeapp-dev-a2.log http://localhost:3304/ -- --frontend-port 3304 --backend-port 8304
+python scripts/drive_rxeapp.py http://localhost:3304 out/rxeapp_dev_a2 ent_grid-a2 dev-a2 0
+# prod: --env prod port 3305 -> out/rxeapp_prod_a2_badgeoff (expect 0); with REFLEX_SHOW_BUILT_WITH_REFLEX=true -> out/rxeapp_prod_a2_badgeon (expect 1)
+```
+- PASS: google_font emits `<link rel=preconnect href=https://fonts.googleapis.com>`, `<link rel=preconnect href=https://fonts.gstatic.com crossorigin=anonymous>`
+  and `<link rel=stylesheet href=https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap>` in `<head>`, present in
+  the served (prerendered) HTML; app-level `font_family` applies; state + client nav work (dev and prod).
+- Badge: absent in dev; present (fixed-position link to https://reflex.dev) in prod on every demo that does not set the option
+  (ag_grid, flow, mantine, tickets, highcharts prod screenshots/links) and with `REFLEX_SHOW_BUILT_WITH_REFLEX=true`.
+  `show_built_with_reflex=False` is honoured (badge hidden, no warning) because the OFFLINE wheel reports tier `enterprise`
+  (`reflex_enterprise/utils.py get_user_tier: if IS_OFFLINE: return "enterprise"`) — expected for this build, not a bypass bug.
+- No login gate anywhere (CI=true; the offline build never asked for `reflex login`).
+- `reflex export` of the dnd demo (`cd dnd && CI=true reflex export --zip-dest-dir out/export_dnd_a2`, log `logs/dnd-export-a2.log`):
+  exit 0, backend.zip 13 files (app package, rxconfig.py, requirements.txt, reflex.lock/{package.json,bun.lock}, assets/favicon.ico,
+  .web/backend/{stateful_pages,bundled_libraries}.json), frontend.zip 649 files (prerendered `index/basic/foreach/kanban(.html,/index.html)`,
+  `404.html`, `__spa-fallback.html`, `.gz` siblings, assets); the exported `index.html` contains the "Built with Reflex" badge.
+  0.9.12 export of the same app (`baseline/dnd_s912`, `logs/dnd-export-s912.log`): identical file lists after normalising asset
+  hashes (`out/export_dnd_*/{backend,frontend}.list`, `diff` empty).
+
+
+## 8. Benign / pre-existing noise seen in this cluster (both versions unless stated)
+- Every prod start logs `Warning: Page <route> is being redefined with the same component.` once per `@rx.page`-decorated page
+  (ag_grid 20, flow 5, mantine 5, dnd 4) — identical on 0.9.12 prod.
+- Compile progress `100% N+1/N` overshoot (both versions).
+- Console `log`: "Disconnect websocket on page navigation" / "... on pagehide" (reflex info logs).
+- `/favicon.ico` 404 on demos without assets (highcharts, tickets, core_rerender).
+- `DeprecationWarning`s from the demos/enterprise: `disable_plugins` strings, `rx.Model`, `console.info/error`,
+  `@rx.memo` without annotations, `ArrayVar.foreach` (enterprise datasource.py:182); `Unable to find the base Starlette app.
+  Proxying will not be enabled.` (enterprise proxy.py:135, prod single-port, both versions).
+
+## 9. Process hygiene
+All servers were started through `scripts/start_server.sh` (one at a time, own process group) and stopped with
+`scripts/stop_server.sh`, which verifies ports 3300-3319/8300-8319 are free; no redis was needed. `ag_grid_lazy/` (a copy of
+ag_grid used for the `frontend_lazy_bundled_libraries` experiment) was deleted afterwards.

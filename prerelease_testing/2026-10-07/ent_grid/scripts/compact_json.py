@@ -18,11 +18,16 @@ for f in Path(sys.argv[1]).rglob("*.json"):
     if isinstance(d.get("requests"), list) and len(d["requests"]) > 60:
         d["requests_truncated_from"] = len(d["requests"])
         d["requests"] = d["requests"][:60]
-    ws = d.get("websockets")
-    if isinstance(ws, dict):
-        for v in ws.values():
-            if isinstance(v, dict):
-                for k in ("sent", "recv", "frames", "samples"):
-                    if isinstance(v.get(k), list) and len(v[k]) > 20:
-                        v[k] = v[k][:20]
+    def trim(o, depth=0):
+        """Keep websocket capture structure but cap lists at 6 items and strings at 400 chars."""
+        if isinstance(o, str):
+            return o if len(o) <= 400 else o[:400] + f"...[{len(o)} chars]"
+        if isinstance(o, list):
+            return [trim(x, depth + 1) for x in o[:6]] + ([f"...[{len(o)} items]"] if len(o) > 6 else [])
+        if isinstance(o, dict):
+            return {k: trim(v, depth + 1) for k, v in o.items()}
+        return o
+
+    if "websockets" in d:
+        d["websockets"] = trim(d["websockets"])
     f.write_text(json.dumps(d, indent=1)[:400000])

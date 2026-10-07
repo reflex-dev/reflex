@@ -95,21 +95,11 @@
    "recv_samples": [
     "0{\"sid\":\"8WCfwkxjdN2RD-EjAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
     "40/_event,{\"sid\":\"ik6SjFPqZub8AT5HAAAB\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8307\",\"origin\":\"http://localhost:3307\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"WF1lyAKJWeA9cQ2T/e+Flw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8307\",\"origin\":\"http://localhost:3307\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13...[600 chars]",
     "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
     "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_rerender___core_rerender____touched\":{\"cols_rx_state_\":[\"x\",\"y\"]}}}]",
     "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "0{\"sid\":\"F_SPBWqLB8jTFNBMAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"XB6c7hwaw4mi0ZteAAAD\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8307\",\"origin\":\"http://localhost:3307\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"7bcCufh/RIuGqxueDvuCsw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_rerender___core_rerender____touched\":{\"cols_rx_state_\":[\"x\",\"y\"]}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_rerender___core_rerender____untouched\":{\"n_rx_state_\":1}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3307\",\"origin\":\"http://localhost:3307\",\"path\":\"/other\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3307/other\"},\"rx_router_route_id_rx_state_\":\"/other\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3307\",\"path\":\"/other\",\"raw_path\":\"/other\",\"full_path\":\"http://localhost:3307/other\",\"full_raw_path\":\"http://localhost:3307/other\",\"params\":{}},\"is_hydrated_rx_state_\":true}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3307\",\"origin\":\"http://localhost:3307\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3307/\"},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3307\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3307/index\",\"full_raw_path\":\"http://localhost:3307/\",\"params\":{}},\"is_hydrated_rx_state_\":false}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_rerender___core_rerender____touched\":{\"cols_rx_state_\":[\"x\",\"y\"]}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    "...[17 items]"
    ],
    "closed": true
   }

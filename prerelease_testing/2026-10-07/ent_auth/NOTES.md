@@ -1,6 +1,6 @@
 # Cluster `ent_auth` — enterprise OIDC / MCP / maps on reflex 0.10.0a2 + offline reflex-enterprise 0.9.7a4
 
-Status: IN PROGRESS (this file is written incrementally; the final section "Results" is authoritative).
+Status: COMPLETE (2026-10-07 ~12:40 UTC). Section "Results" at the end is the summary; issue write-ups follow it.
 
 This cluster was resumed from a previous agent that was cut off by a spend limit. Its evidence
 (xtab cross-tab-logout matrix, first `drive_auth_redis.py` run) was kept in `logs/` and is analysed
@@ -272,5 +272,5 @@ Background-task workaround (§3): after these prod/dev runs the app got `ListWor
 within 1 s) in dev and prod (`logs/bglive-a2-{dev,prod}-redis-loaded.out`), while the plain `fill`
 still is not. So the enterprise delta filter only sees the user when `AuthUserState` happens to be
 loaded in the background task's state tree (`_userinfo_for_state` → "None when … the substate is not
-loaded"). `apps/entauth/` in DEST contains this patched version; the original is `run/entauth.py.orig`
-in the work dir (identical except for `fill_loaded` + its button).
+loaded"). `apps/entauth/` in DEST contains this patched version; the version used for every earlier run is
+`apps/entauth_original_entauth.py.txt` (identical except for `fill_loaded` + its button).

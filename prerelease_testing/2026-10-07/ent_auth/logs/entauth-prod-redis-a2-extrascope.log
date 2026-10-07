@@ -1,0 +1,294 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:8341
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2-ent/lib/python3.12/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='entauth', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=8341, frontend_path='', 
+backend_port=8341, backend_path='', api_url='http://localhost:8341', 
+deploy_url='http://localhost:8341', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url='redis://localhost:8349', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'plugins', 'backend_port', 'loglevel', 'redis_url', 
+'frontend_port', 'api_url', 'app_name', 'telemetry_enabled'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a2 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/alpha2-ent/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 8341 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 8341 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 8341 is not in use.
+ENTAUTH_PROVENANCE reflex=0.10.0a2 rxe=0.9.7a4 file=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2-ent/lib/python3.12/site-packages/reflex/__init__.py rxe_file=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2-ent/lib/python3.12/site-packages/reflex_enterprise/__init__.py
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2-ent/lib/python3.12/site-packages/reflex_components_radix/plugin.py:
+76)
+Debug: [timing] Compile pages: 0.20s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 36/35 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-dropzone@17.0.0', 
+'react-error-boundary@6.1.6', 'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/ent_auth2/entauth/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/ent_auth2/entauth/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 461 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                                         
+10.85 kB │ gzip:  1.29 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css                  
+698.26 kB │ gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-Dqx-qdpR.js                               
+0.30 kB │ gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-BH4Lz19y.js                             
+0.41 kB │ gzip:  0.29 kB
+Debug: build/client/assets/text-cxd74sgl.js                                     
+0.66 kB │ gzip:  0.43 kB
+Debug: build/client/assets/_forbidden_._index-DmoNrGwG.js                       
+0.68 kB │ gzip:  0.44 kB
+Debug: build/client/assets/heading-B826L3Ss.js                                  
+0.68 kB │ gzip:  0.43 kB
+Debug: build/client/assets/link-B3XA302A.js                                     
+0.73 kB │ gzip:  0.45 kB
+Debug: build/client/assets/_login_._index-1CaXFbI4.js                           
+0.77 kB │ gzip:  0.46 kB
+Debug: build/client/assets/tslib.es6-Tae09705.js                                
+1.06 kB │ gzip:  0.52 kB
+Debug: build/client/assets/_agent_._index-DpCHDJY_.js                           
+1.11 kB │ gzip:  0.55 kB
+Debug: build/client/assets/app-Ci_3m8UE.js                                      
+1.25 kB │ gzip:  0.36 kB
+Debug: build/client/assets/_list_._index-BaG6Y88z.js                            
+1.30 kB │ gzip:  0.67 kB
+Debug: build/client/assets/_logout_._index-DxW_GIQ3.js                          
+1.43 kB │ gzip:  0.66 kB
+Debug: build/client/assets/_callback_._index-D7YRH48X.js                        
+1.44 kB │ gzip:  0.67 kB
+Debug: 
+build/client/assets/__reflex_oidc_generic_._popup-login_._index-a1T0dVCw.js     
+1.47 kB │ gzip:  0.69 kB
+Debug: 
+build/client/assets/__reflex_oidc_generic_._popup-logout_._index-BhFplGfu.js    
+1.52 kB │ gzip:  0.71 kB
+Debug: build/client/assets/container-B8MCd8cq.js                                
+1.79 kB │ gzip:  0.81 kB
+Debug: build/client/assets/_index-PyQFqtCA.js                                   
+2.37 kB │ gzip:  0.91 kB
+Debug: build/client/assets/_dashboard_._index-DMWQMU47.js                       
+2.47 kB │ gzip:  0.96 kB
+Debug: build/client/assets/auth-DWZaD1VA.js                                     
+2.90 kB │ gzip:  0.90 kB
+Debug: build/client/assets/button-B_rxH2WB.js                                   
+2.96 kB │ gzip:  1.49 kB
+Debug: build/client/assets/react-dom-CDPjmXo9.js                                
+3.86 kB │ gzip:  1.39 kB
+Debug: build/client/assets/_agent-consent_._index-OC1Xf-CD.js                   
+6.56 kB │ gzip:  1.75 kB
+Debug: build/client/assets/flex-auA2yIb6.js                                     
+12.85 kB │ gzip:  3.99 kB
+Debug: build/client/assets/createLucideIcon-BsGm9PkT.js                         
+18.04 kB │ gzip:  6.73 kB
+Debug: build/client/assets/emotion-react.browser.esm-Ne-RHRfi.js                
+20.71 kB │ gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-BsNeyB4j.js                          
+33.51 kB │ gzip: 11.74 kB
+Debug: build/client/assets/entauth-BuFeX52p.js                                  
+63.85 kB │ gzip: 16.39 kB
+Debug: build/client/assets/components-Bl0Za3ky.js                               
+86.82 kB │ gzip: 28.73 kB
+Debug: build/client/assets/spinner-CVLhVxlC.js                                  
+109.41 kB │ gzip: 31.82 kB
+Debug: build/client/assets/entry.client-_aG2pkzF.js                             
+210.99 kB │ gzip: 66.26 kB
+Debug: build/client/assets/root-sTLk95EC.js                                     
+288.32 kB │ gzip: 80.49 kB
+Debug: 
+Debug: ✓ built in 1.41s
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 40 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.77 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-Dqx-qdpR.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                    105.40 kB │ 
+gzip: 22.49 kB
+Debug: 
+Debug: ✓ built in 716ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /_reflex_oidc_generic/popup-logout -> 
+build/client/_reflex_oidc_generic/popup-logout/index.html
+Debug: Prerender (html): /_reflex_oidc_generic/popup-login -> 
+build/client/_reflex_oidc_generic/popup-login/index.html
+Debug: Prerender (html): /agent-consent -> build/client/agent-consent/index.html
+Debug: Prerender (html): /dashboard -> build/client/dashboard/index.html
+Debug: Prerender (html): /forbidden -> build/client/forbidden/index.html
+Debug: Prerender (html): /callback -> build/client/callback/index.html
+Debug: Prerender (html): /logout -> build/client/logout/index.html
+Debug: Prerender (html): /agent -> build/client/agent/index.html
+Debug: Prerender (html): /login -> build/client/login/index.html
+Debug: Prerender (html): /list -> build/client/list/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Debug: Copying .web/build/client/logout/index.html to 
+.web/build/client/logout.html
+Debug: Copying .web/build/client/agent/index.html to 
+.web/build/client/agent.html
+Debug: Copying .web/build/client/list/index.html to .web/build/client/list.html
+Debug: Copying .web/build/client/agent-consent/index.html to 
+.web/build/client/agent-consent.html
+Debug: Copying .web/build/client/callback/index.html to 
+.web/build/client/callback.html
+Debug: Copying .web/build/client/login/index.html to 
+.web/build/client/login.html
+Debug: Copying .web/build/client/_reflex_oidc_generic/popup-logout/index.html to
+.web/build/client/_reflex_oidc_generic/popup-logout.html
+Debug: Copying .web/build/client/_reflex_oidc_generic/popup-login/index.html to 
+.web/build/client/_reflex_oidc_generic/popup-login.html
+Debug: Copying .web/build/client/forbidden/index.html to 
+.web/build/client/forbidden.html
+Debug: Copying .web/build/client/dashboard/index.html to 
+.web/build/client/dashboard.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/ent_auth2/entauth/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/ent_auth2/entauth/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8341/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 20310)
+[INFO] Listening at: http://0.0.0.0:8341
+[INFO] Spawning worker-1 with PID: 20491
+Warning: Page index is being redefined with the same component.
+Warning: Page dashboard is being redefined with the same component.
+Warning: Page list is being redefined with the same component.
+Warning: Page agent is being redefined with the same component.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Registered lifespan task: _verify_redis_version_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/07/26 12:11:47] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+Debug: Started lifespan task: _verify_redis_version_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+[10/07/26 12:11:49] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/.well-known/o                
+                             penid-configuration "HTTP/1.1 200                  
+                             OK"                                                
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/jwks                         
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     3d2b6905-dd70-4249-a91a-f957779cf8d1  state.py:2168
+                             [txid=819c4647a9f84c9b8227a6b5106bf52              
+                             b] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/dashboard/'.                                     
+[10/07/26 12:11:50] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+[10/07/26 12:11:52] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     9408b7c8-ef5c-4207-ce0e-41ad7580ba16  state.py:2168
+                             [txid=27b700cac4594e9e992841df3c6e847              
+                             f] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/list/'.                
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[10/07/26 12:12:08] INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

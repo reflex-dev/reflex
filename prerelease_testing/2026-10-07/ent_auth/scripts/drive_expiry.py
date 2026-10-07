@@ -22,6 +22,11 @@ sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
 from common import CHROMIUM, W, attach, login, save  # noqa: E402
 
 BASE = sys.argv[1].rstrip("/")
+
+
+def U(path):
+    """URL matcher tolerant of the trailing slash prod static serving adds (307 /dashboard -> /dashboard/)."""
+    return re.compile(re.escape(BASE + path) + r"/?(\?.*)?$")
 LABEL = sys.argv[2]
 SCEN = sys.argv[3].split(",")
 SB = "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad"
@@ -72,7 +77,7 @@ def fresh_login(browser, obs, user="alice"):
     page.goto(BASE + "/dashboard")
     page.wait_for_url(re.compile("/login"), timeout=T)
     login(page, user)
-    page.wait_for_url(BASE + "/dashboard", timeout=T)
+    page.wait_for_url(U("/dashboard"), timeout=T)
     expect(page.locator("#user-name")).to_have_text("Alice Admin" if user == "alice" else "Bob Member", timeout=T)
     return ctx, page
 

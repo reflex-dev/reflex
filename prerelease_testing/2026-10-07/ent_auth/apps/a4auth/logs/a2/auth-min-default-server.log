@@ -1,0 +1,492 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_auth2-drv/lib/python3.12/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='auth_min', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3343, frontend_path='', 
+backend_port=8343, backend_path='', api_url='http://localhost:8343', 
+deploy_url='http://localhost:3343', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'loglevel', 'app_name', 
+'backend_port', 'frontend_port', 'plugins'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a2 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/ent_auth2-drv/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_auth2-drv/lib/python3.12/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='auth_min', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3343, frontend_path='', 
+backend_port=8343, backend_path='', api_url='http://localhost:8343', 
+deploy_url='http://localhost:3343', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'loglevel', 'app_name', 
+'backend_port', 'frontend_port', 'plugins'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a2 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/ent_auth2-drv/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+──────────────────────────── Initializing auth_min ─────────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/ent_auth2-drv/lib/python3.12/site-packages/reflex_base/.templates/web to 
+.web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/ent_auth2/a4auth/apps/auth_min/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 237031427157391313497007431647584542254.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.038 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized auth_min. Install dependencies from `requirements.txt` with
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3343 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3343 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3343 is not in use.
+Debug: Checking if Backend port: 8343 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8343 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8343 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_auth2-drv/lib/python3.12/site-packages/reflex_components_radix/plugin.
+py:76)
+Debug: [timing] Compile pages: 0.19s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 34/33 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'postcss-import@17.0.0', '@react-router/dev@8.4.0', 
+'@react-router/fs-routes@8.4.0', '@emotion/react@11.14.0', 'postcss@8.5.29', 
+'autoprefixer@10.6.1', 'vite@8.3.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss@8.5.29
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: 
+Debug: 128 packages installed [77.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-dom@19.3.0', 'isbot@5.2.2', 'react@19.3.0', 'react-error-boundary@6.1.6',
+'mergician@v2.0.2', 'lucide-react@1.26.0', 'universal-cookie@8.1.2', 
+'@radix-ui/themes@3.3.0', 'react-router@8.4.0', 'sonner@2.0.8', 
+'socket.io-client@4.8.4', '@react-router/node@8.4.0', 'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-dom@19.3.0
+Debug: installed isbot@5.2.2
+Debug: installed react@19.3.0
+Debug: installed react-error-boundary@6.1.6
+Debug: installed mergician@2.0.2
+Debug: installed lucide-react@1.26.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-router@8.4.0
+Debug: installed sonner@2.0.8
+Debug: installed socket.io-client@4.8.4
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: 98 packages installed [103.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/ent_auth2/a4auth/apps/auth_min/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/ent_auth2/a4auth/apps/auth_min/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.20s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpa
+d/apps/ent_auth2/a4auth/apps/auth_min/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/ent_auth2/a4auth/apps/auth_min/assets', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/ent_auth2/a4auth/apps/auth_min/auth_min', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/ent_auth2/a4auth/apps/auth_min/rxconfig.py']
+[INFO] Starting granian (main PID: 23086)
+[INFO] Listening at: http://0.0.0.0:8343
+[INFO] Spawning worker-1 with PID: 23155
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_auth2-drv/lib/python3.12/site-packages/reflex_enterprise/plugins/mcp.p
+y:1552)
+Debug: MCPPlugin: using the in-memory OAuth store (no Redis configured). Tokens 
+do not survive restarts and are per-process; configure redis_url for 
+multi-worker deployments.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/ent_auth2-drv/lib/python3.12/site-packages/reflex_enterprise/plugins/api_t
+okens.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug:   ➜  Local:   http://localhost:3343/
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+App running at: http://localhost:3343/
+Backend running at: http://0.0.0.0:8343
+Debug:   ➜  Network: http://192.0.2.2:3343/  eth0
+[10/07/26 12:13:04] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+Debug: 12:13:05 PM [vite] (ssr) connected.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/07/26 12:13:08] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/.well-known/o                
+                             penid-configuration "HTTP/1.1 200                  
+                             OK"                                                
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/jwks                         
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     484b2acc-a1c4-48ac-cab5-5d0dc796d0d4  state.py:2168
+                             [txid=82721ec302224b30b24611cf678b6ae              
+                             4] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+[10/07/26 12:13:09] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     484b2acc-a1c4-48ac-cab5-5d0dc796d0d4  state.py:1728
+                             [txid=4685abd6756e4f0a98199a842ad5848              
+                             f] User initiated logout                           
+                             (from_popup=False); clearing session.              
+[10/07/26 12:13:10] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     484b2acc-a1c4-48ac-cab5-5d0dc796d0d4  state.py:2168
+                             [txid=c0917a77ee874338beac469250a36c2              
+                             5] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/07/26 12:13:12] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     bd86f245-5b22-435d-a9fa-331872e3d533  state.py:2168
+                             [txid=1a7f0b74d88545fc95eec2885175f7d              
+                             9] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/'.                     
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/07/26 12:13:15] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     96ea8a9a-d733-4e07-a5c2-31bfa918836c  state.py:2168
+                             [txid=76156faf7e2040b48d643c50d97911e              
+                             a] ─ Auth callback succeeded; user                 
+                             logged in, handing the tokens to the               
+                             popup opener.                                      
+[10/07/26 12:13:17] INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.schemas                       
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.tables                        
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.types                         
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.constraints                   
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.defaults                      
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.comments                      
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.ext.checkconstraint_byname                 
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/07/26 12:13:19] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     666509c7-1e41-4383-bc0d-8a564519fc61  state.py:2168
+                             [txid=f7bb4febaaf84532b56538e6d6d7e5e              
+                             b] ─ Auth callback succeeded; user                 
+                             logged in, handing the tokens to the               
+                             popup opener.                                      
+[10/07/26 12:13:20] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/07/26 12:13:24] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     a62d2c5b-b76c-4297-a780-0012c79d2e25  state.py:2168
+                             [txid=126feb437c30400dad298cf338b4324              
+                             9] ─ Auth callback succeeded; user                 
+                             logged in, handing the tokens to the               
+                             popup opener.                                      
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/07/26 12:13:26] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     1cc14b1d-8bf8-41fa-a839-1117e6c3c80e  state.py:2168
+                             [txid=22d3e7358f964271b4a861596e250fa              
+                             9] ─ Auth callback succeeded; user                 
+                             logged in, handing the tokens to the               
+                             popup opener.                                      
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/07/26 12:13:29] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     ede3d5b0-a8e6-42a8-a0c1-233fc8479e64  state.py:2168
+                             [txid=2c55ef9e5e41440da2d5d55b3dfd891              
+                             e] ─ Auth callback succeeded; user                 
+                             logged in, handing the tokens to the               
+                             popup opener.                                      
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/07/26 12:13:33] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:8358/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     66c0e0a5-2afe-47f6-e404-12386235ca64  state.py:2168
+                             [txid=c6178a5509234b9aa89975085a2c10f              
+                             9] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:8358/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Warning: Attempting to send delta to disconnected client 
+'c4705b50-dbaf-499e-85c8-3fcbb8acf393'
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+[INFO] Stopping worker-1
+                    INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+Debug: StateManagerDisk._flush_write_queue: writing 11 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 11 items
+[INFO] Shutting down granian
+[WARNING] Killing worker-1 after it refused to gracefully stop
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

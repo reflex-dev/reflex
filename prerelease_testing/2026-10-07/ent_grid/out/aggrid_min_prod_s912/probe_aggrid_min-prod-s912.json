@@ -1,0 +1,178 @@
+{
+ "name": "probe_aggrid_min-prod-s912",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 5.31,
+   "name": "load 1: grid with column_defs=State var shows its columns",
+   "ok": true,
+   "detail": {
+    "state_cols": [
+     "Make",
+     "Price"
+    ],
+    "literal_cols": [
+     "Make",
+     "Price"
+    ]
+   }
+  },
+  {
+   "t": 5.31,
+   "name": "load 1: grid with literal column_defs shows its columns",
+   "ok": true,
+   "detail": [
+    "Make",
+    "Price"
+   ]
+  },
+  {
+   "t": 9.9,
+   "name": "load 2: grid with column_defs=State var shows its columns",
+   "ok": true,
+   "detail": {
+    "state_cols": [
+     "Make",
+     "Price"
+    ],
+    "literal_cols": [
+     "Make",
+     "Price"
+    ]
+   }
+  },
+  {
+   "t": 9.9,
+   "name": "load 2: grid with literal column_defs shows its columns",
+   "ok": true,
+   "detail": [
+    "Make",
+    "Price"
+   ]
+  }
+ ],
+ "notes": [
+  "guard: 0.9.12 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 4,
+  "console_total": 3,
+  "console_benign": 0,
+  "console_errors": 1,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [
+   {
+    "t": 0.82,
+    "ctx": "min",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "url": "http://localhost:3308/",
+    "location": {
+     "url": "http://localhost:3308/favicon.ico",
+     "line": 0,
+     "column": 0,
+     "lineNumber": 0,
+     "columnNumber": 0
+    },
+    "benign": false
+   }
+  ],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 0.82,
+   "ctx": "min",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "url": "http://localhost:3308/",
+   "location": {
+    "url": "http://localhost:3308/favicon.ico",
+    "line": 0,
+    "column": 0,
+    "lineNumber": 0,
+    "columnNumber": 0
+   },
+   "benign": false
+  },
+  {
+   "t": 5.31,
+   "ctx": "min",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3308/",
+   "location": {
+    "url": "http://localhost:3308/assets/flex-BcdmRUop.js",
+    "line": 1,
+    "column": 9852,
+    "lineNumber": 1,
+    "columnNumber": 9852
+   },
+   "benign": false
+  },
+  {
+   "t": 9.95,
+   "ctx": "min",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3308/",
+   "location": {
+    "url": "http://localhost:3308/assets/flex-BcdmRUop.js",
+    "line": 1,
+    "column": 10036,
+    "lineNumber": 1,
+    "columnNumber": 10036
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3308/_event/?token=8e60376e-76a1-4243-93e3-1444abd32c20&EIO=4&transport=websocket": {
+   "ctx": "min",
+   "sent": 7,
+   "recv": 8,
+   "sent_samples": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "...[7 items]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"Z3FgfY3Q7aWAyQRKAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Uuf5mQsOK8DRnudMAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3308\",\"origin\":\"http://localhost:3308\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.3...[600 chars]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"hR8Jf2meGE14Aq3SAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"G0UjZ6RQp3PRFCN4AAAD\"}",
+    "...[8 items]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 0.65,
+   "ctx": "min",
+   "url": "http://localhost:3308/",
+   "method": "GET"
+  },
+  {
+   "t": 5.32,
+   "ctx": "min",
+   "url": "http://localhost:3308/",
+   "method": "GET"
+  }
+ ]
+}

@@ -1,0 +1,58 @@
+[
+  {
+    "i": 0,
+    "login_ok": true,
+    "secs": 2.5,
+    "final_url": "/dashboard/",
+    "sync_statuses": [
+      405
+    ],
+    "cookies": [],
+    "console_errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 405 (Method Not Allowed)"
+    ]
+  },
+  {
+    "i": 1,
+    "login_ok": true,
+    "secs": 2.7,
+    "final_url": "/dashboard/",
+    "sync_statuses": [
+      405
+    ],
+    "cookies": [],
+    "console_errors": [
+      "Failed to load resource: the server responded with a status of 405 (Method Not Allowed)"
+    ]
+  },
+  {
+    "i": 2,
+    "login_ok": true,
+    "secs": 1.7,
+    "final_url": "/dashboard/",
+    "sync_statuses": [
+      405
+    ],
+    "cookies": [],
+    "console_errors": [
+      "Failed to load resource: the server responded with a status of 405 (Method Not Allowed)"
+    ]
+  },
+  {
+    "i": 3,
+    "login_ok": true,
+    "secs": 1.8,
+    "final_url": "/dashboard/",
+    "sync_statuses": [
+      200
+    ],
+    "cookies": [
+      "_oidc_generic_access_token_data_partitioned",
+      "_oidc_generic_granted_scopes_partitioned",
+      "_oidc_generic_id_token_partitioned",
+      "_oidc_generic_refresh_token_partitioned"
+    ],
+    "console_errors": []
+  }
+]

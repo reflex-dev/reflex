@@ -1,0 +1,202 @@
+{
+ "name": "probe_aggrid_min-dev-a2",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 6.92,
+   "name": "load 1: grid with column_defs=State var shows its columns",
+   "ok": true,
+   "detail": {
+    "state_cols": [
+     "Make",
+     "Price"
+    ],
+    "literal_cols": [
+     "Make",
+     "Price"
+    ]
+   }
+  },
+  {
+   "t": 6.92,
+   "name": "load 1: grid with literal column_defs shows its columns",
+   "ok": true,
+   "detail": [
+    "Make",
+    "Price"
+   ]
+  },
+  {
+   "t": 11.92,
+   "name": "load 2: grid with column_defs=State var shows its columns",
+   "ok": true,
+   "detail": {
+    "state_cols": [
+     "Make",
+     "Price"
+    ],
+    "literal_cols": [
+     "Make",
+     "Price"
+    ]
+   }
+  },
+  {
+   "t": 11.92,
+   "name": "load 2: grid with literal column_defs shows its columns",
+   "ok": true,
+   "detail": [
+    "Make",
+    "Price"
+   ]
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 4,
+  "console_total": 10,
+  "console_benign": 8,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 6.92,
+   "ctx": "min",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3307/",
+   "location": {
+    "url": "http://localhost:3307/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 12.0,
+   "ctx": "min",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3307/",
+   "location": {
+    "url": "http://localhost:3307/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3307/?token=SoFvd8pq697n": {
+   "ctx": "min",
+   "sent": 0,
+   "recv": 2,
+   "sent_samples": [],
+   "recv_samples": [
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  "ws://localhost:8307/_event/?token=c8456f4b-7587-4496-fefa-8e995c16a372&EIO=4&transport=websocket": {
+   "ctx": "min",
+   "sent": 3,
+   "recv": 8,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"731ed06b34bab23f\",\"b084fc0c68f7c73a\",\"376fc8c9cf2d52de\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"731ed06b34bab23f\",\"b084fc0c68f7c73a\",\"376fc8c9cf2d52de\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"SVDr1UfApOGuyIQJAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"xrx-DTfvd9zrDRa4AAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8307\",\"origin\":\"http://localhost:3307\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13...[600 chars]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"NkNy9iOoEWXSKNnEAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"HAvI3GaHlfgeYqcKAAAD\"}",
+    "...[8 items]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 0.65,
+   "ctx": "min",
+   "url": "http://localhost:3307/",
+   "method": "GET"
+  },
+  {
+   "t": 1.58,
+   "ctx": "min",
+   "url": "http://localhost:3307/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 1.58,
+   "ctx": "min",
+   "url": "http://localhost:3307/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 1.6,
+   "ctx": "min",
+   "url": "http://localhost:3307/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 2.12,
+   "ctx": "min",
+   "url": "http://localhost:3307/app/routes/_index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 6.92,
+   "ctx": "min",
+   "url": "http://localhost:3307/",
+   "method": "GET"
+  },
+  {
+   "t": 7.02,
+   "ctx": "min",
+   "url": "http://localhost:3307/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 7.02,
+   "ctx": "min",
+   "url": "http://localhost:3307/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 7.03,
+   "ctx": "min",
+   "url": "http://localhost:3307/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 7.13,
+   "ctx": "min",
+   "url": "http://localhost:3307/app/routes/_index.jsx?import",
+   "method": "GET"
+  }
+ ]
+}

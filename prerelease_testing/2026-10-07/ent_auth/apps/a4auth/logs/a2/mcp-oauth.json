@@ -1,0 +1,215 @@
+{
+  "metadata": {
+    "issuer": "http://localhost:8343/",
+    "authorization_endpoint": "http://localhost:8343/authorize",
+    "token_endpoint": "http://localhost:8343/token",
+    "registration_endpoint": "http://localhost:8343/register-oidc-client",
+    "scopes_supported": [
+      "profile:read"
+    ],
+    "response_types_supported": [
+      "code"
+    ],
+    "grant_types_supported": [
+      "authorization_code",
+      "refresh_token"
+    ],
+    "token_endpoint_auth_methods_supported": [
+      "client_secret_post",
+      "client_secret_basic"
+    ],
+    "revocation_endpoint": "http://localhost:8343/revoke",
+    "revocation_endpoint_auth_methods_supported": [
+      "client_secret_post",
+      "client_secret_basic"
+    ],
+    "code_challenge_methods_supported": [
+      "S256"
+    ]
+  },
+  "registration": {
+    "redirect_uris": [
+      "http://localhost:8358/mcp-return"
+    ],
+    "token_endpoint_auth_method": "client_secret_post",
+    "grant_types": [
+      "authorization_code",
+      "refresh_token"
+    ],
+    "response_types": [
+      "code"
+    ],
+    "scope": "profile:read",
+    "client_name": "Local prerelease test",
+    "client_id": "26e6c469-d7b2-4bcd-8093-d05c5febd121",
+    "client_id_issued_at": 1791375211,
+    "client_secret_expires_at": 1799151211
+  },
+  "browser": {
+    "consent_approved": true,
+    "state_roundtrip": true,
+    "page_errors": [],
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      }
+    ]
+  },
+  "exchange": {
+    "status": 200,
+    "token_type": "Bearer",
+    "scope": "profile:read",
+    "opaque_access_token": true,
+    "opaque_refresh_token": true
+  },
+  "authorization_code_replay": {
+    "status": 400,
+    "body": {
+      "error": "invalid_grant",
+      "error_description": "authorization code does not exist"
+    }
+  },
+  "mcp": {
+    "protected_event": "auth_min___auth_min____profile_state.reveal",
+    "message": {
+      "state": "reflex___state____state.auth_min___auth_min____profile_state",
+      "var": "message",
+      "computed": false,
+      "value": "revealed-alice"
+    },
+    "delta": {
+      "event": "auth_min___auth_min____profile_state.reveal",
+      "delta": {
+        "reflex___state____state": {
+          "rx_router_url": {
+            "scheme": "",
+            "netloc": "",
+            "origin": "://",
+            "path": "/_reflex/mcp",
+            "query": "",
+            "query_parameters": {},
+            "fragment": "",
+            "href": "/_reflex/mcp"
+          },
+          "rx_router_route_id": "/_reflex/mcp",
+          "rx_router_page": {
+            "host": "",
+            "path": "/_reflex/mcp",
+            "raw_path": "/_reflex/mcp",
+            "full_path": "/_reflex/mcp",
+            "full_raw_path": "/_reflex/mcp",
+            "params": {}
+          }
+        },
+        "reflex___state____state.auth_min___auth_min____profile_state": {
+          "message": "revealed-alice"
+        },
+        "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state": {
+          "origin": ""
+        }
+      }
+    },
+    "redacted_root_state": {
+      "reflex___state____state": {
+        "is_hydrated": false,
+        "rx_router_headers": {
+          "host": "",
+          "origin": "",
+          "upgrade": "",
+          "connection": "",
+          "cookie": "",
+          "pragma": "",
+          "cache_control": "",
+          "user_agent": "",
+          "sec_websocket_version": "",
+          "sec_websocket_key": "",
+          "sec_websocket_extensions": "",
+          "accept_encoding": "",
+          "accept_language": "",
+          "raw_headers": {}
+        },
+        "rx_router_page": {
+          "host": "",
+          "path": "/_reflex/mcp",
+          "raw_path": "/_reflex/mcp",
+          "full_path": "/_reflex/mcp",
+          "full_raw_path": "/_reflex/mcp",
+          "params": {}
+        },
+        "rx_router_route_id": "/_reflex/mcp",
+        "rx_router_session": {
+          "client_token": "",
+          "client_ip": "0.0.0.0",
+          "session_id": ""
+        },
+        "rx_router_url": {
+          "scheme": "",
+          "netloc": "",
+          "origin": "://",
+          "path": "/_reflex/mcp",
+          "query": "",
+          "query_parameters": {},
+          "fragment": "",
+          "href": "/_reflex/mcp"
+        }
+      },
+      "reflex___state____state.auth_min___auth_min____profile_state": {
+        "message": "revealed-alice",
+        "refresh_result": ""
+      }
+    }
+  },
+  "refresh": {
+    "status": 200,
+    "rotated": true,
+    "scope": "profile:read"
+  },
+  "refresh_replay": {
+    "status": 400,
+    "body": {
+      "error": "invalid_grant",
+      "error_description": "refresh token does not exist"
+    }
+  }
+}

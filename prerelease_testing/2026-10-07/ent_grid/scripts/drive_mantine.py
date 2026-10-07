@@ -103,6 +103,12 @@ def tags(s, p):
     p.reload(wait_until="networkidle")
     p.wait_for_timeout(1500)
     s.check("tags-input: tags survive reload (session state)", labels() == ["Tag2", "Tag3"], labels())
+    q = s.new_page(s.new_context("mantine-ctx2"), "mantine-ctx2")
+    q.goto(base + "/tags-input", wait_until="networkidle")
+    q.wait_for_timeout(1500)
+    other = q.locator(".mantine-TagsInput-pill .mantine-Pill-label").all_inner_texts()
+    s.check("tags-input: a second browser context starts from the State default (session isolation)", other == ["Tag1", "Tag2"], other)
+    q.close()
 
 
 def qa(s, p):

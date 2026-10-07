@@ -345,31 +345,16 @@
     "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3975edc6f31a4b39\",\"b084fc0c68f7c73a\",\"87429be55fc6e135\",\"902d0a636d00a7a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
     "41/_event,",
     "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3975edc6f31a4b39\",\"b084fc0c68f7c73a\",\"87429be55fc6e135\",\"902d0a636d00a7a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/qa\",\"asPath\":\"/qa\"}}}",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.highcharts___highcharts____qa_highcharts_state.push\",\"router_data\":{\"pathname\":\"/qa\",\"asPath\":\"/qa\"}}]",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.highcharts___highcharts____qa_highcharts_state.retitle\",\"router_data\":{\"pathname\":\"/qa\",\"asPath\":\"/qa\"}}]",
-    "41/_event,",
-    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"3975edc6f31a4b39\",\"b084fc0c68f7c73a\",\"87429be55fc6e135\",\"902d0a636d00a7a7\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/qa\",\"asPath\":\"/qa\"}}}"
+    "...[10 items]"
    ],
    "recv_samples": [
     "0{\"sid\":\"dsIzZ3IaON1zq1ouAAAY\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
     "40/_event,{\"sid\":\"uwpEZuWlFKOKraC2AAAZ\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8318\",\"origin\":\"http://localhost:3318\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ubTAu8UkcN0X5SCpNq18jg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8318\",\"origin\":\"http://localhost:3318\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13...[600 chars]",
     "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
     "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___highcharts____highcharts_state\":{\"last_point_rx_state_\":\"Clicked Mar: 3 units\"}}}]",
     "0{\"sid\":\"UFqGHp6Rk-7rHlSCAAAa\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"Y8wTU4TftTFecsNiAAAb\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8318\",\"origin\":\"http://localhost:3318\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"NdEiCUjoSIMN1KPseM2oTw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "0{\"sid\":\"0oM5ncn37gwh6BtJAAAc\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"lK6VI7HAIGjWlksEAAAd\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8318\",\"origin\":\"http://localhost:3318\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"g22nJmXbU3gmSXbCphRhug==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___highcharts____qa_highcharts_state\":{\"data_rx_state_\":[1,2,3,4]}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___highcharts____qa_highcharts_state\":{\"pie_rx_state_\":[{\"name\":\"A\",\"y\":10},{\"name\":\"B\",\"y\":30},{\"name\":\"C\",\"y\":60}],\"title_rx_state_\":\"QA retitled\"}}}]",
-    "0{\"sid\":\"FWBRIHm_MJjON8E1AAAe\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"LNdflxzI6_GlOCH6AAAf\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8318\",\"origin\":\"http://localhost:3318\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CpSidbD/L7JfFhItSRQiIQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    "...[19 items]"
    ],
    "closed": true
   }

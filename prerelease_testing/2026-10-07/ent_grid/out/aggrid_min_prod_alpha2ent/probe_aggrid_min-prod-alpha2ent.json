@@ -1,0 +1,171 @@
+{
+ "name": "probe_aggrid_min-prod-alpha2ent",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 5.31,
+   "name": "load 1: grid with column_defs=State var shows its columns",
+   "ok": false,
+   "detail": {
+    "state_cols": [],
+    "literal_cols": [
+     "Make",
+     "Price"
+    ]
+   }
+  },
+  {
+   "t": 5.31,
+   "name": "load 1: grid with literal column_defs shows its columns",
+   "ok": true,
+   "detail": [
+    "Make",
+    "Price"
+   ]
+  },
+  {
+   "t": 9.91,
+   "name": "load 2: grid with column_defs=State var shows its columns",
+   "ok": false,
+   "detail": {
+    "state_cols": [],
+    "literal_cols": [
+     "Make",
+     "Price"
+    ]
+   }
+  },
+  {
+   "t": 9.91,
+   "name": "load 2: grid with literal column_defs shows its columns",
+   "ok": true,
+   "detail": [
+    "Make",
+    "Price"
+   ]
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [
+   "load 1: grid with column_defs=State var shows its columns",
+   "load 2: grid with column_defs=State var shows its columns"
+  ],
+  "n_checks": 4,
+  "console_total": 3,
+  "console_benign": 0,
+  "console_errors": 1,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [
+   {
+    "t": 0.82,
+    "ctx": "min",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "url": "http://localhost:3309/",
+    "location": {
+     "url": "http://localhost:3309/favicon.ico",
+     "line": 0,
+     "column": 0,
+     "lineNumber": 0,
+     "columnNumber": 0
+    },
+    "benign": false
+   }
+  ],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 0.82,
+   "ctx": "min",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "url": "http://localhost:3309/",
+   "location": {
+    "url": "http://localhost:3309/favicon.ico",
+    "line": 0,
+    "column": 0,
+    "lineNumber": 0,
+    "columnNumber": 0
+   },
+   "benign": false
+  },
+  {
+   "t": 5.32,
+   "ctx": "min",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3309/",
+   "location": {
+    "url": "http://localhost:3309/assets/flex-CLrrVEtZ.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 9.96,
+   "ctx": "min",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3309/",
+   "location": {
+    "url": "http://localhost:3309/assets/flex-CLrrVEtZ.js",
+    "line": 1,
+    "column": 11410,
+    "lineNumber": 1,
+    "columnNumber": 11410
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3309/_event/?token=1a25e4cf-83bd-4907-ed70-4f5bfbb03f98&EIO=4&transport=websocket": {
+   "ctx": "min",
+   "sent": 3,
+   "recv": 8,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"731ed06b34bab23f\",\"b084fc0c68f7c73a\",\"376fc8c9cf2d52de\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"731ed06b34bab23f\",\"b084fc0c68f7c73a\",\"376fc8c9cf2d52de\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"YmhqLLooFSVq18oIAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"7E6JNIRdX70CxrvFAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3309\",\"origin\":\"http://localhost:3309\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13...[600 chars]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"-mkBsop83S2AwIfgAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"sP3oroWq_a6xcpIcAAAD\"}",
+    "...[8 items]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 0.64,
+   "ctx": "min",
+   "url": "http://localhost:3309/",
+   "method": "GET"
+  },
+  {
+   "t": 5.32,
+   "ctx": "min",
+   "url": "http://localhost:3309/",
+   "method": "GET"
+  }
+ ]
+}

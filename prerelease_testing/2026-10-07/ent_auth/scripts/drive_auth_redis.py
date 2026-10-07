@@ -18,6 +18,11 @@ sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
 from common import CHROMIUM, W, attach, end_session, login, redis_dump, save, storage_snapshot  # noqa: E402
 
 BASE = sys.argv[1].rstrip("/")
+
+
+def U(path):
+    """URL matcher tolerant of the trailing slash prod static serving adds (307 /dashboard -> /dashboard/)."""
+    return re.compile(re.escape(BASE + path) + r"/?(\?.*)?$")
 LABEL = sys.argv[2]
 CASES = sys.argv[3].split(",") if len(sys.argv) > 3 else ["cycle", "pubnav", "twotab"]
 T = 45_000
@@ -45,7 +50,7 @@ def case_cycle(browser, obs):
     page.goto(BASE + "/dashboard")
     page.wait_for_url(re.compile("/login"), timeout=T)
     login(page, "alice")
-    page.wait_for_url(BASE + "/dashboard", timeout=T)
+    page.wait_for_url(U("/dashboard"), timeout=T)
     steps.append(["alice_login", round(time.time() - t0, 2)])
     check_alice_dashboard(page, obs)
     page.locator("#reveal").click()
@@ -69,7 +74,7 @@ def case_cycle(browser, obs):
     steps.append(["alice_reload_ok", round(time.time() - t0, 2)])
     # background task mutating the inherited list
     page.locator("#nav-list").click()
-    page.wait_for_url(BASE + "/list", timeout=T)
+    page.wait_for_url(U("/list"), timeout=T)
     expect(page.locator("#list-user")).to_have_text("alice", timeout=T)
     page.locator("#fill").click()
     try:
@@ -130,13 +135,13 @@ def case_cycle(browser, obs):
     page.goto(BASE + "/dashboard")
     page.wait_for_url(re.compile("/login"), timeout=T)
     login(page, "bob")
-    page.wait_for_url(BASE + "/dashboard", timeout=T)
+    page.wait_for_url(U("/dashboard"), timeout=T)
     expect(page.locator("#user-name")).to_have_text("Bob Member", timeout=T)
     expect(page.locator("#secret")).to_have_text("initial-secret", timeout=T)
     expect(page.locator("#admin-view")).to_have_text("admin-placeholder", timeout=T)
     expect(page.locator("#async-admin-view")).to_have_text("async-admin-placeholder", timeout=T)
     page.locator("#nav-list").click()
-    page.wait_for_url(BASE + "/list", timeout=T)
+    page.wait_for_url(U("/list"), timeout=T)
     expect(page.locator("#list-user")).to_have_text("bob", timeout=T)
     expect(page.locator("#item-count")).to_have_text("0", timeout=T)
     page.wait_for_timeout(1000)
@@ -176,7 +181,7 @@ def case_pubnav(browser, obs):
     page.goto(BASE + "/dashboard")
     page.wait_for_url(re.compile("/login"), timeout=T)
     login(page, "alice")
-    page.wait_for_url(BASE + "/dashboard", timeout=T)
+    page.wait_for_url(U("/dashboard"), timeout=T)
     check_alice_dashboard(page, obs)
     page.locator("#nav-public").click()
     page.wait_for_url(BASE + "/", timeout=T)
@@ -204,7 +209,7 @@ def case_twotab(browser, obs):
     page.goto(BASE + "/dashboard")
     page.wait_for_url(re.compile("/login"), timeout=T)
     login(page, "alice")
-    page.wait_for_url(BASE + "/dashboard", timeout=T)
+    page.wait_for_url(U("/dashboard"), timeout=T)
     check_alice_dashboard(page, obs)
     page.locator("#reveal").click()
     expect(page.locator("#secret")).to_have_text("revealed-alice", timeout=T)
@@ -246,7 +251,7 @@ def case_xtab(browser, obs):
     page.goto(BASE + "/list")
     page.wait_for_url(re.compile("/login"), timeout=T)
     login(page, "alice")
-    page.wait_for_url(BASE + "/list", timeout=T)
+    page.wait_for_url(U("/list"), timeout=T)
     expect(page.locator("#list-user")).to_have_text("alice", timeout=T)
     expect(page.locator("#item-count")).not_to_have_text("-1", timeout=T)
     obs["tab1_items_before"] = page.locator("#item-count").inner_text()
@@ -265,7 +270,7 @@ def case_xtab(browser, obs):
     obs["tab1_user_6s_after_logout"] = page.locator("#list-user").inner_text() if page.locator("#list-user").count() else None
     obs["ls_after"] = [storage_snapshot(page)["local"], storage_snapshot(page2)["local"]]
     obs["cookies_after"] = sorted(c["name"] for c in ctx.cookies())
-    if page.url.split("?")[0] == BASE + "/list":
+    if page.url.split("?")[0].rstrip("/") == BASE + "/list":
         page.locator("#add").click()
         page.wait_for_timeout(3000)
         obs["tab1_url_after_protected_click"] = page.url
@@ -288,7 +293,7 @@ def case_extrascope(browser, obs):
     page.goto(BASE + "/dashboard")
     page.wait_for_url(re.compile("/login"), timeout=T)
     login(page, "alice")
-    page.wait_for_url(BASE + "/dashboard", timeout=T)
+    page.wait_for_url(U("/dashboard"), timeout=T)
     check_alice_dashboard(page, obs)
     obs["authorize_scope"] = [re.search(r"scope=([^&]+)", u).group(1) for u in authz_urls if "scope=" in u]
     page.locator("#force-refresh").click()

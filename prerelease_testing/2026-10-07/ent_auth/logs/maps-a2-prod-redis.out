@@ -1,0 +1,19 @@
+{"markers_200_rendered": {"ok": true, "n_paths": 200, "n_text": "n=200"}}
+{"drag_end_to_state": {"ok": true, "last_drag": "51.49207,-0.04875", "moved_px": [120, 60]}}
+{"second_drag_no_snap_back": {"ok": true, "last_drag": "51.50062,-0.06935", "pos": [498, 359], "expected_near": [498, 359]}}
+{"drag_end_noarg": {"ok": true, "text": "noarg=1"}}
+{"marker_click": {"ok": true, "text": "clicks=1"}}
+{"ticker_bg_updates_live": {"ok": true, "final_tick": "tick=8", "distinct_first_path_d": 8, "path_counts": [200], "first_d0": "M539,300a4,4 0 1,0"}}
+{"ticker_long_tasks": {"ok": true, "n": 0, "max_ms": 0}}
+{"drag_during_ticker": {"ok": true, "tick": "tick=16"}}
+{"reload_restores_state": {"ok": true, "tick": "tick=16", "last_drag": "51.49207,-0.05562"}}
+{"layers_control_rendered": {"ok": true, "n": 1}}
+{"base_layer_switch_from_state": {"ok": true, "osm_before": 12, "topo_after": 12, "osm_after": 0, "topo_requests": 12}}
+{"on_layeradd_event": {"ok": false, "before": "layer adds=0", "after": "layer adds=0"}}
+{"overlay_toggle_from_state": {"ok": true, "initial": 1, "off": 0, "on_again": 1}}
+{"base_layer_switch_back": {"ok": true, "osm": 12, "topo": 0}}
+{"layers_state_after_reload": {"ok": true, "base": "base=osm"}}
+{"geolocation_denied": {"ok": true, "error": "code=1 msg=Geolocation error: User denied Geolocation.", "found": ""}}
+{"geolocation_granted": {"ok": true, "found": "48.8566,2.3522", "error": ""}}
+ERRORS {"markers_diag": {"page_errors": [], "console": [{"type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)", "url": "http://localhost:8345/"}], "http_errors": [], "failed_nontile": []}, "layers_diag": {"page_errors": [], "console": [], "http_errors": [], "failed_nontile": []}}
+MAPS 16 / 17

@@ -3,7 +3,7 @@
  "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
  "checks": [
   {
-   "t": 2.96,
+   "t": 2.83,
    "name": "index lists the demo pages",
    "ok": true,
    "detail": [
@@ -14,13 +14,13 @@
    ]
   },
   {
-   "t": 5.2,
+   "t": 4.97,
    "name": "dates: 12 picker cards render",
    "ok": true,
    "detail": 12
   },
   {
-   "t": 5.33,
+   "t": 5.08,
    "name": "dates: DatePicker day click -> on_change toast with ISO date",
    "ok": true,
    "detail": [
@@ -28,7 +28,7 @@
    ]
   },
   {
-   "t": 5.41,
+   "t": 5.17,
    "name": "dates: MonthPicker -> toast 'Month selected: YYYY-03-01'",
    "ok": true,
    "detail": [
@@ -37,7 +37,7 @@
    ]
   },
   {
-   "t": 5.49,
+   "t": 5.25,
    "name": "dates: YearPicker -> toast 'Year selected: YYYY-01-01'",
    "ok": true,
    "detail": [
@@ -47,7 +47,7 @@
    ]
   },
   {
-   "t": 6.21,
+   "t": 5.99,
    "name": "dates: DatePickerInput popover day -> toast and input shows the date",
    "ok": true,
    "detail": {
@@ -61,7 +61,7 @@
    }
   },
   {
-   "t": 6.42,
+   "t": 6.09,
    "name": "dates: preset 'Tomorrow' (dayjs Var) -> toast with tomorrow",
    "ok": true,
    "detail": [
@@ -73,7 +73,7 @@
    ]
   },
   {
-   "t": 6.49,
+   "t": 6.17,
    "name": "dates: TimeInput typing -> on_change toast with time",
    "ok": true,
    "detail": [
@@ -86,13 +86,13 @@
    ]
   },
   {
-   "t": 8.96,
+   "t": 8.51,
    "name": "pill: 7 pills render",
    "ok": true,
    "detail": 7
   },
   {
-   "t": 9.04,
+   "t": 8.58,
    "name": "pill: remove button -> on_remove toast 'Removed'",
    "ok": true,
    "detail": [
@@ -100,7 +100,7 @@
    ]
   },
   {
-   "t": 11.2,
+   "t": 10.67,
    "name": "tags-input: initial State.tags rendered",
    "ok": true,
    "detail": [
@@ -109,7 +109,7 @@
    ]
   },
   {
-   "t": 12.17,
+   "t": 11.65,
    "name": "tags-input: typing + Enter adds a tag via on_change -> State",
    "ok": true,
    "detail": [
@@ -119,7 +119,7 @@
    ]
   },
   {
-   "t": 13.02,
+   "t": 12.5,
    "name": "tags-input: pill remove updates State",
    "ok": true,
    "detail": [
@@ -128,7 +128,7 @@
    ]
   },
   {
-   "t": 13.9,
+   "t": 13.38,
    "name": "tags-input: duplicate tag rejected",
    "ok": true,
    "detail": [
@@ -137,7 +137,7 @@
    ]
   },
   {
-   "t": 15.98,
+   "t": 15.49,
    "name": "tags-input: tags survive reload (session state)",
    "ok": true,
    "detail": [
@@ -146,25 +146,34 @@
    ]
   },
   {
-   "t": 19.54,
+   "t": 17.79,
+   "name": "tags-input: a second browser context starts from the State default (session isolation)",
+   "ok": true,
+   "detail": [
+    "Tag1",
+    "Tag2"
+   ]
+  },
+  {
+   "t": 21.32,
    "name": "qa: Autocomplete on_option_submit -> State",
    "ok": true,
    "detail": "fruit: Banana"
   },
   {
-   "t": 20.83,
+   "t": 22.61,
    "name": "qa: MultiSelect on_change -> State list",
    "ok": true,
    "detail": "picks: React,Vue"
   },
   {
-   "t": 21.6,
+   "t": 23.37,
    "name": "qa: RingProgress label follows State (30 -> 50)",
    "ok": true,
    "detail": "50%"
   },
   {
-   "t": 22.45,
+   "t": 24.21,
    "name": "qa: JsonInput on_change -> State and format_on_blur reformats",
    "ok": true,
    "detail": {
@@ -173,7 +182,7 @@
    }
   },
   {
-   "t": 23.1,
+   "t": 24.86,
    "name": "qa: JsonInput shows validation_error on invalid JSON",
    "ok": true,
    "detail": [
@@ -181,7 +190,7 @@
    ]
   },
   {
-   "t": 23.93,
+   "t": 25.68,
    "name": "qa: Collapse in_=State.opened toggles content",
    "ok": true,
    "detail": {
@@ -190,7 +199,7 @@
    }
   },
   {
-   "t": 23.94,
+   "t": 25.69,
    "name": "qa: NumberFormatter renders State-derived value",
    "ok": true,
    "detail": "Fruit\n\nfruit: Banana\n\nFrameworks\nReact\nVue\n\npicks: React,Vue\n\n50%\n\nbump\nJSON\n\nInvalid JSON\n\njson: {bad json\n\n$ 50,000\ntoggle collapse\n\ncollapsed content"
@@ -198,14 +207,14 @@
  ],
  "notes": [
   "guard: 0.10.0a2 0.9.7a4",
-  "TimeInput element: <input class=\"m_468e7eda m_8fb7ebe7 mantine-Input-input mantine-TimeInput-input\" data-variant=\"default\" step=\"60\" type=\"time\" aria-invalid=\"false\" id=\"mantine-n4wssg8tg\">",
+  "TimeInput element: <input class=\"m_468e7eda m_8fb7ebe7 mantine-Input-input mantine-TimeInput-input\" data-variant=\"default\" step=\"60\" type=\"time\" aria-invalid=\"false\" id=\"mantine-m80v5gkdw\">",
   "multiselect dropdown visible options: ['React', 'Vue', 'Svelte']",
   "ring sections stroke-dasharray: ['131.94689145077132, 131.94689145077132', '131.94689145077132, 131.94689145077132']"
  ],
  "summary": {
   "checks_failed": [],
-  "n_checks": 22,
-  "console_total": 6,
+  "n_checks": 23,
+  "console_total": 7,
   "console_benign": 0,
   "console_errors": 0,
   "console_warnings": 0,
@@ -218,7 +227,7 @@
   "console_warnings": [],
   "page_errors": [
    {
-    "t": 20.05,
+    "t": 21.82,
     "ctx": "mantine",
     "error": "Cannot read properties of null (reading 'name')",
     "url": "http://localhost:3316/qa-mantine/"
@@ -229,13 +238,13 @@
  },
  "console_all": [
   {
-   "t": 2.96,
+   "t": 2.83,
    "ctx": "mantine",
    "type": "log",
    "text": "Disconnect websocket on page navigation",
    "url": "http://localhost:3316/",
    "location": {
-    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "url": "http://localhost:3316/assets/createLucideIcon-DcX7NwvV.js",
     "line": 1,
     "column": 11226,
     "lineNumber": 1,
@@ -244,13 +253,13 @@
    "benign": false
   },
   {
-   "t": 6.82,
+   "t": 6.4,
    "ctx": "mantine",
    "type": "log",
    "text": "Disconnect websocket on page navigation",
    "url": "http://localhost:3316/dates/",
    "location": {
-    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "url": "http://localhost:3316/assets/createLucideIcon-DcX7NwvV.js",
     "line": 1,
     "column": 11226,
     "lineNumber": 1,
@@ -259,13 +268,13 @@
    "benign": false
   },
   {
-   "t": 9.05,
+   "t": 8.58,
    "ctx": "mantine",
    "type": "log",
    "text": "Disconnect websocket on page navigation",
    "url": "http://localhost:3316/pill/",
    "location": {
-    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "url": "http://localhost:3316/assets/createLucideIcon-DcX7NwvV.js",
     "line": 1,
     "column": 11226,
     "lineNumber": 1,
@@ -274,13 +283,13 @@
    "benign": false
   },
   {
-   "t": 13.9,
+   "t": 13.39,
    "ctx": "mantine",
    "type": "log",
    "text": "Disconnect websocket on page navigation",
    "url": "http://localhost:3316/tags-input/",
    "location": {
-    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "url": "http://localhost:3316/assets/createLucideIcon-DcX7NwvV.js",
     "line": 1,
     "column": 11226,
     "lineNumber": 1,
@@ -289,13 +298,28 @@
    "benign": false
   },
   {
-   "t": 15.98,
+   "t": 17.79,
+   "ctx": "mantine-ctx2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3316/tags-input/",
+   "location": {
+    "url": "http://localhost:3316/assets/createLucideIcon-DcX7NwvV.js",
+    "line": 1,
+    "column": 11410,
+    "lineNumber": 1,
+    "columnNumber": 11410
+   },
+   "benign": false
+  },
+  {
+   "t": 17.82,
    "ctx": "mantine",
    "type": "log",
    "text": "Disconnect websocket on page navigation",
    "url": "http://localhost:3316/tags-input/",
    "location": {
-    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "url": "http://localhost:3316/assets/createLucideIcon-DcX7NwvV.js",
     "line": 1,
     "column": 11226,
     "lineNumber": 1,
@@ -304,13 +328,13 @@
    "benign": false
   },
   {
-   "t": 23.99,
+   "t": 25.73,
    "ctx": "mantine",
    "type": "log",
    "text": "Disconnect websocket on pagehide",
    "url": "http://localhost:3316/qa-mantine/",
    "location": {
-    "url": "http://localhost:3316/assets/createLucideIcon-13rrQlAh.js",
+    "url": "http://localhost:3316/assets/createLucideIcon-DcX7NwvV.js",
     "line": 1,
     "column": 11410,
     "lineNumber": 1,
@@ -320,7 +344,7 @@
   }
  ],
  "websockets": {
-  "ws://localhost:3316/_event/?token=a596171c-d0e6-4c1d-ce56-e1d1e8ffb97f&EIO=4&transport=websocket": {
+  "ws://localhost:3316/_event/?token=d98b4ec5-c972-4721-d9ba-d8bc9e648dbd&EIO=4&transport=websocket": {
    "ctx": "mantine",
    "sent": 20,
    "recv": 33,
@@ -331,116 +355,104 @@
     "41/_event,",
     "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/pill/\",\"asPath\":\"/pill/\"}}}",
     "41/_event,",
-    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/tags-input/\",\"asPath\":\"/tags-input/\"}}}",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___tags_input____tags_input_state.update_tags\",\"payload\":{\"tags\":[\"Tag1\",\"Tag2\",\"Tag3\"]},\"router_data\":{\"pathname\":\"/tags-input/\",\"asPath\":\"/tags-input/\"}}]",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___tags_input____tags_input_state.update_tags\",\"payload\":{\"tags\":[\"Tag2\",\"Tag3\"]},\"router_data\":{\"pathname\":\"/tags-input/\",\"asPath\":\"/tags-input/\"}}]",
-    "41/_event,",
-    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/tags-input/\",\"asPath\":\"/tags-input/\"}}}",
-    "41/_event,",
-    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}}",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_fruit\",\"payload\":{\"value\":\"Banana\"},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_picks\",\"payload\":{\"value\":[\"React\",\"Vue\"]},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.bump\",\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_json_text\",\"payload\":{\"value\":\"{\\\"b\\\": [1,2]}\"},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_json_text\",\"payload\":{\"value\":\"{\\n  \\\"b\\\": [\\n    1,\\n    2\\n  ]\\n}\"},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.set_json_text\",\"payload\":{\"value\":\"{bad json\"},\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]",
-    "42/_event,[\"event\",{\"name\":\"reflex___state____state.mantine___qa_mantine____qa_mantine_state.toggle\",\"router_data\":{\"pathname\":\"/qa-mantine/\",\"asPath\":\"/qa-mantine/\"}}]"
+    "...[20 items]"
    ],
    "recv_samples": [
-    "0{\"sid\":\"cfjYk_EJHuWZRExoAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"G0IdKlXJ8qHCcA4mAAAB\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"WYt5taK0+0AtcaFMQSyqGA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "0{\"sid\":\"SZQZur54xGKTjRI8AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"IHeE7itWplWvrHLxAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13...[600 chars]",
     "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "0{\"sid\":\"Uplr5ijpaylPaNIQAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"aj0AKbqbquIO9GJqAAAD\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Za8YcqQzWKepcGVEo1xOGg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "0{\"sid\":\"wj2wuYGODDUjPikKAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"a3mc1VQRJbHcoJ8RAAAF\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"LY++uPMBJZavX3IKS9HP7w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "0{\"sid\":\"hXxrrkSlA2P0NmYLAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"hgE6p9i_BNt1-swKAAAH\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"BUtWaYHI/AqS4zbWDLB4FQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___tags_input____tags_input_state\":{\"tags_rx_state_\":[\"Tag1\",\"Tag2\",\"Tag3\"]}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___tags_input____tags_input_state\":{\"tags_rx_state_\":[\"Tag2\",\"Tag3\"]}}}]",
-    "0{\"sid\":\"dnrPSg7Lgn6Dcnj5AAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"aGG52gwyKSPCurWMAAAJ\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Yxee6IGCP/QTnocCyXjQqw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "0{\"sid\":\"eivXoKyl_KpUxmgMAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
-    "40/_event,{\"sid\":\"IfDR2DKdbnh4sywSAAAL\"}",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Kdq87IB9zcCl71FCTtbfCw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"fruit_rx_state_\":\"Banana\"}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"picks_rx_state_\":[\"React\",\"Vue\"]}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"progress_rx_state_\":50}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"json_text_rx_state_\":\"{\\\"b\\\": [1,2]}\"}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"json_text_rx_state_\":\"{\\n  \\\"b\\\": [\\n    1,\\n    2\\n  ]\\n}\"}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"json_text_rx_state_\":\"{bad json\"}}}]",
-    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___qa_mantine____qa_mantine_state\":{\"opened_rx_state_\":true}}}]"
+    "0{\"sid\":\"xaUoURzzPw1aKDLIAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"1JppyhxUAuZ0SfqZAAAD\"}",
+    "...[33 items]"
    ],
    "closed": true
+  },
+  "ws://localhost:3316/_event/?token=9d019639-79ee-4d88-fbe4-cb5687ae7221&EIO=4&transport=websocket": {
+   "ctx": "mantine-ctx2",
+   "sent": 1,
+   "recv": 4,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"0e7d1780d21dbbd5\",\"b084fc0c68f7c73a\",\"e99764be3887127d\",\"9abe4f5a85a3e0b3\",\"accc9677f21b82bf\",\"3d29b1da76da4f04\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/tags-input/\",\"asPath\":\"/tags-input/\"}}}"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"13vCefKAtUJOfvVFAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"CanrqqxfDh4wS9TdAAAL\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3316\",\"origin\":\"http://localhost:3316\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13...[600 chars]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": false
   }
  },
  "requests": [
   {
-   "t": 0.74,
+   "t": 0.7,
    "ctx": "mantine",
    "url": "http://localhost:3316/",
    "method": "GET"
   },
   {
-   "t": 2.97,
+   "t": 2.84,
    "ctx": "mantine",
    "url": "http://localhost:3316/dates",
    "method": "GET"
   },
   {
-   "t": 2.97,
+   "t": 2.84,
    "ctx": "mantine",
    "url": "http://localhost:3316/dates/",
    "method": "GET"
   },
   {
-   "t": 6.82,
+   "t": 6.4,
    "ctx": "mantine",
    "url": "http://localhost:3316/pill",
    "method": "GET"
   },
   {
-   "t": 6.88,
+   "t": 6.4,
    "ctx": "mantine",
    "url": "http://localhost:3316/pill/",
    "method": "GET"
   },
   {
-   "t": 9.05,
+   "t": 8.58,
    "ctx": "mantine",
    "url": "http://localhost:3316/tags-input",
    "method": "GET"
   },
   {
-   "t": 9.07,
+   "t": 8.59,
    "ctx": "mantine",
    "url": "http://localhost:3316/tags-input/",
    "method": "GET"
   },
   {
-   "t": 13.9,
+   "t": 13.39,
    "ctx": "mantine",
    "url": "http://localhost:3316/tags-input/",
    "method": "GET"
   },
   {
-   "t": 15.99,
+   "t": 15.59,
+   "ctx": "mantine-ctx2",
+   "url": "http://localhost:3316/tags-input",
+   "method": "GET"
+  },
+  {
+   "t": 15.6,
+   "ctx": "mantine-ctx2",
+   "url": "http://localhost:3316/tags-input/",
+   "method": "GET"
+  },
+  {
+   "t": 17.82,
    "ctx": "mantine",
    "url": "http://localhost:3316/qa-mantine",
    "method": "GET"
   },
   {
-   "t": 15.99,
+   "t": 17.82,
    "ctx": "mantine",
    "url": "http://localhost:3316/qa-mantine/",
    "method": "GET"

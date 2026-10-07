@@ -3,6 +3,7 @@
 Usage: bglive_probe.py <frontend_base> <label>
 Case nav:    login on /dashboard, client-side nav to /list, record item-count/progress, click fill, sample 5 s.
 Case direct: login landing on /list, click fill, sample 5 s.
+Case loaded:  like direct, but clicks #fill-loaded (ListWorker.fill_loaded loads AuthUserState in every async-with block).
 Case navback: login on /list, nav to "/" (public) and back to /list via links, click fill, sample.
 Records ws frames that mention list_worker / list_base.
 """
@@ -19,6 +20,11 @@ sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
 from common import CHROMIUM, W, attach, login  # noqa: E402
 
 BASE = sys.argv[1].rstrip("/")
+
+
+def U(path):
+    """URL matcher tolerant of the trailing slash prod static serving adds (307 /dashboard -> /dashboard/)."""
+    return re.compile(re.escape(BASE + path) + r"/?(\?.*)?$")
 LABEL = sys.argv[2]
 CASES = sys.argv[3].split(",") if len(sys.argv) > 3 else ["nav", "direct", "navback"]
 T = 45_000
@@ -48,23 +54,23 @@ def run(browser, case):
     page.goto(BASE + start)
     page.wait_for_url(re.compile("/login"), timeout=T)
     login(page, "alice")
-    page.wait_for_url(BASE + start, timeout=T)
+    page.wait_for_url(U(start), timeout=T)
     if case == "nav":
         expect(page.locator("#user-name")).to_have_text("Alice Admin", timeout=T)
         page.locator("#nav-list").click()
-        page.wait_for_url(BASE + "/list", timeout=T)
+        page.wait_for_url(U("/list"), timeout=T)
     if case == "navback":
         expect(page.locator("#list-user")).to_have_text("alice", timeout=T)
         page.locator("#nav-public").click()
         page.wait_for_url(BASE + "/", timeout=T)
         expect(page.locator("#signed-in")).to_contain_text("alice", timeout=T)
         page.locator("#nav-list").click()
-        page.wait_for_url(BASE + "/list", timeout=T)
+        page.wait_for_url(U("/list"), timeout=T)
     expect(page.locator("#list-user")).to_have_text("alice", timeout=T)
     page.wait_for_timeout(2000)
     obs["before_fill"] = {"progress": page.locator("#progress").inner_text(), "item_count": page.locator("#item-count").inner_text()}
     n_frames_before = len(frames)
-    page.locator("#fill").click()
+    page.locator("#fill-loaded" if case == "loaded" else "#fill").click()
     obs["samples"] = sample(page, 5)
     obs["live_ok"] = obs["samples"][-1][1] == "5" and obs["samples"][-1][3] == 5
     obs["list_frames_during_fill"] = len(frames) - n_frames_before

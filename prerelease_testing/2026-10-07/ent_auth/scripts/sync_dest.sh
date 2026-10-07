@@ -8,8 +8,10 @@ EXC="--exclude=.web --exclude=node_modules --exclude=.states --exclude=./assets/
 for a in entauth mapsapp; do mkdir -p $DEST/apps/$a; tar -C $W/$a -cf - $EXC . | tar -C $DEST/apps/$a -xf -; done
 # a4auth: the 10-05 auth matrix apps + drivers re-pointed to this cluster's ports (10-05 reference JSON left out)
 mkdir -p $DEST/apps/a4auth
-(cd $W/a4auth && find . -path ./reference -prune -o \( -name '*.py' -o -name '*.md' -o -name '*.json' -path './logs/*' \) -type f -print | grep -v __pycache__ | tar -cf - -T -) | tar -C $DEST/apps/a4auth -xf -
+(cd $W/a4auth && find . \( -path ./reference -o -name .web -o -name node_modules -o -name .states -o -name __pycache__ \) -prune -o -type f \( -name '*.py' -o -name '*.md' -o -path './logs/a2/*' \) -print | grep -v __pycache__ | tar -cf - -T -) | tar -C $DEST/apps/a4auth -xf -
 tar -C $W/scripts -cf - --exclude=__pycache__ . | tar -C $DEST/scripts -xf -
 tar -C $W/logs -cf - . | tar -C $DEST/logs -xf -
 tar -C $W/screenshots -cf - . | tar -C $DEST/screenshots -xf -
+# keep the tree small: big logs / raw event JSON are stored gzipped (zcat / zless to read)
+find $DEST/logs $DEST/apps/a4auth/logs -type f \( -name "*.json" -o -name "*.log" -o -name "*.out" \) -size +40k -exec gzip -f {} +
 du -sh $DEST

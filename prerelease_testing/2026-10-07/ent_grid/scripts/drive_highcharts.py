@@ -64,6 +64,12 @@ def main_page(s, p):
     p.wait_for_selector(".highcharts-root")
     p.wait_for_timeout(1200)
     s.check("index: State.last_point survives reload", "Clicked Mar: 3 units" in p.locator("body").inner_text())
+    q = s.new_page(s.new_context("hc-ctx2"), "hc-ctx2")
+    q.goto(base + "/", wait_until="networkidle")
+    q.wait_for_selector(".highcharts-root")
+    q.wait_for_timeout(1200)
+    s.check("index: a second browser context shows the default text (session isolation)", "Click a point on the 2026 line" in q.locator("body").inner_text())
+    q.close()
 
 
 def qa_page(s, p):

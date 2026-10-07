@@ -25,6 +25,11 @@ from common import CHROMIUM, W, attach, login  # noqa: E402
 from instrument import Recorder  # noqa: E402
 
 BASE = sys.argv[1].rstrip("/")
+
+
+def U(path):
+    """URL matcher tolerant of the trailing slash prod static serving adds (307 /dashboard -> /dashboard/)."""
+    return re.compile(re.escape(BASE + path) + r"/?(\?.*)?$")
 LABEL = sys.argv[2]
 N = int(sys.argv[3]) if len(sys.argv) > 3 else 3
 T = 45_000
@@ -78,7 +83,7 @@ def case_loggedin_boot(browser, obs):
     page.goto(BASE + "/dashboard")
     page.wait_for_url(re.compile("/login"), timeout=T)
     login(page, "alice")
-    page.wait_for_url(BASE + "/dashboard", timeout=T)
+    page.wait_for_url(U("/dashboard"), timeout=T)
     expect(page.locator("#user-name")).to_have_text("Alice Admin", timeout=T)
     page.wait_for_timeout(1500)
     real = ls(page)

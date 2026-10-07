@@ -26,6 +26,11 @@ from common import CHROMIUM, W, attach, login  # noqa: E402
 from instrument import Recorder  # noqa: E402
 
 BASE = sys.argv[1].rstrip("/")
+
+
+def U(path):
+    """URL matcher tolerant of the trailing slash prod static serving adds (307 /dashboard -> /dashboard/)."""
+    return re.compile(re.escape(BASE + path) + r"/?(\?.*)?$")
 LABEL = sys.argv[2]
 SCEN = sys.argv[3].split(",") if len(sys.argv) > 3 else ["reload_writes", "newtab_writes", "garbage_protected", "garbage_public", "garbage_id_refresh", "garbage_all_after_login"]
 T = 45_000
@@ -65,7 +70,7 @@ def do_login(page, path="/dashboard"):
     page.goto(BASE + path)
     page.wait_for_url(re.compile("/login"), timeout=T)
     login(page, "alice")
-    page.wait_for_url(BASE + path, timeout=T)
+    page.wait_for_url(U(path), timeout=T)
     if path == "/dashboard":
         expect(page.locator("#user-name")).to_have_text("Alice Admin", timeout=T)
 
@@ -93,7 +98,7 @@ def scen_reload_writes(browser, obs):
     expect(page.locator("#signed-in")).to_contain_text("alice", timeout=T)
     expect(page.locator("#admin-view")).to_have_text("admin-data", timeout=T)
     page.locator("#nav-dashboard").click()
-    page.wait_for_url(BASE + "/dashboard", timeout=T)
+    page.wait_for_url(U("/dashboard"), timeout=T)
     expect(page.locator("#user-name")).to_have_text("Alice Admin", timeout=T)
     page.locator("#reveal").click()
     expect(page.locator("#secret")).to_have_text("revealed-alice", timeout=T)

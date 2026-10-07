@@ -1,0 +1,166 @@
+{
+ "name": "rxeapp-dev-a2",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 4.52,
+   "name": "google_font: preconnect googleapis + gstatic(crossorigin=anonymous) + css2 stylesheet in <head>",
+   "ok": true,
+   "detail": [
+    {
+     "rel": "preconnect",
+     "href": "https://fonts.googleapis.com/",
+     "co": null
+    },
+    {
+     "rel": "preconnect",
+     "href": "https://fonts.gstatic.com/",
+     "co": "anonymous"
+    },
+    {
+     "rel": "stylesheet",
+     "href": "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+     "co": null
+    }
+   ]
+  },
+  {
+   "t": 4.53,
+   "name": "google_font links are present in the served HTML head (before hydration, prod prerender)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 4.6,
+   "name": "app style font_family applies (Inter, sans-serif)",
+   "ok": true,
+   "detail": "Inter, sans-serif"
+  },
+  {
+   "t": 4.61,
+   "name": "badge absent",
+   "ok": true,
+   "detail": 0
+  },
+  {
+   "t": 5.35,
+   "name": "state event works",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "t": 6.4,
+   "name": "client-side nav to /other (badge persists across pages)",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4",
+  "google font links: [{'rel': 'preconnect', 'href': 'https://fonts.googleapis.com/', 'co': None}, {'rel': 'preconnect', 'href': 'https://fonts.gstatic.com/', 'co': 'anonymous'}, {'rel': 'stylesheet', 'href': 'https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap', 'co': None}]"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 6,
+  "console_total": 5,
+  "console_benign": 4,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 6.44,
+   "ctx": "rxeapp",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3304/other",
+   "location": {
+    "url": "http://localhost:3304/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3304/?token=S5znvdo_KLuC": {
+   "ctx": "rxeapp",
+   "sent": 0,
+   "recv": 1,
+   "sent_samples": [],
+   "recv_samples": [
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": false
+  },
+  "ws://localhost:8304/_event/?token=0ecdfe37-85e5-4cae-943d-bde45b0e843e&EIO=4&transport=websocket": {
+   "ctx": "rxeapp",
+   "sent": 3,
+   "recv": 6,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"03bae0e479baf630\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"a6fa6e62cf5ab438\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.rxeapp___rxeapp___s.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"DH3bRKHMt6hgYq9iAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"vHFmSrju_3CWVxNUAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8304\",\"origin\":\"http://localhost:3304\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13...[600 chars]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.rxeapp___rxeapp___s\":{\"n_rx_state_\":1}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3304\",\"path\":\"/other\",\"raw_path\":\"/other\",\"full_path\":\"http://localhost:3304/other\",\"full_raw_path\":\"http://localhost:3304/other\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/other\",\"is_hydrated_rx_state_\":true,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3304\",\"origin\":\"...[527 chars]"
+   ],
+   "closed": false
+  }
+ },
+ "requests": [
+  {
+   "t": 0.73,
+   "ctx": "rxeapp",
+   "url": "http://localhost:3304/",
+   "method": "GET"
+  },
+  {
+   "t": 1.73,
+   "ctx": "rxeapp",
+   "url": "http://localhost:3304/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 1.73,
+   "ctx": "rxeapp",
+   "url": "http://localhost:3304/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 1.75,
+   "ctx": "rxeapp",
+   "url": "http://localhost:3304/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 2.08,
+   "ctx": "rxeapp",
+   "url": "http://localhost:3304/app/routes/_index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 5.39,
+   "ctx": "rxeapp",
+   "url": "http://localhost:3304/app/routes/[other]._index.jsx?import",
+   "method": "GET"
+  }
+ ]
+}

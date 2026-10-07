@@ -125,6 +125,17 @@ class ListWorker(ListBase):
                 self.progress = i + 1
             await asyncio.sleep(0.25)
 
+    @rxe.event(background=True)
+    async def fill_loaded(self):
+        """Like fill, but loads AuthUserState inside EVERY `async with self` block."""
+        for i in range(5):
+            async with self:
+                auth_user = await self.get_state(AuthUserState)
+                sub = auth_user.userinfo.get("sub", "anon")
+                self.items.append(f"{sub}-bgl-{i}")
+                self.progress = i + 1
+            await asyncio.sleep(0.25)
+
     @rxe.event
     def add_item(self, value: str):
         self.items.append(value)
@@ -293,6 +304,7 @@ def list_page() -> rx.Component:
         rx.text(ListWorker.bg_pid, id="bg-pid"),
         rx.foreach(ListBase.items, lambda it: rx.text(it, class_name="item")),
         rx.button("fill", id="fill", on_click=ListWorker.fill),
+        rx.button("fill loaded", id="fill-loaded", on_click=ListWorker.fill_loaded),
         rx.button("add", id="add", on_click=ListWorker.add_item("manual")),
         rx.link("go public", href="/", id="nav-public"),
         rx.button("logout", id="list-logout", on_click=AuthUserState.logout),
