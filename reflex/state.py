@@ -361,8 +361,9 @@ def _has_data_descriptor(cls: type, name: str) -> bool:
     return False
 
 
-def _is_plain_private_name(cls: type, name: str) -> bool:
-    """Whether assigning a name sets a plain private attribute rather than a var.
+@_cache_per_class
+def _plain_private_prefixes(cls: type[BaseState]) -> tuple[str, ...]:
+    """Get the prefixes of the names a state sets as plain private attributes.
 
     Names starting with a double underscore, like dunders and computed var
     caches, are plain attributes, and so are private names a class of the
@@ -371,18 +372,32 @@ def _is_plain_private_name(cls: type, name: str) -> bool:
 
     Args:
         cls: The state class.
-        name: The attribute name.
 
     Returns:
-        True for dunders and names mangled by the class, a base or a mixin.
+        The dunder prefix, then the mangling prefix of the class, each base and
+        each mixin.
     """
-    return name.startswith((
+    return (
         "__",
         *(
             f"_{klass.__dict__.get('__original_name__', klass.__name__).lstrip('_')}__"
             for klass in cls.__mro__
         ),
-    ))
+    )
+
+
+def _is_plain_private_name(cls: type[BaseState], name: str) -> bool:
+    """Whether assigning a name sets a plain private attribute rather than a var.
+
+    Args:
+        cls: The state class.
+        name: The attribute name.
+
+    Returns:
+        True for dunders and names mangled by the class, a base or a mixin.
+    """
+    # Every dunder or mangled name contains a double underscore.
+    return "__" in name and name.startswith(_plain_private_prefixes(cls))
 
 
 def _bind_attr(cls: type, name: str, value: Any) -> None:

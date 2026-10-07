@@ -183,3 +183,35 @@ def test_component_state_storage_default_keeps_browser_storage():
     compiled = compile_client_storage(state_cls)
     key = f"{state_cls.get_full_name()}.pref{FIELD_MARKER}"
     assert compiled[constants.LOCAL_STORAGE][key] == {"name": "pref", "sync": True}
+
+
+def test_component_state_class_has_own_assignment_history():
+    """Each generated class undoes only its own assignments, not the mixin's."""
+
+    class HistoryComponentState(rx.ComponentState):
+        count: int = 0
+
+        @classmethod
+        def get_component(cls, initial: int) -> rx.Component:
+            """Configure the new state class before returning its component.
+
+            Args:
+                initial: The count's default value.
+
+            Returns:
+                The component showing the count.
+            """
+            cls.count = initial
+            return rx.text(cls.count)
+
+    HistoryComponentState.count = 3
+    for initial in range(5):
+        state_cls = HistoryComponentState.create(initial=initial).State
+        assert state_cls is not None
+        assert state_cls().count == initial  # pyright: ignore[reportAttributeAccessIssue]
+        # Undoing stops at the mixin default the copy started from.
+        del state_cls.count
+        del state_cls.count
+        assert state_cls().count == 3  # pyright: ignore[reportAttributeAccessIssue]
+    del HistoryComponentState.count
+    assert HistoryComponentState.get_fields()["count"].default_value() == 0

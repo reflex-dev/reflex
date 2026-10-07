@@ -16,6 +16,7 @@ import re
 import string
 import warnings
 from abc import ABCMeta
+from collections import deque
 from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
 from dataclasses import MISSING
 from decimal import Decimal
@@ -3893,6 +3894,14 @@ if TYPE_CHECKING:
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
+# The field attribute holding the defaults replaced by class assignments, which
+# undoing an assignment restores, most recent last.
+_REPLACED_DEFAULTS_ATTR = "_replaced_defaults"
+
+# How many replaced defaults a field keeps: undoing reaches back through as many
+# nested patches, and assigning a default repeatedly does not grow the history.
+_MAX_REPLACED_DEFAULTS = 16
+
 # Custom attrs never copied from a source field: get_field_type duck-types
 # pydantic fields on `.annotation`, so carrying it over would shadow the
 # real class annotation; the binding attrs and the defaults replaced by class
@@ -3905,7 +3914,7 @@ _RESERVED_FIELD_ATTRS = frozenset({
     "_tracked",
     "_plain_types",
     "_var",
-    "_replaced_defaults",
+    _REPLACED_DEFAULTS_ATTR,
 })
 
 # Exact types of values that are never wrapped in a MutableProxy. Checking them
@@ -4103,22 +4112,24 @@ class Field(Generic[FIELD_TYPE]):
     ) -> None:
         """Replace the default from a class assignment, keeping the previous one.
 
-        The previous default is restored when the assignment is undone.
+        The previous default is restored when the assignment is undone. At most
+        ``_MAX_REPLACED_DEFAULTS`` previous defaults are kept, dropping the oldest.
 
         Args:
             default: The new default value, or MISSING.
             default_factory: The new default factory, or None.
         """
-        self.__dict__.setdefault("_replaced_defaults", []).append((
-            self.default,
-            self.default_factory,
-        ))
+        if (replaced := self.__dict__.get(_REPLACED_DEFAULTS_ATTR)) is None:
+            replaced = self.__dict__[_REPLACED_DEFAULTS_ATTR] = deque(
+                maxlen=_MAX_REPLACED_DEFAULTS
+            )
+        replaced.append((self.default, self.default_factory))
         self.default = default
         self.default_factory = default_factory
 
     def _restore_default(self) -> None:
         """Undo the most recent class assignment of the default, if any."""
-        if replaced := self.__dict__.get("_replaced_defaults"):
+        if replaced := self.__dict__.get(_REPLACED_DEFAULTS_ATTR):
             self.default, self.default_factory = replaced.pop()
 
     def default_value(self) -> FIELD_TYPE | None:
@@ -4829,9 +4840,9 @@ class BaseStateMeta(ABCMeta):
         A value the field's annotation accepts becomes the default. A
         zero-argument callable it does not accept becomes the default factory,
         after one call validates what it produces, unless it produces a browser
-        storage value, which becomes the default itself. A plain value for a
-        browser storage default, or produced by such a factory, keeps the
-        declared storage type and options. Assigning the field itself, or the
+        storage value, which becomes the default itself. A plain value assigned
+        to a browser storage default, or produced by an assigned factory, keeps
+        the declared storage type and options. Assigning the field itself, or the
         Var read through the class, undoes the most recent assignment, as
         patching tools do to restore what they saved.
 

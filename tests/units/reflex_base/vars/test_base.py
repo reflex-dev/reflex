@@ -36,6 +36,8 @@ from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
     _ABC_BOOKKEEPING_NAME,
+    _MAX_REPLACED_DEFAULTS,
+    _REPLACED_DEFAULTS_ATTR,
     FIELD_TYPE,
     GLOBAL_CACHE,
     BaseStateMeta,
@@ -658,6 +660,37 @@ def test_class_assignment_nested_patches_unwind():
             assert ConfigState()._value == 7
         assert ConfigState()._value == 6
     assert ConfigState()._value == 5
+
+
+def test_class_assignment_history_is_bounded():
+    """Repeated assignments keep a bounded history that still unwinds nested patches."""
+
+    class ConfigState(BaseState):
+        _value: int = 0
+
+    declared = ConfigState.get_fields()["_value"]
+    for value in range(1, 101):
+        ConfigState._value = value
+    replaced = declared.__dict__[_REPLACED_DEFAULTS_ATTR]
+    assert len(replaced) == _MAX_REPLACED_DEFAULTS
+
+    with pytest.MonkeyPatch.context() as outer:
+        outer.setattr(ConfigState, "_value", 101)
+        with pytest.MonkeyPatch.context() as middle:
+            middle.setattr(ConfigState, "_value", 102)
+            with mock.patch.object(ConfigState, "_value", 103):
+                assert ConfigState()._value == 103
+                assert len(replaced) == _MAX_REPLACED_DEFAULTS
+            assert ConfigState()._value == 102
+        assert ConfigState()._value == 101
+    assert ConfigState()._value == 100
+
+    # Undoing steps back through the assignments kept, then leaves the oldest.
+    kept = len(replaced)
+    for _ in range(kept + 1):
+        del ConfigState._value
+    assert ConfigState.__dict__["_value"] is declared
+    assert ConfigState()._value == 100 - kept
 
 
 def test_class_assignment_delattr_restores_default():

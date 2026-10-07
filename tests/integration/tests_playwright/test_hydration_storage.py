@@ -41,15 +41,18 @@ def HydrationStorageApp():
 
     class AssignedStorageState(rx.State):
         local: str = rx.LocalStorage("declared", name="assigned-local")
+        session: str = rx.SessionStorage("declared", name="assigned-session")
         cookie: str = rx.Cookie("declared", name="assigned-cookie")
 
         @rx.event
         def change(self):
             """Change the values the browser stores."""
             self.local = "changed"
+            self.session = "changed"
             self.cookie = "changed"
 
     AssignedStorageState.local = "assigned"
+    AssignedStorageState.session = "assigned"
     AssignedStorageState.cookie = "assigned"
 
     class PreferenceState(rx.ComponentState):
@@ -95,6 +98,7 @@ def HydrationStorageApp():
         """
         return rx.box(
             rx.text(AssignedStorageState.local, id="assigned-local"),
+            rx.text(AssignedStorageState.session, id="assigned-session"),
             rx.text(AssignedStorageState.cookie, id="assigned-cookie"),
             rx.button("Change", on_click=AssignedStorageState.change, id="change"),
             PreferenceState.create(initial="assigned"),
@@ -179,13 +183,14 @@ def test_assigned_storage_default_persists(
     url = f"{hydration_storage_app.frontend_url.rstrip('/')}/assigned"
     page.goto(url)
     expect(page.locator("#hydrated")).to_have_text("true")
-    for var in ("local", "cookie", "pref"):
+    for var in ("local", "session", "cookie", "pref"):
         expect(page.locator(f"#assigned-{var}")).to_have_text("assigned")
 
     page.locator("#change").click()
     page.locator("#change-pref").click()
     page.wait_for_function("""() =>
         localStorage.getItem('assigned-local') === 'changed' &&
+        sessionStorage.getItem('assigned-session') === 'changed' &&
         localStorage.getItem('assigned-pref') === 'changed' &&
         document.cookie.split('; ').includes('assigned-cookie=changed')
     """)
@@ -196,3 +201,12 @@ def test_assigned_storage_default_persists(
     expect(other.locator("#hydrated")).to_have_text("true")
     for var in ("local", "cookie", "pref"):
         expect(other.locator(f"#assigned-{var}")).to_have_text("changed")
+    # Session storage belongs to its tab, so the new tab starts from the default.
+    expect(other.locator("#assigned-session")).to_have_text("assigned")
+
+    # Reloading the tab keeps its session storage.
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+    for var in ("local", "session", "cookie", "pref"):
+        expect(page.locator(f"#assigned-{var}")).to_have_text("changed")
+    assert page.evaluate("sessionStorage.getItem('assigned-session')") == "changed"
