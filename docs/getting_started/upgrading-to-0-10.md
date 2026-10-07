@@ -58,7 +58,7 @@ On 0.9, `State.count = 10` replaced the class attribute, but new instances still
 
 In a background task, `self` is a proxy that only allows changes inside `async with self`. A handler declared on the same state was already called through that proxy, but a handler inherited from a parent state was not: on 0.9, `self.inherited_handler()` ran on the parent state without the lock, so it could write outside `async with self`. In 0.10 it goes through the proxy like any other handler ([#7312](https://github.com/reflex-dev/reflex/pull/7312)):
 
-- Outside `async with self`, the call raises `ImmutableStateError`.
+- Outside `async with self`, a call that modifies state raises `ImmutableStateError`; a read-only handler still runs.
 - Inside it, `self` in the called handler is the proxy, so `type(self)` is `StateProxy`. Use `self.__class__` to get the state class; `isinstance(self, Parent)` still works.
 
 ```python

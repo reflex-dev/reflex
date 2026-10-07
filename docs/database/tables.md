@@ -47,7 +47,7 @@ SQLModel 0.0.44 to 0.0.45 or later. `pip install -U` and `uv pip install` withou
 `-U` leave an installed SQLModel in place. After the move, naive `datetime` values
 are rejected when written, and values read back are timezone-aware, so comparing
 them with `datetime.now()` raises
-`TypeError: can't subtract offset-naive and offset-aware datetimes`. To keep naive
+`TypeError: can't compare offset-naive and offset-aware datetimes`. To keep naive
 datetimes, declare the column explicitly as shown below, or pin `sqlmodel<0.0.45`
 while no migration references `UTCDateTime`.
 
