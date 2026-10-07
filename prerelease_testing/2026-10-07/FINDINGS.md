@@ -53,7 +53,7 @@ train) and 0.9.12.
 ### N-001: Fresh `reflex[db]` resolves SQLAlchemy 2.1.3 without greenlet; `rx.Model` and every `reflex db` command crash with ImportError (HIGH)
 - Cluster: `reverify_db_install` | Regression vs 0.9.12: no in the strict sense (a fresh `reflex[db]==0.9.12`
   fails identically since sqlmodel 0.0.48 was published 2026-10-06 21:44 UTC) | vs 0.10.0a1: yes (a1's
-  `sqlmodel<0.0.45` cap kept SQLAlchemy at 2.0.x) | Verifier: pending (explorer reproduced on 3.11, 3.12, 3.14, uv and pip)
+  `sqlmodel<0.0.45` cap kept SQLAlchemy at 2.0.x) | Verifier: orchestrator-confirmed (fresh venv: sqlalchemy 2.1.3, no greenlet, `import reflex.model` → ImportError) in addition to the explorer's 3.11/3.12/3.14 uv+pip runs
 - Repro: `uv --no-config venv --python 3.12 v && uv --no-config pip install --python v/bin/python --prerelease=allow 'reflex[db]==0.10.0a2' 'pydantic<2.14'`,
   then any `reflex db migrate` / `reflex run` of an app with an `rx.Model`: `ImportError: The SQLAlchemy asyncio
   module requires that the Python 'greenlet' library is installed`. Probe: `reverify_db_install/scripts/greenlet_probe.py`.
