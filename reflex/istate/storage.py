@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from reflex_base.utils import format
+from reflex_base.vars.base import Field
 
 
 class ClientStorageBase:
@@ -142,3 +143,6 @@ class SessionStorage(ClientStorageBase, str):
             inst = super().__new__(cls, object)
         inst.name = name
         return inst
+
+
+Field._client_storage = ClientStorageBase

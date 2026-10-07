@@ -1,0 +1,1 @@
+A double-underscore state attribute (a name-mangled `__private` name or a dunder) can now be a backend var by declaring it with an explicit `rx.field()` value, e.g. `__counter: rx.Field[int] = rx.field(0)`. Without one it stays a plain class attribute, like in 0.9.x.

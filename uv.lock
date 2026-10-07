@@ -3678,7 +3678,7 @@ requires-dist = [
     { name = "reflex-hosting-cli", editable = "packages/reflex-hosting-cli" },
     { name = "rich", specifier = ">=13,<16" },
     { name = "selenium", marker = "extra == 'testing'", specifier = ">=4.0.0,<5.0" },
-    { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.0.45" },
+    { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24" },
     { name = "starlette", specifier = ">=1.3.1" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
     { name = "uvicorn", marker = "extra == 'testing'", specifier = ">=0.34.0,<1.0" },
@@ -4572,16 +4572,16 @@ asyncio = [
 
 [[package]]
 name = "sqlmodel"
-version = "0.0.44"
+version = "0.0.47"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "sqlalchemy" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/13/39/24b128de75c4cfdb8bec6626a036b320ebdb89549f00a71c8e787fcac1ad/sqlmodel-0.0.44.tar.gz", hash = "sha256:1c9d9f5dc1076fb433c944acaa4dc3208daa75220617710245eef909beb245b9", size = 92331, upload-time = "2026-09-21T16:02:16.913Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4f/60/aa4cb68f03fa6bd1ca9e9a9ca89c3bc6c67f50981d0abcd9d6364609516d/sqlmodel-0.0.47.tar.gz", hash = "sha256:3606430ea6db7f00c8ae2157458b9766644ea3ad365c601e26a86cf23f5910d5", size = 98136, upload-time = "2026-09-23T17:31:07.921Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/52/9e63eeaa4eedee5d59012e989a120d05f3adfbc9cdf2eb3ceb9151090aa2/sqlmodel-0.0.44-py3-none-any.whl", hash = "sha256:bae005203686681c612e4a6cd7ac568b020cc62780251cde0df955227e3f8efe", size = 29982, upload-time = "2026-09-21T16:02:15.651Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/b3/988928029b0e68de7ac587c2e1ccd379aa18e7c0aa7cc426628145a032fe/sqlmodel-0.0.47-py3-none-any.whl", hash = "sha256:165294386c3e4b25fa02f151ca1abb0cbf5fdb76f6093a38aca33fdc30dfd485", size = 31314, upload-time = "2026-09-23T17:31:06.8Z" },
 ]
 
 [[package]]
