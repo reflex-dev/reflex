@@ -1,0 +1,340 @@
+[
+  {
+    "case": "anon_boot",
+    "i": 0,
+    "diag": {
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+          "url": "http://localhost:8341/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 4,
+        "received": 14
+      }
+    },
+    "ls_initial": null,
+    "ls_after_boot": "",
+    "reconcile_sent": 1,
+    "cookie_syncs": 2,
+    "hash_ls_writes": [
+      ""
+    ],
+    "sent": [
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_",
+      "reconcile_tokens_after_sync"
+    ],
+    "corrected": true
+  },
+  {
+    "case": "loggedin_boot",
+    "i": 0,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/dashboard/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/dashboard/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 13,
+        "received": 39
+      }
+    },
+    "ls_real_prefix": "6b75af994381",
+    "ls_after_boot_prefix": "6b75af994381",
+    "reconcile_sent": 1,
+    "cookie_syncs": 1,
+    "hash_ls_writes": [
+      "deadbeefdead",
+      "6b75af994381"
+    ],
+    "sent": [
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_",
+      "reconcile_tokens_after_sync"
+    ],
+    "corrected": true
+  },
+  {
+    "case": "live_update",
+    "i": 0,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 3,
+        "received": 9
+      }
+    },
+    "ls_after": "",
+    "reconcile_sent": 1,
+    "cookie_syncs": 2,
+    "hash_ls_writes": [
+      "deadbeefdead",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "sent": [
+      "update_vars_internal",
+      "reconcile_tokens_after_sync",
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_",
+      "update_vars_internal",
+      "check_if_iframed",
+      "update_vars_internal",
+      "check_if_iframed_cb"
+    ],
+    "corrected": true
+  },
+  {
+    "case": "anon_boot",
+    "i": 1,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 4,
+        "received": 14
+      }
+    },
+    "ls_initial": null,
+    "ls_after_boot": "",
+    "reconcile_sent": 1,
+    "cookie_syncs": 2,
+    "hash_ls_writes": [
+      "deadbeefdead",
+      ""
+    ],
+    "sent": [
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_",
+      "reconcile_tokens_after_sync"
+    ],
+    "corrected": true
+  },
+  {
+    "case": "loggedin_boot",
+    "i": 1,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/dashboard/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/dashboard/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 13,
+        "received": 39
+      }
+    },
+    "ls_real_prefix": "d022fb66b3d4",
+    "ls_after_boot_prefix": "d022fb66b3d4",
+    "reconcile_sent": 1,
+    "cookie_syncs": 1,
+    "hash_ls_writes": [
+      "deadbeefdead",
+      "d022fb66b3d4"
+    ],
+    "sent": [
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_",
+      "reconcile_tokens_after_sync"
+    ],
+    "corrected": true
+  },
+  {
+    "case": "live_update",
+    "i": 1,
+    "diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 4,
+        "received": 9
+      }
+    },
+    "ls_after": "",
+    "reconcile_sent": 2,
+    "cookie_syncs": 4,
+    "hash_ls_writes": [
+      "deadbeefdead",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "sent": [
+      "update_vars_internal",
+      "reconcile_tokens_after_sync",
+      "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_",
+      "update_vars_internal",
+      "reconcile_tokens_after_sync",
+      "check_if_iframed",
+      "update_vars_internal",
+      "check_if_iframed_cb"
+    ],
+    "corrected": true
+  }
+]

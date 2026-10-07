@@ -1,0 +1,32 @@
+...................                                                      [100%]
+==================================== PASSES ====================================
+_____________________ test_01_monkeypatch_local_auth_token _____________________
+----------------------------- Captured stdout call -----------------------------
+PATCHED local_auth storage {'cookies': {}, 'local': {'reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_': {'name': '_auth_token', 'sync': False}}, 'session': {}}
+____________________ test_02_mock_patch_magic_session_token ____________________
+----------------------------- Captured stdout call -----------------------------
+PATCHED magic session_token {'type': 'LocalStorage', 'value': 'sess-1', 'name': None, 'sync': True, 'factory': False}
+______________________ test_06_monkeypatch_chat_messages _______________________
+----------------------------- Captured stdout call -----------------------------
+PATCHED chat messages {'type': '_MISSING_TYPE', 'value': '<dataclasses._MISSING_TYPE object at 0x7fd696856f30>', 'name': None, 'sync': None, 'factory': True}
+=========================== short test summary info ============================
+PASSED test_pkg_states.py::test_00_pristine_at_start
+PASSED test_pkg_states.py::test_01_monkeypatch_local_auth_token
+PASSED test_pkg_states.py::test_01_pristine
+PASSED test_pkg_states.py::test_02_mock_patch_magic_session_token
+PASSED test_pkg_states.py::test_02_pristine
+PASSED test_pkg_states.py::test_03_mocker_google_token
+PASSED test_pkg_states.py::test_03_pristine
+PASSED test_pkg_states.py::test_04_monkeypatch_inherited_through_substate
+PASSED test_pkg_states.py::test_04_pristine
+PASSED test_pkg_states.py::test_05_decorator_plain_vars
+PASSED test_pkg_states.py::test_05_pristine
+PASSED test_pkg_states.py::test_06_monkeypatch_chat_messages
+PASSED test_pkg_states.py::test_06_pristine
+PASSED test_pkg_states.py::test_07_manual_assign_restore
+PASSED test_pkg_states.py::test_07_pristine
+PASSED test_pkg_states.py::test_08_stacked
+PASSED test_pkg_states.py::test_08_pristine
+PASSED test_pkg_states.py::test_09_value_used_by_package_logic
+PASSED test_pkg_states.py::test_09_pristine
+19 passed in 3.76s

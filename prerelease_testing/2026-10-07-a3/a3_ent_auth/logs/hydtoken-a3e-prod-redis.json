@@ -1,0 +1,340 @@
+[
+  {
+    "scenario": "reload_writes",
+    "label": "a3e-prod-redis",
+    "tab1_diag": {
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+          "url": "http://localhost:8341/dashboard/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/dashboard/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/dashboard/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/dashboard"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 22,
+        "received": 60
+      }
+    },
+    "cookies_after_login": {
+      "_oidc_generic_access_token_data_partitioned": {
+        "len": 86,
+        "partitionKey": "http://localhost",
+        "sameSite": "None",
+        "secure": true,
+        "httpOnly": true
+      },
+      "_oidc_generic_id_token_partitioned": {
+        "len": 781,
+        "partitionKey": "http://localhost",
+        "sameSite": "None",
+        "secure": true,
+        "httpOnly": true
+      },
+      "_oidc_generic_refresh_token_partitioned": {
+        "len": 48,
+        "partitionKey": "http://localhost",
+        "sameSite": "None",
+        "secure": true,
+        "httpOnly": true
+      },
+      "_oidc_generic_granted_scopes_partitioned": {
+        "len": 22,
+        "partitionKey": "http://localhost",
+        "sameSite": "None",
+        "secure": true,
+        "httpOnly": true
+      }
+    },
+    "steps": [
+      {
+        "reload": 0,
+        "cookies": [
+          "_oidc_generic_access_token_data_partitioned",
+          "_oidc_generic_granted_scopes_partitioned",
+          "_oidc_generic_id_token_partitioned",
+          "_oidc_generic_refresh_token_partitioned"
+        ]
+      },
+      {
+        "reload": 1,
+        "cookies": [
+          "_oidc_generic_access_token_data_partitioned",
+          "_oidc_generic_granted_scopes_partitioned",
+          "_oidc_generic_id_token_partitioned",
+          "_oidc_generic_refresh_token_partitioned"
+        ]
+      },
+      {
+        "after_public_roundtrip": true,
+        "cookies": [
+          "_oidc_generic_access_token_data_partitioned",
+          "_oidc_generic_granted_scopes_partitioned",
+          "_oidc_generic_id_token_partitioned",
+          "_oidc_generic_refresh_token_partitioned"
+        ]
+      }
+    ],
+    "violations": [],
+    "all_hash_writes": [
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "0e5844d5adce3249a1a1a63424b5dcd5987b99c2084b31b650b153d5f4340531",
+        "href": "/callback/?code=L6IrYDoXwhf0T1DZ64w2PD6xTiJgTzie4C",
+        "t": 1.116,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "0e5844d5adce3249a1a1a63424b5dcd5987b99c2084b31b650b153d5f4340531",
+        "href": "/dashboard/",
+        "t": 1.136,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "0e5844d5adce3249a1a1a63424b5dcd5987b99c2084b31b650b153d5f4340531",
+        "href": "/dashboard/",
+        "t": 2.799,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "0e5844d5adce3249a1a1a63424b5dcd5987b99c2084b31b650b153d5f4340531",
+        "href": "/dashboard/",
+        "t": 4.446,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "0e5844d5adce3249a1a1a63424b5dcd5987b99c2084b31b650b153d5f4340531",
+        "href": "/",
+        "t": 6.031,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "0e5844d5adce3249a1a1a63424b5dcd5987b99c2084b31b650b153d5f4340531",
+        "href": "/",
+        "t": 6.13,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "0e5844d5adce3249a1a1a63424b5dcd5987b99c2084b31b650b153d5f4340531",
+        "href": "/dashboard",
+        "t": 6.219,
+        "tab": "tab1"
+      }
+    ],
+    "sync_responses": [
+      {
+        "t": 1.115,
+        "tab": "tab1",
+        "kind": "cookie-sync",
+        "status": 200,
+        "req_cookies_nonempty": [],
+        "set_cookie": [
+          {
+            "name": "_oidc_generic_access_token_data_partitioned",
+            "empty": false,
+            "max_age_0": false,
+            "val_len": 86
+          },
+          {
+            "name": "_oidc_generic_id_token_partitioned",
+            "empty": false,
+            "max_age_0": false,
+            "val_len": 781
+          },
+          {
+            "name": "_oidc_generic_refresh_token_partitioned",
+            "empty": false,
+            "max_age_0": false,
+            "val_len": 48
+          },
+          {
+            "name": "_oidc_generic_granted_scopes_partitioned",
+            "empty": false,
+            "max_age_0": false,
+            "val_len": 22
+          }
+        ]
+      }
+    ],
+    "ok": true,
+    "duration": 7.8
+  },
+  {
+    "scenario": "newtab_writes",
+    "label": "a3e-prod-redis",
+    "tab1_diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/list/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 12,
+        "received": 30
+      }
+    },
+    "tab2_diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 2,
+        "received": 9
+      }
+    },
+    "tab3_diag": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/dashboard/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 1,
+        "received": 9
+      }
+    },
+    "tab1_url_after_click": "http://localhost:8341/list/",
+    "violations": [],
+    "all_hash_writes": [
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "e02cdfa73a43329a0bf859bfe509e60c4a2829fe3596f512652ce635ac90a9c0",
+        "href": "/callback/?code=wt00TEVNOSrUwT8Dgr36In94TLt9hn1mLI",
+        "t": 1.268,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "e02cdfa73a43329a0bf859bfe509e60c4a2829fe3596f512652ce635ac90a9c0",
+        "href": "/list/",
+        "t": 1.296,
+        "tab": "tab1"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "e02cdfa73a43329a0bf859bfe509e60c4a2829fe3596f512652ce635ac90a9c0",
+        "href": "/",
+        "t": 3.353,
+        "tab": "tab2"
+      },
+      {
+        "kind": "ls.set",
+        "k": "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.latest_access_token_hash_ls_rx_state_",
+        "v": "e02cdfa73a43329a0bf859bfe509e60c4a2829fe3596f512652ce635ac90a9c0",
+        "href": "/dashboard/",
+        "t": 3.765,
+        "tab": "tab3"
+      }
+    ],
+    "cookies_end": [
+      "_oidc_generic_access_token_data_partitioned",
+      "_oidc_generic_granted_scopes_partitioned",
+      "_oidc_generic_id_token_partitioned",
+      "_oidc_generic_refresh_token_partitioned"
+    ],
+    "ok": true,
+    "duration": 6.9
+  }
+]

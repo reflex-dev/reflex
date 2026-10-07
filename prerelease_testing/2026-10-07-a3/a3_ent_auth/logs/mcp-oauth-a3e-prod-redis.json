@@ -1,0 +1,356 @@
+{
+  "browser": {
+    "partial": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/agent-consent/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:8341/_reflex/cookies/sync",
+          "failure": "net::ERR_ABORTED",
+          "method": "POST"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 13,
+        "received": 34
+      }
+    },
+    "deny": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/agent-consent/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 5,
+        "received": 15
+      }
+    },
+    "unregistered-scope": {
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+          "url": "http://localhost:8358/mcp-return"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "http_errors": [
+        {
+          "url": "http://localhost:8358/mcp-return",
+          "status": 404
+        }
+      ],
+      "ws_frames": {
+        "sent": 0,
+        "received": 0
+      }
+    },
+    "idp-deny": {
+      "console": [
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation",
+          "url": "http://localhost:8341/login"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+          "url": "http://localhost:8358/oauth2/authorize"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on pagehide",
+          "url": "http://localhost:8341/callback/"
+        }
+      ],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+          "failure": "net::ERR_TUNNEL_CONNECTION_FAILED",
+          "method": "GET"
+        }
+      ],
+      "http_errors": [],
+      "ws_frames": {
+        "sent": 7,
+        "received": 22
+      }
+    }
+  },
+  "metadata_scopes": [
+    "profile:read",
+    "items:write"
+  ],
+  "prm": {
+    "status": 200,
+    "body": {
+      "resource": "http://localhost:8341/_reflex/mcp",
+      "authorization_servers": [
+        "http://localhost:8341/"
+      ],
+      "scopes_supported": [
+        "profile:read",
+        "items:write"
+      ],
+      "bearer_methods_supported": [
+        "header"
+      ]
+    }
+  },
+  "register_a": 201,
+  "register_invalid_scope": {
+    "status": 400,
+    "body": "{\"error\":\"invalid_client_metadata\",\"error_description\":\"Requested scopes are not valid: admin:all\"}"
+  },
+  "partial_consent": {
+    "checkbox_states_initial": [
+      "true",
+      "true"
+    ],
+    "checkbox_states_after": [
+      "checked",
+      "unchecked"
+    ],
+    "callback_params": {
+      "code": "GYm7HQNwI5I2pt6QIoRbPAqLSdjIlwCGDBTzvSoDpwiP0FBb4v_2osAbgtNf68Y0",
+      "state": "st-1"
+    }
+  },
+  "consent_deny": {
+    "checkbox_states_initial": [
+      "true",
+      "false"
+    ],
+    "callback_params": {
+      "error": "access_denied",
+      "error_description": "The user denied the authorization request.",
+      "state": "st-2"
+    }
+  },
+  "unregistered_scope": {
+    "error": "TimeoutError: Locator.wait_for: Timeout 45000ms exceeded.\nCall log:\n  - waiting for get_by_role(\"button\", name=\"Login with Generic\").or_(get_by_role(\"button\", name=\"Approve\", exact=True)).first to be visible\n",
+    "stuck_url": "http://localhost:8358/mcp-return?error=invalid_scope&error_description=Client+was+not+registered+with+scope+items%3Awrite&state=st-3",
+    "stuck_text": "Not Found\n\nThe requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."
+  },
+  "unregistered_scope_raw": {
+    "status": 302,
+    "location": "http://localhost:8358/mcp-return?error=invalid_scope&error_description=Client+was+not+registered+with+scope+items%3Awrite&state=st-3b",
+    "body": ""
+  },
+  "idp_deny": {
+    "idp_deny_button_count": 1,
+    "final_url": "http://localhost:8341/callback/?error=access_denied&error_description=The+resource+owner+or+authorization+server+denied+the+request&state=uuL0eGJDJbV78DIh9BULmIx9K6rUp35EjhTi80W26SePhX4EzgcJpmRV2xYC_84STJyG1w6PtjNF59vPNOenpw",
+    "final_text": "An error occurred during authentication.\n\nPlease close this window and try again.\n\nAn administrator may provide more information about error ID: 616a9557763a41ce9e609b14297bf20a\n\nBuilt with Reflex"
+  },
+  "exchange": {
+    "status": 200
+  },
+  "granted_scope": "profile:read",
+  "mcp": {
+    "whoami": {
+      "is_error": false,
+      "value": {
+        "event": "entauth___entauth____agent_state.whoami",
+        "delta": {
+          "reflex___state____state": {
+            "rx_router_route_id": "/_reflex/mcp",
+            "rx_router_url": {
+              "scheme": "",
+              "netloc": "",
+              "origin": "://",
+              "path": "/_reflex/mcp",
+              "query": "",
+              "query_parameters": {},
+              "fragment": "",
+              "href": "/_reflex/mcp"
+            },
+            "rx_router_page": {
+              "host": "",
+              "path": "/_reflex/mcp",
+              "raw_path": "/_reflex/mcp",
+              "full_path": "/_reflex/mcp",
+              "full_raw_path": "/_reflex/mcp",
+              "params": {}
+            }
+          },
+          "reflex___state____state.entauth___entauth____agent_state": {
+            "private_note": "private-alice",
+            "whoami_result": "who-alice"
+          },
+          "reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state": {
+            "origin": ""
+          }
+        }
+      }
+    },
+    "scoped_write": {
+      "is_error": false,
+      "value": {
+        "event": "entauth___entauth____agent_state.scoped_write",
+        "delta": {}
+      }
+    },
+    "scoped_writes_var": {
+      "is_error": false,
+      "value": {
+        "state": "reflex___state____state.entauth___entauth____agent_state",
+        "var": "scoped_writes",
+        "computed": false,
+        "value": 0
+      }
+    },
+    "scoped_view": {
+      "is_error": false,
+      "value": {
+        "state": "reflex___state____state.entauth___entauth____agent_state",
+        "var": "scoped_view",
+        "computed": true,
+        "value": "scoped:0"
+      }
+    },
+    "private_summary": {
+      "is_error": false,
+      "value": {
+        "note": "private-alice",
+        "pid": "pid-21207"
+      }
+    },
+    "start_bg": {
+      "is_error": false,
+      "value": {
+        "event": "entauth___entauth____agent_state.start_bg",
+        "delta": {
+          "reflex___state____state.entauth___entauth____agent_state": {
+            "bg_progress": 4,
+            "bg_done": true,
+            "bg_pid": "pid-21207"
+          }
+        }
+      }
+    },
+    "start_bg_latency_s": 1.23,
+    "pending": {
+      "is_error": false,
+      "value": {
+        "updates": [
+          {
+            "delta": {
+              "reflex___state____state.reflex_enterprise___auth___user_state____auth_user_state": {
+                "picture": "",
+                "sub": "alice",
+                "name": "Alice Admin",
+                "provider_name": "generic",
+                "email": "alice@example.com"
+              }
+            }
+          },
+          {
+            "delta": {}
+          }
+        ]
+      }
+    },
+    "start_bg_long": "{'is_error': False, 'value': {'event': 'entauth___entauth____agent_state.start_bg', 'delta': {'reflex___state____state.entauth___entauth____agent_state': {'bg_progress': 30, 'bg_done': True, 'bg_pid': 'pid-21207'}}}}",
+    "start_bg_long_latency_s": 9.12,
+    "bg_progress": {
+      "is_error": false,
+      "value": {
+        "state": "reflex___state____state.entauth___entauth____agent_state",
+        "var": "bg_progress",
+        "computed": false,
+        "value": 30
+      }
+    },
+    "flow_reveal": {
+      "is_error": false,
+      "value": {
+        "event": "entauth___entauth____flow_state.reveal",
+        "delta": {
+          "reflex___state____state.entauth___entauth____flow_state": {
+            "secret_view": "computed:revealed-alice",
+            "secret": "revealed-alice"
+          }
+        }
+      }
+    },
+    "flow_secret": {
+      "is_error": false,
+      "value": {
+        "state": "reflex___state____state.entauth___entauth____flow_state",
+        "var": "secret",
+        "computed": false,
+        "value": "revealed-alice"
+      }
+    },
+    "admin_view": {
+      "is_error": false,
+      "value": {
+        "state": "reflex___state____state.entauth___entauth____flow_state",
+        "var": "admin_view",
+        "computed": true,
+        "value": "admin-data"
+      }
+    },
+    "async_admin_view": {
+      "is_error": false,
+      "value": {
+        "state": "reflex___state____state.entauth___entauth____flow_state",
+        "var": "async_admin_view",
+        "computed": true,
+        "value": "async-admin-data"
+      }
+    },
+    "hammer_errors": [],
+    "hammer_delta": 30
+  },
+  "refresh": {
+    "status": 200,
+    "scope": "profile:read"
+  },
+  "refresh_replay": {
+    "status": 400,
+    "body": "{\"error\":\"invalid_grant\",\"error_description\":\"refresh token does not exist\"}"
+  },
+  "revoke": {
+    "status": 200,
+    "body": ""
+  },
+  "after_revoke_mcp": {
+    "status": 401,
+    "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}"
+  },
+  "old_access_after_refresh": {
+    "status": 401,
+    "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}"
+  }
+}

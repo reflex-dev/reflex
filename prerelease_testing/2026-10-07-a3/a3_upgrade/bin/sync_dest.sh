@@ -7,7 +7,7 @@ DEST=/home/user/reflex/prerelease_testing/2026-10-07-a3/a3_upgrade
 mkdir -p "$DEST"
 cpx() { local src=$1 dst=$2; shift 2; mkdir -p "$dst"; tar -C "$src" "$@" -cf - . | tar -C "$dst" -xf -; }
 EXC=(--exclude=.web --exclude=node_modules --exclude=.states --exclude=assets/external --exclude='*.db' --exclude=reflex.lock --exclude=__pycache__ --exclude=.git --exclude='*.pyc' --exclude=uploaded_files --exclude='*.full')
-for a in form-designer github-stats clock twitter twitter-redis guide jsondrain smoke311 smoke314 smoke_comp; do [ -d "$W/$a" ] && cpx "$W/$a" "$DEST/apps/$a" "${EXC[@]}"; done
+for a in form-designer github-stats clock twitter twitter-redis guide jsondrain smokepy311 smokepy314; do [ -d "$W/$a" ] && cpx "$W/$a" "$DEST/apps/$a" "${EXC[@]}"; done
 for d in bin scripts patches freeze pkg logs; do [ -d "$W/$d" ] && cpx "$W/$d" "$DEST/$d" --exclude=__pycache__ --exclude='*.pid' --exclude='*.full'; done
 # trim oversized logs: head + tail + most repeated lines
 $SB/envs/driver/bin/python -I - "$DEST/logs" <<'PY'

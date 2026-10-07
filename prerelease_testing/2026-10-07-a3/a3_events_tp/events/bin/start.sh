@@ -1,0 +1,28 @@
+#!/bin/bash
+# Usage: start.sh <venv> <dev|prod> <label> [app=evapp] [redis]
+# Copies src/<app> to run/<label>, starts the pausable proxy and `reflex run` on the
+# cluster's reserved ports, logs to logs/<label>.log, writes pids/<label>.*.pid.
+# Ports: evapp dev FE 3460 / BE 8460 / proxy 8462; evapp prod 8465 / proxy 8466;
+#        mini dev FE 3470 / BE 8470 / proxy 8472; mini prod 8475 / proxy 8476; redis 8469.
+set -e
+SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+W=$SB/apps/a3_events_tp/events
+V=$1; M=$2; L=$3; APP=${4:-evapp}; REDIS=${5:-}
+case "$APP-$M" in
+  evapp-dev) FP=3460; BP=8460; PX=8462;;
+  evapp-prod) FP=8465; BP=8465; PX=8466;;
+  mini-dev) FP=3470; BP=8470; PX=8472;;
+  mini-prod) FP=8475; BP=8475; PX=8476;;
+esac
+RUN=$W/run/$L
+mkdir -p "$RUN" "$W/logs" "$W/pids"
+cp -r "$W/src/$APP/." "$RUN/"
+echo up > "$W/pids/$L.proxystate"
+nohup "$SB/envs/driver/bin/python" "$W/tools/tcpproxy.py" $PX $BP "$W/pids/$L.proxystate" > "$W/logs/$L.proxy.log" 2>&1 &
+echo $! > "$W/pids/$L.proxy.pid"
+cd "$RUN"
+export EV_EXPECT_VENV=$V REFLEX_TELEMETRY_ENABLED=false LOGLEVEL=debug EV_FP=$FP EV_BP=$BP EV_API_URL=http://localhost:$PX
+if [ -n "$REDIS" ]; then export REFLEX_REDIS_URL=redis://localhost:8469; fi
+setsid nohup "$SB/envs/$V/bin/reflex" run --env $M --frontend-port $FP --backend-port $BP > "$W/logs/$L.log" 2>&1 &
+echo $! > "$W/pids/$L.reflex.pid"
+echo "started $L: venv=$V mode=$M app=$APP FE=$FP BE=$BP proxy=$PX reflex_pid=$(cat $W/pids/$L.reflex.pid) redis=${REDIS:-no}"

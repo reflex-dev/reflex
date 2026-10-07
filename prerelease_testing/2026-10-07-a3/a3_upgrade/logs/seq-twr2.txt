@@ -1,2 +1,103 @@
 built: greenlet==3.5.6 reflex==0.10.0a2 reflex-base==0.10.0a2 sqlalchemy==2.1.4 sqlmodel==0.0.48  load 2.70 7.70 13.51
 ### twr2 base 21:08:08
+migrate rc=0
+started reflex pid=29228 (21:08:12) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/twr2-base-prod.server.log
+UP after 9s (frontend 200, backend /ping 200)
+granian workers spawned (a2): 9
+[PASS   ] bob still logged in after reload (token kept): bo
+[PASS   ] same token kept across logout/login (reset() keeps session): 19cc6907-283a-4c4f-ee8d-51b11e68a381 -> 19cc6907-283a-4c4f-ee8d-51b11e68a381
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "alice", "t": 1.264, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "alice", "t": 1.437, "type": "error", "text":
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "alice", "t": 1.264, "url": "http://localhost:3232/bg.svg", "status": 404}, {"page": "alice", "t": 1.436, "url": "http://localhost:3232/signup/bg.svg", "status": 404}, {"page": "bob", "t": 4.4
+== twr2-base-prod: {'pass': 19, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=27 unexpected_console=8 page_errors=0 bad_requests=8 (unexpected 8) ws_frames=160
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'alice', 't': 1.264, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 1.436, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'bob', 't': 4.43, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 11.138, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 11.496, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 12.754, 'url': 'http://localhost:3232/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 15.317, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 16.664, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+stale tab ready: yes
+17
+19cc6907-283a-4c4f-ee8d-51b11e68a381_reflex___state____state.twitter___state___base____state
+token_manager_socket_record_5171e0c2-0bf4-494c-92ac-62c1eae3e292
+deb7e546-6615-4217-9a98-f53d1835ef7e_reflex___state____state.twitter___state___base____state
+SHUTDOWN: main pid 29228 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### twr2 upgrade 21:08:48
+freeze diff twr2: < reflex==0.10.0a2 < reflex-base==0.10.0a2 > reflex==0.10.0a3 > reflex-base==0.10.0a3 
+Checked 51 packages in 1ms
+All installed packages are compatible
+### twr2 up 21:08:49
+started reflex pid=30805 (21:08:49) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/twr2-up-prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+granian workers spawned (a3): 9
+[ANOMALY] C: did the old tab reload itself after the new server came up?: marker=old-tab-1791407324034
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "dave", "t": 0.711, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "dave", "t": 4.019, "type": "error", "text": "
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "dave", "t": 0.711, "url": "http://localhost:3232/signup/bg.svg", "status": 404}, {"page": "dave", "t": 23.375, "url": "http://localhost:3232/bg.svg", "status": 404}]
+== twr2-stale-prod: {'pass': 8, 'fail': 0, 'anomaly': 3, 'skipped': 0}  console_total=16 unexpected_console=12 page_errors=0 bad_requests=2 (unexpected 2) ws_frames=85
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=5171e0c2-0bf4-494c-92ac-62c1eae3e292&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=5171e0c2-0bf4-494c-92ac-62c1eae3e292&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=5171e0c2-0bf4-494c-92ac-62c1eae3e292&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=5171e0c2-0bf4-494c-92ac-62c1eae3e292&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=5171e0c2-0bf4-494c-92ac-62c1eae3e292&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=5171e0c2-0bf4-494c-92ac-62c1eae3e292&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=5171e0c2-0bf4-494c-92ac-62c1eae3e292&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=5171e0c2-0bf4-494c-92ac-62c1eae3e292&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=5171e0c2-0bf4-494c-92ac-62c1eae3e292&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=5171e0c2-0bf4-494c-92ac-62c1eae3e292&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'dave', 't': 0.711, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'dave', 't': 23.375, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "bob-pw", "t": 4.972, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "carol", "t": 7.619, "type": "error", "text"
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "bob-pw", "t": 4.972, "url": "http://localhost:3232/login/bg.svg", "status": 404}, {"page": "carol", "t": 7.619, "url": "http://localhost:3232/signup/bg.svg", "status": 404}, {"page": "alice-t
+== twr2-up-prod: {'pass': 12, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=14 unexpected_console=4 page_errors=0 bad_requests=4 (unexpected 4) ws_frames=93
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'bob-pw', 't': 4.972, 'url': 'http://localhost:3232/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol', 't': 7.619, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice-tok', 't': 10.681, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice-tok', 't': 10.785, 'url': 'http://localhost:3232/login/bg.svg', 'status': 404}
+[PASS   ] bob still logged in after reload (token kept): bo
+[PASS   ] same token kept across logout/login (reset() keeps session): 98b8107f-d304-4407-c096-d0ed38f6d780 -> 98b8107f-d304-4407-c096-d0ed38f6d780
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "alice", "t": 1.093, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "alice", "t": 1.188, "type": "error", "text":
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "alice", "t": 1.093, "url": "http://localhost:3232/bg.svg", "status": 404}, {"page": "alice", "t": 1.188, "url": "http://localhost:3232/signup/bg.svg", "status": 404}, {"page": "bob", "t": 4.0
+== twr2-up-prod-base: {'pass': 19, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=27 unexpected_console=8 page_errors=0 bad_requests=8 (unexpected 8) ws_frames=160
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'alice', 't': 1.093, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 1.188, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'bob', 't': 4.038, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 10.673, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 11.005, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 12.223, 'url': 'http://localhost:3232/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 14.768, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 16.121, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+SHUTDOWN: main pid 30805 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+SHUTDOWN: no live main pid ()
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- twr2-base-prod server-log warnings:
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+--- twr2-up-prod server-log warnings:
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+      1 Warning: Frontend version 0.10.0a2 for session NrgtYB7ivy9J9B1DAAAB does not 
+### twr2 done 21:09:43
+no listeners on: 80 ports checked

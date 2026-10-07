@@ -1,0 +1,887 @@
+..EFFF.EF.EFFF.EFFF.EF.EF                                                [100%]
+==================================== ERRORS ====================================
+__________ ERROR at teardown of test_01_monkeypatch_local_auth_token ___________
+
+cls = <class 'reflex_local_auth.local_auth.LocalAuthState'>, name = 'auth_token'
+value = Field(default='test-token', is_var=True, annotated_type=<class 'str'>)
+
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update a field's default while retaining its descriptor.
+    
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
+    
+        Args:
+            name: The class attribute being assigned.
+            value: Its new default value or zero-argument default factory.
+    
+        Raises:
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
+        """
+        declared = cls.__fields__.get(name)
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
+        default = value
+>       accepted = _accepts_default(declared, value)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default='test-token', is_var=True, annotated_type=<class 'str'>)
+value = Field(default='test-token', is_var=True, annotated_type=<class 'str'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+----------------------------- Captured stdout call -----------------------------
+PATCHED local_auth storage {'cookies': {}, 'local': {}, 'session': {}}
+_______________ ERROR at teardown of test_03_mocker_google_token _______________
+
+pytestconfig = <_pytest.config.Config object at 0x7ff990143c80>
+
+    def _mocker(pytestconfig: Any) -> Generator[MockerFixture, None, None]:
+        """
+        Return an object that has the same interface to the `mock` module, but
+        takes care of automatically undoing all patches after each test method.
+        """
+        result = MockerFixture(pytestconfig)
+        yield result
+>       result.stopall()
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/pytest_mock/plugin.py:483: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/pytest_mock/plugin.py:158: in stopall
+    self._mock_cache.clear()
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/pytest_mock/plugin.py:82: in clear
+    mock_item.patch.stop()
+/usr/lib/python3.12/unittest/mock.py:1619: in stop
+    return self.__exit__(None, None, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/unittest/mock.py:1586: in __exit__
+    setattr(self.target, self.attribute, self.temp_original)
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: in __setattr__
+    accepted = _accepts_default(declared, value)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default='{"id_token": "x.y.z"}', is_var=True, annotated_type=<class 'str'>)
+value = Field(default='{"id_token": "x.y.z"}', is_var=True, annotated_type=<class 'str'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+_____ ERROR at teardown of test_04_monkeypatch_inherited_through_substate ______
+
+cls = <class '_pytest.runner.CallInfo'>
+func = <function call_and_report.<locals>.<lambda> at 0x7ff988497560>
+when = 'teardown'
+reraise = (<class '_pytest.outcomes.Exit'>, <class 'KeyboardInterrupt'>)
+
+    @classmethod
+    def from_call(
+        cls,
+        func: Callable[[], TResult],
+        when: Literal["collect", "setup", "call", "teardown"],
+        reraise: type[BaseException] | tuple[type[BaseException], ...] | None = None,
+    ) -> CallInfo[TResult]:
+        """Call func, wrapping the result in a CallInfo.
+    
+        :param func:
+            The function to call. Called without arguments.
+        :type func: Callable[[], _pytest.runner.TResult]
+        :param when:
+            The phase in which the function is called.
+        :param reraise:
+            Exception or exceptions that shall propagate if raised by the
+            function, instead of being wrapped in the CallInfo.
+        """
+        excinfo = None
+        instant = timing.Instant()
+        try:
+>           result: TResult | None = func()
+                                     ^^^^^^
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py:361: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py:250: in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/pluggy/_hooks.py:512: in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/pluggy/_manager.py:120: in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/logging.py:873: in pytest_runtest_teardown
+    yield
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/capture.py:905: in pytest_runtest_teardown
+    return (yield)
+            ^^^^^
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py:199: in pytest_runtest_teardown
+    item.session._setupstate.teardown_exact(nextitem)
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py:579: in teardown_exact
+    raise exceptions[0]
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py:568: in teardown_exact
+    fin()
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/fixtures.py:1166: in finish
+    raise exceptions[0]
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/fixtures.py:1156: in finish
+    fin()
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/fixtures.py:1014: in _teardown_yield_fixture
+    next(it)
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/monkeypatch.py:62: in monkeypatch
+    mpatch.undo()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff988725700>
+
+    def undo(self) -> None:
+        """Undo previous changes.
+    
+        This call consumes the undo stack. Calling it a second time has no
+        effect unless you do more monkeypatching after the undo call.
+    
+        There is generally no need to call `undo()`, since it is
+        called automatically during tear-down.
+    
+        .. note::
+            The same `monkeypatch` fixture is used across a
+            single test function invocation. If `monkeypatch` is used both by
+            the test function itself and one of the test fixtures,
+            calling `undo()` will undo all of the changes made in
+            both functions.
+    
+            Prefer to use :meth:`context() <pytest.MonkeyPatch.context>` instead.
+        """
+        for obj, name, value in reversed(self._setattr):
+            if value is not NOTSET:
+                setattr(obj, name, value)
+            else:
+>               delattr(obj, name)
+E               AttributeError: type object 'LoginState' has no attribute 'auth_token'
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/monkeypatch.py:411: AttributeError
+____________ ERROR at teardown of test_06_monkeypatch_chat_messages ____________
+
+cls = <class 'reflex_chat.chat.Chat'>, name = 'messages'
+value = Field(default_factory=functools.partial(<function deepcopy at 0x7ff98feb00e0>, [{'role': 'assistant', 'content': 'seeded'}]), is_var=True, annotated_type=list[dict[str, str]])
+
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update a field's default while retaining its descriptor.
+    
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
+    
+        Args:
+            name: The class attribute being assigned.
+            value: Its new default value or zero-argument default factory.
+    
+        Raises:
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
+        """
+        declared = cls.__fields__.get(name)
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
+        default = value
+>       accepted = _accepts_default(declared, value)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default_factory=functools.partial(<function deepcopy at 0x7ff98feb00e0>, [{'role': 'assistant', 'content': 'seeded'}]), is_var=True, annotated_type=list[dict[str, str]])
+value = Field(default_factory=functools.partial(<function deepcopy at 0x7ff98feb00e0>, [{'role': 'assistant', 'content': 'seeded'}]), is_var=True, annotated_type=list[dict[str, str]])
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+----------------------------- Captured stdout call -----------------------------
+PATCHED chat messages {'type': '_MISSING_TYPE', 'value': '<dataclasses._MISSING_TYPE object at 0x7ff98fe96f90>', 'name': None, 'sync': None, 'factory': True}
+_____________________ ERROR at teardown of test_08_stacked _____________________
+  + Exception Group Traceback (most recent call last):
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py", line 361, in from_call
+  |     result: TResult | None = func()
+  |                              ^^^^^^
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py", line 250, in <lambda>
+  |     lambda: runtest_hook(item=item, **kwds),
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+  |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+  |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+  |     raise exception
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+  |     teardown.throw(exception)
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/logging.py", line 873, in pytest_runtest_teardown
+  |     yield
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+  |     teardown.throw(exception)
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/capture.py", line 905, in pytest_runtest_teardown
+  |     return (yield)
+  |             ^^^^^
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+  |     res = hook_impl.function(*args)
+  |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py", line 199, in pytest_runtest_teardown
+  |     item.session._setupstate.teardown_exact(nextitem)
+  |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py", line 579, in teardown_exact
+  |     raise exceptions[0]
+  | ExceptionGroup: errors while tearing down <Function test_08_stacked> (2 sub-exceptions)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py", line 568, in teardown_exact
+    |     fin()
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/fixtures.py", line 1166, in finish
+    |     raise exceptions[0]
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/fixtures.py", line 1156, in finish
+    |     fin()
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/fixtures.py", line 1014, in _teardown_yield_fixture
+    |     next(it)
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/monkeypatch.py", line 62, in monkeypatch
+    |     mpatch.undo()
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/monkeypatch.py", line 409, in undo
+    |     setattr(obj, name, value)
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4789, in __setattr__
+    |     accepted = _accepts_default(declared, value)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4700, in _accepts_default
+    |     raise TypeError(msg)
+    | TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+    +---------------- 2 ----------------
+    | Traceback (most recent call last):
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/runner.py", line 568, in teardown_exact
+    |     fin()
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/fixtures.py", line 1166, in finish
+    |     raise exceptions[0]
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/fixtures.py", line 1156, in finish
+    |     fin()
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/_pytest/fixtures.py", line 1014, in _teardown_yield_fixture
+    |     next(it)
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/pytest_mock/plugin.py", line 483, in _mocker
+    |     result.stopall()
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/pytest_mock/plugin.py", line 158, in stopall
+    |     self._mock_cache.clear()
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/pytest_mock/plugin.py", line 82, in clear
+    |     mock_item.patch.stop()
+    |   File "/usr/lib/python3.12/unittest/mock.py", line 1619, in stop
+    |     return self.__exit__(None, None, None)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/unittest/mock.py", line 1586, in __exit__
+    |     setattr(self.target, self.attribute, self.temp_original)
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4789, in __setattr__
+    |     accepted = _accepts_default(declared, value)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4700, in _accepts_default
+    |     raise TypeError(msg)
+    | TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+    +------------------------------------
+___________ ERROR at teardown of test_09_value_used_by_package_logic ___________
+
+cls = <class 'reflex_google_auth.state.GoogleAuthState'>
+name = 'token_response_json'
+value = Field(default='{"id_token": "abc"}', is_var=True, annotated_type=<class 'str'>)
+
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update a field's default while retaining its descriptor.
+    
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
+    
+        Args:
+            name: The class attribute being assigned.
+            value: Its new default value or zero-argument default factory.
+    
+        Raises:
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
+        """
+        declared = cls.__fields__.get(name)
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
+        default = value
+>       accepted = _accepts_default(declared, value)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default='{"id_token": "abc"}', is_var=True, annotated_type=<class 'str'>)
+value = Field(default='{"id_token": "abc"}', is_var=True, annotated_type=<class 'str'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+=================================== FAILURES ===================================
+_______________________________ test_01_pristine _______________________________
+
+    def test_01_pristine():
+>       assert_pristine()
+
+test_pkg_states.py:118: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_pristine():
+        now = {
+            "auth_token": field_snapshot(LocalAuthState, "auth_token"),
+            "session_token": field_snapshot(MagicLinkAuthState, "session_token"),
+            "token_response_json": field_snapshot(GoogleAuthState, "token_response_json"),
+            "redirect_to": field_snapshot(LoginState, "redirect_to"),
+            "new_user_id": field_snapshot(RegistrationState, "new_user_id"),
+            "messages": field_snapshot(Chat, "messages"),
+        }
+>       assert now == BASE
+E       AssertionError: assert {'auth_token'...ne, ...}, ...} == {'auth_token'...ne, ...}, ...}
+E         
+E         Omitting 5 identical items, use -vv to show
+E         Differing items:
+E         {'auth_token': {'type': 'str', 'value': 'test-token', 'name': None, 'sync': None, ...}} != {'auth_token': {'type': 'LocalStorage', 'value': '', 'name': '_auth_token', 'sync': False, ...}}
+E         Use -v to get more diff
+
+test_pkg_states.py:89: AssertionError
+____________________ test_02_mock_patch_magic_session_token ____________________
+
+    def test_02_mock_patch_magic_session_token():
+>       with mock.patch.object(MagicLinkAuthState, "session_token", "sess-1"):
+
+test_pkg_states.py:123: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1586: in __exit__
+    setattr(self.target, self.attribute, self.temp_original)
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: in __setattr__
+    accepted = _accepts_default(declared, value)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default='sess-1', is_var=True, annotated_type=<class 'str'>)
+value = Field(default='sess-1', is_var=True, annotated_type=<class 'str'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+----------------------------- Captured stdout call -----------------------------
+PATCHED magic session_token {'type': 'str', 'value': 'sess-1', 'name': None, 'sync': None, 'factory': False}
+_______________________________ test_02_pristine _______________________________
+
+    def test_02_pristine():
+>       assert_pristine()
+
+test_pkg_states.py:131: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_pristine():
+        now = {
+            "auth_token": field_snapshot(LocalAuthState, "auth_token"),
+            "session_token": field_snapshot(MagicLinkAuthState, "session_token"),
+            "token_response_json": field_snapshot(GoogleAuthState, "token_response_json"),
+            "redirect_to": field_snapshot(LoginState, "redirect_to"),
+            "new_user_id": field_snapshot(RegistrationState, "new_user_id"),
+            "messages": field_snapshot(Chat, "messages"),
+        }
+>       assert now == BASE
+E       AssertionError: assert {'auth_token'...ne, ...}, ...} == {'auth_token'...ne, ...}, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Differing items:
+E         {'auth_token': {'type': 'str', 'value': 'test-token', 'name': None, 'sync': None, ...}} != {'auth_token': {'type': 'LocalStorage', 'value': '', 'name': '_auth_token', 'sync': False, ...}}
+E         {'session_token': {'type': 'str', 'value': 'sess-1', 'name': None, 'sync': None, ...}} != {'session_token': {'type': 'LocalStorage', 'value': '', 'name': None, 'sync': True, ...}}
+E         Use -v to get more diff
+
+test_pkg_states.py:89: AssertionError
+_______________________________ test_03_pristine _______________________________
+
+    def test_03_pristine():
+>       assert_pristine()
+
+test_pkg_states.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_pristine():
+        now = {
+            "auth_token": field_snapshot(LocalAuthState, "auth_token"),
+            "session_token": field_snapshot(MagicLinkAuthState, "session_token"),
+            "token_response_json": field_snapshot(GoogleAuthState, "token_response_json"),
+            "redirect_to": field_snapshot(LoginState, "redirect_to"),
+            "new_user_id": field_snapshot(RegistrationState, "new_user_id"),
+            "messages": field_snapshot(Chat, "messages"),
+        }
+>       assert now == BASE
+E       assert {'auth_token'...ne, ...}, ...} == {'auth_token'...ne, ...}, ...}
+E         
+E         Omitting 3 identical items, use -vv to show
+E         Differing items:
+E         {'token_response_json': {'type': 'str', 'value': '{"id_token": "x.y.z"}', 'name': None, 'sync': None, ...}} != {'token_response_json': {'type': 'LocalStorage', 'value': '', 'name': None, 'sync': False, ...}}
+E         {'auth_token': {'type': 'str', 'value': 'test-token', 'name': None, 'sync': None, ...}} != {'auth_token': {'type': 'LocalStorage', 'value': '', 'name': '_auth_token', 'sync': False, ...}}
+E         {'session_token': {'type': 'str', 'value': 'sess-1', 'name': None, 'sync': None, ...}} != {'session_token': {'type': 'Local...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+test_pkg_states.py:89: AssertionError
+_______________________________ test_04_pristine _______________________________
+
+    def test_04_pristine():
+>       assert_pristine()
+
+test_pkg_states.py:152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_pristine():
+        now = {
+            "auth_token": field_snapshot(LocalAuthState, "auth_token"),
+            "session_token": field_snapshot(MagicLinkAuthState, "session_token"),
+            "token_response_json": field_snapshot(GoogleAuthState, "token_response_json"),
+            "redirect_to": field_snapshot(LoginState, "redirect_to"),
+            "new_user_id": field_snapshot(RegistrationState, "new_user_id"),
+            "messages": field_snapshot(Chat, "messages"),
+        }
+>       assert now == BASE
+E       assert {'auth_token'...ne, ...}, ...} == {'auth_token'...ne, ...}, ...}
+E         
+E         Omitting 3 identical items, use -vv to show
+E         Differing items:
+E         {'token_response_json': {'type': 'str', 'value': '{"id_token": "x.y.z"}', 'name': None, 'sync': None, ...}} != {'token_response_json': {'type': 'LocalStorage', 'value': '', 'name': None, 'sync': False, ...}}
+E         {'auth_token': {'type': 'str', 'value': 'sub-token', 'name': None, 'sync': None, ...}} != {'auth_token': {'type': 'LocalStorage', 'value': '', 'name': '_auth_token', 'sync': False, ...}}
+E         {'session_token': {'type': 'str', 'value': 'sess-1', 'name': None, 'sync': None, ...}} != {'session_token': {'type': 'LocalS...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+test_pkg_states.py:89: AssertionError
+_________________________ test_05_decorator_plain_vars _________________________
+
+args = (), keywargs = {}
+
+    @wraps(func)
+    def patched(*args, **keywargs):
+>       with self.decoration_helper(patched,
+                                    args,
+                                    keywargs) as (newargs, newkeywargs):
+
+/usr/lib/python3.12/unittest/mock.py:1387: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+/usr/lib/python3.12/unittest/mock.py:1367: in decoration_helper
+    with contextlib.ExitStack() as exit_stack:
+/usr/lib/python3.12/contextlib.py:610: in __exit__
+    raise exc_details[1]
+/usr/lib/python3.12/contextlib.py:595: in __exit__
+    if cb(*exc_details):
+       ^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/unittest/mock.py:1586: in __exit__
+    setattr(self.target, self.attribute, self.temp_original)
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: in __setattr__
+    accepted = _accepts_default(declared, value)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default=42, is_var=True, annotated_type=<class 'int'>)
+value = Field(default=42, is_var=True, annotated_type=<class 'int'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+_______________________________ test_05_pristine _______________________________
+
+    def test_05_pristine():
+>       assert_pristine()
+
+test_pkg_states.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_pristine():
+        now = {
+            "auth_token": field_snapshot(LocalAuthState, "auth_token"),
+            "session_token": field_snapshot(MagicLinkAuthState, "session_token"),
+            "token_response_json": field_snapshot(GoogleAuthState, "token_response_json"),
+            "redirect_to": field_snapshot(LoginState, "redirect_to"),
+            "new_user_id": field_snapshot(RegistrationState, "new_user_id"),
+            "messages": field_snapshot(Chat, "messages"),
+        }
+>       assert now == BASE
+E       AssertionError: assert {'auth_token'...ne, ...}, ...} == {'auth_token'...ne, ...}, ...}
+E         
+E         Omitting 1 identical items, use -vv to show
+E         Differing items:
+E         {'auth_token': {'type': 'str', 'value': 'sub-token', 'name': None, 'sync': None, ...}} != {'auth_token': {'type': 'LocalStorage', 'value': '', 'name': '_auth_token', 'sync': False, ...}}
+E         {'new_user_id': {'type': 'int', 'value': '42', 'name': None, 'sync': None, ...}} != {'new_user_id': {'type': 'int', 'value': '-1', 'name': None, 'sync': None, ...}}
+E         {'redirect_to': {'type': 'str', 'value': '/after-login', 'name': None, 'sync': None, ...}} != {'redirect_to': {'type': 'str', 'value': '', 'name': None, 'sync': None, ...
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+test_pkg_states.py:89: AssertionError
+_______________________________ test_06_pristine _______________________________
+
+    def test_06_pristine():
+>       assert_pristine()
+
+test_pkg_states.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_pristine():
+        now = {
+            "auth_token": field_snapshot(LocalAuthState, "auth_token"),
+            "session_token": field_snapshot(MagicLinkAuthState, "session_token"),
+            "token_response_json": field_snapshot(GoogleAuthState, "token_response_json"),
+            "redirect_to": field_snapshot(LoginState, "redirect_to"),
+            "new_user_id": field_snapshot(RegistrationState, "new_user_id"),
+            "messages": field_snapshot(Chat, "messages"),
+        }
+>       assert now == BASE
+E       AssertionError: assert {'auth_token'...ne, ...}, ...} == {'auth_token'...ne, ...}, ...}
+E         
+E         Omitting 1 identical items, use -vv to show
+E         Differing items:
+E         {'auth_token': {'type': 'str', 'value': 'sub-token', 'name': None, 'sync': None, ...}} != {'auth_token': {'type': 'LocalStorage', 'value': '', 'name': '_auth_token', 'sync': False, ...}}
+E         {'new_user_id': {'type': 'int', 'value': '42', 'name': None, 'sync': None, ...}} != {'new_user_id': {'type': 'int', 'value': '-1', 'name': None, 'sync': None, ...}}
+E         {'redirect_to': {'type': 'str', 'value': '/after-login', 'name': None, 'sync': None, ...}} != {'redirect_to': {'type': 'str', 'value': '', 'name': None, 'sync': None, ...
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+test_pkg_states.py:89: AssertionError
+________________________ test_07_manual_assign_restore _________________________
+
+    def test_07_manual_assign_restore():
+        saved = LocalAuthState.__dict__.get("auth_token", None)
+        LocalAuthState.auth_token = "manual"
+        try:
+            assert inst(LocalAuthState).auth_token == "manual"
+        finally:
+            if saved is not None:
+>               LocalAuthState.auth_token = saved
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_pkg_states.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: in __setattr__
+    accepted = _accepts_default(declared, value)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default='manual', is_var=True, annotated_type=<class 'str'>)
+value = Field(default='manual', is_var=True, annotated_type=<class 'str'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../../envs/a3_events_tp-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+_______________________________ test_07_pristine _______________________________
+
+    def test_07_pristine():
+>       assert_pristine()
+
+test_pkg_states.py:190: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_pristine():
+        now = {
+            "auth_token": field_snapshot(LocalAuthState, "auth_token"),
+            "session_token": field_snapshot(MagicLinkAuthState, "session_token"),
+            "token_response_json": field_snapshot(GoogleAuthState, "token_response_json"),
+            "redirect_to": field_snapshot(LoginState, "redirect_to"),
+            "new_user_id": field_snapshot(RegistrationState, "new_user_id"),
+            "messages": field_snapshot(Chat, "messages"),
+        }
+>       assert now == BASE
+E       AssertionError: assert {'auth_token'...ne, ...}, ...} == {'auth_token'...ne, ...}, ...}
+E         
+E         Omitting 1 identical items, use -vv to show
+E         Differing items:
+E         {'auth_token': {'type': 'str', 'value': 'manual', 'name': None, 'sync': None, ...}} != {'auth_token': {'type': 'LocalStorage', 'value': '', 'name': '_auth_token', 'sync': False, ...}}
+E         {'new_user_id': {'type': 'int', 'value': '42', 'name': None, 'sync': None, ...}} != {'new_user_id': {'type': 'int', 'value': '-1', 'name': None, 'sync': None, ...}}
+E         {'redirect_to': {'type': 'str', 'value': '/after-login', 'name': None, 'sync': None, ...}} != {'redirect_to': {'type': 'str', 'value': '', 'name': None, 'sync': None, ......
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+test_pkg_states.py:89: AssertionError
+_______________________________ test_08_pristine _______________________________
+
+    def test_08_pristine():
+>       assert_pristine()
+
+test_pkg_states.py:201: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_pristine():
+        now = {
+            "auth_token": field_snapshot(LocalAuthState, "auth_token"),
+            "session_token": field_snapshot(MagicLinkAuthState, "session_token"),
+            "token_response_json": field_snapshot(GoogleAuthState, "token_response_json"),
+            "redirect_to": field_snapshot(LoginState, "redirect_to"),
+            "new_user_id": field_snapshot(RegistrationState, "new_user_id"),
+            "messages": field_snapshot(Chat, "messages"),
+        }
+>       assert now == BASE
+E       AssertionError: assert {'auth_token'...ne, ...}, ...} == {'auth_token'...ne, ...}, ...}
+E         
+E         Omitting 1 identical items, use -vv to show
+E         Differing items:
+E         {'auth_token': {'type': 'str', 'value': 'inner', 'name': None, 'sync': None, ...}} != {'auth_token': {'type': 'LocalStorage', 'value': '', 'name': '_auth_token', 'sync': False, ...}}
+E         {'new_user_id': {'type': 'int', 'value': '42', 'name': None, 'sync': None, ...}} != {'new_user_id': {'type': 'int', 'value': '-1', 'name': None, 'sync': None, ...}}
+E         {'redirect_to': {'type': 'str', 'value': '/after-login', 'name': None, 'sync': None, ...}} != {'redirect_to': {'type': 'str', 'value': '', 'name': None, 'sync': None, ...}...
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+test_pkg_states.py:89: AssertionError
+_______________________________ test_09_pristine _______________________________
+
+    def test_09_pristine():
+>       assert_pristine()
+
+test_pkg_states.py:213: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_pristine():
+        now = {
+            "auth_token": field_snapshot(LocalAuthState, "auth_token"),
+            "session_token": field_snapshot(MagicLinkAuthState, "session_token"),
+            "token_response_json": field_snapshot(GoogleAuthState, "token_response_json"),
+            "redirect_to": field_snapshot(LoginState, "redirect_to"),
+            "new_user_id": field_snapshot(RegistrationState, "new_user_id"),
+            "messages": field_snapshot(Chat, "messages"),
+        }
+>       assert now == BASE
+E       AssertionError: assert {'auth_token'...ne, ...}, ...} == {'auth_token'...ne, ...}, ...}
+E         
+E         Omitting 1 identical items, use -vv to show
+E         Differing items:
+E         {'auth_token': {'type': 'str', 'value': 'inner', 'name': None, 'sync': None, ...}} != {'auth_token': {'type': 'LocalStorage', 'value': '', 'name': '_auth_token', 'sync': False, ...}}
+E         {'new_user_id': {'type': 'int', 'value': '42', 'name': None, 'sync': None, ...}} != {'new_user_id': {'type': 'int', 'value': '-1', 'name': None, 'sync': None, ...}}
+E         {'redirect_to': {'type': 'str', 'value': '/after-login', 'name': None, 'sync': None, ...}} != {'redirect_to': {'type': 'str', 'value': '', 'name': None, 'sync': None, ...}...
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+test_pkg_states.py:89: AssertionError
+==================================== PASSES ====================================
+_____________________ test_01_monkeypatch_local_auth_token _____________________
+----------------------------- Captured stdout call -----------------------------
+PATCHED local_auth storage {'cookies': {}, 'local': {}, 'session': {}}
+______________________ test_06_monkeypatch_chat_messages _______________________
+----------------------------- Captured stdout call -----------------------------
+PATCHED chat messages {'type': '_MISSING_TYPE', 'value': '<dataclasses._MISSING_TYPE object at 0x7ff98fe96f90>', 'name': None, 'sync': None, 'factory': True}
+=========================== short test summary info ============================
+PASSED test_pkg_states.py::test_00_pristine_at_start
+PASSED test_pkg_states.py::test_01_monkeypatch_local_auth_token
+PASSED test_pkg_states.py::test_03_mocker_google_token
+PASSED test_pkg_states.py::test_04_monkeypatch_inherited_through_substate
+PASSED test_pkg_states.py::test_06_monkeypatch_chat_messages
+PASSED test_pkg_states.py::test_08_stacked
+PASSED test_pkg_states.py::test_09_value_used_by_package_logic
+ERROR test_pkg_states.py::test_01_monkeypatch_local_auth_token - TypeError: A...
+ERROR test_pkg_states.py::test_03_mocker_google_token - TypeError: A Field ca...
+ERROR test_pkg_states.py::test_04_monkeypatch_inherited_through_substate - At...
+ERROR test_pkg_states.py::test_06_monkeypatch_chat_messages - TypeError: A Fi...
+ERROR test_pkg_states.py::test_08_stacked - ExceptionGroup: errors while tear...
+ERROR test_pkg_states.py::test_09_value_used_by_package_logic - TypeError: A ...
+FAILED test_pkg_states.py::test_01_pristine - AssertionError: assert {'auth_t...
+FAILED test_pkg_states.py::test_02_mock_patch_magic_session_token - TypeError...
+FAILED test_pkg_states.py::test_02_pristine - AssertionError: assert {'auth_t...
+FAILED test_pkg_states.py::test_03_pristine - assert {'auth_token'...ne, ...}...
+FAILED test_pkg_states.py::test_04_pristine - assert {'auth_token'...ne, ...}...
+FAILED test_pkg_states.py::test_05_decorator_plain_vars - TypeError: A Field ...
+FAILED test_pkg_states.py::test_05_pristine - AssertionError: assert {'auth_t...
+FAILED test_pkg_states.py::test_06_pristine - AssertionError: assert {'auth_t...
+FAILED test_pkg_states.py::test_07_manual_assign_restore - TypeError: A Field...
+FAILED test_pkg_states.py::test_07_pristine - AssertionError: assert {'auth_t...
+FAILED test_pkg_states.py::test_08_pristine - AssertionError: assert {'auth_t...
+FAILED test_pkg_states.py::test_09_pristine - AssertionError: assert {'auth_t...
+12 failed, 7 passed, 6 errors in 4.37s

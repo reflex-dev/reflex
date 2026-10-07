@@ -1,0 +1,9 @@
+Using Python 3.12.3 environment at: envs/a3_upgrade-twr2
+Resolved 51 packages in 264ms
+Prepared 2 packages in 0.47ms
+Uninstalled 2 packages in 26ms
+Installed 2 packages in 7ms
+ - reflex==0.10.0a2
+ + reflex==0.10.0a3
+ - reflex-base==0.10.0a2
+ + reflex-base==0.10.0a3

@@ -1,0 +1,8 @@
+key reflex___state____state.coregd___coregd____prefs.theme_rx_state_
+MARK reload
+ls after reload: bogus-boot
+theme after reload: bogus-boot
+theme on /other: bogus-nav
+SENT 40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","payload":{"hashes":["c3e0ff6baa986d54","b084fc0c68f7c73a","71edbfbfea
+SENT 40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","payload":{"vars":{"reflex___state____state.coregd___coregd____prefs.t
+SENT 42/_event,["event",{"name":"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal","payload":{"vars":{"r

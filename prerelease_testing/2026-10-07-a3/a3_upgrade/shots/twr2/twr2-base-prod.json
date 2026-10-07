@@ -1,0 +1,444 @@
+{
+ "tag": "twr2-base-prod",
+ "results": [
+  {
+   "name": "anon / redirects to /login (on_load check_login)",
+   "status": "pass",
+   "detail": "/login",
+   "t": 1.272
+  },
+  {
+   "name": "alice signup -> redirect to home",
+   "status": "pass",
+   "detail": "/",
+   "t": 2.976
+  },
+  {
+   "name": "home shows alice avatar (State.user set)",
+   "status": "pass",
+   "detail": "al",
+   "t": 2.983
+  },
+  {
+   "name": "alice posts 2 tweets, feed shows them newest-first",
+   "status": "pass",
+   "detail": "[['alices', 'alice tweet two twr2-base-prod'], ['alices', 'alice tweet one twr2-base-prod']]",
+   "t": 3.658
+  },
+  {
+   "name": "search tweets filters feed (set_search -> get_tweets)",
+   "status": "pass",
+   "detail": "[['alices', 'alice tweet two twr2-base-prod']]",
+   "t": 3.969
+  },
+  {
+   "name": "bob signup (2nd context) -> home",
+   "status": "pass",
+   "detail": "/",
+   "t": 5.839
+  },
+  {
+   "name": "bob tweet; feed shows all users' tweets",
+   "status": "pass",
+   "detail": "[['bobs', 'bob tweet twr2-base-prod'], ['alices', 'alice tweet two twr2-base-prod'], ['alices', 'alice tweet one twr2-base-prod']]",
+   "t": 6.18
+  },
+  {
+   "name": "search users 'ali' lists alice with follow button",
+   "status": "pass",
+   "detail": "['alices']",
+   "t": 6.452
+  },
+  {
+   "name": "follow alice click",
+   "status": "pass",
+   "detail": "",
+   "t": 6.455
+  },
+  {
+   "name": "bob still logged in after reload (token kept)",
+   "status": "pass",
+   "detail": "bo",
+   "t": 9.624
+  },
+  {
+   "name": "alice still logged in after reload",
+   "status": "pass",
+   "detail": "al",
+   "t": 9.773
+  },
+  {
+   "name": "sign out -> /login",
+   "status": "pass",
+   "detail": "/login",
+   "t": 11.145
+  },
+  {
+   "name": "after sign out, / redirects to /login again",
+   "status": "pass",
+   "detail": "/login",
+   "t": 11.504
+  },
+  {
+   "name": "wrong password -> window_alert",
+   "status": "pass",
+   "detail": "[{'page': 'alice', 'type': 'alert', 'message': 'Invalid username or password.', 't': 12.505}]",
+   "t": 12.697
+  },
+  {
+   "name": "alice re-login -> home",
+   "status": "pass",
+   "detail": "al",
+   "t": 14.023
+  },
+  {
+   "name": "alice Followers lists bob after fresh login",
+   "status": "pass",
+   "detail": "['bobs']",
+   "t": 15.032
+  },
+  {
+   "name": "same token kept across logout/login (reset() keeps session)",
+   "status": "pass",
+   "detail": "19cc6907-283a-4c4f-ee8d-51b11e68a381 -> 19cc6907-283a-4c4f-ee8d-51b11e68a381",
+   "t": 15.037
+  },
+  {
+   "name": "duplicate username -> alert",
+   "status": "pass",
+   "detail": "[{'page': 'carol0', 'type': 'alert', 'message': 'Username already exists.', 't': 16.442}]",
+   "t": 16.627
+  },
+  {
+   "name": "password mismatch -> alert",
+   "status": "pass",
+   "detail": "[{'page': 'carol0', 'type': 'alert', 'message': 'Passwords do not match.', 't': 17.719}]",
+   "t": 17.913
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"alice\", \"t\": 1.264, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"alice\", \"t\": 1.437, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"bob\", \"t\": 4.431, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"alice\", \"t\": 11.138, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"alice\", \"t\": 11.496, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"alice\", \"t\": 12.755, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"carol0\", \"t\": 15.317, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"carol0\", \"t\": 16.664, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}]",
+   "t": 18.048
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"alice\", \"t\": 1.264, \"url\": \"http://localhost:3232/bg.svg\", \"status\": 404}, {\"page\": \"alice\", \"t\": 1.436, \"url\": \"http://localhost:3232/signup/bg.svg\", \"status\": 404}, {\"page\": \"bob\", \"t\": 4.43, \"url\": \"http://localhost:3232/signup/bg.svg\", \"status\": 404}, {\"page\": \"alice\", \"t\": 11.138, \"url\": \"http://localhost:3232/bg.svg\", \"status\": 404}, {\"page\": \"alice\", \"t\": 11.496, \"url\": \"http://localhost:3232/bg.svg\", \"status\": 404}, {\"page\": \"alice\", \"t\": 12.754, \"url\": \"http://localhost:3232/login/bg.svg\", \"status\": 404}, {\"page\": \"carol0\", \"t\": 15.317, \"url\": \"http://localhost:3232/signup/bg.svg\", \"status\": 404}, {\"page\": \"carol0\", \"t\": 16.664, \"url\": \"http://localhost:3232/signup/bg.svg\", \"status\": 404}]",
+   "t": 18.048
+  }
+ ],
+ "console": [
+  {
+   "page": "alice",
+   "t": 1.264,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "alice",
+   "t": 1.265,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 1.344,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 1.437,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "alice",
+   "t": 1.463,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 1.463,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob",
+   "t": 4.431,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "bob",
+   "t": 4.435,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob",
+   "t": 4.435,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob",
+   "t": 7.999,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 9.636,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 11.138,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "alice",
+   "t": 11.139,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 11.149,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 11.496,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "alice",
+   "t": 11.497,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 12.703,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 12.749,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 12.755,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "carol0",
+   "t": 15.317,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "carol0",
+   "t": 15.336,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol0",
+   "t": 15.336,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol0",
+   "t": 16.631,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "carol0",
+   "t": 16.659,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol0",
+   "t": 16.659,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol0",
+   "t": 16.664,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "carol0",
+   "t": 17.917,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [
+  {
+   "page": "alice",
+   "t": 1.264,
+   "url": "http://localhost:3232/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "alice",
+   "t": 1.436,
+   "url": "http://localhost:3232/signup/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "bob",
+   "t": 4.43,
+   "url": "http://localhost:3232/signup/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "alice",
+   "t": 11.138,
+   "url": "http://localhost:3232/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "alice",
+   "t": 11.496,
+   "url": "http://localhost:3232/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "alice",
+   "t": 12.754,
+   "url": "http://localhost:3232/login/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "carol0",
+   "t": 15.317,
+   "url": "http://localhost:3232/signup/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "carol0",
+   "t": 16.664,
+   "url": "http://localhost:3232/signup/bg.svg",
+   "status": 404
+  }
+ ],
+ "ws_frames": [
+  {
+   "page": "alice",
+   "t": 0.965,
+   "dir": "open",
+   "payload": "ws://localhost:3232/_event/?token=19cc6907-283a-4c4f-ee8d-51b11e68a381&EIO=4&transport=websocket"
+  },
+  {
+   "page": "alice",
+   "t": 0.994,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"sx5jIp8gcdKgEHu7AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "alice",
+   "t": 1.259,
+   "dir": "out",
+   "len": 309,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "alice",
+   "t": 1.259,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"wIguL_2x8Yt4upjnAAAB\"}"
+  },
+  "{\"page\": \"alice\", \"t\": 1.259, \"dir\": \"in\", \"len\": 1784, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3232\\\",\\\"origin\\\":\\\"http://localhost:3232\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_ver...",
+  {
+   "page": "alice",
+   "t": 1.259,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 1.259,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/login\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "alice",
+   "t": 1.259,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  "... 152 more frames trimmed"
+ ],
+ "notes": {
+  "expect_session": true,
+  "dialogs": [
+   {
+    "page": "alice",
+    "type": "alert",
+    "message": "Invalid username or password.",
+    "t": 12.505
+   },
+   {
+    "page": "carol0",
+    "type": "alert",
+    "message": "Username already exists.",
+    "t": 16.442
+   },
+   {
+    "page": "carol0",
+    "type": "alert",
+    "message": "Passwords do not match.",
+    "t": 17.719
+   }
+  ],
+  "observations": {
+   "A_feed_initial": [],
+   "A_click_to_load_button": 1,
+   "B_following_after_follow_no_reload": [],
+   "B_following_after_reload": [],
+   "A_followers_before_reload": [],
+   "A_followers_after_reload": [],
+   "A_feed_after_reload": [
+    [
+     "alices",
+     "alice tweet two twr2-base-prod"
+    ],
+    [
+     "alices",
+     "alice tweet one twr2-base-prod"
+    ]
+   ],
+   "A_feed_after_relogin": []
+  },
+  "tokens": {
+   "alice": "19cc6907-283a-4c4f-ee8d-51b11e68a381",
+   "bob": "d29614c2-b97a-45f5-b36a-6da9c87ebe6b"
+  }
+ }
+}

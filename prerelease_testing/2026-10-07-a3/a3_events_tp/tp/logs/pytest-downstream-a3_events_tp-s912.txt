@@ -1,0 +1,175 @@
+.F.F.F.F.F...F.F.F.                                                      [100%]
+=================================== FAILURES ===================================
+_____________________ test_01_monkeypatch_local_auth_token _____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff64feb5d90>
+
+    def test_01_monkeypatch_local_auth_token(monkeypatch):
+        monkeypatch.setattr(LocalAuthState, "auth_token", "test-token")
+>       assert inst(LocalAuthState).auth_token == "test-token"
+E       AssertionError: assert '' == 'test-token'
+E         
+E         - test-token
+
+test_pkg_states.py:112: AssertionError
+____________________ test_02_mock_patch_magic_session_token ____________________
+
+    def test_02_mock_patch_magic_session_token():
+        with mock.patch.object(MagicLinkAuthState, "session_token", "sess-1"):
+>           assert inst(MagicLinkAuthState).session_token == "sess-1"
+E           AssertionError: assert '' == 'sess-1'
+E             
+E             - sess-1
+
+test_pkg_states.py:124: AssertionError
+_________________________ test_03_mocker_google_token __________________________
+
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7ff64febec30>
+
+    def test_03_mocker_google_token(mocker):
+        mocker.patch.object(GoogleAuthState, "token_response_json", json.dumps({"id_token": "x.y.z"}))
+        i = inst(GoogleAuthState)
+>       assert json.loads(i.token_response_json)["id_token"] == "x.y.z"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_pkg_states.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.decoder.JSONDecoder object at 0x7ff656dc01d0>, s = '', idx = 0
+
+    def raw_decode(self, s, idx=0):
+        """Decode a JSON document from ``s`` (a ``str`` beginning with
+        a JSON document) and return a 2-tuple of the Python
+        representation and the index in ``s`` where the document ended.
+    
+        This can be used to decode a JSON document from a string that may
+        have extraneous data at the end.
+    
+        """
+        try:
+            obj, end = self.scan_once(s, idx)
+        except StopIteration as err:
+>           raise JSONDecodeError("Expecting value", s, err.value) from None
+E           json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+/usr/lib/python3.12/json/decoder.py:355: JSONDecodeError
+________________ test_04_monkeypatch_inherited_through_substate ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff64feb6ae0>
+
+    def test_04_monkeypatch_inherited_through_substate(monkeypatch):
+        monkeypatch.setattr(LoginState, "auth_token", "sub-token")
+>       assert inst(LoginState).auth_token == "sub-token"
+E       AssertionError: assert '' == 'sub-token'
+E         
+E         - sub-token
+
+test_pkg_states.py:148: AssertionError
+_________________________ test_05_decorator_plain_vars _________________________
+
+    @mock.patch.object(LoginState, "redirect_to", "/after-login")
+    @mock.patch.object(RegistrationState, "new_user_id", 42)
+    def test_05_decorator_plain_vars():
+>       assert inst(LoginState).redirect_to == "/after-login"
+E       AssertionError: assert '' == '/after-login'
+E         
+E         - /after-login
+
+test_pkg_states.py:159: AssertionError
+________________________ test_07_manual_assign_restore _________________________
+
+    def test_07_manual_assign_restore():
+        saved = LocalAuthState.__dict__.get("auth_token", None)
+        LocalAuthState.auth_token = "manual"
+        try:
+>           assert inst(LocalAuthState).auth_token == "manual"
+E           AssertionError: assert '' == 'manual'
+E             
+E             - manual
+
+test_pkg_states.py:182: AssertionError
+_______________________________ test_08_stacked ________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff64febea80>
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7ff64febc1d0>
+
+    def test_08_stacked(monkeypatch, mocker):
+        monkeypatch.setattr(LocalAuthState, "auth_token", "outer")
+        mocker.patch.object(LocalAuthState, "auth_token", "inner")
+>       assert inst(LoginState).auth_token == "inner"
+E       AssertionError: assert '' == 'inner'
+E         
+E         - inner
+
+test_pkg_states.py:197: AssertionError
+_____________________ test_09_value_used_by_package_logic ______________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff64febc2f0>
+
+    def test_09_value_used_by_package_logic(monkeypatch):
+        monkeypatch.setattr(GoogleAuthState, "token_response_json", json.dumps({"id_token": "abc"}))
+        i = inst(GoogleAuthState)
+        # GoogleAuthState.id_token_json is a computed var reading token_response_json
+>       assert json.loads(i.id_token_json) == {"credential": "abc"}
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_pkg_states.py:209: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.decoder.JSONDecoder object at 0x7ff656dc01d0>, s = '', idx = 0
+
+    def raw_decode(self, s, idx=0):
+        """Decode a JSON document from ``s`` (a ``str`` beginning with
+        a JSON document) and return a 2-tuple of the Python
+        representation and the index in ``s`` where the document ended.
+    
+        This can be used to decode a JSON document from a string that may
+        have extraneous data at the end.
+    
+        """
+        try:
+            obj, end = self.scan_once(s, idx)
+        except StopIteration as err:
+>           raise JSONDecodeError("Expecting value", s, err.value) from None
+E           json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+/usr/lib/python3.12/json/decoder.py:355: JSONDecodeError
+==================================== PASSES ====================================
+______________________ test_06_monkeypatch_chat_messages _______________________
+----------------------------- Captured stdout call -----------------------------
+PATCHED chat messages {'type': '_MISSING_TYPE', 'value': '<dataclasses._MISSING_TYPE object at 0x7ff657452ea0>', 'name': None, 'sync': None, 'factory': True}
+=========================== short test summary info ============================
+PASSED test_pkg_states.py::test_00_pristine_at_start
+PASSED test_pkg_states.py::test_01_pristine
+PASSED test_pkg_states.py::test_02_pristine
+PASSED test_pkg_states.py::test_03_pristine
+PASSED test_pkg_states.py::test_04_pristine
+PASSED test_pkg_states.py::test_05_pristine
+PASSED test_pkg_states.py::test_06_monkeypatch_chat_messages
+PASSED test_pkg_states.py::test_06_pristine
+PASSED test_pkg_states.py::test_07_pristine
+PASSED test_pkg_states.py::test_08_pristine
+PASSED test_pkg_states.py::test_09_pristine
+FAILED test_pkg_states.py::test_01_monkeypatch_local_auth_token - AssertionEr...
+FAILED test_pkg_states.py::test_02_mock_patch_magic_session_token - Assertion...
+FAILED test_pkg_states.py::test_03_mocker_google_token - json.decoder.JSONDec...
+FAILED test_pkg_states.py::test_04_monkeypatch_inherited_through_substate - A...
+FAILED test_pkg_states.py::test_05_decorator_plain_vars - AssertionError: ass...
+FAILED test_pkg_states.py::test_07_manual_assign_restore - AssertionError: as...
+FAILED test_pkg_states.py::test_08_stacked - AssertionError: assert '' == 'in...
+FAILED test_pkg_states.py::test_09_value_used_by_package_logic - json.decoder...
+8 failed, 11 passed in 3.95s

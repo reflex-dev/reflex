@@ -9,9 +9,24 @@ export SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/s
 export W=$SB/apps/a3_upgrade        # work dir; DEST = prerelease_testing/2026-10-07-a3/a3_upgrade (bin/sync_dest.sh copies)
 DRV="env NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/python"
 ```
-Layout in DEST: `apps/` (app sources as run, no .web/.states/db/lock), `bin/` (run_app.sh, stop_app.sh, ports.sh, install_paths.sh,
-json_matrix.sh, sync_dest.sh), `scripts/` (drivers; copied from `../2026-10-07/upgrade_sweep/scripts` + new `json_drain.py`, `drive_guide.py`),
-`freeze/`, `pkg/`, `logs/`, `shots/`, `guide/probes/` is under `apps/guide/probes`.
+Layout in DEST: `apps/` (app sources as run, no .web/.states/db/lock; `apps/guide/probes/` = Python-level guide probes, `apps/guide/app` = guide e2e app,
+`apps/jsondrain` = #7428 app), `bin/` (run_app.sh, stop_app.sh, ports.sh, common.sh, install_paths.sh, build_base_venvs.sh, seq_*.sh, run_all.sh,
+json_matrix.sh, json_followup.sh, seq_json2.sh, twr_rerun.sh, twr2_run.sh, sync_dest.sh), `scripts/` (drivers copied from `../2026-10-07/upgrade_sweep/scripts`,
+screenshots switched to JPEG, + new `json_drain.py`, `drive_guide.py`, `drive_smoke.py`), `freeze/`, `pkg/`, `logs/`, `shots/` (JSON per run + a3-side JPEGs).
+
+## Verdict
+
+**No upgrade regression from 0.9.12 or 0.10.0a2 to 0.10.0a3.** form-designer, github-stats, clock, twitter (dev, disk state) and twitter (prod + Redis) were
+driven in Chromium on fresh 0.9.12 venvs, upgraded in place (same venv, app dir, `.web/`, `reflex.lock/`, DB, browser profile) and re-driven with the identical
+flows, then cold (`rm -rf .web`) and in prod: every result equals the a2 pass result for the same flow, console/network signatures are the 0.9.12 ones, client
+storage written by 0.9.12 is restored with 0.9.12-identical (idempotent) rewrites only, Redis-pickled 0.9.12 sessions load on a3, and a2-pickled sessions load on a3.
+Install paths: a2 -> a3 with pip (`-U --pre`) and uv (`-U --prerelease=allow`) move only reflex + reflex-base (the wheel's `reflex-base==0.10.0a3` pin works); a
+stock `pip install reflex` still gives 0.9.12, whose `[db]` extra still lacks greenlet (N-001 on the stable line). The upgrade guide's samples run as written and
+its statements hold (N-002/N-007/N-009/N-024/N-040 documented), F-014 is fixed, #7428 is fixed, Python 3.11/3.14 init+run are clean.
+
+New, all LOW: (a3_upgrade-5) the guide misses that writing an INHERITED var outside `async with self` in a background task worked on 0.9.12 and now raises;
+(a3_upgrade-4) `reflex run --json` ignores a SIGINT sent to its pid (supervisor swallows it; pre-existing, 0.9.12 also ignores it); (a3_upgrade-3) at #7428's 30 s
+wall cap the JSON stream ends in a truncated record. Inbox: `board/findings-inbox/a3_upgrade-{1..5}.md`.
 
 ## Item 2: install / upgrade paths (`bin/install_paths.sh`, output `logs/ip-summary.txt`, freezes `freeze/ip-*.txt`)
 
@@ -202,3 +217,27 @@ so no token file was written and the later drives could not run; the rerun (load
 Conclusion #7428: fixed as described — no lost lines and no truncated record for a consumer that can keep up within 30 s, bounded shutdown (30.4 s) for one that cannot;
 remaining wart at the cap = a truncated final record (inbox a3_upgrade-3). Separate pre-existing gap: `reflex run --json` never stops on a SIGINT sent to its pid
 (the supervisor swallows it; plain `reflex run` exits in 0.25 s) — inbox a3_upgrade-4 (0.9.12 does not stop on it either, so not a regression).
+
+### a2 -> a3 in place, twitter prod + Redis (`bin/twr2_run.sh` -> `bin/seq_twr2.sh`, `logs/seq-twr2.txt`, `shots/twr2/`)
+venv `$SB/envs/a3_upgrade-twr2` = what an a2 tester had (`--prerelease=allow 'reflex[db]==0.10.0a2' greenlet 'pydantic<2.14'`, SQLAlchemy 2.1.4); upgrade
+`uv pip install -U --prerelease=allow 'reflex[db]==0.10.0a3' 'pydantic<2.14'` moves ONLY reflex and reflex-base (`freeze/twr2-base-to-up.diff`).
+a2 prod `base` 19/0/2 -> stale tab across the upgrade 8/0/3 -> a3 `up` with the a2 tokens 12/0/2 (**a2-pickled sessions load on a3** after #7494's `__getstate__` change)
+-> a3 `base` 19/0/2. The `.web/package.json` after the a2 -> a3 run is identical to the 0.9.12 -> a3 one; `reflex.lock/package.json` == `.web/package.json`.
+Server log: only `Warning: Frontend version 0.10.0a2 for session ... does not match the backend version 0.10.0a3` (F-019 style) and granian's worker-count warning.
+
+## Observations (not filed as issues)
+* O-1 (install semantics) `pip install -U --pre reflex==0.10.0a3` from an a2 `reflex[db]` venv that lacked greenlet does NOT add greenlet (pip does not remember extras);
+  re-running with `'reflex[db]==0.10.0a3'` does. The a3 changelog's N-001 entry speaks of "a fresh `pip install reflex[db]`", which is accurate; users fixing a broken a2 install must re-request the extra.
+* O-2 (docs nit, part of a3_upgrade-2) two props give TypeErrors other than the quoted LiteralVar one (`id=` -> "expected string or bytes-like object, got 'Field'" = N-006, `href=` -> "Invalid var passed for prop ReactRouterLink.to").
+* O-3 (#7493 visible effect) on the first a3 load of a 0.9.12-written profile, a3 rewrites the loaded LocalStorage values once with identical values (form-designer `_auth_token`;
+  github-stats `selected_users_json`, widget `user_stats_json`, `last_fetch`); 0.9.12 does the same, a2 did not. No changing writes, no defaults written.
+* O-4 (pre-existing) prod + Redis spawns `2 * cpu_count + 1` = 9 granian workers on 4 CPUs (as self-hosting.md says) and granian warns
+  "Configured number of workers appears to be higher than the amount of CPU cores available ... Consider using 4 workers" on every start, 0.9.12 included.
+* Known-benign seen: granian `Unexpected exit from worker-1` when the whole group gets SIGINT; `Killing worker-1 after it refused to gracefully stop` once at a shutdown
+  (also on a2); `Debug: error: script "dev" exited with code 143` at SIGTERM; prod `/favicon.ico` 404 console line on apps without favicon; dev server answers unknown routes
+  with 200 (0.9.12 too); 0.9.12 dev leaves the react-router node process on the frontend port after SIGTERM (fixed since a1 by #7328); F-019 "Frontend version ... does not match" log line.
+* Process: twitter-redis attempt 1 (load average ~20) timed out in the 0.9.12 baseline and was rerun (load ~8): 19/0/2. My storage-probe `--expect-text 'Alice'` on github-stats was wrong (`alice`).
+
+## Cleanup
+Every server, redis, GitHub stub and Chromium started here was stopped (`bin/stop_app.sh` after each run, `bin/ports.sh` -> "no listeners on: 80 ports checked" after the last run).
+Venvs left in `$SB/envs/a3_upgrade-*` (scratch, not in the repo).

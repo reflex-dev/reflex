@@ -33,8 +33,8 @@ Previous pass (a2 train): [../2026-10-07/FINDINGS.md](../2026-10-07/FINDINGS.md)
 | N-039 patch/restore of a var default | MEDIUM | **fixed**: monkeypatch / mock.patch.object / pytest-mock / substate / delattr round trips, 15 var kinds, 0 errors and 0 leaks on Python 3.11–3.14 (a2: 15/15 fail); edge cases in A3-01 | `a3_class_state/logs/` | a3_class_state |
 | N-008 `_x__y` accepted by the dev guard | LOW regression | **fixed**: `self._sneaky__name = 1` raises in dev; own/base/mixin/`_Under`/ComponentState mangled names still accepted | `a3_class_state` | a3_class_state |
 | N-006 `BackendVarFormatError` message | LOW docs | **changed**: message names `default_value()` / `ClassVar` / a state var; `str(S._x)`, `"%s" % S._x`, `f"{S._x!s}"` still embed the `Field` repr silently (as the guide now states) and `rx.box(id=S._label)` is still a cryptic TypeError | `a3_class_state` | a3_class_state |
-| N-002/N-007/N-009/N-024/N-040 docs | LOW docs | _pending_ (N-040 itself unchanged on a3: 179/255 assignments raise, 42 run user code — now documented) | | a3_upgrade, a3_class_state |
-| F-014 `reflex component` message | LOW | _pending_ | | a3_upgrade |
+| N-002/N-007/N-009/N-024/N-040 docs | LOW docs | **fixed (documented)**: the a3 CHANGELOG carries the #7462 entry; the "Upgrading to Reflex 0.10" guide's samples run as written on a3 (dev and prod/Redis, 9 workers) and on 0.9.12 where it says so; 50+ statements checked (Field class read, `ChildrenTypeError`, `BackendVarFormatError` hint, `get_fields()[...]` recipe portable to 0.9.12, class-default scope incl. per-worker runtime assignment, callable factories, lock-pickling error text, `ClassVar`, background-task inherited handlers, state-store note). N-040 behavior itself unchanged (179/255 raise) and now documented. Gaps: A3-06 (inherited-var writes in background tasks), the `id=`/`href=` prop errors differ from the quoted text (N-006) | `a3_upgrade/NOTES.md` | a3_upgrade, a3_class_state |
+| F-014 `reflex component` message | LOW | **fixed**: every `reflex component …` form exits 1 with the wrapping-React docs + component-template pointer on stderr (a2: "No such command", rc 2); hidden from `reflex --help` | `a3_upgrade/NOTES.md` | a3_upgrade |
 
 ## New findings on 0.10.0a3
 Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
@@ -93,7 +93,35 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   (`reflex/state.py:807`, `reflex_base/registry.py` 192-221); `_reload_state_module` (322-331) reloads only the app package. Add the
   render-crash symptom and the import-first workaround to reflex#7479; no new issue.
 
+### A3-06: The upgrade guide misses that writing an INHERITED var outside `async with self` in a background task now raises `ImmutableStateError` (0.9.12 wrote it without the lock) (LOW, docs)
+- Item `a3_upgrade` (inbox 5). App `a3_upgrade/apps/guide`, `bin/seq_guide2.sh`: a Child background task doing `self.count += 100`
+  (count declared on Parent) outside the lock: 0.9.12 14 → 114 with no error; a3 raises. A handler declared on the same state that
+  writes the inherited var splits the same way. The guide covers only calling inherited handlers (N-024). The new behaviour is the
+  safe one; the gap is documentation. 0.9.12 cause: `istate/proxy.py:322-329` skip-vars bypass + `state.py:1455`.
+
+### A3-07: `reflex run --json` ignores SIGINT sent to its pid only; the server keeps running (LOW, pre-existing on 0.9.12 and a2)
+- Item `a3_upgrade` (inbox 4). `kill -INT <pid>` of `reflex run --json`: still running after 60–210 s; plain `reflex run` exits in
+  0.25 s; `--json` + SIGTERM exits in 2 s; Ctrl-C in a terminal (process-group SIGINT) works. `reflex_base/utils/log.py:519` forwards
+  only SIGTERM, `:524` `except KeyboardInterrupt: continue`. Repro `a3_upgrade/bin/json_matrix.sh a3fast a3 INT-pid:100000`.
+
+### A3-08: #7428's 30 s drain cap ends `reflex run --json` mid-record: a very slow consumer gets a truncated last JSON line (LOW, new in a3 but strictly better than a2)
+- Item `a3_upgrade` (inbox 3). #7428 itself works: Ctrl-C/SIGTERM with a 40 lines/s consumer exits in 6.5–6.7 s, rc 0, 0 lines lost,
+  0 invalid JSON (a2 lost 49–63 lines plus a truncated record). With a 6 lines/s consumer the cap fires at 30.4 s (as designed) and the
+  stream ends in `{"timestamp": "...", "level"` with no newline (82 lines undelivered). A consumer parsing line by line sees one
+  invalid record. Repro `a3_upgrade/bin/json_matrix.sh a3 a3 TERM-pid:6`.
+
 ## Cluster summaries
+
+### `a3_upgrade` — done
+No upgrade regression 0.9.12 → a3 or a2 → a3: form-designer, github-stats, clock, twitter dev and twitter prod/Redis give exactly the
+a2-pass results in place and cold; 0.9.12- and a2-pickled Redis sessions load on a3; `.web/package.json` identical to a2; a3 → 0.9.12
+rollback on the same Redis discards a3-written substates silently (no crash; substates a3 only read stay loadable — per-substate reset),
+as the state-store note says. Install paths: pip and uv upgrades from a2 move only reflex + reflex-base; fresh `--pre` and exact-pin
+installs give only train packages; a pip upgrade without `[db]` keeps an old greenlet-less venv broken (installer semantics; naming
+`reflex[db]` fixes it). Stock `pip install 'reflex[db]'` (no pre) still gives 0.9.12 with SQLAlchemy 2.1.4 and no greenlet, so
+`import reflex.model` fails on the stable line today — N-001 for 0.9.x users; a 0.9.13 with #7466 would fix it. `reflex component`
+fixed (F-014); #7428 works (A3-08 at the cap); Python 3.11.17 and 3.14.6 init + dev + prod clean. Upgrade guide accurate (gap A3-06).
+New: A3-06, A3-07, A3-08. Notes: `a3_upgrade/NOTES.md`.
 
 ### `a3_ent_grid` — done (positive control on a2 + a4 reproduced first)
 N-025 fixed on a3 + a5 (prod and dev), and on a2 + a5; 0.9.12 + a5 unaffected; a3 + a4 still broken (the reflex side did not change:

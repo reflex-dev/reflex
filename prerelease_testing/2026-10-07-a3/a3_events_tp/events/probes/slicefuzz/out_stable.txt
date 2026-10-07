@@ -1,0 +1,30 @@
+venv=stable cases=3710 mismatches=204 compile_errors=3180
+  compile-error target=items mode=allvar x726: RecursionError: maximum recursion depth exceeded
+  compile-error target=items mode=varstep x864: RecursionError: maximum recursion depth exceeded
+  compile-error target=s mode=allvar x726: RecursionError: maximum recursion depth exceeded
+  compile-error target=s mode=varstep x864: RecursionError: maximum recursion depth exceeded
+  MISMATCH target=items mode=lit: 54
+     [None:-1:-3] py=[] js=[5, 2]
+     [None:-1:-2] py=[] js=[5, 3, 1]
+     [None:-1:-1] py=[] js=[5, 4, 3, 2, 1, 0]
+     [-6:-1:-3] py=[] js=[0]
+     [-6:-1:-2] py=[] js=[0]
+     [-6:-1:-1] py=[] js=[0]
+  MISMATCH target=items mode=varbounds: 48
+     [-6:-1:-3] py=[] js=[0]
+     [-6:-1:-2] py=[] js=[0]
+     [-6:-1:-1] py=[] js=[0]
+     [-5:-1:-3] py=[] js=[1]
+     [-5:-1:-2] py=[] js=[1]
+     [-5:-1:-1] py=[] js=[1, 0]
+  MISMATCH target=s mode=lit: 54
+     [None:-1:-3] py='' js='fc'
+     [None:-1:-2] py='' js='fdb'
+     [None:-1:-1] py='' js='fedcba'
+     [-6:-1:-3] py='' js='a'
+     [-6:-1:-2] py='' js='a'
+     [-6:-1:-1] py='' js='a'
+  MISMATCH target=s mode=varbounds: 48
+     [-6:-1:-3] py='' js='a'
+     [-6:-1:-2] py='' js='a'
+     [-6:-1:-1] py='' js='a'

@@ -1,0 +1,648 @@
+{
+ "label": "a2ctl_dev",
+ "base": "http://localhost:3460",
+ "results": [
+  {
+   "name": "deco.late_marker_before_first_use",
+   "status": "pass",
+   "details": {
+    "final": "late:start,ping1,late:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.01,
+      "late:start"
+     ],
+     [
+      0.12,
+      "late:start,ping1"
+     ],
+     [
+      1.31,
+      "late:start,ping1,late:end"
+     ]
+    ]
+   },
+   "t": 7.178
+  },
+  {
+   "name": "deco.late_marker_after_is_background_read",
+   "status": "fail",
+   "details": {
+    "final": "lateread:start,lateread:end,ping1",
+    "ran_as_background": false,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      ""
+     ],
+     [
+      1.33,
+      "lateread:start,lateread:end,ping1"
+     ]
+    ]
+   },
+   "t": 10.732
+  },
+  {
+   "name": "deco.functools_wraps_inner",
+   "status": "pass",
+   "details": {
+    "final": "wrapinner:start,ping1,wrapinner:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.01,
+      "wrapinner:start"
+     ],
+     [
+      0.12,
+      "wrapinner:start,ping1"
+     ],
+     [
+      1.33,
+      "wrapinner:start,ping1,wrapinner:end"
+     ]
+    ]
+   },
+   "t": 14.174
+  },
+  {
+   "name": "deco.functools_wraps_outer",
+   "status": "pass",
+   "details": {
+    "final": "wrapouter:start,ping1,wrapouter:end",
+    "ran_as_background": true,
+    "new_backend_errors": 0,
+    "exc_list_tail": "",
+    "timeline": [
+     [
+      0.0,
+      "wrapouter:start"
+     ],
+     [
+      0.11,
+      "wrapouter:start,ping1"
+     ],
+     [
+      1.31,
+      "wrapouter:start,ping1,wrapouter:end"
+     ]
+    ]
+   },
+   "t": 17.671
+  },
+  {
+   "name": "deco.trace_wrapper_executed",
+   "status": "info",
+   "details": {
+    "log": "wrapouter:start,ping1,wrapouter:end,trace=wrapped_inner/wrapped_outer"
+   },
+   "t": 17.712
+  },
+  {
+   "name": "deco.mixin_background_two_substates",
+   "status": "pass",
+   "details": {
+    "A": "A:start,pingA,A:end",
+    "B": "B:start,B:end",
+    "B_started_before_A_end": true,
+    "timeline": {
+     "mix-a-log": [
+      [
+       0.01,
+       "A:start"
+      ],
+      [
+       0.12,
+       "A:start,pingA"
+      ],
+      [
+       1.15,
+       "A:start,pingA,A:end"
+      ]
+     ],
+     "mix-b-log": [
+      [
+       0.01,
+       "B:start"
+      ],
+      [
+       1.38,
+       "B:start,B:end"
+      ]
+     ]
+    }
+   },
+   "t": 21.129
+  },
+  {
+   "name": "deco.pkg_redecorated_early",
+   "status": "pass",
+   "details": {
+    "added": "pkg:start,ping,pkg:end",
+    "new_backend_errors": 0
+   },
+   "t": 24.165
+  },
+  {
+   "name": "deco.pkg_redecorated_late",
+   "status": "pass",
+   "details": {
+    "added": "pkg:start,ping,pkg:end",
+    "new_backend_errors": 0
+   },
+   "t": 27.198
+  },
+  {
+   "name": "nested.match_list_branch",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:match_list_branch:log": 1,
+     "console:match_list_branch:debug": 2,
+     "console:match_list_branch:info": 1,
+     "ws:match_list_branch:sent": 9
+    },
+    "order": "M1,M2",
+    "expected": "M1,M2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=0 frontend=0"
+   },
+   "t": 32.627
+  },
+  {
+   "name": "nested.deep50_nested_match",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:deep50_nested_match:log": 1,
+     "console:deep50_nested_match:debug": 2,
+     "console:deep50_nested_match:info": 1,
+     "ws:deep50_nested_match:sent": 57
+    },
+    "order": "Z49,Z48,Z47,Z46,Z45,Z44,Z43,Z42,Z41,Z40,Z39,Z38,Z37,Z36,Z35,Z34,Z33,Z32,Z31,Z30,Z29,Z28,Z27,Z26,Z25,Z24,Z23,Z22,Z21,Z20,Z19,Z18,Z17,Z16,Z15,Z14,Z13,Z12,Z11,Z10,Z9,Z8,Z7,Z6,Z5,Z4,Z3,Z2,Z1,Z0",
+    "expected": "Z49,Z48,Z47,Z46,Z45,Z44,Z43,Z42,Z41,Z40,Z39,Z38,Z37,Z36,Z35,Z34,Z33,Z32,Z31,Z30,Z29,Z28,Z27,Z26,Z25,Z24,Z23,Z22,Z21,Z20,Z19,Z18,Z17,Z16,Z15,Z14,Z13,Z12,Z11,Z10,Z9,Z8,Z7,Z6,Z5,Z4,Z3,Z2,Z1,Z0",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=0 frontend=0"
+   },
+   "t": 39.345
+  },
+  {
+   "name": "nested.backend_failure_mid_list_flat",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:backend_failure_mid_list_flat:log": 1,
+     "console:backend_failure_mid_list_flat:debug": 2,
+     "console:backend_failure_mid_list_flat:info": 1,
+     "ws:backend_failure_mid_list_flat:sent": 11
+    },
+    "order": "P1,P2,P3",
+    "expected": "P1,P2,P3",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=0 frontend=0",
+    "handler_counts_after": "backend=1 frontend=0"
+   },
+   "t": 45.891
+  },
+  {
+   "name": "nested.backend_failure_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:backend_failure_mid_nested_list:log": 1,
+     "console:backend_failure_mid_nested_list:debug": 2,
+     "console:backend_failure_mid_nested_list:info": 1,
+     "ws:backend_failure_mid_nested_list:sent": 10
+    },
+    "order": "Q1,Q2",
+    "expected": "Q1,Q2",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=1 frontend=0",
+    "handler_counts_after": "backend=2 frontend=0"
+   },
+   "t": 52.192
+  },
+  {
+   "name": "nested.malformed_event_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:malformed_event_mid_nested_list:log": 1,
+     "console:malformed_event_mid_nested_list:debug": 2,
+     "console:malformed_event_mid_nested_list:info": 1,
+     "ws:malformed_event_mid_nested_list:sent": 11
+    },
+    "order": "W1,W2",
+    "expected": "W1,W2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=2 frontend=0",
+    "handler_counts_after": "backend=2 frontend=1"
+   },
+   "t": 58.626
+  },
+  {
+   "name": "nested.handler_returns_nested_list",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "console:handler_returns_nested_list:log": 1,
+     "console:handler_returns_nested_list:debug": 2,
+     "console:handler_returns_nested_list:info": 1,
+     "ws:handler_returns_nested_list:sent": 8
+    },
+    "order": "",
+    "expected": "A,B,C,D",
+    "backend_exc_records": 1,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "TypeError: Your handler NestState.ret_nested must only return/yield: None, Events or other",
+    "handler_counts_before": "backend=2 frontend=1",
+    "handler_counts_after": "backend=3 frontend=1"
+   },
+   "t": 64.954
+  },
+  {
+   "name": "nested.handler_yields_nested_list",
+   "status": "fail",
+   "details": {
+    "capture_counters": {
+     "console:handler_yields_nested_list:log": 1,
+     "console:handler_yields_nested_list:debug": 2,
+     "console:handler_yields_nested_list:info": 1,
+     "ws:handler_yields_nested_list:sent": 8
+    },
+    "order": "",
+    "expected": "Y1,Y2",
+    "backend_exc_records": 1,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "TypeError: Your handler NestState.yield_nested must only return/yield: None, Events or othe",
+    "handler_counts_before": "backend=3 frontend=1",
+    "handler_counts_after": "backend=4 frontend=1"
+   },
+   "t": 70.657
+  },
+  {
+   "name": "nested.handler_returns_flat_with_failing",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:handler_returns_flat_with_failing:log": 1,
+     "console:handler_returns_flat_with_failing:debug": 2,
+     "console:handler_returns_flat_with_failing:info": 1,
+     "ws:handler_returns_flat_with_failing:sent": 8
+    },
+    "order": "R1,R2",
+    "expected": "R1,R2",
+    "backend_exc_records": 1,
+    "expected_exc": 1,
+    "ordinary_after_ok": true,
+    "exc_list": "RuntimeError: boom-intentional",
+    "handler_counts_before": "backend=4 frontend=1",
+    "handler_counts_after": "backend=5 frontend=1"
+   },
+   "t": 76.273
+  },
+  {
+   "name": "nested.call_script_throws_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:call_script_throws_mid_nested_list:log": 2,
+     "console:call_script_throws_mid_nested_list:debug": 2,
+     "console:call_script_throws_mid_nested_list:info": 1,
+     "ws:call_script_throws_mid_nested_list:sent": 10
+    },
+    "order": "C1,C2",
+    "expected": "C1,C2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=1",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 81.395
+  },
+  {
+   "name": "nested.call_script_callback_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:call_script_callback_list:log": 1,
+     "console:call_script_callback_list:debug": 2,
+     "console:call_script_callback_list:info": 1,
+     "ws:call_script_callback_list:sent": 9
+    },
+    "order": "cbv,CB2",
+    "expected": "cbv,CB2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=2",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 86.844
+  },
+  {
+   "name": "nested.run_script_mid_nested_list",
+   "status": "pass",
+   "details": {
+    "capture_counters": {
+     "console:run_script_mid_nested_list:log": 1,
+     "console:run_script_mid_nested_list:debug": 2,
+     "console:run_script_mid_nested_list:info": 1,
+     "ws:run_script_mid_nested_list:sent": 9
+    },
+    "order": "RS1,RS2",
+    "expected": "RS1,RS2",
+    "backend_exc_records": 0,
+    "expected_exc": 0,
+    "ordinary_after_ok": true,
+    "exc_list": "",
+    "handler_counts_before": "backend=5 frontend=2",
+    "handler_counts_after": "backend=5 frontend=2"
+   },
+   "t": 92.046
+  },
+  {
+   "name": "bind.instance_access_and_inheritance",
+   "status": "info",
+   "details": {
+    "bind-inherited-template": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-template-via-self": {
+     "p_log_added": "template:self=BindParent:kind=parent-kind",
+     "p_count": "0",
+     "c_count": "0",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-parent-via-self": {
+     "p_log_added": "bump:self=BindParent ; after_bump",
+     "p_count": "1",
+     "c_count": "1",
+     "c_log": "",
+     "new_exc": 0,
+     "exc_tail": ""
+    },
+    "bind-bg-parent": {
+     "p_log_added": "bump:self=StateProxy",
+     "p_count": "2",
+     "c_count": "1",
+     "c_log": "bg_outside=ImmutableStateError",
+     "new_exc": 0,
+     "exc_tail": ""
+    }
+   },
+   "t": 100.065
+  },
+  {
+   "name": "bind.foreach_args_0_to_5_and_lambdas",
+   "status": "pass",
+   "details": {
+    "got": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ],
+    "expected": [
+     "take0",
+     "take1:i1",
+     "take2:i1:1:int",
+     "take3:i1:1:i1",
+     "take4:i1:1:i1:1",
+     "take5:i1:1:i1:1:five",
+     "take1:lam",
+     "take1:rxlam",
+     "take2:abc:5:int"
+    ]
+   },
+   "t": 103.42
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 27.405,
+   "tag": "deco",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/deco"
+  },
+  {
+   "t": 32.63,
+   "tag": "match_list_branch",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 39.384,
+   "tag": "deep50_nested_match",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 45.898,
+   "tag": "backend_failure_mid_list_flat",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 52.225,
+   "tag": "backend_failure_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 58.633,
+   "tag": "malformed_event_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 64.969,
+   "tag": "handler_returns_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 70.683,
+   "tag": "handler_yields_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 76.279,
+   "tag": "handler_returns_flat_with_failing",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 78.275,
+   "tag": "call_script_throws_mid_nested_list",
+   "type": "log",
+   "text": "_call_script Error: cs-boom\n    at eval (eval at applyEvent (http://localhost:3460/utils/state.js:491:13), <anonymous>:1:7)\n    at applyEvent (http://localhost:3460/utils/state.js:491:13)\n    at processEvent (http://localhost:3460/utils/state.js:658:13)\n    at processEvent (http://localhost:3460/utils/state.js:663:13)\n    at async queueEvents (http://localhost:3460/utils/state.js:622:3)",
+   "loc": "http://localhost:3460/utils/state.js:505",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 81.399,
+   "tag": "call_script_throws_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 86.847,
+   "tag": "call_script_callback_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 92.05,
+   "tag": "run_script_mid_nested_list",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/nested"
+  },
+  {
+   "t": 103.424,
+   "tag": "bind",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3460/utils/state.js:788",
+   "url": "http://localhost:3460/bind"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "counters": {
+  "console:deco:log": 2,
+  "console:deco:debug": 2,
+  "ws:deco:recv": 33,
+  "console:deco:info": 1,
+  "ws:deco:sent": 22,
+  "console:match_list_branch:log": 2,
+  "console:match_list_branch:debug": 2,
+  "ws:match_list_branch:recv": 13,
+  "console:match_list_branch:info": 1,
+  "ws:match_list_branch:sent": 9,
+  "console:deep50_nested_match:log": 2,
+  "console:deep50_nested_match:debug": 2,
+  "ws:deep50_nested_match:recv": 61,
+  "console:deep50_nested_match:info": 1,
+  "ws:deep50_nested_match:sent": 57,
+  "console:backend_failure_mid_list_flat:log": 2,
+  "console:backend_failure_mid_list_flat:debug": 2,
+  "ws:backend_failure_mid_list_flat:recv": 15,
+  "console:backend_failure_mid_list_flat:info": 1,
+  "ws:backend_failure_mid_list_flat:sent": 11,
+  "console:backend_failure_mid_nested_list:log": 2,
+  "console:backend_failure_mid_nested_list:debug": 2,
+  "ws:backend_failure_mid_nested_list:recv": 14,
+  "console:backend_failure_mid_nested_list:info": 1,
+  "ws:backend_failure_mid_nested_list:sent": 10,
+  "console:malformed_event_mid_nested_list:log": 2,
+  "console:malformed_event_mid_nested_list:debug": 2,
+  "ws:malformed_event_mid_nested_list:recv": 13,
+  "console:malformed_event_mid_nested_list:info": 1,
+  "ws:malformed_event_mid_nested_list:sent": 11,
+  "console:handler_returns_nested_list:log": 2,
+  "console:handler_returns_nested_list:debug": 2,
+  "ws:handler_returns_nested_list:recv": 12,
+  "console:handler_returns_nested_list:info": 1,
+  "ws:handler_returns_nested_list:sent": 8,
+  "console:handler_yields_nested_list:log": 2,
+  "console:handler_yields_nested_list:debug": 2,
+  "ws:handler_yields_nested_list:recv": 12,
+  "console:handler_yields_nested_list:info": 1,
+  "ws:handler_yields_nested_list:sent": 8,
+  "console:handler_returns_flat_with_failing:log": 2,
+  "console:handler_returns_flat_with_failing:debug": 2,
+  "ws:handler_returns_flat_with_failing:recv": 14,
+  "console:handler_returns_flat_with_failing:info": 1,
+  "ws:handler_returns_flat_with_failing:sent": 8,
+  "console:call_script_throws_mid_nested_list:log": 3,
+  "console:call_script_throws_mid_nested_list:debug": 2,
+  "ws:call_script_throws_mid_nested_list:recv": 13,
+  "console:call_script_throws_mid_nested_list:info": 1,
+  "ws:call_script_throws_mid_nested_list:sent": 10,
+  "console:call_script_callback_list:log": 2,
+  "console:call_script_callback_list:debug": 2,
+  "ws:call_script_callback_list:recv": 13,
+  "console:call_script_callback_list:info": 1,
+  "ws:call_script_callback_list:sent": 9,
+  "console:run_script_mid_nested_list:log": 2,
+  "console:run_script_mid_nested_list:debug": 2,
+  "ws:run_script_mid_nested_list:recv": 13,
+  "console:run_script_mid_nested_list:info": 1,
+  "ws:run_script_mid_nested_list:sent": 9,
+  "console:bind:log": 2,
+  "console:bind:debug": 2,
+  "ws:bind:recv": 25,
+  "console:bind:info": 1,
+  "ws:bind:sent": 19
+ },
+ "extra": {}
+}
