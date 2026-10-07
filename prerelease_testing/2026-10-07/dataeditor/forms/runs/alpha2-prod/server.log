@@ -1,0 +1,2559 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-macos-pass2/envs/forms-alpha2/lib/python3.12/sit
+e-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='cluster_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3431', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'plugins', 'app_name', 'loglevel',
+'api_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/homebrew/bin/node'), '--version']
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a2 with Python 3.12.14 (PATH: 
+/private/tmp/reflex-prerelease-macos-pass2/envs/forms-alpha2/bin/python)]
+Debug: [Node 26.8.1 (Minimum: 22.22.0) (PATH:/opt/homebrew/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masen/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; 
+root:xnu-12377.161.14~5/RELEASE_ARM64_T6000]
+Debug: Using package installer at: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', '/opt/homebrew/bin/npm']
+Debug: Using package executer at: [['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'], ['/opt/homebrew/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-macos-pass2/envs/forms-alpha2/lib/python3.12/sit
+e-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='cluster_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3431', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'plugins', 'app_name', 'loglevel',
+'api_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a2 with Python 3.12.14 (PATH: 
+/private/tmp/reflex-prerelease-macos-pass2/envs/forms-alpha2/bin/python)]
+Debug: [Node 26.8.1 (Minimum: 22.22.0) (PATH:/opt/homebrew/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masen/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; 
+root:xnu-12377.161.14~5/RELEASE_ARM64_T6000]
+Debug: Using package installer at: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', '/opt/homebrew/bin/npm']
+Debug: Using package executer at: [['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'], ['/opt/homebrew/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+─────────────────────────── Initializing cluster_app ───────────────────────────
+Debug: Creating /Users/masen/Library/Application Support/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /Users/masen/Library/Application Support/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-prerelease-macos-pass2/envs/forms-alpha2/lib/python3.12/site
+-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha2-prod/reflex.lock/pa
+ckage.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 276255463738130249520410057295326159183.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.071 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized cluster_app. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3431
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3431
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3431 is in use.
+Debug: Checking if Fullstack port: 3431 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Fullstack port: 3431 is not in use.
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+CLUSTER_APP reflex 0.10.0a2 /private/tmp/reflex-prerelease-macos-pass2/envs/forms-alpha2/lib/python3.12/site-packages/reflex/__init__.py
+Debug: Registered lifespan task: _setup_event_processor
+CONSTRUCTION_ERROR rc_untyped: TypeError: tick_formatter must be a FunctionVar or JavaScript function expression.
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in SelectState.submit instead. This may lead
+to unexpected behavior but is intentionally ignored for on_submit.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-prerelease-macos-pass2/envs/forms-alpha2/lib/python3.12/sit
+e-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.55s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 46/45 0:00:00
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', '-d', 
+'postcss@8.5.29', '@emotion/react@11.14.0', '@react-router/fs-routes@8.4.0', 
+'vite@8.3.2', '@react-router/dev@8.4.0', 'autoprefixer@10.6.1', 
+'postcss-import@17.0.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [113]
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss@8.5.29
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss-import@17.0.0
+Debug: 
+Debug: 127 packages installed [688.00ms]
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', 'shiki@4.5.0', 
+'mergician@v2.0.2', 'react-helmet@6.1.0', 'universal-cookie@8.1.2', 
+'react-dropzone@17.0.0', '@react-router/node@8.4.0', 'react-plotly.js@4.1.0', 
+'rehype-unwrap-images@1.0.0', 'rehype-raw@7.0.0', 'rehype-katex@7.0.1', 
+'plotly.js@3.7.0', 'react-debounce-input@3.3.0', 'lodash@4.18.1', 
+'socket.io-client@4.8.4', 'moment-duration-format@2.3.2', 'react@19.3.0', 
+'moment@2.31.0', 'lucide-react@1.26.0', 'recharts@3.10.1', 'react-moment@2.0.2',
+'moment-timezone@0.6.5', '@glideapps/glide-data-grid@6.0.3', 'isbot@5.2.2', 
+'react-dom@19.3.0', 'react-router@8.4.0', 
+'@glideapps/glide-data-grid-cells@6.0.3', 'react-markdown@10.1.0', 
+'react-player@3.4.0', 'sonner@2.0.8', '@radix-ui/react-form@0.1.16', 
+'@radix-ui/themes@3.3.0', 'remark-gfm@4.0.1', 'react-syntax-highlighter@16.1.1',
+'remark-math@6.0.0', 'react-error-boundary@6.1.6', 
+'react-responsive-carousel@3.2.23']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [29]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react-dom@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed shiki@4.5.0
+Debug: installed mergician@2.0.2
+Debug: installed react-helmet@6.1.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-dropzone@17.0.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-plotly.js@4.1.0
+Debug: installed rehype-unwrap-images@1.0.0
+Debug: installed rehype-raw@7.0.0
+Debug: installed rehype-katex@7.0.1
+Debug: installed plotly.js@3.7.0
+Debug: installed react-debounce-input@3.3.0
+Debug: installed lodash@4.18.1
+Debug: installed socket.io-client@4.8.4
+Debug: installed moment-duration-format@2.3.2
+Debug: installed react@19.3.0
+Debug: installed moment@2.31.0
+Debug: installed lucide-react@1.26.0
+Debug: installed recharts@3.10.1
+Debug: installed react-moment@2.0.2
+Debug: installed moment-timezone@0.6.5
+Debug: installed @glideapps/glide-data-grid@6.0.3
+Debug: installed isbot@5.2.2
+Debug: installed react-dom@19.3.0
+Debug: installed react-router@8.4.0
+Debug: installed @glideapps/glide-data-grid-cells@6.0.3
+Debug: installed react-markdown@10.1.0
+Debug: installed react-player@3.4.0
+Debug: installed sonner@2.0.8
+Debug: installed @radix-ui/react-form@0.1.16
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed remark-gfm@4.0.1
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: installed remark-math@6.0.0
+Debug: installed react-error-boundary@6.1.6
+Debug: installed react-responsive-carousel@3.2.23
+Debug: 
+Debug: 653 packages installed [2.25s]
+Debug: 
+Debug: Blocked 1 postinstall. Run `bun pm untrusted` for details.
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha2-prod/reflex.lock/bu
+n.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha2-prod/reflex.lock/pa
+ckage.json
+Debug: [timing] Install Frontend Packages: 2.97s
+Debug: [timing] Write to Disk: 0.01s
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 2817 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/assets/KaTeX_Size3-Regular-CTq5MqoE.woff             4.42 kB
+Debug: build/client/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2            4.92 kB
+Debug: build/client/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2            5.20 kB
+Debug: build/client/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2            5.46 kB
+Debug: build/client/assets/KaTeX_Size4-Regular-BF-4gkZK.woff             5.98 kB
+Debug: build/client/assets/KaTeX_Size2-Regular-oD1tc_U0.woff             6.18 kB
+Debug: build/client/assets/KaTeX_Size1-Regular-C195tn64.woff             6.49 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2      6.90 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2         6.91 kB
+Debug: build/client/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf              7.58 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff       7.65 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff          7.71 kB
+Debug: build/client/assets/KaTeX_Script-Regular-D3wIWfF6.woff2           9.64 kB
+Debug: build/client/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2       10.34 kB
+Debug: build/client/assets/KaTeX_Size4-Regular-DWFBv043.ttf             10.36 kB
+Debug: build/client/assets/KaTeX_Script-Regular-D5yQViql.woff           10.58 kB
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2         11.31 kB
+Debug: build/client/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2            11.34 kB
+Debug: build/client/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf             11.50 kB
+Debug: build/client/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2        12.02 kB
+Debug: build/client/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2          12.21 kB
+Debug: build/client/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf             12.22 kB
+Debug: build/client/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff        12.31 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf       12.34 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf          12.36 kB
+Debug: build/client/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff          13.20 kB
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff             13.29 kB
+Debug: build/client/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2      13.56 kB
+Debug: build/client/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff         14.11 kB
+Debug: build/client/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff           14.40 kB
+Debug: build/client/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff       16.02 kB
+Debug: build/client/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2         16.40 kB
+Debug: build/client/assets/KaTeX_Math-Italic-t53AETM-.woff2             16.44 kB
+Debug: build/client/assets/KaTeX_Script-Regular-C5JkGWo-.ttf            16.64 kB
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2         16.78 kB
+Debug: build/client/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2             16.98 kB
+Debug: build/client/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff          18.66 kB
+Debug: build/client/assets/KaTeX_Math-Italic-DA0__PXp.woff              18.74 kB
+Debug: build/client/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff          19.41 kB
+Debug: build/client/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf         19.43 kB
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CB_wures.ttf           19.57 kB
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf              19.58 kB
+Debug: build/client/assets/KaTeX_Main-Italic-BMLOBm91.woff              19.67 kB
+Debug: build/client/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf          22.36 kB
+Debug: build/client/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf            24.50 kB
+Debug: build/client/assets/KaTeX_Main-Bold-Cx986IdX.woff2               25.32 kB
+Debug: build/client/assets/KaTeX_Main-Regular-B22Nviop.woff2            26.27 kB
+Debug: build/client/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf        27.55 kB
+Debug: build/client/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2             28.07 kB
+Debug: build/client/assets/KaTeX_Main-Bold-Jm3AIy58.woff                29.91 kB
+Debug: build/client/assets/KaTeX_Main-Regular-Dr94JaBh.woff             30.77 kB
+Debug: build/client/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf           31.19 kB
+Debug: build/client/assets/KaTeX_Math-Italic-flOr_0UB.ttf               31.30 kB
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf           32.96 kB
+Debug: build/client/assets/KaTeX_AMS-Regular-DMm9YOAa.woff              33.51 kB
+Debug: build/client/assets/KaTeX_Main-Italic-3WenGoN9.ttf               33.58 kB
+Debug: build/client/assets/KaTeX_Main-Bold-waoOVXN0.ttf                 51.33 kB
+Debug: build/client/assets/KaTeX_Main-Regular-ypZvNtVU.ttf              53.58 kB
+Debug: build/client/assets/KaTeX_AMS-Regular-DRggAlZN.ttf               63.63 kB
+Debug: build/client/.vite/manifest.json                                214.06 kB
+│ gzip:    24.92 kB
+Debug: build/client/assets/dataeditor-1OAq1u6B.css                      11.46 kB
+│ gzip:     2.74 kB
+Debug: build/client/assets/_code_-DEcVZfaU.css                          28.83 kB
+│ gzip:     7.92 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css         698.26 kB
+│ gzip:    84.10 kB
+Debug: build/client/assets/emotion-memoize.esm-DsbkLwm0.js               0.11 kB
+│ gzip:     0.11 kB
+Debug: build/client/assets/csv-DeoZPBvg.js                               0.14 kB
+│ gzip:     0.14 kB
+Debug: build/client/assets/hsts-ex6XpwRW.js                              0.20 kB
+│ gzip:     0.18 kB
+Debug: build/client/assets/t4-vb-B7RueooY.js                             0.24 kB
+│ gzip:     0.19 kB
+Debug: build/client/assets/hpkp-CZL65u9s.js                              0.24 kB
+│ gzip:     0.21 kB
+Debug: build/client/assets/arff-DrptKHcu.js                              0.25 kB
+│ gzip:     0.22 kB
+Debug: build/client/assets/t4-cs-jOfVmhqK.js                             0.26 kB
+│ gzip:     0.19 kB
+Debug: build/client/assets/gcode-BXEcl5qa.js                             0.28 kB
+│ gzip:     0.24 kB
+Debug: build/client/assets/brainfuck-CIuPsdNI.js                         0.29 kB
+│ gzip:     0.20 kB
+Debug: build/client/assets/git-BASw3ufu.js                               0.29 kB
+│ gzip:     0.25 kB
+Debug: build/client/assets/reflex-env-C79XfZW-.js                        0.30 kB
+│ gzip:     0.20 kB
+Debug: build/client/assets/jsonp-5kZSLV4l.js                             0.31 kB
+│ gzip:     0.24 kB
+Debug: build/client/assets/cilkc-BYcAZsFd.js                             0.32 kB
+│ gzip:     0.23 kB
+Debug: build/client/assets/nand2tetris-hdl-gURQffqi.js                   0.33 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/bnf-C0XyL7NM.js                               0.36 kB
+│ gzip:     0.24 kB
+Debug: build/client/assets/yang-0H42dP10.js                              0.36 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/cilkcpp-BbPbUNgF.js                           0.37 kB
+│ gzip:     0.24 kB
+Debug: build/client/assets/properties-DKg_-2lZ.js                        0.37 kB
+│ gzip:     0.24 kB
+Debug: build/client/assets/racket-DUkyhs4D.js                            0.39 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/prolog-DM-3k7xl.js                            0.41 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/editorconfig-XJ0zNcNf.js                      0.42 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/xml-doc-6UiyM74g.js                           0.42 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/false-D4D70b-Z.js                             0.43 kB
+│ gzip:     0.32 kB
+Debug: build/client/assets/ebnf-L8SoqwZ8.js                              0.44 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/ignore-C5N49Roq.js                            0.44 kB
+│ gzip:     0.27 kB
+Debug: build/client/assets/php-extras-DkhaYk2-.js                        0.44 kB
+│ gzip:     0.36 kB
+Debug: build/client/assets/tsx-CDH0lqx0.js                               0.47 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/_404_._index-8QJTF3Ia.js                      0.48 kB
+│ gzip:     0.32 kB
+Debug: build/client/assets/tap-1l_zd01v.js                               0.49 kB
+│ gzip:     0.36 kB
+Debug: build/client/assets/go-module-BEI50IkE.js                         0.49 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/matlab-BQyvBoSn.js                            0.49 kB
+│ gzip:     0.37 kB
+Debug: build/client/assets/json5-BkFQEBcI.js                             0.51 kB
+│ gzip:     0.38 kB
+Debug: build/client/assets/json-B02E3pk2.js                              0.51 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/roboconf-Bn3ncXn_.js                          0.51 kB
+│ gzip:     0.32 kB
+Debug: build/client/assets/bbcode-D6OMWDTq.js                            0.52 kB
+│ gzip:     0.28 kB
+Debug: build/client/assets/codeowners-C8r90Shi.js                        0.54 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/hoon-CUqn1Uky.js                              0.55 kB
+│ gzip:     0.37 kB
+Debug: build/client/assets/etlua-BpZBXCLd.js                             0.56 kB
+│ gzip:     0.33 kB
+Debug: build/client/assets/linker-script-XTh_UVOA.js                     0.56 kB
+│ gzip:     0.38 kB
+Debug: build/client/assets/gedcom-C5YFAf6D.js                            0.58 kB
+│ gzip:     0.28 kB
+Debug: build/client/assets/r-CjN4PMnd.js                                 0.58 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/gettext-BaPu7_e8.js                           0.59 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/box-CLcUpjLK.js                               0.59 kB
+│ gzip:     0.39 kB
+Debug: build/client/assets/jexl-DbkIzZKC.js                              0.60 kB
+│ gzip:     0.36 kB
+Debug: build/client/assets/llvm-BML3FRzH.js                              0.61 kB
+│ gzip:     0.42 kB
+Debug: build/client/assets/processing-CElZPZIW.js                        0.61 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/ejs-C1IM4A91.js                               0.64 kB
+│ gzip:     0.37 kB
+Debug: build/client/assets/rego-DgqoaeAa.js                              0.64 kB
+│ gzip:     0.40 kB
+Debug: build/client/assets/character-entities-legacy-Wut6vMuj.js         0.65 kB
+│ gzip:     0.37 kB
+Debug: build/client/assets/lua-Dl7axvik.js                               0.66 kB
+│ gzip:     0.45 kB
+Debug: build/client/assets/diff-CnVbg4kZ.js                              0.66 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/erb-BkXjJY-E.js                               0.66 kB
+│ gzip:     0.38 kB
+Debug: build/client/assets/ini-_H0-Wnh8.js                               0.67 kB
+│ gzip:     0.31 kB
+Debug: build/client/assets/bison-GYDVC45D.js                             0.69 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/warpscript-BcDDSmPD.js                        0.69 kB
+│ gzip:     0.51 kB
+Debug: build/client/assets/birb-CR3Sl1o-.js                              0.69 kB
+│ gzip:     0.48 kB
+Debug: build/client/assets/n4js-CXMzGBd6.js                              0.69 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/t4-templating-xhBpS6bs.js                     0.70 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/smalltalk-lZkBJf_H.js                         0.71 kB
+│ gzip:     0.45 kB
+Debug: build/client/assets/shellsession-DYrWla-w.js                      0.71 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/tsv-sltzmVWM.js                               0.73 kB
+│ gzip:     0.33 kB
+Debug: build/client/assets/badge-C3URXAvx.js                             0.74 kB
+│ gzip:     0.46 kB
+Debug: build/client/assets/classnames-CfLRLWYq.js                        0.75 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/code-C5101BRD.js                              0.75 kB
+│ gzip:     0.48 kB
+Debug: build/client/assets/awk-q4YWlkWR.js                               0.76 kB
+│ gzip:     0.49 kB
+Debug: build/client/assets/idris-DHAJW6jN.js                             0.76 kB
+│ gzip:     0.49 kB
+Debug: build/client/assets/nasm-BYyRWXsA.js                              0.76 kB
+│ gzip:     0.51 kB
+Debug: build/client/assets/link-BUqSzL9D.js                              0.77 kB
+│ gzip:     0.47 kB
+Debug: build/client/assets/solution-file-gE9JyDmu.js                     0.77 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/less-DZtXz-rP.js                              0.78 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/nginx-B19tPRFV.js                             0.79 kB
+│ gzip:     0.43 kB
+Debug: build/client/assets/objectivec-xZKNbhlf.js                        0.79 kB
+│ gzip:     0.52 kB
+Debug: build/client/assets/systemd-D1_5snoB.js                           0.79 kB
+│ gzip:     0.45 kB
+Debug: build/client/assets/agda-uS3zBbvL.js                              0.80 kB
+│ gzip:     0.53 kB
+Debug: build/client/assets/phpdoc-gy-c8ntd.js                            0.81 kB
+│ gzip:     0.50 kB
+Debug: build/client/assets/ichigojam-Di1Ns6X_.js                         0.82 kB
+│ gzip:     0.62 kB
+Debug: build/client/assets/jsstacktrace-DwWA-I7r.js                      0.83 kB
+│ gzip:     0.45 kB
+Debug: build/client/assets/erlang-DFlnBev6.js                            0.83 kB
+│ gzip:     0.50 kB
+Debug: build/client/assets/rip-B4Ycriad.js                               0.83 kB
+│ gzip:     0.46 kB
+Debug: build/client/assets/apl-D1-3En04.js                               0.83 kB
+│ gzip:     0.59 kB
+Debug: build/client/assets/html-derivative-PnFQL2pC.js                   0.84 kB
+│ gzip:     0.45 kB
+Debug: build/client/assets/clike-fRPTR8MY.js                             0.85 kB
+│ gzip:     0.55 kB
+Debug: build/client/assets/openqasm-D58R-1tG.js                          0.86 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/pcaxis-1DvWz8SL.js                            0.86 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/j-DQt7bR4l.js                                 0.88 kB
+│ gzip:     0.56 kB
+Debug: build/client/assets/oz-C41MtKuJ.js                                0.88 kB
+│ gzip:     0.58 kB
+Debug: build/client/assets/autoit-XLsjApYF.js                            0.89 kB
+│ gzip:     0.58 kB
+Debug: build/client/assets/firestore-security-rules-DSEutCgX.js          0.90 kB
+│ gzip:     0.49 kB
+Debug: build/client/assets/dns-zone-file-DIw4tGE3.js                     0.90 kB
+│ gzip:     0.55 kB
+Debug: build/client/assets/parigp-DdjG9MK8.js                            0.91 kB
+│ gzip:     0.55 kB
+Debug: build/client/assets/javadoclike-BBI20IT2.js                       0.91 kB
+│ gzip:     0.53 kB
+Debug: build/client/assets/dataweave-CZbfBwNi.js                         0.92 kB
+│ gzip:     0.56 kB
+Debug: build/client/assets/mel-6r1HqpkP.js                               0.92 kB
+│ gzip:     0.54 kB
+Debug: build/client/assets/reason-DOG5k0bo.js                            0.92 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/supercollider-BpgCy7pe.js                     0.92 kB
+│ gzip:     0.55 kB
+Debug: build/client/assets/wolfram-D2zPSWp1.js                           0.93 kB
+│ gzip:     0.58 kB
+Debug: build/client/assets/asm6502-CRL1W035.js                           0.93 kB
+│ gzip:     0.63 kB
+Debug: build/client/assets/bbj-CGdFgIN6.js                               0.93 kB
+│ gzip:     0.61 kB
+Debug: build/client/assets/monkey-es2e915U.js                            0.94 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/actionscript-Di0_WF3j.js                      0.95 kB
+│ gzip:     0.58 kB
+Debug: build/client/assets/abnf-40Fo_Vtj.js                              0.96 kB
+│ gzip:     0.53 kB
+Debug: build/client/assets/ada-CulH8oqI.js                               0.97 kB
+│ gzip:     0.61 kB
+Debug: build/client/assets/turtle-BajsPQ9K.js                            0.97 kB
+│ gzip:     0.54 kB
+Debug: build/client/assets/git-rebase-CuqI2PUc.js                        0.98 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/gdscript-DQmNHg50.js                          0.98 kB
+│ gzip:     0.63 kB
+Debug: build/client/assets/icon-Dzyu6qEV.js                              0.99 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/qmldir-DCQb3MpD.js                            0.99 kB
+│ gzip:     0.44 kB
+Debug: build/client/assets/twig-Cm6NKYYx.js                              0.99 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/makefile-C7Vj606s.js                          1.00 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/eiffel-C7SR1lph.js                            1.01 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/toml-shH6cMOm.js                              1.02 kB
+│ gzip:     0.54 kB
+Debug: build/client/assets/flow-C5v-g1GE.js                              1.04 kB
+│ gzip:     0.56 kB
+Debug: build/client/assets/dataeditor-CEjDFJyu.js                        1.04 kB
+│ gzip:     0.53 kB
+Debug: build/client/assets/handlebars-D8NnLpv3.js                        1.04 kB
+│ gzip:     0.57 kB
+Debug: build/client/assets/excel-formula-BXhYwmBR.js                     1.06 kB
+│ gzip:     0.56 kB
+Debug: build/client/assets/sparql-B019SYfI.js                            1.06 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/avro-idl-9kRV7bUR.js                          1.06 kB
+│ gzip:     0.58 kB
+Debug: build/client/assets/keyman-CJcnrxrj.js                            1.07 kB
+│ gzip:     0.61 kB
+Debug: build/client/assets/neon-zwwbwoMR.js                              1.07 kB
+│ gzip:     0.52 kB
+Debug: build/client/assets/go-DdqKCDiW.js                                1.07 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/elm-CnpgxzWV.js                               1.07 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/julia-m-tue8zV.js                             1.07 kB
+│ gzip:     0.70 kB
+Debug: build/client/assets/gap-CtLis1Xu.js                               1.08 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/shell-session-8H-pu4k1.js                     1.08 kB
+│ gzip:     0.62 kB
+Debug: build/client/assets/cypher-Bp-c8qFh.js                            1.10 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/latex-euonHM-l.js                             1.10 kB
+│ gzip:     0.52 kB
+Debug: build/client/assets/protobuf-fo4fyLjb.js                          1.10 kB
+│ gzip:     0.59 kB
+Debug: build/client/assets/mizar-B6Z6M1Ed.js                             1.11 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/aql-vMdHpWig.js                               1.11 kB
+│ gzip:     0.70 kB
+Debug: build/client/assets/gn-wwd7v58L.js                                1.11 kB
+│ gzip:     0.59 kB
+Debug: build/client/assets/qore-DgjzkaeG.js                              1.11 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/csv-Dx-8-gkx.js                               1.13 kB
+│ gzip:     0.36 kB
+Debug: build/client/assets/brightscript-z9kOOoxM.js                      1.14 kB
+│ gzip:     0.63 kB
+Debug: build/client/assets/vhdl-CIWn_y0q.js                              1.14 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/bro-rdG3ka22.js                               1.17 kB
+│ gzip:     0.75 kB
+Debug: build/client/assets/solidity-CfloOxlk.js                          1.18 kB
+│ gzip:     0.73 kB
+Debug: build/client/assets/xojo-ByP3cRow.js                              1.18 kB
+│ gzip:     0.79 kB
+Debug: build/client/assets/magma-9lzosfcB.js                             1.19 kB
+│ gzip:     0.68 kB
+Debug: build/client/assets/sass-RhMvkm29.js                              1.19 kB
+│ gzip:     0.53 kB
+Debug: build/client/assets/squirrel-JxSDGXOY.js                          1.20 kB
+│ gzip:     0.68 kB
+Debug: build/client/assets/nim-CjyG8OP2.js                               1.20 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/glsl-Dk4NmT-a.js                              1.20 kB
+│ gzip:     0.63 kB
+Debug: build/client/assets/csp-D_cTitSG.js                               1.21 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/aspnet-CxyQ4lmG.js                            1.22 kB
+│ gzip:     0.61 kB
+Debug: build/client/assets/git-commit-BSykSTBG.js                        1.22 kB
+│ gzip:     0.52 kB
+Debug: build/client/assets/mata-Dc5rk9nS.js                              1.23 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/lolcode-CfMr6tZs.js                           1.23 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/ocaml-CGRmXfd0.js                             1.23 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/jq-BmCy6E6o.js                                1.23 kB
+│ gzip:     0.68 kB
+Debug: build/client/assets/uri-9IuvSt6-.js                               1.25 kB
+│ gzip:     0.57 kB
+Debug: build/client/assets/dot-Cte5oIpV.js                               1.25 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/markup-templating-DibuqcZb.js                 1.26 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/antlr4-XraleXvN.js                            1.26 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/wasm-CL-PBsLm.js                              1.27 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/wiki-CHhKCZC5.js                              1.27 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/django-CesTLwkR.js                            1.27 kB
+│ gzip:     0.66 kB
+Debug: build/client/assets/latte-G6qsBQV8.js                             1.28 kB
+│ gzip:     0.68 kB
+Debug: build/client/assets/rolldown-runtime-C0FnF6B9.js                  1.29 kB
+│ gzip:     0.71 kB
+Debug: build/client/assets/promql-Cyu0bSs-.js                            1.29 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/css-BLUnUyF9.js                               1.30 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/dhall-85OdaVgO.js                             1.30 kB
+│ gzip:     0.73 kB
+Debug: build/client/assets/peoplecode-BgBWHHHM.js                        1.31 kB
+│ gzip:     0.74 kB
+Debug: build/client/assets/fortran-CRREqS6m.js                           1.33 kB
+│ gzip:     0.85 kB
+Debug: build/client/assets/cfscript-DYN3co3R.js                          1.33 kB
+│ gzip:     0.77 kB
+Debug: build/client/assets/nix-BkfMGg2d.js                               1.33 kB
+│ gzip:     0.81 kB
+Debug: build/client/assets/chaiscript-B4SYpffq.js                        1.33 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/armasm-BrfBtT9v.js                            1.34 kB
+│ gzip:     0.84 kB
+Debug: build/client/assets/bicep-BgiflvoR.js                             1.34 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/lilypond-C-fbis9c.js                          1.34 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/tt2-C9zg_zGr.js                               1.35 kB
+│ gzip:     0.76 kB
+Debug: build/client/assets/velocity-DEtNylsn.js                          1.35 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/xsl-Ci-Eh2uW.js                               1.36 kB
+│ gzip:     0.49 kB
+Debug: build/client/assets/regex-Dv2vm_uO.js                             1.36 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/preload-helper-DjzSQ1t3.js                    1.38 kB
+│ gzip:     0.75 kB
+Debug: build/client/assets/iecst-Dp4yaA1l.js                             1.38 kB
+│ gzip:     0.91 kB
+Debug: build/client/assets/pascaligo-DpmXB4fk.js                         1.39 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/bqn-CAmdIE_e.js                               1.39 kB
+│ gzip:     0.77 kB
+Debug: build/client/assets/wren-ZVk8-izA.js                              1.41 kB
+│ gzip:     0.71 kB
+Debug: build/client/assets/createLucideIcon-B2-_YjFe.js                  1.41 kB
+│ gzip:     0.79 kB
+Debug: build/client/assets/scss-BSDGjs1D.js                              1.42 kB
+│ gzip:     0.70 kB
+Debug: build/client/assets/crystal-DEFqqbPf.js                           1.42 kB
+│ gzip:     0.82 kB
+Debug: build/client/assets/smali-DHR2StmD.js                             1.42 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/typescript-DH3BS7WE.js                        1.42 kB
+│ gzip:     0.66 kB
+Debug: build/client/assets/hcl-BVMyo2BJ.js                               1.45 kB
+│ gzip:     0.64 kB
+Debug: build/client/assets/scala-BPAZ7eFr.js                             1.45 kB
+│ gzip:     0.79 kB
+Debug: build/client/assets/typoscript-L2xWg453.js                        1.46 kB
+│ gzip:     0.77 kB
+Debug: build/client/assets/sparql-D_iOobhT.js                            1.47 kB
+│ gzip:     0.81 kB
+Debug: build/client/assets/gradle-BI7YSb4U.js                            1.49 kB
+│ gzip:     0.81 kB
+Debug: build/client/assets/odin-Byl7CSB2.js                              1.51 kB
+│ gzip:     0.83 kB
+Debug: build/client/assets/ini-B5eOa1yu.js                               1.51 kB
+│ gzip:     0.49 kB
+Debug: build/client/assets/Preview-BTNlf3EO.js                           1.54 kB
+│ gzip:     0.83 kB
+Debug: build/client/assets/parser-D0IaXfaJ.js                            1.55 kB
+│ gzip:     0.75 kB
+Debug: build/client/assets/coffeescript-BLCrGhZ-.js                      1.56 kB
+│ gzip:     0.74 kB
+Debug: build/client/assets/qml-B1wwhuwc.js                               1.56 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/robotframework-BZw9gX0w.js                    1.57 kB
+│ gzip:     0.65 kB
+Debug: build/client/assets/tcl-CEa2RNd5.js                               1.57 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/stan-Byqu5KZz.js                              1.57 kB
+│ gzip:     0.88 kB
+Debug: build/client/assets/jolie-hEXnyRVS.js                             1.58 kB
+│ gzip:     0.88 kB
+Debug: build/client/assets/text-field-DkK1g-Zc.js                        1.58 kB
+│ gzip:     0.78 kB
+Debug: build/client/assets/sml-CGCKZ7_9.js                               1.59 kB
+│ gzip:     0.82 kB
+Debug: build/client/assets/kusto-De8KKPxY.js                             1.60 kB
+│ gzip:     0.95 kB
+Debug: build/client/assets/cue-nEhSTQ5F.js                               1.61 kB
+│ gzip:     0.79 kB
+Debug: build/client/assets/javastacktrace-BjbuPutP.js                    1.61 kB
+│ gzip:     0.66 kB
+Debug: build/client/assets/javadoc-BMcciXtq.js                           1.62 kB
+│ gzip:     0.74 kB
+Debug: build/client/assets/docker-C_eDFnUW.js                            1.62 kB
+│ gzip:     0.76 kB
+Debug: build/client/assets/rescript-Cla-WDKB.js                          1.62 kB
+│ gzip:     0.85 kB
+Debug: build/client/assets/cooklang-CudJKlCU.js                          1.64 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/jsdoc-BFmBExUm.js                             1.64 kB
+│ gzip:     0.78 kB
+Debug: build/client/assets/maxscript-C-5mgloj.js                         1.65 kB
+│ gzip:     0.90 kB
+Debug: build/client/assets/fortran-fixed-form-DEKoE2YW.js                1.66 kB
+│ gzip:     0.68 kB
+Debug: build/client/assets/tremor-C12yT62p.js                            1.66 kB
+│ gzip:     0.88 kB
+Debug: build/client/assets/haxe-BgsZEpmn.js                              1.67 kB
+│ gzip:     0.86 kB
+Debug: build/client/assets/kumir-CtNudeVI.js                             1.69 kB
+│ gzip:     0.84 kB
+Debug: build/client/assets/dart-CPTJlmW-.js                              1.70 kB
+│ gzip:     0.90 kB
+Debug: build/client/assets/soy-BAg1LASu.js                               1.72 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/groovy-D84bb_Pu.js                            1.73 kB
+│ gzip:     0.96 kB
+Debug: build/client/assets/docker-IyjqRm3v.js                            1.73 kB
+│ gzip:     0.59 kB
+Debug: build/client/assets/batch-ExsvRcTe.js                             1.74 kB
+│ gzip:     0.70 kB
+Debug: build/client/assets/dotenv-CuH5my32.js                            1.74 kB
+│ gzip:     0.60 kB
+Debug: build/client/assets/bsl-CD2CmxFZ.js                               1.74 kB
+│ gzip:     0.81 kB
+Debug: build/client/assets/hlsl-ChZeZ3AP.js                              1.76 kB
+│ gzip:     0.96 kB
+Debug: build/client/assets/splunk-spl-BkLEGjpI.js                        1.77 kB
+│ gzip:     0.95 kB
+Debug: build/client/assets/q-Bk86XahR.js                                 1.77 kB
+│ gzip:     1.05 kB
+Debug: build/client/assets/io-6xqbEpcP.js                                1.77 kB
+│ gzip:     1.10 kB
+Debug: build/client/assets/asmatmel-BI-S8lDS.js                          1.80 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/desktop-Dlh5hvp9.js                           1.82 kB
+│ gzip:     0.75 kB
+Debug: build/client/assets/stata-Cuoz51Oa.js                             1.83 kB
+│ gzip:     0.81 kB
+Debug: build/client/assets/vbnet-DnW-9VLb.js                             1.84 kB
+│ gzip:     1.11 kB
+Debug: build/client/assets/applescript-CMxJz5BX.js                       1.84 kB
+│ gzip:     1.01 kB
+Debug: build/client/assets/naniscript-00Efet83.js                        1.85 kB
+│ gzip:     0.82 kB
+Debug: build/client/assets/n1ql-D9ZVNH8B.js                              1.86 kB
+│ gzip:     1.15 kB
+Debug: build/client/assets/unrealscript-B-NggFno.js                      1.86 kB
+│ gzip:     0.98 kB
+Debug: build/client/assets/hxml-Dcm88srW.js                              1.89 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/elixir-DLp7SwIK.js                            1.90 kB
+│ gzip:     0.91 kB
+Debug: build/client/assets/ftl-7vp2t82a.js                               1.94 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/http-D4oga4du.js                              1.94 kB
+│ gzip:     0.91 kB
+Debug: build/client/assets/concurnas-BBlql4Uj.js                         1.95 kB
+│ gzip:     0.99 kB
+Debug: build/client/assets/visual-basic-BwH6S-m8.js                      1.96 kB
+│ gzip:     1.13 kB
+Debug: build/client/assets/basic-s8kVRwOW.js                             1.97 kB
+│ gzip:     1.25 kB
+Debug: build/client/assets/pascal-DzYtueWJ.js                            1.97 kB
+│ gzip:     1.03 kB
+Debug: build/client/assets/v-CdiUaXS4.js                                 1.99 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/powerquery-CdxcVCeV.js                        2.02 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/livescript-Bc5OVJRm.js                        2.02 kB
+│ gzip:     0.98 kB
+Debug: build/client/assets/xeora-GPpeUQM_.js                             2.02 kB
+│ gzip:     0.66 kB
+Debug: build/client/assets/nevod-CzE30xVf.js                             2.03 kB
+│ gzip:     0.79 kB
+Debug: build/client/assets/c-CRrNz9ww.js                                 2.04 kB
+│ gzip:     1.08 kB
+Debug: build/client/assets/yaml-n53w1Kfi.js                              2.04 kB
+│ gzip:     0.91 kB
+Debug: build/client/assets/kotlin-CnfHkq1r.js                            2.05 kB
+│ gzip:     1.03 kB
+Debug: build/client/assets/dist-7W5OdZjH.js                              2.05 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/vala-Y0JWgWko.js                              2.10 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/smarty-jCbhLjua.js                            2.10 kB
+│ gzip:     0.97 kB
+Debug: build/client/assets/moonscript-Diqag_n2.js                        2.11 kB
+│ gzip:     1.13 kB
+Debug: build/client/assets/qsharp-CN35MVTr.js                            2.11 kB
+│ gzip:     1.13 kB
+Debug: build/client/assets/icu-message-format-Dx59rolq.js                2.13 kB
+│ gzip:     0.87 kB
+Debug: build/client/assets/erb-Dgt8dYs0.js                               2.13 kB
+│ gzip:     0.62 kB
+Debug: build/client/assets/mermaid-Cke4m_Cz.js                           2.14 kB
+│ gzip:     0.96 kB
+Debug: build/client/assets/wenyan-C8pVoKbM.js                            2.15 kB
+│ gzip:     1.08 kB
+Debug: build/client/assets/verilog-Ccu_Xk-I.js                           2.16 kB
+│ gzip:     1.14 kB
+Debug: build/client/assets/python-PcNiIBxw.js                            2.16 kB
+│ gzip:     1.14 kB
+Debug: build/client/assets/cil-B8_gfQ5d.js                               2.17 kB
+│ gzip:     1.17 kB
+Debug: build/client/assets/web-idl-L-ew2qx6.js                           2.19 kB
+│ gzip:     1.00 kB
+Debug: build/client/assets/liquid-DUPQG2s1.js                            2.21 kB
+│ gzip:     1.15 kB
+Debug: build/client/assets/powershell-CO2koXZw.js                        2.21 kB
+│ gzip:     1.31 kB
+Debug: build/client/assets/fsharp-1JtOXZmr.js                            2.21 kB
+│ gzip:     1.20 kB
+Debug: build/client/assets/jssm-DXw9l8Rf.js                              2.23 kB
+│ gzip:     0.61 kB
+Debug: build/client/assets/apex-C-ebYwP5.js                              2.24 kB
+│ gzip:     1.23 kB
+Debug: build/client/assets/perl-Ci2iz3Xf.js                              2.30 kB
+│ gzip:     1.06 kB
+Debug: build/client/assets/edge-ElHk8bR_.js                              2.30 kB
+│ gzip:     0.67 kB
+Debug: build/client/assets/_select-matrix_._index-BtwgJJ2a.js            2.32 kB
+│ gzip:     0.95 kB
+Debug: build/client/assets/reg-CRGYupPL.js                               2.33 kB
+│ gzip:     0.69 kB
+Debug: build/client/assets/d-dZkGcqeR.js                                 2.34 kB
+│ gzip:     1.35 kB
+Debug: build/client/assets/plant-uml-Dr2Y4irI.js                         2.34 kB
+│ gzip:     1.20 kB
+Debug: build/client/assets/haml-Btsvf1xP.js                              2.34 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/zig-JX-h6b9i.js                               2.38 kB
+│ gzip:     1.24 kB
+Debug: build/client/assets/purescript-NMXprYIU.js                        2.41 kB
+│ gzip:     1.29 kB
+Debug: build/client/assets/uorazor-Cd-VrsLz.js                           2.45 kB
+│ gzip:     1.25 kB
+Debug: build/client/assets/rust-CYWeblTv.js                              2.54 kB
+│ gzip:     1.22 kB
+Debug: build/client/assets/diff-woXpYk--.js                              2.56 kB
+│ gzip:     0.68 kB
+Debug: build/client/assets/log-CZXGB4zT.js                               2.56 kB
+│ gzip:     1.20 kB
+Debug: build/client/assets/gleam-CSRkHgEL.js                             2.57 kB
+│ gzip:     0.81 kB
+Debug: build/client/assets/purebasic-CVw9bj1Z.js                         2.57 kB
+│ gzip:     1.22 kB
+Debug: build/client/assets/jsx-Dil3HlnV.js                               2.58 kB
+│ gzip:     1.08 kB
+Debug: build/client/assets/graphql-yR0KZn6_.js                           2.59 kB
+│ gzip:     1.19 kB
+Debug: build/client/assets/js-extras-CCaD0dqp.js                         2.59 kB
+│ gzip:     1.10 kB
+Debug: build/client/assets/puppet-D28JRZD1.js                            2.60 kB
+│ gzip:     1.13 kB
+Debug: build/client/assets/hy-CZbG8q4J.js                                2.64 kB
+│ gzip:     1.17 kB
+Debug: build/client/assets/lisp-Im1BsEoa.js                              2.64 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/al-DCOMDDak.js                                2.68 kB
+│ gzip:     1.34 kB
+Debug: build/client/assets/cpp-CyGsBBnP.js                               2.71 kB
+│ gzip:     1.29 kB
+Debug: build/client/assets/js-templates-CeGR5VtX.js                      2.73 kB
+│ gzip:     1.27 kB
+Debug: build/client/assets/cshtml-C16HFrCD.js                            2.81 kB
+│ gzip:     1.29 kB
+Debug: build/client/assets/openscad-BUDT5pXO.js                          2.81 kB
+│ gzip:     1.00 kB
+Debug: build/client/assets/plsql-Gdc5k5FM.js                             2.84 kB
+│ gzip:     1.59 kB
+Debug: build/client/assets/log-BNLmms1o.js                               2.84 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/java-CpSgypM6.js                              2.88 kB
+│ gzip:     1.31 kB
+Debug: build/client/assets/json-DYyUca0x.js                              2.89 kB
+│ gzip:     0.82 kB
+Debug: build/client/assets/cairo-DLTphjLi.js                             2.93 kB
+│ gzip:     0.80 kB
+Debug: build/client/assets/markup-BS8zte1i.js                            2.94 kB
+│ gzip:     1.19 kB
+Debug: build/client/assets/berry-DKpUyyne.js                             2.99 kB
+│ gzip:     0.80 kB
+Debug: build/client/assets/jsonl-CmCQp5Yx.js                             3.00 kB
+│ gzip:     0.78 kB
+Debug: build/client/assets/swift-7bJ1Hzvg.js                             3.00 kB
+│ gzip:     1.35 kB
+Debug: build/client/assets/pug-DnLB3Az3.js                               3.00 kB
+│ gzip:     1.10 kB
+Debug: build/client/assets/lib-DyCdXPVJ.js                               3.03 kB
+│ gzip:     1.45 kB
+Debug: build/client/assets/_index--H7ZCj_z.js                            3.03 kB
+│ gzip:     0.91 kB
+Debug: build/client/assets/haskell-fbSFjs_d.js                           3.03 kB
+│ gzip:     1.60 kB
+Debug: build/client/assets/toConsumableArray-DtGuMjsd.js                 3.05 kB
+│ gzip:     1.28 kB
+Debug: build/client/assets/mongodb-Cdk4-KN7.js                           3.08 kB
+│ gzip:     1.62 kB
+Debug: build/client/assets/coq-CK0VuwP0.js                               3.10 kB
+│ gzip:     1.68 kB
+Debug: build/client/assets/jsonc-CYpm1nAK.js                             3.10 kB
+│ gzip:     0.78 kB
+Debug: build/client/assets/clojure-Cal39ug-.js                           3.11 kB
+│ gzip:     1.55 kB
+Debug: build/client/assets/logo-Cluzi2Zq.js                              3.12 kB
+│ gzip:     1.46 kB
+Debug: build/client/assets/arturo-CXbgK3GJ.js                            3.20 kB
+│ gzip:     1.66 kB
+Debug: build/client/assets/_de-foreach_._index-CqEy24fj.js               3.23 kB
+│ gzip:     0.96 kB
+Debug: build/client/assets/po-BiJDBrnU.js                                3.23 kB
+│ gzip:     0.90 kB
+Debug: build/client/assets/psl-C4ZUpXFx.js                               3.24 kB
+│ gzip:     1.70 kB
+Debug: build/client/assets/json5-BR5RXkoi.js                             3.24 kB
+│ gzip:     0.82 kB
+Debug: build/client/assets/mipsasm-BMqwQI7S.js                           3.25 kB
+│ gzip:     1.17 kB
+Debug: build/client/assets/tasl-DMoTqEGO.js                              3.28 kB
+│ gzip:     0.84 kB
+Debug: build/client/assets/_memo-names_._index-DMaaW113.js               3.28 kB
+│ gzip:     1.02 kB
+Debug: build/client/assets/rbs-C0MpOrj4.js                               3.30 kB
+│ gzip:     0.72 kB
+Debug: build/client/assets/sql-DL4klaVE.js                               3.32 kB
+│ gzip:     1.91 kB
+Debug: build/client/assets/genie-CV2tkWYe.js                             3.34 kB
+│ gzip:     1.20 kB
+Debug: build/client/assets/rel-BtDbiS_P.js                               3.36 kB
+│ gzip:     1.10 kB
+Debug: build/client/assets/vala-zf12oZj6.js                              3.36 kB
+│ gzip:     1.18 kB
+Debug: build/client/assets/css-extras-BUKTif8p.js                        3.37 kB
+│ gzip:     1.57 kB
+Debug: build/client/assets/inform7-hBjdaCQN.js                           3.40 kB
+│ gzip:     1.54 kB
+Debug: build/client/assets/splunk-BC2Px7Mm.js                            3.42 kB
+│ gzip:     1.51 kB
+Debug: build/client/assets/_de-big_._index-BsYQkNBL.js                   3.46 kB
+│ gzip:     1.07 kB
+Debug: build/client/assets/dax-CKB8QRdy.js                               3.49 kB
+│ gzip:     1.70 kB
+Debug: build/client/assets/pure-BJm2LNYT.js                              3.51 kB
+│ gzip:     1.74 kB
+Debug: build/client/assets/wgsl-DESs6Ww8.js                              3.51 kB
+│ gzip:     1.54 kB
+Debug: build/client/assets/hurl-Cb5XgwOM.js                              3.51 kB
+│ gzip:     1.09 kB
+Debug: build/client/assets/_download_._index-IDwvOBvm.js                 3.52 kB
+│ gzip:     1.06 kB
+Debug: build/client/assets/textile-B81OdZgL.js                           3.53 kB
+│ gzip:     1.24 kB
+Debug: build/client/assets/fluent-C03EYrpw.js                            3.60 kB
+│ gzip:     0.89 kB
+Debug: build/client/assets/data-grid-overlay-editor-Cw3irN8f.js          3.60 kB
+│ gzip:     1.78 kB
+Debug: build/client/assets/rest-Jn9jSZ2s.js                              3.60 kB
+│ gzip:     1.12 kB
+Debug: build/client/assets/ssh-config-BgfXC-Er.js                        3.61 kB
+│ gzip:     1.59 kB
+Debug: build/client/assets/jsonnet-CJTPZ8u_.js                           3.61 kB
+│ gzip:     1.03 kB
+Debug: build/client/assets/kdl-CsD5j6eV.js                               3.62 kB
+│ gzip:     1.03 kB
+Debug: build/client/assets/narrat-_X_XdTYD.js                            3.66 kB
+│ gzip:     1.09 kB
+Debug: build/client/assets/ruby-BLixtv7a.js                              3.68 kB
+│ gzip:     1.57 kB
+Debug: build/client/assets/turtle-ByJddavk.js                            3.69 kB
+│ gzip:     0.96 kB
+Debug: build/client/assets/glsl-C3yOxx6A.js                              3.69 kB
+│ gzip:     1.46 kB
+Debug: build/client/assets/stylus-ChgJAoS8.js                            3.80 kB
+│ gzip:     1.67 kB
+Debug: build/client/assets/_de-filter_._index-DwM49NrG.js                3.81 kB
+│ gzip:     1.17 kB
+Debug: build/client/assets/nsis-BAiVBhPp.js                              3.83 kB
+│ gzip:     2.12 kB
+Debug: build/client/assets/react-dom-CvX0TCLz.js                         3.89 kB
+│ gzip:     1.41 kB
+Debug: build/client/assets/zenscript-BnlCZFoB.js                         3.90 kB
+│ gzip:     1.28 kB
+Debug: build/client/assets/ron-VUp2lXgN.js                               3.90 kB
+│ gzip:     0.97 kB
+Debug: build/client/assets/_plotly_._index-BoZQwnWA.js                   3.91 kB
+│ gzip:     1.10 kB
+Debug: build/client/assets/gn-CAXYAgV-.js                                4.01 kB
+│ gzip:     1.48 kB
+Debug: build/client/assets/arduino-DKanMJeL.js                           4.03 kB
+│ gzip:     1.99 kB
+Debug: build/client/assets/scheme-DEQeAjll.js                            4.03 kB
+│ gzip:     1.68 kB
+Debug: build/client/assets/xquery-BLvdQa--.js                            4.03 kB
+│ gzip:     1.75 kB
+Debug: build/client/assets/pascal-4ZHwLPI5.js                            4.14 kB
+│ gzip:     1.67 kB
+Debug: build/client/assets/_radix_._index-nnIQdavq.js                    4.32 kB
+│ gzip:     1.24 kB
+Debug: build/client/assets/renpy-DroUj61n.js                             4.35 kB
+│ gzip:     2.03 kB
+Debug: build/client/assets/http-Dy2ncae7.js                              4.41 kB
+│ gzip:     1.06 kB
+Debug: build/client/assets/tcl-CZd0xW_V.js                               4.42 kB
+│ gzip:     1.50 kB
+Debug: build/client/assets/_recharts_._index-D9ntLfpk.js                 4.42 kB
+│ gzip:     1.35 kB
+Debug: build/client/assets/_de-multi_._index-zRc70ZC_.js                 4.48 kB
+│ gzip:     1.30 kB
+Debug: build/client/assets/nextflow-CSgcYZcx.js                          4.50 kB
+│ gzip:     1.16 kB
+Debug: build/client/assets/rosmsg-CAekHB0j.js                            4.51 kB
+│ gzip:     1.05 kB
+Debug: build/client/assets/asciidoc-DDXwstOS.js                          4.51 kB
+│ gzip:     1.67 kB
+Debug: build/client/assets/metafont-CgGUclsg.js                          4.57 kB
+│ gzip:     2.08 kB
+Debug: build/client/assets/_match_._index-DNSDtmDb.js                    4.59 kB
+│ gzip:     1.34 kB
+Debug: build/client/assets/polar-C7UOKdEL.js                             4.66 kB
+│ gzip:     1.12 kB
+Debug: build/client/assets/sdbl-bTVj8UrX.js                              4.69 kB
+│ gzip:     2.00 kB
+Debug: build/client/assets/fennel-DQxkIbk2.js                            4.76 kB
+│ gzip:     1.53 kB
+Debug: build/client/assets/javascript-Dr8kdvK2.js                        4.76 kB
+│ gzip:     1.77 kB
+Debug: build/client/assets/bibtex-Ci_nEsc7.js                            4.78 kB
+│ gzip:     0.83 kB
+Debug: build/client/assets/llvm-DqHOMS-s.js                              5.03 kB
+│ gzip:     2.01 kB
+Debug: build/client/assets/markdown-CPItr4R5.js                          5.09 kB
+│ gzip:     1.96 kB
+Debug: build/client/assets/wgsl-BsKzXJz4.js                              5.13 kB
+│ gzip:     1.38 kB
+Debug: build/client/assets/avisynth-CHXSu3lG.js                          5.15 kB
+│ gzip:     2.71 kB
+Debug: build/client/assets/cobol-DOV3u-Ty.js                             5.15 kB
+│ gzip:     2.46 kB
+Debug: build/client/assets/gdresource-xMC7jr7x.js                        5.28 kB
+│ gzip:     1.33 kB
+Debug: build/client/assets/zig-CMLA9XwU.js                               5.33 kB
+│ gzip:     1.55 kB
+Debug: build/client/assets/qml-DaaPxMrD.js                               5.33 kB
+│ gzip:     1.38 kB
+Debug: build/client/assets/react-CPkOzfQJ.js                             5.34 kB
+│ gzip:     2.52 kB
+Debug: build/client/assets/dax-BkyTk9wS.js                               5.35 kB
+│ gzip:     2.21 kB
+Debug: build/client/assets/bicep-CUHmPFLl.js                             5.37 kB
+│ gzip:     1.14 kB
+Debug: build/client/assets/xml-BgwO9svv.js                               5.44 kB
+│ gzip:     1.25 kB
+Debug: build/client/assets/awk-BWXHIvNe.js                               5.45 kB
+│ gzip:     1.37 kB
+Debug: build/client/assets/jinja-TI5biEzb.js                             5.62 kB
+│ gzip:     1.36 kB
+Debug: build/client/assets/dist-CXkRkGNF.js                              5.72 kB
+│ gzip:     2.88 kB
+Debug: build/client/assets/dist-DVj5saJy.js                              5.72 kB
+│ gzip:     2.38 kB
+Debug: build/client/assets/keepalived-fDo2-RHG.js                        5.74 kB
+│ gzip:     2.27 kB
+Debug: build/client/assets/lean-CewbzKMR.js                              5.77 kB
+│ gzip:     1.91 kB
+Debug: build/client/assets/_de_._index-DzvIbWNY.js                       5.81 kB
+│ gzip:     1.91 kB
+Debug: build/client/assets/progress-DFanRraN.js                          5.88 kB
+│ gzip:     2.56 kB
+Debug: build/client/assets/powerquery-DNMTfnFr.js                        5.89 kB
+│ gzip:     1.51 kB
+Debug: build/client/assets/shaderlab-TOUzSsQk.js                         5.91 kB
+│ gzip:     2.08 kB
+Debug: build/client/assets/dist-EY_fNozK.js                              5.94 kB
+│ gzip:     2.32 kB
+Debug: build/client/assets/cypher-ClKdZ_lG.js                            5.94 kB
+│ gzip:     1.71 kB
+Debug: build/client/assets/coq-CGaSfhwR.js                               6.04 kB
+│ gzip:     1.95 kB
+Debug: build/client/assets/vb-DOwzaHZ0.js                                6.06 kB
+│ gzip:     2.32 kB
+Debug: build/client/assets/moonbit-D9W784E_.js                           6.07 kB
+│ gzip:     1.70 kB
+Debug: build/client/assets/bash-4sOSYtlG.js                              6.22 kB
+│ gzip:     3.09 kB
+Debug: build/client/assets/min-dark-BSWPekZh.js                          6.28 kB
+│ gzip:     1.70 kB
+Debug: build/client/assets/gdshader-CBce3t8t.js                          6.31 kB
+│ gzip:     1.72 kB
+Debug: build/client/assets/ara-4CJ0cIlV.js                               6.35 kB
+│ gzip:     1.80 kB
+Debug: build/client/assets/verilog-B2gwz-sJ.js                           6.40 kB
+│ gzip:     1.92 kB
+Debug: build/client/assets/clojure-DqKBuwfJ.js                           6.40 kB
+│ gzip:     1.41 kB
+Debug: build/client/assets/postcss-BXeXVLqQ.js                           6.41 kB
+│ gzip:     1.90 kB
+Debug: build/client/assets/toml-CcmNWLt0.js                              6.41 kB
+│ gzip:     1.28 kB
+Debug: build/client/assets/php-CkjG6d3p.js                               6.45 kB
+│ gzip:     2.08 kB
+Debug: build/client/assets/csharp-ukjrnEW1.js                            6.49 kB
+│ gzip:     2.57 kB
+Debug: build/client/assets/react-JtwtcN1u.js                             6.50 kB
+│ gzip:     2.73 kB
+Debug: build/client/assets/proto-DB4EqR-F.js                             6.54 kB
+│ gzip:     1.41 kB
+Debug: build/client/assets/chapel-BG8u2Rih.js                            6.62 kB
+│ gzip:     1.85 kB
+Debug: build/client/assets/red-CYlAq2b0.js                               6.73 kB
+│ gzip:     1.70 kB
+Debug: build/client/assets/talonscript-CohzipZa.js                       6.75 kB
+│ gzip:     1.48 kB
+Debug: build/client/assets/r-CrJekUTE.js                                 6.80 kB
+│ gzip:     1.89 kB
+Debug: build/client/assets/riscv-Ckw8ddFX.js                             6.90 kB
+│ gzip:     1.97 kB
+Debug: build/client/assets/soy-B7Bf2FPI.js                               6.92 kB
+│ gzip:     1.62 kB
+Debug: build/client/assets/solarized-light-DFPxpIYQ.js                   6.93 kB
+│ gzip:     1.79 kB
+Debug: build/client/assets/min-light-DDpmG2fV.js                         6.96 kB
+│ gzip:     1.88 kB
+Debug: build/client/assets/react-Bd_pYmJ2.js                             6.96 kB
+│ gzip:     2.97 kB
+Debug: build/client/assets/scheme-DQCgrYNe.js                            7.16 kB
+│ gzip:     2.04 kB
+Debug: build/client/assets/hlsl-Cvrh5tZx.js                              7.25 kB
+│ gzip:     2.18 kB
+Debug: build/client/assets/solarized-dark-b97czJOk.js                    7.39 kB
+│ gzip:     1.89 kB
+Debug: build/client/assets/react-NYKeuNDx.js                             7.40 kB
+│ gzip:     2.93 kB
+Debug: build/client/assets/qss-Fe1Jh2GI.js                               7.46 kB
+│ gzip:     2.57 kB
+Debug: build/client/assets/sas-BI7KPfej.js                               7.54 kB
+│ gzip:     3.10 kB
+Debug: build/client/assets/prisma-DMgNhnYS.js                            7.73 kB
+│ gzip:     1.48 kB
+Debug: build/client/assets/p_match-D9tGALX-.js                           7.78 kB
+│ gzip:     1.26 kB
+Debug: build/client/assets/systemd-BxMlprV5.js                           7.86 kB
+│ gzip:     2.54 kB
+Debug: build/client/assets/react-DiVRNtpo.js                             7.87 kB
+│ gzip:     3.00 kB
+Debug: build/client/assets/abap-C1aVpbp_.js                              7.98 kB
+│ gzip:     3.61 kB
+Debug: build/client/assets/regexp-723CALth.js                            8.05 kB
+│ gzip:     1.47 kB
+Debug: build/client/assets/monokai-BscAjiQZ.js                           8.24 kB
+│ gzip:     1.97 kB
+Debug: build/client/assets/apacheconf-D72xpb2t.js                        8.25 kB
+│ gzip:     3.59 kB
+Debug: build/client/assets/gml-CHoFsbXW.js                               8.29 kB
+│ gzip:     3.82 kB
+Debug: build/client/assets/haml-CDrYgwc6.js                              8.33 kB
+│ gzip:     1.85 kB
+Debug: build/client/assets/vue-html-d0F-gcUX.js                          8.47 kB
+│ gzip:     1.68 kB
+Debug: build/client/assets/plsql-DGHpHOYJ.js                             8.50 kB
+│ gzip:     2.99 kB
+Debug: build/client/assets/core-r5e0Utiy.js                              8.50 kB
+│ gzip:     3.74 kB
+Debug: build/client/assets/dart-CHZY9Xhz.js                              8.60 kB
+│ gzip:     1.99 kB
+Debug: build/client/assets/react-bmKb9Sj9.js                             8.65 kB
+│ gzip:     3.48 kB
+Debug: build/client/assets/horizon-CE9ld1lL.js                           8.77 kB
+│ gzip:     1.94 kB
+Debug: build/client/assets/kotlin-DhhofPvG.js                            8.77 kB
+│ gzip:     2.12 kB
+Debug: build/client/assets/horizon-bright-DSNQnXHK.js                    8.78 kB
+│ gzip:     1.96 kB
+Debug: build/client/assets/autohotkey-NKYlqafD.js                        8.82 kB
+│ gzip:     4.07 kB
+Debug: build/client/assets/make-Dixweg8N.js                              8.95 kB
+│ gzip:     1.76 kB
+Debug: build/client/assets/andromeeda-vGVdxbeo.js                        9.01 kB
+│ gzip:     2.35 kB
+Debug: build/client/assets/factor-CTBqOjKA.js                            9.03 kB
+│ gzip:     3.52 kB
+Debug: build/client/assets/sas-BMQYX8JZ.js                               9.06 kB
+│ gzip:     3.82 kB
+Debug: build/client/assets/dark-plus-Cs2F2srj.js                         9.09 kB
+│ gzip:     2.10 kB
+Debug: build/client/assets/slack-dark-DnToyrRv.js                        9.11 kB
+│ gzip:     1.96 kB
+Debug: build/client/assets/smithy-Dgaz7aur.js                            9.12 kB
+│ gzip:     1.51 kB
+Debug: build/client/assets/sass-DXrisJhu.js                              9.28 kB
+│ gzip:     2.48 kB
+Debug: build/client/assets/plastic-DQwYfKfQ.js                           9.29 kB
+│ gzip:     1.96 kB
+Debug: build/client/assets/slack-ochin-B2OO5cIa.js                       9.42 kB
+│ gzip:     2.08 kB
+Debug: build/client/assets/react-HCf2_gEe.js                             9.50 kB
+│ gzip:     3.66 kB
+Debug: build/client/assets/jison-C7uQeUlv.js                             9.69 kB
+│ gzip:     1.86 kB
+Debug: build/client/assets/tex-nulmLfzO.js                               9.73 kB
+│ gzip:     3.10 kB
+Debug: build/client/assets/cmake-Bj61d0ZC.js                             9.84 kB
+│ gzip:     3.37 kB
+Debug: build/client/assets/gherkin-ClajUNSI.js                           9.89 kB
+│ gzip:     5.40 kB
+Debug: build/client/assets/light-plus-DVQuIRkW.js                        9.93 kB
+│ gzip:     2.27 kB
+Debug: build/client/assets/opencl-pWwQV-e0.js                           10.02 kB
+│ gzip:     4.29 kB
+Debug: build/client/assets/hcl-Dh228itO.js                              10.04 kB
+│ gzip:     1.93 kB
+Debug: build/client/assets/_new-components_._index-HnGXAyfz.js          10.05 kB
+│ gzip:     3.58 kB
+Debug: build/client/assets/rst-CXCpXMDR.js                              10.31 kB
+│ gzip:     2.24 kB
+Debug: build/client/assets/pkl-ot-7Btpt.js                              10.36 kB
+│ gzip:     1.37 kB
+Debug: build/client/assets/dream-maker-DW3nJb8Q.js                      10.46 kB
+│ gzip:     2.25 kB
+Debug: build/client/assets/raku-B3gFvitq.js                             10.46 kB
+│ gzip:     2.94 kB
+Debug: build/client/assets/nextflow-groovy-D7IRt6Pp.js                  10.52 kB
+│ gzip:     2.16 kB
+Debug: build/client/assets/cmake-CjNjy5sG.js                            10.54 kB
+│ gzip:     4.15 kB
+Debug: build/client/assets/yaml-BnkSoqfe.js                             10.57 kB
+│ gzip:     2.32 kB
+Debug: build/client/assets/just-vMcXd_8j.js                             10.84 kB
+│ gzip:     2.62 kB
+Debug: build/client/assets/elm-D_TZK0Oc.js                              10.94 kB
+│ gzip:     2.09 kB
+Debug: build/client/assets/github-light-EUqPIrTm.js                     11.18 kB
+│ gzip:     2.49 kB
+Debug: build/client/assets/prolog-iXnhIJG7.js                           11.34 kB
+│ gzip:     3.84 kB
+Debug: build/client/assets/terraform-DswuEJGm.js                        11.38 kB
+│ gzip:     2.51 kB
+Debug: build/client/assets/github-dark-C-LZuMrd.js                      11.40 kB
+│ gzip:     2.53 kB
+Debug: build/client/assets/puppet-CDv2pdJW.js                           11.43 kB
+│ gzip:     2.10 kB
+Debug: build/client/assets/laserwave-C_8bwKvT.js                        11.49 kB
+│ gzip:     2.57 kB
+Debug: build/client/assets/react-Dt5Rs2TR.js                            11.58 kB
+│ gzip:     4.36 kB
+Debug: build/client/assets/gherkin-DExj1W_8.js                          11.93 kB
+│ gzip:     5.04 kB
+Debug: build/client/assets/wasm-ByWQv1Qj.js                             12.00 kB
+│ gzip:     2.17 kB
+Debug: build/client/assets/hjson-CxZEssPk.js                            12.04 kB
+│ gzip:     1.64 kB
+Debug: build/client/assets/surrealql-7gu956ad.js                        12.06 kB
+│ gzip:     3.30 kB
+Debug: build/client/assets/apache-U0d_L8uA.js                           12.44 kB
+│ gzip:     3.71 kB
+Debug: build/client/assets/handlebars-f2VetpdR.js                       12.48 kB
+│ gzip:     2.42 kB
+Debug: build/client/assets/vesper-DdrHHSXu.js                           12.73 kB
+│ gzip:     1.99 kB
+Debug: build/client/assets/beancount-C2IN4Vk8.js                        12.84 kB
+│ gzip:     2.21 kB
+Debug: build/client/assets/bat-qdxAdBWQ.js                              12.88 kB
+│ gzip:     3.23 kB
+Debug: build/client/assets/fish-BJitypiv.js                             13.03 kB
+│ gzip:     1.73 kB
+Debug: build/client/assets/nsis-CjNLYCLg.js                             13.11 kB
+│ gzip:     4.06 kB
+Debug: build/client/assets/v-DBj4K9d_.js                                13.32 kB
+│ gzip:     2.75 kB
+Debug: build/client/assets/vitesse-light-VbXTXTou.js                    13.61 kB
+│ gzip:     3.03 kB
+Debug: build/client/assets/aurora-x-CDeNXAV0.js                         13.65 kB
+│ gzip:     2.28 kB
+Debug: build/client/assets/vitesse-black-fwtXNY1n.js                    13.67 kB
+│ gzip:     3.05 kB
+Debug: build/client/assets/vitesse-dark-BZCL-v6S.js                     13.75 kB
+│ gzip:     3.06 kB
+Debug: build/client/assets/slider-Bzh-J-Oy.js                           13.78 kB
+│ gzip:     5.40 kB
+Debug: build/client/assets/pug-IfRh_sAf.js                              13.84 kB
+│ gzip:     2.58 kB
+Debug: build/client/assets/synthwave-84-nFMaYfgc.js                     14.03 kB
+│ gzip:     2.85 kB
+Debug: build/client/assets/smalltalk-BHpQb5nM.js                        14.11 kB
+│ gzip:     2.14 kB
+Debug: build/client/assets/github-light-default-BXViO-2h.js             14.15 kB
+│ gzip:     3.02 kB
+Debug: build/client/assets/_forms_._index-BVche2Qv.js                   14.16 kB
+│ gzip:     3.73 kB
+Debug: build/client/assets/_forms-stopped_._index-BilR2WYO.js           14.19 kB
+│ gzip:     3.76 kB
+Debug: build/client/assets/github-light-high-contrast-B68TUdTA.js       14.27 kB
+│ gzip:     3.00 kB
+Debug: build/client/assets/vim-ChHP2Qq7.js                              14.27 kB
+│ gzip:     5.96 kB
+Debug: build/client/assets/clarity-CtfBBspg.js                          14.35 kB
+│ gzip:     2.50 kB
+Debug: build/client/assets/github-dark-dimmed-Bx1FflLF.js               14.43 kB
+│ gzip:     3.11 kB
+Debug: build/client/assets/github-dark-default-DXG-b-1a.js              14.43 kB
+│ gzip:     3.12 kB
+Debug: build/client/assets/github-dark-high-contrast-B_tTalzw.js        14.59 kB
+│ gzip:     3.07 kB
+Debug: build/client/assets/gnuplot-7GGW24-e.js                          14.77 kB
+│ gzip:     3.27 kB
+Debug: build/client/assets/rust-DpiIf5JO.js                             15.16 kB
+│ gzip:     2.72 kB
+Debug: build/client/assets/kusto-C7mF5XQf.js                            15.16 kB
+│ gzip:     3.92 kB
+Debug: build/client/assets/dist-CyE5fcvK.js                             15.38 kB
+│ gzip:     3.88 kB
+Debug: build/client/assets/dist-pXm0evoB.js                             15.49 kB
+│ gzip:     5.59 kB
+Debug: build/client/assets/nix-IvuFDN5E.js                              15.50 kB
+│ gzip:     2.47 kB
+Debug: build/client/assets/actionscript-3-Cs6JJXT5.js                   15.53 kB
+│ gzip:     2.70 kB
+Debug: build/client/assets/lua-tuq8Rev2.js                              15.60 kB
+│ gzip:     3.19 kB
+Debug: build/client/assets/abap-CLvhMVsD.js                             15.84 kB
+│ gzip:     5.93 kB
+Debug: build/client/assets/matlab-D7qyCx1q.js                           16.07 kB
+│ gzip:     3.06 kB
+Debug: build/client/assets/number-overlay-editor-CJog_XyV.js            16.08 kB
+│ gzip:     6.09 kB
+Debug: build/client/assets/cue-CE9AQfxI.js                              16.19 kB
+│ gzip:     2.04 kB
+Debug: build/client/assets/elixir-CnPE2eGA.js                           16.26 kB
+│ gzip:     2.76 kB
+Debug: build/client/assets/luau-VGWVLoqX.js                             16.29 kB
+│ gzip:     3.56 kB
+Debug: build/client/assets/solidity-Bj7E1mRn.js                         16.40 kB
+│ gzip:     3.14 kB
+Debug: build/client/assets/odin-B1RWQWA5.js                             16.50 kB
+│ gzip:     2.92 kB
+Debug: build/client/assets/ts-tags-DkeNAmvs.js                          16.54 kB
+│ gzip:     2.05 kB
+Debug: build/client/assets/kanagawa-wave-BML5mF2J.js                    17.11 kB
+│ gzip:     2.90 kB
+Debug: build/client/assets/kanagawa-lotus-BmuOG9ZW.js                   17.11 kB
+│ gzip:     2.91 kB
+Debug: build/client/assets/kanagawa-dragon-Bozd7klA.js                  17.12 kB
+│ gzip:     2.92 kB
+Debug: build/client/assets/move-BYnGhZoM.js                             17.65 kB
+│ gzip:     3.06 kB
+Debug: build/client/assets/graphql-DlruBr94.js                          18.08 kB
+│ gzip:     2.54 kB
+Debug: build/client/assets/liquid-iV652G51.js                           18.10 kB
+│ gzip:     3.14 kB
+Debug: build/client/assets/click-outside-container-_LXX33Ih.js          18.15 kB
+│ gzip:     6.36 kB
+Debug: build/client/assets/svelte-CAHOf6am.js                           18.25 kB
+│ gzip:     3.14 kB
+Debug: build/client/assets/floating-ui.dom-B0ujvShr.js                  18.38 kB
+│ gzip:     7.26 kB
+Debug: build/client/assets/material-theme-Bm3Qr25_.js                   18.61 kB
+│ gzip:     3.10 kB
+Debug: build/client/assets/material-theme-darker-2IIEA8gg.js            18.62 kB
+│ gzip:     3.10 kB
+Debug: build/client/assets/material-theme-ocean-CHQ94UKr.js             18.62 kB
+│ gzip:     3.12 kB
+Debug: build/client/assets/material-theme-lighter-uhdI0v04.js           18.63 kB
+│ gzip:     3.10 kB
+Debug: build/client/assets/material-theme-palenight-B5W6OYN7.js         18.63 kB
+│ gzip:     3.11 kB
+Debug: build/client/assets/html-void-elements-DKER9wWT.js               19.06 kB
+│ gzip:     6.58 kB
+Debug: build/client/assets/gdscript-DYvRD3hg.js                         19.08 kB
+│ gzip:     3.76 kB
+Debug: build/client/assets/groovy-CacY0gHj.js                           19.17 kB
+│ gzip:     3.59 kB
+Debug: build/client/assets/ayu-dark-DluEY0Gj.js                         20.07 kB
+│ gzip:     3.93 kB
+Debug: build/client/assets/ayu-mirage-Bqwy1Gya.js                       20.08 kB
+│ gzip:     3.91 kB
+Debug: build/client/assets/glimmer-js-BWpsb5k_.js                       20.08 kB
+│ gzip:     2.94 kB
+Debug: build/client/assets/glimmer-ts-B2mVF2r6.js                       20.08 kB
+│ gzip:     2.93 kB
+Debug: build/client/assets/mdc-Db8_QLh7.js                              20.08 kB
+│ gzip:     6.81 kB
+Debug: build/client/assets/powershell-QtSnmXcu.js                       20.14 kB
+│ gzip:     4.05 kB
+Debug: build/client/assets/ayu-light-C3h-C4tm.js                        20.14 kB
+│ gzip:     3.89 kB
+Debug: build/client/assets/viml-DvXPmvsu.js                             20.35 kB
+│ gzip:     6.73 kB
+Debug: build/client/assets/emotion-react.browser.esm-DOrW0kQc.js        20.73 kB
+│ gzip:     8.15 kB
+Debug: build/client/assets/snazzy-light-4G7pJPwS.js                     20.77 kB
+│ gzip:     3.80 kB
+Debug: build/client/assets/dracula-BHWKrbxM.js                          21.06 kB
+│ gzip:     3.99 kB
+Debug: build/client/assets/dracula-soft-5eyTD99u.js                     21.07 kB
+│ gzip:     4.02 kB
+Debug: build/client/assets/wit-DdvCle-K.js                              21.46 kB
+│ gzip:     2.87 kB
+Debug: build/client/assets/rose-pine-aMsaMD1D.js                        21.73 kB
+│ gzip:     3.88 kB
+Debug: build/client/assets/rose-pine-moon-DO-qXg-I.js                   21.74 kB
+│ gzip:     3.89 kB
+Debug: build/client/assets/rose-pine-dawn-8PwUyIlP.js                   21.74 kB
+│ gzip:     3.89 kB
+Debug: build/client/assets/nushell--0fT3PI1.js                          21.76 kB
+│ gzip:     5.44 kB
+Debug: build/client/assets/nim-Dqn02CMk.js                              22.45 kB
+│ gzip:     3.15 kB
+Debug: build/client/assets/common-lisp-Cv5bFMCO.js                      22.57 kB
+│ gzip:     6.07 kB
+Debug: build/client/assets/gruvbox-dark-hard-C820rvS2.js                22.63 kB
+│ gzip:     4.15 kB
+Debug: build/client/assets/gruvbox-dark-soft-MrdJrrXF.js                22.63 kB
+│ gzip:     4.15 kB
+Debug: build/client/assets/gruvbox-light-hard-BC_s9l72.js               22.63 kB
+│ gzip:     4.16 kB
+Debug: build/client/assets/gruvbox-light-soft-BSMLrYjP.js               22.63 kB
+│ gzip:     4.16 kB
+Debug: build/client/assets/gruvbox-dark-medium-BPjhmG05.js              22.63 kB
+│ gzip:     4.15 kB
+Debug: build/client/assets/gruvbox-light-medium-BAWPOn9u.js             22.63 kB
+│ gzip:     4.16 kB
+Debug: build/client/assets/cadence-CQ2zXKGN.js                          23.66 kB
+│ gzip:     3.65 kB
+Debug: build/client/assets/sql-CdusftUB.js                              23.73 kB
+│ gzip:     7.57 kB
+Debug: build/client/assets/astro-D6yAtRaF.js                            24.02 kB
+│ gzip:     7.59 kB
+Debug: build/client/assets/apl-D8UTrxw0.js                              24.02 kB
+│ gzip:     4.16 kB
+Debug: build/client/assets/templ-C60WSTq_.js                            24.06 kB
+│ gzip:     5.41 kB
+Debug: build/client/assets/angular-html-Dn-5jmeL.js                     24.24 kB
+│ gzip:     3.98 kB
+Debug: build/client/assets/vhdl-BroJfC0k.js                             24.25 kB
+│ gzip:     3.86 kB
+Debug: build/client/assets/purescript-9MfHhQsQ.js                       24.67 kB
+│ gzip:     3.24 kB
+Debug: build/client/assets/twig-qr9vFjFf.js                             24.85 kB
+│ gzip:     4.01 kB
+Debug: build/client/assets/vue-JBqVDD9L.js                              24.96 kB
+│ gzip:     3.03 kB
+Debug: build/client/assets/one-light-D7Lr4KcI.js                        25.29 kB
+│ gzip:     3.63 kB
+Debug: build/client/assets/fsharp-D13ZGOAj.js                           25.30 kB
+│ gzip:     4.12 kB
+Debug: build/client/assets/marko-ZKOJ2oKt.js                            25.72 kB
+│ gzip:     3.66 kB
+Debug: build/client/assets/night-owl-light-eJ-hLW7d.js                  25.89 kB
+│ gzip:     4.23 kB
+Debug: build/client/assets/c3-D0apG41V.js                               26.37 kB
+│ gzip:     3.97 kB
+Debug: build/client/assets/system-verilog-Dh5ihWbf.js                   26.54 kB
+│ gzip:     4.85 kB
+Debug: build/client/assets/nord-Cb4Vim4T.js                             26.72 kB
+│ gzip:     4.35 kB
+Debug: build/client/assets/codeql-oeQT6MSM.js                           26.87 kB
+│ gzip:     3.79 kB
+Debug: build/client/assets/typespec-BGhR2SqG.js                         26.99 kB
+│ gzip:     2.75 kB
+Debug: build/client/assets/scss-DTxSD2jW.js                             27.26 kB
+│ gzip:     4.22 kB
+Debug: build/client/assets/java-CCLYh7Ws.js                             27.28 kB
+│ gzip:     4.31 kB
+Debug: build/client/assets/coffee-C17FjuDx.js                           27.42 kB
+│ gzip:     6.35 kB
+Debug: build/client/assets/razor-2VQKZ7iM.js                            27.45 kB
+│ gzip:     3.54 kB
+Debug: build/client/assets/scala-BiFt_7mu.js                            28.88 kB
+│ gzip:     3.93 kB
+Debug: build/client/assets/night-owl-DhmEMT88.js                        28.91 kB
+│ gzip:     5.14 kB
+Debug: build/client/assets/crystal-CoUSe2As.js                          29.41 kB
+│ gzip:     4.44 kB
+Debug: build/client/assets/applescript-CCn79oCD.js                      29.56 kB
+│ gzip:     5.94 kB
+Debug: build/client/assets/button-D5rfe6e_.js                           31.02 kB
+│ gzip:     7.87 kB
+Debug: build/client/assets/stylus-B6D30XZt.js                           31.06 kB
+│ gzip:     8.01 kB
+Debug: build/client/assets/julia-px4_H0ze.js                            31.22 kB
+│ gzip:     4.33 kB
+Debug: build/client/assets/ahk-DwADkxyd.js                              31.44 kB
+│ gzip:     7.83 kB
+Debug: build/client/assets/errorBoundaries-ByI1_A_M.js                  32.25 kB
+│ gzip:    11.31 kB
+Debug: build/client/assets/sqf-Dv6VzqAn.js                              33.49 kB
+│ gzip:    11.17 kB
+Debug: build/client/assets/poimandres-DRFjx7u4.js                       33.49 kB
+│ gzip:     5.49 kB
+Debug: build/client/assets/bsl-_VjlB9mv.js                              33.94 kB
+│ gzip:     8.35 kB
+Debug: build/client/assets/nginx-nAXs0UmH.js                            35.35 kB
+│ gzip:     4.45 kB
+Debug: build/client/assets/houston-CsvMBhTu.js                          35.41 kB
+│ gzip:     5.76 kB
+Debug: build/client/assets/tokyo-night-oM2G3aXe.js                      35.66 kB
+│ gzip:     6.22 kB
+Debug: build/client/assets/haxe-C8oCnwJJ.js                             35.94 kB
+│ gzip:     6.00 kB
+Debug: build/client/assets/org-DrQwSvLH.js                              36.26 kB
+│ gzip:     3.67 kB
+Debug: build/client/assets/one-dark-pro-C6YyR8OD.js                     37.05 kB
+│ gzip:     6.10 kB
+Debug: build/client/assets/erlang-Cphh6RMH.js                           37.47 kB
+│ gzip:     4.36 kB
+Debug: build/client/assets/bird2-CYIUgYqB.js                            38.67 kB
+│ gzip:     8.49 kB
+Debug: build/client/assets/cobol-DpzlyaQV.js                            39.07 kB
+│ gzip:    10.89 kB
+Debug: build/client/assets/asm-Cmm7eHzH.js                              40.71 kB
+│ gzip:     8.16 kB
+Debug: build/client/assets/haskell-D8IpX4py.js                          41.48 kB
+│ gzip:     6.41 kB
+Debug: build/client/assets/shellscript-DoDh9O3W.js                      41.54 kB
+│ gzip:     6.13 kB
+Debug: build/client/assets/text-area-BEpxpQTd.js                        42.51 kB
+│ gzip:     9.78 kB
+Debug: build/client/assets/perl-Dlyx3JO6.js                             43.14 kB
+│ gzip:     4.64 kB
+Debug: build/client/assets/d-qD-0Kul2.js                                43.78 kB
+│ gzip:     8.43 kB
+Debug: build/client/assets/ahk2-_6rzW9BS.js                             45.05 kB
+│ gzip:     9.87 kB
+Debug: build/client/assets/ruby-BfbbXWBR.js                             46.63 kB
+│ gzip:     5.70 kB
+Debug: build/client/assets/go-rLFTqkRN.js                               46.81 kB
+│ gzip:     5.14 kB
+Debug: build/client/assets/apex-KFGFyKwG.js                             47.88 kB
+│ gzip:     6.85 kB
+Debug: build/client/assets/ada-X3Y2mlq2.js                              48.07 kB
+│ gzip:     5.96 kB
+Debug: build/client/assets/react-CzizcBbD.js                            49.19 kB
+│ gzip:    14.99 kB
+Debug: build/client/assets/imba-DsUTQ-LC.js                             49.92 kB
+│ gzip:     9.47 kB
+Debug: build/client/assets/catppuccin-mocha-DjuaAJKi.js                 50.84 kB
+│ gzip:     8.47 kB
+Debug: build/client/assets/catppuccin-latte-CtsyrtPq.js                 50.84 kB
+│ gzip:     8.48 kB
+Debug: build/client/assets/catppuccin-frappe-C9Q5zVZY.js                50.85 kB
+│ gzip:     8.48 kB
+Debug: build/client/assets/catppuccin-macchiato-R8nAf1vR.js             50.85 kB
+│ gzip:     8.48 kB
+Debug: build/client/assets/css-DOF-lnNg.js                              53.43 kB
+│ gzip:    12.53 kB
+Debug: build/client/assets/everforest-dark-sB-x3p7T.js                  53.74 kB
+│ gzip:     8.37 kB
+Debug: build/client/assets/everforest-light-Df2xbC6M.js                 53.74 kB
+│ gzip:     8.36 kB
+Debug: build/client/assets/mermaid-BxpfTIzt.js                          54.80 kB
+│ gzip:     4.79 kB
+Debug: build/client/assets/wikitext-ClFFjSW2.js                         55.87 kB
+│ gzip:     4.81 kB
+Debug: build/client/assets/stata-CGBdPs6I.js                            56.99 kB
+│ gzip:    12.39 kB
+Debug: build/client/assets/html-B2zDfId-.js                             57.32 kB
+│ gzip:    11.78 kB
+Debug: build/client/assets/ballerina-B7ZEbQpA.js                        58.68 kB
+│ gzip:     8.10 kB
+Debug: build/client/assets/markdown-BYOwaDjH.js                         59.32 kB
+│ gzip:     5.66 kB
+Debug: build/client/assets/dist-CXmxw0X_.js                             60.64 kB
+│ gzip:    17.59 kB
+Debug: build/client/assets/moment-D0P3lHt0.js                           62.36 kB
+│ gzip:    20.26 kB
+Debug: build/client/assets/ocaml-O90oeIOV.js                            62.44 kB
+│ gzip:     5.04 kB
+Debug: build/client/assets/mojo-fg40_ntQ.js                             69.51 kB
+│ gzip:     9.20 kB
+Debug: build/client/assets/python-gzcpVVnB.js                           69.94 kB
+│ gzip:     9.09 kB
+Debug: build/client/assets/c-mSN2GbH4.js                                72.17 kB
+│ gzip:    10.55 kB
+Debug: build/client/assets/latex-QGS9LWCU.js                            73.24 kB
+│ gzip:     6.78 kB
+Debug: build/client/assets/vyper-CgoNMtux.js                            74.64 kB
+│ gzip:    10.69 kB
+Debug: build/client/assets/components-CgLK7DGW.js                       78.37 kB
+│ gzip:    25.77 kB
+Debug: build/client/assets/hack-CLw4KPdG.js                             81.07 kB
+│ gzip:    26.45 kB
+Debug: build/client/assets/swift-CyEgAFGc.js                            87.22 kB
+│ gzip:    14.79 kB
+Debug: build/client/assets/fortran-free-form-CYNrtFtB.js                88.96 kB
+│ gzip:    11.18 kB
+Debug: build/client/assets/csharp-dmMxLVLW.js                           91.43 kB
+│ gzip:    10.79 kB
+Debug: build/client/assets/racket-DcIDlBhZ.js                           92.38 kB
+│ gzip:    15.07 kB
+Debug: build/client/assets/less-DVTAwKKz.js                             97.62 kB
+│ gzip:    14.84 kB
+Debug: build/client/assets/p_dataeditor-CaqbGERn.js                    104.94 kB
+│ gzip:    32.56 kB
+Debug: build/client/assets/blade-B7ge092p.js                           104.97 kB
+│ gzip:    28.30 kB
+Debug: build/client/assets/objective-c-D1A_Heim.js                     105.40 kB
+│ gzip:    23.63 kB
+Debug: build/client/assets/select-CJm1x4Ir.js                          106.86 kB
+│ gzip:    29.21 kB
+Debug: build/client/assets/flex-JmFILG3D.js                            108.28 kB
+│ gzip:    32.90 kB
+Debug: build/client/assets/php-qA0VCL3I.js                             113.12 kB
+│ gzip:    28.84 kB
+Debug: build/client/assets/dist-BIO3ZSsm.js                            131.36 kB
+│ gzip:    39.60 kB
+Debug: build/client/assets/asciidoc-SCjQUq34.js                        136.04 kB
+│ gzip:     9.45 kB
+Debug: build/client/assets/mdx-DQZ5AkYe.js                             136.10 kB
+│ gzip:    23.54 kB
+Debug: build/client/assets/typst-cvW-L6Cf.js                           163.48 kB
+│ gzip:    10.95 kB
+Debug: build/client/assets/objective-cpp-BsSzOQcm.js                   171.96 kB
+│ gzip:    30.98 kB
+Debug: build/client/assets/javascript-B3ZoUvGD.js                      174.89 kB
+│ gzip:    16.68 kB
+Debug: build/client/assets/tsx-D0-aSICp.js                             175.60 kB
+│ gzip:    16.68 kB
+Debug: build/client/assets/jsx-Cb6Vub3Y.js                             177.85 kB
+│ gzip:    16.77 kB
+Debug: build/client/assets/typescript-ITQieXu3.js                      181.14 kB
+│ gzip:    16.29 kB
+Debug: build/client/assets/angular-ts-Cv8RQXHe.js                      183.73 kB
+│ gzip:    16.78 kB
+Debug: build/client/assets/root-B_KaZWfl.js                            188.45 kB
+│ gzip:    44.33 kB
+Debug: build/client/assets/vue-vine-D1l--V5f.js                        190.05 kB
+│ gzip:    18.07 kB
+Debug: build/client/assets/entry.client-BHluJ2VV.js                    211.06 kB
+│ gzip:    66.24 kB
+Debug: build/client/assets/wolfram-DLL8P-h_.js                         262.38 kB
+│ gzip:    77.63 kB
+Debug: build/client/assets/esm-D3c8I7t_.js                             263.32 kB
+│ gzip:    84.73 kB
+Debug: build/client/assets/p_charts-Rl-lsP9w.js                        508.38 kB
+│ gzip:    98.44 kB
+Debug: build/client/assets/dist-C2qUADX9.js                            523.06 kB
+│ gzip:   135.40 kB
+Debug: build/client/assets/hls-BcPVyNxK.js                             574.73 kB
+│ gzip:   178.98 kB
+Debug: build/client/assets/wasm-BnjxR4X6.js                            622.32 kB
+│ gzip:   232.09 kB
+Debug: build/client/assets/_code_._index-CnAGM-_C.js                   672.57 kB
+│ gzip:   198.84 kB
+Debug: build/client/assets/article-cell-editor-ggoKCh_r.js             681.50 kB
+│ gzip:   209.03 kB
+Debug: build/client/assets/cpp-svqsdV-V.js                             785.54 kB
+│ gzip:    58.27 kB
+Debug: build/client/assets/emacs-lisp-DR2vtWaj.js                      790.01 kB
+│ gzip:   200.31 kB
+Debug: build/client/assets/dash.all.min-Cwm8JF7h.js                    822.54 kB
+│ gzip:   238.53 kB
+Debug: build/client/assets/p_misc-C6JbOGbR.js                          986.14 kB
+│ gzip:   102.07 kB
+Debug: build/client/assets/dist-rpyIJdFs.js                          4,652.04 kB
+│ gzip: 1,391.85 kB
+Debug: 
+Debug: [plugin builtin:vite-reporter] 
+Debug: (!) Some chunks are larger than 500 kB after minification. Consider:
+Debug: - Using dynamic import() to code-split the application
+Debug: - Use build.rolldownOptions.output.codeSplitting to improve chunking: 
+https://rolldown.rs/reference/OutputOptions.codeSplitting
+Debug: - Adjust chunk size limit for this warning via 
+build.chunkSizeWarningLimit.
+Debug: [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mnode_modules/recharts/es6/index.js is
+dynamically imported by app_components/cluster_app/p_charts.jsx but also 
+statically imported by app_components/cluster_app/p_charts.jsx, dynamic import 
+will not move module into another chunk.
+Debug: 
+Debug: ✓ built in 3.78s
+Debug: [33m[PLUGIN_TIMINGS] [0mJavaScript callbacks ran for 2.2s of this 3.8s 
+build (58%).
+Debug: 3 callbacks are listed without a time. Their calls overlapped, so the 
+time inside one call includes work from other calls. To find their cost, profile
+the build with `node --cpu-prof`:
+Debug:   - plugin react-router:dot-server resolveId (7712 calls)
+Debug:   - plugin react-router:build-client-route transform (2817 calls)
+Debug:   - plugin vite:css transform (4 calls)
+Debug: See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for 
+more details.
+Debug: 
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 54 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 61 assets cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: build/client/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2
+Debug: build/client/assets/KaTeX_AMS-Regular-DMm9YOAa.woff
+Debug: build/client/assets/KaTeX_AMS-Regular-DRggAlZN.ttf
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf
+Debug: build/client/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2
+Debug: build/client/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CB_wures.ttf
+Debug: build/client/assets/KaTeX_Main-Bold-Cx986IdX.woff2
+Debug: build/client/assets/KaTeX_Main-Bold-Jm3AIy58.woff
+Debug: build/client/assets/KaTeX_Main-Bold-waoOVXN0.ttf
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2
+Debug: build/client/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf
+Debug: build/client/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2
+Debug: build/client/assets/KaTeX_Main-Italic-BMLOBm91.woff
+Debug: build/client/assets/KaTeX_Main-Italic-3WenGoN9.ttf
+Debug: build/client/assets/KaTeX_Main-Regular-B22Nviop.woff2
+Debug: build/client/assets/KaTeX_Main-Regular-Dr94JaBh.woff
+Debug: build/client/assets/KaTeX_Main-Regular-ypZvNtVU.ttf
+Debug: build/client/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2
+Debug: build/client/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff
+Debug: build/client/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf
+Debug: build/client/assets/KaTeX_Math-Italic-t53AETM-.woff2
+Debug: build/client/assets/KaTeX_Math-Italic-DA0__PXp.woff
+Debug: build/client/assets/KaTeX_Math-Italic-flOr_0UB.ttf
+Debug: build/client/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2
+Debug: build/client/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff
+Debug: build/client/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf
+Debug: build/client/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2
+Debug: build/client/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff
+Debug: build/client/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf
+Debug: build/client/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2
+Debug: build/client/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff
+Debug: build/client/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf
+Debug: build/client/assets/KaTeX_Script-Regular-D3wIWfF6.woff2
+Debug: build/client/assets/KaTeX_Script-Regular-D5yQViql.woff
+Debug: build/client/assets/KaTeX_Script-Regular-C5JkGWo-.ttf
+Debug: build/client/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2
+Debug: build/client/assets/KaTeX_Size1-Regular-C195tn64.woff
+Debug: build/client/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf
+Debug: build/client/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2
+Debug: build/client/assets/KaTeX_Size2-Regular-oD1tc_U0.woff
+Debug: build/client/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf
+Debug: build/client/assets/KaTeX_Size3-Regular-CTq5MqoE.woff
+Debug: build/client/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf
+Debug: build/client/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2
+Debug: build/client/assets/KaTeX_Size4-Regular-BF-4gkZK.woff
+Debug: build/client/assets/KaTeX_Size4-Regular-DWFBv043.ttf
+Debug: build/client/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2
+Debug: build/client/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff
+Debug: build/client/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf
+Debug: build/server/assets/server-build-ij7QijfF.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/assets/KaTeX_Size3-Regular-CTq5MqoE.woff           4.42 kB
+Debug: build/server/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2          4.92 kB
+Debug: build/server/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2          5.20 kB
+Debug: build/server/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2          5.46 kB
+Debug: build/server/assets/KaTeX_Size4-Regular-BF-4gkZK.woff           5.98 kB
+Debug: build/server/assets/KaTeX_Size2-Regular-oD1tc_U0.woff           6.18 kB
+Debug: build/server/assets/KaTeX_Size1-Regular-C195tn64.woff           6.49 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2    6.90 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2       6.91 kB
+Debug: build/server/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf            7.58 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff     7.65 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff        7.71 kB
+Debug: build/server/assets/KaTeX_Script-Regular-D3wIWfF6.woff2         9.64 kB
+Debug: build/server/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2     10.34 kB
+Debug: build/server/assets/KaTeX_Size4-Regular-DWFBv043.ttf           10.36 kB
+Debug: build/server/assets/KaTeX_Script-Regular-D5yQViql.woff         10.58 kB
+Debug: build/server/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2       11.31 kB
+Debug: build/server/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2          11.34 kB
+Debug: build/server/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf           11.50 kB
+Debug: build/server/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2      12.02 kB
+Debug: build/server/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2        12.21 kB
+Debug: build/server/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf           12.22 kB
+Debug: build/server/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff      12.31 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf     12.34 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf        12.36 kB
+Debug: build/server/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff        13.20 kB
+Debug: build/server/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff           13.29 kB
+Debug: build/server/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2    13.56 kB
+Debug: build/server/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff       14.11 kB
+Debug: build/server/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff         14.40 kB
+Debug: build/server/.vite/manifest.json                               15.17 kB │
+gzip:  1.66 kB
+Debug: build/server/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff     16.02 kB
+Debug: build/server/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2       16.40 kB
+Debug: build/server/assets/KaTeX_Math-Italic-t53AETM-.woff2           16.44 kB
+Debug: build/server/assets/KaTeX_Script-Regular-C5JkGWo-.ttf          16.64 kB
+Debug: build/server/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2       16.78 kB
+Debug: build/server/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2           16.98 kB
+Debug: build/server/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff        18.66 kB
+Debug: build/server/assets/KaTeX_Math-Italic-DA0__PXp.woff            18.74 kB
+Debug: build/server/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff        19.41 kB
+Debug: build/server/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf       19.43 kB
+Debug: build/server/assets/KaTeX_Fraktur-Regular-CB_wures.ttf         19.57 kB
+Debug: build/server/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf            19.58 kB
+Debug: build/server/assets/KaTeX_Main-Italic-BMLOBm91.woff            19.67 kB
+Debug: build/server/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf        22.36 kB
+Debug: build/server/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf          24.50 kB
+Debug: build/server/assets/KaTeX_Main-Bold-Cx986IdX.woff2             25.32 kB
+Debug: build/server/assets/KaTeX_Main-Regular-B22Nviop.woff2          26.27 kB
+Debug: build/server/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf      27.55 kB
+Debug: build/server/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2           28.07 kB
+Debug: build/server/assets/KaTeX_Main-Bold-Jm3AIy58.woff              29.91 kB
+Debug: build/server/assets/KaTeX_Main-Regular-Dr94JaBh.woff           30.77 kB
+Debug: build/server/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf         31.19 kB
+Debug: build/server/assets/KaTeX_Math-Italic-flOr_0UB.ttf             31.30 kB
+Debug: build/server/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf         32.96 kB
+Debug: build/server/assets/KaTeX_AMS-Regular-DMm9YOAa.woff            33.51 kB
+Debug: build/server/assets/KaTeX_Main-Italic-3WenGoN9.ttf             33.58 kB
+Debug: build/server/assets/KaTeX_Main-Bold-waoOVXN0.ttf               51.33 kB
+Debug: build/server/assets/KaTeX_Main-Regular-ypZvNtVU.ttf            53.58 kB
+Debug: build/server/assets/KaTeX_AMS-Regular-DRggAlZN.ttf             63.63 kB
+Debug: build/server/assets/server-build-ij7QijfF.css                  40.30 kB │
+gzip: 10.67 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css       698.26 kB │
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-C79XfZW-.js                      0.30 kB │
+gzip:  0.20 kB
+Debug: build/server/index.js                                         435.89 kB │
+gzip: 49.26 kB
+Debug: 
+Debug: ✓ built in 364ms
+Debug: Deprecation warning: use moment.updateLocale(localeName, config) to 
+change an existing locale. moment.defineLocale(localeName, config) should only 
+be used for creating a new locale See 
+http://momentjs.com/guides/#/warnings/define-locale/ for more info.
+Debug: Error
+Debug:     at deprecateSimple 
+(/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha2-prod/.web/node_mod
+ules/moment/moment.js:341:31)
+Debug:     at hooks.defineLocale 
+(/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha2-prod/.web/node_mod
+ules/moment/moment.js:2342:17)
+Debug:     at 
+/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha2-prod/.web/node_modu
+les/moment/locale/ja.js:14:21
+Debug:     at 
+/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha2-prod/.web/node_modu
+les/moment/locale/ja.js:7:43
+Debug:     at Object.<anonymous> 
+(/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha2-prod/.web/node_mod
+ules/moment/locale/ja.js:10:2)
+Debug:     at Module._compile (node:internal/modules/cjs/loader:1934:14)
+Debug:     at Object..js (node:internal/modules/cjs/loader:2074:10)
+Debug:     at Module.load (node:internal/modules/cjs/loader:1656:32)
+Debug:     at Module._load (node:internal/modules/cjs/loader:1448:12)
+Debug:     at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /new-components -> 
+build/client/new-components/index.html
+Debug: Prerender (html): /forms-stopped -> build/client/forms-stopped/index.html
+Debug: Prerender (html): /select-matrix -> build/client/select-matrix/index.html
+Debug: Prerender (html): /de-foreach -> build/client/de-foreach/index.html
+Debug: Prerender (html): /memo-names -> build/client/memo-names/index.html
+Debug: Prerender (html): /de-filter -> build/client/de-filter/index.html
+Debug: Prerender (html): /de-multi -> build/client/de-multi/index.html
+Debug: Prerender (html): /download -> build/client/download/index.html
+Debug: Prerender (html): /recharts -> build/client/recharts/index.html
+Debug: Prerender (html): /de-big -> build/client/de-big/index.html
+Debug: Prerender (html): /plotly -> build/client/plotly/index.html
+Debug: Prerender (html): /forms -> build/client/forms/index.html
+Debug: Prerender (html): /match -> build/client/match/index.html
+Debug: Prerender (html): /radix -> build/client/radix/index.html
+Debug: Prerender (html): /code -> build/client/code/index.html
+Debug: Prerender (html): /de -> build/client/de/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:05
+Debug: Copying .web/build/client/de-filter/index.html to 
+.web/build/client/de-filter.html
+Debug: Copying .web/build/client/de-big/index.html to 
+.web/build/client/de-big.html
+Debug: Copying .web/build/client/forms/index.html to 
+.web/build/client/forms.html
+Debug: Copying .web/build/client/match/index.html to 
+.web/build/client/match.html
+Debug: Copying .web/build/client/memo-names/index.html to 
+.web/build/client/memo-names.html
+Debug: Copying .web/build/client/code/index.html to .web/build/client/code.html
+Debug: Copying .web/build/client/new-components/index.html to 
+.web/build/client/new-components.html
+Debug: Copying .web/build/client/plotly/index.html to 
+.web/build/client/plotly.html
+Debug: Copying .web/build/client/download/index.html to 
+.web/build/client/download.html
+Debug: Copying .web/build/client/radix/index.html to 
+.web/build/client/radix.html
+Debug: Copying .web/build/client/de/index.html to .web/build/client/de.html
+Debug: Copying .web/build/client/forms-stopped/index.html to 
+.web/build/client/forms-stopped.html
+Debug: Copying .web/build/client/de-multi/index.html to 
+.web/build/client/de-multi.html
+Debug: Copying .web/build/client/select-matrix/index.html to 
+.web/build/client/select-matrix.html
+Debug: Copying .web/build/client/recharts/index.html to 
+.web/build/client/recharts.html
+Debug: Copying .web/build/client/de-foreach/index.html to 
+.web/build/client/de-foreach.html
+Debug: Running command: [PosixPath('/opt/homebrew/bin/node'), 
+PosixPath('/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha2-prod/.we
+b/compress-static.js'), 
+PosixPath('/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha2-prod/.we
+b/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3431/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 15313)
+[INFO] Listening at: http://0.0.0.0:3431
+[INFO] Spawning worker-1 with PID: 15505
+`rx._x` contains experimental features and might be removed at any time in the future.
+CLUSTER_APP reflex 0.10.0a2 /private/tmp/reflex-prerelease-macos-pass2/envs/forms-alpha2/lib/python3.12/site-packages/reflex/__init__.py
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3431
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3431
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+FORM_MAIN 1 {"d_check": null, "d_text": null, "f_check": false, "f_check_on": true, "f_debounced": "", "f_named": "abc", "f_native": "", "f_native_select": "n1", "f_radio": null, "f_rating": null, "f_slider": "30", "f_switch": false, "f_text": "", "f_textarea": "", "rating3": "3"}
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at http://localhost:3431/assets/esm-D3c8I7t_.js:156:50938
+    at o (http://localhost:3431/assets/esm-D3c8I7t_.js:2:39071)
+    at http://localhost:3431/assets/text-area-BEpxpQTd.js:1:14790
+    at El (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:94972)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118140)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119356)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118120)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at http://localhost:3431/assets/esm-D3c8I7t_.js:156:50938
+    at o (http://localhost:3431/assets/esm-D3c8I7t_.js:2:39071)
+    at http://localhost:3431/assets/text-area-BEpxpQTd.js:1:36504
+    at El (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:94972)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118140)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119356)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118120)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at http://localhost:3431/assets/esm-D3c8I7t_.js:156:50938
+    at o (http://localhost:3431/assets/esm-D3c8I7t_.js:2:39071)
+    at http://localhost:3431/assets/text-area-BEpxpQTd.js:1:27478
+    at El (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:94972)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118140)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118120)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119356)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+
+FORM_MAIN 2 {"d_check": null, "d_text": null, "f_check": true, "f_check_on": true, "f_debounced": "deb", "f_named": "abc", "f_native": "nat", "f_native_select": "n2", "f_radio": "y", "f_rating": "3", "f_slider": "30", "f_switch": true, "f_text": "hello", "f_textarea": "multi\nline", "rating3": "3", "rating_native": "3"}
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at http://localhost:3431/assets/esm-D3c8I7t_.js:156:50938
+    at o (http://localhost:3431/assets/esm-D3c8I7t_.js:2:39071)
+    at http://localhost:3431/assets/text-area-BEpxpQTd.js:1:14790
+    at El (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:94972)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118140)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119356)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118120)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+
+FORM_DIALOG 1 {"d_check": true, "d_text": "dlg"}
+FORM_MAIN 3 {"d_check": true, "d_text": "dlg", "f_check": true, "f_check_on": true, "f_debounced": "deb", "f_native": "nat", "f_native_select": "n2", "f_radio": "y", "f_rating": "3", "f_slider": "30", "f_switch": true, "f_text": "hello", "f_textarea": "multi\nline", "rating3": "3"}
+FORM_CS 1 {"csf1_sw": false, "csf1_text": "one"}
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at http://localhost:3431/assets/esm-D3c8I7t_.js:156:50938
+    at o (http://localhost:3431/assets/esm-D3c8I7t_.js:2:39071)
+    at http://localhost:3431/assets/text-area-BEpxpQTd.js:1:36504
+    at El (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:94972)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118140)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119356)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+    at Uu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118120)
+    at Hu (http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117913)
+
+FORM_CS 1 {"csf2_sw": true, "csf2_text": ""}
+FORM_DIALOG 1 {"d_check": false, "d_text": "stopped"}
+DE_EDIT {"cell": {"allowOverlay": true, "data": "ow", "displayData": "Beta", "kind": "text", "readonly": false}, "pos": [0, 1]}
+DE_EDIT {"cell": {"allowOverlay": true, "data": "low", "displayData": "Beta", "kind": "text", "readonly": false}, "pos": [0, 1]}
+DE_EDIT {"cell": {"allowOverlay": true, "data": "low", "displayData": "Beta", "kind": "text", "readonly": false}, "pos": [0, 1]}
+DE_EDIT {"cell": {"allowOverlay": true, "data": "Slow", "displayData": "Beta", "kind": "text", "readonly": false}, "pos": [0, 1]}
+FORM_MAIN 1 {"d_check": null, "d_text": null, "f_check": false, "f_check_on": true, "f_debounced": "", "f_named": "abc", "f_native": "", "f_native_select": "n1", "f_radio": null, "f_rating": null, "f_slider": "30", "f_switch": false, "f_text": "", "f_textarea": "", "rating3": "3"}
+[Reflex Frontend Exception]
+ TypeError: undefined is not an object (evaluating 'e.changedTouches[0]')
+@http://localhost:3431/assets/esm-D3c8I7t_.js:156:50938
+o@http://localhost:3431/assets/esm-D3c8I7t_.js:2:39075
+dispatchEvent@\[native code]
+@http://localhost:3431/assets/text-area-BEpxpQTd.js:1:14803
+El@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:94973
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118142
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+
+[Reflex Frontend Exception]
+ TypeError: undefined is not an object (evaluating 'e.changedTouches[0]')
+@http://localhost:3431/assets/esm-D3c8I7t_.js:156:50938
+o@http://localhost:3431/assets/esm-D3c8I7t_.js:2:39075
+dispatchEvent@\[native code]
+@http://localhost:3431/assets/text-area-BEpxpQTd.js:1:36517
+El@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:94973
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118142
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118163
+
+[Reflex Frontend Exception]
+ TypeError: undefined is not an object (evaluating 'e.changedTouches[0]')
+@http://localhost:3431/assets/esm-D3c8I7t_.js:156:50938
+o@http://localhost:3431/assets/esm-D3c8I7t_.js:2:39075
+dispatchEvent@\[native code]
+@http://localhost:3431/assets/text-area-BEpxpQTd.js:1:27491
+El@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:94973
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118142
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+
+FORM_MAIN 2 {"d_check": null, "d_text": null, "f_check": true, "f_check_on": true, "f_debounced": "deb", "f_named": "abc", "f_native": "nat", "f_native_select": "n2", "f_radio": "y", "f_rating": "3", "f_slider": "30", "f_switch": true, "f_text": "hello", "f_textarea": "multi\nline", "rating3": "3", "rating_native": "3"}
+[Reflex Frontend Exception]
+ TypeError: undefined is not an object (evaluating 'e.changedTouches[0]')
+@http://localhost:3431/assets/esm-D3c8I7t_.js:156:50938
+o@http://localhost:3431/assets/esm-D3c8I7t_.js:2:39075
+dispatchEvent@\[native code]
+@http://localhost:3431/assets/text-area-BEpxpQTd.js:1:14803
+El@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:94973
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118142
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+
+FORM_DIALOG 1 {"d_check": true, "d_text": "dlg"}
+FORM_MAIN 3 {"d_check": true, "d_text": "dlg", "f_check": true, "f_check_on": true, "f_debounced": "deb", "f_native": "nat", "f_native_select": "n2", "f_radio": "y", "f_rating": "3", "f_slider": "30", "f_switch": true, "f_text": "hello", "f_textarea": "multi\nline", "rating3": "3"}
+FORM_CS 1 {"csf1_sw": false, "csf1_text": "one"}
+[Reflex Frontend Exception]
+ TypeError: undefined is not an object (evaluating 'e.changedTouches[0]')
+@http://localhost:3431/assets/esm-D3c8I7t_.js:156:50938
+o@http://localhost:3431/assets/esm-D3c8I7t_.js:2:39075
+dispatchEvent@\[native code]
+@http://localhost:3431/assets/text-area-BEpxpQTd.js:1:36517
+El@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:94973
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118142
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:118122
+Hu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:117915
+Uu@http://localhost:3431/assets/entry.client-BHluJ2VV.js:8:119358
+
+FORM_CS 1 {"csf2_sw": true, "csf2_text": ""}
+FORM_DIALOG 1 {"d_check": false, "d_text": "stopped"}
+[INFO] Stopping worker-1
+[INFO] Shutting down granian
+Debug: StateManagerDisk._flush_write_queue: writing 1 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 1 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

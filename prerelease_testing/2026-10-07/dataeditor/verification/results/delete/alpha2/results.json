@@ -1,0 +1,132 @@
+{
+  "control-Delete": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      }
+    ],
+    "pageerrors": [],
+    "requests_failed": [],
+    "http_errors": [],
+    "before": "[[\"alpha\"],[\"beta\"]]",
+    "after": "[[\"\"],[\"beta\"]]",
+    "edits": "1",
+    "deleted": "",
+    "versions": "reflex=0.10.0a2",
+    "browser": "153.0.8010.12",
+    "pass": true
+  },
+  "control-Backspace": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      }
+    ],
+    "pageerrors": [],
+    "requests_failed": [],
+    "http_errors": [],
+    "before": "[[\"alpha\"],[\"beta\"]]",
+    "after": "[[\"\"],[\"beta\"]]",
+    "edits": "1",
+    "deleted": "",
+    "versions": "reflex=0.10.0a2",
+    "browser": "153.0.8010.12",
+    "pass": true
+  },
+  "bound-Delete": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      }
+    ],
+    "pageerrors": [
+      {
+        "message": "Cannot read properties of undefined (reading 'length')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'length')\n    at shiftSelection (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:12751:56)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:12884:11\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:14308:37\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:14464:7\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:10485:14\n    at executeDispatch (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:9906:5)\n    at runWithFiberInDEV (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:944:66)\n    at processDispatchQueue (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:9932:27)\n    at http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:10201:5\n    at batchedUpdates$1 (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:2145:12)"
+      }
+    ],
+    "requests_failed": [],
+    "http_errors": [],
+    "before": "[[\"alpha\"],[\"beta\"]]",
+    "after": "[[\"alpha\"],[\"beta\"]]",
+    "edits": "0",
+    "deleted": "{\"columns\": {\"items\": []}, \"current\": {\"cell\": [0, 0], \"range\": {\"height\": 1, \"width\": 1, \"x\": 0, \"y\": 0}, \"rangeStack\": []}, \"rows\": {\"items\": []}}",
+    "versions": "reflex=0.10.0a2",
+    "browser": "153.0.8010.12",
+    "pass": false
+  },
+  "bound-Backspace": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      }
+    ],
+    "pageerrors": [
+      {
+        "message": "Cannot read properties of undefined (reading 'length')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'length')\n    at shiftSelection (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:12751:56)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:12884:11\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:14308:37\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:14464:7\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:10485:14\n    at executeDispatch (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:9906:5)\n    at runWithFiberInDEV (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:944:66)\n    at processDispatchQueue (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:9932:27)\n    at http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:10201:5\n    at batchedUpdates$1 (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:2145:12)"
+      }
+    ],
+    "requests_failed": [],
+    "http_errors": [],
+    "before": "[[\"alpha\"],[\"beta\"]]",
+    "after": "[[\"alpha\"],[\"beta\"]]",
+    "edits": "0",
+    "deleted": "{\"columns\": {\"items\": []}, \"current\": {\"cell\": [0, 0], \"range\": {\"height\": 1, \"width\": 1, \"x\": 0, \"y\": 0}, \"rangeStack\": []}, \"rows\": {\"items\": []}}",
+    "versions": "reflex=0.10.0a2",
+    "browser": "153.0.8010.12",
+    "pass": false
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "base": "http://localhost:3430",
+  "label": "chromium",
+  "groups": {
+    "select_matrix": {
+      "checks": [
+        {
+          "name": "submitted_select_id",
+          "ok": false,
+          "detail": {
+            "select_both_name": "b",
+            "select_name": "b"
+          }
+        },
+        {
+          "name": "submitted_select_name",
+          "ok": true,
+          "detail": {
+            "select_both_name": "b",
+            "select_name": "b"
+          }
+        },
+        {
+          "name": "submitted_select_both_name",
+          "ok": true,
+          "detail": {
+            "select_both_name": "b",
+            "select_name": "b"
+          }
+        }
+      ],
+      "console": [],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [],
+      "ws": {
+        "sent": 3,
+        "recv": 7
+      },
+      "unset": {
+        "select_both_name": "",
+        "select_name": ""
+      },
+      "filled": {
+        "select_both_name": "b",
+        "select_name": "b"
+      },
+      "seconds": 2.7351464580001448
+    }
+  },
+  "browser": {
+    "engine": "chromium",
+    "version": "153.0.8010.12"
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "reflex-components-dataeditor": {
+    "before": {
+      "filename": "reflex_components_dataeditor-0.9.3.post1-py3-none-any.whl",
+      "sha256": "bb3c20d8112c319ae8dfc43fc688ea2c7e70cf6066e2a83781f69f34efe31f3e",
+      "version": "0.9.3.post1",
+      "requires_python": ">=3.10",
+      "requires_dist": [
+        "reflex-base>=0.9.12",
+        "reflex-components-core>=0.9.0"
+      ]
+    },
+    "after": {
+      "filename": "reflex_components_dataeditor-0.10.0a1-py3-none-any.whl",
+      "sha256": "e5fa675bcb7f229525c2649d792c38a216069e46620050a73299549f5e53e3a3",
+      "version": "0.10.0a1",
+      "requires_python": ">=3.11",
+      "requires_dist": [
+        "reflex-base>=0.10.0a2",
+        "reflex-components-core>=0.10.0a2"
+      ]
+    },
+    "python_files_before": 2,
+    "python_files_after": 2,
+    "changed_python_files": [],
+    "changed_non_python_members": []
+  },
+  "reflex-components-react-player": {
+    "before": {
+      "filename": "reflex_components_react_player-0.9.2-py3-none-any.whl",
+      "sha256": "3e2d234759169d4f3b65ca3eafef1452cfce51ca190b0b318eb4129acf295a72",
+      "version": "0.9.2",
+      "requires_python": ">=3.10",
+      "requires_dist": [
+        "reflex-base>=0.9.0",
+        "reflex-components-core>=0.9.0"
+      ]
+    },
+    "after": {
+      "filename": "reflex_components_react_player-0.10.0a1-py3-none-any.whl",
+      "sha256": "6cd76f05631bb19826aba50be59804517192918c2c098822b034351bcbc3ca1d",
+      "version": "0.10.0a1",
+      "requires_python": ">=3.11",
+      "requires_dist": [
+        "reflex-base>=0.10.0a2",
+        "reflex-components-core>=0.10.0a2"
+      ]
+    },
+    "python_files_before": 4,
+    "python_files_after": 4,
+    "changed_python_files": [],
+    "changed_non_python_members": []
+  },
+  "reflex-components-sonner": {
+    "before": {
+      "filename": "reflex_components_sonner-0.9.4-py3-none-any.whl",
+      "sha256": "1285edbb70e565b44aa3b5052ebe9c4a5384f850ea1b2f7286a295a6ca8a1b66",
+      "version": "0.9.4",
+      "requires_python": ">=3.10",
+      "requires_dist": [
+        "reflex-base>=0.9.0",
+        "reflex-components-lucide>=0.9.0"
+      ]
+    },
+    "after": {
+      "filename": "reflex_components_sonner-0.10.0a1-py3-none-any.whl",
+      "sha256": "0f899a7259250f420bbc4e5e08d5841653212713e2ba0b9b36eb6247c0c91442",
+      "version": "0.10.0a1",
+      "requires_python": ">=3.11",
+      "requires_dist": [
+        "reflex-base>=0.10.0a2",
+        "reflex-components-lucide>=1.1.0a1"
+      ]
+    },
+    "python_files_before": 2,
+    "python_files_after": 2,
+    "changed_python_files": [],
+    "changed_non_python_members": []
+  },
+  "reflex-components-lucide": {
+    "before": {
+      "filename": "reflex_components_lucide-1.0.4-py3-none-any.whl",
+      "sha256": "2688f75468f1fa97f81e3d54e8e709c76cff8d8bc9260eb08f75b2f2b1e4b2bd",
+      "version": "1.0.4",
+      "requires_python": ">=3.10",
+      "requires_dist": [
+        "reflex-base>=0.9.0"
+      ]
+    },
+    "after": {
+      "filename": "reflex_components_lucide-1.1.0a1-py3-none-any.whl",
+      "sha256": "fa914b1ab0f3640038d85299b77c9b63e2e2ac21892437026f729bd1d35a8c53",
+      "version": "1.1.0a1",
+      "requires_python": ">=3.11",
+      "requires_dist": [
+        "reflex-base>=0.10.0a2"
+      ]
+    },
+    "python_files_before": 2,
+    "python_files_after": 2,
+    "changed_python_files": [],
+    "changed_non_python_members": []
+  }
+}

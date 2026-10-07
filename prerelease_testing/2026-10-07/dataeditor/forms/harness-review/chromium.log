@@ -1,0 +1,4 @@
+WARN `--no-project` was provided, but no project was found
+  [FAIL] select_matrix/submitted_select_id: {'select_both_name': 'b', 'select_name': 'b'}
+  [PASS] select_matrix/submitted_select_name: {'select_both_name': 'b', 'select_name': 'b'}
+  [PASS] select_matrix/submitted_select_both_name: {'select_both_name': 'b', 'select_name': 'b'}

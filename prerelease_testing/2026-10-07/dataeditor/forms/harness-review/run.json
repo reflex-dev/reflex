@@ -1,0 +1,50 @@
+{
+  "command": [
+    "uv",
+    "--no-config",
+    "run",
+    "--no-project",
+    "--python",
+    "/private/tmp/reflex-prerelease-harness-check/envs/forms-alpha2/bin/python",
+    "reflex",
+    "run",
+    "--env",
+    "dev",
+    "--frontend-port",
+    "3430",
+    "--backend-port",
+    "8430",
+    "--loglevel",
+    "debug"
+  ],
+  "cwd": "/private/tmp/reflex-prerelease-harness-check/apps/forms/alpha2-dev",
+  "environment": {
+    "REFLEX_TEST_ENV": "forms-alpha2",
+    "REFLEX_TELEMETRY_ENABLED": "false",
+    "CLUSTER_API_URL": "http://localhost:8430"
+  },
+  "drivers": [
+    {
+      "command": [
+        "uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-harness-check/envs/driver/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/dataeditor/forms/scripts/drive_forms.py",
+        "http://localhost:3430",
+        "/private/tmp/reflex-prerelease-harness-check/results/forms/alpha2-dev/chromium",
+        "--browser",
+        "chromium",
+        "--groups",
+        "select_matrix"
+      ],
+      "returncode": 1
+    }
+  ],
+  "pid": 17009,
+  "server_returncode": 0,
+  "cleanup_remaining_pids": []
+}

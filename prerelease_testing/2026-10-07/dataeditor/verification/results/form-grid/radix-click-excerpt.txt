@@ -1,0 +1,19 @@
+	import_react.useEffect(() => {
+		const input = bubbleInput;
+		if (!input) return;
+		const inputProto = window.HTMLInputElement.prototype;
+		const setChecked = Object.getOwnPropertyDescriptor(inputProto, "checked").set;
+		const isUserInteraction = userInteractionCount !== prevUserInteractionCountRef.current;
+		prevUserInteractionCountRef.current = userInteractionCount;
+		const checkedChanged = prevCheckedRef.current !== checked;
+		prevCheckedRef.current = checked;
+		const bubbles = !(isUserInteraction && hasConsumerStoppedPropagationRef.current);
+		if (checkedChanged && setChecked) {
+			shouldStopClickPropagationRef.current = !isUserInteraction;
+			const event = new Event("click", { bubbles });
+			input.indeterminate = isIndeterminate$1(checked);
+			setChecked.call(input, isIndeterminate$1(checked) ? false : checked);
+			input.dispatchEvent(event);
+			shouldStopClickPropagationRef.current = false;
+		}
+	}, [

@@ -1,0 +1,213 @@
+{
+  "control": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3435/",
+          "line": 23,
+          "column": 22,
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3435/@vite/client",
+          "line": 933,
+          "column": 8,
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3435/@vite/client",
+          "line": 1046,
+          "column": 11,
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=4673e6be",
+          "line": 15804,
+          "column": 48,
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      }
+    ],
+    "pageerrors": [],
+    "requests_failed": [],
+    "http_errors": [],
+    "ws_frames": [
+      "{\"type\":\"connected\"}",
+      "0{\"sid\":\"OVTgQJwon3Rb93jKAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "40/_event,{\"sid\":\"HR6wUQD4H0b0hW-ZAAAB\"}",
+      "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8435\",\"origin\":\"http://localhost:3435\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"DciE/xIlSfWU/WlnDzh9Gg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8435\",\"origin\":\"http://localhost:3435\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"DciE/xIlSfWU/WlnDzh9Gg==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3435\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3435/index\",\"full_raw_path\":\"http://localhost:3435/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"f7f9e122-cbf6-4052-f8aa-bc789b9947f0\",\"client_ip\":",
+      "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    ],
+    "body": "Control\n\nreflex=0.10.0a2 dataeditor=0.10.0a1\n\nControl\nForeach\nMemo foreach",
+    "grid_count": 1,
+    "browser": "153.0.8010.12",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "pass": true
+  },
+  "foreach": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3435/foreach",
+          "line": 23,
+          "column": 22,
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3435/@vite/client",
+          "line": 933,
+          "column": 8,
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3435/@vite/client",
+          "line": 1046,
+          "column": 11,
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=4673e6be",
+          "line": 15804,
+          "column": 48,
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      },
+      {
+        "type": "error",
+        "text": "%o\n\n%s\n\n%s\n ReferenceError: rows_rx_state_ is not defined\n    at getData_osizayzf (http://localhost:3435/app_components/foreach_probe/foreach_probe.jsx:142:11)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:13099:17\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:11034:56\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6981:30\n    at walkRowsInCol (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6540:27)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6963:3\n    at walkColumns (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6561:7)\n    at drawCells (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6930:2)\n    at drawGrid (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:9637:16)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:10142:4 The above error occurred in the <ForwardRef(DataGrid)> component. React will try to recreate this component tree from scratch using the error boundary you provided, C.",
+        "location": {
+          "url": "http://localhost:3435/@vite/client",
+          "line": 356,
+          "column": 3,
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      },
+      {
+        "type": "error",
+        "text": "%o\n\n%s\n\n%s\n ReferenceError: rows_rx_state_ is not defined\n    at getData_osizayzf (http://localhost:3435/app_components/foreach_probe/foreach_probe.jsx:142:11)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:13099:17\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:11034:56\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6981:30\n    at walkRowsInCol (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6540:27)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6963:3\n    at walkColumns (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6561:7)\n    at drawCells (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6930:2)\n    at drawGrid (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:9637:16)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:10142:4 The above error occurred in the <ForwardRef(DataGrid)> component. React will try to recreate this component tree from scratch using the error boundary you provided, C.",
+        "location": {
+          "url": "http://localhost:3435/@vite/client",
+          "line": 356,
+          "column": 3,
+          "lineNumber": 356,
+          "columnNumber": 3
+        }
+      }
+    ],
+    "pageerrors": [],
+    "requests_failed": [],
+    "http_errors": [],
+    "ws_frames": [
+      "{\"type\":\"connected\"}",
+      "0{\"sid\":\"09fNJKF9-eoGLvaRAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "40/_event,{\"sid\":\"SMILIBjvaMa68UEOAAAD\"}",
+      "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8435\",\"origin\":\"http://localhost:3435\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"MJpriiJQ6qybck254yNXXQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8435\",\"origin\":\"http://localhost:3435\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"MJpriiJQ6qybck254yNXXQ==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3435\",\"path\":\"/foreach\",\"raw_path\":\"/foreach\",\"full_path\":\"http://localhost:3435/foreach\",\"full_raw_path\":\"http://localhost:3435/foreach\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/foreach\",\"rx_router_session_rx_state_\":{\"client_token\":\"92329f2a-5944-411c-b014-fb208f",
+      "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    ],
+    "body": "An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nReferenceError: rows_rx_state_ is not defined\nReferenceError: rows_rx_state_ is not defined\n    at getData_osizayzf (http://localhost:3435/app_components/foreach_probe/foreach_probe.jsx:142:11)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:13099:17\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:11034:56\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6981:30\n    at walkRowsInCol (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6540:27)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6963:3\n    at walkColumns (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6561:7)\n    at drawCells (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:6930:2)\n    at drawGrid (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:9637:16)\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=3e50f082:10142:4\nCopy\nBuilt with",
+    "grid_count": 0,
+    "browser": "153.0.8010.12",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "pass": false
+  },
+  "memo": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+        "location": {
+          "url": "http://localhost:3435/memo",
+          "line": 23,
+          "column": 22,
+          "lineNumber": 23,
+          "columnNumber": 22
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting...",
+        "location": {
+          "url": "http://localhost:3435/@vite/client",
+          "line": 933,
+          "column": 8,
+          "lineNumber": 933,
+          "columnNumber": 8
+        }
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected.",
+        "location": {
+          "url": "http://localhost:3435/@vite/client",
+          "line": 1046,
+          "column": 11,
+          "lineNumber": 1046,
+          "columnNumber": 11
+        }
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "location": {
+          "url": "http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=4673e6be",
+          "line": 15804,
+          "column": 48,
+          "lineNumber": 15804,
+          "columnNumber": 48
+        }
+      }
+    ],
+    "pageerrors": [],
+    "requests_failed": [],
+    "http_errors": [],
+    "ws_frames": [
+      "{\"type\":\"connected\"}",
+      "0{\"sid\":\"V6qda6asjgnnVxQ9AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "40/_event,{\"sid\":\"GKcCDKDKQHfhBgzAAAAF\"}",
+      "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8435\",\"origin\":\"http://localhost:3435\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"xAjSzq6Xa4ZzBt1BvFkV1Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8435\",\"origin\":\"http://localhost:3435\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"xAjSzq6Xa4ZzBt1BvFkV1Q==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3435\",\"path\":\"/memo\",\"raw_path\":\"/memo\",\"full_path\":\"http://localhost:3435/memo\",\"full_raw_path\":\"http://localhost:3435/memo\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/memo\",\"rx_router_session_rx_state_\":{\"client_token\":\"84f590c1-7cea-4072-f054-3e5ebf4b651f\",\"client",
+      "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    ],
+    "body": "Memo foreach\n\nreflex=0.10.0a2 dataeditor=0.10.0a1\n\nControl\nForeach\nMemo foreach",
+    "grid_count": 2,
+    "browser": "153.0.8010.12",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "pass": true
+  }
+}

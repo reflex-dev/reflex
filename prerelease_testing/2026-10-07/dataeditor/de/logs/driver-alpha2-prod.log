@@ -1,0 +1,73 @@
+WARN `--no-project` was provided, but no project was found
+== group de_foreach
+  [FAIL] de_foreach/foreach_editors_render_without_errors: {'boxes': 0, 'canvases': 0, 'cells': [], 'pageerrors': [], 'console_errors': ['ReferenceError: g_rx_state_ is not defined\n    at n (http://localhost:8423/assets/p_dataeditor-BpRmFcja.js:173:35083)\n    at http://localhost:8423/assets/p_dataeditor-BpRmFcja.js:163:13629\n    at http://localhost:8423/
+   console errors/warnings: 2; pageerrors: 0; failed req: 0; http>=400: 0
+     error: ReferenceError: g_rx_state_ is not defined
+    at n (http://localhost:8423/assets/p_dataeditor-BpRmFcja.js:173:35083)
+    at http://localhost:8423/assets/p_dataeditor-BpRmFcja.js:163:13629
+    at http://localhost:8423/as
+     error: ReferenceError: g_rx_state_ is not defined
+    at n (http://localhost:8423/assets/p_dataeditor-BpRmFcja.js:173:35083)
+    at http://localhost:8423/assets/p_dataeditor-BpRmFcja.js:163:13629
+    at http://localhost:8423/as
+== group de_edit
+  [note] de_edit: {'first_edit_overlay_before_commit': ['d'], 'overlay_values': ['d']}
+  [FAIL] de_edit/first_edit_fast_typing_keeps_all_chars: {'cell': {'allowOverlay': True, 'data': 'd', 'displayData': 'Beta', 'kind': 'text', 'readonly': False}, 'pos': [0, 1]}
+  [PASS] de_edit/explicit_editor_col_0: {'cell': {'allowOverlay': True, 'data': 'MacEdit', 'displayData': 'Alpha', 'kind': 'text', 'readonly': False}, 'pos': [0, 0]}
+  [PASS] de_edit/explicit_editor_col_1: {'cell': {'allowOverlay': True, 'data': 42, 'displayData': '3', 'kind': 'number', 'readonly': False}, 'pos': [1, 2]}
+  [PASS] de_edit/explicit_editor_col_2: {'cell': {'allowOverlay': True, 'data': 9.5, 'displayData': '5', 'kind': 'number', 'readonly': False}, 'pos': [2, 3]}
+  [PASS] de_edit/bool_single_click_toggles: {'before': 'edits:4', 'after': 'edits:5', 'last_edit': '{"cell": {"data": false, "kind": "boolean", "readonly": false}, "pos": [3, 0]}'}
+  [PASS] de_edit/bool_second_click_toggles: {'after': 'edits:6', 'last_edit': '{"cell": {"data": true, "kind": "boolean", "readonly": false}, "pos": [3, 0]}'}
+  [PASS] de_edit/text_overlay_open: 
+  [PASS] de_edit/text_overlay_escape_closes: 
+  [PASS] de_edit/delete_selection_delivered: {"columns": {"items": []}, "current": {"cell": [0, 5], "range": {"height": 1, "width": 1, "x": 0, "y": 5}, "rangeStack": []}, "rows": {"items": []}}
+  [FAIL] de_edit/delete_no_javascript_error: ["Cannot read properties of undefined (reading 'length')\nTypeError: Cannot read properties of undefined (reading 'length')\n    at ps (http://localhost:8423/assets/p_dataeditor-BpRmFcja.js:163:5975)\n    at http://localhost:8423/assets/p_dataeditor-BpRmFcja.js:163:10219\n    at http://localhost:842
+  [FAIL] de_edit/delete_clears_cell: {"cell": {"data": true, "kind": "boolean", "readonly": false}, "pos": [3, 0]}
+   console errors/warnings: 2; pageerrors: 1; failed req: 1; http>=400: 1
+     error: Failed to load resource: net::ERR_CONNECTION_REFUSED
+     error: Failed to load resource: the server responded with a status of 404 (Not Found)
+     pageerror: Cannot read properties of undefined (reading 'length')
+TypeError: Cannot read properties of undefined (reading 'length')
+    at ps (http://localhost:8423/assets/p_dataeditor-BpRmFcja.js:163:5975)
+    at http://localhost:
+== group de_overlay
+  [PASS] de_overlay/image_overlay_styled: {'portal_html_len': 2886, 'has_carousel': True, 'wrapper_rect': [329.5, 268.5, 383, 612.796875], 'carousel_overflow': 'hidden', 'carousel_position': 'relative', 'wrapper_overflow': 'hidden', 'slider_display': 'flex', 'n_imgs': 5, 'n_visible_imgs': 1, 'visible_srcs': ['/img_a.png'], 'img_complete': [
+  [PASS] de_overlay/carousel_next_changes_slide: {'portal_html_len': 2877, 'has_carousel': True, 'wrapper_rect': [329.5, 268.5, 383, 612.796875], 'carousel_overflow': 'hidden', 'carousel_position': 'relative', 'wrapper_overflow': 'hidden', 'slider_display': 'flex', 'n_imgs': 5, 'n_visible_imgs': 1, 'visible_srcs': ['/img_b.png'], 'img_complete': [
+  [PASS] de_overlay/image_overlay_escape_after_arrow_closes: {'portal_html_len': 0, 'has_carousel': False, 'portal_html': ''}
+  [FAIL] de_overlay/image_overlay_escape_without_arrow_closes: {'portal_html_len': 2310, 'has_carousel': True, 'wrapper_rect': [329.5, 208.5, 160, 100], 'carousel_overflow': 'hidden', 'carousel_position': 'relative', 'wrapper_overflow': 'hidden', 'slider_display': 'flex', 'n_imgs': 1, 'n_visible_imgs': 1, 'visible_srcs': ['/img_red.png'], 'img_complete': [['/im
+   console errors/warnings: 2; pageerrors: 0; failed req: 1; http>=400: 1
+     error: Failed to load resource: net::ERR_CONNECTION_REFUSED
+     error: Failed to load resource: the server responded with a status of 404 (Not Found)
+== group de_multi
+  [PASS] de_multi/csa_canvas_present: 2
+  [PASS] de_multi/csb_canvas_present: 2
+  [PASS] de_multi/cs_a_click_updates_only_a: {'a': 'csa clicks 1 edits 0 last 0,1', 'b': 'csb clicks 0 edits 0 last'}
+  [PASS] de_multi/cs_b_edit_isolated: {'b': 'csb clicks 1 edits 1 last 0,0', 'b_rows': '[["zz",1],["b",2],["c",3]]', 'a_rows': '[["a",1],["b",2],["c",3]]'}
+  [PASS] de_multi/memo_editor_title_updates: memo editor (3)
+  [PASS] de_multi/memo_editor_rows_grow: {'before': 2, 'after': 3, 'col0': ['m1', 'm2', 'm3']}
+  [PASS] de_multi/dropdown_grid_renders_canvas: 
+  [note] de_multi: {'dropdown_cells': {'0-0': {'kind': 'text', 'data': 'x', 'display': 'x', 'ro': False, 'ov': True}, '1-0': {'kind': 'custom', 'data': {'kind': 'dropdown-cell', 'allowedValues': ['red', 'green', 'blue'], 'value': 'red'}, 'display': 'red', 'ro': False, 'ov': True}, '0-1': {'kind': 'text', 'data': 'y', 
+   console errors/warnings: 0; pageerrors: 0; failed req: 0; http>=400: 0
+== group de_theme
+  [PASS] de_theme/state_theme_light_bg_is_light: (255, 255, 255)
+  [PASS] de_theme/state_theme_dark_bg_matches_bgCell: (22, 22, 27)
+  [PASS] de_theme/static_DataEditorTheme_applied: (22, 22, 27)
+  [PASS] de_theme/state_theme_toggles_back: (255, 255, 255)
+   console errors/warnings: 2; pageerrors: 0; failed req: 1; http>=400: 1
+     error: Failed to load resource: net::ERR_CONNECTION_REFUSED
+     error: Failed to load resource: the server responded with a status of 404 (Not Found)
+== group de_filter
+  [PASS] de_filter/filter_initial_all_rows: visible rows: 30
+  [PASS] de_filter/client_state_filter_reduces_rows: visible rows: 10
+  [PASS] de_filter/filtered_grid_shows_only_veg: {'rows': 10, 'cat_col': ['veg', 'veg', 'veg', 'veg', 'veg', 'veg', 'veg', 'veg', 'veg', 'veg'], 'err': None}
+  [PASS] de_filter/filter_tracks_backend_updates: visible rows: 11
+  [PASS] de_filter/mapped_rows_grid_renders: {'rows': 31, 'col0': ['P00', 'P01', 'P02', 'P03', 'P04'], 'err': None}
+   console errors/warnings: 0; pageerrors: 0; failed req: 0; http>=400: 0
+== group de_big
+  [PASS] de_big/big_rows_loaded: {'text': 'rows: 5000', 'seconds_to_5000': 1.66}
+  [note] de_big: {'big_canvas_box': {'x': 10, 'y': 160, 'width': 700, 'height': 500}}
+  [PASS] de_big/big_scroll_moves: {'scroll': [32000, 170036], 'wheel_seconds': 2.17}
+  [PASS] de_big/big_scroll_no_long_tasks_over_250ms: {'n_longtasks': 0, 'max_ms': 0, 'sum_ms': 0}
+  [PASS] de_big/big_click_near_end_reports_row: click: 1,4999
+   console errors/warnings: 0; pageerrors: 0; failed req: 0; http>=400: 0
+TOTAL FAILS: 5 [('de_foreach', 'foreach_editors_render_without_errors'), ('de_edit', 'first_edit_fast_typing_keeps_all_chars'), ('de_edit', 'delete_no_javascript_error'), ('de_edit', 'delete_clears_cell'), ('de_overlay', 'image_overlay_escape_without_arrow_closes')]

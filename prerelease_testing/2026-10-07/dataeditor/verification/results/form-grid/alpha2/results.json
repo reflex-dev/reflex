@@ -1,0 +1,176 @@
+{
+  "form-only": {
+    "console": [
+      {
+        "phase": "load",
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "phase": "load",
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "phase": "load",
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "phase": "load",
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "phase": "checkbox",
+        "type": "warning",
+        "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+      }
+    ],
+    "pageerrors": [],
+    "http_errors": [],
+    "requests_failed": [],
+    "clicks": [
+      {
+        "type": "PointerEvent",
+        "target": "BUTTON",
+        "id": "checkbox",
+        "checked": null,
+        "mouse": true
+      },
+      {
+        "type": "Event",
+        "target": "INPUT",
+        "id": "",
+        "checked": true,
+        "mouse": false
+      },
+      {
+        "type": "PointerEvent",
+        "target": "SPAN",
+        "id": "",
+        "checked": null,
+        "mouse": true
+      },
+      {
+        "type": "Event",
+        "target": "INPUT",
+        "id": "",
+        "checked": true,
+        "mouse": false
+      },
+      {
+        "type": "PointerEvent",
+        "target": "BUTTON",
+        "id": "",
+        "checked": null,
+        "mouse": true
+      },
+      {
+        "type": "Event",
+        "target": "INPUT",
+        "id": "",
+        "checked": true,
+        "mouse": false
+      }
+    ],
+    "grid_count": 0,
+    "browser": "153.0.8010.12",
+    "pass": true
+  },
+  "form-grid": {
+    "console": [
+      {
+        "phase": "load",
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "phase": "load",
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "phase": "load",
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "phase": "load",
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "phase": "checkbox",
+        "type": "warning",
+        "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+      }
+    ],
+    "pageerrors": [
+      {
+        "phase": "checkbox",
+        "message": "Cannot read properties of undefined (reading '0')",
+        "stack": "TypeError: Cannot read properties of undefined (reading '0')\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:10368:31\n    at eventListener (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:2537:26)\n    at http://localhost:3435/node_modules/.vite/deps/@radix-ui_themes.js?v=6b1ab2bb:4863:10\n    at Object.react_stack_bottom_frame (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:14178:13)\n    at runWithFiberInDEV (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:944:66)\n    at commitHookEffectListMount (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:6901:153)\n    at commitHookPassiveMountEffects (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:6936:55)\n    at commitPassiveMountOnFiber (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:8313:22)\n    at recursivelyTraversePassiveMountEffects (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:8300:313)\n    at commitPassiveMountOnFiber (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:8372:14)"
+      },
+      {
+        "phase": "switch",
+        "message": "Cannot read properties of undefined (reading '0')",
+        "stack": "TypeError: Cannot read properties of undefined (reading '0')\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:10368:31\n    at eventListener (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:2537:26)\n    at http://localhost:3435/node_modules/.vite/deps/@radix-ui_themes.js?v=6b1ab2bb:15395:10\n    at Object.react_stack_bottom_frame (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:14178:13)\n    at runWithFiberInDEV (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:944:66)\n    at commitHookEffectListMount (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:6901:153)\n    at commitHookPassiveMountEffects (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:6936:55)\n    at commitPassiveMountOnFiber (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:8313:22)\n    at recursivelyTraversePassiveMountEffects (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:8300:313)\n    at commitPassiveMountOnFiber (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:8372:14)"
+      },
+      {
+        "phase": "radio",
+        "message": "Cannot read properties of undefined (reading '0')",
+        "stack": "TypeError: Cannot read properties of undefined (reading '0')\n    at http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:10368:31\n    at eventListener (http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26cd7d79:2537:26)\n    at http://localhost:3435/node_modules/.vite/deps/@radix-ui_themes.js?v=6b1ab2bb:12031:10\n    at Object.react_stack_bottom_frame (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:14178:13)\n    at runWithFiberInDEV (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:944:66)\n    at commitHookEffectListMount (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:6901:153)\n    at commitHookPassiveMountEffects (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:6936:55)\n    at commitPassiveMountOnFiber (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:8313:22)\n    at recursivelyTraversePassiveMountEffects (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:8300:313)\n    at commitPassiveMountOnFiber (http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:8312:6)"
+      }
+    ],
+    "http_errors": [],
+    "requests_failed": [],
+    "clicks": [
+      {
+        "type": "PointerEvent",
+        "target": "BUTTON",
+        "id": "checkbox",
+        "checked": null,
+        "mouse": true
+      },
+      {
+        "type": "Event",
+        "target": "INPUT",
+        "id": "",
+        "checked": true,
+        "mouse": false
+      },
+      {
+        "type": "PointerEvent",
+        "target": "SPAN",
+        "id": "",
+        "checked": null,
+        "mouse": true
+      },
+      {
+        "type": "Event",
+        "target": "INPUT",
+        "id": "",
+        "checked": true,
+        "mouse": false
+      },
+      {
+        "type": "PointerEvent",
+        "target": "BUTTON",
+        "id": "",
+        "checked": null,
+        "mouse": true
+      },
+      {
+        "type": "Event",
+        "target": "INPUT",
+        "id": "",
+        "checked": true,
+        "mouse": false
+      }
+    ],
+    "grid_count": 1,
+    "browser": "153.0.8010.12",
+    "pass": false
+  }
+}

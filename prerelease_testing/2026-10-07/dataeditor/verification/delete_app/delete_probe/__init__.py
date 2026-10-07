@@ -1,0 +1,1 @@
+"""Independent deletion callback verification."""

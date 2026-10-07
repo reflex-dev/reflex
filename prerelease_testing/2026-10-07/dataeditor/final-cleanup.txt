@@ -1,0 +1,2 @@
+Wed Oct  7 07:24:16 UTC 2026
+lsof_exit=1 (1 with no rows means no listening ports)

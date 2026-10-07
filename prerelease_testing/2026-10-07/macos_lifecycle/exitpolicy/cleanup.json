@@ -1,0 +1,11 @@
+{
+  "checked_at": "2026-10-07T07:19:54.730284+00:00",
+  "process_groups": [
+    17015,
+    17196
+  ],
+  "remaining_group_members": [],
+  "lsof_exitcode": 1,
+  "listeners": "",
+  "lsof_stderr": ""
+}

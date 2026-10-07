@@ -1,0 +1,368 @@
+{
+ "base": "http://localhost:3421",
+ "label": "stable-typing",
+ "groups": {
+  "typing_delay_0": {
+   "checks": [
+    {
+     "name": "typed_value_preserved",
+     "ok": false,
+     "detail": {
+      "delay": 0,
+      "before_commit": {
+       "active": "TEXTAREA",
+       "editor": {
+        "value": "low",
+        "start": 3,
+        "end": 3,
+        "focused": true
+       }
+      },
+      "event": {
+       "cell": {
+        "allowOverlay": true,
+        "data": "low",
+        "displayData": "Beta",
+        "kind": "text",
+        "readonly": false
+       },
+       "pos": [
+        0,
+        1
+       ]
+      }
+     }
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Link",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Notes",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Tags",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Drill",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=RowID",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+     "loc": "http://localhost:8438/xo_purple.png",
+     "repeat_count": 1
+    }
+   ],
+   "pageerrors": [],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8438/xo_purple.png",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "http_errors": [],
+   "notes": [],
+   "ws": {
+    "sent": 5,
+    "recv": 7
+   }
+  },
+  "typing_delay_40": {
+   "checks": [
+    {
+     "name": "typed_value_preserved",
+     "ok": false,
+     "detail": {
+      "delay": 40,
+      "before_commit": {
+       "active": "TEXTAREA",
+       "editor": {
+        "value": "low",
+        "start": 3,
+        "end": 3,
+        "focused": true
+       }
+      },
+      "event": {
+       "cell": {
+        "allowOverlay": true,
+        "data": "low",
+        "displayData": "Beta",
+        "kind": "text",
+        "readonly": false
+       },
+       "pos": [
+        0,
+        1
+       ]
+      }
+     }
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Link",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Notes",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Tags",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Drill",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=RowID",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+     "loc": "http://localhost:8438/xo_purple.png",
+     "repeat_count": 1
+    }
+   ],
+   "pageerrors": [],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8438/xo_purple.png",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "http_errors": [],
+   "notes": [],
+   "ws": {
+    "sent": 5,
+    "recv": 7
+   }
+  },
+  "typing_delay_120": {
+   "checks": [
+    {
+     "name": "typed_value_preserved",
+     "ok": false,
+     "detail": {
+      "delay": 120,
+      "before_commit": {
+       "active": "TEXTAREA",
+       "editor": {
+        "value": "low",
+        "start": 3,
+        "end": 3,
+        "focused": true
+       }
+      },
+      "event": {
+       "cell": {
+        "allowOverlay": true,
+        "data": "low",
+        "displayData": "Beta",
+        "kind": "text",
+        "readonly": false
+       },
+       "pos": [
+        0,
+        1
+       ]
+      }
+     }
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Link",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Notes",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Tags",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Drill",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=RowID",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+     "loc": "http://localhost:8438/xo_purple.png",
+     "repeat_count": 1
+    }
+   ],
+   "pageerrors": [],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8438/xo_purple.png",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "http_errors": [],
+   "notes": [],
+   "ws": {
+    "sent": 5,
+    "recv": 7
+   }
+  },
+  "first_key_selection": {
+   "checks": [
+    {
+     "name": "first_letter_not_selected_for_replacement",
+     "ok": true,
+     "detail": {
+      "active": "TEXTAREA",
+      "editor": {
+       "value": "S",
+       "start": 1,
+       "end": 1,
+       "focused": true
+      }
+     }
+    },
+    {
+     "name": "delayed_remainder_preserves_first_letter",
+     "ok": true,
+     "detail": {
+      "after_remaining_keys": {
+       "active": "TEXTAREA",
+       "editor": {
+        "value": "Slow",
+        "start": 4,
+        "end": 4,
+        "focused": true
+       }
+      },
+      "event": {
+       "cell": {
+        "allowOverlay": true,
+        "data": "Slow",
+        "displayData": "Beta",
+        "kind": "text",
+        "readonly": false
+       },
+       "pos": [
+        0,
+        1
+       ]
+      }
+     }
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Link",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Notes",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Tags",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Drill",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=RowID",
+     "loc": "http://localhost:3421/utils/helpers/dataeditor.js",
+     "repeat_count": 64
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+     "loc": "http://localhost:8438/xo_purple.png",
+     "repeat_count": 1
+    }
+   ],
+   "pageerrors": [],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8438/xo_purple.png",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "http_errors": [],
+   "notes": [
+    {
+     "after_first_key": {
+      "active": "TEXTAREA",
+      "editor": {
+       "value": "S",
+       "start": 1,
+       "end": 1,
+       "focused": true
+      }
+     }
+    }
+   ],
+   "ws": {
+    "sent": 5,
+    "recv": 7
+   }
+  }
+ },
+ "ws_frames_artifact": "websocket-frames.json.gz",
+ "full_console_artifact": "full-console.json.gz"
+}

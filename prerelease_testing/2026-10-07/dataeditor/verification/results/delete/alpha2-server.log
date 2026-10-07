@@ -1,0 +1,565 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-pack
+ages/reflex_base/config.py'
+Debug: Config: Config(app_name='delete_probe', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'loglevel', 'app_name'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/homebrew/bin/node'), '--version']
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a2 with Python 3.12.14 (PATH: 
+/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python)]
+Debug: [Node 26.8.1 (Minimum: 22.22.0) (PATH:/opt/homebrew/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masen/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; 
+root:xnu-12377.161.14~5/RELEASE_ARM64_T6000]
+Debug: Using package installer at: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', '/opt/homebrew/bin/npm']
+Debug: Using package executer at: [['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'], ['/opt/homebrew/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-pack
+ages/reflex_base/config.py'
+Debug: Config: Config(app_name='delete_probe', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'loglevel', 'app_name'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a2 with Python 3.12.14 (PATH: 
+/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python)]
+Debug: [Node 26.8.1 (Minimum: 22.22.0) (PATH:/opt/homebrew/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masen/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; 
+root:xnu-12377.161.14~5/RELEASE_ARM64_T6000]
+Debug: Using package installer at: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', '/opt/homebrew/bin/npm']
+Debug: Using package executer at: [['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'], ['/opt/homebrew/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────────────────── Initializing delete_probe ───────────────────────────
+Debug: Creating /Users/masen/Library/Application Support/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /Users/masen/Library/Application Support/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packa
+ges/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor-verification/delete-a
+lpha2/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 122371918916687869412021840730320526532.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.069 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized delete_probe. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3435
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8435
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3435 is in use.
+Debug: Checking if Frontend port: 3435 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3435 is not in use.
+Debug: Checking if Backend port: 8435 is in use.
+Debug: Checking if Backend port: 8435 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8435 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3435
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8435
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-pack
+ages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.09s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', '-d', 
+'@emotion/react@11.14.0', 'postcss-import@17.0.0', '@react-router/dev@8.4.0', 
+'postcss@8.5.29', 'vite@8.3.2', '@react-router/fs-routes@8.4.0', 
+'autoprefixer@10.6.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed postcss@8.5.29
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: 
+Debug: 127 packages installed [242.00ms]
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', 'react-router@8.4.0', 
+'isbot@5.2.2', 'react-helmet@6.1.0', 'react-responsive-carousel@3.2.23', 
+'sonner@2.0.8', '@react-router/node@8.4.0', 'mergician@v2.0.2', 
+'@radix-ui/react-form@0.1.16', 'lodash@4.18.1', '@radix-ui/themes@3.3.0', 
+'react-error-boundary@6.1.6', 'socket.io-client@4.8.4', 
+'universal-cookie@8.1.2', 'lucide-react@1.26.0', 'react@19.3.0', 
+'@glideapps/glide-data-grid@6.0.3', 'react-dom@19.3.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react-dom@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-router@8.4.0
+Debug: installed isbot@5.2.2
+Debug: installed react-helmet@6.1.0
+Debug: installed react-responsive-carousel@3.2.23
+Debug: installed sonner@2.0.8
+Debug: installed @react-router/node@8.4.0
+Debug: installed mergician@2.0.2
+Debug: installed @radix-ui/react-form@0.1.16
+Debug: installed lodash@4.18.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-error-boundary@6.1.6
+Debug: installed socket.io-client@4.8.4
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react@19.3.0
+Debug: installed @glideapps/glide-data-grid@6.0.3
+Debug: installed react-dom@19.3.0
+Debug: 
+Debug: 137 packages installed [518.00ms]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor-verification/delete-a
+lpha2/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor-verification/delete-a
+lpha2/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.78s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Using Granian for backend
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Reload paths: 
+['/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor-verification/delete
+-alpha2/rxconfig.py', 
+'/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor-verification/delete-
+alpha2/requirements.txt', 
+'/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor-verification/delete-
+alpha2/delete_probe']
+[INFO] Starting granian (main PID: 10484)
+[INFO] Listening at: http://0.0.0.0:8435
+[INFO] Spawning worker-1 with PID: 10495
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3435
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8435
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3435/
+App running at: http://localhost:3435/
+Backend running at: http://0.0.0.0:8435
+Debug:   ➜  Network: http://192.168.0.54:3435/     en0
+Debug:   ➜  Network: http://100.127.195.100:3435/  utun4
+Debug: 12:03:46 AM [vite] (ssr) connected.
+Debug: 12:05:10 AM [vite] (client) [console.warn] Checkbox is changing from 
+uncontrolled to controlled. Components should not switch from controlled to 
+uncontrolled (or vice versa). Decide between using a controlled or uncontrolled 
+value for the lifetime of the component.
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:10368:31
+    at eventListener 
+(http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=2
+6cd7d79:2537:26)
+    at 
+http://localhost:3435/node_modules/.vite/deps/@radix-ui_themes.js?v=6b1ab2bb:486
+3:10
+    at Object.react_stack_bottom_frame 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:14
+178:13)
+    at runWithFiberInDEV 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:94
+4:66)
+    at commitHookEffectListMount 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:69
+01:153)
+    at commitHookPassiveMountEffects 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:69
+36:55)
+    at commitPassiveMountOnFiber 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:83
+13:22)
+    at recursivelyTraversePassiveMountEffects 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:83
+00:313)
+    at commitPassiveMountOnFiber 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:83
+72:14)
+
+Debug: 12:05:14 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading '0')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:34
+Debug:  > node_modules/@radix-ui/react-checkbox/dist/index.mjs:245:14
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:28656:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:1045:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13748:28
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13835:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:16906:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:16851:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:17183:10
+Debug: 
+Debug: 12:05:14 AM [vite] (client) [console.warn] Checkbox is changing from 
+uncontrolled to controlled. Components should not switch from controlled to 
+uncontrolled (or vice versa). Decide between using a controlled or uncontrolled 
+value for the lifetime of the component.
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:10368:31
+    at eventListener 
+(http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=2
+6cd7d79:2537:26)
+    at 
+http://localhost:3435/node_modules/.vite/deps/@radix-ui_themes.js?v=6b1ab2bb:153
+95:10
+    at Object.react_stack_bottom_frame 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:14
+178:13)
+    at runWithFiberInDEV 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:94
+4:66)
+    at commitHookEffectListMount 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:69
+01:153)
+    at commitHookPassiveMountEffects 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:69
+36:55)
+    at commitPassiveMountOnFiber 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:83
+13:22)
+    at recursivelyTraversePassiveMountEffects 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:83
+00:313)
+    at commitPassiveMountOnFiber 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:83
+72:14)
+
+Debug: 12:05:14 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading '0')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:34
+Debug:  > node_modules/@radix-ui/react-switch/dist/index.mjs:226:14
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:28656:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:1045:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13748:28
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13835:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:16906:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:16851:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:17183:10
+Debug: 
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:10368:31
+    at eventListener 
+(http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=2
+6cd7d79:2537:26)
+    at 
+http://localhost:3435/node_modules/.vite/deps/@radix-ui_themes.js?v=6b1ab2bb:120
+31:10
+    at Object.react_stack_bottom_frame 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:14
+178:13)
+    at runWithFiberInDEV 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:94
+4:66)
+    at commitHookEffectListMount 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:69
+01:153)
+    at commitHookPassiveMountEffects 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:69
+36:55)
+    at commitPassiveMountOnFiber 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:83
+13:22)
+    at recursivelyTraversePassiveMountEffects 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:83
+00:313)
+    at commitPassiveMountOnFiber 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:83
+12:6)
+
+Debug: 12:05:15 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading '0')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:34
+Debug:  > node_modules/@radix-ui/react-radio-group/dist/index.mjs:169:14
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:28656:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:1045:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13748:28
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13835:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:16906:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:16851:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:16898:10
+Debug: 
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading 'length')
+TypeError: Cannot read properties of undefined (reading 'length')
+    at shiftSelection 
+(http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=2
+6cd7d79:12751:56)
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:12884:11
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:14308:37
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:14464:7
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:10485:14
+    at executeDispatch 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:99
+06:5)
+    at runWithFiberInDEV 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:94
+4:66)
+    at processDispatchQueue 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:99
+32:27)
+    at 
+http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:102
+01:5
+    at batchedUpdates$1 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:21
+45:12)
+
+Debug: 12:05:15 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading 'length')
+Debug:  > shiftSelection 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:38:6
+2
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:167:
+19
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:1836
+:46
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:2084
+:12
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:805:20
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:20804:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:1045:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:20854:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:21423:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3437:39
+Debug: 
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading 'length')
+TypeError: Cannot read properties of undefined (reading 'length')
+    at shiftSelection 
+(http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=2
+6cd7d79:12751:56)
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:12884:11
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:14308:37
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:14464:7
+    at 
+http://localhost:3435/node_modules/.vite/deps/@glideapps_glide-data-grid.js?v=26
+cd7d79:10485:14
+    at executeDispatch 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:99
+06:5)
+    at runWithFiberInDEV 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:94
+4:66)
+    at processDispatchQueue 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:99
+32:27)
+    at 
+http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:102
+01:5
+    at batchedUpdates$1 
+(http://localhost:3435/node_modules/.vite/deps/react-dom_client.js?v=5590dde1:21
+45:12)
+
+Debug: 12:05:20 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading 'length')
+Debug:  > shiftSelection 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:38:6
+2
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:167:
+19
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:1836
+:46
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:2084
+:12
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:805:20
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:20804:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:1045:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:20854:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:21423:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3437:39
+Debug: 
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+Debug: error: script "dev" exited with code 143
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

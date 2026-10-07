@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 import time
 import traceback
 from pathlib import Path
@@ -45,7 +46,28 @@ def forms(run, page):
     """
     old.g_forms(run, page)
     unset = json.loads(run.group["payload_unset"])
-    run.check("closed_dialog_controls_absent", not {"d_text", "d_check"} & unset.keys(), unset)
+    run.check(
+        "closed_dialog_controls_absent", not {"d_text", "d_check"} & unset.keys(), unset
+    )
+
+
+def dialog_control(run, page):
+    """Check explicit propagation control for a dialog in a form tree.
+
+    Args:
+        run: Evidence collector.
+        page: Browser page.
+    """
+    run.goto(page, "/forms-stopped", "#open_dialog")
+    page.locator("#open_dialog").click()
+    page.locator("#d_text").fill("stopped")
+    page.locator("#d_submit").click()
+    expect(page.locator("#dialog_count")).to_have_text("1")
+    run.check(
+        "explicit_stop_prevents_outer_submit",
+        page.locator("#main_count").inner_text() == "0",
+    )
+    run.shot(page, "dialog-stopped")
 
 
 def recharts(run, page):
@@ -57,21 +79,47 @@ def recharts(run, page):
     """
     run.goto(page, "/recharts", "#rc-run")
     page.wait_for_timeout(1500)
-    patterns = {"literal": r"L\d+", "var_create": r"A\d+", "funcstr": r"\d+u", "partial": r"\$\d+", "args": r"\$\d+", "memo": r"\$\d+"}
+    patterns = {
+        "literal": r"L\d+",
+        "var_create": r"A\d+",
+        "funcstr": r"\d+u",
+        "partial": r"\$\d+",
+        "args": r"\$\d+",
+        "memo": r"\$\d+",
+    }
     for name, pattern in patterns.items():
-        values = page.locator(f"#rc_{name} text[orientation=bottom]").all_text_contents()
-        run.check(f"formatter_{name}", bool(values) and all(re.fullmatch(pattern, value) for value in values), values)
+        values = page.locator(
+            f"#rc_{name} text[orientation=bottom]"
+        ).all_text_contents()
+        run.check(
+            f"formatter_{name}",
+            bool(values) and all(re.fullmatch(pattern, value) for value in values),
+            values,
+        )
     rejection = page.locator("#err-rc_untyped").all_text_contents()
-    run.check("untyped_function_rejected", bool(rejection) and "FunctionVar" in rejection[0], rejection)
+    run.check(
+        "untyped_function_rejected",
+        bool(rejection) and "FunctionVar" in rejection[0],
+        rejection,
+    )
     page.locator("#rc-currency").click()
     expect(page.locator("#rc-cur")).to_contain_text("EUR")
     for name in ("partial", "args", "memo"):
-        values = page.locator(f"#rc_{name} text[orientation=bottom]").all_text_contents()
-        run.check(f"reactive_formatter_{name}", bool(values) and all(value.startswith("EUR ") for value in values), values)
+        values = page.locator(
+            f"#rc_{name} text[orientation=bottom]"
+        ).all_text_contents()
+        run.check(
+            f"reactive_formatter_{name}",
+            bool(values) and all(value.startswith("EUR ") for value in values),
+            values,
+        )
     path = page.locator("#rc_literal .recharts-line-curve").get_attribute("d")
     page.locator("#rc-run").click()
     expect(page.locator("#rc-ticks")).to_have_text("ticks:20", timeout=30000)
-    run.check("chart_updates", page.locator("#rc_literal .recharts-line-curve").get_attribute("d") != path)
+    run.check(
+        "chart_updates",
+        page.locator("#rc_literal .recharts-line-curve").get_attribute("d") != path,
+    )
     run.shot(page, "recharts", full=True)
 
 
@@ -86,10 +134,18 @@ def new_components(run, page):
     page.locator("#media-toggle").click()
     expect(page.locator("#media-plays")).to_have_text("1", timeout=15000)
     page.wait_for_function("document.querySelector('video').currentTime > 0.1")
-    run.check("video_playback", True, page.locator("video").evaluate("element => ({time: element.currentTime, paused: element.paused, ready: element.readyState})"))
+    run.check(
+        "video_playback",
+        True,
+        page.locator("video").evaluate(
+            "element => ({time: element.currentTime, paused: element.paused, ready: element.readyState})"
+        ),
+    )
     page.locator("#media-toggle").click()
     expect(page.locator("#media-pauses")).to_have_text("1")
-    run.check("video_pauses", page.locator("video").evaluate("element => element.paused"))
+    run.check(
+        "video_pauses", page.locator("video").evaluate("element => element.paused")
+    )
     page.locator("#icon-toggle").click()
     expect(page.locator("#icon-selected")).to_have_text("true")
     run.check("lucide_icon_updates", page.locator("#icon-toggle svg").count() == 1)
@@ -99,8 +155,12 @@ def new_components(run, page):
     run.shot(page, "new-components")
 
 
-def main():
-    """Run selected groups and write evidence after every group."""
+def main() -> int:
+    """Run selected groups and write evidence after every group.
+
+    Returns:
+        One when any assertion fails, otherwise zero.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("base")
     parser.add_argument("out", type=Path)
@@ -109,13 +169,22 @@ def main():
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     run = old.Run(args.base, args.out, args.browser)
-    groups = {**old.GROUPS, "select_matrix": select_matrix, "forms": forms, "recharts": recharts, "new_components": new_components}
+    groups = {
+        **old.GROUPS,
+        "select_matrix": select_matrix,
+        "forms": forms,
+        "dialog_control": dialog_control,
+        "recharts": recharts,
+        "new_components": new_components,
+    }
     with sync_playwright() as playwright:
         browser = getattr(playwright, args.browser).launch()
         run.results["browser"] = {"engine": args.browser, "version": browser.version}
         for name in args.groups.split(","):
             run.start_group(name)
-            context = browser.new_context(viewport={"width": 1280, "height": 900}, accept_downloads=True)
+            context = browser.new_context(
+                viewport={"width": 1280, "height": 900}, accept_downloads=True
+            )
             page = context.new_page()
             run.attach(page)
             started = time.monotonic()
@@ -129,12 +198,24 @@ def main():
                 run.group["download_hashes"] = {}
                 for downloaded in (args.out / "downloads").glob("*"):
                     data = downloaded.read_bytes()
-                    run.group["download_hashes"][downloaded.name] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+                    run.group["download_hashes"][downloaded.name] = {
+                        "bytes": len(data),
+                        "sha256": hashlib.sha256(data).hexdigest(),
+                    }
                     downloaded.unlink()
             context.close()
-            (args.out / "results.json").write_text(json.dumps(run.results, indent=2, default=str))
+            (args.out / "results.json").write_text(
+                json.dumps(run.results, indent=2, default=str)
+            )
         browser.close()
+    return int(
+        any(
+            not check["ok"]
+            for group in run.results["groups"].values()
+            for check in group["checks"]
+        )
+    )
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -1,0 +1,445 @@
+{
+ "base": "http://localhost:8424",
+ "label": "stable-prod",
+ "groups": {
+  "de_foreach": {
+   "checks": [
+    {
+     "name": "foreach_editors_render_without_errors",
+     "ok": false,
+     "detail": {
+      "boxes": 0,
+      "canvases": 0,
+      "cells": [],
+      "pageerrors": [],
+      "console_errors": [
+       "ReferenceError: g_rx_state_ is not defined\n    at n (http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:173:34667)\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:13629\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:61937\n    at http://localhost:8424/assets/p_da",
+       "ReferenceError: g_rx_state_ is not defined\n    at n (http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:173:34667)\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:13629\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:61937\n    at http://localhost:8424/assets/p_da"
+      ]
+     }
+    }
+   ],
+   "console": [
+    {
+     "type": "error",
+     "text": "ReferenceError: g_rx_state_ is not defined\n    at n (http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:173:34667)\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:13629\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:61937\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:6109\n    at oi (http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:1086)\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:5825\n    at si (http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:1278)\n    at vi (http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:5338)\n    at eo (http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:37457)\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:47444",
+     "loc": "http://localhost:8424/assets/entry.client-DyRIokh9.js",
+     "repeat_count": 2
+    }
+   ],
+   "pageerrors": [],
+   "failed_requests": [],
+   "http_errors": [],
+   "notes": [],
+   "ws": {
+    "sent": 7,
+    "recv": 4
+   },
+   "seconds": 9.2
+  },
+  "de_edit": {
+   "checks": [
+    {
+     "name": "first_edit_fast_typing_keeps_all_chars",
+     "ok": false,
+     "detail": {
+      "cell": {
+       "allowOverlay": true,
+       "data": "d",
+       "displayData": "Beta",
+       "kind": "text",
+       "readonly": false
+      },
+      "pos": [
+       0,
+       1
+      ]
+     }
+    },
+    {
+     "name": "explicit_editor_col_0",
+     "ok": true,
+     "detail": {
+      "cell": {
+       "allowOverlay": true,
+       "data": "MacEdit",
+       "displayData": "Alpha",
+       "kind": "text",
+       "readonly": false
+      },
+      "pos": [
+       0,
+       0
+      ]
+     }
+    },
+    {
+     "name": "explicit_editor_col_1",
+     "ok": true,
+     "detail": {
+      "cell": {
+       "allowOverlay": true,
+       "data": 42,
+       "displayData": "3",
+       "kind": "number",
+       "readonly": false
+      },
+      "pos": [
+       1,
+       2
+      ]
+     }
+    },
+    {
+     "name": "explicit_editor_col_2",
+     "ok": true,
+     "detail": {
+      "cell": {
+       "allowOverlay": true,
+       "data": 9.5,
+       "displayData": "5",
+       "kind": "number",
+       "readonly": false
+      },
+      "pos": [
+       2,
+       3
+      ]
+     }
+    },
+    {
+     "name": "bool_single_click_toggles",
+     "ok": true,
+     "detail": {
+      "before": "edits:4",
+      "after": "edits:5",
+      "last_edit": "{\"cell\": {\"data\": false, \"kind\": \"boolean\", \"readonly\": false}, \"pos\": [3, 0]}"
+     }
+    },
+    {
+     "name": "bool_second_click_toggles",
+     "ok": true,
+     "detail": {
+      "after": "edits:6",
+      "last_edit": "{\"cell\": {\"data\": true, \"kind\": \"boolean\", \"readonly\": false}, \"pos\": [3, 0]}"
+     }
+    },
+    {
+     "name": "text_overlay_open",
+     "ok": true,
+     "detail": null
+    },
+    {
+     "name": "text_overlay_escape_closes",
+     "ok": true,
+     "detail": null
+    },
+    {
+     "name": "delete_selection_delivered",
+     "ok": true,
+     "detail": "{\"columns\": {\"items\": []}, \"current\": {\"cell\": [0, 5], \"range\": {\"height\": 1, \"width\": 1, \"x\": 0, \"y\": 5}, \"rangeStack\": []}, \"rows\": {\"items\": []}}"
+    },
+    {
+     "name": "delete_no_javascript_error",
+     "ok": false,
+     "detail": [
+      "Cannot read properties of undefined (reading 'length')\nTypeError: Cannot read properties of undefined (reading 'length')\n    at ps (http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:5975)\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:10219\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:30266\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:32642\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:53221\n    at yd (http://localhost:8424/assets/entry.client-DyRIokh9.js:8:125858)\n    at http://localhost:8424/assets/entry.client-DyRIokh9.js:8:130852\n    at _n (http://localhost:8424/assets/entry.client-DyRIokh9.js:8:15080)\n    at wd (http://localhost:8424/assets/entry.client-DyRIokh9.js:8:127085)\n    at up (http://localhost:8424/assets/entry.client-DyRIokh9.js:9:28428)"
+     ]
+    },
+    {
+     "name": "delete_clears_cell",
+     "ok": false,
+     "detail": "{\"cell\": {\"data\": true, \"kind\": \"boolean\", \"readonly\": false}, \"pos\": [3, 0]}"
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Link",
+     "loc": "http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js",
+     "repeat_count": 432
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Notes",
+     "loc": "http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js",
+     "repeat_count": 432
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Tags",
+     "loc": "http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js",
+     "repeat_count": 432
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Drill",
+     "loc": "http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js",
+     "repeat_count": 432
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=RowID",
+     "loc": "http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js",
+     "repeat_count": 432
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+     "loc": "http://localhost:8438/xo_purple.png",
+     "repeat_count": 1
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+     "loc": "http://localhost:8424/does-not-exist.png",
+     "repeat_count": 1
+    }
+   ],
+   "pageerrors": [
+    "Cannot read properties of undefined (reading 'length')\nTypeError: Cannot read properties of undefined (reading 'length')\n    at ps (http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:5975)\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:10219\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:30266\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:163:32642\n    at http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js:156:53221\n    at yd (http://localhost:8424/assets/entry.client-DyRIokh9.js:8:125858)\n    at http://localhost:8424/assets/entry.client-DyRIokh9.js:8:130852\n    at _n (http://localhost:8424/assets/entry.client-DyRIokh9.js:8:15080)\n    at wd (http://localhost:8424/assets/entry.client-DyRIokh9.js:8:127085)\n    at up (http://localhost:8424/assets/entry.client-DyRIokh9.js:9:28428)"
+   ],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8438/xo_purple.png",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "http_errors": [
+    {
+     "url": "http://localhost:8424/does-not-exist.png",
+     "status": 404
+    }
+   ],
+   "notes": [
+    {
+     "first_edit_overlay_before_commit": [
+      "d"
+     ],
+     "overlay_values": [
+      "d"
+     ]
+    }
+   ],
+   "ws": {
+    "sent": 25,
+    "recv": 25
+   },
+   "seconds": 13.1
+  },
+  "de_overlay": {
+   "checks": [
+    {
+     "name": "image_overlay_styled",
+     "ok": true,
+     "detail": {
+      "portal_html_len": 2886,
+      "has_carousel": true,
+      "wrapper_rect": [
+       329.5,
+       268.5,
+       383,
+       612.796875
+      ],
+      "carousel_overflow": "hidden",
+      "carousel_position": "relative",
+      "wrapper_overflow": "hidden",
+      "slider_display": "flex",
+      "n_imgs": 5,
+      "n_visible_imgs": 1,
+      "visible_srcs": [
+       "/img_a.png"
+      ],
+      "img_complete": [
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ],
+       [
+        "/img_b.png",
+        true,
+        200
+       ],
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ]
+      ],
+      "has_arrows": true,
+      "has_dots": true
+     }
+    },
+    {
+     "name": "carousel_next_changes_slide",
+     "ok": true,
+     "detail": {
+      "portal_html_len": 2877,
+      "has_carousel": true,
+      "wrapper_rect": [
+       329.5,
+       268.5,
+       383,
+       612.796875
+      ],
+      "carousel_overflow": "hidden",
+      "carousel_position": "relative",
+      "wrapper_overflow": "hidden",
+      "slider_display": "flex",
+      "n_imgs": 5,
+      "n_visible_imgs": 1,
+      "visible_srcs": [
+       "/img_b.png"
+      ],
+      "img_complete": [
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ],
+       [
+        "/img_b.png",
+        true,
+        200
+       ],
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ]
+      ],
+      "has_arrows": true,
+      "has_dots": true
+     }
+    },
+    {
+     "name": "image_overlay_escape_after_arrow_closes",
+     "ok": true,
+     "detail": {
+      "portal_html_len": 0,
+      "has_carousel": false,
+      "portal_html": ""
+     }
+    },
+    {
+     "name": "image_overlay_escape_without_arrow_closes",
+     "ok": false,
+     "detail": {
+      "portal_html_len": 2310,
+      "has_carousel": true,
+      "wrapper_rect": [
+       329.5,
+       208.5,
+       160,
+       100
+      ],
+      "carousel_overflow": "hidden",
+      "carousel_position": "relative",
+      "wrapper_overflow": "hidden",
+      "slider_display": "flex",
+      "n_imgs": 1,
+      "n_visible_imgs": 1,
+      "visible_srcs": [
+       "/img_red.png"
+      ],
+      "img_complete": [
+       [
+        "/img_red.png",
+        true,
+        160
+       ]
+      ],
+      "has_arrows": true,
+      "has_dots": true
+     }
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Link",
+     "loc": "http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js",
+     "repeat_count": 184
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Notes",
+     "loc": "http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js",
+     "repeat_count": 184
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Tags",
+     "loc": "http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js",
+     "repeat_count": 184
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Drill",
+     "loc": "http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js",
+     "repeat_count": 184
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=RowID",
+     "loc": "http://localhost:8424/assets/p_dataeditor-D_1lfqxZ.js",
+     "repeat_count": 184
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+     "loc": "http://localhost:8438/xo_purple.png",
+     "repeat_count": 1
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+     "loc": "http://localhost:8424/does-not-exist.png",
+     "repeat_count": 1
+    }
+   ],
+   "pageerrors": [],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8438/xo_purple.png",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "http_errors": [
+    {
+     "url": "http://localhost:8424/does-not-exist.png",
+     "status": 404
+    }
+   ],
+   "notes": [],
+   "ws": {
+    "sent": 11,
+    "recv": 12
+   },
+   "seconds": 7.6
+  }
+ },
+ "ws_frames_artifact": "websocket-frames.json.gz",
+ "full_console_artifact": "full-console.json.gz"
+}

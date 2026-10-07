@@ -1,0 +1,2537 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-macos-pass2/envs/forms-stable/lib/python3.12/sit
+e-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='cluster_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8430', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'loglevel', 'plugins',
+'api_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/homebrew/bin/node'), '--version']
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.14 (PATH: 
+/private/tmp/reflex-prerelease-macos-pass2/envs/forms-stable/bin/python)]
+Debug: [Node 26.8.1 (Minimum: 22.22.0) (PATH:/opt/homebrew/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masen/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; 
+root:xnu-12377.161.14~5/RELEASE_ARM64_T6000]
+Debug: Using package installer at: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', '/opt/homebrew/bin/npm']
+Debug: Using package executer at: [['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'], ['/opt/homebrew/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3430
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8430
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3430 is in use.
+Debug: Checking if Frontend port: 3430 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3430 is not in use.
+Debug: Checking if Backend port: 8430 is in use.
+Debug: Checking if Backend port: 8430 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8430 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3430
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8430
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+CLUSTER_APP reflex 0.9.12 /private/tmp/reflex-prerelease-macos-pass2/envs/forms-stable/lib/python3.12/site-packages/reflex/__init__.py
+Debug: Registered lifespan task: _setup_event_processor
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in SelectState.submit instead. This may lead
+to unexpected behavior but is intentionally ignored for on_submit.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-prerelease-macos-pass2/envs/forms-stable/lib/python3.12/sit
+e-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.31s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 42/41 0:00:00
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', '-d', 
+'@react-router/dev@8.4.0', 'postcss-import@17.0.0', 
+'@react-router/fs-routes@8.4.0', '@emotion/react@11.14.0', 
+'autoprefixer@10.5.4', 'postcss@8.5.26', 'vite@8.2.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: 
+Debug: 127 packages installed [174.00ms]
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', 
+'@radix-ui/themes@3.3.0', 'rehype-unwrap-images@1.0.0', 
+'@glideapps/glide-data-grid-cells@6.0.3', 'isbot@5.2.2', 
+'react-syntax-highlighter@16.1.1', 'shiki@4.4.3', 'react-dom@19.2.8', 
+'react-responsive-carousel@3.2.23', '@radix-ui/react-form@0.1.16', 
+'lodash@4.18.1', 'mergician@v2.0.2', 'moment-timezone@0.6.3', 
+'remark-math@6.0.0', 'moment@2.30.1', '@react-router/node@8.4.0', 
+'react-debounce-input@3.3.0', 'react-router@8.4.0', 'remark-gfm@4.0.1', 
+'rehype-katex@7.0.1', 'moment-duration-format@2.2.2', 'react-moment@2.0.2', 
+'react-helmet@6.1.0', 'react-error-boundary@6.1.2', 'universal-cookie@8.1.2', 
+'react-player@3.4.0', 'react-markdown@10.1.0', 'socket.io-client@4.8.3', 
+'react-dropzone@15.0.0', '@glideapps/glide-data-grid@6.0.3', 'rehype-raw@7.0.0',
+'react@19.2.8', 'sonner@2.0.8', 'lucide-react@1.26.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [218]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react-dom@19.2.8"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed rehype-unwrap-images@1.0.0
+Debug: installed @glideapps/glide-data-grid-cells@6.0.3
+Debug: installed isbot@5.2.2
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: installed shiki@4.4.3
+Debug: installed react-dom@19.2.8
+Debug: installed react-responsive-carousel@3.2.23
+Debug: installed @radix-ui/react-form@0.1.16
+Debug: installed lodash@4.18.1
+Debug: installed mergician@2.0.2
+Debug: installed moment-timezone@0.6.3
+Debug: installed remark-math@6.0.0
+Debug: installed moment@2.30.1
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-debounce-input@3.3.0
+Debug: installed react-router@8.4.0
+Debug: installed remark-gfm@4.0.1
+Debug: installed rehype-katex@7.0.1
+Debug: installed moment-duration-format@2.2.2
+Debug: installed react-moment@2.0.2
+Debug: installed react-helmet@6.1.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-player@3.4.0
+Debug: installed react-markdown@10.1.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-dropzone@15.0.0
+Debug: installed @glideapps/glide-data-grid@6.0.3
+Debug: installed rehype-raw@7.0.0
+Debug: installed react@19.2.8
+Debug: installed sonner@2.0.8
+Debug: installed lucide-react@1.26.0
+Debug: 
+Debug: 370 packages installed [1.77s]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/forms/stable-dev/reflex.lock/bun
+.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/forms/stable-dev/reflex.lock/pac
+kage.json
+Debug: [timing] Install Frontend Packages: 1.97s
+Debug: [timing] Write to Disk: 0.01s
+Debug: Using Granian for backend
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Reload paths: 
+['/private/tmp/reflex-prerelease-macos-pass2/apps/forms/stable-dev/rxconfig.py',
+'/private/tmp/reflex-prerelease-macos-pass2/apps/forms/stable-dev/requirements.t
+xt', 
+'/private/tmp/reflex-prerelease-macos-pass2/apps/forms/stable-dev/cluster_app', 
+'/private/tmp/reflex-prerelease-macos-pass2/apps/forms/stable-dev/assets']
+[INFO] Starting granian (main PID: 13591)
+[INFO] Listening at: http://0.0.0.0:8430
+[INFO] Spawning worker-1 with PID: 13608
+`rx._x` contains experimental features and might be removed at any time in the future.
+CLUSTER_APP reflex 0.9.12 /private/tmp/reflex-prerelease-macos-pass2/envs/forms-stable/lib/python3.12/site-packages/reflex/__init__.py
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3430
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8430
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3430/
+App running at: http://localhost:3430/
+Backend running at: http://0.0.0.0:8430
+Debug:   ➜  Network: http://192.168.0.54:3430/     en0
+Debug:   ➜  Network: http://100.127.195.100:3430/  utun4
+Debug: 12:09:03 AM [vite] (ssr) connected.
+Warning: Error transforming event payload for handler SelectState.submit: Error 
+transforming event argument 'data' with value '{'select_name': '', 
+'select_both_name': '', 'select_id': None, 'select_both': None, 'submit_matrix':
+None}' and type hint 'dict[str, str]'
+FORM_MAIN 1 {"d_check": null, "d_close": null, "d_submit": null, "d_text": null, "dialog_form": null, "f_check": false, "f_check_on": true, "f_debounced": null, "f_grid": null, "f_label": null, "f_named": "abc", "f_native": null, "f_native_select": "n1", "f_notcontrol": null, "f_radio": null, "f_rating": null, "f_select": null, "f_slider": "30", "f_submit": null, "f_switch": false, "f_text": null, "f_textarea": null, "f_upload": null, "f_wrapper": "on", "main_form": "on", "open_dialog": null, "rating3": "3"}
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at 
+http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js?v=3da2d4d7:11666:3
+1
+    at eventListener 
+(http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js?v=3da2d4d7:3644:2
+6)
+    at 
+http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js?v=972cde7c:483
+6:10
+    at Object.react_stack_bottom_frame 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:12
+902:13)
+    at runWithFiberInDEV 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:66
+17:153)
+    at commitHookPassiveMountEffects 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:66
+52:55)
+    at commitPassiveMountOnFiber 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+18:22)
+    at recursivelyTraversePassiveMountEffects 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+06:5)
+    at commitPassiveMountOnFiber 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+72:14)
+
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at 
+http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js?v=3da2d4d7:11666:3
+1
+    at eventListener 
+(http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js?v=3da2d4d7:3644:2
+6)
+    at 
+http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js?v=972cde7c:140
+51:10
+    at Object.react_stack_bottom_frame 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:12
+902:13)
+    at runWithFiberInDEV 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:66
+17:153)
+    at commitHookPassiveMountEffects 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:66
+52:55)
+    at commitPassiveMountOnFiber 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+18:22)
+    at recursivelyTraversePassiveMountEffects 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+06:5)
+    at commitPassiveMountOnFiber 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+72:14)
+
+Debug: 12:09:15 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading '0')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:34
+Debug:  > node_modules/@radix-ui/react-checkbox/dist/index.mjs:245:14
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13249:28
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15439:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15718:10
+Debug: 
+Debug: 12:09:15 AM [vite] (client) [console.warn] Checkbox is changing from 
+uncontrolled to controlled. Components should not switch from controlled to 
+uncontrolled (or vice versa). Decide between using a controlled or uncontrolled 
+value for the lifetime of the component.
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at 
+http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js?v=3da2d4d7:11666:3
+1
+    at eventListener 
+(http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js?v=3da2d4d7:3644:2
+6)
+    at 
+http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js?v=972cde7c:106
+87:10
+    at Object.react_stack_bottom_frame 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:12
+902:13)
+    at runWithFiberInDEV 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:66
+17:153)
+    at commitHookPassiveMountEffects 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:66
+52:55)
+    at commitPassiveMountOnFiber 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+18:22)
+    at recursivelyTraversePassiveMountEffects 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+06:5)
+    at commitPassiveMountOnFiber 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+17:6)
+
+Debug: 12:09:15 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading '0')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:34
+Debug:  > node_modules/@radix-ui/react-switch/dist/index.mjs:226:14
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13249:28
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15439:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15718:10
+Debug: 
+Debug: 12:09:16 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading '0')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:34
+Debug:  > node_modules/@radix-ui/react-radio-group/dist/index.mjs:169:14
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13249:28
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15439:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15476:10
+Debug: 
+FORM_MAIN 2 {"d_check": null, "d_close": null, "d_submit": null, "d_text": null, "dialog_form": null, "f_check": true, "f_check_on": true, "f_debounced": "deb", "f_grid": null, "f_label": null, "f_named": "abc", "f_native": "nat", "f_native_select": "n2", "f_notcontrol": null, "f_radio": "y", "f_rating": "3", "f_select": null, "f_slider": "30", "f_submit": null, "f_switch": true, "f_text": "hello", "f_textarea": "multi\nline", "f_upload": null, "f_wrapper": "on", "main_form": "on", "open_dialog": null, "rating3": "3", "rating_native": "3"}
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at 
+http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js?v=3da2d4d7:11666:3
+1
+    at eventListener 
+(http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js?v=3da2d4d7:3644:2
+6)
+    at 
+http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js?v=972cde7c:483
+6:10
+    at Object.react_stack_bottom_frame 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:12
+902:13)
+    at runWithFiberInDEV 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:66
+17:153)
+    at commitHookPassiveMountEffects 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:66
+52:55)
+    at commitPassiveMountOnFiber 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+18:22)
+    at recursivelyTraversePassiveMountEffects 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+06:5)
+    at commitPassiveMountOnFiber 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+72:14)
+
+Debug: 12:09:17 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading '0')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:34
+Debug:  > node_modules/@radix-ui/react-checkbox/dist/index.mjs:245:14
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13249:28
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15439:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15718:10
+Debug: 
+Debug: 12:09:17 AM [vite] (client) [console.warn] Checkbox is changing from 
+uncontrolled to controlled. Components should not switch from controlled to 
+uncontrolled (or vice versa). Decide between using a controlled or uncontrolled 
+value for the lifetime of the component.
+FORM_DIALOG 1 {"d_check": true, "d_submit": null, "d_text": "dlg", "dialog_form": "on"}
+FORM_MAIN 3 {"d_check": true, "d_close": null, "d_submit": null, "d_text": "dlg", "dialog_form": "on", "f_check": true, "f_check_on": true, "f_debounced": "deb", "f_grid": null, "f_label": null, "f_native": "nat", "f_native_select": "n2", "f_notcontrol": null, "f_radio": "y", "f_rating": "3", "f_select": null, "f_slider": "30", "f_submit": null, "f_switch": true, "f_text": "hello", "f_textarea": "multi\nline", "f_upload": null, "f_wrapper": "on", "main_form": "on", "open_dialog": null, "rating3": "3"}
+FORM_CS 1 {"csf1_form": null, "csf1_go": null, "csf1_label": null, "csf1_sw": false, "csf1_text": "one", "csf1_wrap": null}
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading '0')
+TypeError: Cannot read properties of undefined (reading '0')
+    at 
+http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js?v=3da2d4d7:11666:3
+1
+    at eventListener 
+(http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js?v=3da2d4d7:3644:2
+6)
+    at 
+http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js?v=972cde7c:140
+51:10
+    at Object.react_stack_bottom_frame 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:12
+902:13)
+    at runWithFiberInDEV 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:66
+17:153)
+    at commitHookPassiveMountEffects 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:66
+52:55)
+    at commitPassiveMountOnFiber 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+18:22)
+    at recursivelyTraversePassiveMountEffects 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+06:5)
+    at commitPassiveMountOnFiber 
+(http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=7b1418cf:76
+72:14)
+
+Debug: 12:09:20 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading '0')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:34
+Debug:  > node_modules/@radix-ui/react-switch/dist/index.mjs:226:14
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13249:28
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15439:10
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15718:10
+Debug: 
+FORM_CS 1 {"csf2_form": "on", "csf2_go": null, "csf2_label": null, "csf2_sw": true, "csf2_text": null, "csf2_wrap": "on"}
+FORM_DIALOG 1 {"d_check": false, "d_submit": null, "d_text": "stopped", "dialog_form": null}
+Debug: 12:09:25 AM [vite] (client) [console.warn] Deprecation warning: use 
+moment.updateLocale(localeName, config) to change an existing locale. 
+moment.defineLocale(localeName, config) should only be used for creating a new 
+locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.
+Debug: [vite-plugin-safari-cachebust] Rewrote 3 modulepreload links with 
+__reflex_ts param.
+FORM_MAIN 1 {"d_check": null, "d_close": null, "d_submit": null, "d_text": null, "dialog_form": null, "f_check": false, "f_check_on": true, "f_debounced": null, "f_grid": null, "f_label": null, "f_named": "abc", "f_native": null, "f_native_select": "n1", "f_notcontrol": null, "f_radio": null, "f_rating": null, "f_select": null, "f_slider": "30", "f_submit": null, "f_switch": false, "f_text": null, "f_textarea": null, "f_upload": null, "f_wrapper": "on", "main_form": "on", "open_dialog": null, "rating3": "3"}
+[Reflex Frontend Exception]
+ TypeError: undefined is not an object (evaluating 'ev.changedTouches[0]')
+@http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js:11666:31
+eventListener@http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js:3644
+:30
+dispatchEvent@\[native code]
+@http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js:4836:23
+react_stack_bottom_frame@http://localhost:3430/node_modules/.vite/deps/react-dom
+_client.js:12902:19
+runWithFiberInDEV@http://localhost:3430/node_modules/.vite/deps/react-dom_client
+.js:851:131
+commitHookEffectListMount@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:6617:170
+commitHookPassiveMountEffects@http://localhost:3430/node_modules/.vite/deps/reac
+t-dom_client.js:6652:80
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7618:51
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+
+[Reflex Frontend Exception]
+ TypeError: undefined is not an object (evaluating 'ev.changedTouches[0]')
+@http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js:11666:31
+eventListener@http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js:3644
+:30
+dispatchEvent@\[native code]
+@http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js:14051:23
+react_stack_bottom_frame@http://localhost:3430/node_modules/.vite/deps/react-dom
+_client.js:12902:19
+runWithFiberInDEV@http://localhost:3430/node_modules/.vite/deps/react-dom_client
+.js:851:131
+commitHookEffectListMount@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:6617:170
+commitHookPassiveMountEffects@http://localhost:3430/node_modules/.vite/deps/reac
+t-dom_client.js:6652:80
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7618:51
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+
+[Reflex Frontend Exception]
+ TypeError: undefined is not an object (evaluating 'ev.changedTouches[0]')
+@http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js:11666:31
+eventListener@http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js:3644
+:30
+dispatchEvent@\[native code]
+@http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js:10687:23
+react_stack_bottom_frame@http://localhost:3430/node_modules/.vite/deps/react-dom
+_client.js:12902:19
+runWithFiberInDEV@http://localhost:3430/node_modules/.vite/deps/react-dom_client
+.js:851:131
+commitHookEffectListMount@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:6617:170
+commitHookPassiveMountEffects@http://localhost:3430/node_modules/.vite/deps/reac
+t-dom_client.js:6652:80
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7618:51
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+
+Debug: 12:09:50 AM [vite] (client) [Unhandled error] TypeError: undefined is not
+an object (evaluating 'ev.changedTouches[0]')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:39
+Debug:  > node_modules/@radix-ui/react-checkbox/dist/index.mjs:245:28
+Debug:  > react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:26
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:874:21
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13250:16
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:36
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:42
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug: 
+Debug: 12:09:50 AM [vite] (client) [console.warn] Checkbox is changing from 
+uncontrolled to controlled. Components should not switch from controlled to 
+uncontrolled (or vice versa). Decide between using a controlled or uncontrolled 
+value for the lifetime of the component.
+Debug: 12:09:50 AM [vite] (client) [Unhandled error] TypeError: undefined is not
+an object (evaluating 'ev.changedTouches[0]')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:39
+Debug:  > node_modules/@radix-ui/react-switch/dist/index.mjs:226:28
+Debug:  > react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:26
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:874:21
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13250:16
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:36
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:42
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug: 
+Debug: 12:09:51 AM [vite] (client) [Unhandled error] TypeError: undefined is not
+an object (evaluating 'ev.changedTouches[0]')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:39
+Debug:  > node_modules/@radix-ui/react-radio-group/dist/index.mjs:169:28
+Debug:  > react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:26
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:874:21
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13250:16
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:36
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:42
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug: 
+FORM_MAIN 2 {"d_check": null, "d_close": null, "d_submit": null, "d_text": null, "dialog_form": null, "f_check": true, "f_check_on": true, "f_debounced": "deb", "f_grid": null, "f_label": null, "f_named": "abc", "f_native": "nat", "f_native_select": "n2", "f_notcontrol": null, "f_radio": "y", "f_rating": "3", "f_select": null, "f_slider": "30", "f_submit": null, "f_switch": true, "f_text": "hello", "f_textarea": "multi\nline", "f_upload": null, "f_wrapper": "on", "main_form": "on", "open_dialog": null, "rating3": "3", "rating_native": "3"}
+[Reflex Frontend Exception]
+ TypeError: undefined is not an object (evaluating 'ev.changedTouches[0]')
+@http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js:11666:31
+eventListener@http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js:3644
+:30
+dispatchEvent@\[native code]
+@http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js:4836:23
+react_stack_bottom_frame@http://localhost:3430/node_modules/.vite/deps/react-dom
+_client.js:12902:19
+runWithFiberInDEV@http://localhost:3430/node_modules/.vite/deps/react-dom_client
+.js:851:131
+commitHookEffectListMount@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:6617:170
+commitHookPassiveMountEffects@http://localhost:3430/node_modules/.vite/deps/reac
+t-dom_client.js:6652:80
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7618:51
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+
+FORM_DIALOG 1 {"d_check": true, "d_submit": null, "d_text": "dlg", "dialog_form": "on"}
+FORM_MAIN 3 {"d_check": true, "d_close": null, "d_submit": null, "d_text": "dlg", "dialog_form": "on", "f_check": true, "f_check_on": true, "f_debounced": "deb", "f_grid": null, "f_label": null, "f_native": "nat", "f_native_select": "n2", "f_notcontrol": null, "f_radio": "y", "f_rating": "3", "f_select": null, "f_slider": "30", "f_submit": null, "f_switch": true, "f_text": "hello", "f_textarea": "multi\nline", "f_upload": null, "f_wrapper": "on", "main_form": "on", "open_dialog": null, "rating3": "3"}
+Debug: 12:09:52 AM [vite] (client) [Unhandled error] TypeError: undefined is not
+an object (evaluating 'ev.changedTouches[0]')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:39
+Debug:  > node_modules/@radix-ui/react-checkbox/dist/index.mjs:245:28
+Debug:  > react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:26
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:874:21
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13250:16
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:36
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:42
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug: 
+Debug: 12:09:52 AM [vite] (client) [console.warn] Checkbox is changing from 
+uncontrolled to controlled. Components should not switch from controlled to 
+uncontrolled (or vice versa). Decide between using a controlled or uncontrolled 
+value for the lifetime of the component.
+FORM_CS 1 {"csf1_form": null, "csf1_go": null, "csf1_label": null, "csf1_sw": false, "csf1_text": "one", "csf1_wrap": null}
+[Reflex Frontend Exception]
+ TypeError: undefined is not an object (evaluating 'ev.changedTouches[0]')
+@http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js:11666:31
+eventListener@http://localhost:3430/node_modules/.vite/deps/esm-BnQITf_M.js:3644
+:30
+dispatchEvent@\[native code]
+@http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js:14051:23
+react_stack_bottom_frame@http://localhost:3430/node_modules/.vite/deps/react-dom
+_client.js:12902:19
+runWithFiberInDEV@http://localhost:3430/node_modules/.vite/deps/react-dom_client
+.js:851:131
+commitHookEffectListMount@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:6617:170
+commitHookPassiveMountEffects@http://localhost:3430/node_modules/.vite/deps/reac
+t-dom_client.js:6652:80
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7618:51
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7672:52
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+commitPassiveMountOnFiber@http://localhost:3430/node_modules/.vite/deps/react-do
+m_client.js:7617:44
+recursivelyTraversePassiveMountEffects@http://localhost:3430/node_modules/.vite/
+deps/react-dom_client.js:7606:30
+
+FORM_CS 1 {"csf2_form": "on", "csf2_go": null, "csf2_label": null, "csf2_sw": true, "csf2_text": null, "csf2_wrap": "on"}
+Debug: 12:09:55 AM [vite] (client) [Unhandled error] TypeError: undefined is not
+an object (evaluating 'ev.changedTouches[0]')
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:665:40
+Debug:  > eventListener 
+node_modules/@glideapps/glide-data-grid/dist/esm/common/utils.js:19:39
+Debug:  > node_modules/@radix-ui/react-switch/dist/index.mjs:226:28
+Debug:  > react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:26
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:874:21
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13250:16
+Debug:  > commitHookPassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13336:36
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15484:42
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15719:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug:  > commitPassiveMountOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15477:12
+Debug:  > recursivelyTraversePassiveMountEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15440:12
+Debug: 
+FORM_DIALOG 1 {"d_check": false, "d_submit": null, "d_text": "stopped", "dialog_form": null}
+Debug: 12:10:00 AM [vite] (client) [console.warn] Deprecation warning: use 
+moment.updateLocale(localeName, config) to change an existing locale. 
+moment.defineLocale(localeName, config) should only be used for creating a new 
+locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 1 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 1 items
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

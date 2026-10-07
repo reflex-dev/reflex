@@ -87,8 +87,15 @@ cs_form_1 = FormCS.create(prefix="csf1")
 cs_form_2 = FormCS.create(prefix="csf2")
 
 
-def forms_page() -> rx.Component:
-    """Form page with every control kind, a dialog with a nested form, and CS forms."""
+def forms_page(stop_propagation: bool = False) -> rx.Component:
+    """Build a form page with a dialog and ComponentState forms.
+
+    Args:
+        stop_propagation: Stop dialog submit propagation for the control case.
+
+    Returns:
+        The composed form fixture.
+    """
     return rx.vstack(
         nav(),
         rx.heading("Form payloads"),
@@ -137,7 +144,7 @@ def forms_page() -> rx.Component:
                             rx.input(id="d_text"),
                             rx.checkbox(id="d_check"),
                             rx.button("Dialog submit", type="submit", id="d_submit"),
-                            on_submit=FormState.dialog_submit,
+                            on_submit=FormState.dialog_submit.stop_propagation if stop_propagation else FormState.dialog_submit,
                             id="dialog_form",
                         ),
                         rx.dialog.close(rx.button("Close", type="button", id="d_close")),

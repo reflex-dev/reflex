@@ -1,0 +1,13 @@
+export const Dataeditor_dataeditor_ea07484df5c2c5cbfabfa97f4cb9b2b7_31bf677b = /*#__PURE__*/ (() => {
+const Dataeditor_dataeditor_ea07484df5c2c5cbfabfa97f4cb9b2b7_31bf677b = memo(({children, ...rest}) => {
+    const on_cell_clicked_83ecebe726429f22a74327ad7122bebf = useCallback(((_ev_0) => (addEvents([(ReflexEvent("reflex___state____state.delete_probe___delete_probe____state.click", ({ ["pos"] : _ev_0 }), ({  })))], [_ev_0], ({  })))), [addEvents, ReflexEvent])
+const on_cell_edited_44daee488c3a810a11bb7d4432ebcc93 = useCallback(((_ev_0, _ev_1) => (addEvents([(ReflexEvent("reflex___state____state.delete_probe___delete_probe____state.edit", ({ ["pos"] : _ev_0, ["cell"] : _ev_1 }), ({  })))], [_ev_0, _ev_1], ({  })))), [addEvents, ReflexEvent])
+const on_delete_cb60212088d951e8f31c074a3f50563c = useCallback(((_ev_0) => (addEvents([(ReflexEvent("reflex___state____state.delete_probe___delete_probe____state.delete", ({ ["selection"] : _ev_0 }), ({  })))], [_ev_0], ({  })))), [addEvents, ReflexEvent])
+const reflex___state____state__delete_probe___delete_probe____state = useContext(StateContexts.reflex___state____state__delete_probe___delete_probe____state)
+function getData_wnkiegyk([col, row]){
+    return formatDataEditorCells(col, row, [({ ["title"] : "Name", ["type"] : "str", ["width"] : 180, ["id"] : "name", ["overlayIcon"] : null })], reflex___state____state__delete_probe___delete_probe____state.rows_rx_state_);
+  }
+
+
+    return(
+        jsx(DataEditor,{...mergeSlotProps(rest, ({ columns:[({ ["title"] : "Name", ["type"] : "str", ["width"] : 180, ["id"] : "name", ["overlayIcon"] : null })], css:({ ["width"] : "260px", ["height"] : "170px" }), data:reflex___state____state__delete_probe___delete_probe____state.rows_rx_state_, getCellContent:getData_wnkiegyk, getCellsForSelection:true, headerHeight:36, onCellClicked:on_cell_clicked_83ecebe726429f22a74327ad7122bebf, onCellEdited:on_cell_edited_44daee488c3a810a11bb7d4432ebcc93, onDelete:on_delete_cb60212088d951e8f31c074a3f50563c, onPaste:false, rowHeight:40, rowMarkers:"number", rows:reflex___state____state__delete_probe___delete_probe____state.rows_rx_state_.length }))},)

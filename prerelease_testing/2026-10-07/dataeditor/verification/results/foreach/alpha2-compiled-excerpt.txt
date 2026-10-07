@@ -1,0 +1,60 @@
+export const MemoGrid_fd0a750e = /*#__PURE__*/ (() => {
+const MemoGrid_fd0a750e = memo(({rows:rowsRxMemo}) => {
+    
+function getData_rjutlsgw([col, row]){
+    return formatDataEditorCells(col, row, [({ ["title"] : "Name", ["type"] : "str", ["width"] : 160, ["id"] : "name", ["overlayIcon"] : null })], rowsRxMemo);
+  }
+
+
+    return(
+        jsx(RadixThemesBox,{className:"probe-grid",css:({ ["width"] : "240px", ["height"] : "160px" })},jsx("div",{css:({ ["width"] : "240px", ["height"] : "160px" })},jsx(DataEditor,{columns:[({ ["title"] : "Name", ["type"] : "str", ["width"] : 160, ["id"] : "name", ["overlayIcon"] : null })],css:({ ["width"] : "240px", ["height"] : "160px" }),data:rowsRxMemo,getCellContent:getData_rjutlsgw,getCellsForSelection:true,onPaste:false,rows:rowsRxMemo.length},)))
+    )
+});
+MemoGrid_fd0a750e.displayName = "MemoGrid";
+return MemoGrid_fd0a750e;
+})();
+
+export const Dataeditor_dataeditor_7b018767b5b92ccd88d37fa803ec4b03_fd0a750e = /*#__PURE__*/ (() => {
+const Dataeditor_dataeditor_7b018767b5b92ccd88d37fa803ec4b03_fd0a750e = memo(({children, ...rest}) => {
+    const reflex___state____state__foreach_probe___foreach_probe____state = useContext(StateContexts.reflex___state____state__foreach_probe___foreach_probe____state)
+function getData_udaxihhe([col, row]){
+    return formatDataEditorCells(col, row, [({ ["title"] : "Name", ["type"] : "str", ["width"] : 160, ["id"] : "name", ["overlayIcon"] : null })], reflex___state____state__foreach_probe___foreach_probe____state.groups_rx_state_?.at?.(0));
+  }
+
+
+    return(
+        jsx(DataEditor,{...mergeSlotProps(rest, ({ columns:[({ ["title"] : "Name", ["type"] : "str", ["width"] : 160, ["id"] : "name", ["overlayIcon"] : null })], css:({ ["width"] : "240px", ["height"] : "160px" }), data:reflex___state____state__foreach_probe___foreach_probe____state.groups_rx_state_?.at?.(0), getCellContent:getData_udaxihhe, getCellsForSelection:true, onPaste:false, rows:reflex___state____state__foreach_probe___foreach_probe____state.groups_rx_state_?.at?.(0).length }))},)
+    )
+});
+Dataeditor_dataeditor_7b018767b5b92ccd88d37fa803ec4b03_fd0a750e.displayName = "DataEditor";
+return Dataeditor_dataeditor_7b018767b5b92ccd88d37fa803ec4b03_fd0a750e;
+})();
+
+export const Foreach_comp_445d45adabc46637d19a91b98991cb85_fd0a750e = /*#__PURE__*/ (() => {
+const Foreach_comp_445d45adabc46637d19a91b98991cb85_fd0a750e = memo(({children}) => {
+    const reflex___state____state__foreach_probe___foreach_probe____state = useContext(StateContexts.reflex___state____state__foreach_probe___foreach_probe____state)
+function getData_osizayzf([col, row]){
+    return formatDataEditorCells(col, row, [({ ["title"] : "Name", ["type"] : "str", ["width"] : 160, ["id"] : "name", ["overlayIcon"] : null })], rows_rx_state_);
+  }
+
+
+    return(
+        Array.prototype.map.call(reflex___state____state__foreach_probe___foreach_probe____state.groups_rx_state_ ?? [],((rows_rx_state_,index_108cddd760ced1f3c517788d92937d20)=>(jsx(RadixThemesBox,{className:"probe-grid",css:({ ["width"] : "240px", ["height"] : "160px" }),key:index_108cddd760ced1f3c517788d92937d20},jsx("div",{css:({ ["width"] : "240px", ["height"] : "160px" })},jsx(DataEditor,{columns:[({ ["title"] : "Name", ["type"] : "str", ["width"] : 160, ["id"] : "name", ["overlayIcon"] : null })],css:({ ["width"] : "240px", ["height"] : "160px" }),data:rows_rx_state_,getCellContent:getData_osizayzf,getCellsForSelection:true,onPaste:false,rows:rows_rx_state_.length},))))))
+    )
+});
+Foreach_comp_445d45adabc46637d19a91b98991cb85_fd0a750e.displayName = "Foreach";
+return Foreach_comp_445d45adabc46637d19a91b98991cb85_fd0a750e;
+})();
+
+export const Foreach_comp_63a2c658580109e5697c3b675985ce02_fd0a750e = /*#__PURE__*/ (() => {
+const Foreach_comp_63a2c658580109e5697c3b675985ce02_fd0a750e = memo(({children}) => {
+    const reflex___state____state__foreach_probe___foreach_probe____state = useContext(StateContexts.reflex___state____state__foreach_probe___foreach_probe____state)
+
+
+
+    return(
+        Array.prototype.map.call(reflex___state____state__foreach_probe___foreach_probe____state.groups_rx_state_ ?? [],((rows_rx_state_,index_9b00a0ca218ed9b6d077c1ef749fabd0)=>(jsx(MemoGrid_fd0a750e,{key:index_9b00a0ca218ed9b6d077c1ef749fabd0,rows:rows_rx_state_},))))
+    )
+});
+Foreach_comp_63a2c658580109e5697c3b675985ce02_fd0a750e.displayName = "Foreach";
+return Foreach_comp_63a2c658580109e5697c3b675985ce02_fd0a750e;

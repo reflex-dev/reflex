@@ -1,0 +1,136 @@
+{
+  "name": "alpha2-npm-dev-exitpolicy",
+  "metadata": {
+    "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+    "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+    "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "packages": {
+      "reflex-components-code": "0.10.0a2",
+      "reflex-components-core": "0.10.0a2",
+      "reflex-components-lucide": "1.1.0a1",
+      "reflex-components-gridjs": "0.10.0a2",
+      "reflex": "0.10.0a2",
+      "reflex-hosting-cli": "0.2.0a1",
+      "reflex-components-dataeditor": "0.10.0a1",
+      "pydantic": "2.13.5",
+      "reflex-components-plotly": "0.10.0a2",
+      "reflex-components-react-player": "0.10.0a1",
+      "reflex-components-radix": "0.10.0a2",
+      "reflex-components-recharts": "0.10.0a2",
+      "reflex-components-sonner": "0.10.0a1",
+      "reflex-components-moment": "0.10.0a2",
+      "reflex-build-sdk": "0.1.0a1",
+      "reflex-base": "0.10.0a2",
+      "granian": "2.8.4",
+      "reflex-components-markdown": "0.10.0a2"
+    }
+  },
+  "command": [
+    "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/reflex",
+    "run",
+    "--frontend-port",
+    "3667",
+    "--backend-port",
+    "8667",
+    "--loglevel",
+    "debug"
+  ],
+  "app": "/private/tmp/reflex-prerelease-macos-pass2/apps/macos_lifecycle/ascii/alpha2-npm-dev-exitpolicy",
+  "manager": "npm",
+  "hmr": false,
+  "prod": false,
+  "messages": [
+    {
+      "type": "log",
+      "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    }
+  ],
+  "pid": 17196,
+  "started_at": 1791357544.070763,
+  "ready_seconds": 7.3434648513793945,
+  "browser": "153.0.8010.12",
+  "browser_events_passed": true,
+  "reload_passed": true,
+  "before_sigterm": [
+    {
+      "pid": "17196",
+      "ppid": "17192",
+      "pgid": "17196",
+      "stat": "Ss",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/reflex run --frontend-port 3667 --backend-port 8667 --loglevel debug"
+    },
+    {
+      "pid": "17200",
+      "ppid": "17196",
+      "pgid": "17196",
+      "stat": "S",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -c from multiprocessing.resource_tracker import main;main(12)"
+    },
+    {
+      "pid": "17264",
+      "ppid": "17196",
+      "pgid": "17196",
+      "stat": "S",
+      "command": "npm run dev"
+    },
+    {
+      "pid": "17265",
+      "ppid": "17196",
+      "pgid": "17196",
+      "stat": "S",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=13, pipe_handle=15) --multiprocessing-fork"
+    },
+    {
+      "pid": "17283",
+      "ppid": "17264",
+      "pgid": "17196",
+      "stat": "S",
+      "command": "node /private/tmp/reflex-prerelease-macos-pass2/apps/macos_lifecycle/ascii/alpha2-npm-dev-exitpolicy/.web/node_modules/.bin/react-router dev --host"
+    }
+  ],
+  "listeners_before_sigterm": "COMMAND   PID  USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\nPython  17196 masen    8u  IPv4 0xc07eb8841b9b85d7      0t0  TCP *:8667 (LISTEN)\nPython  17265 masen    8u  IPv4 0xc07eb8841b9b85d7      0t0  TCP *:8667 (LISTEN)\nnode    17283 masen   54u  IPv6 0xcd89321b69e2d58f      0t0  TCP *:3667 (LISTEN)\n",
+  "sigterm_wait_seconds": 0.19792974999973012,
+  "sigterm_cli_exited": true,
+  "returncode_after_sigterm": 0,
+  "after_sigterm": [],
+  "listeners_after_sigterm": "",
+  "before_cleanup": [],
+  "after_cleanup": [],
+  "listeners_after_cleanup": "",
+  "websocket_frames_omitted_from_compact_copy": 23,
+  "full_report_scratch_path": "/private/tmp/reflex-prerelease-macos-pass2/results/lifecycle-exitpolicy/alpha2-npm-dev-exitpolicy.json",
+  "observed_harness_exitcode": 0
+}

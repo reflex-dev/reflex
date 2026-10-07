@@ -1,0 +1,220 @@
+{
+ "base": "http://localhost:3431",
+ "label": "parent-prod-overlay",
+ "groups": {
+  "de_overlay": {
+   "checks": [
+    {
+     "name": "image_overlay_styled",
+     "ok": true,
+     "detail": {
+      "portal_html_len": 2886,
+      "has_carousel": true,
+      "wrapper_rect": [
+       329.5,
+       268.5,
+       383,
+       612.796875
+      ],
+      "carousel_overflow": "hidden",
+      "carousel_position": "relative",
+      "wrapper_overflow": "hidden",
+      "slider_display": "flex",
+      "n_imgs": 5,
+      "n_visible_imgs": 1,
+      "visible_srcs": [
+       "/img_a.png"
+      ],
+      "img_complete": [
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ],
+       [
+        "/img_b.png",
+        true,
+        200
+       ],
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ]
+      ],
+      "has_arrows": true,
+      "has_dots": true
+     }
+    },
+    {
+     "name": "carousel_next_changes_slide",
+     "ok": true,
+     "detail": {
+      "portal_html_len": 2877,
+      "has_carousel": true,
+      "wrapper_rect": [
+       329.5,
+       268.5,
+       383,
+       612.796875
+      ],
+      "carousel_overflow": "hidden",
+      "carousel_position": "relative",
+      "wrapper_overflow": "hidden",
+      "slider_display": "flex",
+      "n_imgs": 5,
+      "n_visible_imgs": 1,
+      "visible_srcs": [
+       "/img_b.png"
+      ],
+      "img_complete": [
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ],
+       [
+        "/img_b.png",
+        true,
+        200
+       ],
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ]
+      ],
+      "has_arrows": true,
+      "has_dots": true
+     }
+    },
+    {
+     "name": "image_overlay_escape_after_arrow_closes",
+     "ok": true,
+     "detail": {
+      "portal_html_len": 0,
+      "has_carousel": false,
+      "portal_html": ""
+     }
+    },
+    {
+     "name": "image_overlay_escape_without_arrow_closes",
+     "ok": false,
+     "detail": {
+      "portal_html_len": 2310,
+      "has_carousel": true,
+      "wrapper_rect": [
+       329.5,
+       208.5,
+       160,
+       100
+      ],
+      "carousel_overflow": "hidden",
+      "carousel_position": "relative",
+      "wrapper_overflow": "hidden",
+      "slider_display": "flex",
+      "n_imgs": 1,
+      "n_visible_imgs": 1,
+      "visible_srcs": [
+       "/img_red.png"
+      ],
+      "img_complete": [
+       [
+        "/img_red.png",
+        true,
+        160
+       ]
+      ],
+      "has_arrows": true,
+      "has_dots": true
+     }
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Link",
+     "loc": "http://localhost:3431/assets/dataeditor-CEjDFJyu.js",
+     "repeat_count": 176
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Notes",
+     "loc": "http://localhost:3431/assets/dataeditor-CEjDFJyu.js",
+     "repeat_count": 176
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Tags",
+     "loc": "http://localhost:3431/assets/dataeditor-CEjDFJyu.js",
+     "repeat_count": 176
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Drill",
+     "loc": "http://localhost:3431/assets/dataeditor-CEjDFJyu.js",
+     "repeat_count": 176
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=RowID",
+     "loc": "http://localhost:3431/assets/dataeditor-CEjDFJyu.js",
+     "repeat_count": 176
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+     "loc": "http://localhost:8438/xo_purple.png",
+     "repeat_count": 1
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+     "loc": "http://localhost:3431/does-not-exist.png",
+     "repeat_count": 1
+    }
+   ],
+   "pageerrors": [],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8438/xo_purple.png",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "http_errors": [
+    {
+     "url": "http://localhost:3431/does-not-exist.png",
+     "status": 404
+    }
+   ],
+   "notes": [],
+   "ws": {
+    "sent": 9,
+    "recv": 12
+   },
+   "seconds": 7.6
+  }
+ },
+ "ws_frames_artifact": "websocket-frames.json.gz",
+ "full_console_artifact": "full-console.json.gz"
+}

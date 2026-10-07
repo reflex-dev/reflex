@@ -1,0 +1,2 @@
+COMMAND  PID  USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+node    8044 masen   57u  IPv6 0xfb79d5ea9b84d118      0t0  TCP *:3421 (LISTEN)

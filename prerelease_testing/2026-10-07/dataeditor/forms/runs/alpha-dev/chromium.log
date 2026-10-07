@@ -1,0 +1,31 @@
+WARN `--no-project` was provided, but no project was found
+  [FAIL] select_matrix/submitted_select_id: {'select_both_name': 'b', 'select_name': 'b'}
+  [PASS] select_matrix/submitted_select_name: {'select_both_name': 'b', 'select_name': 'b'}
+  [PASS] select_matrix/submitted_select_both_name: {'select_both_name': 'b', 'select_name': 'b'}
+  [PASS] forms/unset_submit_received: {'count': '1', 'payload': '{"d_check": null, "d_text": null, "f_check": false, "f_check_on": true, "f_debounced": "", "f_named": "abc", "f_native": "", "f_native_select": "n1", "f_radio": null, "f_rating": null, "f_slider": "30", "f_switch": false, "f_text": "", "f_textarea": "", "rating3": "3"}'}
+  [PASS] forms/no_stray_noncontrol_keys: {'stray': [], 'keys': ['d_check', 'd_text', 'f_check', 'f_check_on', 'f_debounced', 'f_named', 'f_native', 'f_native_select', 'f_radio', 'f_rating', 'f_slider', 'f_switch', 'f_text', 'f_textarea', 'rating3']}
+  [FAIL] forms/id_backed_controls_present_when_unset: {'missing': ['f_select']}
+  [note] forms: {'unset_values': {'d_check': None, 'd_text': None, 'f_check': False, 'f_check_on': True, 'f_debounced': '', 'f_named': 'abc', 'f_native': '', 'f_native_select': 'n1', 'f_radio': None, 'f_rating': None, 'f_select': '<absent>', 'f_slider': '30', 'f_switch': False, 'f_text': '', 'f_textarea': '', 'rati
+  [FAIL] forms/filled_payload_values: {'diff(got,exp)': {'f_select': ('<absent>', 's2')}, 'slider': '30'}
+  [PASS] forms/filled_no_stray_keys: []
+  [PASS] forms/dialog_form_payload: {'dialog_count': '1', 'dialog_payload': '{"d_check": true, "d_text": "dlg"}', 'main_count_before': '2', 'main_count_after': '3', 'main_payload_after': '{"d_check": true, "d_text": "dlg", "f_check": true, "f_check_on": true, "f_debounced": "deb", "f_native": "nat", "f_native_select": "n2", "f_radio":
+  [FAIL] forms/dialog_submit_does_not_trigger_outer_form: {'dialog_count': '1', 'dialog_payload': '{"d_check": true, "d_text": "dlg"}', 'main_count_before': '2', 'main_count_after': '3', 'main_payload_after': '{"d_check": true, "d_text": "dlg", "f_check": true, "f_check_on": true, "f_debounced": "deb", "f_native": "nat", "f_native_select": "n2", "f_radio":
+  [PASS] forms/component_state_forms_isolated_and_clean: {'csf1': '1 {"csf1_sw": false, "csf1_text": "one"}', 'csf2': '1 {"csf2_sw": true, "csf2_text": ""}'}
+  [FAIL] forms/closed_dialog_controls_absent: {'d_check': None, 'd_text': None, 'f_check': False, 'f_check_on': True, 'f_debounced': '', 'f_named': 'abc', 'f_native': '', 'f_native_select': 'n1', 'f_radio': None, 'f_rating': None, 'f_slider': '30', 'f_switch': False, 'f_text': '', 'f_textarea': '', 'rating3': '3'}
+  [PASS] dialog_control/explicit_stop_prevents_outer_submit: 
+  [PASS] code/shiki_dynamic_initial_highlighted: {'cls': 'shiki github-light', 'colored': 8, 'text': 'def double(x):\n    # comment\n    return x * 2\n', 'highlighted_lines': 0, 'html_len': 586}
+  [PASS] code/shiki_dynamic_theme_lang_switch: {'cls': 'shiki dracula', 'colored': 12, 'text': 'const double = (x) => x * 2; // comment\n', 'highlighted_lines': 0, 'html_len': 687}
+  [note] code: {'known_defect_use_transformers_highlighted_lines': 0}
+  [PASS] code/shiki_themes_dict_highlighted: {'cls': 'shiki shiki-themes github-light github-dark', 'colored': 3, 'text': 'x = 1\n', 'highlighted_lines': 0, 'html_len': 452}
+  [note] code: {'shiki_themes_dict_mutations_after_3_parent_rerenders': 0}
+  [PASS] code/markdown_fenced_code_rendered: {'pres': 2, 'colored': 11, 'text': "Markdown\n\nSome inline code.\n\nprint('fenced')  # comment\nconsole.log(1)"}
+  [PASS] code/moment_state_tz_locale_format: jeudi 15 janvier 2026 07:34
+  [PASS] code/moment_state_switch: 2026-01-15 21:34 JST
+  [PASS] code/moment_interval_ticks: {'a': '00:10:59', 'b': '00:11:01'}
+  [note] code: {'moment_on_change_count_after_~10s': 'moment on_change=15'}
+  [PASS] code/moment_duration_format: 01:30:15
+  [PASS] code/moment_ja_locale: 2026年3月1日 日曜日 10:00
+  [PASS] new_components/video_playback: {'time': 0.117069, 'paused': False, 'ready': 4}
+  [PASS] new_components/video_pauses: 
+  [PASS] new_components/lucide_icon_updates: 
+  [PASS] new_components/sonner_toast: 

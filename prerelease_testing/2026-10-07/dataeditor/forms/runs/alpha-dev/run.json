@@ -1,0 +1,69 @@
+{
+  "command": [
+    "uv",
+    "--no-config",
+    "run",
+    "--no-project",
+    "--python",
+    "/private/tmp/reflex-prerelease-macos-pass2/envs/forms-alpha/bin/python",
+    "reflex",
+    "run",
+    "--env",
+    "dev",
+    "--frontend-port",
+    "3430",
+    "--backend-port",
+    "8430",
+    "--loglevel",
+    "debug"
+  ],
+  "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/forms/alpha-dev",
+  "environment": {
+    "REFLEX_TEST_ENV": "forms-alpha",
+    "REFLEX_TELEMETRY_ENABLED": "false",
+    "CLUSTER_API_URL": "http://localhost:8430"
+  },
+  "drivers": [
+    {
+      "command": [
+        "uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/driver/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/dataeditor/forms/scripts/drive_forms.py",
+        "http://localhost:3430",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/dataeditor/forms/runs/alpha-dev/chromium",
+        "--browser",
+        "chromium",
+        "--groups",
+        "select_matrix,forms,dialog_control,code,new_components"
+      ],
+      "returncode": 1
+    },
+    {
+      "command": [
+        "uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/driver/bin/python",
+        "python",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/dataeditor/forms/scripts/drive_forms.py",
+        "http://localhost:3430",
+        "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/dataeditor/forms/runs/alpha-dev/webkit",
+        "--browser",
+        "webkit",
+        "--groups",
+        "select_matrix,forms,dialog_control,code,new_components"
+      ],
+      "returncode": 1
+    }
+  ],
+  "pid": 14247,
+  "server_returncode": 0,
+  "cleanup_remaining_pids": []
+}

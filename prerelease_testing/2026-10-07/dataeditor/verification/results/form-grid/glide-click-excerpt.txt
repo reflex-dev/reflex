@@ -1,0 +1,35 @@
+	useEventListener("touchend", onMouseUpImpl, window, false);
+	useEventListener("click", import_react.useCallback((ev) => {
+		const canvas = ref.current;
+		if (canvas === null) return;
+		const eventTarget = eventTargetRef?.current;
+		const isOutside = ev.target !== canvas && ev.target !== eventTarget;
+		let clientX;
+		let clientY;
+		let canCancel = true;
+		if (ev instanceof MouseEvent) {
+			clientX = ev.clientX;
+			clientY = ev.clientY;
+			canCancel = ev.button < 3;
+		} else {
+			clientX = ev.changedTouches[0].clientX;
+			clientY = ev.changedTouches[0].clientY;
+		}
+		const args = getMouseArgsForPosition(canvas, clientX, clientY, ev);
+		if (lastWasTouchRef.current !== args.isTouch) setLastWasTouch(args.isTouch);
+		if (!isOutside && ev.cancelable && canCancel) ev.preventDefault();
+		const [col] = args.location;
+		const headerBounds = isOverHeaderMenu(canvas, col, clientX, clientY);
+		if (args.kind === "header" && headerBounds !== void 0) {
+			if (args.button === 0 && downPosition.current?.[0] === col && downPosition.current?.[1] === -1) onHeaderMenuClick?.(col, headerBounds);
+		} else if (args.kind === "group-header") {
+			const action = groupHeaderActionForEvent(args.group, args.bounds, args.localEventX, args.localEventY);
+			if (action !== void 0 && args.button === 0) action.onClick(args);
+		}
+	}, [
+		eventTargetRef,
+		getMouseArgsForPosition,
+		isOverHeaderMenu,
+		onHeaderMenuClick,
+		groupHeaderActionForEvent
+	]), window, false);

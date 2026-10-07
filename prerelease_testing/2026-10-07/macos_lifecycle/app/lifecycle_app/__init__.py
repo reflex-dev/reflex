@@ -1,0 +1,1 @@
+"""Lifecycle testing application package."""

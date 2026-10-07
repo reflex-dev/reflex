@@ -1,0 +1,8 @@
+Wed Oct  7 07:05:30 UTC 2026
+ProductName:		macOS
+ProductVersion:		26.6.2
+BuildVersion:		25G83
+arm64
+v26.8.1
+11.19.0
+1.3.14

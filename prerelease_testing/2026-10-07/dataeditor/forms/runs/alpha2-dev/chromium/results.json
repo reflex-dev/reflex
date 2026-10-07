@@ -1,0 +1,1238 @@
+{
+  "base": "http://localhost:3430",
+  "label": "chromium",
+  "groups": {
+    "select_matrix": {
+      "checks": [
+        {
+          "name": "submitted_select_id",
+          "ok": false,
+          "detail": {
+            "select_both_name": "b",
+            "select_name": "b"
+          }
+        },
+        {
+          "name": "submitted_select_name",
+          "ok": true,
+          "detail": {
+            "select_both_name": "b",
+            "select_name": "b"
+          }
+        },
+        {
+          "name": "submitted_select_both_name",
+          "ok": true,
+          "detail": {
+            "select_both_name": "b",
+            "select_name": "b"
+          }
+        }
+      ],
+      "console": [],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [],
+      "ws": {
+        "sent": 3,
+        "recv": 7
+      },
+      "unset": {
+        "select_both_name": "",
+        "select_name": ""
+      },
+      "filled": {
+        "select_both_name": "b",
+        "select_name": "b"
+      },
+      "seconds": 3.208794791999935
+    },
+    "forms": {
+      "checks": [
+        {
+          "name": "unset_submit_received",
+          "ok": true,
+          "detail": {
+            "count": "1",
+            "payload": "{\"d_check\": null, \"d_text\": null, \"f_check\": false, \"f_check_on\": true, \"f_debounced\": \"\", \"f_named\": \"abc\", \"f_native\": \"\", \"f_native_select\": \"n1\", \"f_radio\": null, \"f_rating\": null, \"f_slider\": \"30\", \"f_switch\": false, \"f_text\": \"\", \"f_textarea\": \"\", \"rating3\": \"3\"}"
+          }
+        },
+        {
+          "name": "no_stray_noncontrol_keys",
+          "ok": true,
+          "detail": {
+            "stray": [],
+            "keys": [
+              "d_check",
+              "d_text",
+              "f_check",
+              "f_check_on",
+              "f_debounced",
+              "f_named",
+              "f_native",
+              "f_native_select",
+              "f_radio",
+              "f_rating",
+              "f_slider",
+              "f_switch",
+              "f_text",
+              "f_textarea",
+              "rating3"
+            ]
+          }
+        },
+        {
+          "name": "id_backed_controls_present_when_unset",
+          "ok": false,
+          "detail": {
+            "missing": [
+              "f_select"
+            ]
+          }
+        },
+        {
+          "name": "filled_payload_values",
+          "ok": false,
+          "detail": {
+            "diff(got,exp)": {
+              "f_select": [
+                "<absent>",
+                "s2"
+              ]
+            },
+            "slider": "30"
+          }
+        },
+        {
+          "name": "filled_no_stray_keys",
+          "ok": true,
+          "detail": []
+        },
+        {
+          "name": "dialog_form_payload",
+          "ok": true,
+          "detail": {
+            "dialog_count": "1",
+            "dialog_payload": "{\"d_check\": true, \"d_text\": \"dlg\"}",
+            "main_count_before": "2",
+            "main_count_after": "3",
+            "main_payload_after": "{\"d_check\": true, \"d_text\": \"dlg\", \"f_check\": true, \"f_check_on\": true, \"f_debounced\": \"deb\", \"f_native\": \"nat\", \"f_native_select\": \"n2\", \"f_radio\": \"y\", \"f_rating\": \"3\", \"f_slider\": \"30\", \"f_switch\": true, \"f_text\": \"hello\", \"f_textarea\": \"multi\\nline\", \"rating3\": \"3\"}"
+          }
+        },
+        {
+          "name": "dialog_submit_does_not_trigger_outer_form",
+          "ok": false,
+          "detail": {
+            "dialog_count": "1",
+            "dialog_payload": "{\"d_check\": true, \"d_text\": \"dlg\"}",
+            "main_count_before": "2",
+            "main_count_after": "3",
+            "main_payload_after": "{\"d_check\": true, \"d_text\": \"dlg\", \"f_check\": true, \"f_check_on\": true, \"f_debounced\": \"deb\", \"f_native\": \"nat\", \"f_native_select\": \"n2\", \"f_radio\": \"y\", \"f_rating\": \"3\", \"f_slider\": \"30\", \"f_switch\": true, \"f_text\": \"hello\", \"f_textarea\": \"multi\\nline\", \"rating3\": \"3\"}"
+          }
+        },
+        {
+          "name": "component_state_forms_isolated_and_clean",
+          "ok": true,
+          "detail": {
+            "csf1": "1 {\"csf1_sw\": false, \"csf1_text\": \"one\"}",
+            "csf2": "1 {\"csf2_sw\": true, \"csf2_text\": \"\"}"
+          }
+        },
+        {
+          "name": "closed_dialog_controls_absent",
+          "ok": false,
+          "detail": {
+            "d_check": null,
+            "d_text": null,
+            "f_check": false,
+            "f_check_on": true,
+            "f_debounced": "",
+            "f_named": "abc",
+            "f_native": "",
+            "f_native_select": "n1",
+            "f_radio": null,
+            "f_rating": null,
+            "f_slider": "30",
+            "f_switch": false,
+            "f_text": "",
+            "f_textarea": "",
+            "rating3": "3"
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.",
+          "loc": "http://localhost:3430/@vite/client"
+        },
+        {
+          "type": "warning",
+          "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.",
+          "loc": "http://localhost:3430/@vite/client"
+        }
+      ],
+      "pageerrors": [
+        "TypeError: Cannot read properties of undefined (reading '0')\n    at http://localhost:3430/node_modules/.vite/deps/esm-Da4FF1yh.js?v=010825d0:12198:31\n    at eventListener (http://localhost:3430/node_modules/.vite/deps/esm-Da4FF1yh.js?v=010825d0:4176:26)\n    at http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js?v=cde9dae9:4836:10\n    at Object.react_stack_bottom_frame (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:14178:13)\n    at runWithFiberInDEV (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:944:66)\n    at commitHookEffectListMount (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:6901:153)\n    at commitHookPassiveMountEffects (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:6936:55)\n    at commitPassiveMountOnFiber (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8313:22)\n    at recursivelyTraversePassiveMountEffects (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8300:313)\n    at commitPassiveMountOnFiber (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8372:14)",
+        "TypeError: Cannot read properties of undefined (reading '0')\n    at http://localhost:3430/node_modules/.vite/deps/esm-Da4FF1yh.js?v=010825d0:12198:31\n    at eventListener (http://localhost:3430/node_modules/.vite/deps/esm-Da4FF1yh.js?v=010825d0:4176:26)\n    at http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js?v=cde9dae9:14051:10\n    at Object.react_stack_bottom_frame (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:14178:13)\n    at runWithFiberInDEV (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:944:66)\n    at commitHookEffectListMount (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:6901:153)\n    at commitHookPassiveMountEffects (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:6936:55)\n    at commitPassiveMountOnFiber (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8313:22)\n    at recursivelyTraversePassiveMountEffects (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8300:313)\n    at commitPassiveMountOnFiber (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8372:14)",
+        "TypeError: Cannot read properties of undefined (reading '0')\n    at http://localhost:3430/node_modules/.vite/deps/esm-Da4FF1yh.js?v=010825d0:12198:31\n    at eventListener (http://localhost:3430/node_modules/.vite/deps/esm-Da4FF1yh.js?v=010825d0:4176:26)\n    at http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js?v=cde9dae9:10687:10\n    at Object.react_stack_bottom_frame (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:14178:13)\n    at runWithFiberInDEV (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:944:66)\n    at commitHookEffectListMount (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:6901:153)\n    at commitHookPassiveMountEffects (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:6936:55)\n    at commitPassiveMountOnFiber (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8313:22)\n    at recursivelyTraversePassiveMountEffects (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8300:313)\n    at commitPassiveMountOnFiber (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8312:6)",
+        "TypeError: Cannot read properties of undefined (reading '0')\n    at http://localhost:3430/node_modules/.vite/deps/esm-Da4FF1yh.js?v=010825d0:12198:31\n    at eventListener (http://localhost:3430/node_modules/.vite/deps/esm-Da4FF1yh.js?v=010825d0:4176:26)\n    at http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js?v=cde9dae9:4836:10\n    at Object.react_stack_bottom_frame (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:14178:13)\n    at runWithFiberInDEV (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:944:66)\n    at commitHookEffectListMount (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:6901:153)\n    at commitHookPassiveMountEffects (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:6936:55)\n    at commitPassiveMountOnFiber (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8313:22)\n    at recursivelyTraversePassiveMountEffects (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8300:313)\n    at commitPassiveMountOnFiber (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8372:14)",
+        "TypeError: Cannot read properties of undefined (reading '0')\n    at http://localhost:3430/node_modules/.vite/deps/esm-Da4FF1yh.js?v=010825d0:12198:31\n    at eventListener (http://localhost:3430/node_modules/.vite/deps/esm-Da4FF1yh.js?v=010825d0:4176:26)\n    at http://localhost:3430/node_modules/.vite/deps/@radix-ui_themes.js?v=cde9dae9:14051:10\n    at Object.react_stack_bottom_frame (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:14178:13)\n    at runWithFiberInDEV (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:944:66)\n    at commitHookEffectListMount (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:6901:153)\n    at commitHookPassiveMountEffects (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:6936:55)\n    at commitPassiveMountOnFiber (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8313:22)\n    at recursivelyTraversePassiveMountEffects (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8300:313)\n    at commitPassiveMountOnFiber (http://localhost:3430/node_modules/.vite/deps/react-dom_client.js?v=306e8031:8372:14)"
+      ],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [
+        {
+          "unset_values": {
+            "d_check": null,
+            "d_text": null,
+            "f_check": false,
+            "f_check_on": true,
+            "f_debounced": "",
+            "f_named": "abc",
+            "f_native": "",
+            "f_native_select": "n1",
+            "f_radio": null,
+            "f_rating": null,
+            "f_select": "<absent>",
+            "f_slider": "30",
+            "f_switch": false,
+            "f_text": "",
+            "f_textarea": "",
+            "rating3": "3"
+          }
+        }
+      ],
+      "ws": {
+        "sent": 20,
+        "recv": 12
+      },
+      "payload_unset": "{\"d_check\": null, \"d_text\": null, \"f_check\": false, \"f_check_on\": true, \"f_debounced\": \"\", \"f_named\": \"abc\", \"f_native\": \"\", \"f_native_select\": \"n1\", \"f_radio\": null, \"f_rating\": null, \"f_slider\": \"30\", \"f_switch\": false, \"f_text\": \"\", \"f_textarea\": \"\", \"rating3\": \"3\"}",
+      "payload_filled": "{\"d_check\": null, \"d_text\": null, \"f_check\": true, \"f_check_on\": true, \"f_debounced\": \"deb\", \"f_named\": \"abc\", \"f_native\": \"nat\", \"f_native_select\": \"n2\", \"f_radio\": \"y\", \"f_rating\": \"3\", \"f_slider\": \"30\", \"f_switch\": true, \"f_text\": \"hello\", \"f_textarea\": \"multi\\nline\", \"rating3\": \"3\", \"rating_native\": \"3\"}",
+      "dialog": {
+        "dialog_count": "1",
+        "dialog_payload": "{\"d_check\": true, \"d_text\": \"dlg\"}",
+        "main_count_before": "2",
+        "main_count_after": "3",
+        "main_payload_after": "{\"d_check\": true, \"d_text\": \"dlg\", \"f_check\": true, \"f_check_on\": true, \"f_debounced\": \"deb\", \"f_native\": \"nat\", \"f_native_select\": \"n2\", \"f_radio\": \"y\", \"f_rating\": \"3\", \"f_slider\": \"30\", \"f_switch\": true, \"f_text\": \"hello\", \"f_textarea\": \"multi\\nline\", \"rating3\": \"3\"}"
+      },
+      "cs_forms": {
+        "csf1": "1 {\"csf1_sw\": false, \"csf1_text\": \"one\"}",
+        "csf2": "1 {\"csf2_sw\": true, \"csf2_text\": \"\"}"
+      },
+      "seconds": 11.379502125000272
+    },
+    "recharts": {
+      "checks": [
+        {
+          "name": "formatter_literal",
+          "ok": true,
+          "detail": [
+            "L0",
+            "L1",
+            "L2",
+            "L3",
+            "L4",
+            "L5",
+            "L6",
+            "L7",
+            "L8",
+            "L9"
+          ]
+        },
+        {
+          "name": "formatter_var_create",
+          "ok": true,
+          "detail": [
+            "A0",
+            "A1",
+            "A2",
+            "A3",
+            "A4",
+            "A5",
+            "A6",
+            "A7",
+            "A8",
+            "A9"
+          ]
+        },
+        {
+          "name": "formatter_funcstr",
+          "ok": true,
+          "detail": [
+            "0u",
+            "1u",
+            "2u",
+            "3u",
+            "4u",
+            "5u",
+            "6u",
+            "7u",
+            "8u",
+            "9u"
+          ]
+        },
+        {
+          "name": "formatter_partial",
+          "ok": true,
+          "detail": [
+            "$0",
+            "$1",
+            "$2",
+            "$3",
+            "$4",
+            "$5",
+            "$6",
+            "$7",
+            "$8",
+            "$9"
+          ]
+        },
+        {
+          "name": "formatter_args",
+          "ok": true,
+          "detail": [
+            "$0",
+            "$1",
+            "$2",
+            "$3",
+            "$4",
+            "$5",
+            "$6",
+            "$7",
+            "$8",
+            "$9"
+          ]
+        },
+        {
+          "name": "formatter_memo",
+          "ok": true,
+          "detail": [
+            "$1",
+            "$2",
+            "$3",
+            "$4",
+            "$5",
+            "$6",
+            "$7",
+            "$8",
+            "$9"
+          ]
+        },
+        {
+          "name": "untyped_function_rejected",
+          "ok": true,
+          "detail": [
+            "construction-error rc_untyped: TypeError: tick_formatter must be a FunctionVar or JavaScript function expression."
+          ]
+        },
+        {
+          "name": "reactive_formatter_partial",
+          "ok": true,
+          "detail": [
+            "EUR 1",
+            "EUR 3",
+            "EUR 5",
+            "EUR 7",
+            "EUR 9"
+          ]
+        },
+        {
+          "name": "reactive_formatter_args",
+          "ok": true,
+          "detail": [
+            "EUR 1",
+            "EUR 3",
+            "EUR 5",
+            "EUR 7",
+            "EUR 9"
+          ]
+        },
+        {
+          "name": "reactive_formatter_memo",
+          "ok": true,
+          "detail": [
+            "EUR 1",
+            "EUR 3",
+            "EUR 5",
+            "EUR 7",
+            "EUR 9"
+          ]
+        },
+        {
+          "name": "chart_updates",
+          "ok": true,
+          "detail": null
+        }
+      ],
+      "console": [],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [],
+      "ws": {
+        "sent": 3,
+        "recv": 28
+      },
+      "seconds": 14.463113208999857
+    },
+    "plotly": {
+      "checks": [
+        {
+          "name": "title_p_str",
+          "ok": true,
+          "detail": {
+            "got": "Literal string title",
+            "exp": "Literal string title"
+          }
+        },
+        {
+          "name": "title_p_obj",
+          "ok": true,
+          "detail": {
+            "got": "Literal object title",
+            "exp": "Literal object title"
+          }
+        },
+        {
+          "name": "title_p_state_str",
+          "ok": true,
+          "detail": {
+            "got": "State title 1",
+            "exp": "State title 1"
+          }
+        },
+        {
+          "name": "title_p_state_dict",
+          "ok": true,
+          "detail": {
+            "got": "Dict state title 1",
+            "exp": "Dict state title 1"
+          }
+        },
+        {
+          "name": "title_p_cond",
+          "ok": true,
+          "detail": {
+            "got": "Cond title",
+            "exp": "Cond title"
+          }
+        },
+        {
+          "name": "title_p_shared1",
+          "ok": true,
+          "detail": {
+            "got": "Shared title",
+            "exp": "Shared title"
+          }
+        },
+        {
+          "name": "title_p_shared2",
+          "ok": true,
+          "detail": {
+            "got": "Shared title",
+            "exp": "Shared title"
+          }
+        },
+        {
+          "name": "title_p_fig_str",
+          "ok": true,
+          "detail": {
+            "got": "Fig string title",
+            "exp": "Fig string title"
+          }
+        },
+        {
+          "name": "title_p_fig_obj",
+          "ok": true,
+          "detail": {
+            "got": "Fig object title",
+            "exp": "Fig object title"
+          }
+        },
+        {
+          "name": "title_p_fig_override",
+          "ok": true,
+          "detail": {
+            "got": "Override title",
+            "exp": "Override title"
+          }
+        },
+        {
+          "name": "title_p_state_fig",
+          "ok": true,
+          "detail": {
+            "got": "State fig title 1",
+            "exp": "State fig title 1"
+          }
+        },
+        {
+          "name": "object_title_font_color_red",
+          "ok": true,
+          "detail": "rgb(255, 0, 0)"
+        },
+        {
+          "name": "title_after_bump_p_state_str",
+          "ok": true,
+          "detail": {
+            "got": "State title 2",
+            "exp": "State title 2"
+          }
+        },
+        {
+          "name": "title_after_bump_p_state_dict",
+          "ok": true,
+          "detail": {
+            "got": "Dict state title 2",
+            "exp": "Dict state title 2"
+          }
+        },
+        {
+          "name": "title_after_bump_p_state_fig",
+          "ok": true,
+          "detail": {
+            "got": "State fig title 2",
+            "exp": "State fig title 2"
+          }
+        },
+        {
+          "name": "cond_plot_unmounted",
+          "ok": true,
+          "detail": 0
+        },
+        {
+          "name": "cond_plot_remounted_with_title",
+          "ok": true,
+          "detail": "Cond title"
+        }
+      ],
+      "console": [],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [],
+      "ws": {
+        "sent": 7,
+        "recv": 11
+      },
+      "titles_initial": {
+        "p_str": "Literal string title",
+        "p_obj": "Literal object title",
+        "p_state_str": "State title 1",
+        "p_state_dict": "Dict state title 1",
+        "p_cond": "Cond title",
+        "p_shared1": "Shared title",
+        "p_shared2": "Shared title",
+        "p_fig_str": "Fig string title",
+        "p_fig_obj": "Fig object title",
+        "p_fig_override": "Override title",
+        "p_state_fig": "State fig title 1"
+      },
+      "seconds": 11.554021790999741
+    },
+    "radix": {
+      "checks": [
+        {
+          "name": "slider_ArrowRight_55",
+          "ok": true,
+          "detail": {
+            "key": "ArrowRight",
+            "aria": "55",
+            "state": "value=55",
+            "committed": "committed=55"
+          }
+        },
+        {
+          "name": "slider_ArrowRight_60",
+          "ok": true,
+          "detail": {
+            "key": "ArrowRight",
+            "aria": "60",
+            "state": "value=60",
+            "committed": "committed=60"
+          }
+        },
+        {
+          "name": "slider_ArrowRight_65",
+          "ok": true,
+          "detail": {
+            "key": "ArrowRight",
+            "aria": "65",
+            "state": "value=65",
+            "committed": "committed=65"
+          }
+        },
+        {
+          "name": "slider_ArrowLeft_60",
+          "ok": true,
+          "detail": {
+            "key": "ArrowLeft",
+            "aria": "60",
+            "state": "value=60",
+            "committed": "committed=60"
+          }
+        },
+        {
+          "name": "slider_End_100",
+          "ok": true,
+          "detail": {
+            "key": "End",
+            "aria": "100",
+            "state": "value=100",
+            "committed": "committed=100"
+          }
+        },
+        {
+          "name": "slider_Home_0",
+          "ok": true,
+          "detail": {
+            "key": "Home",
+            "aria": "0",
+            "state": "value=0",
+            "committed": "committed=0"
+          }
+        },
+        {
+          "name": "slider_change_and_commit_counts_match_keypresses",
+          "ok": true,
+          "detail": "changes=8 commits=8"
+        },
+        {
+          "name": "slider2_unaffected",
+          "ok": true,
+          "detail": "value=50"
+        },
+        {
+          "name": "progress_reaches_100",
+          "ok": true,
+          "detail": [
+            "progress=100",
+            "100",
+            "complete",
+            "--progress-value: 100; --progress-max: 100;"
+          ]
+        },
+        {
+          "name": "progress_aria_valuenow_tracks_state",
+          "ok": true,
+          "detail": [
+            "progress=100",
+            "100",
+            "complete",
+            "--progress-value: 100; --progress-max: 100;"
+          ]
+        },
+        {
+          "name": "progress2_unaffected",
+          "ok": true,
+          "detail": "progress=0"
+        }
+      ],
+      "console": [],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [],
+      "ws": {
+        "sent": 18,
+        "recv": 33
+      },
+      "slider_log": [
+        {
+          "key": "ArrowRight",
+          "aria": "55",
+          "state": "value=55",
+          "committed": "committed=55"
+        },
+        {
+          "key": "ArrowRight",
+          "aria": "60",
+          "state": "value=60",
+          "committed": "committed=60"
+        },
+        {
+          "key": "ArrowRight",
+          "aria": "65",
+          "state": "value=65",
+          "committed": "committed=65"
+        },
+        {
+          "key": "ArrowLeft",
+          "aria": "60",
+          "state": "value=60",
+          "committed": "committed=60"
+        },
+        {
+          "key": "End",
+          "aria": "100",
+          "state": "value=100",
+          "committed": "committed=100"
+        },
+        {
+          "key": "Home",
+          "aria": "0",
+          "state": "value=0",
+          "committed": "committed=0"
+        },
+        {
+          "key": "PageUp",
+          "aria": "50",
+          "state": "value=50",
+          "committed": "committed=50"
+        },
+        {
+          "key": "ArrowUp",
+          "aria": "55",
+          "state": "value=55",
+          "committed": "committed=55"
+        }
+      ],
+      "progress_samples": [
+        [
+          "progress=10",
+          "10",
+          "loading",
+          "--progress-value: 10; --progress-max: 100;"
+        ],
+        [
+          "progress=20",
+          "20",
+          "loading",
+          "--progress-value: 20; --progress-max: 100;"
+        ],
+        [
+          "progress=30",
+          "30",
+          "loading",
+          "--progress-value: 30; --progress-max: 100;"
+        ],
+        [
+          "progress=40",
+          "40",
+          "loading",
+          "--progress-value: 40; --progress-max: 100;"
+        ],
+        [
+          "progress=50",
+          "50",
+          "loading",
+          "--progress-value: 50; --progress-max: 100;"
+        ],
+        [
+          "progress=60",
+          "60",
+          "loading",
+          "--progress-value: 60; --progress-max: 100;"
+        ],
+        [
+          "progress=70",
+          "70",
+          "loading",
+          "--progress-value: 70; --progress-max: 100;"
+        ],
+        [
+          "progress=80",
+          "80",
+          "loading",
+          "--progress-value: 80; --progress-max: 100;"
+        ],
+        [
+          "progress=90",
+          "90",
+          "loading",
+          "--progress-value: 90; --progress-max: 100;"
+        ],
+        [
+          "progress=100",
+          "100",
+          "complete",
+          "--progress-value: 100; --progress-max: 100;"
+        ],
+        [
+          "progress=100",
+          "100",
+          "complete",
+          "--progress-value: 100; --progress-max: 100;"
+        ],
+        [
+          "progress=100",
+          "100",
+          "complete",
+          "--progress-value: 100; --progress-max: 100;"
+        ],
+        [
+          "progress=100",
+          "100",
+          "complete",
+          "--progress-value: 100; --progress-max: 100;"
+        ],
+        [
+          "progress=100",
+          "100",
+          "complete",
+          "--progress-value: 100; --progress-max: 100;"
+        ]
+      ],
+      "seconds": 12.847095750000335
+    },
+    "code": {
+      "checks": [
+        {
+          "name": "shiki_dynamic_initial_highlighted",
+          "ok": true,
+          "detail": {
+            "cls": "shiki github-light",
+            "colored": 8,
+            "text": "def double(x):\n    # comment\n    return x * 2\n",
+            "highlighted_lines": 0,
+            "html_len": 586
+          }
+        },
+        {
+          "name": "shiki_dynamic_theme_lang_switch",
+          "ok": true,
+          "detail": {
+            "cls": "shiki dracula",
+            "colored": 12,
+            "text": "const double = (x) => x * 2; // comment\n",
+            "highlighted_lines": 0,
+            "html_len": 687
+          }
+        },
+        {
+          "name": "shiki_themes_dict_highlighted",
+          "ok": true,
+          "detail": {
+            "cls": "shiki shiki-themes github-light github-dark",
+            "colored": 3,
+            "text": "x = 1\n",
+            "highlighted_lines": 0,
+            "html_len": 452
+          }
+        },
+        {
+          "name": "markdown_fenced_code_rendered",
+          "ok": true,
+          "detail": {
+            "pres": 2,
+            "colored": 11,
+            "text": "Markdown\n\nSome inline code.\n\nprint('fenced')  # comment\nconsole.log(1)"
+          }
+        },
+        {
+          "name": "moment_state_tz_locale_format",
+          "ok": true,
+          "detail": "jeudi 15 janvier 2026 07:34"
+        },
+        {
+          "name": "moment_state_switch",
+          "ok": true,
+          "detail": "2026-01-15 21:34 JST"
+        },
+        {
+          "name": "moment_interval_ticks",
+          "ok": true,
+          "detail": {
+            "a": "00:05:00",
+            "b": "00:05:02"
+          }
+        },
+        {
+          "name": "moment_duration_format",
+          "ok": true,
+          "detail": "01:30:15"
+        },
+        {
+          "name": "moment_ja_locale",
+          "ok": true,
+          "detail": "2026\u5e743\u67081\u65e5 \u65e5\u66dc\u65e5 10:00"
+        }
+      ],
+      "console": [
+        {
+          "type": "warning",
+          "text": "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.\nError\n    at deprecateSimple (http://localhost:3430/node_modules/.vite/deps/moment-qFm84mCt.js?v=010825d0:173:40)\n    at hooks.defineLocale (http://localhost:3430/node_modules/.vite/deps/moment-qFm84mCt.js?v=010825d0:1286:6)\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=434cd83b:13:17\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=434cd83b:9:101\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=434cd83b:10:4\n    at http://localhost:3430/node_modules/.vite/deps/rolldown-runtime-CEgmsyvS.js?v=010825d0:16:49\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=434cd83b:144:16",
+          "loc": "http://localhost:3430/@vite/client"
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [
+        {
+          "known_defect_use_transformers_highlighted_lines": 0
+        },
+        {
+          "shiki_themes_dict_mutations_after_3_parent_rerenders": 0
+        },
+        {
+          "moment_on_change_count_after_~10s": "moment on_change=15"
+        }
+      ],
+      "ws": {
+        "sent": 22,
+        "recv": 25
+      },
+      "shiki_transformers": {
+        "cls": "shiki one-light",
+        "colored": 9,
+        "text": "print('x') # [!code highlight]\nprint('y')",
+        "highlighted_lines": 0,
+        "html_len": 582
+      },
+      "seconds": 14.138845792000211
+    },
+    "download": {
+      "checks": [
+        {
+          "name": "download_list_var_exact",
+          "ok": true,
+          "detail": {
+            "got": "b'[{\"address\":\"12 Main St #4\",\"note\":\"100%25 sure\",\"emoji\":\"\\xf0\\x9f\\x98\\x80\"}]'",
+            "exp": "b'[{\"address\":\"12 Main St #4\",\"note\":\"100%25 sure\",\"emoji\":\"\\xf0\\x9f\\x98\\x80\"}]'",
+            "err": null,
+            "name": "list.json"
+          }
+        },
+        {
+          "name": "download_dataurl_var_passthrough",
+          "ok": true,
+          "detail": {
+            "got": "b'already a data url #hash'",
+            "err": null
+          }
+        },
+        {
+          "name": "download_var_10000_exact_json",
+          "ok": true,
+          "detail": {
+            "err": null,
+            "got_len": 15377,
+            "exp_len": 15377
+          }
+        },
+        {
+          "name": "download_backend_str_10000_exact_raw",
+          "ok": true,
+          "detail": {
+            "err": null,
+            "got_len": 12875,
+            "exp_len": 12875
+          }
+        },
+        {
+          "name": "download_var_500000_exact_json",
+          "ok": true,
+          "detail": {
+            "err": null,
+            "got_len": 768752,
+            "exp_len": 768752
+          }
+        },
+        {
+          "name": "download_backend_str_500000_exact_raw",
+          "ok": true,
+          "detail": {
+            "err": null,
+            "got_len": 643750,
+            "exp_len": 643750
+          }
+        },
+        {
+          "name": "download_var_1000000_exact_json",
+          "ok": true,
+          "detail": {
+            "err": null,
+            "got_len": 1537502,
+            "exp_len": 1537502
+          }
+        },
+        {
+          "name": "download_backend_str_1000000_exact_raw",
+          "ok": true,
+          "detail": {
+            "err": null,
+            "got_len": 1287500,
+            "exp_len": 1287500
+          }
+        },
+        {
+          "name": "download_var_2000000_exact_json",
+          "ok": true,
+          "detail": {
+            "err": null,
+            "got_len": 3075002,
+            "exp_len": 3075002
+          }
+        },
+        {
+          "name": "download_backend_str_2000000_exact_raw",
+          "ok": true,
+          "detail": {
+            "err": null,
+            "got_len": 2575000,
+            "exp_len": 2575000
+          }
+        }
+      ],
+      "console": [],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [],
+      "ws": {
+        "sent": 9,
+        "recv": 13
+      },
+      "seconds": 5.846369291999963,
+      "download_hashes": {
+        "chromium-var-500000.txt": {
+          "bytes": 768752,
+          "sha256": "63267f337683e3e0936941847b6999fafdd19969f0edc43a3bfee19df314414f"
+        },
+        "chromium-du.txt": {
+          "bytes": 24,
+          "sha256": "8d4cbeb5966d7fa09f2d3027c76a931ee86072b641498e69d80764346a515f60"
+        },
+        "chromium-backend-1000000.txt": {
+          "bytes": 1287500,
+          "sha256": "07d7a82f44f6483fc0513be2c8f3aeabe65a3a37aede9ffc547765c7482a88ca"
+        },
+        "chromium-list.json": {
+          "bytes": 65,
+          "sha256": "a817098ad61e2b444347099524dac4612c1cc0799e9258784e49b3164697274a"
+        },
+        "chromium-var-2000000.txt": {
+          "bytes": 3075002,
+          "sha256": "f182ff1b62ebd061226bad43f6e3862b763c907770c44f928280980f45926e5d"
+        },
+        "chromium-var-10000.txt": {
+          "bytes": 15377,
+          "sha256": "da92c4853d0fcf6eb0d0b5280ce473d71fa2898e5ccfb31d924ed02b7f860614"
+        },
+        "chromium-backend-2000000.txt": {
+          "bytes": 2575000,
+          "sha256": "a50ac1a2718f3edc4d9086e0be9bb60ac1b8f5e68f4a8c5f4e419d8bb19348fd"
+        },
+        "chromium-backend-500000.txt": {
+          "bytes": 643750,
+          "sha256": "5e2779b22aa4bb8a8605eba96770d88f37c0ff5ad2139df7cb1558e87b8ba1e5"
+        },
+        "chromium-var-1000000.txt": {
+          "bytes": 1537502,
+          "sha256": "0f32d82751fb637f366fd175e836f15d1946cd97b70ca95d673126aa8cc9b64f"
+        },
+        "chromium-backend-10000.txt": {
+          "bytes": 12875,
+          "sha256": "78b3c0f2a2e1675020185b7b36f4889a92d5bf08708a15f31da0cb7c7030562e"
+        }
+      }
+    },
+    "match": {
+      "checks": [
+        {
+          "name": "match_initial_mode_a",
+          "ok": true,
+          "detail": {
+            "bad": {},
+            "pageerrors": []
+          }
+        },
+        {
+          "name": "match_page_cycle_to_b",
+          "ok": true,
+          "detail": {}
+        },
+        {
+          "name": "cs_match_unaffected_by_page_cycle",
+          "ok": true,
+          "detail": "A:pA:q"
+        },
+        {
+          "name": "cs1_cycle_b_component_branch",
+          "ok": true,
+          "detail": "B:p |  | B:q"
+        },
+        {
+          "name": "cs1_cycle_b_literal_branch",
+          "ok": true,
+          "detail": "lit-b/p |  | lit-b/q"
+        },
+        {
+          "name": "cs2_isolated",
+          "ok": true,
+          "detail": {
+            "comp": "A:pA:q",
+            "lit": "lit-a/p |  | lit-a/q"
+          }
+        },
+        {
+          "name": "default_branches",
+          "ok": true,
+          "detail": {
+            "#top-comp": "top-D",
+            "#top-lit": "toplit-d",
+            "#memo-prop": "memoprop-D t1",
+            "#memo-state": "memostate-D t2",
+            "#memo-foreach": "memoprop-D f1 |  | memoprop-D f2",
+            "#mcs1-comp": "D:p |  | D:q",
+            "#mcs1-lit": "lit-d/p |  | lit-d/q",
+            "#mcs2-comp": "A:pA:q",
+            "#mcs2-lit": "lit-a/p |  | lit-a/q"
+          }
+        }
+      ],
+      "console": [],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [],
+      "ws": {
+        "sent": 5,
+        "recv": 9
+      },
+      "snap_a": {
+        "#top-comp": "top-A",
+        "#top-lit": "toplit-a",
+        "#memo-prop": "memoprop-A t1",
+        "#memo-state": "memostate-A t2",
+        "#memo-foreach": "memoprop-A f1 |  | memoprop-A f2",
+        "#mcs1-comp": "A:pA:q",
+        "#mcs1-lit": "lit-a/p |  | lit-a/q",
+        "#mcs2-comp": "A:pA:q",
+        "#mcs2-lit": "lit-a/p |  | lit-a/q"
+      },
+      "snap_b": {
+        "#top-comp": "top-B",
+        "#top-lit": "toplit-d",
+        "#memo-prop": "memoprop-B t1",
+        "#memo-state": "memostate-B t2",
+        "#memo-foreach": "memoprop-B f1 |  | memoprop-B f2",
+        "#mcs1-comp": "A:pA:q",
+        "#mcs1-lit": "lit-a/p |  | lit-a/q",
+        "#mcs2-comp": "A:pA:q",
+        "#mcs2-lit": "lit-a/p |  | lit-a/q"
+      },
+      "snap_cs1_b": {
+        "#top-comp": "top-B",
+        "#top-lit": "toplit-d",
+        "#memo-prop": "memoprop-B t1",
+        "#memo-state": "memostate-B t2",
+        "#memo-foreach": "memoprop-B f1 |  | memoprop-B f2",
+        "#mcs1-comp": "B:p |  | B:q",
+        "#mcs1-lit": "lit-b/p |  | lit-b/q",
+        "#mcs2-comp": "A:pA:q",
+        "#mcs2-lit": "lit-a/p |  | lit-a/q"
+      },
+      "snap_c": {
+        "#top-comp": "top-D",
+        "#top-lit": "toplit-d",
+        "#memo-prop": "memoprop-D t1",
+        "#memo-state": "memostate-D t2",
+        "#memo-foreach": "memoprop-D f1 |  | memoprop-D f2",
+        "#mcs1-comp": "D:p |  | D:q",
+        "#mcs1-lit": "lit-d/p |  | lit-d/q",
+        "#mcs2-comp": "A:pA:q",
+        "#mcs2-lit": "lit-a/p |  | lit-a/q"
+      },
+      "seconds": 8.155549375000192
+    },
+    "memo_names": {
+      "checks": [
+        {
+          "name": "memo_cards_render_and_update",
+          "ok": true,
+          "detail": {
+            "titles": [
+              "A",
+              "dyn",
+              "C",
+              "i1",
+              "i2",
+              "nested"
+            ],
+            "values": [
+              "1",
+              "1",
+              "2",
+              "1",
+              "1",
+              "1"
+            ]
+          }
+        },
+        {
+          "name": "no_doubled_tag_in_memo_wrapper_names",
+          "ok": true,
+          "detail": {
+            "doubled": [],
+            "cardish": [
+              "Card",
+              "MemoComponent_Card_85ce4a77",
+              "MemoizedToastProvider"
+            ]
+          }
+        }
+      ],
+      "console": [],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [],
+      "ws": {
+        "sent": 2,
+        "recv": 6
+      },
+      "fiber_names_cardish": [
+        "Card",
+        "MemoComponent_Card_85ce4a77",
+        "MemoizedToastProvider"
+      ],
+      "fiber_count": 319,
+      "seconds": 4.7683826659999795
+    },
+    "new_components": {
+      "checks": [
+        {
+          "name": "video_playback",
+          "ok": true,
+          "detail": {
+            "time": 0.117564,
+            "paused": false,
+            "ready": 4
+          }
+        },
+        {
+          "name": "video_pauses",
+          "ok": true,
+          "detail": null
+        },
+        {
+          "name": "lucide_icon_updates",
+          "ok": true,
+          "detail": null
+        },
+        {
+          "name": "sonner_toast",
+          "ok": true,
+          "detail": null
+        }
+      ],
+      "console": [],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "notes": [],
+      "ws": {
+        "sent": 6,
+        "recv": 10
+      },
+      "seconds": 2.1468528750001497
+    }
+  },
+  "browser": {
+    "engine": "chromium",
+    "version": "153.0.8010.12"
+  }
+}

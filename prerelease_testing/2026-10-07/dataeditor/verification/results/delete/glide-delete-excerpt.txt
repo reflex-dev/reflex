@@ -1,0 +1,38 @@
+var DataGridOverlayEditor = import_react.lazy(async () => await import("./data-grid-overlay-editor-5ZoOilEq.js"));
+var idCounter = 0;
+function getSpanStops(cells) {
+	return (0, import_uniq.default)((0, import_flatten.default)((0, import_flatten.default)(cells).filter((c) => c.span !== void 0).map((c) => (0, import_range.default)((c.span?.[0] ?? 0) + 1, (c.span?.[1] ?? 0) + 1))));
+}
+function shiftSelection(input, offset) {
+	if (input === void 0 || offset === 0 || input.columns.length === 0 && input.current === void 0) return input;
+	return {
+		current: input.current === void 0 ? void 0 : {
+			cell: [input.current.cell[0] + offset, input.current.cell[1]],
+			range: {
+				...input.current.range,
+				x: input.current.range.x + offset
+			},
+			rangeStack: input.current.rangeStack.map((r) => ({
+				...r,
+				x: r.x + offset
+			}))
+		},
+		rows: input.rows,
+		columns: input.columns.offset(offset)
+	};
+}
+var loadingCell = {
+	kind: GridCellKind.Loading,
+	allowOverlay: false
+};
+	const onDelete = import_react.useCallback((sel) => {
+		if (onDeleteIn !== void 0) {
+			const result = onDeleteIn(shiftSelection(sel, -rowMarkerOffset));
+			if (typeof result === "boolean") return result;
+			return shiftSelection(result, rowMarkerOffset);
+		}
+		return true;
+	}, [onDeleteIn, rowMarkerOffset]);
+	const [setCurrent, setSelectedRows, setSelectedColumns] = useSelectionBehavior(gridSelection, setGridSelection, rangeSelectionBlending, columnSelectionBlending, rowSelectionBlending, rangeSelect);
+	const mergedTheme = import_react.useMemo(() => {
+		return mergeAndRealizeTheme(getDataEditorTheme(), theme);

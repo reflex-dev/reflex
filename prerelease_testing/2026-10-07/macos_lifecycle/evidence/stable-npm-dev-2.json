@@ -1,0 +1,392 @@
+{
+  "name": "stable-npm-dev-2",
+  "metadata": {
+    "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+    "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/python",
+    "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "packages": {
+      "reflex-components-gridjs": "0.9.2.post1",
+      "reflex-components-recharts": "0.9.4.post1",
+      "reflex-components-code": "0.9.6",
+      "reflex-components-sonner": "0.9.4",
+      "reflex-components-lucide": "1.0.4",
+      "reflex-components-plotly": "0.9.7",
+      "reflex-components-moment": "0.9.4",
+      "pydantic": "2.13.5",
+      "reflex-components-radix": "0.9.10.post1",
+      "reflex-components-core": "0.9.10.post1",
+      "reflex-components-markdown": "0.9.4.post1",
+      "reflex-hosting-cli": "0.1.72",
+      "reflex-components-react-player": "0.9.2",
+      "reflex": "0.9.12",
+      "reflex-base": "0.9.12",
+      "granian": "2.8.4",
+      "reflex-components-dataeditor": "0.9.3.post1"
+    }
+  },
+  "command": [
+    "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex",
+    "run",
+    "--frontend-port",
+    "3662",
+    "--backend-port",
+    "8662",
+    "--loglevel",
+    "debug"
+  ],
+  "app": "/private/tmp/reflex-prerelease-macos-pass2/apps/macos_lifecycle/spaces café 日本語/stable-npm-dev-2",
+  "manager": "npm",
+  "hmr": true,
+  "prod": false,
+  "messages": [
+    {
+      "type": "log",
+      "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] hot updated: /app/routes/_index.jsx"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] hot updated: /app/routes/_index.jsx"
+    }
+  ],
+  "websockets": [
+    {
+      "type": "open",
+      "url": "ws://localhost:3662/?token=Y_9IXnXLADdm"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"connected\"}"
+    },
+    {
+      "type": "open",
+      "url": "ws://localhost:8662/_event/?token=97b1b26c-a555-4808-d148-e7f2cfd84000&EIO=4&transport=websocket"
+    },
+    {
+      "type": "framereceived",
+      "text": "0{\"sid\":\"JlDoIsZellxBpv9VAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+    },
+    {
+      "type": "framesent",
+      "text": "40/_event,"
+    },
+    {
+      "type": "framereceived",
+      "text": "40/_event,{\"sid\":\"UiKFj3Z_FG1UZQusAAAB\"}"
+    },
+    {
+      "type": "framesent",
+      "text": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+    },
+    {
+      "type": "framesent",
+      "text": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+    },
+    {
+      "type": "framereceived",
+      "text": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8662\",\"origin\":\"http://localhost:3662\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"mmw/V5Ji3Y9ZQgfZAYiIsQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8662\",\"origin\":\"http://localhost:3662\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"mmw/V5Ji3Y9ZQgfZAYiIsQ==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3662\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3662/index\",\"full_raw_path\":\"http://localhost:3662/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"97b1b26c-a555-4808-d148-e7f2cfd84000\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"UiKFj3Z_FG1UZQusAAAB\"},\"rx_router_url_rx_state"
+    },
+    {
+      "type": "framereceived",
+      "text": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    },
+    {
+      "type": "framesent",
+      "text": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lifecycle_app___lifecycle_app____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+    },
+    {
+      "type": "framereceived",
+      "text": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lifecycle_app___lifecycle_app____state\":{\"count_rx_state_\":1}}}]"
+    },
+    {
+      "type": "framesent",
+      "text": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lifecycle_app___lifecycle_app____state.rename\",\"payload\":{\"value\":\"Café 日本語 🚀\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+    },
+    {
+      "type": "framereceived",
+      "text": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lifecycle_app___lifecycle_app____state\":{\"name_rx_state_\":\"Café 日本語 🚀\"}}}]"
+    },
+    {
+      "type": "framesent",
+      "text": "41/_event,"
+    },
+    {
+      "type": "open",
+      "url": "ws://localhost:3662/?token=Y_9IXnXLADdm"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"connected\"}"
+    },
+    {
+      "type": "open",
+      "url": "ws://localhost:8662/_event/?token=97b1b26c-a555-4808-d148-e7f2cfd84000&EIO=4&transport=websocket"
+    },
+    {
+      "type": "framereceived",
+      "text": "0{\"sid\":\"FgcaIuH8C-yb-i1bAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+    },
+    {
+      "type": "framesent",
+      "text": "40/_event,"
+    },
+    {
+      "type": "framereceived",
+      "text": "40/_event,{\"sid\":\"7OSVe6aMdmE7SwgBAAAD\"}"
+    },
+    {
+      "type": "framesent",
+      "text": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+    },
+    {
+      "type": "framesent",
+      "text": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+    },
+    {
+      "type": "framereceived",
+      "text": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8662\",\"origin\":\"http://localhost:3662\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ENS4HTyZhE0db0CkMGXdWw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8662\",\"origin\":\"http://localhost:3662\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"ENS4HTyZhE0db0CkMGXdWw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3662\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3662/index\",\"full_raw_path\":\"http://localhost:3662/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"97b1b26c-a555-4808-d148-e7f2cfd84000\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"7OSVe6aMdmE7SwgBAAAD\"},\"rx_router_url_rx_state"
+    },
+    {
+      "type": "framereceived",
+      "text": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    },
+    {
+      "type": "framesent",
+      "text": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lifecycle_app___lifecycle_app____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+    },
+    {
+      "type": "framereceived",
+      "text": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lifecycle_app___lifecycle_app____state\":{\"count_rx_state_\":2}}}]"
+    },
+    {
+      "type": "open",
+      "url": "ws://localhost:8662/_event/?token=97b1b26c-a555-4808-d148-e7f2cfd84000&EIO=4&transport=websocket"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+    },
+    {
+      "type": "framereceived",
+      "text": "0{\"sid\":\"lToQteqr68E3Gjw7AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+    },
+    {
+      "type": "framesent",
+      "text": "40/_event,"
+    },
+    {
+      "type": "framereceived",
+      "text": "40/_event,{\"sid\":\"R6sPG9xyi_fUaJFOAAAB\"}"
+    },
+    {
+      "type": "framesent",
+      "text": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+    },
+    {
+      "type": "framesent",
+      "text": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+    },
+    {
+      "type": "framereceived",
+      "text": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8662\",\"origin\":\"http://localhost:3662\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"sGE5NaXlQDxHq8kMPaTNwg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8662\",\"origin\":\"http://localhost:3662\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"sGE5NaXlQDxHq8kMPaTNwg==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3662\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3662/index\",\"full_raw_path\":\"http://localhost:3662/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"97b1b26c-a555-4808-d148-e7f2cfd84000\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"R6sPG9xyi_fUaJFOAAAB\"},\"rx_router_url_rx_state"
+    },
+    {
+      "type": "framereceived",
+      "text": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":{\"id\":\"routes/_index\",\"parentId\":\"root\",\"index\":true,\"url\":\"/app/routes/_index.jsx\",\"module\":\"/app/routes/_index.jsx?import\",\"hasAction\":false,\"hasClientAction\":false,\"hasLoader\":false,\"hasClientLoader\":false,\"hasClientMiddleware\":false,\"hasDefaultExport\":true,\"hasErrorBoundary\":false,\"imports\":[]}}}"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1791356491028,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+    },
+    {
+      "type": "framereceived",
+      "text": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1791356491027,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+    },
+    {
+      "type": "framesent",
+      "text": "42/_event,[\"event\",{\"name\":\"reflex___state____state.lifecycle_app___lifecycle_app____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+    },
+    {
+      "type": "framereceived",
+      "text": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.lifecycle_app___lifecycle_app____state\":{\"count_rx_state_\":4}}}]"
+    }
+  ],
+  "pid": 9031,
+  "started_at": 1791356475.941029,
+  "ready_seconds": 8.450516939163208,
+  "browser": "153.0.8010.12",
+  "browser_events_passed": true,
+  "reload_passed": true,
+  "hmr_passed": true,
+  "before_sigterm": [
+    {
+      "pid": "9031",
+      "ppid": "9027",
+      "pgid": "9031",
+      "stat": "Ss",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex run --frontend-port 3662 --backend-port 8662 --loglevel debug"
+    },
+    {
+      "pid": "9035",
+      "ppid": "9031",
+      "pgid": "9031",
+      "stat": "S",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -c from multiprocessing.resource_tracker import main;main(12)"
+    },
+    {
+      "pid": "9130",
+      "ppid": "9031",
+      "pgid": "9031",
+      "stat": "S",
+      "command": "npm run dev"
+    },
+    {
+      "pid": "9150",
+      "ppid": "9130",
+      "pgid": "9031",
+      "stat": "S",
+      "command": "node /private/tmp/reflex-prerelease-macos-pass2/apps/macos_lifecycle/spaces café 日本語/stable-npm-dev-2/.web/node_modules/.bin/react-router dev --host"
+    },
+    {
+      "pid": "9267",
+      "ppid": "9031",
+      "pgid": "9031",
+      "stat": "S",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=13, pipe_handle=17) --multiprocessing-fork"
+    }
+  ],
+  "listeners_before_sigterm": "COMMAND  PID  USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\nPython  9031 masen    8u  IPv4 0xa0973dd68efd72fc      0t0  TCP *:8662 (LISTEN)\nnode    9150 masen   53u  IPv6 0x65a9177fe82e0b44      0t0  TCP *:3662 (LISTEN)\nPython  9267 masen    8u  IPv4 0xa0973dd68efd72fc      0t0  TCP *:8662 (LISTEN)\n",
+  "sigterm_wait_seconds": 30.000552375000098,
+  "sigterm_cli_exited": false,
+  "returncode_after_sigterm": null,
+  "after_sigterm": [
+    {
+      "pid": "9031",
+      "ppid": "9027",
+      "pgid": "9031",
+      "stat": "Ss",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex run --frontend-port 3662 --backend-port 8662 --loglevel debug"
+    },
+    {
+      "pid": "9035",
+      "ppid": "9031",
+      "pgid": "9031",
+      "stat": "S",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -c from multiprocessing.resource_tracker import main;main(12)"
+    },
+    {
+      "pid": "9130",
+      "ppid": "9031",
+      "pgid": "9031",
+      "stat": "S",
+      "command": "npm run dev"
+    },
+    {
+      "pid": "9150",
+      "ppid": "9130",
+      "pgid": "9031",
+      "stat": "S",
+      "command": "node /private/tmp/reflex-prerelease-macos-pass2/apps/macos_lifecycle/spaces café 日本語/stable-npm-dev-2/.web/node_modules/.bin/react-router dev --host"
+    }
+  ],
+  "listeners_after_sigterm": "COMMAND  PID  USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\nnode    9150 masen   53u  IPv6 0x65a9177fe82e0b44      0t0  TCP *:3662 (LISTEN)\n",
+  "before_cleanup": [
+    {
+      "pid": "9031",
+      "ppid": "9027",
+      "pgid": "9031",
+      "stat": "Ss",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex run --frontend-port 3662 --backend-port 8662 --loglevel debug"
+    },
+    {
+      "pid": "9035",
+      "ppid": "9031",
+      "pgid": "9031",
+      "stat": "S",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -c from multiprocessing.resource_tracker import main;main(12)"
+    },
+    {
+      "pid": "9130",
+      "ppid": "9031",
+      "pgid": "9031",
+      "stat": "S",
+      "command": "npm run dev"
+    },
+    {
+      "pid": "9150",
+      "ppid": "9130",
+      "pgid": "9031",
+      "stat": "S",
+      "command": "node /private/tmp/reflex-prerelease-macos-pass2/apps/macos_lifecycle/spaces café 日本語/stable-npm-dev-2/.web/node_modules/.bin/react-router dev --host"
+    }
+  ],
+  "cleanup_errors": [
+    "[Errno 1] Operation not permitted"
+  ],
+  "after_cleanup": [],
+  "listeners_after_cleanup": ""
+}

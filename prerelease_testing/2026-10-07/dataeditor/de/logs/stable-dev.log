@@ -1,0 +1,746 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-pack
+ages/reflex_base/config.py'
+Debug: Config: Config(app_name='cluster_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'loglevel', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/homebrew/bin/node'), '--version']
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.14 (PATH: 
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/python)]
+Debug: [Node 26.8.1 (Minimum: 22.22.0) (PATH:/opt/homebrew/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masen/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; 
+root:xnu-12377.161.14~5/RELEASE_ARM64_T6000]
+Debug: Using package installer at: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', '/opt/homebrew/bin/npm']
+Debug: Using package executer at: [['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'], ['/opt/homebrew/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-pack
+ages/reflex_base/config.py'
+Debug: Config: Config(app_name='cluster_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'loglevel', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.14 (PATH: 
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/python)]
+Debug: [Node 26.8.1 (Minimum: 22.22.0) (PATH:/opt/homebrew/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masen/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; 
+root:xnu-12377.161.14~5/RELEASE_ARM64_T6000]
+Debug: Using package installer at: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', '/opt/homebrew/bin/npm']
+Debug: Using package executer at: [['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'], ['/opt/homebrew/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+─────────────────────────── Initializing cluster_app ───────────────────────────
+Debug: Creating /Users/masen/Library/Application Support/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /Users/masen/Library/Application Support/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packa
+ges/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor/stable/reflex.lock/pa
+ckage.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 56123821460145959421941555831972413711.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.054 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized cluster_app. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3421
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8421
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3421 is in use.
+Debug: Checking if Frontend port: 3421 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3421 is not in use.
+Debug: Checking if Backend port: 8421 is in use.
+Debug: Checking if Backend port: 8421 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8421 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3421
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8421
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+CLUSTER_APP 0.9.12 /private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-pack
+ages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.85s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', '-d', 'vite@8.2.2', 
+'postcss-import@17.0.0', '@emotion/react@11.14.0', 
+'@react-router/fs-routes@8.4.0', '@react-router/dev@8.4.0', 'postcss@8.5.26', 
+'autoprefixer@10.5.4']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss-import@17.0.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed postcss@8.5.26
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: 
+Debug: 127 packages installed [133.00ms]
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', 
+'@glideapps/glide-data-grid-cells@6.0.3', 'universal-cookie@8.1.2', 
+'react-responsive-carousel@3.2.23', 'react-helmet@6.1.0', 'react-dom@19.2.8', 
+'@radix-ui/themes@3.3.0', 'lodash@4.18.1', 'react-router@8.4.0', 
+'lucide-react@1.26.0', 'isbot@5.2.2', 'react-error-boundary@6.1.2', 
+'react@19.2.8', 'socket.io-client@4.8.3', '@react-router/node@8.4.0', 
+'sonner@2.0.8', '@glideapps/glide-data-grid@6.0.3', 'mergician@v2.0.2']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react-dom@19.2.8"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed @glideapps/glide-data-grid-cells@6.0.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-responsive-carousel@3.2.23
+Debug: installed react-helmet@6.1.0
+Debug: installed react-dom@19.2.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed lodash@4.18.1
+Debug: installed react-router@8.4.0
+Debug: installed lucide-react@1.26.0
+Debug: installed isbot@5.2.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed @react-router/node@8.4.0
+Debug: installed sonner@2.0.8
+Debug: installed @glideapps/glide-data-grid@6.0.3
+Debug: installed mergician@2.0.2
+Debug: 
+Debug: 156 packages installed [335.00ms]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor/stable/reflex.lock/bu
+n.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor/stable/reflex.lock/pa
+ckage.json
+Debug: [timing] Install Frontend Packages: 0.49s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Using Granian for backend
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/Users/masen/Library/Application 
+Support/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Reload paths: 
+['/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor/stable/rxconfig.py'
+, 
+'/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor/stable/requirements.
+txt', 
+'/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor/stable/cluster_app',
+'/private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor/stable/assets']
+[INFO] Starting granian (main PID: 8011)
+[INFO] Listening at: http://0.0.0.0:8421
+[INFO] Spawning worker-1 with PID: 8045
+`rx._x` contains experimental features and might be removed at any time in the future.
+CLUSTER_APP 0.9.12 /private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3421
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8421
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3421/
+App running at: http://localhost:3421/
+Backend running at: http://0.0.0.0:8421
+Debug:   ➜  Network: http://192.168.0.54:3421/     en0
+Debug:   ➜  Network: http://100.127.195.100:3421/  utun4
+Debug: 12:00:04 AM [vite] (ssr) connected.
+Debug: 12:00:05 AM [vite] (client) [Unhandled rejection] ReferenceError: 
+g_rx_state_ is not defined
+Debug:  > g_rx_state_ app_components/cluster_app/p_dataeditor.jsx:657:203
+Debug:     655 |      const 
+reflex___state____state__cluster_app___p_dataeditor____filter_state = 
+useContext(StateContexts.reflex___sta...
+Debug:     656 |  function getData_iohcozrd([col, row]){
+Debug:     657 |  ...["type"] : "int", ["id"] : "n", ["overlayIcon"] : null })],
+g_rx_state_);
+Debug:         |                                                                
+^
+Debug:     658 |    }
+Debug:     659 |  
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-cells-for-selec
+tion.js:17:33
+Debug:  > fn 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-column-sizer.js
+:92:30
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-column-sizer.js
+:114:8
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13249:28
+Debug:  > commitHookLayoutEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13213:10
+Debug:  > commitLayoutEffectOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:13951:12
+Debug:  > recursivelyTraverseLayoutEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15159:10
+Debug: 
+Debug: 12:00:05 AM [vite] (client) [Unhandled rejection] ReferenceError: 
+g_rx_state_ is not defined
+Debug:  > g_rx_state_ app_components/cluster_app/p_dataeditor.jsx:657:203
+Debug:     655 |      const 
+reflex___state____state__cluster_app___p_dataeditor____filter_state = 
+useContext(StateContexts.reflex___sta...
+Debug:     656 |  function getData_iohcozrd([col, row]){
+Debug:     657 |  ...["type"] : "int", ["id"] : "n", ["overlayIcon"] : null })],
+g_rx_state_);
+Debug:         |                                                                
+^
+Debug:     658 |    }
+Debug:     659 |  
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-cells-for-selec
+tion.js:17:33
+Debug:  > fn 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-column-sizer.js
+:92:30
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-column-sizer.js
+:114:8
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13249:28
+Debug:  > commitHookLayoutEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13213:10
+Debug:  > commitLayoutEffectOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:13951:12
+Debug:  > recursivelyTraverseLayoutEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15159:10
+Debug: 
+Debug: 12:00:05 AM [vite] (client) [Unhandled rejection] ReferenceError: 
+g_rx_state_ is not defined
+Debug:  > g_rx_state_ app_components/cluster_app/p_dataeditor.jsx:657:203
+Debug:     655 |      const 
+reflex___state____state__cluster_app___p_dataeditor____filter_state = 
+useContext(StateContexts.reflex___sta...
+Debug:     656 |  function getData_iohcozrd([col, row]){
+Debug:     657 |  ...["type"] : "int", ["id"] : "n", ["overlayIcon"] : null })],
+g_rx_state_);
+Debug:         |                                                                
+^
+Debug:     658 |    }
+Debug:     659 |  
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-cells-for-selec
+tion.js:17:33
+Debug:  > fn 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-column-sizer.js
+:92:30
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-column-sizer.js
+:114:8
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13249:28
+Debug:  > commitHookLayoutEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13213:10
+Debug:  > reappearLayoutEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15252:10
+Debug:  > recursivelyTraverseReappearLayoutEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15394:8
+Debug: 
+Debug: 12:00:05 AM [vite] (client) [Unhandled rejection] ReferenceError: 
+g_rx_state_ is not defined
+Debug:  > g_rx_state_ app_components/cluster_app/p_dataeditor.jsx:657:203
+Debug:     655 |      const 
+reflex___state____state__cluster_app___p_dataeditor____filter_state = 
+useContext(StateContexts.reflex___sta...
+Debug:     656 |  function getData_iohcozrd([col, row]){
+Debug:     657 |  ...["type"] : "int", ["id"] : "n", ["overlayIcon"] : null })],
+g_rx_state_);
+Debug:         |                                                                
+^
+Debug:     658 |    }
+Debug:     659 |  
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-cells-for-selec
+tion.js:17:33
+Debug:  > fn 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-column-sizer.js
+:92:30
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/use-column-sizer.js
+:114:8
+Debug:  > Object.react_stack_bottom_frame 
+node_modules/react-dom/cjs/react-dom-client.development.js:25989:19
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > commitHookEffectListMount 
+node_modules/react-dom/cjs/react-dom-client.development.js:13249:28
+Debug:  > commitHookLayoutEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:13213:10
+Debug:  > reappearLayoutEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15252:10
+Debug:  > recursivelyTraverseReappearLayoutEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15394:8
+Debug: 
+Debug: 12:00:05 AM [vite] (client) [console.error] ReferenceError: g_rx_state_ 
+is not defined
+Debug:     at getData_iohcozrd 
+(http://localhost:3421/app_components/cluster_app/p_dataeditor.jsx:1085:11)
+Debug:     at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14961:1
+7
+Debug:     at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:12863:5
+6
+Debug:     at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8810:30
+Debug:     at walkRowsInCol 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8369:2
+7)
+Debug:     at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8792:3
+Debug:     at walkColumns 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8390:7
+)
+Debug:     at drawCells 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8759:2
+)
+Debug:     at drawGrid 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:11466:
+16)
+Debug:     at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:11971:4
+Debug: 
+Debug: The above error occurred in the <ForwardRef(DataGrid)> component.
+Debug: 
+Debug: React will try to recreate this component tree from scratch using the 
+error boundary you provided, m.
+Debug: 
+Debug: 12:00:05 AM [vite] (client) [console.error] ReferenceError: g_rx_state_ 
+is not defined
+Debug:     at getData_iohcozrd 
+(http://localhost:3421/app_components/cluster_app/p_dataeditor.jsx:1085:11)
+Debug:     at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14961:1
+7
+Debug:     at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:12863:5
+6
+Debug:     at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8810:30
+Debug:     at walkRowsInCol 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8369:2
+7)
+Debug:     at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8792:3
+Debug:     at walkColumns 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8390:7
+)
+Debug:     at drawCells 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8759:2
+)
+Debug:     at drawGrid 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:11466:
+16)
+Debug:     at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:11971:4
+Debug: 
+Debug: The above error occurred in the <ForwardRef(DataGrid)> component.
+Debug: 
+Debug: React will try to recreate this component tree from scratch using the 
+error boundary you provided, m.
+Debug: 
+Warning: Error transforming event payload for handler 
+FrontendEventExceptionState.handle_frontend_exception: Error transforming event 
+argument 'info' with value 'ReferenceError: g_rx_state_ is not defined
+ReferenceError: g_rx_state_ is not defined
+    at getData_iohcozrd 
+(http://localhost:3421/app_components/cluster_app/p_dataeditor.jsx:1085:11)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14003:1
+9
+    at fn 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:7328:2
+2)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:7340:3
+    at Object.react_stack_bottom_frame 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:12
+902:13)
+    at runWithFiberInDEV 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:66
+17:153)
+    at commitHookLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:66
+05:55)
+    at commitLayoutEffectOnFiber 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:69
+59:19)
+    at recursivelyTraverseLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:74
+79:102)' and type hint '<class 'str'>'
+[Reflex Frontend Exception]
+ ReferenceError: g_rx_state_ is not defined
+ReferenceError: g_rx_state_ is not defined
+    at getData_iohcozrd 
+(http://localhost:3421/app_components/cluster_app/p_dataeditor.jsx:1085:11)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14003:1
+9
+    at fn 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:7328:2
+2)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:7340:3
+    at Object.react_stack_bottom_frame 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:12
+902:13)
+    at runWithFiberInDEV 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:66
+17:153)
+    at commitHookLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:66
+05:55)
+    at commitLayoutEffectOnFiber 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:69
+59:19)
+    at recursivelyTraverseLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:74
+79:102)
+
+[Reflex Frontend Exception]
+ ReferenceError: g_rx_state_ is not defined
+ReferenceError: g_rx_state_ is not defined
+    at getData_iohcozrd 
+(http://localhost:3421/app_components/cluster_app/p_dataeditor.jsx:1085:11)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14003:1
+9
+    at fn 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:7328:2
+2)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:7340:3
+    at Object.react_stack_bottom_frame 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:12
+902:13)
+    at runWithFiberInDEV 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:66
+17:153)
+    at commitHookLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:66
+05:55)
+    at commitLayoutEffectOnFiber 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:69
+59:19)
+    at recursivelyTraverseLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:74
+79:102)
+
+[Reflex Frontend Exception]
+ ReferenceError: g_rx_state_ is not defined
+ReferenceError: g_rx_state_ is not defined
+    at getData_iohcozrd 
+(http://localhost:3421/app_components/cluster_app/p_dataeditor.jsx:1085:11)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14003:1
+9
+    at fn 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:7328:2
+2)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:7340:3
+    at Object.react_stack_bottom_frame 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:12
+902:13)
+    at runWithFiberInDEV 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:66
+17:153)
+    at commitHookLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:66
+05:55)
+    at reappearLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:75
+27:6)
+    at recursivelyTraverseReappearLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:75
+88:65)
+
+[Reflex Frontend Exception]
+ ReferenceError: g_rx_state_ is not defined
+ReferenceError: g_rx_state_ is not defined
+    at getData_iohcozrd 
+(http://localhost:3421/app_components/cluster_app/p_dataeditor.jsx:1085:11)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14003:1
+9
+    at fn 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:7328:2
+2)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:7340:3
+    at Object.react_stack_bottom_frame 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:12
+902:13)
+    at runWithFiberInDEV 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:85
+1:66)
+    at commitHookEffectListMount 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:66
+17:153)
+    at commitHookLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:66
+05:55)
+    at reappearLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:75
+27:6)
+    at recursivelyTraverseReappearLayoutEffects 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:75
+88:65)
+
+[Reflex Frontend Exception]
+ ReferenceError: g_rx_state_ is not defined
+ReferenceError: g_rx_state_ is not defined
+    at getData_iohcozrd 
+(http://localhost:3421/app_components/cluster_app/p_dataeditor.jsx:1085:11)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14961:1
+7
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:12863:5
+6
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8810:30
+    at walkRowsInCol 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8369:2
+7)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8792:3
+    at walkColumns 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8390:7
+)
+    at drawCells 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8759:2
+)
+    at drawGrid 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:11466:
+16)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:11971:4
+
+[Reflex Frontend Exception]
+ ReferenceError: g_rx_state_ is not defined
+ReferenceError: g_rx_state_ is not defined
+    at getData_iohcozrd 
+(http://localhost:3421/app_components/cluster_app/p_dataeditor.jsx:1085:11)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14961:1
+7
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:12863:5
+6
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8810:30
+    at walkRowsInCol 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8369:2
+7)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8792:3
+    at walkColumns 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8390:7
+)
+    at drawCells 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:8759:2
+)
+    at drawGrid 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:11466:
+16)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:11971:4
+
+DE_EDIT {"cell": {"allowOverlay": true, "data": "d", "displayData": "Beta", "kind": "text", "readonly": false}, "pos": [0, 1]}
+DE_EDIT {"cell": {"allowOverlay": true, "data": "MacEdit", "displayData": "Alpha", "kind": "text", "readonly": false}, "pos": [0, 0]}
+DE_EDIT {"cell": {"allowOverlay": true, "data": 42, "displayData": "3", "kind": "number", "readonly": false}, "pos": [1, 2]}
+DE_EDIT {"cell": {"allowOverlay": true, "data": 9.5, "displayData": "5", "kind": "number", "readonly": false}, "pos": [2, 3]}
+DE_EDIT {"cell": {"data": false, "kind": "boolean", "readonly": false}, "pos": [3, 0]}
+DE_EDIT {"cell": {"data": true, "kind": "boolean", "readonly": false}, "pos": [3, 0]}
+[Reflex Frontend Exception]
+ TypeError: Cannot read properties of undefined (reading 'length')
+TypeError: Cannot read properties of undefined (reading 'length')
+    at shiftSelection 
+(http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14613:
+56)
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:14746:1
+1
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:16170:3
+7
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:16326:7
+    at 
+http://localhost:3421/node_modules/.vite/deps/esm-B-d6lupf.js?v=8c968510:12314:1
+4
+    at executeDispatch 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:91
+41:5)
+    at runWithFiberInDEV 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:85
+1:66)
+    at processDispatchQueue 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:91
+67:27)
+    at 
+http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:945
+4:5
+    at batchedUpdates$1 
+(http://localhost:3421/node_modules/.vite/deps/react-dom_client.js?v=bd5d0e02:20
+44:12)
+
+Debug: 12:00:26 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+properties of undefined (reading 'length')
+Debug:  > shiftSelection 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:38:6
+2
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:167:
+19
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:1836
+:46
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/data-editor/data-editor.js:2084
+:12
+Debug:  > 
+node_modules/@glideapps/glide-data-grid/dist/esm/internal/data-grid/data-grid.js
+:805:20
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+Debug: 
+DE_EDIT {"cell": {"allowOverlay": true, "data": "low", "displayData": "Beta", "kind": "text", "readonly": false}, "pos": [0, 1]}
+DE_EDIT {"cell": {"allowOverlay": true, "data": "low", "displayData": "Beta", "kind": "text", "readonly": false}, "pos": [0, 1]}
+DE_EDIT {"cell": {"allowOverlay": true, "data": "low", "displayData": "Beta", "kind": "text", "readonly": false}, "pos": [0, 1]}
+DE_EDIT {"cell": {"allowOverlay": true, "data": "Slow", "displayData": "Beta", "kind": "text", "readonly": false}, "pos": [0, 1]}
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!

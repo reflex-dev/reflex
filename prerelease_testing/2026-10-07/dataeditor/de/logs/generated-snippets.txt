@@ -1,0 +1,144 @@
+alpha2/.web/app_components/cluster_app/p_dataeditor.jsx:198-216
+198: })();
+199: 
+200: export const Dataeditor_dataeditor_d497746835cee90dc65e650943f438f3_9da81f66 = /*#__PURE__*/ (() => {
+201: const Dataeditor_dataeditor_d497746835cee90dc65e650943f438f3_9da81f66 = memo(({children, ...rest}) => {
+202:     const ref_de_main = useRef(null); refs["ref_de_main"] = ref_de_main;
+203: const on_cell_clicked_ca8c468975fb0f5668f4d32d721202d2 = useCallback(((_ev_0) => (addEvents([(ReflexEvent("reflex___state____state.cluster_app___p_dataeditor___de_state.cell_clicked", ({ ["pos"] : _ev_0 }), ({  })))], [_ev_0], ({  })))), [addEvents, ReflexEvent])
+204: const on_cell_activated_d9074416b7ddf363418ccf7a2d6aa528 = useCallback(((_ev_0) => (addEvents([(ReflexEvent("reflex___state____state.cluster_app___p_dataeditor___de_state.cell_activated", ({ ["pos"] : _ev_0 }), ({  })))], [_ev_0], ({  })))), [addEvents, ReflexEvent])
+205: const on_cell_edited_fe9828a516aa660599f90389c714e02c = useCallback(((_ev_0, _ev_1) => (addEvents([(ReflexEvent("reflex___state____state.cluster_app___p_dataeditor___de_state.cell_edited", ({ ["pos"] : _ev_0, ["cell"] : _ev_1 }), ({  })))], [_ev_0, _ev_1], ({  })))), [addEvents, ReflexEvent])
+206: const on_header_clicked_080f4c4eb532a9e2cc0f5056a0725c06 = useCallback(((_ev_0) => (addEvents([(ReflexEvent("reflex___state____state.cluster_app___p_dataeditor___de_state.header_clicked", ({ ["col"] : _ev_0 }), ({  })))], [_ev_0], ({  })))), [addEvents, ReflexEvent])
+207: const on_column_resize_d1f41f3de05cbb78d2fede657b59f758 = useCallback(((_ev_0, _ev_1) => (addEvents([(ReflexEvent("reflex___state____state.cluster_app___p_dataeditor___de_state.column_resized", ({ ["column"] : _ev_0, ["new_size"] : _ev_1 }), ({  })))], [_ev_0, _ev_1], ({  })))), [addEvents, ReflexEvent])
+208: const on_delete_f161e5f871decdce9705125e933cd9dd = useCallback(((_ev_0) => (addEvents([(ReflexEvent("reflex___state____state.cluster_app___p_dataeditor___de_state.on_delete", ({ ["selection"] : _ev_0 }), ({  })))], [_ev_0], ({  })))), [addEvents, ReflexEvent])
+209: const reflex___state____state__cluster_app___p_dataeditor___de_state = useContext(StateContexts.reflex___state____state__cluster_app___p_dataeditor___de_state)
+210: function getData_rgwuwrnh([col, row]){
+211:     return formatDataEditorCells(col, row, reflex___state____state__cluster_app___p_dataeditor___de_state.cols_rx_state_, reflex___state____state__cluster_app___p_dataeditor___de_state.rows_rx_state_);
+212:   }
+213: 
+214: 
+215:     return(
+216:         jsx(DataEditor,{...mergeSlotProps(rest, ({ columns:reflex___state____state__cluster_app___p_dataeditor___de_state.cols_rx_state_, css:({ ["width"] : "1100px", ["height"] : "560px" }), data:reflex___state____state__cluster_app___p_dataeditor___de_state.rows_rx_state_, getCellContent:getData_rgwuwrnh, getCellsForSelection:true, id:"de-main", onCellActivated:on_cell_activated_d9074416b7ddf363418ccf7a2d6aa528, onCellClicked:on_cell_clicked_ca8c468975fb0f5668f4d32d721202d2, onCellEdited:on_cell_edited_fe9828a516aa660599f90389c714e02c, onColumnResize:on_column_resize_d1f41f3de05cbb78d2fede657b59f758, onDelete:on_delete_f161e5f871decdce9705125e933cd9dd, onHeaderClicked:on_header_clicked_080f4c4eb532a9e2cc0f5056a0725c06, onPaste:false, ref:ref_de_main, rowHeight:60, rowMarkers:"number", rows:reflex___state____state__cluster_app___p_dataeditor___de_state.rows_rx_state_.length, theme:reflex___state____state__cluster_app___p_dataeditor___de_state.theme_rx_state_ }))},)
+
+alpha2/.web/app_components/cluster_app/p_dataeditor.jsx:657-672
+657: Dataeditor_dataeditor_ff8f4cba495cf20d67b4238a9f6e53df_9da81f66.displayName = "DataEditor";
+658: return Dataeditor_dataeditor_ff8f4cba495cf20d67b4238a9f6e53df_9da81f66;
+659: })();
+660: 
+661: export const Foreach_comp_47287d753315e7ed8523fdf003dcfdb4_9da81f66 = /*#__PURE__*/ (() => {
+662: const Foreach_comp_47287d753315e7ed8523fdf003dcfdb4_9da81f66 = memo(({children}) => {
+663:     const reflex___state____state__cluster_app___p_dataeditor____filter_state = useContext(StateContexts.reflex___state____state__cluster_app___p_dataeditor____filter_state)
+664: function getData_iohcozrd([col, row]){
+665:     return formatDataEditorCells(col, row, [({ ["title"] : "G", ["type"] : "str", ["id"] : "g", ["overlayIcon"] : null }), ({ ["title"] : "N", ["type"] : "int", ["id"] : "n", ["overlayIcon"] : null })], g_rx_state_);
+666:   }
+667: 
+668: 
+669:     return(
+670:         Array.prototype.map.call(reflex___state____state__cluster_app___p_dataeditor____filter_state.groups_rx_state_ ?? [],((g_rx_state_,index_1884833534fe73c16bc0e2c6ad4a4f51)=>(jsx(RadixThemesBox,{className:"foreach-grid-box",css:({ ["width"] : "250px", ["height"] : "120px" }),key:index_1884833534fe73c16bc0e2c6ad4a4f51},jsx("div",{css:({ ["width"] : "250px", ["height"] : "120px" })},jsx(DataEditor,{columns:[({ ["title"] : "G", ["type"] : "str", ["id"] : "g", ["overlayIcon"] : null }), ({ ["title"] : "N", ["type"] : "int", ["id"] : "n", ["overlayIcon"] : null })],css:({ ["width"] : "250px", ["height"] : "120px" }),data:g_rx_state_,getCellContent:getData_iohcozrd,getCellsForSelection:true,onPaste:false,rows:g_rx_state_.length},))))))
+671:     )
+672: });
+
+alpha2/.web/node_modules/.vite/deps/esm-B-d6lupf.js:14610-14630
+14610: 	return (0, import_uniq.default)((0, import_flatten.default)((0, import_flatten.default)(cells).filter((c) => c.span !== void 0).map((c) => (0, import_range.default)((c.span?.[0] ?? 0) + 1, (c.span?.[1] ?? 0) + 1))));
+14611: }
+14612: function shiftSelection(input, offset) {
+14613: 	if (input === void 0 || offset === 0 || input.columns.length === 0 && input.current === void 0) return input;
+14614: 	return {
+14615: 		current: input.current === void 0 ? void 0 : {
+14616: 			cell: [input.current.cell[0] + offset, input.current.cell[1]],
+14617: 			range: {
+14618: 				...input.current.range,
+14619: 				x: input.current.range.x + offset
+14620: 			},
+14621: 			rangeStack: input.current.rangeStack.map((r) => ({
+14622: 				...r,
+14623: 				x: r.x + offset
+14624: 			}))
+14625: 		},
+14626: 		rows: input.rows,
+14627: 		columns: input.columns.offset(offset)
+14628: 	};
+14629: }
+14630: var loadingCell = {
+
+alpha2/.web/node_modules/.vite/deps/esm-B-d6lupf.js:14742-14750
+14742: 	const onDelete = import_react.useCallback((sel) => {
+14743: 		if (onDeleteIn !== void 0) {
+14744: 			const result = onDeleteIn(shiftSelection(sel, -rowMarkerOffset));
+14745: 			if (typeof result === "boolean") return result;
+14746: 			return shiftSelection(result, rowMarkerOffset);
+14747: 		}
+14748: 		return true;
+14749: 	}, [onDeleteIn, rowMarkerOffset]);
+14750: 	const [setCurrent, setSelectedRows, setSelectedColumns] = useSelectionBehavior(gridSelection, setGridSelection, rangeSelectionBlending, columnSelectionBlending, rowSelectionBlending, rangeSelect);
+
+alpha2/.web/utils/state.js:609-616
+609: export const queueEvents = async (
+610:   events,
+611:   socket,
+612:   prepend,
+613:   navigate,
+614:   params,
+615: ) => {
+616:   const normalized = normalizeEvents(events);
+
+alpha2/.web/utils/state.js:1164-1185
+1164:   const addEvents = useCallback((events, args, event_actions) => {
+1165:     const _events = normalizeEvents(events);
+1166: 
+1167:     event_actions = _events.reduce(
+1168:       (acc, e) => ({ ...acc, ...e.event_actions }),
+1169:       event_actions ?? {},
+1170:     );
+1171: 
+1172:     if (!event_actions?.temporal) {
+1173:       // Reconnect socket if needed for non-temporal events.
+1174:       ensureSocketConnected();
+1175:     }
+1176: 
+1177:     return applyEventActions(
+1178:       () => queueEvents(_events, socket, false, navigate, params),
+1179:       event_actions,
+1180:       args,
+1181:       _events.map((e) => e.name).join("+++"),
+1182:       () => !!socket.current?.connected,
+1183:     );
+1184:   }, []);
+1185: 
+
+/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex_components_dataeditor/dataeditor.py:365-368
+365:     on_delete: EventHandler[passthrough_event_spec(GridSelection)] = field(
+366:         doc="Fired when a selection is deleted."
+367:     )
+368: 
+
+/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex_components_dataeditor/dataeditor.py:472-500
+472:     def add_hooks(self) -> list[str]:
+473:         """Get the hooks to render.
+474: 
+475:         Returns:
+476:             The hooks to render.
+477:         """
+478:         # Define the id of the component in case multiple are used in the same page.
+479:         editor_id = get_unique_variable_name()
+480: 
+481:         # Define the name of the getData callback associated with this component and assign to get_cell_content.
+482:         if self.get_cell_content is not None:
+483:             data_callback = self.get_cell_content._js_expr
+484:         else:
+485:             data_callback = f"getData_{editor_id}"
+486:             self.get_cell_content = Var(_js_expr=data_callback)
+487: 
+488:         code = [f"function {data_callback}([col, row]){{"]
+489: 
+490:         columns_path = str(self.columns)
+491:         data_path = str(self.data)
+492: 
+493:         code.extend([
+494:             f"    return formatDataEditorCells(col, row, {columns_path}, {data_path});",
+495:             "  }",
+496:         ])
+497: 
+498:         return ["\n".join(code)]
+499: 
+500:     @classmethod
+

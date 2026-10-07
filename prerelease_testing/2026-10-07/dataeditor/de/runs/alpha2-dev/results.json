@@ -1,0 +1,748 @@
+{
+ "base": "http://localhost:3420",
+ "label": "alpha2-dev",
+ "groups": {
+  "de_foreach": {
+   "checks": [
+    {
+     "name": "foreach_editors_render_without_errors",
+     "ok": false,
+     "detail": {
+      "boxes": 0,
+      "canvases": 0,
+      "cells": [],
+      "pageerrors": [],
+      "console_errors": [
+       "%o\n\n%s\n\n%s\n ReferenceError: g_rx_state_ is not defined\n    at getData_iohcozrd (http://localhost:3420/app_components/cluster_app/p_dataeditor.jsx:1095:11)\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:14961:17\n    at http://localhost:3420/node_modules/.vite/deps/esm",
+       "%o\n\n%s\n\n%s\n ReferenceError: g_rx_state_ is not defined\n    at getData_iohcozrd (http://localhost:3420/app_components/cluster_app/p_dataeditor.jsx:1095:11)\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:14961:17\n    at http://localhost:3420/node_modules/.vite/deps/esm"
+      ]
+     }
+    }
+   ],
+   "console": [
+    {
+     "type": "error",
+     "text": "%o\n\n%s\n\n%s\n ReferenceError: g_rx_state_ is not defined\n    at getData_iohcozrd (http://localhost:3420/app_components/cluster_app/p_dataeditor.jsx:1095:11)\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:14961:17\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:12863:56\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:8810:30\n    at walkRowsInCol (http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:8369:27)\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:8792:3\n    at walkColumns (http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:8390:7)\n    at drawCells (http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:8759:2)\n    at drawGrid (http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:11466:16)\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:11971:4 The above error occurred in the <ForwardRef(DataGrid)> component. React will try to recreate this component tree from scratch using the error boundary you provided, C.",
+     "loc": "http://localhost:3420/@vite/client",
+     "repeat_count": 2
+    }
+   ],
+   "pageerrors": [],
+   "failed_requests": [],
+   "http_errors": [],
+   "notes": [],
+   "ws": {
+    "sent": 13,
+    "recv": 5
+   },
+   "seconds": 9.7
+  },
+  "de_edit": {
+   "checks": [
+    {
+     "name": "first_edit_fast_typing_keeps_all_chars",
+     "ok": false,
+     "detail": {
+      "cell": {
+       "allowOverlay": true,
+       "data": "d",
+       "displayData": "Beta",
+       "kind": "text",
+       "readonly": false
+      },
+      "pos": [
+       0,
+       1
+      ]
+     }
+    },
+    {
+     "name": "explicit_editor_col_0",
+     "ok": true,
+     "detail": {
+      "cell": {
+       "allowOverlay": true,
+       "data": "MacEdit",
+       "displayData": "Alpha",
+       "kind": "text",
+       "readonly": false
+      },
+      "pos": [
+       0,
+       0
+      ]
+     }
+    },
+    {
+     "name": "explicit_editor_col_1",
+     "ok": true,
+     "detail": {
+      "cell": {
+       "allowOverlay": true,
+       "data": 42,
+       "displayData": "3",
+       "kind": "number",
+       "readonly": false
+      },
+      "pos": [
+       1,
+       2
+      ]
+     }
+    },
+    {
+     "name": "explicit_editor_col_2",
+     "ok": true,
+     "detail": {
+      "cell": {
+       "allowOverlay": true,
+       "data": 9.5,
+       "displayData": "5",
+       "kind": "number",
+       "readonly": false
+      },
+      "pos": [
+       2,
+       3
+      ]
+     }
+    },
+    {
+     "name": "bool_single_click_toggles",
+     "ok": true,
+     "detail": {
+      "before": "edits:4",
+      "after": "edits:5",
+      "last_edit": "{\"cell\": {\"data\": false, \"kind\": \"boolean\", \"readonly\": false}, \"pos\": [3, 0]}"
+     }
+    },
+    {
+     "name": "bool_second_click_toggles",
+     "ok": true,
+     "detail": {
+      "after": "edits:6",
+      "last_edit": "{\"cell\": {\"data\": true, \"kind\": \"boolean\", \"readonly\": false}, \"pos\": [3, 0]}"
+     }
+    },
+    {
+     "name": "text_overlay_open",
+     "ok": true,
+     "detail": null
+    },
+    {
+     "name": "text_overlay_escape_closes",
+     "ok": true,
+     "detail": null
+    },
+    {
+     "name": "delete_selection_delivered",
+     "ok": true,
+     "detail": "{\"columns\": {\"items\": []}, \"current\": {\"cell\": [0, 5], \"range\": {\"height\": 1, \"width\": 1, \"x\": 0, \"y\": 5}, \"rangeStack\": []}, \"rows\": {\"items\": []}}"
+    },
+    {
+     "name": "delete_no_javascript_error",
+     "ok": false,
+     "detail": [
+      "Cannot read properties of undefined (reading 'length')\nTypeError: Cannot read properties of undefined (reading 'length')\n    at shiftSelection (http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:14613:56)\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:14746:11\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:16170:37\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:16326:7\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:12314:14\n    at executeDispatch (http://localhost:3420/node_modules/.vite/deps/react-dom_client.js?v=e2b7d876:9906:5)\n    at runWithFiberInDEV (http://localhost:3420/node_modules/.vite/deps/react-dom_client.js?v=e2b7d876:944:66)\n    at processDispatchQueue (http://localhost:3420/node_modules/.vite/deps/react-dom_client.js?v=e2b7d876:9932:27)\n    at http://localhost:3420/node_modules/.vite/deps/react-dom_client.js?v=e2b7d876:10201:5\n    at batchedUpdates$1 (http://localhost:3420/node_modules/.vite/deps/react-dom_client.js?v=e2b7d876:2145:12)"
+     ]
+    },
+    {
+     "name": "delete_clears_cell",
+     "ok": false,
+     "detail": "{\"cell\": {\"data\": true, \"kind\": \"boolean\", \"readonly\": false}, \"pos\": [3, 0]}"
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Link",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 296
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Notes",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 296
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Tags",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 296
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Drill",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 296
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=RowID",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 296
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+     "loc": "http://localhost:8438/xo_purple.png",
+     "repeat_count": 1
+    }
+   ],
+   "pageerrors": [
+    "Cannot read properties of undefined (reading 'length')\nTypeError: Cannot read properties of undefined (reading 'length')\n    at shiftSelection (http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:14613:56)\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:14746:11\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:16170:37\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:16326:7\n    at http://localhost:3420/node_modules/.vite/deps/esm-B-d6lupf.js?v=35f99952:12314:14\n    at executeDispatch (http://localhost:3420/node_modules/.vite/deps/react-dom_client.js?v=e2b7d876:9906:5)\n    at runWithFiberInDEV (http://localhost:3420/node_modules/.vite/deps/react-dom_client.js?v=e2b7d876:944:66)\n    at processDispatchQueue (http://localhost:3420/node_modules/.vite/deps/react-dom_client.js?v=e2b7d876:9932:27)\n    at http://localhost:3420/node_modules/.vite/deps/react-dom_client.js?v=e2b7d876:10201:5\n    at batchedUpdates$1 (http://localhost:3420/node_modules/.vite/deps/react-dom_client.js?v=e2b7d876:2145:12)"
+   ],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8438/xo_purple.png",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "http_errors": [],
+   "notes": [
+    {
+     "first_edit_overlay_before_commit": [
+      "d"
+     ],
+     "overlay_values": [
+      "d"
+     ]
+    }
+   ],
+   "ws": {
+    "sent": 24,
+    "recv": 26
+   },
+   "seconds": 13.9
+  },
+  "de_overlay": {
+   "checks": [
+    {
+     "name": "image_overlay_styled",
+     "ok": true,
+     "detail": {
+      "portal_html_len": 2886,
+      "has_carousel": true,
+      "wrapper_rect": [
+       329.5,
+       268.5,
+       383,
+       612.796875
+      ],
+      "carousel_overflow": "hidden",
+      "carousel_position": "relative",
+      "wrapper_overflow": "hidden",
+      "slider_display": "flex",
+      "n_imgs": 5,
+      "n_visible_imgs": 1,
+      "visible_srcs": [
+       "/img_a.png"
+      ],
+      "img_complete": [
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ],
+       [
+        "/img_b.png",
+        true,
+        200
+       ],
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ]
+      ],
+      "has_arrows": true,
+      "has_dots": true
+     }
+    },
+    {
+     "name": "carousel_next_changes_slide",
+     "ok": true,
+     "detail": {
+      "portal_html_len": 2877,
+      "has_carousel": true,
+      "wrapper_rect": [
+       329.5,
+       268.5,
+       383,
+       612.796875
+      ],
+      "carousel_overflow": "hidden",
+      "carousel_position": "relative",
+      "wrapper_overflow": "hidden",
+      "slider_display": "flex",
+      "n_imgs": 5,
+      "n_visible_imgs": 1,
+      "visible_srcs": [
+       "/img_b.png"
+      ],
+      "img_complete": [
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ],
+       [
+        "/img_b.png",
+        true,
+        200
+       ],
+       [
+        "/img_c.png",
+        true,
+        400
+       ],
+       [
+        "/img_a.png",
+        true,
+        320
+       ]
+      ],
+      "has_arrows": true,
+      "has_dots": true
+     }
+    },
+    {
+     "name": "image_overlay_escape_after_arrow_closes",
+     "ok": true,
+     "detail": {
+      "portal_html_len": 0,
+      "has_carousel": false,
+      "portal_html": ""
+     }
+    },
+    {
+     "name": "image_overlay_escape_without_arrow_closes",
+     "ok": false,
+     "detail": {
+      "portal_html_len": 2310,
+      "has_carousel": true,
+      "wrapper_rect": [
+       329.5,
+       208.5,
+       160,
+       100
+      ],
+      "carousel_overflow": "hidden",
+      "carousel_position": "relative",
+      "wrapper_overflow": "hidden",
+      "slider_display": "flex",
+      "n_imgs": 1,
+      "n_visible_imgs": 1,
+      "visible_srcs": [
+       "/img_red.png"
+      ],
+      "img_complete": [
+       [
+        "/img_red.png",
+        true,
+        160
+       ]
+      ],
+      "has_arrows": true,
+      "has_dots": true
+     }
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Link",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 136
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Notes",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 136
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Tags",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 136
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Drill",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 136
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=RowID",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 136
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+     "loc": "http://localhost:8438/xo_purple.png",
+     "repeat_count": 1
+    }
+   ],
+   "pageerrors": [],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8438/xo_purple.png",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "http_errors": [],
+   "notes": [],
+   "ws": {
+    "sent": 9,
+    "recv": 13
+   },
+   "seconds": 7.7
+  },
+  "de_multi": {
+   "checks": [
+    {
+     "name": "csa_canvas_present",
+     "ok": true,
+     "detail": 2
+    },
+    {
+     "name": "csb_canvas_present",
+     "ok": true,
+     "detail": 2
+    },
+    {
+     "name": "cs_a_click_updates_only_a",
+     "ok": true,
+     "detail": {
+      "a": "csa clicks 1 edits 0 last 0,1",
+      "b": "csb clicks 0 edits 0 last"
+     }
+    },
+    {
+     "name": "cs_b_edit_isolated",
+     "ok": true,
+     "detail": {
+      "b": "csb clicks 1 edits 1 last 0,0",
+      "b_rows": "[[\"zz\",1],[\"b\",2],[\"c\",3]]",
+      "a_rows": "[[\"a\",1],[\"b\",2],[\"c\",3]]"
+     }
+    },
+    {
+     "name": "memo_editor_title_updates",
+     "ok": true,
+     "detail": "memo editor (3)"
+    },
+    {
+     "name": "memo_editor_rows_grow",
+     "ok": true,
+     "detail": {
+      "before": 2,
+      "after": 3,
+      "col0": [
+       "m1",
+       "m2",
+       "m3"
+      ]
+     }
+    },
+    {
+     "name": "dropdown_grid_renders_canvas",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "console": [],
+   "pageerrors": [],
+   "failed_requests": [],
+   "http_errors": [],
+   "notes": [
+    {
+     "dropdown_cells": {
+      "0-0": {
+       "kind": "text",
+       "data": "x",
+       "display": "x",
+       "ro": false,
+       "ov": true
+      },
+      "1-0": {
+       "kind": "custom",
+       "data": {
+        "kind": "dropdown-cell",
+        "allowedValues": [
+         "red",
+         "green",
+         "blue"
+        ],
+        "value": "red"
+       },
+       "display": "red",
+       "ro": false,
+       "ov": true
+      },
+      "0-1": {
+       "kind": "text",
+       "data": "y",
+       "display": "y",
+       "ro": false,
+       "ov": true
+      },
+      "1-1": {
+       "kind": "custom",
+       "data": {
+        "kind": "dropdown-cell",
+        "allowedValues": [
+         "red",
+         "green",
+         "blue"
+        ],
+        "value": "green"
+       },
+       "display": "green",
+       "ro": false,
+       "ov": true
+      }
+     }
+    }
+   ],
+   "ws": {
+    "sent": 5,
+    "recv": 9
+   },
+   "seconds": 7.5
+  },
+  "de_theme": {
+   "checks": [
+    {
+     "name": "state_theme_light_bg_is_light",
+     "ok": true,
+     "detail": [
+      255,
+      255,
+      255
+     ]
+    },
+    {
+     "name": "state_theme_dark_bg_matches_bgCell",
+     "ok": true,
+     "detail": [
+      22,
+      22,
+      27
+     ]
+    },
+    {
+     "name": "static_DataEditorTheme_applied",
+     "ok": true,
+     "detail": [
+      22,
+      22,
+      27
+     ]
+    },
+    {
+     "name": "state_theme_toggles_back",
+     "ok": true,
+     "detail": [
+      255,
+      255,
+      255
+     ]
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Link",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 32
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Notes",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 32
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Tags",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 32
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=Drill",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 32
+    },
+    {
+     "type": "log",
+     "text": "Warning: column.type is undefined for column.title=RowID",
+     "loc": "http://localhost:3420/utils/helpers/dataeditor.js",
+     "repeat_count": 32
+    },
+    {
+     "type": "error",
+     "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+     "loc": "http://localhost:8438/xo_purple.png",
+     "repeat_count": 1
+    }
+   ],
+   "pageerrors": [],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8438/xo_purple.png",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "http_errors": [],
+   "notes": [],
+   "ws": {
+    "sent": 3,
+    "recv": 7
+   },
+   "seconds": 9.2
+  },
+  "de_filter": {
+   "checks": [
+    {
+     "name": "filter_initial_all_rows",
+     "ok": true,
+     "detail": "visible rows: 30"
+    },
+    {
+     "name": "client_state_filter_reduces_rows",
+     "ok": true,
+     "detail": "visible rows: 10"
+    },
+    {
+     "name": "filtered_grid_shows_only_veg",
+     "ok": true,
+     "detail": {
+      "rows": 10,
+      "cat_col": [
+       "veg",
+       "veg",
+       "veg",
+       "veg",
+       "veg",
+       "veg",
+       "veg",
+       "veg",
+       "veg",
+       "veg"
+      ],
+      "err": null
+     }
+    },
+    {
+     "name": "filter_tracks_backend_updates",
+     "ok": true,
+     "detail": "visible rows: 11"
+    },
+    {
+     "name": "mapped_rows_grid_renders",
+     "ok": true,
+     "detail": {
+      "rows": 31,
+      "col0": [
+       "P00",
+       "P01",
+       "P02",
+       "P03",
+       "P04"
+      ],
+      "err": null
+     }
+    }
+   ],
+   "console": [],
+   "pageerrors": [],
+   "failed_requests": [],
+   "http_errors": [],
+   "notes": [],
+   "ws": {
+    "sent": 2,
+    "recv": 6
+   },
+   "seconds": 6.0
+  },
+  "de_big": {
+   "checks": [
+    {
+     "name": "big_rows_loaded",
+     "ok": true,
+     "detail": {
+      "text": "rows: 5000",
+      "seconds_to_5000": 1.85
+     }
+    },
+    {
+     "name": "big_scroll_moves",
+     "ok": true,
+     "detail": {
+      "scroll": [
+       32000,
+       170036
+      ],
+      "wheel_seconds": 2.15
+     }
+    },
+    {
+     "name": "big_scroll_no_long_tasks_over_250ms",
+     "ok": true,
+     "detail": {
+      "n_longtasks": 0,
+      "max_ms": 0,
+      "sum_ms": 0
+     }
+    },
+    {
+     "name": "big_click_near_end_reports_row",
+     "ok": true,
+     "detail": "click: 1,4999"
+    }
+   ],
+   "console": [],
+   "pageerrors": [],
+   "failed_requests": [],
+   "http_errors": [],
+   "notes": [
+    {
+     "big_canvas_box": {
+      "x": 10,
+      "y": 160,
+      "width": 339,
+      "height": 500
+     }
+    }
+   ],
+   "ws": {
+    "sent": 2,
+    "recv": 8
+   },
+   "seconds": 8.2
+  }
+ },
+ "ws_frames_artifact": "websocket-frames.json.gz",
+ "full_console_artifact": "full-console.json.gz"
+}

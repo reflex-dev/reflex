@@ -1,0 +1,2 @@
+ 8011  8001 /opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex run --frontend-port 3421 --backend-port 8421 --loglevel debug
+ 8044  8043 node /private/tmp/reflex-prerelease-macos-pass2/apps/dataeditor/stable/.web/node_modules/.bin/react-router dev --host

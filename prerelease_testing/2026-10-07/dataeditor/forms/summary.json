@@ -1,0 +1,705 @@
+{
+  "runs": {
+    "alpha-dev/chromium/results.json": {
+      "browser": {
+        "engine": "chromium",
+        "version": "153.0.8010.12"
+      },
+      "groups": {
+        "select_matrix": {
+          "assertions": 3,
+          "failed": [
+            "submitted_select_id"
+          ],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "forms": {
+          "assertions": 9,
+          "failed": [
+            "id_backed_controls_present_when_unset",
+            "filled_payload_values",
+            "dialog_submit_does_not_trigger_outer_form",
+            "closed_dialog_controls_absent"
+          ],
+          "pageerrors": 5,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.",
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+          ]
+        },
+        "dialog_control": {
+          "assertions": 1,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "code": {
+          "assertions": 9,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.\nError\n    at deprecateSimple (http://localhost:3430/node_modules/.vite/deps/moment-qFm84mCt.js?v=321d424b:173:40)\n    at hooks.defineLocale (http://localhost:3430/node_modules/.vite/deps/moment-qFm84mCt.js?v=321d424b:1286:6)\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=f3939f77:13:17\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=f3939f77:9:101\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=f3939f77:10:4\n    at http://localhost:3430/node_modules/.vite/deps/rolldown-runtime-CEgmsyvS.js?v=321d424b:16:49\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=f3939f77:144:16"
+          ]
+        },
+        "new_components": {
+          "assertions": 4,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        }
+      }
+    },
+    "alpha-dev/webkit/results.json": {
+      "browser": {
+        "engine": "webkit",
+        "version": "26.6"
+      },
+      "groups": {
+        "select_matrix": {
+          "assertions": 3,
+          "failed": [
+            "submitted_select_id"
+          ],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "forms": {
+          "assertions": 9,
+          "failed": [
+            "id_backed_controls_present_when_unset",
+            "filled_payload_values",
+            "dialog_submit_does_not_trigger_outer_form",
+            "closed_dialog_controls_absent"
+          ],
+          "pageerrors": 5,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.",
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+          ]
+        },
+        "dialog_control": {
+          "assertions": 1,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "code": {
+          "assertions": 9,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.\ndeprecateSimple@http://localhost:3430/node_modules/.vite/deps/moment-qFm84mCt.js:173:49\ndefineLocale@http://localhost:3430/node_modules/.vite/deps/moment-qFm84mCt.js:1286:21\n@http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js:9:108\n@http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js:10:4\n@http://localhost:3430/node_modules/.vite/deps/rolldown-runtime-CEgmsyvS.js:16:51\nmodule code@http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js:144:26",
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ]
+        },
+        "new_components": {
+          "assertions": 4,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        }
+      }
+    },
+    "alpha2-dev/chromium/results.json": {
+      "browser": {
+        "engine": "chromium",
+        "version": "153.0.8010.12"
+      },
+      "groups": {
+        "select_matrix": {
+          "assertions": 3,
+          "failed": [
+            "submitted_select_id"
+          ],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "forms": {
+          "assertions": 9,
+          "failed": [
+            "id_backed_controls_present_when_unset",
+            "filled_payload_values",
+            "dialog_submit_does_not_trigger_outer_form",
+            "closed_dialog_controls_absent"
+          ],
+          "pageerrors": 5,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.",
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+          ]
+        },
+        "recharts": {
+          "assertions": 11,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "plotly": {
+          "assertions": 17,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "radix": {
+          "assertions": 11,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "code": {
+          "assertions": 9,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.\nError\n    at deprecateSimple (http://localhost:3430/node_modules/.vite/deps/moment-qFm84mCt.js?v=010825d0:173:40)\n    at hooks.defineLocale (http://localhost:3430/node_modules/.vite/deps/moment-qFm84mCt.js?v=010825d0:1286:6)\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=434cd83b:13:17\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=434cd83b:9:101\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=434cd83b:10:4\n    at http://localhost:3430/node_modules/.vite/deps/rolldown-runtime-CEgmsyvS.js?v=010825d0:16:49\n    at http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js?v=434cd83b:144:16"
+          ]
+        },
+        "download": {
+          "assertions": 10,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "match": {
+          "assertions": 7,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "memo_names": {
+          "assertions": 2,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "new_components": {
+          "assertions": 4,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        }
+      }
+    },
+    "alpha2-dev/webkit/results.json": {
+      "browser": {
+        "engine": "webkit",
+        "version": "26.6"
+      },
+      "groups": {
+        "select_matrix": {
+          "assertions": 3,
+          "failed": [
+            "submitted_select_id"
+          ],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "forms": {
+          "assertions": 9,
+          "failed": [
+            "id_backed_controls_present_when_unset",
+            "filled_payload_values",
+            "dialog_submit_does_not_trigger_outer_form",
+            "closed_dialog_controls_absent"
+          ],
+          "pageerrors": 5,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.",
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+          ]
+        },
+        "recharts": {
+          "assertions": 11,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ]
+        },
+        "plotly": {
+          "assertions": 17,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ]
+        },
+        "radix": {
+          "assertions": 11,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ]
+        },
+        "code": {
+          "assertions": 9,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.\ndeprecateSimple@http://localhost:3430/node_modules/.vite/deps/moment-qFm84mCt.js:173:49\ndefineLocale@http://localhost:3430/node_modules/.vite/deps/moment-qFm84mCt.js:1286:21\n@http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js:9:108\n@http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js:10:4\n@http://localhost:3430/node_modules/.vite/deps/rolldown-runtime-CEgmsyvS.js:16:51\nmodule code@http://localhost:3430/node_modules/.vite/deps/moment_locale_ja.js:144:26",
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ]
+        },
+        "download": {
+          "assertions": 10,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ]
+        },
+        "match": {
+          "assertions": 7,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ]
+        },
+        "memo_names": {
+          "assertions": 2,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ]
+        },
+        "new_components": {
+          "assertions": 4,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        }
+      }
+    },
+    "alpha2-prod/chromium/results.json": {
+      "browser": {
+        "engine": "chromium",
+        "version": "153.0.8010.12"
+      },
+      "groups": {
+        "select_matrix": {
+          "assertions": 3,
+          "failed": [
+            "submitted_select_id"
+          ],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "forms": {
+          "assertions": 9,
+          "failed": [
+            "id_backed_controls_present_when_unset",
+            "filled_payload_values",
+            "dialog_submit_does_not_trigger_outer_form",
+            "closed_dialog_controls_absent"
+          ],
+          "pageerrors": 5,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "dialog_control": {
+          "assertions": 1,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "recharts": {
+          "assertions": 11,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "plotly": {
+          "assertions": 17,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "radix": {
+          "assertions": 11,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "code": {
+          "assertions": 9,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.\nError\n    at ue (http://localhost:3431/assets/moment-D0P3lHt0.js:5:3)\n    at r.Rn [as defineLocale] (http://localhost:3431/assets/moment-D0P3lHt0.js:5:22155)\n    at http://localhost:3431/assets/_code_._index-CnAGM-_C.js:292:2704\n    at http://localhost:3431/assets/_code_._index-CnAGM-_C.js:292:2596\n    at http://localhost:3431/assets/_code_._index-CnAGM-_C.js:292:2679\n    at http://localhost:3431/assets/rolldown-runtime-C0FnF6B9.js:1:268\n    at http://localhost:3431/assets/_code_._index-CnAGM-_C.js:297:38128"
+          ]
+        },
+        "download": {
+          "assertions": 10,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "match": {
+          "assertions": 7,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "memo_names": {
+          "assertions": 2,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "new_components": {
+          "assertions": 4,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        }
+      }
+    },
+    "alpha2-prod/webkit/results.json": {
+      "browser": {
+        "engine": "webkit",
+        "version": "26.6"
+      },
+      "groups": {
+        "select_matrix": {
+          "assertions": 3,
+          "failed": [
+            "submitted_select_id"
+          ],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "forms": {
+          "assertions": 9,
+          "failed": [
+            "id_backed_controls_present_when_unset",
+            "filled_payload_values",
+            "dialog_submit_does_not_trigger_outer_form",
+            "closed_dialog_controls_absent"
+          ],
+          "pageerrors": 5,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "dialog_control": {
+          "assertions": 1,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "recharts": {
+          "assertions": 11,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "plotly": {
+          "assertions": 17,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "radix": {
+          "assertions": 11,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "code": {
+          "assertions": 9,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.\nue@http://localhost:3431/assets/moment-D0P3lHt0.js:5:8\nRn@http://localhost:3431/assets/moment-D0P3lHt0.js:5:22157\n@http://localhost:3431/assets/_code_._index-CnAGM-_C.js:292:2597\n@http://localhost:3431/assets/_code_._index-CnAGM-_C.js:292:2679\n@http://localhost:3431/assets/rolldown-runtime-C0FnF6B9.js:1:269\nmodule code@http://localhost:3431/assets/_code_._index-CnAGM-_C.js:297:38130"
+          ]
+        },
+        "download": {
+          "assertions": 10,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "match": {
+          "assertions": 7,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "memo_names": {
+          "assertions": 2,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "new_components": {
+          "assertions": 4,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        }
+      }
+    },
+    "stable-dev/chromium/results.json": {
+      "browser": {
+        "engine": "chromium",
+        "version": "153.0.8010.12"
+      },
+      "groups": {
+        "select_matrix": {
+          "assertions": 3,
+          "failed": [
+            "submitted_select_id"
+          ],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "forms": {
+          "assertions": 9,
+          "failed": [
+            "no_stray_noncontrol_keys",
+            "filled_payload_values",
+            "filled_no_stray_keys",
+            "dialog_form_payload",
+            "dialog_submit_does_not_trigger_outer_form",
+            "component_state_forms_isolated_and_clean",
+            "closed_dialog_controls_absent"
+          ],
+          "pageerrors": 5,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.",
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+          ]
+        },
+        "dialog_control": {
+          "assertions": 1,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "code": {
+          "assertions": 9,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info."
+          ]
+        },
+        "new_components": {
+          "assertions": 4,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        }
+      }
+    },
+    "stable-dev/webkit/results.json": {
+      "browser": {
+        "engine": "webkit",
+        "version": "26.6"
+      },
+      "groups": {
+        "select_matrix": {
+          "assertions": 3,
+          "failed": [
+            "submitted_select_id"
+          ],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "forms": {
+          "assertions": 9,
+          "failed": [
+            "no_stray_noncontrol_keys",
+            "filled_payload_values",
+            "filled_no_stray_keys",
+            "dialog_form_payload",
+            "dialog_submit_does_not_trigger_outer_form",
+            "component_state_forms_isolated_and_clean",
+            "closed_dialog_controls_absent"
+          ],
+          "pageerrors": 5,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.",
+            "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+          ]
+        },
+        "dialog_control": {
+          "assertions": 1,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        },
+        "code": {
+          "assertions": 9,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": [
+            "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.",
+            "The resource http://localhost:3430/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+            "The resource http://localhost:3430/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+          ]
+        },
+        "new_components": {
+          "assertions": 4,
+          "failed": [],
+          "pageerrors": 0,
+          "failed_requests": 0,
+          "http_errors": [],
+          "warnings": []
+        }
+      }
+    }
+  },
+  "assertions": 438,
+  "passed": 392,
+  "failed": 46
+}
