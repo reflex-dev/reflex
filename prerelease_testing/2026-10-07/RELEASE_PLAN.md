@@ -150,6 +150,17 @@ Fix-before-release items, assigned to @masenf, each with a fix branch in progres
 | N-006 | [reflex#7475](https://github.com/reflex-dev/reflex/issues/7475) | `claude/docs-0.10-migration` |
 | N-001 | PR [reflex#7466](https://github.com/reflex-dev/reflex/pull/7466) | `claude/db-extra-greenlet` |
 
+All five fix branches are pushed (no pull requests opened yet): `claude/n025-reflex-before-render` 655b22259 (window.__reflex at
+module scope; compiler unit test + Playwright test; verifier fixtures: probe NO_REFLEX→HAS_REFLEX, enterprise grid 0→2 headers),
+`claude/n032-boot-reconcile` 33568493e (client-storage vars applied at boot are re-marked dirty after the guarded snapshot so the
+event delta goes through `get_delta`; verifier fixtures: `away` 0/3→3/3 dev and prod, stale-hash probes 3/3), `claude/n004-pickle-compat`
+378d403b7 (legacy default-including hash in the pickle tuple, new hash inside the pickled dict; rollback matrix kept on Redis and disk;
+new issue #7491 for the Python-version hash dependence), `claude/class-assignment` 5cfb3d20f + 347d0456c + b57fd27fc (patch/restore
+round trip, storage wrapper kept on plain-default assignment, mangled-name guard), `claude/docs-0.10-migration` 8c725dcde + 12f54a690 +
+e46344d84 (`BackendVarFormatError` hint, #7462 fragment, "Upgrading to Reflex 0.10" guide). Each worktree ran ruff, pyright, the unit
+suite (the only failures are the 232 reflex_cli version-check tests that fail on unmodified main in a shallow checkout) and the relevant
+Playwright tests; the Selenium `test_client_storage.py` could not run here (no matching Chrome) and should be watched in CI for N-032.
+
 Filed for after the release — reflex: N-020 [#7476](https://github.com/reflex-dev/reflex/issues/7476), N-017 [#7477](https://github.com/reflex-dev/reflex/issues/7477),
 N-019 [#7478](https://github.com/reflex-dev/reflex/issues/7478), N-003/N-041 [#7479](https://github.com/reflex-dev/reflex/issues/7479),
 N-018 [#7480](https://github.com/reflex-dev/reflex/issues/7480), N-023 [#7481](https://github.com/reflex-dev/reflex/issues/7481),
