@@ -124,6 +124,8 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   `_get_state_from_cache(AuthUserState)`, which returns None for `update_vars_internal` under Redis, so the filter fails closed and the
   frontend persists the "" placeholders. Repro: `bin/infra.sh start; bin/run_storx.sh a3-ent:vauthx_a3e:a3e-dev-redis-v2;
   drivers/storx_table.py a3e-dev-redis-v2`.
+- Filed: [reflex-enterprise#274](https://github.com/reflex-dev/reflex-enterprise/issues/274) (2026-10-07). N-033's a3 re-check added to
+  [reflex-enterprise#262](https://github.com/reflex-dev/reflex-enterprise/issues/262#issuecomment-6047554210).
 
 ## Cluster summaries
 
