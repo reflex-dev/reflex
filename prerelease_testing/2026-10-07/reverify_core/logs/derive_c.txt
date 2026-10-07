@@ -1,0 +1,12 @@
+################ alpha2
+PageContext.get(): LookupError: <ContextVar name='PageContext' at 0x7f3576697880>
+CompileContext.get(): LookupError: <ContextVar name='CompileContext' at 0x7f3576697740>
+EventContext.get(): LookupError: <ContextVar name='EventContext' at 0x7f3576625d00>
+################ alpha
+PageContext.get(): LookupError: <ContextVar name='PageContext' at 0x7f82cd4d5580>
+CompileContext.get(): LookupError: <ContextVar name='CompileContext' at 0x7f82cd4d5440>
+EventContext.get(): LookupError: <ContextVar name='EventContext' at 0x7f82cd4478d0>
+################ stable
+PageContext.get(): RuntimeError: No active PageContext is attached to the current context.
+CompileContext.get(): RuntimeError: No active CompileContext is attached to the current context.
+EventContext.get(): LookupError: <ContextVar name='EventContext' at 0x7f72c51d5d00>

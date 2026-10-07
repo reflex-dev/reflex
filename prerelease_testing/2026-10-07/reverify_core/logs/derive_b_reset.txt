@@ -1,0 +1,12 @@
+################ alpha2 dev
+reset() ok -> n = 0 _key = 'sk_live'
+################ alpha2 prod
+reset() ok -> n = 0 _key = 'sk_live'
+################ alpha dev
+reset() EXC SetUndefinedStateVarError: The state variable '_key' has not been defined in 'Cfg'. All state variables must be declared before they can be set.
+################ alpha prod
+reset() ok -> n = 0 _key = None
+################ stable dev
+reset() ok -> n = 0 _key = None
+################ stable prod
+reset() ok -> n = 0 _key = None

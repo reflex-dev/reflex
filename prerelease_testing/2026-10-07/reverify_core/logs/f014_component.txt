@@ -1,0 +1,60 @@
++ [alpha2] reflex component --help
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+rc=2
++ [alpha2] reflex component init
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+rc=2
++ [alpha2] reflex component build
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+rc=2
++ [alpha] reflex component --help
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+rc=2
++ [alpha] reflex component init
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+rc=2
++ [alpha] reflex component build
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+rc=2
++ [stable] reflex component --help
+Usage: reflex component [OPTIONS] COMMAND [ARGS]...
+
+  CLI for creating custom components.
+
+Options:
+  --help  Show this message and exit.
+rc=0
++ [stable] reflex component init
+───────────────────── Initializing reflex-neutral project ──────────────────────
+Info: Populating pyproject.toml with package name: reflex-neutral
+Info: Initializing the component directory: custom_components/reflex_neutral
+Info: Creating app for testing: neutral_demo
+────────────────────────── Initializing neutral_demo ───────────────────────────
+Info: Initializing the web directory.
+rc=1
++ [stable] reflex component build
+Building custom component...
+Failed to import custom_components.reflex_neutral.__init__
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/utils/pyi_generator.py", line 1657, in _scan_files
+    importlib.import_module(module_import)
+  File "/usr/lib/python3.12/importlib/__init__.py", line 90, in import_module
+rc=1

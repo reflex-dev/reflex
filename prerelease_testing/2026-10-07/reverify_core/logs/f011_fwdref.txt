@@ -1,0 +1,33 @@
++ [alpha2] reflex compile --dry
+      ^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex_base/vars/base.py", line 1287, in guess_type
+    raise TypeError(msg)
+TypeError: Unsupported type ForwardRef('list[Item]') for guess_type.
++ [alpha] reflex compile --dry
+      ^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex_base/vars/base.py", line 1285, in guess_type
+    raise TypeError(msg)
+TypeError: Unsupported type ForwardRef('list[Item]') for guess_type.
++ [stable] reflex compile --dry
+    eval(self.__forward_code__, globalns, localns),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 1, in <module>
+NameError: name 'Item' is not defined. Did you mean: 'items'?
++ [alpha2] fwdref_tb.py future
+future -> TypeError: Unsupported type ForwardRef('Later | None') for guess_type.
+    at reflex/state.py 739 __init_subclass__
+    at reflex/state.py 281 get_var_for_field
+    at reflex_base/vars/base.py 3881 dispatch
+    at reflex_base/vars/base.py 1287 guess_type
++ [alpha] fwdref_tb.py future
+future -> TypeError: Unsupported type ForwardRef('Later | None') for guess_type.
+    at reflex/state.py 738 __init_subclass__
+    at reflex/state.py 282 get_var_for_field
+    at reflex_base/vars/base.py 3879 dispatch
+    at reflex_base/vars/base.py 1285 guess_type
++ [stable] fwdref_tb.py future
+future -> NameError: name 'Later' is not defined
+    at /usr/lib/python3.12/typing.py 2244 get_type_hints
+    at /usr/lib/python3.12/typing.py 414 _eval_type
+    at /usr/lib/python3.12/typing.py 924 _evaluate
+    at <string> 1 <module>

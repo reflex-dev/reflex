@@ -1,0 +1,1 @@
+{"cookies": [{"name": "mini_consent", "value": "granted", "domain": "localhost", "path": "/", "expires": 1791358214.220118, "httpOnly": false, "secure": false, "sameSite": "Lax"}], "origins": [{"origin": "http://localhost:3221", "localStorage": [{"name": "mini_theme", "value": "blue"}, {"name": "theme", "value": "system"}]}]}

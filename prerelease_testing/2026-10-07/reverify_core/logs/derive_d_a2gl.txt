@@ -1,0 +1,30 @@
+################ reverify_core-a2db-gl direct
+--- scenario direct
+ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (derive_d.py:18)
+--- end
+################ reverify_core-a2db-gl exec
+--- scenario exec
+ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (derive_d.py:20)
+--- end
+################ reverify_core-a2db-gl model_here
+--- scenario model_here
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/reverify_core-a2db-gl/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:156)
+--- end
+################ reverify_core-a2db-gl model_import
+--- scenario model_import
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/reverify_core-a2db-gl/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:156)
+--- end
+################ reverify_core-a2db-gl both_models
+--- scenario both_models
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/reverify_core-a2db-gl/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:156)
+--- end
+################ reverify_core-a2db-gl memo
+--- scenario memo
+`@rx.memo` on `my_memo` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `x`. Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (derive_d.py:32)
+--- end
+################ reverify_core-a2db-gl env
+--- scenario env
+state_manager_disk_debounce exists: True
+REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS has been deprecated in version 0.9.12. Set REFLEX_STATE_MANAGER_DISK_DEBOUNCE=1.0s instead. It will be completely removed in 1.0. (derive_d.py:42)
+value: 0:00:01
+--- end

@@ -10,6 +10,10 @@ finding, venvs, paths); [AGENT_BRIEF.md](./AGENT_BRIEF.md) the rules every agent
 
 Status and results: [FINDINGS.md](./FINDINGS.md) (written incrementally as clusters report).
 
+**Working on this from another session?** Read [COORDINATION.md](./COORDINATION.md): claim an item from
+[board/items/](./board/items/) with `scripts/claim.sh <item>`, build envs with `scripts/bootstrap_envs.sh`,
+drop findings in `board/findings-inbox/`, release with `scripts/release.sh`.
+
 | dir | covers |
 |---|---|
 | `packaging/` | `.pyi` audit of all 20 new-train packages: PASS |

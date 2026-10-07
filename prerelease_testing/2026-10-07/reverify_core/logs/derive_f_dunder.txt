@@ -1,0 +1,330 @@
+################ alpha2 dev
+reflex 0.10.0a2  REFLEX_ENV_MODE=dev
+--- classification
+  _D__counter                    in get_fields(): False | backend: -     | in D.vars: False
+  _D__ann_plain                  in get_fields(): False | backend: -     | in D.vars: False
+  __dunder_thing__               in get_fields(): False | backend: -     | in D.vars: False
+  __data_source_params_class__   in get_fields(): False | backend: -     | in D.vars: False
+  _D__fielded                    in get_fields(): True  | backend: True  | in D.vars: False
+  _single__mid                   in get_fields(): True  | backend: True  | in D.vars: False
+  _Mx__mx                        in get_fields(): False | backend: -     | in D.vars: False
+  shown                          in get_fields(): True  | backend: False | in D.vars: True
+--- class access
+D._D__counter                                                  -> 0
+D._D__ann_plain                                                -> 5
+D.__dunder_thing__                                             -> 'dunder-value'
+D.__data_source_params_class__.from_request(1)                 -> 'Params.from_request(1)'
+Sub.__data_source_params_class__.from_request(1)               -> 'Params2.from_request(1)'
+D._D__fielded (explicit field)                                 -> Field(default=0, is_var=True, annotated_type=<class 'int'>)
+D._single__mid                                                 -> Field(default=7, is_var=True, annotated_type=<class 'int'>)
+Mx._Mx__mx / D._Mx__mx                                         -> (0, 0)
+_Under._Under__u                                               -> 1
+--- instance writes (dev guard)
+d.bump() -> d.get_counter()                                    -> 1
+   dirty_vars after bump                                       -> []
+   D._D__counter class value unchanged                         -> 0
+   counter_view (computed, should NOT react)                   -> 1
+d.bump_mx() (mixin-mangled name) -> d.get_mx()                 -> 1
+u.set_u(5) (class name starts with _) -> u.get_u()             -> 5
+Base2.write_private on a Child2 instance (mangled by a base)   -> 'base-wrote'
+d.__dunder_thing__ = 'x' on instance                           -> 'inst'
+d._D__typo__x = 1 (undeclared, contains __)                    -> 'accepted'
+d._typo_x = 1 (undeclared, control)                            -> EXC SetUndefinedStateVarError: The state variable '_typo_x' has not been defined in 'D'. All state variables must be declared before they can be set.
+d._sneaky__name = 1 (undeclared, single _ + '__' inside)       -> 'accepted'
+--- explicit rx.field dunder is a real backend var
+d2.bump_fielded() -> get_fielded()                             -> 1
+   dirty_vars                                                  -> ['_D__fielded', 'fielded_view']
+   fielded_view (computed, should react)                       -> 1
+_single__mid instance write dirty?                             -> ['_D__fielded', '_single__mid', 'fielded_view']
+--- pickle round trip (what disk/redis managers do)
+d3._D__counter = 41                                            -> 'ok'
+d3._D__fielded = 42                                            -> 'ok'
+d3._Mx__mx = 43                                                -> 'ok'
+after pickle: _D__counter (plain, was 41)                      -> 41
+after pickle: _D__fielded (field, was 42)                      -> 42
+after pickle: _Mx__mx (plain mixin, was 43)                    -> 43
+--- reset()
+d3.reset()                                                     -> 'ok'
+after reset: _D__counter / _D__fielded / _Mx__mx               -> (41, 0, 43)
+--- class-level assignment of dunder/mangled
+D._D__counter = 100 -> fresh instance reads                    -> 100
+D.__data_source_params_class__ = Params2 -> class              -> 'Params2'
+D._D__fielded = 9 (explicit field) -> fresh instance reads     -> 9
+type(D.__dict__['_D__fielded'])                                -> 'Field'
+--- ComponentState with a dunder
+CS.create() ok                                                 -> 'jsx(RadixThemesButton,{onClick:((_e) => (addEvents([(ReflexE'
+################ alpha2 prod
+reflex 0.10.0a2  REFLEX_ENV_MODE=prod
+--- classification
+  _D__counter                    in get_fields(): False | backend: -     | in D.vars: False
+  _D__ann_plain                  in get_fields(): False | backend: -     | in D.vars: False
+  __dunder_thing__               in get_fields(): False | backend: -     | in D.vars: False
+  __data_source_params_class__   in get_fields(): False | backend: -     | in D.vars: False
+  _D__fielded                    in get_fields(): True  | backend: True  | in D.vars: False
+  _single__mid                   in get_fields(): True  | backend: True  | in D.vars: False
+  _Mx__mx                        in get_fields(): False | backend: -     | in D.vars: False
+  shown                          in get_fields(): True  | backend: False | in D.vars: True
+--- class access
+D._D__counter                                                  -> 0
+D._D__ann_plain                                                -> 5
+D.__dunder_thing__                                             -> 'dunder-value'
+D.__data_source_params_class__.from_request(1)                 -> 'Params.from_request(1)'
+Sub.__data_source_params_class__.from_request(1)               -> 'Params2.from_request(1)'
+D._D__fielded (explicit field)                                 -> Field(default=0, is_var=True, annotated_type=<class 'int'>)
+D._single__mid                                                 -> Field(default=7, is_var=True, annotated_type=<class 'int'>)
+Mx._Mx__mx / D._Mx__mx                                         -> (0, 0)
+_Under._Under__u                                               -> 1
+--- instance writes (dev guard)
+d.bump() -> d.get_counter()                                    -> 1
+   dirty_vars after bump                                       -> []
+   D._D__counter class value unchanged                         -> 0
+   counter_view (computed, should NOT react)                   -> 1
+d.bump_mx() (mixin-mangled name) -> d.get_mx()                 -> 1
+u.set_u(5) (class name starts with _) -> u.get_u()             -> 5
+Base2.write_private on a Child2 instance (mangled by a base)   -> 'base-wrote'
+d.__dunder_thing__ = 'x' on instance                           -> 'inst'
+d._D__typo__x = 1 (undeclared, contains __)                    -> 'accepted'
+d._typo_x = 1 (undeclared, control)                            -> 'accepted'
+d._sneaky__name = 1 (undeclared, single _ + '__' inside)       -> 'accepted'
+--- explicit rx.field dunder is a real backend var
+d2.bump_fielded() -> get_fielded()                             -> 1
+   dirty_vars                                                  -> ['_D__fielded', 'fielded_view']
+   fielded_view (computed, should react)                       -> 1
+_single__mid instance write dirty?                             -> ['_D__fielded', '_single__mid', 'fielded_view']
+--- pickle round trip (what disk/redis managers do)
+d3._D__counter = 41                                            -> 'ok'
+d3._D__fielded = 42                                            -> 'ok'
+d3._Mx__mx = 43                                                -> 'ok'
+after pickle: _D__counter (plain, was 41)                      -> 41
+after pickle: _D__fielded (field, was 42)                      -> 42
+after pickle: _Mx__mx (plain mixin, was 43)                    -> 43
+--- reset()
+d3.reset()                                                     -> 'ok'
+after reset: _D__counter / _D__fielded / _Mx__mx               -> (41, 0, 43)
+--- class-level assignment of dunder/mangled
+D._D__counter = 100 -> fresh instance reads                    -> 100
+D.__data_source_params_class__ = Params2 -> class              -> 'Params2'
+D._D__fielded = 9 (explicit field) -> fresh instance reads     -> 9
+type(D.__dict__['_D__fielded'])                                -> 'Field'
+--- ComponentState with a dunder
+CS.create() ok                                                 -> 'jsx(RadixThemesButton,{onClick:((_e) => (addEvents([(ReflexE'
+################ alpha dev
+reflex 0.10.0a1  REFLEX_ENV_MODE=dev
+--- classification
+  _D__counter                    in get_fields(): True  | backend: True  | in D.vars: False
+  _D__ann_plain                  in get_fields(): True  | backend: True  | in D.vars: False
+  __dunder_thing__               in get_fields(): False | backend: -     | in D.vars: False
+  __data_source_params_class__   in get_fields(): True  | backend: True  | in D.vars: False
+  _D__fielded                    in get_fields(): True  | backend: True  | in D.vars: False
+  _single__mid                   in get_fields(): True  | backend: True  | in D.vars: False
+  _Mx__mx                        in get_fields(): True  | backend: True  | in D.vars: False
+  shown                          in get_fields(): True  | backend: False | in D.vars: True
+--- class access
+D._D__counter                                                  -> Field(default=0, is_var=True, annotated_type=<class 'int'>)
+D._D__ann_plain                                                -> Field(default=5, is_var=True, annotated_type=<class 'int'>)
+D.__dunder_thing__                                             -> 'dunder-value'
+D.__data_source_params_class__.from_request(1)                 -> EXC AttributeError: 'Field' object has no attribute 'from_request'
+Sub.__data_source_params_class__.from_request(1)               -> 'Params2.from_request(1)'
+D._D__fielded (explicit field)                                 -> Field(default=0, is_var=True, annotated_type=<class 'int'>)
+D._single__mid                                                 -> Field(default=7, is_var=True, annotated_type=<class 'int'>)
+Mx._Mx__mx / D._Mx__mx                                         -> (Field(default=0, is_var=True, annotated_type=<class 'int'>), Field(default=0, is_var=True, annotated_type=<class 'int'>))
+_Under._Under__u                                               -> Field(default=1, is_var=True, annotated_type=<class 'int'>)
+--- instance writes (dev guard)
+d.bump() -> d.get_counter()                                    -> 1
+   dirty_vars after bump                                       -> ['_D__counter', 'counter_view']
+   D._D__counter class value unchanged                         -> Field(default=0, is_var=True, annotated_type=<class 'int'>)
+   counter_view (computed, should NOT react)                   -> 1
+d.bump_mx() (mixin-mangled name) -> d.get_mx()                 -> 1
+u.set_u(5) (class name starts with _) -> u.get_u()             -> 5
+Base2.write_private on a Child2 instance (mangled by a base)   -> EXC SetUndefinedStateVarError: The state variable '_Base2__from_base' has not been defined in 'Child2'. All state variables must be declared before they can be set.
+d.__dunder_thing__ = 'x' on instance                           -> 'inst'
+d._D__typo__x = 1 (undeclared, contains __)                    -> 'accepted'
+d._typo_x = 1 (undeclared, control)                            -> EXC SetUndefinedStateVarError: The state variable '_typo_x' has not been defined in 'D'. All state variables must be declared before they can be set.
+d._sneaky__name = 1 (undeclared, single _ + '__' inside)       -> EXC SetUndefinedStateVarError: The state variable '_sneaky__name' has not been defined in 'D'. All state variables must be declared before they can be set.
+--- explicit rx.field dunder is a real backend var
+d2.bump_fielded() -> get_fielded()                             -> 1
+   dirty_vars                                                  -> ['_D__fielded', 'fielded_view']
+   fielded_view (computed, should react)                       -> 1
+_single__mid instance write dirty?                             -> ['_D__fielded', '_single__mid', 'fielded_view']
+--- pickle round trip (what disk/redis managers do)
+d3._D__counter = 41                                            -> 'ok'
+d3._D__fielded = 42                                            -> 'ok'
+d3._Mx__mx = 43                                                -> 'ok'
+after pickle: _D__counter (plain, was 41)                      -> 41
+after pickle: _D__fielded (field, was 42)                      -> 42
+after pickle: _Mx__mx (plain mixin, was 43)                    -> 43
+--- reset()
+d3.reset()                                                     -> 'ok'
+after reset: _D__counter / _D__fielded / _Mx__mx               -> (0, 0, 0)
+--- class-level assignment of dunder/mangled
+D._D__counter = 100 -> fresh instance reads                    -> 100
+D.__data_source_params_class__ = Params2 -> class              -> 'Params2'
+D._D__fielded = 9 (explicit field) -> fresh instance reads     -> 9
+type(D.__dict__['_D__fielded'])                                -> 'int'
+--- ComponentState with a dunder
+CS.create() ok                                                 -> 'jsx(RadixThemesButton,{onClick:((_e) => (addEvents([(ReflexE'
+################ alpha prod
+reflex 0.10.0a1  REFLEX_ENV_MODE=prod
+--- classification
+  _D__counter                    in get_fields(): True  | backend: True  | in D.vars: False
+  _D__ann_plain                  in get_fields(): True  | backend: True  | in D.vars: False
+  __dunder_thing__               in get_fields(): False | backend: -     | in D.vars: False
+  __data_source_params_class__   in get_fields(): True  | backend: True  | in D.vars: False
+  _D__fielded                    in get_fields(): True  | backend: True  | in D.vars: False
+  _single__mid                   in get_fields(): True  | backend: True  | in D.vars: False
+  _Mx__mx                        in get_fields(): True  | backend: True  | in D.vars: False
+  shown                          in get_fields(): True  | backend: False | in D.vars: True
+--- class access
+D._D__counter                                                  -> Field(default=0, is_var=True, annotated_type=<class 'int'>)
+D._D__ann_plain                                                -> Field(default=5, is_var=True, annotated_type=<class 'int'>)
+D.__dunder_thing__                                             -> 'dunder-value'
+D.__data_source_params_class__.from_request(1)                 -> EXC AttributeError: 'Field' object has no attribute 'from_request'
+Sub.__data_source_params_class__.from_request(1)               -> 'Params2.from_request(1)'
+D._D__fielded (explicit field)                                 -> Field(default=0, is_var=True, annotated_type=<class 'int'>)
+D._single__mid                                                 -> Field(default=7, is_var=True, annotated_type=<class 'int'>)
+Mx._Mx__mx / D._Mx__mx                                         -> (Field(default=0, is_var=True, annotated_type=<class 'int'>), Field(default=0, is_var=True, annotated_type=<class 'int'>))
+_Under._Under__u                                               -> Field(default=1, is_var=True, annotated_type=<class 'int'>)
+--- instance writes (dev guard)
+d.bump() -> d.get_counter()                                    -> 1
+   dirty_vars after bump                                       -> ['_D__counter', 'counter_view']
+   D._D__counter class value unchanged                         -> Field(default=0, is_var=True, annotated_type=<class 'int'>)
+   counter_view (computed, should NOT react)                   -> 1
+d.bump_mx() (mixin-mangled name) -> d.get_mx()                 -> 1
+u.set_u(5) (class name starts with _) -> u.get_u()             -> 5
+Base2.write_private on a Child2 instance (mangled by a base)   -> 'base-wrote'
+d.__dunder_thing__ = 'x' on instance                           -> 'inst'
+d._D__typo__x = 1 (undeclared, contains __)                    -> 'accepted'
+d._typo_x = 1 (undeclared, control)                            -> 'accepted'
+d._sneaky__name = 1 (undeclared, single _ + '__' inside)       -> 'accepted'
+--- explicit rx.field dunder is a real backend var
+d2.bump_fielded() -> get_fielded()                             -> 1
+   dirty_vars                                                  -> ['_D__fielded', 'fielded_view']
+   fielded_view (computed, should react)                       -> 1
+_single__mid instance write dirty?                             -> ['_D__fielded', '_single__mid', 'fielded_view']
+--- pickle round trip (what disk/redis managers do)
+d3._D__counter = 41                                            -> 'ok'
+d3._D__fielded = 42                                            -> 'ok'
+d3._Mx__mx = 43                                                -> 'ok'
+after pickle: _D__counter (plain, was 41)                      -> 41
+after pickle: _D__fielded (field, was 42)                      -> 42
+after pickle: _Mx__mx (plain mixin, was 43)                    -> 43
+--- reset()
+d3.reset()                                                     -> 'ok'
+after reset: _D__counter / _D__fielded / _Mx__mx               -> (0, 0, 0)
+--- class-level assignment of dunder/mangled
+D._D__counter = 100 -> fresh instance reads                    -> 100
+D.__data_source_params_class__ = Params2 -> class              -> 'Params2'
+D._D__fielded = 9 (explicit field) -> fresh instance reads     -> 9
+type(D.__dict__['_D__fielded'])                                -> 'int'
+--- ComponentState with a dunder
+CS.create() ok                                                 -> 'jsx(RadixThemesButton,{onClick:((_e) => (addEvents([(ReflexE'
+################ stable dev
+reflex 0.9.12  REFLEX_ENV_MODE=dev
+--- classification
+  _D__counter                    in get_fields(): True  | backend: -     | in D.vars: False
+  _D__ann_plain                  in get_fields(): True  | backend: -     | in D.vars: False
+  __dunder_thing__               in get_fields(): False | backend: -     | in D.vars: False
+  __data_source_params_class__   in get_fields(): True  | backend: -     | in D.vars: False
+  _D__fielded                    in get_fields(): True  | backend: -     | in D.vars: False
+  _single__mid                   in get_fields(): True  | backend: -     | in D.vars: False
+  _Mx__mx                        in get_fields(): True  | backend: -     | in D.vars: False
+  shown                          in get_fields(): True  | backend: -     | in D.vars: True
+--- class access
+D._D__counter                                                  -> 0
+D._D__ann_plain                                                -> 5
+D.__dunder_thing__                                             -> 'dunder-value'
+D.__data_source_params_class__.from_request(1)                 -> 'Params.from_request(1)'
+Sub.__data_source_params_class__.from_request(1)               -> 'Params2.from_request(1)'
+D._D__fielded (explicit field)                                 -> None
+D._single__mid                                                 -> 7
+Mx._Mx__mx / D._Mx__mx                                         -> (0, 0)
+_Under._Under__u                                               -> 1
+--- instance writes (dev guard)
+d.bump() -> d.get_counter()                                    -> 1
+   dirty_vars after bump                                       -> []
+   D._D__counter class value unchanged                         -> 0
+   counter_view (computed, should NOT react)                   -> 1
+d.bump_mx() (mixin-mangled name) -> d.get_mx()                 -> EXC SetUndefinedStateVarError: The state variable '_Mx__mx' has not been defined in 'D'. All state variables must be declared before they can be set.
+u.set_u(5) (class name starts with _) -> u.get_u()             -> 5
+Base2.write_private on a Child2 instance (mangled by a base)   -> EXC SetUndefinedStateVarError: The state variable '_Base2__from_base' has not been defined in 'Child2'. All state variables must be declared before they can be set.
+d.__dunder_thing__ = 'x' on instance                           -> 'inst'
+d._D__typo__x = 1 (undeclared, contains __)                    -> 'accepted'
+d._typo_x = 1 (undeclared, control)                            -> EXC SetUndefinedStateVarError: The state variable '_typo_x' has not been defined in 'D'. All state variables must be declared before they can be set.
+d._sneaky__name = 1 (undeclared, single _ + '__' inside)       -> EXC SetUndefinedStateVarError: The state variable '_sneaky__name' has not been defined in 'D'. All state variables must be declared before they can be set.
+--- explicit rx.field dunder is a real backend var
+d2.bump_fielded() -> get_fielded()                             -> 1
+   dirty_vars                                                  -> []
+   fielded_view (computed, should react)                       -> 1
+_single__mid instance write dirty?                             -> ['_single__mid']
+--- pickle round trip (what disk/redis managers do)
+d3._D__counter = 41                                            -> 'ok'
+d3._D__fielded = 42                                            -> 'ok'
+d3._Mx__mx = 43                                                -> EXC SetUndefinedStateVarError: The state variable '_Mx__mx' has not been defined in 'D'. All state variables must be declared before they can be set.
+after pickle: _D__counter (plain, was 41)                      -> 41
+after pickle: _D__fielded (field, was 42)                      -> 42
+after pickle: _Mx__mx (plain mixin, was 43)                    -> 0
+--- reset()
+d3.reset()                                                     -> 'ok'
+after reset: _D__counter / _D__fielded / _Mx__mx               -> (41, 42, 0)
+--- class-level assignment of dunder/mangled
+D._D__counter = 100 -> fresh instance reads                    -> 0
+D.__data_source_params_class__ = Params2 -> class              -> 'Params2'
+D._D__fielded = 9 (explicit field) -> fresh instance reads     -> 0
+type(D.__dict__['_D__fielded'])                                -> 'int'
+--- ComponentState with a dunder
+CS.create() ok                                                 -> 'jsx(RadixThemesButton,{onClick:((_e) => (addEvents([(ReflexE'
+################ stable prod
+reflex 0.9.12  REFLEX_ENV_MODE=prod
+--- classification
+  _D__counter                    in get_fields(): True  | backend: -     | in D.vars: False
+  _D__ann_plain                  in get_fields(): True  | backend: -     | in D.vars: False
+  __dunder_thing__               in get_fields(): False | backend: -     | in D.vars: False
+  __data_source_params_class__   in get_fields(): True  | backend: -     | in D.vars: False
+  _D__fielded                    in get_fields(): True  | backend: -     | in D.vars: False
+  _single__mid                   in get_fields(): True  | backend: -     | in D.vars: False
+  _Mx__mx                        in get_fields(): True  | backend: -     | in D.vars: False
+  shown                          in get_fields(): True  | backend: -     | in D.vars: True
+--- class access
+D._D__counter                                                  -> 0
+D._D__ann_plain                                                -> 5
+D.__dunder_thing__                                             -> 'dunder-value'
+D.__data_source_params_class__.from_request(1)                 -> 'Params.from_request(1)'
+Sub.__data_source_params_class__.from_request(1)               -> 'Params2.from_request(1)'
+D._D__fielded (explicit field)                                 -> None
+D._single__mid                                                 -> 7
+Mx._Mx__mx / D._Mx__mx                                         -> (0, 0)
+_Under._Under__u                                               -> 1
+--- instance writes (dev guard)
+d.bump() -> d.get_counter()                                    -> 1
+   dirty_vars after bump                                       -> []
+   D._D__counter class value unchanged                         -> 0
+   counter_view (computed, should NOT react)                   -> 1
+d.bump_mx() (mixin-mangled name) -> d.get_mx()                 -> EXC SetUndefinedStateVarError: The state variable '_Mx__mx' has not been defined in 'D'. All state variables must be declared before they can be set.
+u.set_u(5) (class name starts with _) -> u.get_u()             -> 5
+Base2.write_private on a Child2 instance (mangled by a base)   -> EXC SetUndefinedStateVarError: The state variable '_Base2__from_base' has not been defined in 'Child2'. All state variables must be declared before they can be set.
+d.__dunder_thing__ = 'x' on instance                           -> 'inst'
+d._D__typo__x = 1 (undeclared, contains __)                    -> 'accepted'
+d._typo_x = 1 (undeclared, control)                            -> EXC SetUndefinedStateVarError: The state variable '_typo_x' has not been defined in 'D'. All state variables must be declared before they can be set.
+d._sneaky__name = 1 (undeclared, single _ + '__' inside)       -> EXC SetUndefinedStateVarError: The state variable '_sneaky__name' has not been defined in 'D'. All state variables must be declared before they can be set.
+--- explicit rx.field dunder is a real backend var
+d2.bump_fielded() -> get_fielded()                             -> 1
+   dirty_vars                                                  -> []
+   fielded_view (computed, should react)                       -> 1
+_single__mid instance write dirty?                             -> ['_single__mid']
+--- pickle round trip (what disk/redis managers do)
+d3._D__counter = 41                                            -> 'ok'
+d3._D__fielded = 42                                            -> 'ok'
+d3._Mx__mx = 43                                                -> EXC SetUndefinedStateVarError: The state variable '_Mx__mx' has not been defined in 'D'. All state variables must be declared before they can be set.
+after pickle: _D__counter (plain, was 41)                      -> 41
+after pickle: _D__fielded (field, was 42)                      -> 42
+after pickle: _Mx__mx (plain mixin, was 43)                    -> 0
+--- reset()
+d3.reset()                                                     -> 'ok'
+after reset: _D__counter / _D__fielded / _Mx__mx               -> (41, 42, 0)
+--- class-level assignment of dunder/mangled
+D._D__counter = 100 -> fresh instance reads                    -> 0
+D.__data_source_params_class__ = Params2 -> class              -> 'Params2'
+D._D__fielded = 9 (explicit field) -> fresh instance reads     -> 0
+type(D.__dict__['_D__fielded'])                                -> 'int'
+--- ComponentState with a dunder
+CS.create() ok                                                 -> 'jsx(RadixThemesButton,{onClick:((_e) => (addEvents([(ReflexE'
