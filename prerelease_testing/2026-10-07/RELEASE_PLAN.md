@@ -145,14 +145,14 @@ Fix-before-release items, assigned to @masenf, each with a fix branch in progres
 | finding | issue | fix branch |
 |---|---|---|
 | N-025 | [reflex#7468](https://github.com/reflex-dev/reflex/issues/7468) | `claude/n025-reflex-before-render` — PR #7492 **closed by the maintainer** (16:40 UTC): fixed on the enterprise side instead, [reflex-enterprise#273](https://github.com/reflex-dev/reflex-enterprise/pull/273), because moving `window.__reflex` out of the useEffect would negate that change's benefits |
-| N-032 | [reflex#7469](https://github.com/reflex-dev/reflex/issues/7469) | `claude/n032-boot-reconcile` |
+| N-032 | [reflex#7469](https://github.com/reflex-dev/reflex/issues/7469) | `claude/n032-boot-reconcile` — PR #7493 **merged** 2026-10-07 17:57 UTC |
 | N-004 | [reflex#7470](https://github.com/reflex-dev/reflex/issues/7470) (closed, not planned) | `claude/n004-pickle-compat` — PR #7494 **re-scoped by the maintainer** to a breaking-change declaration (fragment + Self Hosting note), pickle-format change reverted |
 | N-005 | [reflex#7471](https://github.com/reflex-dev/reflex/issues/7471) | `claude/class-assignment` |
 | N-039 | [reflex#7472](https://github.com/reflex-dev/reflex/issues/7472) | `claude/class-assignment` |
 | N-008 | [reflex#7473](https://github.com/reflex-dev/reflex/issues/7473) | `claude/class-assignment` |
 | docs (N-002, N-007, N-009, N-024, N-040) | [reflex#7474](https://github.com/reflex-dev/reflex/issues/7474) | `claude/docs-0.10-migration` |
 | N-006 | [reflex#7475](https://github.com/reflex-dev/reflex/issues/7475) | `claude/docs-0.10-migration` |
-| N-001 | PR [reflex#7466](https://github.com/reflex-dev/reflex/pull/7466) | `claude/db-extra-greenlet` |
+| N-001 | PR [reflex#7466](https://github.com/reflex-dev/reflex/pull/7466) | `claude/db-extra-greenlet` — green, approved 17:58 UTC, waiting on merge |
 
 All five fix branches are pushed and have pull requests (label `on deck`, milestone v0.10.x): [#7492](https://github.com/reflex-dev/reflex/pull/7492) N-025, [#7493](https://github.com/reflex-dev/reflex/pull/7493) N-032, [#7494](https://github.com/reflex-dev/reflex/pull/7494) N-004, [#7495](https://github.com/reflex-dev/reflex/pull/7495) class assignment, [#7496](https://github.com/reflex-dev/reflex/pull/7496) docs: `claude/n025-reflex-before-render` 655b22259 (window.__reflex at
 module scope; compiler unit test + Playwright test; verifier fixtures: probe NO_REFLEX→HAS_REFLEX, enterprise grid 0→2 headers),
