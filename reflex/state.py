@@ -2384,8 +2384,13 @@ class State(BaseState):
         Sent by the frontend once per websocket (re)connect. Doing the client
         storage reset, the browser-provided client storage values and the
         state snapshot under one state lock avoids separate load/persist
-        cycles of the state tree. A page with on_load handlers then gets
-        ``on_load_internal``, which only locks its leaf substate.
+        cycles of the state tree. The snapshot does not pass through
+        ``get_delta`` and may not write browser storage, so this event's own
+        delta carries the browser-provided values again, as
+        ``update_vars_internal``'s does: ``get_delta`` overrides see them
+        there, and the browser stores what they return. A page with on_load
+        handlers then gets ``on_load_internal``, which only locks its leaf
+        substate.
 
         Args:
             vars: Client storage vars set in the browser, keyed by fully
@@ -2402,8 +2407,7 @@ class State(BaseState):
         from reflex_base.event.context import EventContext
 
         self._reset_client_storage()
-        if vars:
-            await _apply_client_storage_vars(self, vars)
+        applied = await _apply_client_storage_vars(self, vars) if vars else []
         self._clean()
         # The snapshot must carry is_hydrated=False: the frontend skips
         # writing client storage for a delta that is not yet hydrated, and
@@ -2420,6 +2424,11 @@ class State(BaseState):
             await ctx.emit_delta(delta=delta)
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
+        # The browser's values only: the reset defaults stay clean, so they are
+        # not written back to the browser.
+        for var_state, var_name in applied:
+            var_state.dirty_vars.add(var_name)
+            var_state._mark_dirty((var_name,))
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
             return None
@@ -2580,13 +2589,19 @@ async def _diff_against_initial_state(
     return diff
 
 
-async def _apply_client_storage_vars(state: BaseState, vars: dict[str, Any]) -> None:
+async def _apply_client_storage_vars(
+    state: BaseState, vars: dict[str, Any]
+) -> list[tuple[BaseState, str]]:
     """Apply browser-provided client storage values to the states that own them.
 
     Args:
         state: Any state in the tree; used to reach the owning substates.
         vars: Fully qualified var names mapped to their browser values.
+
+    Returns:
+        Each var that was set, with the state that owns it.
     """
+    applied: list[tuple[BaseState, str]] = []
     for var, value in vars.items():
         state_name, _, var_name = var.rpartition(".")
         var_name = var_name.removesuffix(FIELD_MARKER)
@@ -2594,6 +2609,8 @@ async def _apply_client_storage_vars(state: BaseState, vars: dict[str, Any]) -> 
         if var_state_cls._is_client_storage(var_name):
             var_state = await state.get_state(var_state_cls)
             setattr(var_state, var_name, value)
+            applied.append((var_state, var_name))
+    return applied
 
 
 def _load_events_for_page(
