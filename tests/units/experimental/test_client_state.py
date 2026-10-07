@@ -1,73 +1,71 @@
-"""Tests for reflex.experimental.client_state."""
-
-from typing import cast
+"""The deprecated reflex.experimental.client_state path still resolves."""
 
 import pytest
-from reflex_base.vars.base import Var
 
-from reflex.experimental.client_state import ClientStateVar
-from reflex.state import BaseState
+import reflex as rx
 
 
-@pytest.mark.parametrize("use_set_property", [True, False])
-def test_global_setter_carries_client_state_hooks(use_set_property: bool) -> None:
-    """A global setter Var must carry the hooks that initialize the client state.
+def test_experimental_import_is_the_promoted_class() -> None:
+    """``reflex.experimental.client_state`` builds the reflex-base class."""
+    from reflex.experimental.client_state import ClientStateVar
 
-    A component that only sets the value (e.g. a sibling button of the
-    component rendering ``.value``) is compiled into its own memo body, so
-    the setter must bring the ``useState`` and ``refs`` wiring with it.
+    assert issubclass(ClientStateVar, rx.ClientStateVar)
+    assert isinstance(ClientStateVar.create("legacy_cls", default=0), rx.ClientStateVar)
 
-    Args:
-        use_set_property: Whether to use ``.set`` or ``.set_value(...)``.
+
+def test_legacy_create_keeps_the_original_argument_order(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """``ClientStateVar.create(var_name, default=...)`` still works and warns."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    cs = ClientStateVar.create("sibling", default="a")
+    assert cs._state_name == "sibling"
+    assert cs._is_global
+    assert "ClientStateVar.create" in caplog.text
+
+    scoped = ClientStateVar.create("scoped", default="a", global_ref=False)
+    assert scoped._state_name != "scoped"
+    assert not scoped._is_global
+
+
+def test_experimental_namespace_factory_still_works() -> None:
+    """``rx._x.client_state`` keeps building the same vars."""
+    # The shim keeps the original positional signature.
+    assert rx._x.client_state("legacy", 0)._state_name == "legacy"
+
+
+def test_promoted_names_are_reachable_from_rx() -> None:
+    """The lazy-loader wiring only fails at attribute access, so assert it."""
+    assert rx.client_state(0, name="promoted")._state_name == "promoted"
+    assert isinstance(rx.client_state(0, name="typed"), rx.ClientStateVar)
+    # Exported so `.set` can be named in a type annotation.
+    assert isinstance(rx.client_state(0, name="setter").set, rx.ClientStateSetter)
+
+
+def test_legacy_named_var_is_global() -> None:
+    """The old positional form keeps naming -- and therefore globalizing -- vars."""
+    cs = rx._x.client_state("legacy_named", 0)
+    assert cs._state_name == "legacy_named"
+    assert cs._is_global
+
+
+def test_legacy_global_ref_false_drops_the_name() -> None:
+    """``global_ref=False`` meant anonymous, which is now a dropped name.
+
+    The name was never a store key in that mode, so discarding it reproduces the
+    old behavior exactly under the new scoping rules.
     """
-    cs = ClientStateVar.create("setter_hooks", default=0)
-    setter = cs.set if use_set_property else cs.set_value(1)
-
-    cs_var_data = cs._get_all_var_data()
-    setter_var_data = setter._get_all_var_data()
-    assert cs_var_data is not None
-    assert setter_var_data is not None
-    assert set(cs_var_data.hooks) <= set(setter_var_data.hooks)
-    assert any("useState" in hook for hook in setter_var_data.hooks)
+    cs = rx._x.client_state("is_copied", False, False)
+    assert cs._state_name != "is_copied"
+    assert not cs._is_global
 
 
-@pytest.mark.parametrize("use_set_property", [True, False])
-def test_local_setter_does_not_carry_client_state_hooks(use_set_property: bool) -> None:
-    """A local setter Var must not bring its own ``useState``.
+def test_legacy_path_warns(caplog: pytest.LogCaptureFixture) -> None:
+    """All the deprecation noise lives on the old entry point, not the new API."""
+    rx._x.client_state("warned", 0)
+    assert "rx._x.client_state" in caplog.text
 
-    A local setter-only component with its own state copy would silently update
-    state that no reader sees; leaving the hooks off keeps that a loud error.
-
-    Args:
-        use_set_property: Whether to use ``.set`` or ``.set_value(...)``.
-    """
-    cs = ClientStateVar.create("local_setter", default=0, global_ref=False)
-    setter = cs.set if use_set_property else cs.set_value(1)
-
-    setter_var_data = setter._get_all_var_data()
-    assert setter_var_data is None or not any(
-        "useState" in hook for hook in setter_var_data.hooks
-    )
-
-
-def test_setter_carries_backend_default_hooks() -> None:
-    """A backend-derived default brings its state context hook to the setter.
-
-    Regression: ``create`` merged only the default's own ``_var_data``, so a
-    setter-only component compiled ``useState(<state>.field)`` without the
-    ``useContext`` hook that defines ``<state>``, raising a ReferenceError.
-    """
-
-    class ClientStateDefaultState(BaseState):
-        default_text: str = "hi"
-
-    default = cast("Var", ClientStateDefaultState.default_text)
-    default_var_data = default._get_all_var_data()
-    assert default_var_data is not None
-
-    cs = ClientStateVar.create("backend_default", default=default)
-    for var in (cs, cs.value, cs.set, cs.set_value("changed")):
-        var_data = var._get_all_var_data()
-        assert var_data is not None
-        assert var_data.state == default_var_data.state
-        assert set(default_var_data.hooks) <= set(var_data.hooks)
+    caplog.clear()
+    rx.client_state(0, name="quiet")
+    assert "deprecat" not in caplog.text.lower()

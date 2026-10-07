@@ -87,7 +87,16 @@ class _RenderUtils:
         children_rendered = "".join([
             _RenderUtils.render(child) for child in component.get("children", [])
         ])
-        return f"Array.prototype.map.call({component['iterable_state']} ?? [],(({component['arg_name']},{component['arg_index']})=>({children_rendered})))"
+        arg = component["arg_name"]
+        index = component["arg_index"]
+        # Provide the item and index to the subtree by name. Descendants that
+        # compile into their own components read them from context, so a hoisted
+        # handler or a lifted memo body no longer loses the loop scope.
+        values = f"{{{arg}:{arg},{index}:{index}}}"
+        # The provider is the element the map yields, so it carries the key.
+        key = component["item_key"]
+        wrapped = f"jsx(ScopedValues,{{key:{key},values:{values}}},{children_rendered})"
+        return f"Array.prototype.map.call({component['iterable_state']} ?? [],(({arg},{index})=>({wrapped})))"
 
     @staticmethod
     def render_match_tag(component: Any) -> str:

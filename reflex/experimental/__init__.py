@@ -12,6 +12,7 @@ from reflex.utils.misc import run_in_thread
 
 from . import hooks as hooks
 from .client_state import ClientStateVar as ClientStateVar
+from .client_state import client_state as _legacy_client_state
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ class ExperimentalNamespace(SimpleNamespace):
 
 
 _x = ExperimentalNamespace(
-    client_state=ClientStateVar.create,
+    client_state=_legacy_client_state,
     hooks=hooks,
     code_block=code_block,
     hybrid_property=hybrid_property,

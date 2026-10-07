@@ -346,6 +346,11 @@ class MemoComponentDefinition(MemoDefinition):
     # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
     # its own and ``None`` pulls in nothing.
     wrapper: Var | None = DEFAULT_MEMO_WRAPPER
+    # Whether each render of this memo is a distinct component instance from
+    # the user's point of view. True only for ``@rx.memo``; the auto-memoize
+    # optimizer's wrappers leave it False so they stay semantically invisible
+    # -- notably to client state, which opens a scope per instance boundary.
+    is_instance_boundary: bool = False
     # Set for definitions the compiler's auto-memoize pass creates (see
     # ``create_passthrough_component_memo``). Instances of such a definition
     # are the auto-memo boundary itself, so the pass must not wrap them again.
@@ -2358,6 +2363,7 @@ def _memo_impl(
             _rest_target_fields=rest_target_fields,
             _runtime_inferred_params=frozenset(missing_params),
             wrapper=wrapper,
+            is_instance_boundary=True,
         )
         memo_callable = _create_component_wrapper(definition)
     else:

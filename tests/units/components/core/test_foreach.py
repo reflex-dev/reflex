@@ -325,3 +325,79 @@ def test_optional_list():
         ForEachState.optional_dict_value,
         lambda color: text(color[0], color[1]),
     )
+
+
+def test_foreach_wraps_each_item_in_a_scope_provider():
+    """Each rendered item is wrapped in ``ScopedValues``, keyed by index.
+
+    The provider is the element the ``.map`` yields, so it -- not the item root
+    -- carries the React key, and it publishes the item and index by name for
+    descendants that compile into their own components.
+    """
+    component = foreach(ForEachState.colors_list, lambda color: text(color))
+    rendered = str(component)
+
+    arg_name = f"color{FIELD_MARKER}"
+    assert "jsx(ScopedValues,{key:index_" in rendered
+    assert f"values:{{{arg_name}:{arg_name},index_" in rendered
+    # The provider sits between the map callback and the item's subtree.
+    assert rendered.index("jsx(ScopedValues,") < rendered.index("RadixThemesText")
+
+
+def test_foreach_loop_vars_read_from_the_enclosing_scope():
+    """Loop vars render as a context read, not as the map callback parameter.
+
+    Regression for reflex-dev/reflex#3210: a loop var used to compile to the
+    ``.map`` callback's parameter name, which went out of scope the moment
+    anything referencing it was hoisted into its own function -- a
+    ``useCallback``'d event handler, or a subtree lifted into its own memo
+    module. Reading by name from context works wherever the compiler puts the
+    consumer.
+    """
+    tag = foreach(
+        ForEachState.colors_list, lambda color, index: text(color, index)
+    )._render()
+
+    arg_var = tag.get_arg_var()
+    index_var = tag.get_index_var()
+
+    # The hook declares the same identifier the map callback binds, so the
+    # parameter shadows it inside the loop body and the context read applies
+    # everywhere else.
+    for var, name in (
+        (arg_var, f"color{FIELD_MARKER}"),
+        (index_var, f"index{FIELD_MARKER}"),
+    ):
+        assert str(var) == name
+        var_data = var._get_all_var_data()
+        assert var_data is not None
+        assert list(var_data.hooks) == [f'const {name} = useScopedValue("{name}")']
+        assert dict(var_data.imports).keys() == {"$/utils/client_state"}
+
+
+@pytest.mark.parametrize(
+    ("key", "expected"),
+    [
+        (lambda color: color, f"color{FIELD_MARKER}"),
+        (lambda _color: "literal", '"literal"'),
+        (lambda _color: 7, "7"),
+    ],
+    ids=["var", "string", "int"],
+)
+def test_foreach_lifts_an_explicit_item_key_to_the_provider(key, expected):
+    """An explicit ``key`` on the item becomes the provider's key.
+
+    The provider is what React reconciles the list by, so a key left on the
+    item root would give the list positional identity and the explicit key
+    would do nothing. It is rendered as a JS value, not pasted in as source: a
+    plain string key emitted bare would be a reference to an undefined name.
+
+    Args:
+        key: Builds the key to pass, from the loop var.
+        expected: The JS the provider's key must render as.
+    """
+    component = foreach(
+        ForEachState.colors_list, lambda color: text(color, key=key(color))
+    )
+
+    assert f"jsx(ScopedValues,{{key:{expected}," in str(component)

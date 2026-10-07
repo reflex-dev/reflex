@@ -7,9 +7,8 @@ components:
 import reflex as rx
 
 from reflex_components_lucide.icon import LUCIDE_ICON_LIST
-from reflex.experimental.client_state import ClientStateVar
 
-icon_search_cs = ClientStateVar.create("icon_search", default="")
+icon_search_cs = rx.client_state("", name="icon_search")
 
 
 @rx.memo
@@ -26,7 +25,7 @@ def lucide_icons() -> rx.Component:
             ),
             rx.el.input(
                 placeholder="Search icons...",
-                on_change=icon_search_cs.set_value,
+                on_change=icon_search_cs.set,
                 class_name="relative box-border border-border-subtle focus:border-border-strong focus:border-1 bg-muted p-[0.5rem_0.75rem] border rounded-xl font-base text-muted-foreground placeholder:text-subtle-foreground outline-none focus:outline-none w-full mb-2 pl-10",
             ),
             class_name="relative flex items-center",

@@ -328,7 +328,7 @@ markers = [
 ]
 
 [tool.codespell]
-skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, packages/reflex-build-sdk/openapi.json, uv.lock, */bun.lock, node_modules"
+skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, packages/reflex-build-sdk/openapi.json, uv.lock, */bun.lock, */package-lock.json, node_modules"
 ignore-words-list = "te, TreeE, selectin"
 
 

@@ -127,6 +127,7 @@ async function setup({
       },
       eventLoop: { addEvents() {}, connectErrors: [] },
     },
+    "$/utils/client_state": { CLIENT_STATE_REF: "__client_state" },
     "$/utils/helpers/json": { parseJson: JSON.parse },
     "$/utils/helpers/debounce": { default() {} },
     "$/utils/helpers/throttle": { default() {} },
