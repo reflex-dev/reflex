@@ -1,0 +1,9 @@
+Using Python 3.12.3 environment at: envs/a3_upgrade-uva2
+Resolved 41 packages in 213ms
+Prepared 2 packages in 0.38ms
+Uninstalled 2 packages in 12ms
+Installed 2 packages in 4ms
+ - reflex==0.10.0a2
+ + reflex==0.10.0a3
+ - reflex-base==0.10.0a2
+ + reflex-base==0.10.0a3

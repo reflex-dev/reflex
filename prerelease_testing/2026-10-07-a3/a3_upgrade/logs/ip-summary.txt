@@ -1,0 +1,59 @@
+=== A. pip: a2 -> a3 (pip install -U --pre reflex==0.10.0a3)
+base rc=0
+reflex=0.10.0a2 reflex-base=0.10.0a2 reflex-components-core=0.10.0a2 reflex-hosting-cli=0.2.0a1 sqlalchemy=- sqlmodel=- greenlet=- pydantic=- 
+dry-run without --pre rc=0: Would install reflex-0.10.0a3 reflex-base-0.10.0a3
+upgrade rc=0
+reflex=0.10.0a3 reflex-base=0.10.0a3 reflex-components-core=0.10.0a2 reflex-hosting-cli=0.2.0a1 sqlalchemy=- sqlmodel=- greenlet=- pydantic=- 
+--- diff ip-pipa2-base -> ip-pipa2-up:
+< reflex-base==0.10.0a2 > reflex-base==0.10.0a3 < reflex==0.10.0a2 > reflex==0.10.0a3 
+--- pip check a3_upgrade-pipa2:
+No broken requirements found.
+=== B. uv: a2 -> a3 (uv pip install -U --prerelease=allow reflex==0.10.0a3)
+base done
+reflex=0.10.0a2 reflex-base=0.10.0a2 reflex-components-core=0.10.0a2 reflex-hosting-cli=0.2.0a1 sqlalchemy=- sqlmodel=- greenlet=- pydantic=- 
+uv dry-run without --prerelease: hint: `reflex-base` was requested with a pre-release marker (e.g., reflex-base==0.10.0a3), but pre-releases weren't enabled (try: `--prerelease=allow`)
+uv dry-run --prerelease=allow without -U:
+ - reflex==0.10.0a2  + reflex==0.10.0a3  - reflex-base==0.10.0a2  + reflex-base==0.10.0a3 
+upgrade done
+reflex=0.10.0a3 reflex-base=0.10.0a3 reflex-components-core=0.10.0a2 reflex-hosting-cli=0.2.0a1 sqlalchemy=- sqlmodel=- greenlet=- pydantic=- 
+--- diff ip-uva2-base -> ip-uva2-up:
+< reflex-base==0.10.0a2 > reflex-base==0.10.0a3 < reflex==0.10.0a2 > reflex==0.10.0a3 
+--- pip check a3_upgrade-uva2:
+No broken requirements found.
+=== C. a2[db] without greenlet (N-001 broken) -> a3 with and without the extra (pip)
+base rc=0
+reflex=0.10.0a2 reflex-base=0.10.0a2 reflex-components-core=0.10.0a2 reflex-hosting-cli=0.2.0a1 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=- pydantic=2.13.5 
+ImportError: The SQLAlchemy asyncio module requires that the Python 'greenlet' library is installed.  In order to ensure this dependency is available, use the 'sqlalchemy[asyncio]' install target:  'pip install sqlalchemy[asyncio]'
+upgrade without [db] rc=0
+reflex=0.10.0a3 reflex-base=0.10.0a3 reflex-components-core=0.10.0a2 reflex-hosting-cli=0.2.0a1 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=- pydantic=2.13.5 
+ImportError: The SQLAlchemy asyncio module requires that the Python 'greenlet' library is installed.  In order to ensure this dependency is available, use the 'sqlalchemy[asyncio]' install target:  'pip install sqlalchemy[asyncio]'
+--- diff ip-pipa2db-base -> ip-pipa2db-up-noextra:
+< reflex-base==0.10.0a2 > reflex-base==0.10.0a3 < reflex==0.10.0a2 > reflex==0.10.0a3 
+upgrade with [db] rc=0
+reflex=0.10.0a3 reflex-base=0.10.0a3 reflex-components-core=0.10.0a2 reflex-hosting-cli=0.2.0a1 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 pydantic=2.13.5 
+import reflex.model OK /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_upgrade-pipa2db/lib/python3.12/site-packages/reflex/__init__.py
+--- diff ip-pipa2db-up-noextra -> ip-pipa2db-up-db:
+> greenlet==3.5.6 
+--- pip check a3_upgrade-pipa2db:
+No broken requirements found.
+=== D. fresh pip install --pre reflex==0.10.0a3
+rc=0
+reflex=0.10.0a3 reflex-base=0.10.0a3 reflex-components-core=0.10.0a2 reflex-hosting-cli=0.2.0a1 sqlalchemy=- sqlmodel=- greenlet=- pydantic=- 
+--- pip check a3_upgrade-pipfresh:
+No broken requirements found.
+pre-release dists in the --pre graph:
+reflex-base==0.10.0a3 reflex-build-sdk==0.1.0a1 reflex-components-code==0.10.0a2 reflex-components-core==0.10.0a2 reflex-components-dataeditor==0.10.0a1 reflex-components-gridjs==0.10.0a2 reflex-components-lucide==1.1.0a1 reflex-components-markdown==0.10.0a2 reflex-components-moment==0.10.0a2 reflex-components-plotly==0.10.0a2 reflex-components-radix==0.10.0a2 reflex-components-react-player==0.10.0a1 reflex-components-recharts==0.10.0a2 reflex-components-sonner==0.10.0a1 reflex-hosting-cli==0.2.0a1 reflex==0.10.0a3 
+exact pin without --pre rc=0
+reflex=0.10.0a3 reflex-base=0.10.0a3 reflex-components-core=0.10.0a2 reflex-hosting-cli=0.2.0a1 sqlalchemy=- sqlmodel=- greenlet=- pydantic=- 
+--- diff ip-pipfresh -> ip-pipfresh-nopre:
+
+--- pip check a3_upgrade-pipfresh-nopre:
+No broken requirements found.
+=== E. stock installs without --pre (what a new user gets today)
+pip install reflex rc=0
+reflex=0.9.12 reflex-base=0.9.12 reflex-components-core=0.9.10.post1 reflex-hosting-cli=0.1.72 sqlalchemy=- sqlmodel=- greenlet=- pydantic=- 
+pip install reflex[db] rc=0
+reflex=0.9.12 reflex-base=0.9.12 reflex-components-core=0.9.10.post1 reflex-hosting-cli=0.1.72 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=- pydantic=2.13.5 
+ImportError: The SQLAlchemy asyncio module requires that the Python 'greenlet' library is installed.  In order to ensure this dependency is available, use the 'sqlalchemy[asyncio]' install target:  'pip install sqlalchemy[asyncio]'
+uv (no prerelease) reflex[db] dry-run:  + sqlalchemy==2.1.4 
+=== done 20:03:31

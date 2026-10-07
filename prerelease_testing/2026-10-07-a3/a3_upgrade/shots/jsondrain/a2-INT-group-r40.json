@@ -1,0 +1,38 @@
+{
+ "cmd": "run --json --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2",
+ "signal": "INT-group",
+ "slow_rate": 40.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 2.22,
+  "pause_start": 5.24,
+  "signal": 9.24,
+  "signal_wall": "20:13:33.486Z",
+  "exit": 14.79,
+  "eof": 19.58
+ },
+ "signal_to_eof_s": 10.33,
+ "signal_to_exit_s": 5.55,
+ "returncode": 0,
+ "lines_total": 1346,
+ "lines_after_signal": 376,
+ "invalid_json": 1,
+ "invalid_samples": [
+  {
+   "t": 19.6,
+   "err": "Unterminated string starting at: line 1 column 99 (char 98)",
+   "line": "{\"timestamp\": \"2026-10-07T20:13:33.487457+00:00\", \"level\": \"info\", \"logger\": \"stdout\", \"message\": \"QA-SEQ 0001341 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 245]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": 0,
+ "seq_max_received": 1340,
+ "seq_written_at_signal": "1398",
+ "seq_written_final": "1403",
+ "lost_tail": 63,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T20:13:33.487457+00:00\", \"level\": \"info\", \"logger\": \"stdout\", \"message\": \"QA-SEQ 0001341 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx<NO-NEWLINE-AT-EOF>",
+ "last_non_seq_lines": [],
+ "leftover_after_exit": ""
+}

@@ -1,589 +1,475 @@
 {
- "scenario": "r2e_var_after_bump",
- "measure": {
-  "grids": {
-   "w_js": {
-    "headers": [
-     "J:make",
-     "J:price",
-     "J:double",
-     "J:arrow"
-    ],
-    "cells": 16,
-    "rows": 0,
-    "badges": 0,
-    "memo_badges": 0,
-    "tip_texts": 0,
-    "pinned_top_rows": 1,
-    "group_rows": 0,
-    "cheap_cells": 1,
-    "row_texts": [
-     "t-0: make=S:PINNED | price=$99 | double=198 | arrow=PINNED",
-     "0: make=S:Tesla | price=$1 | double=2 | arrow=TESLA",
-     "1: make=S:Ford | price=$2 | double=4 | arrow=FORD",
-     "2: make=S:Toyota | price=$3 | double=6 | arrow=TOYOTA"
-    ]
-   },
-   "w_lam": {
-    "headers": [
-     "S:make",
-     "S:price",
-     "S:double",
-     "S:tip",
-     "S:memo",
-     "S:trace"
-    ],
-    "cells": 18,
-    "rows": 0,
-    "badges": 6,
-    "memo_badges": 3,
-    "tip_texts": 3,
-    "pinned_top_rows": 0,
-    "group_rows": 0,
-    "cheap_cells": 1,
-    "row_texts": [
-     "0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
-     "1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
-     "2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
-    ]
-   },
-   "w_cond": {
-    "headers": [
-     "L:make",
-     "L:price",
-     "L:double",
-     "L:tip",
-     "L:memo",
-     "L:trace"
-    ],
-    "cells": 18,
-    "rows": 0,
-    "badges": 6,
-    "memo_badges": 3,
-    "tip_texts": 3,
-    "pinned_top_rows": 0,
-    "group_rows": 0,
-    "cheap_cells": 1,
-    "row_texts": [
-     "0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
-     "1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
-     "2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
-    ]
-   },
-   "w_comp": {
-    "headers": [
-     "C:make",
-     "C:price"
-    ],
-    "cells": 6,
-    "rows": 0,
-    "badges": 0,
-    "memo_badges": 0,
-    "tip_texts": 0,
-    "pinned_top_rows": 0,
-    "group_rows": 0,
-    "cheap_cells": 0,
-    "row_texts": [
-     "0: make=Tesla | price=1 EUR",
-     "1: make=Ford | price=2 EUR",
-     "2: make=Toyota | price=3 EUR"
-    ]
-   },
-   "w_group": {
-    "headers": [
-     "Group",
-     "G:make",
-     "sum(G:price)"
-    ],
-    "cells": 15,
-    "rows": 0,
-    "badges": 0,
-    "memo_badges": 0,
-    "tip_texts": 0,
-    "pinned_top_rows": 0,
-    "group_rows": 4,
-    "cheap_cells": 0,
-    "row_texts": [
-     "0: ag-Grid-AutoColumn=US\n(2) | make= | price=3",
-     "1: ag-Grid-AutoColumn= | make=Tesla | price=1",
-     "2: ag-Grid-AutoColumn= | make=Ford | price=2",
-     "3: ag-Grid-AutoColumn=JP\n(1) | make= | price=3",
-     "4: ag-Grid-AutoColumn= | make=Toyota | price=3"
-    ]
-   }
-  },
-  "probes": {},
-  "probeCounts": {},
-  "reflexDefinedNow": true,
-  "reflexSetAt": 180.70000000018626,
-  "cellRenders": {
-   "n": 37,
-   "first_t": 276.40000000037253,
-   "without_reflex": 0,
-   "by_src": {
-    "state_js": 16,
-    "literal": 21
-   }
-  },
-  "path": "/var/",
-  "heading": "entr var"
- },
- "measure_plus4s": {
-  "grids": {
-   "w_js": {
-    "headers": [
-     "J:make",
-     "J:price",
-     "J:double",
-     "J:arrow"
-    ],
-    "cells": 16,
-    "rows": 0,
-    "badges": 0,
-    "memo_badges": 0,
-    "tip_texts": 0,
-    "pinned_top_rows": 1,
-    "group_rows": 0,
-    "cheap_cells": 1,
-    "row_texts": [
-     "t-0: make=S:PINNED | price=$99 | double=198 | arrow=PINNED",
-     "0: make=S:Tesla | price=$1 | double=2 | arrow=TESLA",
-     "1: make=S:Ford | price=$2 | double=4 | arrow=FORD",
-     "2: make=S:Toyota | price=$3 | double=6 | arrow=TOYOTA"
-    ]
-   },
-   "w_lam": {
-    "headers": [
-     "S:make",
-     "S:price",
-     "S:double",
-     "S:tip",
-     "S:memo",
-     "S:trace"
-    ],
-    "cells": 18,
-    "rows": 0,
-    "badges": 6,
-    "memo_badges": 3,
-    "tip_texts": 3,
-    "pinned_top_rows": 0,
-    "group_rows": 0,
-    "cheap_cells": 1,
-    "row_texts": [
-     "0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
-     "1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
-     "2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
-    ]
-   },
-   "w_cond": {
-    "headers": [
-     "L:make",
-     "L:price",
-     "L:double",
-     "L:tip",
-     "L:memo",
-     "L:trace"
-    ],
-    "cells": 18,
-    "rows": 0,
-    "badges": 6,
-    "memo_badges": 3,
-    "tip_texts": 3,
-    "pinned_top_rows": 0,
-    "group_rows": 0,
-    "cheap_cells": 1,
-    "row_texts": [
-     "0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
-     "1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
-     "2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
-    ]
-   },
-   "w_comp": {
-    "headers": [
-     "C:make",
-     "C:price"
-    ],
-    "cells": 6,
-    "rows": 0,
-    "badges": 0,
-    "memo_badges": 0,
-    "tip_texts": 0,
-    "pinned_top_rows": 0,
-    "group_rows": 0,
-    "cheap_cells": 0,
-    "row_texts": [
-     "0: make=Tesla | price=1 EUR",
-     "1: make=Ford | price=2 EUR",
-     "2: make=Toyota | price=3 EUR"
-    ]
-   },
-   "w_group": {
-    "headers": [
-     "Group",
-     "G:make",
-     "sum(G:price)"
-    ],
-    "cells": 15,
-    "rows": 0,
-    "badges": 0,
-    "memo_badges": 0,
-    "tip_texts": 0,
-    "pinned_top_rows": 0,
-    "group_rows": 4,
-    "cheap_cells": 0,
-    "row_texts": [
-     "0: ag-Grid-AutoColumn=US\n(2) | make= | price=3",
-     "1: ag-Grid-AutoColumn= | make=Tesla | price=1",
-     "2: ag-Grid-AutoColumn= | make=Ford | price=2",
-     "3: ag-Grid-AutoColumn=JP\n(1) | make= | price=3",
-     "4: ag-Grid-AutoColumn= | make=Toyota | price=3"
-    ]
-   }
-  },
-  "probes": {},
-  "probeCounts": {},
-  "reflexDefinedNow": true,
-  "reflexSetAt": 180.70000000018626,
-  "cellRenders": {
-   "n": 37,
-   "first_t": 276.40000000037253,
-   "without_reflex": 0,
-   "by_src": {
-    "state_js": 16,
-    "literal": 21
-   }
-  },
-  "path": "/var/",
-  "heading": "entr var"
- },
- "boot_frames": [
-  {
-   "t": 109.7,
-   "dir": "ws_in",
-   "len": 108,
-   "head": "0{"
-  },
-  {
-   "t": 180.3,
-   "dir": "ws_out",
-   "len": 298,
-   "head": "40",
-   "nsp": "/_event",
-   "auth_keys": [
-    "event"
-   ],
-   "auth_mentions_hydrate_and_load": true,
-   "auth_event_name": "reflex___state____state.hydrate_and_load"
-  },
-  {
-   "t": 234.9,
-   "dir": "ws_in",
-   "len": 40,
-   "head": "40",
-   "nsp": "/_event",
-   "auth_keys": [
-    "sid"
-   ],
-   "auth_mentions_hydrate_and_load": false
-  },
-  {
-   "t": 316.7,
-   "dir": "ws_in",
-   "len": 1794,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "delta": {
-    "reflex___state____state": [
-     "is_hydrated_rx_state_",
-     "rx_router_headers_rx_state_",
-     "rx_router_page_rx_state_",
-     "rx_router_route_id_rx_state_",
-     "rx_router_session_rx_state_",
-     "rx_router_url_rx_state_"
-    ]
-   },
-   "final": null,
-   "events": null
-  },
-  {
-   "t": 317.1,
-   "dir": "ws_in",
-   "len": 88,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "delta": {
-    "reflex___state____state": [
-     "is_hydrated_rx_state_"
-    ]
-   },
-   "final": null,
-   "events": null
-  },
-  {
-   "t": 7548.7,
-   "dir": "ws_out",
-   "len": 135,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "event_name": "reflex___state____state.entr___entr___v_state.toggle",
-   "payload_keys": []
-  },
-  {
-   "t": 7553,
-   "dir": "ws_in",
-   "len": 104,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "delta": {
-    "reflex___state____state.entr___entr___v_state": [
-     "flag_rx_state_"
-    ]
-   },
-   "final": null,
-   "events": null
-  },
-  {
-   "t": 13758.8,
-   "dir": "ws_out",
-   "len": 135,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "event_name": "reflex___state____state.entr___entr___v_state.toggle",
-   "payload_keys": []
-  },
-  {
-   "t": 13768.4,
-   "dir": "ws_in",
-   "len": 103,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "delta": {
-    "reflex___state____state.entr___entr___v_state": [
-     "flag_rx_state_"
-    ]
-   },
-   "final": null,
-   "events": null
-  },
-  {
-   "t": 19958.3,
-   "dir": "ws_out",
-   "len": 133,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "event_name": "reflex___state____state.entr___entr___v_state.bump",
-   "payload_keys": []
-  },
-  {
-   "t": 19967.1,
-   "dir": "ws_in",
-   "len": 102,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "delta": {
-    "reflex___state____state.entr___entr___v_state": [
-     "clicks_rx_state_"
-    ]
-   },
-   "final": null,
-   "events": null
-  },
-  {
-   "t": 25073.2,
-   "dir": "ws_in",
-   "len": 1,
-   "head": "2"
-  },
-  {
-   "t": 25073.3,
-   "dir": "ws_out",
-   "len": 1,
-   "head": "3"
-  }
- ],
- "timeline": [
-  "     23.6ms grid counts (headers, cells) {}",
-  "     70.4ms ws_open_call {\"url\": \"ws://localhost:3305/_event/?token=eda8a96a-0dd8-495f-a91b-6c0c0fb2a2f4&EIO=4&transport=websocket\"}",
-  "    105.2ms grid counts (headers, cells) {\"w_js\": [0, 0, 0], \"w_lam\": [0, 0, 0], \"w_cond\": [0, 0, 0], \"w_comp\": [0, 0, 0], \"w_group\": [0, 0, 0]}",
-  "    105.4ms ws_open {}",
-  "    109.7ms ws_in {\"len\": 108}",
-  "    180.3ms ws_out {\"len\": 298, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
-  "    180.7ms window.__reflex ASSIGNED (6 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3305/assets/root-C9v8v-W7.js:82:324 |     at El (http://localhost:3305/assets/entry.client-H-Leh00q.js:8:94941) |     at Uu (http://localhost:3305/assets/entry.client-H-Leh00q.js:8:118109) |     at Hu (http://localhost:3305/assets/entry.client",
-  "    234.9ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
-  "    276.4ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "    276.6ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "    276.7ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "    276.8ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "    278.0ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "    278.4ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "    278.9ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "    279.4ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "    279.8ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "    280.4ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "    298.6ms grid counts (headers, cells) {\"w_js\": [4, 16, 0], \"w_lam\": [6, 18, 6], \"w_cond\": [6, 18, 6], \"w_comp\": [2, 6, 0], \"w_group\": [3, 15, 0]}",
-  "    316.7ms ws_in {\"len\": 1794, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
-  "    317.1ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
-  "   7548.7ms ws_out {\"len\": 135, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"event_name\": \"reflex___state____state.entr___entr___v_state.toggle\", \"payload_keys\": []}",
-  "   7553.0ms ws_in {\"len\": 104, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state.entr___entr___v_state\": [\"flag_rx_state_\"]}, \"final\": null, \"events\": null}",
-  "   7579.0ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "   7579.0ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "   7579.2ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "   7579.3ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "   7580.7ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "   7581.4ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "   7582.3ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "   7606.8ms grid counts (headers, cells) {\"w_js\": [4, 16, 0], \"w_lam\": [6, 18, 6], \"w_cond\": [1, 3, 0], \"w_comp\": [2, 6, 0], \"w_group\": [3, 15, 0]}",
-  "  13758.8ms ws_out {\"len\": 135, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"event_name\": \"reflex___state____state.entr___entr___v_state.toggle\", \"payload_keys\": []}",
-  "  13768.4ms ws_in {\"len\": 103, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state.entr___entr___v_state\": [\"flag_rx_state_\"]}, \"final\": null, \"events\": null}",
-  "  13790.8ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "  13790.9ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "  13791.0ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "  13791.0ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "  13791.9ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  13792.3ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  13792.9ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  13818.1ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  13818.7ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  13819.2ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  13834.3ms grid counts (headers, cells) {\"w_js\": [4, 16, 0], \"w_lam\": [6, 18, 6], \"w_cond\": [6, 18, 6], \"w_comp\": [2, 6, 0], \"w_group\": [3, 15, 0]}",
-  "  19958.3ms ws_out {\"len\": 133, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"event_name\": \"reflex___state____state.entr___entr___v_state.bump\", \"payload_keys\": []}",
-  "  19967.1ms ws_in {\"len\": 102, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state.entr___entr___v_state\": [\"clicks_rx_state_\"]}, \"final\": null, \"events\": null}",
-  "  19981.7ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "  19981.7ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "  19981.8ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "  19981.9ms cell_render {\"src\": \"state_js\", \"has\": true}",
-  "  19982.5ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  19982.9ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  19983.3ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  19986.6ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  19987.2ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  19987.9ms cell_render {\"src\": \"literal\", \"has\": true}",
-  "  25073.2ms ws_in {\"len\": 1}",
-  "  25073.3ms ws_out {\"len\": 1}"
- ],
- "console": [],
- "pageerrors": [],
- "pw_frames": [
-  {
-   "dir": "out",
-   "t": 0.036,
-   "summary": {
-    "len": 133,
-    "head": "42",
-    "nsp": "/_event",
-    "sio_event": "event",
-    "event_name": "reflex___state____state.entr___entr___v_state.bump",
-    "payload_keys": []
-   }
-  },
-  {
-   "dir": "in",
-   "t": 2.039,
-   "summary": {
-    "len": 102,
-    "head": "42",
-    "nsp": "/_event",
-    "sio_event": "event",
-    "delta": {
-     "reflex___state____state.entr___entr___v_state": [
-      "clicks_rx_state_"
-     ]
-    },
-    "final": null,
-    "events": null
-   }
-  },
-  {
-   "dir": "in",
-   "t": 6.046,
-   "summary": {
-    "len": 1,
-    "head": "2"
-   }
-  },
-  {
-   "dir": "out",
-   "t": 6.046,
-   "summary": {
-    "len": 1,
-    "head": "3"
-   }
-  }
- ],
- "http_errors": [],
- "raw_ws": [
-  {
-   "t": 109.7,
-   "dir": "ws_in",
-   "data": "0{\"sid\":\"PaO4KgNJaogG5EEuAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
-  },
-  {
-   "t": 180.3,
-   "dir": "ws_out",
-   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"aca0352c60ab0412\",\"b084fc0c68f7c73a\",\"92eb61598b3feb14\",\"d41591e52f612335\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/var/\",\"asPath\":\"/var/\"}}}"
-  },
-  {
-   "t": 234.9,
-   "dir": "ws_in",
-   "data": "40/_event,{\"sid\":\"HoipJ7GnGi4-2BpiAAAH\"}"
-  },
-  {
-   "t": 316.7,
-   "dir": "ws_in",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3305\",\"origin\":\"http://localhost:3305\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"C3NO1f4LMNetaL0AtdImmA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3305\",\"origin\":\"http://localhost:3305\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"C3NO1f4LMNetaL0AtdImmA==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3305\",\"path\":\"/var\",\"raw_path\":\"/var/\",\"full_path\":\"http://localhost:3305/var\",\"full_raw_path\":\"http://localhost:3305/var/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/var\",\"rx_router_session_rx_state_\":{\"client_token\":\"eda8a96a-0dd8-495f-a91b-6c0c0fb2a2f4\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"HoipJ7GnGi4-2BpiAAAH\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3305\",\"origin\":\"http://localhost:3305\",\"path\":\"/var/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3305/var/\"},\"is_hydrated_rx_state_\":false}}}]"
-  },
-  {
-   "t": 317.1,
-   "dir": "ws_in",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
-  },
-  {
-   "t": 7548.7,
-   "dir": "ws_out",
-   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.entr___entr___v_state.toggle\",\"router_data\":{\"pathname\":\"/var/\",\"asPath\":\"/var/\"}}]"
-  },
-  {
-   "t": 7553,
-   "dir": "ws_in",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.entr___entr___v_state\":{\"flag_rx_state_\":false}}}]"
-  },
-  {
-   "t": 13758.8,
-   "dir": "ws_out",
-   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.entr___entr___v_state.toggle\",\"router_data\":{\"pathname\":\"/var/\",\"asPath\":\"/var/\"}}]"
-  },
-  {
-   "t": 13768.4,
-   "dir": "ws_in",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.entr___entr___v_state\":{\"flag_rx_state_\":true}}}]"
-  },
-  {
-   "t": 19958.3,
-   "dir": "ws_out",
-   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.entr___entr___v_state.bump\",\"router_data\":{\"pathname\":\"/var/\",\"asPath\":\"/var/\"}}]"
-  },
-  {
-   "t": 19967.1,
-   "dir": "ws_in",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.entr___entr___v_state\":{\"clicks_rx_state_\":1}}}]"
-  },
-  {
-   "t": 25073.2,
-   "dir": "ws_in",
-   "data": "2"
-  },
-  {
-   "t": 25073.3,
-   "dir": "ws_out",
-   "data": "3"
-  }
- ]
+"scenario": "r2e_var_after_bump",
+"measure": {
+"grids": {
+"w_js": {
+"headers": [
+"J:make",
+"J:price",
+"J:double",
+"J:arrow"
+],
+"cells": 16,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 1,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"t-0: make=S:PINNED | price=$99 | double=198 | arrow=PINNED",
+"0: make=S:Tesla | price=$1 | double=2 | arrow=TESLA",
+"1: make=S:Ford | price=$2 | double=4 | arrow=FORD",
+"2: make=S:Toyota | price=$3 | double=6 | arrow=TOYOTA"
+]
+},
+"w_lam": {
+"headers": [
+"S:make",
+"S:price",
+"S:double",
+"S:tip",
+"S:memo",
+"S:trace"
+],
+"cells": 18,
+"rows": 0,
+"badges": 6,
+"memo_badges": 3,
+"tip_texts": 3,
+"pinned_top_rows": 0,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
+"1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
+"2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
+]
+},
+"w_cond": {
+"headers": [
+"L:make",
+"L:price",
+"L:double",
+"L:tip",
+"L:memo",
+"L:trace"
+],
+"cells": 18,
+"rows": 0,
+"badges": 6,
+"memo_badges": 3,
+"tip_texts": 3,
+"pinned_top_rows": 0,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
+"1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
+"2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
+]
+},
+"w_comp": {
+"headers": [
+"C:make",
+"C:price"
+],
+"cells": 6,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 0,
+"cheap_cells": 0,
+"row_texts": [
+"0: make=Tesla | price=1 EUR",
+"1: make=Ford | price=2 EUR",
+"2: make=Toyota | price=3 EUR"
+]
+},
+"w_group": {
+"headers": [
+"Group",
+"G:make",
+"sum(G:price)"
+],
+"cells": 15,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 4,
+"cheap_cells": 0,
+"row_texts": [
+"0: ag-Grid-AutoColumn=US\n(2) | make= | price=3",
+"1: ag-Grid-AutoColumn= | make=Tesla | price=1",
+"2: ag-Grid-AutoColumn= | make=Ford | price=2",
+"3: ag-Grid-AutoColumn=JP\n(1) | make= | price=3",
+"4: ag-Grid-AutoColumn= | make=Toyota | price=3"
+]
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 180.70000000018626,
+"cellRenders": {
+"n": 37,
+"first_t": 276.40000000037253,
+"without_reflex": 0,
+"by_src": {
+"state_js": 16,
+"literal": 21
+}
+},
+"path": "/var/",
+"heading": "entr var"
+},
+"measure_plus4s": {
+"grids": {
+"w_js": {
+"headers": [
+"J:make",
+"J:price",
+"J:double",
+"J:arrow"
+],
+"cells": 16,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 1,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"t-0: make=S:PINNED | price=$99 | double=198 | arrow=PINNED",
+"0: make=S:Tesla | price=$1 | double=2 | arrow=TESLA",
+"1: make=S:Ford | price=$2 | double=4 | arrow=FORD",
+"2: make=S:Toyota | price=$3 | double=6 | arrow=TOYOTA"
+]
+},
+"w_lam": {
+"headers": [
+"S:make",
+"S:price",
+"S:double",
+"S:tip",
+"S:memo",
+"S:trace"
+],
+"cells": 18,
+"rows": 0,
+"badges": 6,
+"memo_badges": 3,
+"tip_texts": 3,
+"pinned_top_rows": 0,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
+"1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
+"2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
+]
+},
+"w_cond": {
+"headers": [
+"L:make",
+"L:price",
+"L:double",
+"L:tip",
+"L:memo",
+"L:trace"
+],
+"cells": 18,
+"rows": 0,
+"badges": 6,
+"memo_badges": 3,
+"tip_texts": 3,
+"pinned_top_rows": 0,
+"group_rows": 0,
+"cheap_cells": 1,
+"row_texts": [
+"0: make=\"Tesla\" | price=$1 | double=2 | tip=\"US\" | memo=memo:Tesla | trace=T:Tesla",
+"1: make=\"Ford\" | price=$2 | double=4 | tip=\"US\" | memo=memo:Ford | trace=T:Ford",
+"2: make=\"Toyota\" | price=$3 | double=6 | tip=\"JP\" | memo=memo:Toyota | trace=T:Toyota"
+]
+},
+"w_comp": {
+"headers": [
+"C:make",
+"C:price"
+],
+"cells": 6,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 0,
+"cheap_cells": 0,
+"row_texts": [
+"0: make=Tesla | price=1 EUR",
+"1: make=Ford | price=2 EUR",
+"2: make=Toyota | price=3 EUR"
+]
+},
+"w_group": {
+"headers": [
+"Group",
+"G:make",
+"sum(G:price)"
+],
+"cells": 15,
+"rows": 0,
+"badges": 0,
+"memo_badges": 0,
+"tip_texts": 0,
+"pinned_top_rows": 0,
+"group_rows": 4,
+"cheap_cells": 0,
+"row_texts": [
+"0: ag-Grid-AutoColumn=US\n(2) | make= | price=3",
+"1: ag-Grid-AutoColumn= | make=Tesla | price=1",
+"2: ag-Grid-AutoColumn= | make=Ford | price=2",
+"3: ag-Grid-AutoColumn=JP\n(1) | make= | price=3",
+"4: ag-Grid-AutoColumn= | make=Toyota | price=3"
+]
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 180.70000000018626,
+"cellRenders": {
+"n": 37,
+"first_t": 276.40000000037253,
+"without_reflex": 0,
+"by_src": {
+"state_js": 16,
+"literal": 21
+}
+},
+"path": "/var/",
+"heading": "entr var"
+},
+"boot_frames": [
+{
+"t": 109.7,
+"dir": "ws_in",
+"len": 108,
+"head": "0{"
+},
+{
+"t": 180.3,
+"dir": "ws_out",
+"len": 298,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"event"
+],
+"auth_mentions_hydrate_and_load": true,
+"auth_event_name": "reflex___state____state.hydrate_and_load"
+},
+{
+"t": 234.9,
+"dir": "ws_in",
+"len": 40,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"sid"
+],
+"auth_mentions_hydrate_and_load": false
+},
+{
+"t": 316.7,
+"dir": "ws_in",
+"len": 1794,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_",
+"rx_router_headers_rx_state_",
+"rx_router_page_rx_state_",
+"rx_router_route_id_rx_state_",
+"rx_router_session_rx_state_",
+"rx_router_url_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 317.1,
+"dir": "ws_in",
+"len": 88,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 7548.7,
+"dir": "ws_out",
+"len": 135,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"event_name": "reflex___state____state.entr___entr___v_state.toggle",
+"payload_keys": []
+},
+{
+"t": 7553,
+"dir": "ws_in",
+"len": 104,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state.entr___entr___v_state": [
+"flag_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 13758.8,
+"dir": "ws_out",
+"len": 135,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"event_name": "reflex___state____state.entr___entr___v_state.toggle",
+"payload_keys": []
+},
+{
+"t": 13768.4,
+"dir": "ws_in",
+"len": 103,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state.entr___entr___v_state": [
+"flag_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 19958.3,
+"dir": "ws_out",
+"len": 133,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"event_name": "reflex___state____state.entr___entr___v_state.bump",
+"payload_keys": []
+},
+{
+"t": 19967.1,
+"dir": "ws_in",
+"len": 102,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state.entr___entr___v_state": [
+"clicks_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 25073.2,
+"dir": "ws_in",
+"len": 1,
+"head": "2"
+},
+{
+"t": 25073.3,
+"dir": "ws_out",
+"len": 1,
+"head": "3"
+}
+],
+"timeline": [
+"     23.6ms grid counts (headers, cells) {}",
+"     70.4ms ws_open_call {\"url\": \"ws://localhost:3305/_event/?token=eda8a96a-0dd8-495f-a91b-6c0c0fb2a2f4&EIO=4&transport=websocket\"}",
+"    105.2ms grid counts (headers, cells) {\"w_js\": [0, 0, 0], \"w_lam\": [0, 0, 0], \"w_cond\": [0, 0, 0], \"w_comp\": [0, 0, 0], \"w_group\": [0, 0, 0]}",
+"    105.4ms ws_open {}",
+"    109.7ms ws_in {\"len\": 108}",
+"    180.3ms ws_out {\"len\": 298, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+"    180.7ms window.__reflex ASSIGNED (6 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3305/assets/root-C9v8v-W7.js:82:324 |     at El (http://localhost:3305/assets/entry.client-H-Leh00q.js:8:94941) |     at Uu (http://localhost:3305/assets/entry.client-H-Leh00q.js:8:118109) |     at Hu (http://localhost:3305/assets/entry.client",
+"    234.9ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+"    276.4ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"    276.6ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"    276.7ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"    276.8ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"    278.0ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    278.4ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    278.9ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    279.4ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    279.8ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    280.4ms cell_render {\"src\": \"literal\", \"has\": true}",
+"    298.6ms grid counts (headers, cells) {\"w_js\": [4, 16, 0], \"w_lam\": [6, 18, 6], \"w_cond\": [6, 18, 6], \"w_comp\": [2, 6, 0], \"w_group\": [3, 15, 0]}",
+"    316.7ms ws_in {\"len\": 1794, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    317.1ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
+"   7548.7ms ws_out {\"len\": 135, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"event_name\": \"reflex___state____state.entr___entr___v_state.toggle\", \"payload_keys\": []}",
+"   7553.0ms ws_in {\"len\": 104, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state.entr___entr___v_state\": [\"flag_rx_state_\"]}, \"final\": null, \"events\": null}",
+"   7579.0ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"   7579.0ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"   7579.2ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"   7579.3ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"   7580.7ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   7581.4ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   7582.3ms cell_render {\"src\": \"literal\", \"has\": true}",
+"   7606.8ms grid counts (headers, cells) {\"w_js\": [4, 16, 0], \"w_lam\": [6, 18, 6], \"w_cond\": [1, 3, 0], \"w_comp\": [2, 6, 0], \"w_group\": [3, 15, 0]}",
+"  13758.8ms ws_out {\"len\": 135, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"event_name\": \"reflex___state____state.entr___entr___v_state.toggle\", \"payload_keys\": []}",
+"  13768.4ms ws_in {\"len\": 103, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state.entr___entr___v_state\": [\"flag_rx_state_\"]}, \"final\": null, \"events\": null}",
+"  13790.8ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"  13790.9ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"  13791.0ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"  13791.0ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"  13791.9ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  13792.3ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  13792.9ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  13818.1ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  13818.7ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  13819.2ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  13834.3ms grid counts (headers, cells) {\"w_js\": [4, 16, 0], \"w_lam\": [6, 18, 6], \"w_cond\": [6, 18, 6], \"w_comp\": [2, 6, 0], \"w_group\": [3, 15, 0]}",
+"  19958.3ms ws_out {\"len\": 133, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"event_name\": \"reflex___state____state.entr___entr___v_state.bump\", \"payload_keys\": []}",
+"  19967.1ms ws_in {\"len\": 102, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state.entr___entr___v_state\": [\"clicks_rx_state_\"]}, \"final\": null, \"events\": null}",
+"  19981.7ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"  19981.7ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"  19981.8ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"  19981.9ms cell_render {\"src\": \"state_js\", \"has\": true}",
+"  19982.5ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  19982.9ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  19983.3ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  19986.6ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  19987.2ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  19987.9ms cell_render {\"src\": \"literal\", \"has\": true}",
+"  25073.2ms ws_in {\"len\": 1}",
+"  25073.3ms ws_out {\"len\": 1}"
+],
+"console": [],
+"pageerrors": [],
+"http_errors": []
 }

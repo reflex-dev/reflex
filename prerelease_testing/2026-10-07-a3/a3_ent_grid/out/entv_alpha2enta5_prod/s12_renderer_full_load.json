@@ -1,260 +1,157 @@
 {
- "scenario": "s12_renderer_full_load",
- "measure": {
-  "grids": {
-   "w_renderer": {
-    "headers": [
-     "Make",
-     "Price"
-    ],
-    "cells": 6,
-    "rows": 0
-   }
-  },
-  "probes": {},
-  "probeCounts": {},
-  "reflexDefinedNow": true,
-  "reflexSetAt": 242.60000000009313,
-  "path": "/renderer/",
-  "heading": "entv renderer"
- },
- "measure_plus4s": {
-  "grids": {
-   "w_renderer": {
-    "headers": [
-     "Make",
-     "Price"
-    ],
-    "cells": 6,
-    "rows": 0
-   }
-  },
-  "probes": {},
-  "probeCounts": {},
-  "reflexDefinedNow": true,
-  "reflexSetAt": 242.60000000009313,
-  "path": "/renderer/",
-  "heading": "entv renderer"
- },
- "boot_frames": [
-  {
-   "t": 193.7,
-   "dir": "ws_in",
-   "len": 108,
-   "head": "0{"
-  },
-  {
-   "t": 241.9,
-   "dir": "ws_out",
-   "len": 346,
-   "head": "40",
-   "nsp": "/_event",
-   "auth_keys": [
-    "event"
-   ],
-   "auth_mentions_hydrate_and_load": true,
-   "auth_event_name": "reflex___state____state.hydrate_and_load"
-  },
-  {
-   "t": 278.9,
-   "dir": "ws_in",
-   "len": 40,
-   "head": "40",
-   "nsp": "/_event",
-   "auth_keys": [
-    "sid"
-   ],
-   "auth_mentions_hydrate_and_load": false
-  },
-  {
-   "t": 338.8,
-   "dir": "ws_in",
-   "len": 1829,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "delta": {
-    "reflex___state____state": [
-     "is_hydrated_rx_state_",
-     "rx_router_headers_rx_state_",
-     "rx_router_page_rx_state_",
-     "rx_router_route_id_rx_state_",
-     "rx_router_session_rx_state_",
-     "rx_router_url_rx_state_"
-    ]
-   },
-   "final": null,
-   "events": null
-  },
-  {
-   "t": 339.5,
-   "dir": "ws_in",
-   "len": 88,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "delta": {
-    "reflex___state____state": [
-     "is_hydrated_rx_state_"
-    ]
-   },
-   "final": null,
-   "events": null
-  }
- ],
- "timeline": [
-  "     23.5ms grid counts (headers, cells) {}",
-  "     97.4ms grid counts (headers, cells) {\"w_renderer\": [0, 0]}",
-  "    164.3ms ws_open_call {\"url\": \"ws://localhost:3301/_event/?token=7ed29b27-1944-4b17-fdff-849d56c15096&EIO=4&transport=websocket\"}",
-  "    187.7ms ws_open {}",
-  "    193.7ms ws_in {\"len\": 108}",
-  "    241.9ms ws_out {\"len\": 346, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
-  "    242.6ms window.__reflex ASSIGNED (5 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3301/assets/root-ByH-tAp0.js:82:324 |     at El (http://localhost:3301/assets/entry.client-H-Leh00q.js:8:94941) |     at Uu (http://localhost:3301/assets/entry.client-H-Leh00q.js:8:118109) |     at Hu (http://localhost:3301/assets/entry.client",
-  "    278.9ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
-  "    331.4ms grid counts (headers, cells) {\"w_renderer\": [2, 6]}",
-  "    338.8ms ws_in {\"len\": 1829, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
-  "    339.5ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}"
- ],
- "console": [
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 0.4
-  },
-  {
-   "type": "error",
-   "text": "************************************************ AG Grid Enterprise License ************************************************",
-   "t": 0.401
-  },
-  {
-   "type": "error",
-   "text": "************************************************** License Key Not Found ***************************************************",
-   "t": 0.401
-  },
-  {
-   "type": "error",
-   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
-   "t": 0.401
-  },
-  {
-   "type": "error",
-   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
-   "t": 0.401
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 0.401
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 0.401
-  }
- ],
- "pageerrors": [],
- "pw_frames": [
-  {
-   "dir": "in",
-   "t": 0.198,
-   "summary": {
-    "len": 108,
-    "head": "0{"
-   }
-  },
-  {
-   "dir": "out",
-   "t": 0.401,
-   "summary": {
-    "len": 346,
-    "head": "40",
-    "nsp": "/_event",
-    "auth_keys": [
-     "event"
-    ],
-    "auth_mentions_hydrate_and_load": true,
-    "auth_event_name": "reflex___state____state.hydrate_and_load"
-   }
-  },
-  {
-   "dir": "in",
-   "t": 0.402,
-   "summary": {
-    "len": 40,
-    "head": "40",
-    "nsp": "/_event",
-    "auth_keys": [
-     "sid"
-    ],
-    "auth_mentions_hydrate_and_load": false
-   }
-  },
-  {
-   "dir": "in",
-   "t": 0.402,
-   "summary": {
-    "len": 1829,
-    "head": "42",
-    "nsp": "/_event",
-    "sio_event": "event",
-    "delta": {
-     "reflex___state____state": [
-      "is_hydrated_rx_state_",
-      "rx_router_headers_rx_state_",
-      "rx_router_page_rx_state_",
-      "rx_router_route_id_rx_state_",
-      "rx_router_session_rx_state_",
-      "rx_router_url_rx_state_"
-     ]
-    },
-    "final": null,
-    "events": null
-   }
-  },
-  {
-   "dir": "in",
-   "t": 0.402,
-   "summary": {
-    "len": 88,
-    "head": "42",
-    "nsp": "/_event",
-    "sio_event": "event",
-    "delta": {
-     "reflex___state____state": [
-      "is_hydrated_rx_state_"
-     ]
-    },
-    "final": null,
-    "events": null
-   }
-  }
- ],
- "raw_ws": [
-  {
-   "t": 193.7,
-   "dir": "ws_in",
-   "data": "0{\"sid\":\"rea9pKL_YHVVN9-ZAAAQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
-  },
-  {
-   "t": 241.9,
-   "dir": "ws_out",
-   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f05849ba59c543dd\",\"95c87de63afdd5da\",\"34fd6223f7cd2e3c\",\"f4263b8274e9e12c\",\"dcc2ada93d26b909\",\"f958b7853c5a3438\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/renderer/\",\"asPath\":\"/renderer/\"}}}"
-  },
-  {
-   "t": 278.9,
-   "dir": "ws_in",
-   "data": "40/_event,{\"sid\":\"iVK2CHCUW4hHkEKoAAAR\"}"
-  },
-  {
-   "t": 338.8,
-   "dir": "ws_in",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"SLF7/Ks0R3J1thBjOFQkrw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"SLF7/Ks0R3J1thBjOFQkrw==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3301\",\"path\":\"/renderer\",\"raw_path\":\"/renderer/\",\"full_path\":\"http://localhost:3301/renderer\",\"full_raw_path\":\"http://localhost:3301/renderer/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/renderer\",\"rx_router_session_rx_state_\":{\"client_token\":\"7ed29b27-1944-4b17-fdff-849d56c15096\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"iVK2CHCUW4hHkEKoAAAR\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"path\":\"/renderer/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3301/renderer/\"},\"is_hydrated_rx_state_\":false}}}]"
-  },
-  {
-   "t": 339.5,
-   "dir": "ws_in",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
-  }
- ],
- "badges": 3
+"scenario": "s12_renderer_full_load",
+"measure": {
+"grids": {
+"w_renderer": {
+"headers": [
+"Make",
+"Price"
+],
+"cells": 6,
+"rows": 0
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 242.60000000009313,
+"path": "/renderer/",
+"heading": "entv renderer"
+},
+"measure_plus4s": {
+"grids": {
+"w_renderer": {
+"headers": [
+"Make",
+"Price"
+],
+"cells": 6,
+"rows": 0
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 242.60000000009313,
+"path": "/renderer/",
+"heading": "entv renderer"
+},
+"boot_frames": [
+{
+"t": 193.7,
+"dir": "ws_in",
+"len": 108,
+"head": "0{"
+},
+{
+"t": 241.9,
+"dir": "ws_out",
+"len": 346,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"event"
+],
+"auth_mentions_hydrate_and_load": true,
+"auth_event_name": "reflex___state____state.hydrate_and_load"
+},
+{
+"t": 278.9,
+"dir": "ws_in",
+"len": 40,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"sid"
+],
+"auth_mentions_hydrate_and_load": false
+},
+{
+"t": 338.8,
+"dir": "ws_in",
+"len": 1829,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_",
+"rx_router_headers_rx_state_",
+"rx_router_page_rx_state_",
+"rx_router_route_id_rx_state_",
+"rx_router_session_rx_state_",
+"rx_router_url_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 339.5,
+"dir": "ws_in",
+"len": 88,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_"
+]
+},
+"final": null,
+"events": null
+}
+],
+"timeline": [
+"     23.5ms grid counts (headers, cells) {}",
+"     97.4ms grid counts (headers, cells) {\"w_renderer\": [0, 0]}",
+"    164.3ms ws_open_call {\"url\": \"ws://localhost:3301/_event/?token=7ed29b27-1944-4b17-fdff-849d56c15096&EIO=4&transport=websocket\"}",
+"    187.7ms ws_open {}",
+"    193.7ms ws_in {\"len\": 108}",
+"    241.9ms ws_out {\"len\": 346, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+"    242.6ms window.__reflex ASSIGNED (5 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3301/assets/root-ByH-tAp0.js:82:324 |     at El (http://localhost:3301/assets/entry.client-H-Leh00q.js:8:94941) |     at Uu (http://localhost:3301/assets/entry.client-H-Leh00q.js:8:118109) |     at Hu (http://localhost:3301/assets/entry.client",
+"    278.9ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+"    331.4ms grid counts (headers, cells) {\"w_renderer\": [2, 6]}",
+"    338.8ms ws_in {\"len\": 1829, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    339.5ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}"
+],
+"console": [
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.4
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 0.401
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 0.401
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 0.401
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 0.401
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.401
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 0.401
+}
+],
+"pageerrors": [],
+"badges": 3
 }

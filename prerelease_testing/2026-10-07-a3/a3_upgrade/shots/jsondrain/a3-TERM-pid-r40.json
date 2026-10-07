@@ -1,0 +1,33 @@
+{
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3",
+ "signal": "TERM-pid",
+ "slow_rate": 40.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 1.18,
+  "pause_start": 4.19,
+  "signal": 8.19,
+  "signal_wall": "20:08:21.641Z",
+  "exit": 14.92,
+  "eof": 19.57
+ },
+ "signal_to_eof_s": 11.38,
+ "signal_to_exit_s": 6.73,
+ "returncode": 0,
+ "lines_total": 1411,
+ "lines_after_signal": 449,
+ "invalid_json": 0,
+ "invalid_samples": [],
+ "last_line_valid_json": true,
+ "seq_first": 0,
+ "seq_max_received": 1407,
+ "seq_written_at_signal": "1392",
+ "seq_written_final": "1407",
+ "lost_tail": 0,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T20:08:21.743612+00:00\", \"level\": \"info\", \"logger\": \"reflex.utils.processes\", \"message\": \"Reflex app stopped.\", \"location\": \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/lib/python3.12/site-packages/reflex/utils/processes.py:570\", \"",
+ "last_non_seq_lines": [
+  "{\"timestamp\": \"2026-10-07T20:08:21.743612+00:00\", \"level\": \"info\", \"logger\": \"reflex.utils.processes\", \"message\": \"Reflex app stopped.\", \"location\": \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/s"
+ ],
+ "leftover_after_exit": ""
+}

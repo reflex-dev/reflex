@@ -1,0 +1,12 @@
+Using Python 3.12.3 environment at: envs/a3_upgrade-stock
+Resolved 49 packages in 181ms
+Would install 9 packages
+ + alembic==1.20.0
+ + annotated-types==0.8.0
+ + mako==1.4.3
+ + markupsafe==3.0.4
+ + pydantic==2.13.5
+ + pydantic-core==2.46.5
+ + sqlalchemy==2.1.4
+ + sqlmodel==0.0.48
+ + typing-inspection==0.4.4

@@ -1,0 +1,70 @@
+### reflex component  -> rc=1
+[stdout]
+[stderr]
+`reflex component` was removed in Reflex 0.10. Wrap React components directly in
+your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable 
+component packages from the component template: 
+https://github.com/reflex-dev/component-template
+### reflex component init  -> rc=1
+[stdout]
+[stderr]
+`reflex component` was removed in Reflex 0.10. Wrap React components directly in
+your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable 
+component packages from the component template: 
+https://github.com/reflex-dev/component-template
+### reflex component build --loglevel debug  -> rc=1
+[stdout]
+[stderr]
+`reflex component` was removed in Reflex 0.10. Wrap React components directly in
+your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable 
+component packages from the component template: 
+https://github.com/reflex-dev/component-template
+### reflex component share  -> rc=1
+[stdout]
+[stderr]
+`reflex component` was removed in Reflex 0.10. Wrap React components directly in
+your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable 
+component packages from the component template: 
+https://github.com/reflex-dev/component-template
+### reflex component install  -> rc=1
+[stdout]
+[stderr]
+`reflex component` was removed in Reflex 0.10. Wrap React components directly in
+your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable 
+component packages from the component template: 
+https://github.com/reflex-dev/component-template
+### reflex component publish --token x  -> rc=1
+[stdout]
+[stderr]
+`reflex component` was removed in Reflex 0.10. Wrap React components directly in
+your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable 
+component packages from the component template: 
+https://github.com/reflex-dev/component-template
+### reflex component --help  -> rc=0
+[stdout]
+Usage: reflex component [OPTIONS] [ARGS]...
+
+  `reflex component` was removed in Reflex 0.10. Wrap React components
+  directly in your app (https://reflex.dev/docs/wrapping-react/overview/) and
+  start reusable component packages from the component template:
+  https://github.com/reflex-dev/component-template
+
+Options:
+  --help  Show this message and exit.
+[stderr]
+### reflex component init --help  -> rc=0
+[stdout]
+Usage: reflex component [OPTIONS] [ARGS]...
+
+  `reflex component` was removed in Reflex 0.10. Wrap React components
+  directly in your app (https://reflex.dev/docs/wrapping-react/overview/) and
+  start reusable component packages from the component template:
+  https://github.com/reflex-dev/component-template
+
+Options:
+  --help  Show this message and exit.
+[stderr]
+### reflex --help | grep -i component
+(grep rc=1)
+e.txt
+o.txt

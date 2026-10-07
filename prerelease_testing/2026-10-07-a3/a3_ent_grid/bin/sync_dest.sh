@@ -9,10 +9,12 @@ EXCL=(--exclude=.web --exclude=node_modules --exclude=.states --exclude=assets/e
 cp -r $W/drivers/. $DEST/drivers/; cp -r $W/scripts/. $DEST/scripts/; cp -r $W/bin/. $DEST/bin/
 rm -rf $DEST/drivers/__pycache__ $DEST/scripts/__pycache__
 # outputs: JSON + JPEG only (PNG converted, quality 60)
-( cd $W/out && find . -type f \( -name "*.json" -o -name "*.md" -o -name "*.txt" -o -name "*.jpg" \) | tar -cf - -T - ) | ( cd $DEST/out && tar -xf - )
-( cd $W/out && find . -name "*.png" ) | while read -r f; do
+( cd $W/out && find . -type f \( -name "*.md" -o -name "*.txt" -o -name "*.jpg" \) | tar -cf - -T - ) | ( cd $DEST/out && tar -xf - )
+$SB/envs/driver/bin/python -I $W/bin/compact_json.py $W/out $DEST/out
+# screenshots of repeat scenarios (same page state as another shot) are not copied, to keep DEST small
+( cd $W/out && find . -name "*.png" | grep -vE '/(s3_|s4_|s5_|s6_|s7_|s10_|r1b_|r2b_|r2c_|r2d_|r2e_|r3b_|r5b_)' ) | while read -r f; do
   t="$DEST/out/${f%.png}.jpg"; [ -f "$t" ] && [ "$t" -nt "$W/out/$f" ] && continue
-  mkdir -p "$(dirname "$t")"; convert "$W/out/$f" -quality 60 "$t"
+  mkdir -p "$(dirname "$t")"; convert "$W/out/$f" -resize '640x>' -quality 45 "$t"
 done
 for f in $W/logs/*.log; do
   grep -vE "gzip:|^Debug: build/client/assets|^\s*$|^Debug: Copying|^\.web/build/client/" "$f" | head -c 200000 > $DEST/logs/$(basename $f)

@@ -1,0 +1,40 @@
+{
+ "cmd": "run --json --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2",
+ "signal": "TERM-pid",
+ "slow_rate": 40.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 2.74,
+  "pause_start": 5.76,
+  "signal": 9.76,
+  "signal_wall": "20:13:55.362Z",
+  "exit": 14.98,
+  "eof": 19.56
+ },
+ "signal_to_eof_s": 9.8,
+ "signal_to_exit_s": 5.22,
+ "returncode": 0,
+ "lines_total": 1005,
+ "lines_after_signal": 388,
+ "invalid_json": 1,
+ "invalid_samples": [
+  {
+   "t": 19.58,
+   "err": "Unterminated string starting at: line 1 column 15 (char 14)",
+   "line": "{\"timestamp\": \"2026-10-07T20:13:55.363<NO-NEWLINE-AT-EOF> [len 57]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": 0,
+ "seq_max_received": 1001,
+ "seq_written_at_signal": "1047",
+ "seq_written_final": "1050",
+ "lost_tail": 49,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T20:13:55.363<NO-NEWLINE-AT-EOF>",
+ "last_non_seq_lines": [
+  "{\"timestamp\": \"2026-10-07T20:13:55.363<NO-NEWLINE-AT-EOF>"
+ ],
+ "leftover_after_exit": ""
+}

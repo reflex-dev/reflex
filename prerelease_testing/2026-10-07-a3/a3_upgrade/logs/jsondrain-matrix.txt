@@ -1,0 +1,19 @@
+### a3 INT-group rate=40 20:07:52
+{"signal": "INT-group", "slow_rate": 40.0, "signal_to_eof_s": 11.05, "signal_to_exit_s": 6.47, "returncode": 0, "lines_total": 1317, "lines_after_signal": 435, "invalid_json": 0, "seq_max_received": 1313, "seq_written_final": "1313", "lost_tail": 0, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### a3 TERM-pid rate=40 20:08:13
+{"signal": "TERM-pid", "slow_rate": 40.0, "signal_to_eof_s": 11.38, "signal_to_exit_s": 6.73, "returncode": 0, "lines_total": 1411, "lines_after_signal": 449, "invalid_json": 0, "seq_max_received": 1407, "seq_written_final": "1407", "lost_tail": 0, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### a3 TERM-pid rate=6 20:08:34
+{"signal": "TERM-pid", "slow_rate": 6.0, "signal_to_eof_s": 60.77, "signal_to_exit_s": 30.39, "returncode": 0, "lines_total": 1341, "lines_after_signal": 365, "invalid_json": 1, "seq_max_received": 1337, "seq_written_final": "1419", "lost_tail": 82, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### a3 INT-pid rate=40 20:09:44
+{"signal": "INT-pid", "slow_rate": 40.0, "signal_to_eof_s": NaN, "signal_to_exit_s": 210.01, "returncode": "TIMEOUT", "lines_total": 6718, "lines_after_signal": 5855, "invalid_json": 1, "seq_max_received": 6714, "seq_written_final": "7181", "lost_tail": 467, "seq_gaps": [], "leftover_after_exit": "4680 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/reflex run --json --frontend-port 3210 --backend-port 8210\n 4691 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/python -m reflex run --json --frontend-port 3210 --backend-port 8210\n 4710 S    /root/.bun/bin/bun run dev\n 4712 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/jsondrain/.web/node_modules/.bin/react-router dev --host\n 4722 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/python -m reflex run --json --frontend-port 3210 --backend-port 8210\n4712\n4691\n4722"}
+no listeners on: 2 ports checked
+### a2 INT-group rate=40 20:13:24
+{"signal": "INT-group", "slow_rate": 40.0, "signal_to_eof_s": 10.33, "signal_to_exit_s": 5.55, "returncode": 0, "lines_total": 1346, "lines_after_signal": 376, "invalid_json": 1, "seq_max_received": 1340, "seq_written_final": "1403", "lost_tail": 63, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### a2 TERM-pid rate=40 20:13:45
+{"signal": "TERM-pid", "slow_rate": 40.0, "signal_to_eof_s": 9.8, "signal_to_exit_s": 5.22, "returncode": 0, "lines_total": 1005, "lines_after_signal": 388, "invalid_json": 1, "seq_max_received": 1001, "seq_written_final": "1050", "lost_tail": 49, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### a2 TERM-pid rate=6 20:14:06

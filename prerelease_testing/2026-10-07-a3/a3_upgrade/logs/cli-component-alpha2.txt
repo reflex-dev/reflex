@@ -1,0 +1,60 @@
+### reflex component  -> rc=2
+[stdout]
+[stderr]
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+### reflex component init  -> rc=2
+[stdout]
+[stderr]
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+### reflex component build --loglevel debug  -> rc=2
+[stdout]
+[stderr]
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+### reflex component share  -> rc=2
+[stdout]
+[stderr]
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+### reflex component install  -> rc=2
+[stdout]
+[stderr]
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+### reflex component publish --token x  -> rc=2
+[stdout]
+[stderr]
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+### reflex component --help  -> rc=2
+[stdout]
+[stderr]
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+### reflex component init --help  -> rc=2
+[stdout]
+[stderr]
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+### reflex --help | grep -i component
+(grep rc=1)
+e.txt
+o.txt

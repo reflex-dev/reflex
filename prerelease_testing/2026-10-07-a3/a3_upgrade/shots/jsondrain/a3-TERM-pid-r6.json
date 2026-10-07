@@ -1,0 +1,39 @@
+{
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3",
+ "signal": "TERM-pid",
+ "slow_rate": 6.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 1.21,
+  "pause_start": 4.22,
+  "signal": 8.22,
+  "signal_wall": "20:08:42.495Z",
+  "exit": 38.61,
+  "eof": 68.99
+ },
+ "signal_to_eof_s": 60.77,
+ "signal_to_exit_s": 30.39,
+ "returncode": 0,
+ "lines_total": 1341,
+ "lines_after_signal": 365,
+ "invalid_json": 1,
+ "invalid_samples": [
+  {
+   "t": 69.01,
+   "err": "Expecting ':' delimiter: line 1 column 58 (char 57)",
+   "line": "{\"timestamp\": \"2026-10-07T20:08:42.496757+00:00\", \"level\"<NO-NEWLINE-AT-EOF> [len 76]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": 0,
+ "seq_max_received": 1337,
+ "seq_written_at_signal": "1406",
+ "seq_written_final": "1419",
+ "lost_tail": 82,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T20:08:42.496757+00:00\", \"level\"<NO-NEWLINE-AT-EOF>",
+ "last_non_seq_lines": [
+  "{\"timestamp\": \"2026-10-07T20:08:42.496757+00:00\", \"level\"<NO-NEWLINE-AT-EOF>"
+ ],
+ "leftover_after_exit": ""
+}

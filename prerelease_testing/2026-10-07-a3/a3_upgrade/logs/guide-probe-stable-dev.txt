@@ -1,0 +1,69 @@
+reflex 0.9.12 reflex-base 0.9.12 REFLEX_ENV_MODE=dev
+=== S1 Reading a backend var on a state class
+S1.1 type(State._items)                                                        -> builtins.list
+S1.2 rx.text(State._items)  [guide: ChildrenTypeError]                         -> jsx(RadixThemesText,{as:"p"},["a", "b"])
+S1.3 rx.box(State._label)   [child]                                            -> jsx(RadixThemesBox,{},"lbl")
+S1.4 rx.text('x', color=State._color) [guide: TypeError Unsupported type ... for LiteralVar] -> jsx(RadixThemesText,{as:"p",css:({ ["color"] : "red" })},"x")
+S1.5 rx.box(id=State._label)  [prop]                                           -> jsx(RadixThemesBox,{id:"lbl",ref:ref_lbl},)
+S1.6 rx.input(value=State._label)  [prop]                                      -> jsx(RadixThemesTextField.Root,{value:(isNotNullOrUndefined("lbl") ? "lbl" : "")},)
+S1.7 rx.image(src=State._label)  [prop]                                        -> jsx("img",{src:"lbl"},)
+S1.8 rx.link('x', href=State._label)  [prop]                                   -> jsx(RadixThemesLink,{asChild:true,css:({ ["&:hover"] : ({ ["color"] : "var(--accent-8)" }) })},jsx(ReactRouterLink,{to:"
+S1.9 rx.box(style={'color': State._color})  [style]                            -> jsx(RadixThemesBox,{css:({ ["color"] : "red" })},)
+S1.10 rx.foreach(State._items, rx.text)  [the 0.9 pattern in the sample comment] -> Array.prototype.map.call(["a", "b"] ?? [],((children_rx_state_,props_rx_state_)=>(jsx(RadixThemesText,{as:"p",key:props_
+S1.11 rx.cond(State._flag, rx.text('y'), rx.text('n'))                         -> jsx(Fragment,{},(true?(jsx(Fragment,{},jsx(RadixThemesText,{as:"p"},"y"))):(jsx(Fragment,{},jsx(RadixThemesText,{as:"p"}
+S1.12 f'{State._label}'  [guide: BackendVarFormatError]                        -> lbl
+S1.13 '{}'.format(State._label)  [guide: BackendVarFormatError]                -> lbl
+S1.14 f'{State._label!r}'  [guide: embeds the Field text]                      -> 'lbl'
+S1.15 f'{State._label!s}'  [guide: embeds the Field text]                      -> lbl
+S1.16 str(State._label)  [guide: embeds the Field text]                        -> lbl
+S1.17 '%s' % State._label  [not in guide]                                      -> lbl
+S1.18 f'{State._size}px'                                                       -> 16px
+S1.19 instance read fresh(State)._items  [guide: unchanged]                    -> MutableProxy(['a', 'b'])
+S1.20 sample: State._items.default_value()                                     -> EXC builtins.AttributeError: 'list' object has no attribute 'default_value'
+S1.21 sample: rx.foreach(State._items.default_value(), rx.text) renders a,b    -> EXC builtins.AttributeError: 'list' object has no attribute 'default_value'
+S1.22 sample: type(State._endpoint), rx.text(State._endpoint)                  -> ('str', 'jsx(RadixThemesText,{as:"p"},"https://example.com/api")')
+S1.23 sample page: rx.vstack(foreach(default_value), text(ClassVar))           -> EXC builtins.AttributeError: 'list' object has no attribute 'default_value'
+S1.24 portable: State.get_fields()['_items'].default_value()                   -> ['a', 'b']
+   (raise)                                                                     -> lbl
+S1.26 BackendVarFormatError message names default_value()/ClassVar             -> (False, False, 'lbl')
+=== S2 Assigning a default through a state class
+S2.1 after Cnt.count = 10: type(Cnt.count)  [0.9: replaced; 0.10: stays a var] -> int
+S2.2 new instance count  [0.9: declared default 0; 0.10: 10]                   -> 0
+S2.3 instance with a stored value (5) keeps it                                 -> 5
+S2.4 instance created BEFORE the assignment, count never touched               -> 0
+S2.5 reset() of the stored instance -> new default                             -> 0
+S2.6 rx.text(Cnt.count) still renders a reactive var                           -> jsx(RadixThemesText,{as:"p"},10)
+S2.7 Cnt.count = 'x'  [guide: TypeError: Invalid default for field]            -> None
+   default after the rejected assignment                                       -> 0
+S2.8 unannotated _client = None; Slots._client = Client()  [guide: TypeError]  -> None
+S2.9 unannotated _client = None; Slots._client = None                          -> None
+S2.10 Slots.count2 = factory (zero-arg fn returning int)                       -> None
+   calls during the assignment  [guide: called once]                           -> 0
+   two new instances read count2                                               -> (0, 0)
+   calls after two instances  [factory per instance]                           -> 0
+S2.11 Slots.count3 = int (a class, annotation int does not accept the class)   -> None
+   fresh(Slots).count3                                                         -> 0
+S2.12 Slots.count3 = bad_factory (returns str)  [side effect runs, then TypeError] -> None
+   side effects executed                                                       -> []
+   default after the rejected factory (previous one stays)                     -> 0
+S2.13 Slots.count3 = raising_factory  [base_vars: previous default remains]    -> None
+   default after the failing factory                                           -> 0
+S2.14 mutable default copied per instance                                      -> (MutableProxy([]), MutableProxy([]), False)
+S2.15 Slots._client2 = Client() (Optional[Client]) accepted                    -> None
+   new instance reads _client2  [guide: TypeError: cannot pickle '_thread.lock' object] -> None
+S2.16 Slots._any = threading.Lock() (Any) accepted                             -> None
+   new instance reads _any  [guide: TypeError: cannot pickle '_thread.lock' object] -> None
+S2.17 ClassVar object shared, never copied (identity on two instances)         -> True
+S2.18 mixin: Mix.mval = 5 -> (state defined before, state defined after)  [guide: only after] -> (1, 1)
+S2.19 Chi.pcount = 9 on a subclass -> (Par new instance, Chi new instance)  [base_vars: declaring state changes] -> (1, 1)
+S2.20 Undo.u = 2; Undo.u = <Var read before>  [base_vars: undo]                -> 1
+S2.21 Undo.u = 3; del Undo.u  [base_vars: undo]                                -> 1
+=== S4 Other changes
+S4.1 rx.event.BACKGROUND_TASK_MARKER / SUPERSEDES_MARKER                       -> ('_reflex_background_task', '_reflex_supersedes')
+S4.2 Bg.hb.is_background                                                       -> True
+S4.3 Bg.h.is_background before marking                                         -> False
+S4.4 mark Bg.h.fn after first use -> is_background  [guide: ignored, no warning] -> True
+S4.5 @rx.event(supersedes=True) accepted                                       -> function
+S4.6 self.typo = 1 on an instance  [guide: dev raises SetUndefinedStateVarError; prod plain attr] -> EXC reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable 'typo' has not been defined in 'Und'. All state variables must be declared before they can be set.
+   typo is not a var (not in dict/dirty)                                       -> (False, [])
+S4.7 self._typo__name = 1 (only looks mangled)                                 -> EXC reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable '_typo__name' has not been defined in 'Und'. All state variables must be declared before they can be set.

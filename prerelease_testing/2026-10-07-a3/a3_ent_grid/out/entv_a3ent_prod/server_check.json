@@ -1,10 +1,10 @@
 {
- "listeners": [
-  {
-   "pid": "21673",
-   "cmd": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3-ent/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3-ent/bin/reflex run --frontend-port 3306 --backend-port 3306 --loglevel debug --env prod "
-  }
- ],
- "venv": "a3-ent",
- "versions": "reflex=0.10.0a3 reflex-base=0.10.0a3 reflex-enterprise=0.9.7a5 reflex_from=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3-ent/lib/python3.12/site-packages/reflex/__init__.py"
+"listeners": [
+{
+"pid": "21673",
+"cmd": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3-ent/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3-ent/bin/reflex run --frontend-port 3306 --backend-port 3306 --loglevel debug --env prod "
+}
+],
+"venv": "a3-ent",
+"versions": "reflex=0.10.0a3 reflex-base=0.10.0a3 reflex-enterprise=0.9.7a5 reflex_from=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3-ent/lib/python3.12/site-packages/reflex/__init__.py"
 }

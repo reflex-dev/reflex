@@ -1,0 +1,36 @@
+{
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3",
+ "signal": "INT-pid",
+ "slow_rate": 40.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 1.41,
+  "pause_start": 4.41,
+  "signal": 8.41,
+  "signal_wall": "20:09:52.938Z",
+  "exit": 218.42
+ },
+ "signal_to_eof_s": NaN,
+ "signal_to_exit_s": 210.01,
+ "returncode": "TIMEOUT",
+ "lines_total": 6718,
+ "lines_after_signal": 5855,
+ "invalid_json": 1,
+ "invalid_samples": [
+  {
+   "t": 158.42,
+   "err": "Extra data: line 2 column 1 (char 357)",
+   "line": "{\"timestamp\": \"2026-10-07T20:12:17.082125+00:00\", \"level\": \"info\", \"logger\": \"stdout\", \"message\": \"QA-SEQ 0006715 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 3197]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": 0,
+ "seq_max_received": 6714,
+ "seq_written_at_signal": "1293",
+ "seq_written_final": "7181",
+ "lost_tail": 467,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T20:12:17.082125+00:00\", \"level\": \"info\", \"logger\": \"stdout\", \"message\": \"QA-SEQ 0006715 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+ "last_non_seq_lines": [],
+ "leftover_after_exit": "4680 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/reflex run --json --frontend-port 3210 --backend-port 8210\n 4691 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/python -m reflex run --json --frontend-port 3210 --backend-port 8210\n 4710 S    /root/.bun/bin/bun run dev\n 4712 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/jsondrain/.web/node_modules/.bin/react-router dev --host\n 4722 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/python -m reflex run --json --frontend-port 3210 --backend-port 8210\n4712\n4691\n4722"
+}

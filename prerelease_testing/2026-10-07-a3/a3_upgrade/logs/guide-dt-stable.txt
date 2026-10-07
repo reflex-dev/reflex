@@ -1,0 +1,9 @@
+reflex 0.9.12 sqlmodel 0.0.47 sqlalchemy 2.0.54
+sa_type=DateTime(timezone=False): naive insert/read                    -> (datetime.datetime(2026, 10, 7, 12, 0), None)
+sa_type=DateTime(timezone=False): default_factory=datetime.now (no value given) -> None
+plain datetime: naive insert  [docs: rejected on >=0.0.45]             -> EXC StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage.
+[SQL: INSERT INTO plainpost (created_a
+plain datetime: aware insert/read  [docs: UTC-aware back]              -> (datetime.datetime(2026, 10, 7, 12, 0, tzinfo=datetime.timezone.utc), datetime.timezone.utc)
+plain datetime: read-back compared with datetime.now()  [docs: TypeError] -> EXC TypeError: can't compare offset-naive and offset-aware datetimes
+NaiveDatetime: naive insert/read  [docs: naive storage]                -> (datetime.datetime(2026, 10, 7, 12, 0), None)
+type of PlainPost.created_at column                                    -> 'UTCDateTime()'

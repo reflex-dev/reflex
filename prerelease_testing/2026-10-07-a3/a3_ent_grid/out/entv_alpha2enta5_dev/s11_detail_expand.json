@@ -1,567 +1,464 @@
 {
- "scenario": "s11_detail_expand",
- "measure": {
-  "grids": {
-   "w_detail_state": {
-    "headers": [
-     "Id",
-     "Name",
-     "Count",
-     "Value"
-    ],
-    "cells": 8,
-    "rows": 0
-   },
-   "w_detail_literal": {
-    "headers": [
-     "Id",
-     "Name",
-     "Count",
-     "Value"
-    ],
-    "cells": 8,
-    "rows": 0
-   }
-  },
-  "probes": {},
-  "probeCounts": {},
-  "reflexDefinedNow": true,
-  "reflexSetAt": 435.89999999990687,
-  "path": "/detail",
-  "heading": "entv detail"
- },
- "measure_plus4s": {
-  "grids": {
-   "w_detail_state": {
-    "headers": [
-     "Id",
-     "Name",
-     "Count",
-     "Value"
-    ],
-    "cells": 8,
-    "rows": 0
-   },
-   "w_detail_literal": {
-    "headers": [
-     "Id",
-     "Name",
-     "Count",
-     "Value"
-    ],
-    "cells": 8,
-    "rows": 0
-   }
-  },
-  "probes": {},
-  "probeCounts": {},
-  "reflexDefinedNow": true,
-  "reflexSetAt": 435.89999999990687,
-  "path": "/detail",
-  "heading": "entv detail"
- },
- "boot_frames": [
-  {
-   "t": 271.6,
-   "dir": "ws_in",
-   "len": 108,
-   "head": "0{"
-  },
-  {
-   "t": 435.1,
-   "dir": "ws_out",
-   "len": 340,
-   "head": "40",
-   "nsp": "/_event",
-   "auth_keys": [
-    "event"
-   ],
-   "auth_mentions_hydrate_and_load": true,
-   "auth_event_name": "reflex___state____state.hydrate_and_load"
-  },
-  {
-   "t": 443.1,
-   "dir": "ws_in",
-   "len": 40,
-   "head": "40",
-   "nsp": "/_event",
-   "auth_keys": [
-    "sid"
-   ],
-   "auth_mentions_hydrate_and_load": false
-  },
-  {
-   "t": 445.9,
-   "dir": "ws_in",
-   "len": 1811,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "delta": {
-    "reflex___state____state": [
-     "is_hydrated_rx_state_",
-     "rx_router_headers_rx_state_",
-     "rx_router_page_rx_state_",
-     "rx_router_route_id_rx_state_",
-     "rx_router_session_rx_state_",
-     "rx_router_url_rx_state_"
-    ]
-   },
-   "final": null,
-   "events": null
-  },
-  {
-   "t": 446.4,
-   "dir": "ws_in",
-   "len": 88,
-   "head": "42",
-   "nsp": "/_event",
-   "sio_event": "event",
-   "delta": {
-    "reflex___state____state": [
-     "is_hydrated_rx_state_"
-    ]
-   },
-   "final": null,
-   "events": null
-  }
- ],
- "timeline": [
-  "     19.9ms grid counts (headers, cells) {}",
-  "    265.8ms ws_open_call {\"url\": \"ws://localhost:8302/_event/?token=c4326688-6d4b-4af1-c80e-c9d357af663d&EIO=4&transport=websocket\"}",
-  "    270.1ms ws_open {}",
-  "    271.6ms ws_in {\"len\": 108}",
-  "    435.1ms ws_out {\"len\": 340, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
-  "    436.0ms window.__reflex ASSIGNED (5 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3302/app/root.jsx:27:21 |     at Object.react_stack_bottom_frame (http://localhost:3302/node_modules/.vite/deps/react-dom_client.js?v=d364ed35:14178:13) |     at runWithFiberInDEV (http://localhost:3302/node_modules/.vite/deps/react-dom_client",
-  "    443.1ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
-  "    445.9ms ws_in {\"len\": 1811, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
-  "    446.4ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
-  "   1017.2ms grid counts (headers, cells) {\"w_detail_state\": [2, 4], \"w_detail_literal\": [2, 4]}",
-  "   3660.7ms grid counts (headers, cells) {\"w_detail_state\": [4, 8], \"w_detail_literal\": [2, 4]}",
-  "   3802.4ms grid counts (headers, cells) {\"w_detail_state\": [4, 8], \"w_detail_literal\": [4, 8]}"
- ],
- "console": [
-  {
-   "type": "log",
-   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
-   "t": 0.104
-  },
-  {
-   "type": "debug",
-   "text": "[vite] connecting...",
-   "t": 0.235
-  },
-  {
-   "type": "debug",
-   "text": "[vite] connected.",
-   "t": 0.275
-  },
-  {
-   "type": "info",
-   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
-   "t": 0.48
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.486
-  },
-  {
-   "type": "error",
-   "text": "************************************************ AG Grid Enterprise License ************************************************",
-   "t": 3.489
-  },
-  {
-   "type": "error",
-   "text": "************************************************** License Key Not Found ***************************************************",
-   "t": 3.489
-  },
-  {
-   "type": "error",
-   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
-   "t": 3.489
-  },
-  {
-   "type": "error",
-   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
-   "t": 3.489
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.49
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.49
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.49
-  },
-  {
-   "type": "error",
-   "text": "************************************************ AG Grid Enterprise License ************************************************",
-   "t": 3.49
-  },
-  {
-   "type": "error",
-   "text": "************************************************** License Key Not Found ***************************************************",
-   "t": 3.49
-  },
-  {
-   "type": "error",
-   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
-   "t": 3.49
-  },
-  {
-   "type": "error",
-   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
-   "t": 3.49
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.491
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.491
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.491
-  },
-  {
-   "type": "error",
-   "text": "************************************************ AG Grid Enterprise License ************************************************",
-   "t": 3.491
-  },
-  {
-   "type": "error",
-   "text": "************************************************** License Key Not Found ***************************************************",
-   "t": 3.491
-  },
-  {
-   "type": "error",
-   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
-   "t": 3.491
-  },
-  {
-   "type": "error",
-   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
-   "t": 3.491
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.492
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.492
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.492
-  },
-  {
-   "type": "error",
-   "text": "************************************************ AG Grid Enterprise License ************************************************",
-   "t": 3.492
-  },
-  {
-   "type": "error",
-   "text": "************************************************** License Key Not Found ***************************************************",
-   "t": 3.492
-  },
-  {
-   "type": "error",
-   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
-   "t": 3.492
-  },
-  {
-   "type": "error",
-   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
-   "t": 3.493
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.493
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.493
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.56
-  },
-  {
-   "type": "error",
-   "text": "************************************************ AG Grid Enterprise License ************************************************",
-   "t": 3.562
-  },
-  {
-   "type": "error",
-   "text": "************************************************** License Key Not Found ***************************************************",
-   "t": 3.562
-  },
-  {
-   "type": "error",
-   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
-   "t": 3.562
-  },
-  {
-   "type": "error",
-   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
-   "t": 3.569
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.569
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.572
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.576
-  },
-  {
-   "type": "error",
-   "text": "************************************************ AG Grid Enterprise License ************************************************",
-   "t": 3.577
-  },
-  {
-   "type": "error",
-   "text": "************************************************** License Key Not Found ***************************************************",
-   "t": 3.578
-  },
-  {
-   "type": "error",
-   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
-   "t": 3.578
-  },
-  {
-   "type": "error",
-   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
-   "t": 3.579
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.579
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.58
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.718
-  },
-  {
-   "type": "error",
-   "text": "************************************************ AG Grid Enterprise License ************************************************",
-   "t": 3.726
-  },
-  {
-   "type": "error",
-   "text": "************************************************** License Key Not Found ***************************************************",
-   "t": 3.726
-  },
-  {
-   "type": "error",
-   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
-   "t": 3.727
-  },
-  {
-   "type": "error",
-   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
-   "t": 3.727
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.727
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.727
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.736
-  },
-  {
-   "type": "error",
-   "text": "************************************************ AG Grid Enterprise License ************************************************",
-   "t": 3.737
-  },
-  {
-   "type": "error",
-   "text": "************************************************** License Key Not Found ***************************************************",
-   "t": 3.737
-  },
-  {
-   "type": "error",
-   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
-   "t": 3.741
-  },
-  {
-   "type": "error",
-   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
-   "t": 3.742
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.742
-  },
-  {
-   "type": "error",
-   "text": "****************************************************************************************************************************",
-   "t": 3.742
-  }
- ],
- "pageerrors": [],
- "pw_frames": [
-  {
-   "dir": "in",
-   "t": 0.275,
-   "summary": {
-    "len": 108,
-    "head": "0{"
-   }
-  },
-  {
-   "dir": "out",
-   "t": 0.48,
-   "summary": {
-    "len": 340,
-    "head": "40",
-    "nsp": "/_event",
-    "auth_keys": [
-     "event"
-    ],
-    "auth_mentions_hydrate_and_load": true,
-    "auth_event_name": "reflex___state____state.hydrate_and_load"
-   }
-  },
-  {
-   "dir": "in",
-   "t": 0.48,
-   "summary": {
-    "len": 40,
-    "head": "40",
-    "nsp": "/_event",
-    "auth_keys": [
-     "sid"
-    ],
-    "auth_mentions_hydrate_and_load": false
-   }
-  },
-  {
-   "dir": "in",
-   "t": 0.481,
-   "summary": {
-    "len": 1811,
-    "head": "42",
-    "nsp": "/_event",
-    "sio_event": "event",
-    "delta": {
-     "reflex___state____state": [
-      "is_hydrated_rx_state_",
-      "rx_router_headers_rx_state_",
-      "rx_router_page_rx_state_",
-      "rx_router_route_id_rx_state_",
-      "rx_router_session_rx_state_",
-      "rx_router_url_rx_state_"
-     ]
-    },
-    "final": null,
-    "events": null
-   }
-  },
-  {
-   "dir": "in",
-   "t": 0.481,
-   "summary": {
-    "len": 88,
-    "head": "42",
-    "nsp": "/_event",
-    "sio_event": "event",
-    "delta": {
-     "reflex___state____state": [
-      "is_hydrated_rx_state_"
-     ]
-    },
-    "final": null,
-    "events": null
-   }
-  }
- ],
- "raw_ws": [
-  {
-   "t": 271.6,
-   "dir": "ws_in",
-   "data": "0{\"sid\":\"i9egC4gNxnR9LLMDAAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
-  },
-  {
-   "t": 435.1,
-   "dir": "ws_out",
-   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f05849ba59c543dd\",\"95c87de63afdd5da\",\"34fd6223f7cd2e3c\",\"f4263b8274e9e12c\",\"dcc2ada93d26b909\",\"f958b7853c5a3438\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/detail\",\"asPath\":\"/detail\"}}}"
-  },
-  {
-   "t": 443.1,
-   "dir": "ws_in",
-   "data": "40/_event,{\"sid\":\"HXsKJDzhgAPwpfAeAAAP\"}"
-  },
-  {
-   "t": 445.9,
-   "dir": "ws_in",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8302\",\"origin\":\"http://localhost:3302\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"YTmIBDl3HBndUNtEQMF62w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8302\",\"origin\":\"http://localhost:3302\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"YTmIBDl3HBndUNtEQMF62w==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3302\",\"path\":\"/detail\",\"raw_path\":\"/detail\",\"full_path\":\"http://localhost:3302/detail\",\"full_raw_path\":\"http://localhost:3302/detail\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/detail\",\"rx_router_session_rx_state_\":{\"client_token\":\"c4326688-6d4b-4af1-c80e-c9d357af663d\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"HXsKJDzhgAPwpfAeAAAP\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3302\",\"origin\":\"http://localhost:3302\",\"path\":\"/detail\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3302/detail\"},\"is_hydrated_rx_state_\":false}}}]"
-  },
-  {
-   "t": 446.4,
-   "dir": "ws_in",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
-  }
- ],
- "detail": {
-  "w_detail_state": {
-   "detail_rows": 1,
-   "detail_headers": [
-    "Count",
-    "Value"
-   ],
-   "detail_cells": 4
-  },
-  "w_detail_literal": {
-   "detail_rows": 1,
-   "detail_headers": [
-    "Count",
-    "Value"
-   ],
-   "detail_cells": 4
-  }
- }
+"scenario": "s11_detail_expand",
+"measure": {
+"grids": {
+"w_detail_state": {
+"headers": [
+"Id",
+"Name",
+"Count",
+"Value"
+],
+"cells": 8,
+"rows": 0
+},
+"w_detail_literal": {
+"headers": [
+"Id",
+"Name",
+"Count",
+"Value"
+],
+"cells": 8,
+"rows": 0
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 435.89999999990687,
+"path": "/detail",
+"heading": "entv detail"
+},
+"measure_plus4s": {
+"grids": {
+"w_detail_state": {
+"headers": [
+"Id",
+"Name",
+"Count",
+"Value"
+],
+"cells": 8,
+"rows": 0
+},
+"w_detail_literal": {
+"headers": [
+"Id",
+"Name",
+"Count",
+"Value"
+],
+"cells": 8,
+"rows": 0
+}
+},
+"probes": {},
+"probeCounts": {},
+"reflexDefinedNow": true,
+"reflexSetAt": 435.89999999990687,
+"path": "/detail",
+"heading": "entv detail"
+},
+"boot_frames": [
+{
+"t": 271.6,
+"dir": "ws_in",
+"len": 108,
+"head": "0{"
+},
+{
+"t": 435.1,
+"dir": "ws_out",
+"len": 340,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"event"
+],
+"auth_mentions_hydrate_and_load": true,
+"auth_event_name": "reflex___state____state.hydrate_and_load"
+},
+{
+"t": 443.1,
+"dir": "ws_in",
+"len": 40,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"sid"
+],
+"auth_mentions_hydrate_and_load": false
+},
+{
+"t": 445.9,
+"dir": "ws_in",
+"len": 1811,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_",
+"rx_router_headers_rx_state_",
+"rx_router_page_rx_state_",
+"rx_router_route_id_rx_state_",
+"rx_router_session_rx_state_",
+"rx_router_url_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 446.4,
+"dir": "ws_in",
+"len": 88,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_"
+]
+},
+"final": null,
+"events": null
+}
+],
+"timeline": [
+"     19.9ms grid counts (headers, cells) {}",
+"    265.8ms ws_open_call {\"url\": \"ws://localhost:8302/_event/?token=c4326688-6d4b-4af1-c80e-c9d357af663d&EIO=4&transport=websocket\"}",
+"    270.1ms ws_open {}",
+"    271.6ms ws_in {\"len\": 108}",
+"    435.1ms ws_out {\"len\": 340, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+"    436.0ms window.__reflex ASSIGNED (5 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3302/app/root.jsx:27:21 |     at Object.react_stack_bottom_frame (http://localhost:3302/node_modules/.vite/deps/react-dom_client.js?v=d364ed35:14178:13) |     at runWithFiberInDEV (http://localhost:3302/node_modules/.vite/deps/react-dom_client",
+"    443.1ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+"    445.9ms ws_in {\"len\": 1811, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    446.4ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
+"   1017.2ms grid counts (headers, cells) {\"w_detail_state\": [2, 4], \"w_detail_literal\": [2, 4]}",
+"   3660.7ms grid counts (headers, cells) {\"w_detail_state\": [4, 8], \"w_detail_literal\": [2, 4]}",
+"   3802.4ms grid counts (headers, cells) {\"w_detail_state\": [4, 8], \"w_detail_literal\": [4, 8]}"
+],
+"console": [
+{
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"t": 0.104
+},
+{
+"type": "debug",
+"text": "[vite] connecting...",
+"t": 0.235
+},
+{
+"type": "debug",
+"text": "[vite] connected.",
+"t": 0.275
+},
+{
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"t": 0.48
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.486
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 3.489
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 3.489
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 3.489
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 3.489
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.49
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.49
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.49
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 3.49
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 3.49
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 3.49
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 3.49
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.491
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.491
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.491
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 3.491
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 3.491
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 3.491
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 3.491
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.492
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.492
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.492
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 3.492
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 3.492
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 3.492
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 3.493
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.493
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.493
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.56
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 3.562
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 3.562
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 3.562
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 3.569
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.569
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.572
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.576
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 3.577
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 3.578
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 3.578
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 3.579
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.579
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.58
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.718
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 3.726
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 3.726
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 3.727
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 3.727
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.727
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.727
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.736
+},
+{
+"type": "error",
+"text": "************************************************ AG Grid Enterprise License ************************************************",
+"t": 3.737
+},
+{
+"type": "error",
+"text": "************************************************** License Key Not Found ***************************************************",
+"t": 3.737
+},
+{
+"type": "error",
+"text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+"t": 3.741
+},
+{
+"type": "error",
+"text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+"t": 3.742
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.742
+},
+{
+"type": "error",
+"text": "****************************************************************************************************************************",
+"t": 3.742
+}
+],
+"pageerrors": [],
+"detail": {
+"w_detail_state": {
+"detail_rows": 1,
+"detail_headers": [
+"Count",
+"Value"
+],
+"detail_cells": 4
+},
+"w_detail_literal": {
+"detail_rows": 1,
+"detail_headers": [
+"Count",
+"Value"
+],
+"detail_cells": 4
+}
+}
 }
