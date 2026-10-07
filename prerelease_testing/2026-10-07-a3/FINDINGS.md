@@ -113,13 +113,22 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   stream ends in `{"timestamp": "...", "level"` with no newline (82 lines undelivered). A consumer parsing line by line sees one
   invalid record. Repro `a3_upgrade/bin/json_matrix.sh a3 a3 TERM-pid:6`.
 
-### A3-09: After the #7493 boot reconcile signs a stale tab out, the tab stays on the protected page with blanked values instead of being redirected to /login (LOW, behaviour change vs 0.9.12; pending verification)
+### A3-09: After the #7493 boot reconcile signs a stale tab out, the tab stays on the protected page with blanked values instead of being redirected to /login (LOW, cosmetic; NARROWED by independent verifier — 0.9.12 only redirects when a race goes its way; enterprise-side)
 - Item `a3_ent_auth` (inbox 4). vauth on a3-ent, `vdrv.py stale … 3`: P3 ends on `('/vault', '')` 3/3 dev Redis, 2/3 prod, 3/3 memory;
   0.9.12 + a5 `('/login', None)` 3/3 (and 2/3 in `away`). a2 never signed the tab out at all (N-032). `hydrate_and_load` runs the page
   guard during the boot chain, before the frontend's cookie sync and `reconcile_tokens_after_sync` reset the session; the reset does not
   re-run the guard. Nothing protected is exposed (values blanked; the next protected event redirects to /login).
+- **Verification (`verify_ent_auth`, own app `vea` + driver, then the explorer's fixtures): NARROWED.** a3 stays on `/vault` blanked in
+  every form (stale, away, live) in dev; in the verifier's own app 0.9.12 + a5 stays blanked too (3/3 in dev), and prod 1 worker redirects
+  only 1–2/3 on 0.9.12. On 0.9.12 the cookie-sync POST from `update_vars_internal` races the separately sent `on_load_internal` page guard
+  (vauth: POST first → guard redirects; vea: guard first → `reconcile_tokens_after_sync` → `reset_auth` blanks); a3's `hydrate_and_load`
+  chains `on_load_internal` server-side, so the guard nearly always runs first. A live cross-tab logout leaves the page blanked on every
+  version (`reset_auth` never re-runs the guard). The user cannot see or act on protected data: a protected click goes to /login in
+  ~0.2 s (18/18, 6/6), protected client nav goes to /login. Pre-existing on both: the boot snapshot briefly renders the previous user's
+  protected values before the reset (a3 dev 6–20 ms, 0.9.12 dev 30–51 ms, prod 19–221 ms on both). Fix (enterprise): redirect to
+  `login_url_for(current url)` after a reconcile reset on a protected page (`auth/oidc/state.py:562` → `:868` `reset_auth`).
 
-### A3-10: Enterprise auth + Redis: client-side navigation erases a signed-in user's protected `rx.LocalStorage` / `rx.Cookie` values (MEDIUM, pre-existing on a2 + a4 and 0.9.12 + a5, enterprise; pending verification)
+### A3-10: Enterprise auth + Redis: client-side navigation erases a signed-in user's protected `rx.LocalStorage` / `rx.Cookie` values (MEDIUM, pre-existing on a2 + a4 and 0.9.12 + a5, enterprise; CONFIRMED and broadened by independent verifier)
 - Item `a3_ent_auth` (inbox 3). App `a3_ent_auth/apps/vauthx` (default-protected state with `draft = rx.LocalStorage(name="vx_draft",
   sync=True)`, `ck = rx.Cookie(name="vx_ck")`): sign in, "set draft", click the "vault2" link → localStorage `vx_draft` and cookie
   `vx_ck` become "" (2/2 on a3, a2 and 0.9.12 with Redis); the next boot sends "" so the backend loses the value too. With the memory
@@ -127,6 +136,16 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   `_get_state_from_cache(AuthUserState)`, which returns None for `update_vars_internal` under Redis, so the filter fails closed and the
   frontend persists the "" placeholders. Repro: `bin/infra.sh start; bin/run_storx.sh a3-ent:vauthx_a3e:a3e-dev-redis-v2;
   drivers/storx_table.py a3e-dev-redis-v2`.
+- **Verification (`verify_ent_auth`, own app `vea`, then the explorer's vauthx): CONFIRMED, broader.** Every protected client-storage kind
+  (`rx.LocalStorage` with and without `sync=True`, `rx.Cookie`, `rx.SessionStorage`) is rewritten as "" on any `rx.link` navigation; the
+  `update_vars_internal` reply carries `vault:{draft:"",plain:"",ck:"",ss:""}` while adjacent `auth=False` vars come back unchanged. a3
+  dev Redis, prod Redis 1 and 9 workers, a2 + a4, 0.9.12 + a5; not with the disk or memory manager. **With `sync=True`, a second open tab
+  is enough** (no navigation): tab A writes, tab B's storage-event `update_vars_internal` gets "" back and writes it, wiping A's value
+  within milliseconds. The backend keeps the value until the tab's next boot re-seeds it from the emptied browser storage, so it is lost on
+  both sides. Cause confirmed by instrumentation (`auth_user=NOT-LOADED(ValueError)` for exactly these deltas) and a counter-experiment
+  (resolving the user in `AuthMiddleware.preprocess` before `update_vars_internal` stops every wipe): `AuthMiddleware.preprocess`
+  (`auth/enforcement.py` 1694-1716) loads `AuthUserState` for exempt states only on `hydrate`/`hydrate_and_load`. Same root cause as
+  N-034 / enterprise#263. Workaround: `rxe.field(..., auth=False)`.
 - Filed: [reflex-enterprise#274](https://github.com/reflex-dev/reflex-enterprise/issues/274) (2026-10-07). N-033's a3 re-check added to
   [reflex-enterprise#262](https://github.com/reflex-dev/reflex-enterprise/issues/262#issuecomment-6047554210).
 

@@ -51,9 +51,10 @@ No upgrade regression 0.9.12 → a3 or a2 → a3; F-002/F-003/F-004 stay fixed; 
 - N-006 remainder (silent `str()` / `%s` / `!s` paths, cryptic `id=` error) — part of the filed N-006 follow-up if not already.
 
 ### reflex-enterprise
-- A3-10 (MEDIUM, pre-existing; verification running) — filed [reflex-enterprise#274](https://github.com/reflex-dev/reflex-enterprise/issues/274).
+- A3-10 (MEDIUM, pre-existing; CONFIRMED and broadened: with `sync=True` two open tabs suffice) — filed [reflex-enterprise#274](https://github.com/reflex-dev/reflex-enterprise/issues/274).
 - N-033 (HIGH, pre-existing) — still open as [reflex-enterprise#262](https://github.com/reflex-dev/reflex-enterprise/issues/262) (a3 re-check commented).
-- A3-09 (LOW, behaviour change; verification running) — stale tab signed out at boot stays on the protected page blanked.
+- A3-09 (LOW, cosmetic; NARROWED: 0.9.12 only redirects when a race goes its way, and a live cross-tab logout blanks without redirect on
+  every version) — redirect to the login page after `reconcile_tokens_after_sync` resets a protected page. File with #261 closure or separately.
 - reflex-enterprise#261 (N-032's enterprise side) can be closed: fixed by reflex #7493 on 0.10.0a3.
 
 ## Stable line
