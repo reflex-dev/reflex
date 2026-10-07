@@ -70,13 +70,15 @@ class StaticHandler(http.server.SimpleHTTPRequestHandler):
         """Suppress routine static access logs captured by browser tracing."""
 
 
-def drive(browser_type, out, revision):
+def drive(browser_type, out, revision, build_revision="A", bfcache=False):
     """Exercise hydration, persisted preferences and browser history restoration."""
     out.mkdir(parents=True, exist_ok=False)
     evidence = {"browser": browser_type.name, "checks": [], "console": [],
                 "pageerrors": [], "failed_requests": [], "http_errors": [],
                 "websockets": [], "navigation": []}
-    browser = browser_type.launch()
+    launch_options = {"ignore_default_args": ["--disable-back-forward-cache"]} if bfcache and browser_type.name == "chromium" else {}
+    browser = browser_type.launch(**launch_options)
+    evidence["bfcache_requested"] = bfcache
     evidence["browser_version"] = browser.version
     context = browser.new_context()
     context.add_init_script("""globalThis.__historyEvents = [];
@@ -110,7 +112,7 @@ def drive(browser_type, out, revision):
         tier = "Starter" if revision == "A" else "Professional"
         page.goto("http://localhost:3730/", wait_until="networkidle")
         page.wait_for_function("document.querySelector('#hydrated')?.textContent === 'true'", timeout=30000)
-        check("old_static_build", page.locator("#build").inner_text(), "Frontend build A")
+        check("static_build", page.locator("#build").inner_text(), f"Frontend build {build_revision}")
         check("live_quota_before_event", page.locator("#quota").inner_text(), str(quota))
         check("live_tier_before_event", page.locator("#tier").inner_text(), tier)
         check("computed_remaining_before_event", page.locator("#remaining").inner_text(), str(quota))
@@ -176,6 +178,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("scratch", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--build-revision", default="A")
+    parser.add_argument("--build-extra-state", action="store_true")
+    parser.add_argument("--bfcache", action="store_true")
+    parser.add_argument("--browsers", default="chromium,webkit")
     parser.add_argument("--cases", default="stable-stable-A,alpha-alpha-A,alpha2-alpha2-A,stable-alpha2-A,alpha-alpha2-A,alpha2-alpha2-B,alpha2-alpha2-B-extra,stable-stable-B-extra,alpha-alpha-B-extra")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
@@ -186,9 +192,9 @@ def main():
             output = args.output / case
             output.mkdir(exist_ok=False)
             source_hash = hashlib.sha256((SOURCE / "app/deploy_app/deploy_app.py").read_bytes()).hexdigest()
-            app = args.scratch / f"apps/deploy-cache-{source_hash[:8]}" / f"Account Café {front}"
+            app = args.scratch / f"apps/deploy-cache-{source_hash[:8]}-{args.build_revision}-{int(args.build_extra_state)}" / f"Account Café {front}"
             environment = os.environ.copy()
-            environment.update(TEST_REFLEX_ENV=front, DEPLOY_REVISION="A", DEPLOY_EXTRA_STATE="0",
+            environment.update(TEST_REFLEX_ENV=front, DEPLOY_REVISION=args.build_revision, DEPLOY_EXTRA_STATE="1" if args.build_extra_state else "0",
                                REFLEX_TELEMETRY_ENABLED="false", GRANIAN_WORKERS="1", UV_CACHE_DIR=str(args.scratch / "uv-cache"))
             if not (app / "build-finished.json").exists():
                 app.mkdir(parents=True, exist_ok=False)
@@ -205,14 +211,14 @@ def main():
             threading.Thread(target=server.serve_forever, daemon=True).start()
             environment.update(TEST_REFLEX_ENV=back, DEPLOY_REVISION=revision, DEPLOY_EXTRA_STATE="1" if extra else "0")
             backend_command = command(args.scratch, back, "reflex", "run", "--env", "prod", "--backend-only", "--backend-port", "8730", "--loglevel", "debug")
-            record = {"frontend": front, "backend": back, "revision": revision, "extra_state": bool(extra), "command": backend_command, "browsers": {}, "build": json.loads((app / "build-finished.json").read_text())}
+            record = {"frontend": front, "backend": back, "revision": revision, "build_revision": args.build_revision, "build_extra_state": args.build_extra_state, "extra_state": bool(extra), "command": backend_command, "browsers": {}, "build": json.loads((app / "build-finished.json").read_text())}
             print("RUN", case, flush=True)
             with (output / "backend.log").open("w") as log:
                 process = subprocess.Popen(backend_command, cwd=app, env=environment, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
                 try:
                     wait_server(process, "http://localhost:8730/ping")
-                    for name in ("chromium", "webkit"):
-                        browser_failed = drive(getattr(playwright, name), output / name, revision)
+                    for name in args.browsers.split(","):
+                        browser_failed = drive(getattr(playwright, name), output / name, revision, args.build_revision, args.bfcache)
                         record["browsers"][name] = {"failed": browser_failed}
                         failed |= browser_failed
                 except Exception as error:
