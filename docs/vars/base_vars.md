@@ -111,6 +111,26 @@ default assignment. Testing tools such as pytest's `monkeypatch.setattr` and
 `unittest.mock.patch.object` restore a patched default this way, including a
 patch made through a subclass.
 
+```md alert warning
+# Annotate the var, and keep shared objects out of defaults.
+
+An unannotated var is typed from its default, so `_client = None` only accepts
+`None` later: annotate the var with the type you will assign. Defaults are copied
+for every instance, so a live client, lock, or connection cannot be shared this
+way. Assigning one to an `Any` or `Optional[...]` var is accepted, but reading the
+var on a new instance then raises `TypeError: cannot pickle '_thread.lock' object`.
+Declare an object that all sessions share as a `ClassVar`.
+```
+
+```md alert warning
+# Assign defaults before the app starts running.
+
+Assigning on a mixin only affects states created afterwards. Do not assign
+defaults in event handlers, lifespan tasks, or at any other time after the app
+has started running: such an assignment only affects the worker process that ran
+it.
+```
+
 ## Backend-only Vars
 
 Any Var in a state class that starts with an underscore (`_`) is considered backend
@@ -140,8 +160,11 @@ For example, a backend-only var is used to store a large data structure which is
 then paged to the frontend using cached vars.
 
 Read and write a backend var through a state instance, such as `self._token`.
-Reading `MyState._token` through the class returns its field descriptor. Assigning
-to `MyState._token` updates its default as described above.
+Reading `MyState._token` through the class returns its field descriptor, whose
+`default_value()` method returns the default (a fresh copy if it is mutable). Use
+it to build the UI from a constant, such as
+`rx.foreach(MyState._options.default_value(), rx.text)` for a backend var
+`_options`. Assigning to `MyState._token` updates its default as described above.
 
 For configuration shared by all sessions, declare a `ClassVar` instead:
 
@@ -158,6 +181,8 @@ MyState._endpoint = "https://example.com/v2"
 ```
 
 `ClassVar` values are ordinary class attributes and are not part of session state.
+Reading one on the class returns the plain value, and an object that cannot be
+copied, such as a client or lock, is shared rather than copied for each instance.
 
 ```python demo exec
 import numpy as np
