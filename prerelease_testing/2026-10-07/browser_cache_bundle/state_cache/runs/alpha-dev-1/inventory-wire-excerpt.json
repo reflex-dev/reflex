@@ -1,0 +1,16 @@
+[
+  {
+    "sent": "42/_event,[\"event\",{\"name\":\"reflex___state____state.order_dashboard___order_dashboard____cart.mutate\",\"payload\":{\"operation\":\"dict_values\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "received_before_next_operation": []
+  },
+  {
+    "sent": "42/_event,[\"event\",{\"name\":\"reflex___state____state.order_dashboard___order_dashboard____cart.mutate\",\"payload\":{\"operation\":\"dict_items\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "received_before_next_operation": []
+  },
+  {
+    "sent": "42/_event,[\"event\",{\"name\":\"reflex___state____state.order_dashboard___order_dashboard____cart.mutate\",\"payload\":{\"operation\":\"dict_get\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "received_before_next_operation": [
+      "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.order_dashboard___order_dashboard____cart\":{\"stock_total_rx_state_\":24,\"inventory_rx_state_\":{\"tea\":{\"stock\":6},\"mug\":{\"stock\":18}}}}}]"
+    ]
+  }
+]
