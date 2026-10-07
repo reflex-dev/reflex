@@ -250,7 +250,8 @@ handlers work on `rx.plotly.map` as on the full component.
 
 ### Migrating Mapbox figures
 
-`rx.plotly.mapbox` is deprecated and will be removed in Reflex 1.0. Migrate
+`rx.plotly.mapbox` is deprecated as of Reflex 0.10.0 and will be removed in Reflex
+1.0. Migrate
 `go.Scattermapbox`, `go.Choroplethmapbox` and `go.Densitymapbox` to `go.Scattermap`,
 `go.Choroplethmap` and `go.Densitymap`. Plotly Express provides the corresponding
 `px.scatter_map`, `px.choropleth_map` and `px.density_map` functions.
@@ -264,6 +265,10 @@ Mapbox-only figures can continue using it while they migrate. That bundle only
 supports the three Mapbox trace types and ordinary scatter traces; it is not a
 fallback for arbitrary mixed figures. Migrate those figures to MapLibre traces
 and render them with the full `rx.plotly` component.
+
+The default `rx.plotly` component logs a browser warning when a figure contains
+Mapbox traces or subplot settings, including figures received through state
+updates. These inputs cannot render with Plotly.js 4; follow the migration above.
 
 ### Plotly.js 4 compatibility
 

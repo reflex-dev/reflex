@@ -69,6 +69,14 @@ def PlotlyLocaleApp():
             if points and points[0].get("lat") == self.latitude:
                 self.clicks += 1
 
+    class PlotlyMigrationState(rx.State):
+        figure: go.Figure = go.Figure(go.Scatter(x=[1], y=[1]))
+
+        @rx.event
+        def use_mapbox(self):
+            """Load a legacy map after the initial chart has rendered."""
+            self.figure = go.Figure(go.Scattermapbox(lat=[37.77], lon=[-122.42]))
+
     app = rx.App()
 
     def plot_box(plot_id: str, **plotly_props) -> "rx.Component":
@@ -142,6 +150,26 @@ def PlotlyLocaleApp():
                 "Move marker", id="move-marker", on_click=PlotlyMapState.move_marker
             ),
             rx.text(PlotlyMapState.clicks, id="map-clicks"),
+        )
+
+    @app.add_page
+    def mapbox_literal():
+        return rx.plotly(
+            data=go.Figure(go.Scattermapbox(lat=[37.77], lon=[-122.42])),
+            id="migration-plot",
+        )
+
+    @app.add_page
+    def mapbox_layout():
+        return rx.plotly(data=figure, layout={"mapbox2": {}}, id="migration-plot")
+
+    @app.add_page
+    def mapbox_state():
+        return rx.vstack(
+            rx.plotly(data=PlotlyMigrationState.figure, id="migration-plot"),
+            rx.button(
+                "Use Mapbox", id="use-mapbox", on_click=PlotlyMigrationState.use_mapbox
+            ),
         )
 
 
@@ -282,7 +310,16 @@ def test_plotly_map_bundles(page: Page, plotly_locale_app: AppHarness):
     """Both map bundles render together with locales, updates and click events."""
     assert plotly_locale_app.frontend_url is not None
     errors: list[str] = []
+    warnings: list[str] = []
     page.on("pageerror", lambda error: errors.append(str(error)))
+    page.on(
+        "console",
+        lambda message: (
+            warnings.append(message.text)
+            if "rx.plotly uses Plotly.js 4" in message.text
+            else None
+        ),
+    )
     page.goto(f"{plotly_locale_app.frontend_url.rstrip('/')}/maps")
 
     for plot_id, subplot, trace_type, locale, pan_title in (
@@ -326,3 +363,33 @@ def test_plotly_map_bundles(page: Page, plotly_locale_app: AppHarness):
     page.mouse.click(point["x"], point["y"])
     expect(page.locator("#map-clicks")).to_have_text("1")
     assert not errors
+    assert not warnings
+
+
+@pytest.mark.parametrize("route", ["mapbox-literal", "mapbox-layout", "mapbox-state"])
+def test_plotly_mapbox_migration_warning(
+    page: Page, plotly_locale_app: AppHarness, route: str
+):
+    """Warn for literal and reactive Mapbox inputs to the default renderer."""
+    assert plotly_locale_app.frontend_url is not None
+    warnings: list[str] = []
+    page.on(
+        "console",
+        lambda message: (
+            warnings.append(message.text)
+            if message.type == "warning" and "rx.plotly" in message.text
+            else None
+        ),
+    )
+    page.goto(f"{plotly_locale_app.frontend_url.rstrip('/')}/{route}")
+    expect(page.locator("#migration-plot .main-svg").first).to_be_visible(
+        timeout=60_000
+    )
+    if route == "mapbox-state":
+        assert not warnings
+        with page.expect_console_message(
+            predicate=lambda message: "rx.plotly.map" in message.text
+        ):
+            page.locator("#use-mapbox").click()
+    assert len(warnings) == 1
+    assert "layout.map" in warnings[0]

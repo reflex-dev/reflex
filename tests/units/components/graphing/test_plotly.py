@@ -1,3 +1,6 @@
+import json
+import subprocess
+
 import numpy as np
 import plotly.graph_objects as go
 import pytest
@@ -167,8 +170,46 @@ def test_plotly_mapbox_deprecation_preserves_bundle(
     assert deprecate.call_args.kwargs["feature_name"] == "rx.plotly.mapbox"
     assert "rx.plotly.map" in deprecate.call_args.kwargs["reason"]
     assert deprecate.call_args.kwargs["removal_version"] == "1.0"
+    assert deprecate.call_args.kwargs["deprecation_version"] == "0.10.0"
     imports = component._get_all_imports()
     assert "plotly.js-mapbox-dist-min@3.7.0" in imports
     assert "plotly.js-mapbox-dist-min@4.0.0" not in imports
     assert "plotly.js-locales@4.0.0" in imports
     assert "import('plotly.js-mapbox-dist-min')" in component._get_dynamic_imports()
+
+
+@pytest.mark.parametrize(
+    ("figure", "warns"),
+    [
+        ({"data": [{"type": "scattermapbox"}]}, True),
+        ({"data": [{"type": "choroplethmapbox"}]}, True),
+        ({"data": [{"type": "densitymapbox"}]}, True),
+        ({"layout": {"mapbox": {}}}, True),
+        ({"layout": {"mapbox2": {}}}, True),
+        ({"data": [{"type": "scattermap"}], "layout": {"map": {}}}, False),
+        ({"data": [{"x": [1], "y": [2]}]}, False),
+        ({}, False),
+    ],
+)
+def test_plotly_mapbox_warning(figure: dict, warns: bool):
+    """Warn once for removed Mapbox inputs without changing the figure."""
+    component = rx.plotly()
+    code = next(
+        code for code in component.add_custom_code() if "_rxWarnPlotlyMapbox" in code
+    )
+    script = rf"""
+const assert = require('node:assert/strict');
+const warnings = [];
+console.warn = message => warnings.push(message);
+{code}
+const figure = {json.dumps(figure)};
+assert.equal(_rxWarnPlotlyMapbox(figure), figure);
+assert.equal(_rxWarnPlotlyMapbox(figure), figure);
+assert.deepEqual(figure, {json.dumps(figure)});
+assert.equal(warnings.length, {int(warns)});
+if (warnings.length) {{
+    assert.match(warnings[0], /rx\.plotly\.map/);
+    assert.match(warnings[0], /layout\.map/);
+}}
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)

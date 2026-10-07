@@ -257,6 +257,24 @@ const extractPoints = (points) => {
 }
 """,
         ]
+        if type(self) is Plotly:
+            codes.append("""
+let _rxDidWarnPlotlyMapbox = false;
+const _rxWarnPlotlyMapbox = (figure) => {
+    if (!_rxDidWarnPlotlyMapbox && (
+        figure.data?.some(trace => trace.type?.endsWith("mapbox")) ||
+        Object.keys(figure.layout ?? {}).some(key => /^mapbox\\d*$/.test(key))
+    )) {
+        _rxDidWarnPlotlyMapbox = true;
+        console.warn(
+            "rx.plotly uses Plotly.js 4, which no longer supports Mapbox traces or layout.mapbox. " +
+            "Migrate to MapLibre traces and layout.map with rx.plotly.map (or rx.plotly for mixed figures). " +
+            "For a temporary Mapbox-only fallback, use the deprecated rx.plotly.mapbox."
+        );
+    }
+    return figure;
+}
+""")
         if self.locale is not None:
             codes.append("""
 const _rxResolvePlotlyLocaleData = (plotlyLocales, locale) => {
@@ -344,26 +362,14 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
             template_dict = LiteralVar.create({"layout": {"template": self.template}})
             merge_dicts.append(template_dict._without_data())
         if merge_dicts:
-            tag = tag.set(
-                special_props=[
-                    *tag.special_props,
-                    # Merge all dictionaries and spread the result over props.
-                    Var(
-                        _js_expr=(
-                            f"{{ ...mergician({figure!s}, "
-                            f"...{Var.create(merge_dicts)!s}) }}"
-                        ),
-                    ),
-                ]
+            figure_expr = (
+                f"{{ ...mergician({figure!s}, ...{Var.create(merge_dicts)!s}) }}"
             )
         else:
-            tag = tag.set(
-                special_props=[
-                    *tag.special_props,
-                    # Spread the figure dict over props, nothing to merge.
-                    Var(_js_expr=str(figure)),
-                ]
-            )
+            figure_expr = str(figure)
+        if type(self) is Plotly:
+            figure_expr = f"_rxWarnPlotlyMapbox({figure_expr})"
+        tag = tag.set(special_props=[*tag.special_props, Var(_js_expr=figure_expr)])
         if self.locale is not None:
             config = self.config if self.config is not None else LiteralVar.create({})
             tag = tag.set(
@@ -594,7 +600,7 @@ class PlotlyMapbox(Plotly):
             console.deprecate(
                 feature_name="rx.plotly.mapbox",
                 reason="Use rx.plotly.map with MapLibre traces and layout.map instead",
-                deprecation_version="0.9.13",
+                deprecation_version="0.10.0",
                 removal_version="1.0",
             )
             return super().create(*children, **props)
