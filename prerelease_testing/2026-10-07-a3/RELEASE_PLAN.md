@@ -1,7 +1,6 @@
 # Release plan after the 0.10.0a3 re-verification (reflex / reflex-base 0.10.0a3 + reflex-enterprise 0.9.7a5)
 
-**Status: DRAFT** — written at 2026-10-07 ~22:25 UTC after every exploration item finished; the independent verifications of
-A3-06..A3-10 are in; A3-11/A3-12's is still running and may change the triage below. Rubric (testing skill): fix before release =
+**Status: FINAL (pending #7505 CI/review)** — every exploration item and all four independent verifications (A3-01..A3-12) are in. Rubric (testing skill): fix before release =
 confirmed regression vs the previous stable (0.9.12), security-relevant, significant user impact, or trivially small. Evidence:
 [FINDINGS.md](./FINDINGS.md). Supersedes [../2026-10-07/RELEASE_PLAN.md](../2026-10-07/RELEASE_PLAN.md) for everything it re-checked.
 
@@ -23,13 +22,12 @@ No upgrade regression 0.9.12 → a3 or a2 → a3; F-002/F-003/F-004 stay fixed; 
 
 ## Fix before release
 
-- **A3-11** (MEDIUM, regression vs a2, NOT vs 0.9.12; verification running) — `sync=True` LocalStorage: #7493's boot echo writes back the
-  value a tab read at connect time, so changing the value in one tab while other tabs boot starts an endless cross-tab ping-pong (tens of
-  thousands of frames per 5 s, backend 50–70 % CPU, the user's last value lost). It does not meet the strict "regression vs the previous
-  stable" arm (0.9.12 storms 9/10), but #7493 reintroduced it in a release that had removed it, it burns server CPU indefinitely, and the
-  fix is local to the boot echo (do not re-send a client-storage value the browser itself just sent, or have the frontend skip an echo of
-  the value it sent at boot). **Maintainer decision:** fix in 0.10.0, or ship with 0.9.12 parity and file it with A3-12.
-  **Decided 10-07:** fix it — prototype on `claude/a3-11-storage-echo` (frontend only, also ends the A3-12 ping-pong): [reflex-dev/reflex#7505](https://github.com/reflex-dev/reflex/pull/7505).
+- **A3-11 + A3-12** (MEDIUM; A3-11 regression vs a2, not vs 0.9.12; A3-12 pre-existing; both CONFIRMED by an independent verifier, A3-11
+  wider than first reported: one change with 3 tabs over a real network, e.g. a session restore, loops forever at ~72 % backend CPU and
+  can leave localStorage on the old value; A3-12 is set off by any dev save/deploy/restart with ≥4 tabs whose on_load stamps a synced
+  var). **Decided 10-07: fix in 0.10.0** — [reflex-dev/reflex#7505](https://github.com/reflex-dev/reflex/pull/7505) (frontend only: no
+  write-back of unchanged echoes, storage events send the stored value, synced vars resync when an echo crossed a newer value; 0 storms
+  and full convergence in 26 runs dev/prod; 3 Playwright regression tests). The verifier independently arrived at the same design.
 - **A3-01** (LOW, regression vs a2; CONFIRMED) — trivially small arm: in `BaseStateMeta.__setattr__`, push the "kept default" undo entry
   before `_keep_client_storage` / `_accepts_default` can raise (so a rejected `mock.patch.object` / pytest-mock patch round-trips), and
   make `__delattr__` and the identity restore pop only an entry that the same patch pushed. The docs already promise the round trip.

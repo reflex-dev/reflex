@@ -175,7 +175,7 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
 - Filed: [reflex-enterprise#274](https://github.com/reflex-dev/reflex-enterprise/issues/274) (2026-10-07). N-033's a3 re-check added to
   [reflex-enterprise#262](https://github.com/reflex-dev/reflex-enterprise/issues/262#issuecomment-6047554210).
 
-### A3-11: `sync=True` LocalStorage: the #7493 boot echo writes back the stale value a tab read at connect time, so a change made in another tab while tabs are booting starts an endless cross-tab storage ping-pong (MEDIUM, regression vs a2, not vs 0.9.12; pending verification)
+### A3-11: `sync=True` LocalStorage: the #7493 boot echo writes back the stale value a tab read at connect time, so a change made in another tab while tabs are booting starts an endless cross-tab storage ping-pong (MEDIUM, regression vs a2, not vs 0.9.12; CONFIRMED and widened by independent verifier; fix PR reflex#7505)
 - Item `a3_hydration` (inbox 1). `src/bootecho`, `scripts/run_storm.sh a3 dev 8 3142 8142 S 6`: tab 0 sets the synced `be_theme` 5× 250 ms
   apart while 6 more tabs load in the same browser context. a3: endless ping-pong dev 6/9 (+3/3 long runs), prod 2/5; a2 0/15; 0.9.12
   9/10. Long runs: 8k–39k websocket frames per 5 s for 60 s, tabs stuck on mixed s2–s4 (the user's last value s5 is lost), backend
@@ -183,15 +183,31 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   re-mark the applied browser values dirty after the snapshot → the boot delta carries the value read at CONNECT → `state.js:896/1076`
   `localStorage.setItem` of the stale value → `storage` event in the other tabs (`state.js:1267`) → `update_vars_internal` → deltas write
   back again. #7493 restored 0.9.12's boot echo, and with it 0.9.12's storm; a2 was immune because it echoed nothing.
+- **Verification (`verify_hydration`, own app + drivers incl. stock headful Chromium over raw CDP with real background tabs, 100 ms RTT
+  proxy): CONFIRMED, wider than reported.** One user change and 3 tabs suffice: returning user, browser restart restoring 3 tabs 300 ms
+  apart, one click in the foreground tab → endless ping-pong a3 3/3 (+60 s run: 22–27k frames per 5 s, no decay), a2 0/3, 0.9.12 3/3;
+  Playwright 7 restored tabs: a3 stormed every time a tab booted across the click, a2 0/7, 0.9.12 6/6; prod + Redis 9 workers 2/2. With 2
+  tabs the user's own tab flips back to the old value 3–53 times (1/5 runs looped > 10 s). Effects: the clicked tab shows the old value
+  again, tabs end on mixed values, localStorage ends on the OLD value in 3/10 storms, a later click is swallowed, one client with 3 tabs
+  keeps the backend at ~72 % CPU; nothing logged. Not a Playwright artefact (no timers in the storm path). The explorer's localhost Part S
+  rate depends on machine load (verifier: a3 0/7 on localhost; the CONNECT→echo window is ~10 ms there, ~1 RTT on a real network).
+  Same mechanism as 0.9.12 (whose window is wider). Realistic trigger: `sync=True` LocalStorage, real network, ≥3 tabs, a change within
+  ~1 RTT of another tab booting (session restore, reload, new tab). Fix location: the boot echo — keep #7493's re-marking for `get_delta`
+  overrides, but never write back an unchanged echo (the verifier's scratch patch of the compiled state.js: 0 storms).
 - **Fix prototyped (10-07, at the maintainer's request)** on branch `claude/a3-11-storage-echo` (frontend only, `state.js`): do not write
   an echoed local/session storage value back (cookies still renew `max_age`); on a storage event send the value stored now, not
   `e.newValue`; resync a synced var whose echo crossed a newer stored value. Storm driver vs published a3: dev 0 storms in 11 runs
   (a3 3/4), prod 0/7; `on_load` stamps (A3-12) 0 storms in 16 runs, all converge (a3 4/4 storms). 3 Playwright regression tests fail on main. PR [reflex-dev/reflex#7505](https://github.com/reflex-dev/reflex/pull/7505).
 
-### A3-12: `sync=True` LocalStorage written concurrently by several tabs (an on_load that stamps a synced var, a browser session restore) loops forever between the tabs (MEDIUM, pre-existing on 0.9.12, a2 and a3; pending verification)
+### A3-12: `sync=True` LocalStorage written concurrently by several tabs (an on_load that stamps a synced var, a browser session restore) loops forever between the tabs (MEDIUM, pre-existing on 0.9.12, a2 and a3; CONFIRMED by independent verifier; fixed by the same PR reflex#7505)
 - Item `a3_hydration` (inbox 2). `src/syncstamp` (`Stamp.last = rx.LocalStorage("", name="ss_last", sync=True)` set to a per-tab value in
   `/stamp`'s on_load), `scripts/run_stamp.sh a3 dev 4 3142 8142 /stamp 6`: 3–6 tabs → a3 41k–234k, a2 118k–137k, 0.9.12 40k–64k frames
   per 5 s; the control `/same` (same value from every tab) stays quiet. The volume crashed the Playwright driver in 4/12 runs.
+- **Verification (`verify_hydration`): CONFIRMED, pre-existing.** Also triggers with no user action: 4 quiet tabs on `/doc/<slug>` pages
+  whose `on_load` stamps a synced var, then one dev backend reload (a save, deploy or restart): every tab reconnects, re-runs on_load and
+  the loop never ends (a3, a2, 0.9.12 2/2 each); 6 restored background tabs 2/2 each; explorer `/stamp 6` 2/2 each; 20–65k frames per
+  5 s, tabs end on 2–3 values. Fixing the storage-sync path alone ends the loop but leaves a tab on a stale value unless it re-reads
+  localStorage when a sync answer disagrees — which #7505 does (0 storms, all converge in 16 runs).
 
 ### A3-13: #7493 re-sends client-storage vars and their dependent computed vars in a second boot delta, so storage-dependent computed vars run twice per page load (LOW, performance; same as 0.9.12, a2 ran them once)
 - Item `a3_events_tp` (inbox 2). `events/src/bootdup` (core only): on each reload with a stored value a3 sends 4 deltas and evaluates every
