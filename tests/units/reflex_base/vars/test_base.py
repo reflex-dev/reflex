@@ -1847,3 +1847,77 @@ async def test_cached_async_computed_var_checks_return_type_on_recompute_only(
     state.items = [5]
     assert await state.doubled == [10]
     assert checked == [[2, 4, 6], [10]]
+
+
+def test_private_names_are_not_fields():
+    """A double-underscore name is a plain class attribute unless declared a field.
+
+    A name-mangled private attribute, a hand-mangled one and a dunder stay
+    ordinary attributes, as before fields became descriptors.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        __mangled: int = 1  # pyright: ignore[reportGeneralTypeIssues]
+        __unannotated = 2
+        _Model__by_hand: int = 3
+        __dunder__: int = 4
+        __declared: Field[int] = field(default=5)  # pyright: ignore[reportGeneralTypeIssues]
+        __unannotated_declared = field(default=6)  # pyright: ignore[reportGeneralTypeIssues]
+        _backend: int = 7
+
+    assert set(Model.__fields__) == {
+        "_Model__declared",
+        "_Model__unannotated_declared",
+        "_backend",
+    }
+    assert Model.__fields__["_Model__declared"]._backend
+    model = Model()
+    for name, value in (
+        ("_Model__mangled", 1),
+        ("_Model__unannotated", 2),
+        ("_Model__by_hand", 3),
+        ("__dunder__", 4),
+    ):
+        assert vars(Model)[name] == value
+        assert getattr(model, name) == value
+    for name, value in (
+        ("_Model__declared", 5),
+        ("_Model__unannotated_declared", 6),
+    ):
+        assert getattr(model, name) == value
+
+
+def test_private_names_of_plain_base_are_not_fields():
+    """A plain base's private names are not fields of a model inheriting it either."""
+
+    class Plain:
+        __mangled: int = 1
+        __dunder__: int = 2
+        _backend: int = 3
+
+    class Model(Plain, EvenMoreBasicBaseState):
+        pass
+
+    assert set(Model.__fields__) == {"_backend"}
+    name = "_Plain__mangled"
+    assert getattr(Model(), name) == 1
+
+
+def test_new_default_for_inherited_private_field_stays_a_field():
+    """A private name shadowing an inherited explicit field is a field as well."""
+
+    class Parent(EvenMoreBasicBaseState):
+        __counter__: Field[int] = field(default=1)
+
+    class Annotated(Parent):
+        __counter__: int = 2  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    class Unannotated(Parent):
+        __counter__ = 2  # pyright: ignore[reportAssignmentType]
+
+    for child in (Annotated, Unannotated):
+        child_field = child.__fields__["__counter__"]
+        assert child_field is not Parent.__fields__["__counter__"]
+        assert child_field.default == 2
+        assert isinstance(vars(child)["__counter__"], Field)
+        assert child().__counter__ == 2

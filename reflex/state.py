@@ -1489,11 +1489,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             cls = type(self)
             if name not in (settable := cls._settable_names):
                 if not (
-                    # Dunder names, like computed var caches, and mangled private names.
-                    name.startswith((
-                        "__",
-                        f"_{getattr(cls, '__original_name__', cls.__name__)}__",
-                    ))
+                    # Dunder names, like computed var caches, and private names
+                    # mangled by this class, a base or a mixin: plain attributes.
+                    (name.startswith("_") and "__" in name)
                     # A field, a property, or a bookkeeping slot handles the assignment.
                     or _has_data_descriptor(cls, name)
                 ):
