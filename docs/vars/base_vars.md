@@ -101,17 +101,25 @@ through a subclass also changes that declaring state's default. Each generated
 [`get_component` to configure defaults](/docs/state-structure/component-state/#passing-props)
 independently for each component.
 
+```md alert warning
+# Annotate the var, and keep shared objects out of defaults.
+
 An unannotated var is typed from its default, so `_client = None` only accepts
 `None` later: annotate the var with the type you will assign. Defaults are copied
 for every instance, so a live client, lock, or connection cannot be shared this
 way. Assigning one to an `Any` or `Optional[...]` var is accepted, but reading the
 var on a new instance then raises `TypeError: cannot pickle '_thread.lock' object`.
 Declare an object that all sessions share as a `ClassVar`.
+```
+
+```md alert warning
+# Assign defaults before the app starts running.
 
 Assigning on a mixin only affects states created afterwards. Do not assign
 defaults in event handlers, lifespan tasks, or at any other time after the app
 has started running: such an assignment only affects the worker process that ran
 it.
+```
 
 ## Backend-only Vars
 
