@@ -1,3 +1,25 @@
+## v0.10.0a3 (2026-10-07)
+
+### Breaking Changes
+
+- Calling a handler that a substate inherits from a parent state, as a method of `self` in a background task, now goes through the task's state proxy like any other handler. Outside `async with self`, a call that modifies state raises `ImmutableStateError` (0.9 ran it on the parent state without the lock), and inside it `type(self)` is `StateProxy`, so use `self.__class__` to get the state class. See [Upgrading to Reflex 0.10](https://reflex.dev/docs/changelog/upgrading/upgrading-to-0-10/#calling-inherited-handlers-from-background-tasks). ([#7312](https://github.com/reflex-dev/reflex/issues/7312))
+- Remove the `sqlmodel<0.0.45` cap that 0.10.0a1 added to `reflex[db]`. From SQLModel 0.0.45 a plain `datetime` field is stored as UTC, so writes and filters need timezone-aware values and reads return aware ones. A fresh install, or `uv pip install -U` from 0.10.0a1 (which moves SQLModel 0.0.44 to the latest release), then breaks apps that use naive datetimes: declare the field with `sa_type=DateTime(timezone=False)` or pin `sqlmodel<0.0.45` to keep them, as described in [Datetimes and SQLModel upgrades](https://reflex.dev/docs/database/tables/#datetimes-and-sqlmodel-upgrades). ([#7462](https://github.com/reflex-dev/reflex/issues/7462))
+- Instances of Reflex 0.9 and 0.10 can no longer share a Redis or disk state store. A 0.10 instance loads state saved by 0.9, but a 0.9 instance discards state saved by 0.10, so a rolling deploy that runs both versions, or a rollback to 0.9 against the same store, resets the sessions that reach the older instance. Upgrade every instance of an app together, and clear the store (or start a fresh one) when rolling back. ([#7494](https://github.com/reflex-dev/reflex/issues/7494))
+
+### Bug Fixes
+
+- The `db` extra now installs `greenlet`, which SQLAlchemy 2.1 no longer pulls in on its own, so `rx.Model`, `rx.session()` and the `reflex db` commands work again on a fresh `pip install reflex[db]` instead of failing with `ImportError: The SQLAlchemy asyncio module requires that the Python 'greenlet' library is installed`. ([#7466](https://github.com/reflex-dev/reflex/issues/7466))
+- Pass the client-storage values a page loads with through `get_delta` overrides again, in a delta that can update browser storage, as before 0.10. This restores reflex-enterprise OIDC's cross-tab token check, so a tab that is reloaded or navigated back to after logging out in another tab is signed out. ([#7493](https://github.com/reflex-dev/reflex/issues/7493))
+- Assigning a plain default to a browser storage var through its state class, such as `cls.theme = initial` in `ComponentState.get_component` for `theme: str = rx.LocalStorage("light", name="theme")` or a `default_factory` producing one, keeps the var in browser storage with its name and options instead of silently turning it into an ordinary var or raising `TypeError`. ([#7495](https://github.com/reflex-dev/reflex/issues/7495))
+- Undoing a patch of a state var's default, such as with pytest's `monkeypatch.setattr` or `unittest.mock.patch.object` on a state class, restores the previous default instead of raising `TypeError` at teardown and leaking the patched default into later tests. ([#7495](https://github.com/reflex-dev/reflex/issues/7495))
+- In development mode, assigning an undeclared state attribute whose name only looks name-mangled, such as `self._typo__name = 1`, raises `SetUndefinedStateVarError` again. Names starting with a double underscore and private names mangled by the state's own class, its bases or its mixins remain plain attributes. ([#7495](https://github.com/reflex-dev/reflex/issues/7495))
+- `reflex component` and its old subcommands now exit with a pointer to the wrapping React docs and the [component template](https://github.com/reflex-dev/component-template) instead of "No such command". ([#7497](https://github.com/reflex-dev/reflex/issues/7497))
+
+### Documentation
+
+- Add an [Upgrading to Reflex 0.10](https://reflex.dev/docs/changelog/upgrading/upgrading-to-0-10/) guide. It covers reading a backend var's default on a state class (`State._x.default_value()` is new in 0.10; on 0.9 use `State.get_fields()["_x"].default_value()`), the scope of class-level default assignment, and inherited handlers called from background tasks. ([#7496](https://github.com/reflex-dev/reflex/issues/7496))
+
+
 ## v0.10.0a2 (2026-10-06)
 
 ### Breaking Changes

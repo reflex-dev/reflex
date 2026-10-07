@@ -1,3 +1,16 @@
+## v0.10.0a3 (2026-10-07)
+
+### Bug Fixes
+
+- Avoid premature truncation of JSON logs when consumers read slowly during shutdown, while limiting output draining to 30 seconds after the command exits. ([#7428](https://github.com/reflex-dev/reflex/issues/7428))
+- A plain value assigned through a state class, or produced by an assigned factory, to a field whose default is a browser storage value, or whose default factory produces one, keeps that storage type and options. ([#7495](https://github.com/reflex-dev/reflex/issues/7495))
+- Assigning a field (or its Var, read through the class) back to its state class, or deleting the class attribute, undoes the most recent default assignment, so patch-and-restore tools round-trip a class-level default. ([#7495](https://github.com/reflex-dev/reflex/issues/7495))
+
+### Miscellaneous
+
+- The `BackendVarFormatError` raised when a backend var is formatted into a string now names the fix: read its default with `State._var.default_value()`, declare a constant shared by all sessions as `ClassVar[...]`, or use a regular state var for a value the UI shows and updates. ([#7496](https://github.com/reflex-dev/reflex/issues/7496))
+
+
 ## v0.10.0a2 (2026-10-06)
 
 ### Breaking Changes
