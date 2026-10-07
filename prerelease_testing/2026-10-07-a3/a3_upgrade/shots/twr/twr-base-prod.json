@@ -1,0 +1,261 @@
+{
+ "tag": "twr-base-prod",
+ "results": [
+  {
+   "name": "anon / redirects to /login (on_load check_login)",
+   "status": "pass",
+   "detail": "/login",
+   "t": 2.75
+  },
+  {
+   "name": "alice signup -> redirect to home",
+   "status": "pass",
+   "detail": "/",
+   "t": 4.951
+  },
+  {
+   "name": "home shows alice avatar (State.user set)",
+   "status": "pass",
+   "detail": "al",
+   "t": 4.959
+  },
+  {
+   "name": "alice posts 2 tweets, feed shows them newest-first",
+   "status": "pass",
+   "detail": "[['alicer', 'alice tweet two twr-base-prod'], ['alicer', 'alice tweet one twr-base-prod']]",
+   "t": 5.97
+  },
+  {
+   "name": "search tweets filters feed (set_search -> get_tweets)",
+   "status": "pass",
+   "detail": "[['alicer', 'alice tweet two twr-base-prod']]",
+   "t": 6.369
+  },
+  {
+   "name": "bob signup (2nd context) -> home",
+   "status": "pass",
+   "detail": "/",
+   "t": 8.92
+  },
+  {
+   "name": "bob tweet; feed shows all users' tweets",
+   "status": "pass",
+   "detail": "[['bobr', 'bob tweet twr-base-prod'], ['alicer', 'alice tweet two twr-base-prod'], ['alicer', 'alice tweet one twr-base-prod']]",
+   "t": 9.285
+  },
+  {
+   "name": "search users 'ali' lists alice with follow button",
+   "status": "pass",
+   "detail": "['alicer']",
+   "t": 9.555
+  },
+  {
+   "name": "follow alice click",
+   "status": "pass",
+   "detail": "",
+   "t": 9.558
+  },
+  {
+   "name": "bob still logged in after reload (token kept)",
+   "status": "pass",
+   "detail": "bo",
+   "t": 13.319
+  },
+  {
+   "name": "alice still logged in after reload",
+   "status": "fail",
+   "detail": "None",
+   "t": 23.746
+  },
+  {
+   "name": "driver exception in base",
+   "status": "fail",
+   "detail": "TimeoutError('Locator.click: Timeout 30000ms exceeded.\\nCall log:\\n  - waiting for get_by_role(\"button\", name=\"Sign out\")\\n')",
+   "t": 55.282
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"alice\", \"t\": 2.731, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"alice\", \"t\": 3.058, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"bob\", \"t\": 7.29, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"alice\", \"t\": 13.879, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}]",
+   "t": 55.924
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"alice\", \"t\": 2.731, \"url\": \"http://localhost:3232/bg.svg\", \"status\": 404}, {\"page\": \"alice\", \"t\": 3.058, \"url\": \"http://localhost:3232/signup/bg.svg\", \"status\": 404}, {\"page\": \"bob\", \"t\": 7.29, \"url\": \"http://localhost:3232/signup/bg.svg\", \"status\": 404}, {\"page\": \"alice\", \"t\": 13.878, \"url\": \"http://localhost:3232/bg.svg\", \"status\": 404}]",
+   "t": 55.924
+  }
+ ],
+ "console": [
+  {
+   "page": "alice",
+   "t": 2.731,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "alice",
+   "t": 2.731,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 2.881,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 3.014,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 3.014,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 3.058,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "bob",
+   "t": 7.29,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "bob",
+   "t": 7.295,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob",
+   "t": 7.296,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob",
+   "t": 11.223,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 13.362,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 13.879,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "alice",
+   "t": 13.879,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [
+  {
+   "page": "alice",
+   "t": 2.731,
+   "url": "http://localhost:3232/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "alice",
+   "t": 3.058,
+   "url": "http://localhost:3232/signup/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "bob",
+   "t": 7.29,
+   "url": "http://localhost:3232/signup/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "alice",
+   "t": 13.878,
+   "url": "http://localhost:3232/bg.svg",
+   "status": 404
+  }
+ ],
+ "ws_frames": [
+  {
+   "page": "alice",
+   "t": 2.464,
+   "dir": "open",
+   "payload": "ws://localhost:3232/_event/?token=2ccaa6cd-e10b-4e31-f4e7-3d16185a0e8d&EIO=4&transport=websocket"
+  },
+  {
+   "page": "alice",
+   "t": 2.465,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"FLng7RjWrGcTqd3EAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "alice",
+   "t": 2.466,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "alice",
+   "t": 2.728,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"oFlXHnKv5McapoxEAAAB\"}"
+  },
+  {
+   "page": "alice",
+   "t": 2.728,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 2.73,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  "{\"page\": \"alice\", \"t\": 2.73, \"dir\": \"in\", \"len\": 2637, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3232\\\",\\\"origin\\\":\\\"http://localhost:3232\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safa...",
+  {
+   "page": "alice",
+   "t": 2.73,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  "... 95 more frames trimmed"
+ ],
+ "notes": {
+  "expect_session": true,
+  "dialogs": [],
+  "observations": {
+   "A_feed_initial": [],
+   "A_click_to_load_button": 1,
+   "B_following_after_follow_no_reload": [],
+   "B_following_after_reload": [],
+   "A_followers_before_reload": [],
+   "A_followers_after_reload": null,
+   "A_feed_after_reload": []
+  }
+ }
+}

@@ -1,0 +1,5 @@
+[verify_class_state-a3] Box  mode=none     substate=reflex___istate___dynamic____box_n1 browser_key=box_pref               default='light' (LocalStorage)
+[verify_class_state-a3] Box  mode=plain    substate=reflex___istate___dynamic____box_n2 browser_key=box_pref               default='init-plain' (LocalStorage)
+[verify_class_state-a3] Box  mode=storage  substate=reflex___istate___dynamic____box_n3 browser_key=box_pref_storage       default='init-storage' (LocalStorage)
+[verify_class_state-a3] Free mode=none     substate=reflex___istate___dynamic____free_n1 browser_key=<var name>             default='light' (LocalStorage)
+[verify_class_state-a3] Free mode=plain    substate=reflex___istate___dynamic____free_n2 browser_key=<var name>             default='init-plain' (LocalStorage)

@@ -1,0 +1,40 @@
+server check ok: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166
+server versions: reflex=0.10.0a3 reflex-base=0.10.0a3
+[c1_full_load] grids(headers,cells,badges)={} probes={'probe-untouched': 'untouched|NO_REFLEX|["a","b"]', 'probe-untouched_n': 'untouched_n|NO_REFLEX|0', 'probe-touched': 'touched|HAS_REFLEX|"loaded"', 'probe-other': 'other|NO_REFLEX|0', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'untouched': 1, 'untouched_n': 1, 'touched': 2, 'other': 1, 'literal': 1} reflexSetAt=434.70000000018626 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=475.3 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=540.6 delta substates=['reflex___state____state']
+   t=541.8 delta substates=['reflex___state____state']
+   t=543 delta substates=['reflex___state____state.corev___corev____touched']
+   t=543.1 delta substates=['reflex___state____state']
+   console errors/warnings: 1; pageerrors: 0
+     error: Failed to load resource: the server responded with a status of 404 (Not Found)
+[c2_reload] grids(headers,cells,badges)={} probes={'probe-untouched': 'untouched|NO_REFLEX|["a","b"]', 'probe-untouched_n': 'untouched_n|NO_REFLEX|0', 'probe-touched': 'touched|HAS_REFLEX|"loaded"', 'probe-other': 'other|NO_REFLEX|0', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'untouched': 1, 'untouched_n': 1, 'touched': 2, 'other': 1, 'literal': 1} reflexSetAt=397.79999999981374 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=397.3 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=434.5 delta substates=['reflex___state____state', 'reflex___state____state.corev___corev____touched']
+   t=435.4 delta substates=['reflex___state____state']
+   t=435.7 delta substates=['reflex___state____state.corev___corev____touched']
+   t=435.8 delta substates=['reflex___state____state']
+[c3_after_unrelated_event] grids(headers,cells,badges)={} probes={'probe-untouched': 'untouched|NO_REFLEX|["a","b"]', 'probe-untouched_n': 'untouched_n|NO_REFLEX|0', 'probe-touched': 'touched|HAS_REFLEX|"loaded"', 'probe-other': 'other|HAS_REFLEX|1', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'untouched': 1, 'untouched_n': 1, 'touched': 2, 'other': 2, 'literal': 1} reflexSetAt=397.79999999981374 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=397.3 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=434.5 delta substates=['reflex___state____state', 'reflex___state____state.corev___corev____touched']
+   t=435.4 delta substates=['reflex___state____state']
+   t=435.7 delta substates=['reflex___state____state.corev___corev____touched']
+   t=435.8 delta substates=['reflex___state____state']
+   t=8468.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.corev___corev____other.bump", "payload_keys": []}
+   t=8484.1 delta substates=['reflex___state____state.corev___corev____other']
+[c4_after_same_substate_event] grids(headers,cells,badges)={} probes={'probe-untouched': 'untouched|HAS_REFLEX|["a","b"]', 'probe-untouched_n': 'untouched_n|HAS_REFLEX|1', 'probe-touched': 'touched|HAS_REFLEX|"loaded"', 'probe-other': 'other|HAS_REFLEX|1', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'untouched': 2, 'untouched_n': 2, 'touched': 2, 'other': 2, 'literal': 1} reflexSetAt=397.79999999981374 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=397.3 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=434.5 delta substates=['reflex___state____state', 'reflex___state____state.corev___corev____touched']
+   t=435.4 delta substates=['reflex___state____state']
+   t=435.7 delta substates=['reflex___state____state.corev___corev____touched']
+   t=435.8 delta substates=['reflex___state____state']
+   t=8468.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.corev___corev____other.bump", "payload_keys": []}
+   t=8484.1 delta substates=['reflex___state____state.corev___corev____other']
+   t=14760.5 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.corev___corev____untouched.bump", "payload_keys": []}
+   t=14768.6 delta substates=['reflex___state____state.corev___corev____untouched']
+[c5_reload_after_state_changed] grids(headers,cells,badges)={} probes={'probe-untouched': 'untouched|HAS_REFLEX|["a","b"]', 'probe-untouched_n': 'untouched_n|HAS_REFLEX|1', 'probe-touched': 'touched|HAS_REFLEX|"loaded"', 'probe-other': 'other|HAS_REFLEX|1', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'untouched': 2, 'untouched_n': 2, 'touched': 2, 'other': 2, 'literal': 1} reflexSetAt=145.19999999925494 cellRenders={'n': 0, 'first_t': None, 'without_reflex': 0, 'by_src': {}}
+   t=144.9 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=243.7 delta substates=['reflex___state____state', 'reflex___state____state.corev___corev____untouched', 'reflex___state____state.corev___corev____touched', 'reflex___state____state.corev___corev____other']
+   t=244.2 delta substates=['reflex___state____state']
+   t=245 delta substates=['reflex___state____state.corev___corev____touched']
+   t=245.1 delta substates=['reflex___state____state']

@@ -1,0 +1,766 @@
+{
+"name": "mantine-dev-a3",
+"python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+"checks": [
+{
+"t": 16.39,
+"name": "index lists the demo pages",
+"ok": true,
+"detail": [
+"Dates",
+"Pill",
+"Tags Input",
+"QA Mantine"
+]
+},
+{
+"t": 24.32,
+"name": "dates: 12 picker cards render",
+"ok": true,
+"detail": 12
+},
+{
+"t": 24.49,
+"name": "dates: DatePicker day click -> on_change toast with ISO date",
+"ok": true,
+"detail": [
+"Date selected: 2026-10-15"
+]
+},
+{
+"t": 24.94,
+"name": "dates: MonthPicker -> toast 'Month selected: YYYY-03-01'",
+"ok": true,
+"detail": [
+"Month selected: 2026-03-01",
+"Date selected: 2026-10-15"
+]
+},
+{
+"t": 25.49,
+"name": "dates: YearPicker -> toast 'Year selected: YYYY-01-01'",
+"ok": true,
+"detail": [
+"Year selected: 2027-01-01",
+"Month selected: 2026-03-01",
+"Date selected: 2026-10-15"
+]
+},
+{
+"t": 26.7,
+"name": "dates: DatePickerInput popover day -> toast and input shows the date",
+"ok": true,
+"detail": {
+"toasts": [
+"Date selected: 2026-10-20",
+"Year selected: 2027-01-01",
+"Month selected: 2026-03-01",
+"Date selected: 2026-10-15"
+],
+"input": "DatePickerInput\n\nPick a Date\nOctober 20, 2026"
+}
+},
+{
+"t": 27.85,
+"name": "dates: preset 'Tomorrow' (dayjs Var) -> toast with tomorrow",
+"ok": true,
+"detail": [
+"Date selected: 2026-10-08",
+"Date selected: 2026-10-20",
+"Year selected: 2027-01-01",
+"Month selected: 2026-03-01",
+"Date selected: 2026-10-15"
+]
+},
+{
+"t": 27.93,
+"name": "dates: TimeInput typing -> on_change toast with time",
+"ok": true,
+"detail": [
+"Time selected: 10:30",
+"Date selected: 2026-10-08",
+"Date selected: 2026-10-20",
+"Year selected: 2027-01-01",
+"Month selected: 2026-03-01",
+"Date selected: 2026-10-15"
+]
+},
+{
+"t": 33.01,
+"name": "pill: 7 pills render",
+"ok": true,
+"detail": 7
+},
+{
+"t": 33.15,
+"name": "pill: remove button -> on_remove toast 'Removed'",
+"ok": true,
+"detail": [
+"Removed"
+]
+},
+{
+"t": 36.72,
+"name": "tags-input: initial State.tags rendered",
+"ok": true,
+"detail": [
+"Tag1",
+"Tag2"
+]
+},
+{
+"t": 38.25,
+"name": "tags-input: typing + Enter adds a tag via on_change -> State",
+"ok": true,
+"detail": [
+"Tag1",
+"Tag2",
+"Tag3"
+]
+},
+{
+"t": 40.14,
+"name": "tags-input: pill remove updates State",
+"ok": true,
+"detail": [
+"Tag2",
+"Tag3"
+]
+},
+{
+"t": 41.11,
+"name": "tags-input: duplicate tag rejected",
+"ok": true,
+"detail": [
+"Tag2",
+"Tag3"
+]
+},
+{
+"t": 45.18,
+"name": "tags-input: tags survive reload (session state)",
+"ok": true,
+"detail": [
+"Tag2",
+"Tag3"
+]
+},
+{
+"t": 53.92,
+"name": "tags-input: a second browser context starts from the State default (session isolation)",
+"ok": true,
+"detail": [
+"Tag1",
+"Tag2"
+]
+},
+{
+"t": 59.64,
+"name": "qa: Autocomplete on_option_submit -> State",
+"ok": true,
+"detail": "fruit: Banana"
+},
+{
+"t": 60.98,
+"name": "qa: MultiSelect on_change -> State list",
+"ok": true,
+"detail": "picks: React,Vue"
+},
+{
+"t": 61.79,
+"name": "qa: RingProgress label follows State (30 -> 50)",
+"ok": true,
+"detail": "50%"
+},
+{
+"t": 62.67,
+"name": "qa: JsonInput on_change -> State and format_on_blur reformats",
+"ok": true,
+"detail": {
+"state": "json: { \"b\": [ 1, 2 ] }",
+"input": "{\n  \"b\": [\n    1,\n    2\n  ]\n}"
+}
+},
+{
+"t": 63.41,
+"name": "qa: JsonInput shows validation_error on invalid JSON",
+"ok": true,
+"detail": [
+"Invalid JSON"
+]
+},
+{
+"t": 64.24,
+"name": "qa: Collapse in_=State.opened toggles content",
+"ok": true,
+"detail": {
+"before": false,
+"after": true
+}
+},
+{
+"t": 64.25,
+"name": "qa: NumberFormatter renders State-derived value",
+"ok": true,
+"detail": "Fruit\n\nfruit: Banana\n\nFrameworks\nReact\nVue\n\npicks: React,Vue\n\n50%\n\nbump\nJSON\n\nInvalid JSON\n\njson: {bad json\n\n$ 50,000\ntoggle collapse\n\ncollapsed content"
+}
+],
+"notes": [
+"guard: 0.10.0a3 0.9.7a5",
+"TimeInput element: <input class=\"m_468e7eda m_8fb7ebe7 mantine-Input-input mantine-TimeInput-input\" data-variant=\"default\" step=\"60\" aria-invalid=\"false\" id=\"mantine-tnbnl7u9n\" type=\"time\">",
+"multiselect dropdown visible options: ['React', 'Vue', 'Svelte']",
+"ring sections stroke-dasharray: ['131.94689145077132, 131.94689145077132', '131.94689145077132, 131.94689145077132']"
+],
+"summary": {
+"checks_failed": [],
+"n_checks": 23,
+"console_total": 35,
+"console_benign": 28,
+"console_errors": 0,
+"console_warnings": 0,
+"page_errors": 1,
+"failed_requests": 0,
+"http_errors": 0
+},
+"anomalies": {
+"console_errors": [],
+"console_warnings": [],
+"page_errors": [
+{
+"t": 60.21,
+"ctx": "mantine",
+"error": "Cannot read properties of null (reading 'name')",
+"url": "http://localhost:3319/qa-mantine"
+}
+],
+"failed_requests": [],
+"http_errors": []
+},
+"console_all": [
+{
+"t": 7.62,
+"ctx": "mantine",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 11.56,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 11.69,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 11.88,
+"ctx": "mantine",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=4e537a8f",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 16.41,
+"ctx": "mantine",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 18.83,
+"ctx": "mantine",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/dates",
+"location": {
+"url": "http://localhost:3319/dates",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 20.55,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/dates",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 20.73,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/dates",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 20.73,
+"ctx": "mantine",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/dates",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=4e537a8f",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 28.36,
+"ctx": "mantine",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/dates",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 29.18,
+"ctx": "mantine",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/pill",
+"location": {
+"url": "http://localhost:3319/pill",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 29.66,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/pill",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 29.85,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/pill",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 29.85,
+"ctx": "mantine",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/pill",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=4e537a8f",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 33.16,
+"ctx": "mantine",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/pill",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 33.29,
+"ctx": "mantine",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/tags-input",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 33.6,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 33.68,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 33.68,
+"ctx": "mantine",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=4e537a8f",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 41.16,
+"ctx": "mantine",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 41.48,
+"ctx": "mantine",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/tags-input",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 41.78,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 41.96,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 41.96,
+"ctx": "mantine",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=4e537a8f",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 45.96,
+"ctx": "mantine-ctx2",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/tags-input",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 46.88,
+"ctx": "mantine-ctx2",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 47.02,
+"ctx": "mantine-ctx2",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 47.53,
+"ctx": "mantine-ctx2",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=4e537a8f",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 53.94,
+"ctx": "mantine-ctx2",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 788,
+"column": 14,
+"lineNumber": 788,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 53.96,
+"ctx": "mantine",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/tags-input",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 54.71,
+"ctx": "mantine",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/qa-mantine",
+"location": {
+"url": "http://localhost:3319/qa-mantine",
+"line": 27,
+"column": 22,
+"lineNumber": 27,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 55.18,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/qa-mantine",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 55.25,
+"ctx": "mantine",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/qa-mantine",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=4e537a8f",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 55.29,
+"ctx": "mantine",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/qa-mantine",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 64.78,
+"ctx": "mantine",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3319/qa-mantine",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 788,
+"column": 14,
+"lineNumber": 788,
+"columnNumber": 14
+},
+"benign": false
+}
+]
+}

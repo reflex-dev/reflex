@@ -1,0 +1,105 @@
+### twr base 20:47:50
+migrate rc=0
+started reflex pid=29633 (20:48:02) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/twr-base-prod.server.log
+UP after 29s (frontend 200, backend /ping 200)
+worker processes under reflex: 0
+[PASS   ] bob still logged in after reload (token kept): bo
+[FAIL   ] alice still logged in after reload: None
+[FAIL   ] driver exception in base: TimeoutError('Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for get_by_role("button", name="Sign out")\n')
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "alice", "t": 2.731, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "alice", "t": 3.058, "type": "error", "text":
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "alice", "t": 2.731, "url": "http://localhost:3232/bg.svg", "status": 404}, {"page": "alice", "t": 3.058, "url": "http://localhost:3232/signup/bg.svg", "status": 404}, {"page": "bob", "t": 7.2
+== twr-base-prod: {'pass': 10, 'fail': 2, 'anomaly': 2, 'skipped': 0}  console_total=13 unexpected_console=4 page_errors=0 bad_requests=4 (unexpected 4) ws_frames=103
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'alice', 't': 2.731, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 3.058, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'bob', 't': 7.29, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 13.878, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+stale tab ready: yes
+16
+70c911d8-1bd9-4c28-91a8-acb6f9acb87b_reflex___state____state.twitter___state___base____state.twitter___state___home____home_state
+fedfea0e-1002-484b-8359-a85f236b780e_reflex___state____state
+4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6_reflex___state____state
+SHUTDOWN: main pid 29633 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### twr upgrade 20:49:44
+freeze diff twr: < reflex==0.9.12 < reflex-base==0.9.12 < reflex-components-code==0.9.6 < reflex-components-core==0.9.10.post1 < reflex-components-dataeditor==0.9.3.post1 < reflex-components-gridjs==0.9.2.post1 < reflex-components-lucide==1.0.4 < reflex-components-markdown==0.9.4.post1 < reflex-components-moment==0.9.4 < reflex-components-plotly==0.9.7 < reflex-components-radix==0.9.10.post1 < reflex-components-react-player==0.9.2 < reflex-components-recharts==0.9.4.post1 < reflex-components-sonner==0.9.4 < reflex-hosting-cli==0.1.72 > reflex==0.10.0a3 > reflex-base==0.10.0a3 > reflex-build-sdk==0.1.0a1 > reflex-components-code==0.10.0a2 > reflex-components-core==0.10.0a2 > reflex-components-dataeditor==0.10.0a1 > reflex-components-gridjs==0.10.0a2 > reflex-components-lucide==1.1.0a1 > reflex-components-markdown==0.10.0a2 > reflex-components-moment==0.10.0a2 > reflex-components-plotly==0.10.0a2 > reflex-components-radix==0.10.0a2 > reflex-components-react-player==0.10.0a1 > reflex-components-recharts==0.10.0a2 > reflex-components-sonner==0.10.0a1 > reflex-hosting-cli==0.2.0a1 < sqlalchemy==2.0.54 > sqlalchemy==2.1.4 < wrapt==2.3.0 > wrapt==2.5.0 
+Checked 51 packages in 10ms
+All installed packages are compatible
+### twr up 20:49:46
+started reflex pid=31484 (20:49:46) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/twr-up-prod.server.log
+UP after 26s (frontend 200, backend /ping 200)
+worker processes under reflex (a3): 0
+[ANOMALY] C: did the old tab reload itself after the new server came up?: marker=old-tab-1791406178353
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "dave", "t": 3.166, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "dave", "t": 9.15, "type": "error", "text": "W
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "dave", "t": 3.166, "url": "http://localhost:3232/signup/bg.svg", "status": 404}, {"page": "dave", "t": 51.281, "url": "http://localhost:3232/bg.svg", "status": 404}]
+== twr-stale-prod: {'pass': 8, 'fail': 0, 'anomaly': 3, 'skipped': 0}  console_total=26 unexpected_console=22 page_errors=0 bad_requests=2 (unexpected 2) ws_frames=109
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'dave', 't': 3.166, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'dave', 't': 51.281, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+[FAIL   ] driver exception in up: FileNotFoundError(2, 'No such file or directory')
+== twr-up-prod: {'pass': 2, 'fail': 1, 'anomaly': 0, 'skipped': 0}  console_total=0 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=0
+[PASS   ] bob still logged in after reload (token kept): bo
+[PASS   ] same token kept across logout/login (reset() keeps session): 7b0f9c20-fa3e-429d-d7a0-d4bef3cbaf5a -> 7b0f9c20-fa3e-429d-d7a0-d4bef3cbaf5a
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "alice", "t": 2.166, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "alice", "t": 2.285, "type": "error", "text":
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "alice", "t": 2.166, "url": "http://localhost:3232/bg.svg", "status": 404}, {"page": "alice", "t": 2.285, "url": "http://localhost:3232/signup/bg.svg", "status": 404}, {"page": "bob", "t": 5.7
+== twr-up-prod-base: {'pass': 19, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=27 unexpected_console=8 page_errors=0 bad_requests=8 (unexpected 8) ws_frames=160
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'alice', 't': 2.166, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 2.285, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'bob', 't': 5.744, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 13.071, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 13.441, 'url': 'http://localhost:3232/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 14.71, 'url': 'http://localhost:3232/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 17.296, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 18.645, 'url': 'http://localhost:3232/signup/bg.svg', 'status': 404}
+cp: cannot stat '/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/ctl/twr.tok': No such file or directory
+SHUTDOWN: main pid 31484 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### twr rollback to 0.9.12 against the same Redis 20:50:53
+27a28
+> reflex-build-sdk==0.1.0a1
+started reflex pid=1083 (20:50:55) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/twr-rollback-prod.server.log
+UP after 28s (frontend 200, backend /ping 200)
+[FAIL   ] driver exception in up: FileNotFoundError(2, 'No such file or directory')
+== twr-rollback-prod: {'pass': 2, 'fail': 1, 'anomaly': 0, 'skipped': 0}  console_total=0 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=0
+SHUTDOWN: main pid 1083 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- twr-base-prod server-log warnings:
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+--- twr-up-prod server-log warnings:
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+      1 Warning: Frontend version 0.9.12 for session AcOnqJN_o7LrKl1OAAAB does not match
+--- twr-rollback-prod server-log warnings:
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+### twr done 20:51:33

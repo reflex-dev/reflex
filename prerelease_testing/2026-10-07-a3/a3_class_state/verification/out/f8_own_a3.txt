@@ -1,0 +1,38 @@
+[verify_class_state-a3] _is_client_storage('opt_cached') before assignment = True
+[verify_class_state-a3] declared
+    compiled storage: {'ck': ('cookies', 'k_ck'), 'plain': ('local', 'k_plain'), 'opt': ('local', 'k_opt'), 'opt_cached': ('local', 'k_opt_cached'), 'uni': ('local', 'k_uni')}
+    plain      default_type=LocalStorage  default='d'      instance='d'
+    opt        default_type=LocalStorage  default='d'      instance='d'
+    opt_cached default_type=LocalStorage  default='d'      instance='d'
+    uni        default_type=LocalStorage  default='d'      instance='d'
+    ck         default_type=Cookie        default='d'      instance='d'
+[verify_class_state-a3] St.plain = 'x': accepted
+[verify_class_state-a3] St.opt = None: accepted
+[verify_class_state-a3] St.opt_cached = None: accepted
+[verify_class_state-a3] St.uni = 5: accepted
+[verify_class_state-a3] St.ck = None: accepted
+[verify_class_state-a3] after non-str assignments
+    compiled storage: {'plain': ('local', 'k_plain')}
+    plain      default_type=LocalStorage  default='x'      instance='x'
+    opt        default_type=NoneType      default=None     instance=None
+    opt_cached default_type=NoneType      default=None     instance=None
+    uni        default_type=int           default=5        instance=5
+    ck         default_type=NoneType      default=None     instance=None
+    _is_client_storage('opt') = False
+    _is_client_storage('opt_cached') = True
+    _is_client_storage('uni') = False
+    _is_client_storage('ck') = False
+[verify_class_state-a3] after St.opt = 'y'
+    compiled storage: {'plain': ('local', 'k_plain')}
+    plain      default_type=LocalStorage  default='x'      instance='x'
+    opt        default_type=str           default='y'      instance='y'
+    opt_cached default_type=NoneType      default=None     instance=None
+    uni        default_type=int           default=5        instance=5
+    ck         default_type=NoneType      default=None     instance=None
+[verify_class_state-a3] after two `del St.opt`
+    compiled storage: {'plain': ('local', 'k_plain'), 'opt': ('local', 'k_opt')}
+    plain      default_type=LocalStorage  default='x'      instance='x'
+    opt        default_type=LocalStorage  default='d'      instance='d'
+    opt_cached default_type=NoneType      default=None     instance=None
+    uni        default_type=int           default=5        instance=5
+    ck         default_type=NoneType      default=None     instance=None

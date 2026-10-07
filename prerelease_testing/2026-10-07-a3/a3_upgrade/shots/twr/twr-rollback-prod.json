@@ -1,0 +1,31 @@
+{
+ "tag": "twr-rollback-prod",
+ "results": [
+  {
+   "name": "driver exception in up",
+   "status": "fail",
+   "detail": "FileNotFoundError(2, 'No such file or directory')",
+   "t": 1.634
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 2.383
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 2.383
+  }
+ ],
+ "console": [],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [],
+ "notes": {
+  "expect_session": false,
+  "dialogs": []
+ }
+}

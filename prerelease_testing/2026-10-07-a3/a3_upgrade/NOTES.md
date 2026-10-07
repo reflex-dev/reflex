@@ -159,3 +159,21 @@ Storage probe on the first a3 load (`gh-up-firstload-home`): 0 changing app writ
 (app's refetch loop for the unknown user `ghost1`; a2 pass: 147 in the same probe, so app behaviour) and a3 additionally rewrites `selected_users_json`,
 the widget's `user_stats_json` and `last_fetch` once each with identical values (a2: not rewritten; 0.9.12 behaviour, see form-designer). The probe's
 `FAIL text visible: 'Alice'` is my expect-text (the page shows the login `alice`; the a2 pass used `'alice'`), not an app failure.
+
+### clock (`logs/seq-ck.txt`, `logs/ck-session.driver.log`, `shots/ck/`)
+| run | result | a2 pass |
+|---|---|---|
+| 0.9.12 `drive_clock` | 17/0/0 | 17/0/0 |
+| one browser context across 0.9.12 stop -> in-place upgrade -> a3 start (`clock_session.py`) | 10/0/1 (anomaly = 20 `ERR_CONNECTION_REFUSED` websocket retries while the server was down) | 10/0/1 |
+| a3 in place / cold | 17/0/0 / 17/0/0 | 17/0/0 / 17/0/0 |
+Session details: the old tab reloads itself when the new server comes up; a NEW tab opened right after the upgrade shows the `rx.Cookie` zone Europe/Paris written
+by 0.9.12 and writes nothing; zone change and the background tick work from the old tab against the a3 backend; the cookie survives a reload; `on_load` resets the switch.
+Server log: `Warning: Frontend version 0.9.12 for session ... does not match the backend version 0.10.0a3` (F-019, unchanged: log only, no user-visible signal).
+
+### twitter, dev with the disk state manager (`logs/seq-tw.txt`, `shots/tw/`)
+| run | result | a2 pass |
+|---|---|---|
+| 0.9.12 `base` (signup, tweets, search, follow, reload, logout/login, bad-password/duplicate alerts) | 21/0/0 | 21/0/0 |
+| a3 in place `up` (QA_EXPECT_SESSION=0: `reflex run` wipes `.states` in dev, so users log in again — same on 0.9.12) | 14/0/0 | 14/0/0 |
+| a3 cold `base` (new users, suffix `c`) | 21/0/0 | 21/0/0 |
+`reflex db migrate` after the upgrade rc 0; alembic head unchanged, 0.9.12 rows intact (only additions).

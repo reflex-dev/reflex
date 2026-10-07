@@ -1,0 +1,68 @@
+.........F...F...F
+[verify_class_state-a3] (d) during the test _quota starts at 0
+.F
+=================================== FAILURES ===================================
+______________________ test_check_a_mock_patch_object_var ______________________
+
+    def test_check_a_mock_patch_object_var():
+>       assert fresh(A_MOCK_VAR) == (10, 10)
+E       assert (0, 10) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:101: AssertionError
+__________________________ test_check_b_mocker_field ___________________________
+
+    def test_check_b_mocker_field():
+>       assert fresh(B_MOCKER_FIELD) == (10, 10)
+E       assert (10, 0) == (10, 10)
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:121: AssertionError
+___________________ test_check_c_assign_inside_patch_window ____________________
+
+    def test_check_c_assign_inside_patch_window():
+        # Plain-Python-attribute semantics would put back what monkeypatch saved (10).
+>       assert fresh(C_ASSIGN_IN_WINDOW) == (10, 10)
+E       assert (99, 10) == (10, 10)
+E         
+E         At index 0 diff: 99 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:143: AssertionError
+_______________________ test_check_d_monkeypatch_delattr _______________________
+
+    def test_check_d_monkeypatch_delattr():
+>       assert fresh(D_MP_DELATTR) == (10, 10)
+E       assert (10, 0) == (10, 10)
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:153: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_v7_undo.py::test_case_ctrl_monkeypatch
+PASSED test_v7_undo.py::test_check_ctrl_monkeypatch
+PASSED test_v7_undo.py::test_case_ctrl_mock_patch_object
+PASSED test_v7_undo.py::test_check_ctrl_mock_patch_object
+PASSED test_v7_undo.py::test_case_ctrl_rejected_wrong_type
+PASSED test_v7_undo.py::test_check_ctrl_rejected_wrong_type
+PASSED test_v7_undo.py::test_case_ctrl_nested
+PASSED test_v7_undo.py::test_check_ctrl_nested
+PASSED test_v7_undo.py::test_case_a_mock_patch_object_var
+PASSED test_v7_undo.py::test_case_a2_monkeypatch_var
+PASSED test_v7_undo.py::test_check_a2_monkeypatch_var
+PASSED test_v7_undo.py::test_case_b_mocker_field
+PASSED test_v7_undo.py::test_case_b2_monkeypatch_field
+PASSED test_v7_undo.py::test_check_b2_monkeypatch_field
+PASSED test_v7_undo.py::test_case_c_assign_inside_patch_window
+PASSED test_v7_undo.py::test_case_d_monkeypatch_delattr
+FAILED test_v7_undo.py::test_check_a_mock_patch_object_var - assert (0, 10) =...
+FAILED test_v7_undo.py::test_check_b_mocker_field - assert (10, 0) == (10, 10)
+FAILED test_v7_undo.py::test_check_c_assign_inside_patch_window - assert (99,...
+FAILED test_v7_undo.py::test_check_d_monkeypatch_delattr - assert (10, 0) == ...
+4 failed, 16 passed in 0.96s

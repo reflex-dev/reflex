@@ -21,5 +21,5 @@ for f in $W/logs/*.log; do
 done
 du -sh $DEST
 # shrink large JPEGs copied verbatim (qa_common drivers write 1400px JPEGs)
-find $DEST/out -name "*.jpg" -size +45k | while read -r f; do convert "$f" -resize '640x>' -quality 40 "$f"; done
+find $DEST/out -name "*.jpg" -size +25k | while read -r f; do convert "$f" -resize '520x>' -quality 35 "$f"; done
 du -sh $DEST

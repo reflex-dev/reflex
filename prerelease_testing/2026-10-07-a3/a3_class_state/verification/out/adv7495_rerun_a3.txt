@@ -1,0 +1,11 @@
+reflex 0.10.0a3 reflex-base 0.10.0a3 python 3.12.3 venv verify_class_state-a3
+CASE self_assign_after_config | S.count=10; S.count=S.count -> ok, fresh=0 | S._b=10; S._b=S._b -> ok, fresh=0
+CASE over16_assign_then_restore | 20 assignments 1..20, then 21 restores -> ['19', '18', '17', '16', '15', '14', '13', '12', '11', '10', '9', '8', '7', '6', '5', '4', '4', '4', '4', '4', '4'] (orig 0)
+CASE over16_nested_monkeypatch | 20 nested monkeypatches: during=20 after LIFO undo=4 (orig 0) errors=[]
+CASE rejected_var_then_undo_mock | config 10; with mock.patch.object(S,'count',Other.y) -> TypeError: A Var cannot be a field default. Use ClassVar[rx.Var] to sav | after=0 (want 10)
+CASE declared_factory_raises_on_plain_assign | declared factory calls: at class creation=0, by assigning a factory=1 | S.v='plain' after configuring a factory -> ok, fresh='plain' | fresh class, raising declared factory, S2.v='x' -> RuntimeError: factory needs app context
+CASE storage_optional_none | v: Optional[str] = LocalStorage('d', name='kopt'): before=(True, {'kind': 'local', 'name': 'kopt', 'sync': False}) | S.v=None -> ok (True, None, 'None') | then S.v='x' -> ok (True, None, "'x'")
+CASE storage_union_annotation_nonstr | v: Union[str,int] = LocalStorage(name='kany'): before=(True, {'kind': 'local', 'name': 'kany', 'sync': False}) | S.v=5 -> ok (True, None, '5')
+CASE storage_cs_multi_instances_same_key | 3 ComponentState instances (fresh pref, entry pref, entry nameless): [("'dark'", {'kind': 'local', 'name': 'box_pref', 'sync': False}, {'kind': 'local', 'sync': False}), ("'blue'", {'kind': 'local', 'name': 'box_pref', 'sync': False}, {'kind': 'local', 'sync': False}), ("'red'", {'kind': 'local', 'name': 'box_pref', 'sync': False}, {'kind': 'local', 'sync': False})]
+CASE patch_then_runtime_assign_then_undo | patch 99; code assigns 77; undo -> ok | after=99 (plain-attribute semantics: 0)
+CASE monkeypatch_delattr_with_config | config 10; monkeypatch.delattr -> ok, during=0 | undo -> ok, after=0 (want 10)

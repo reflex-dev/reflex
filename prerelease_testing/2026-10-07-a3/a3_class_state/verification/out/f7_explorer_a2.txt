@@ -1,0 +1,90 @@
+.....EF..                                                                [100%]
+==================================== ERRORS ====================================
+_____ ERROR at teardown of test_c1_patch_then_code_under_test_reconfigures _____
+
+cls = <class 'test_undo_edge.Svc'>, name = 'limit'
+value = Field(default=50, is_var=True, annotated_type=<class 'int'>)
+
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update a field's default while retaining its descriptor.
+    
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
+    
+        Args:
+            name: The class attribute being assigned.
+            value: Its new default value or zero-argument default factory.
+    
+        Raises:
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
+        """
+        declared = cls.__fields__.get(name)
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
+        default = value
+>       accepted = _accepts_default(declared, value)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default=50, is_var=True, annotated_type=<class 'int'>)
+value = Field(default=50, is_var=True, annotated_type=<class 'int'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+=================================== FAILURES ===================================
+__________________ test_c2_sentinel_limit_back_to_configured ___________________
+
+    def test_c2_sentinel_limit_back_to_configured():
+>       assert fresh("limit") == 10
+E       AssertionError: assert 50 == 10
+E        +  where 50 = fresh('limit')
+
+test_undo_edge.py:57: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_undo_edge.py::test_a1_mock_patch_with_a_var_is_rejected
+PASSED test_undo_edge.py::test_a2_sentinel_limit_still_configured
+PASSED test_undo_edge.py::test_b1_mocker_patch_with_a_field_is_rejected
+PASSED test_undo_edge.py::test_b2_sentinel_quota_still_configured
+PASSED test_undo_edge.py::test_c1_patch_then_code_under_test_reconfigures
+PASSED test_undo_edge.py::test_d1_monkeypatch_delattr
+PASSED test_undo_edge.py::test_d2_sentinel_quota_back_to_configured
+ERROR test_undo_edge.py::test_c1_patch_then_code_under_test_reconfigures - Ty...
+FAILED test_undo_edge.py::test_c2_sentinel_limit_back_to_configured - Asserti...
+1 failed, 7 passed, 1 error in 0.39s

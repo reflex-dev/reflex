@@ -1,0 +1,36 @@
+### tw base 20:43:48
+migrate rc=0
+started reflex pid=24915 (20:44:00) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/tw-base.server.log
+UP after 19s (frontend 200, backend /ping 200)
+[PASS   ] bob still logged in after reload (token kept): bo
+[PASS   ] same token kept across logout/login (reset() keeps session): f7f4e073-6007-4c96-ca33-b029162c4e26 -> f7f4e073-6007-4c96-ca33-b029162c4e26
+== tw-base: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=55 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=178
+SHUTDOWN: main pid 24915 still alive 15s after SIGTERM
+ORPHAN after SIGTERM: port=3230 pid=25182 cmd=node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/twitter/.web/node_modules/.bin/react-ro
+### tw upgrade 20:45:27
+freeze diff tw: < reflex==0.9.12 < reflex-base==0.9.12 < reflex-components-code==0.9.6 < reflex-components-core==0.9.10.post1 < reflex-components-dataeditor==0.9.3.post1 < reflex-components-gridjs==0.9.2.post1 < reflex-components-lucide==1.0.4 < reflex-components-markdown==0.9.4.post1 < reflex-components-moment==0.9.4 < reflex-components-plotly==0.9.7 < reflex-components-radix==0.9.10.post1 < reflex-components-react-player==0.9.2 < reflex-components-recharts==0.9.4.post1 < reflex-components-sonner==0.9.4 < reflex-hosting-cli==0.1.72 > reflex==0.10.0a3 > reflex-base==0.10.0a3 > reflex-build-sdk==0.1.0a1 > reflex-components-code==0.10.0a2 > reflex-components-core==0.10.0a2 > reflex-components-dataeditor==0.10.0a1 > reflex-components-gridjs==0.10.0a2 > reflex-components-lucide==1.1.0a1 > reflex-components-markdown==0.10.0a2 > reflex-components-moment==0.10.0a2 > reflex-components-plotly==0.10.0a2 > reflex-components-radix==0.10.0a2 > reflex-components-react-player==0.10.0a1 > reflex-components-recharts==0.10.0a2 > reflex-components-sonner==0.10.0a1 > reflex-hosting-cli==0.2.0a1 < wrapt==2.3.0 > wrapt==2.5.0 
+Checked 51 packages in 1ms
+All installed packages are compatible
+migrate after upgrade rc=0
+### tw up 20:45:32
+started reflex pid=26944 (20:45:32) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/tw-up.server.log
+UP after 14s (frontend 200, backend /ping 200)
+package.json diff: < "react": "19.2.8", < "react-dom": "19.2.8", < "react-error-boundary": "6.1.2", > "react": "19.3.0", > "react-dom": "19.3.0", > "react-error-boundary": "6.1.6", < "socket.io-client": "4.8.3", > "socket.io-client": "4.8.4", < "autoprefixer": "10.5.4", < "postcss": "8.5.26", > "autoprefixer": "10.6.1", > "postcss": "8.5.29", < "vite": "8.2.2" > "vite": "8.3.2" 
+== tw-up: {'pass': 14, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=36 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=109
+SHUTDOWN: main pid 26944 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### tw cold 20:46:28
+started reflex pid=28078 (20:46:29) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/tw-cold.server.log
+UP after 17s (frontend 200, backend /ping 200)
+cold package.json == up
+[PASS   ] bob still logged in after reload (token kept): bo
+[PASS   ] same token kept across logout/login (reset() keeps session): 5e5f9c0d-6664-4295-d670-64aa5009b570 -> 5e5f9c0d-6664-4295-d670-64aa5009b570
+== tw-cold-base: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=55 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=160
+SHUTDOWN: main pid 28078 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- tw-base server-log warnings:
+--- tw-up server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- tw-cold server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+### tw done 20:47:32

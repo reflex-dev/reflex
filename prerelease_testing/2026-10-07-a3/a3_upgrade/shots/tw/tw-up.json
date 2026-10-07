@@ -1,0 +1,377 @@
+{
+ "tag": "tw-up",
+ "results": [
+  {
+   "name": "alice's token after restart lands on /login (disk state manager: `reflex run` wipes .states, both versions)",
+   "status": "pass",
+   "detail": "path=/login avatar=None token_now=f7f4e073-6007-4c96-ca33-b029162c4e26 same_token=True",
+   "t": 11.001
+  },
+  {
+   "name": "alice posts after upgrade; pre-upgrade tweets still in feed",
+   "status": "pass",
+   "detail": "[['alice', 'alice after tw-up'], ['bob', 'bob tweet tw-base'], ['alice', 'alice tweet two tw-base'], ['alice', 'alice tweet one tw-base']]",
+   "t": 14.529
+  },
+  {
+   "name": "bob's token after restart lands on /login (disk mode, expected)",
+   "status": "pass",
+   "detail": "path=/login",
+   "t": 18.081
+  },
+  {
+   "name": "bob logs in with pre-upgrade password row",
+   "status": "pass",
+   "detail": "bo",
+   "t": 23.546
+  },
+  {
+   "name": "bob Following lists alice after login (pre-upgrade follow row)",
+   "status": "pass",
+   "detail": "['alice']",
+   "t": 24.792
+  },
+  {
+   "name": "bob loads full feed (pre+post upgrade tweets)",
+   "status": "pass",
+   "detail": "[['alice', 'alice after tw-up'], ['bob', 'bob tweet tw-base'], ['alice', 'alice tweet two tw-base'], ['alice', 'alice tweet one tw-base']]",
+   "t": 25.267
+  },
+  {
+   "name": "new user caroltwup signup after upgrade",
+   "status": "pass",
+   "detail": "/",
+   "t": 29.362
+  },
+  {
+   "name": "caroltwup follows alice",
+   "status": "pass",
+   "detail": "['alice']",
+   "t": 29.398
+  },
+  {
+   "name": "alice sign out -> /login",
+   "status": "pass",
+   "detail": "/login",
+   "t": 31.29
+  },
+  {
+   "name": "alice re-login -> home",
+   "status": "pass",
+   "detail": "al",
+   "t": 33.708
+  },
+  {
+   "name": "alice Followers = bob + caroltwup",
+   "status": "pass",
+   "detail": "['bob', 'caroltwup']",
+   "t": 34.721
+  },
+  {
+   "name": "alice still logged in after reload",
+   "status": "pass",
+   "detail": "al",
+   "t": 35.75
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 36.188
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 36.188
+  }
+ ],
+ "console": [
+  {
+   "page": "alice-tok",
+   "t": 8.21,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice-tok",
+   "t": 8.775,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice-tok",
+   "t": 8.798,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "alice-tok",
+   "t": 9.287,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice-tok",
+   "t": 10.182,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob-tok",
+   "t": 15.245,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "bob-tok",
+   "t": 15.851,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "bob-tok",
+   "t": 15.913,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "bob-tok",
+   "t": 16.267,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "bob-tok",
+   "t": 16.571,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob-tok",
+   "t": 18.091,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "bob-pw",
+   "t": 20.199,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "bob-pw",
+   "t": 21.582,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "bob-pw",
+   "t": 21.626,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "bob-pw",
+   "t": 21.879,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "bob-pw",
+   "t": 22.072,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob-pw",
+   "t": 25.304,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "carol",
+   "t": 25.78,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "carol",
+   "t": 26.191,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "carol",
+   "t": 26.464,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "carol",
+   "t": 26.694,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "carol",
+   "t": 27.052,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol",
+   "t": 27.053,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol",
+   "t": 30.46,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "alice-tok",
+   "t": 31.263,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice-tok",
+   "t": 31.297,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice-tok",
+   "t": 31.974,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice-tok",
+   "t": 32.08,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice-tok",
+   "t": 32.206,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "alice-tok",
+   "t": 32.207,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice-tok",
+   "t": 32.363,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice-tok",
+   "t": 35.079,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice-tok",
+   "t": 35.269,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice-tok",
+   "t": 35.393,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice-tok",
+   "t": 35.401,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice-tok",
+   "t": 35.401,
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "alice-tok",
+   "t": 8.799,
+   "dir": "open",
+   "payload": "ws://localhost:8230/_event/?token=f7f4e073-6007-4c96-ca33-b029162c4e26&EIO=4&transport=websocket"
+  },
+  {
+   "page": "alice-tok",
+   "t": 8.929,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"5kfYc1gubsUtfLY4AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "alice-tok",
+   "t": 9.288,
+   "dir": "out",
+   "len": 309,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "alice-tok",
+   "t": 9.288,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"mb1Hwi31-J3ylrc8AAAB\"}"
+  },
+  "{\"page\": \"alice-tok\", \"t\": 9.288, \"dir\": \"in\", \"len\": 1784, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8230\\\",\\\"origin\\\":\\\"http://localhost:3230\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket...",
+  {
+   "page": "alice-tok",
+   "t": 9.438,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 9.438,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/login\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 9.465,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  "... 101 more frames trimmed"
+ ],
+ "notes": {
+  "expect_session": false,
+  "dialogs": [],
+  "tokens_in": {
+   "alice": "f7f4e073-6007-4c96-ca33-b029162c4e26",
+   "bob": "d2b0f12a-0849-4c13-d246-0fe1d0739215"
+  },
+  "observations": {
+   "A_feed_on_restore": [],
+   "A_followers_on_restore": null
+  },
+  "tokens_out": {
+   "alice": "f7f4e073-6007-4c96-ca33-b029162c4e26",
+   "bob": "d2b0f12a-0849-4c13-d246-0fe1d0739215"
+  }
+ }
+}

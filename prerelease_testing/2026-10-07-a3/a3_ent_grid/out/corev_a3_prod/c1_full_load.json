@@ -1,0 +1,181 @@
+{
+"scenario": "c1_full_load",
+"measure": {
+"grids": {},
+"probes": {
+"probe-untouched": "untouched|NO_REFLEX|[\"a\",\"b\"]",
+"probe-untouched_n": "untouched_n|NO_REFLEX|0",
+"probe-touched": "touched|HAS_REFLEX|\"loaded\"",
+"probe-other": "other|NO_REFLEX|0",
+"probe-literal": "literal|NO_REFLEX|\"lit\""
+},
+"probeCounts": {
+"untouched": 1,
+"untouched_n": 1,
+"touched": 2,
+"other": 1,
+"literal": 1
+},
+"reflexDefinedNow": true,
+"reflexSetAt": 434.70000000018626,
+"cellRenders": {
+"n": 0,
+"first_t": null,
+"without_reflex": 0,
+"by_src": {}
+},
+"path": "/",
+"heading": "corev index"
+},
+"measure_plus4s": {
+"grids": {},
+"probes": {
+"probe-untouched": "untouched|NO_REFLEX|[\"a\",\"b\"]",
+"probe-untouched_n": "untouched_n|NO_REFLEX|0",
+"probe-touched": "touched|HAS_REFLEX|\"loaded\"",
+"probe-other": "other|NO_REFLEX|0",
+"probe-literal": "literal|NO_REFLEX|\"lit\""
+},
+"probeCounts": {
+"untouched": 1,
+"untouched_n": 1,
+"touched": 2,
+"other": 1,
+"literal": 1
+},
+"reflexDefinedNow": true,
+"reflexSetAt": 434.70000000018626,
+"cellRenders": {
+"n": 0,
+"first_t": null,
+"without_reflex": 0,
+"by_src": {}
+},
+"path": "/",
+"heading": "corev index"
+},
+"boot_frames": [
+{
+"t": 474.4,
+"dir": "ws_in",
+"len": 108,
+"head": "0{"
+},
+{
+"t": 475.3,
+"dir": "ws_out",
+"len": 328,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"event"
+],
+"auth_mentions_hydrate_and_load": true,
+"auth_event_name": "reflex___state____state.hydrate_and_load"
+},
+{
+"t": 526.7,
+"dir": "ws_in",
+"len": 40,
+"head": "40",
+"nsp": "/_event",
+"auth_keys": [
+"sid"
+],
+"auth_mentions_hydrate_and_load": false
+},
+{
+"t": 540.6,
+"dir": "ws_in",
+"len": 1784,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_",
+"rx_router_headers_rx_state_",
+"rx_router_page_rx_state_",
+"rx_router_route_id_rx_state_",
+"rx_router_session_rx_state_",
+"rx_router_url_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 541.8,
+"dir": "ws_in",
+"len": 89,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 543,
+"dir": "ws_in",
+"len": 111,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state.corev___corev____touched": [
+"value_rx_state_"
+]
+},
+"final": null,
+"events": null
+},
+{
+"t": 543.1,
+"dir": "ws_in",
+"len": 88,
+"head": "42",
+"nsp": "/_event",
+"sio_event": "event",
+"delta": {
+"reflex___state____state": [
+"is_hydrated_rx_state_"
+]
+},
+"final": null,
+"events": null
+}
+],
+"timeline": [
+"    171.8ms grid counts (headers, cells) {}",
+"    341.1ms ws_open_call {\"url\": \"ws://localhost:3300/_event/?token=4b7d97e3-9cb7-4dbd-fe39-e205fa802c21&EIO=4&transport=websocket\"}",
+"    404.6ms ws_open {}",
+"    416.4ms probe render untouched #1 NO_REFLEX value=[\"a\",\"b\"]",
+"    416.5ms probe render untouched_n #1 NO_REFLEX value=0",
+"    416.5ms probe render touched #1 NO_REFLEX value=\"init\"",
+"    417.2ms probe render other #1 NO_REFLEX value=0",
+"    417.3ms probe render literal #1 NO_REFLEX value=\"lit\"",
+"    434.7ms window.__reflex ASSIGNED (5 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3300/assets/root-CV0Ue6mw.js:82:322 |     at El (http://localhost:3300/assets/entry.client-B-F7NSW8.js:8:94941) |     at Uu (http://localhost:3300/assets/entry.client-B-F7NSW8.js:8:118109) |     at Hu (http://localhost:3300/assets/entry.client",
+"    474.4ms ws_in {\"len\": 108}",
+"    475.3ms ws_out {\"len\": 328, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+"    526.7ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+"    540.6ms ws_in {\"len\": 1784, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    541.8ms ws_in {\"len\": 89, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    543.0ms ws_in {\"len\": 111, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state.corev___corev____touched\": [\"value_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    543.1ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
+"    544.1ms probe render touched #2 HAS_REFLEX value=\"loaded\""
+],
+"console": [
+{
+"type": "error",
+"text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+"t": 0.602
+}
+],
+"pageerrors": [],
+"http_errors": []
+}

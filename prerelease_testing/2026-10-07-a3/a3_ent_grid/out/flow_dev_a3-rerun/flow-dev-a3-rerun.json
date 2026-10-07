@@ -1,0 +1,904 @@
+{
+"name": "flow-dev-a3-rerun",
+"python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+"checks": [
+{
+"t": 4.55,
+"name": "index lists 6 flow demos",
+"ok": true,
+"detail": [
+"Add Node on Edge Drop Demo",
+"Connection Limit Demo",
+"Custom Node Demo",
+"Drag Handle Demo",
+"Intersections",
+"Feature Overview"
+]
+},
+{
+"t": 8.42,
+"name": "overview: 11 nodes and 6 edges render",
+"ok": true,
+"detail": {
+"nodes": 11,
+"edges": 6
+}
+},
+{
+"t": 8.42,
+"name": "overview: minimap + controls + background present",
+"ok": true,
+"detail": ""
+},
+{
+"t": 11.68,
+"name": "overview: pointer drag moves Default Node (on_nodes_change -> State.set_nodes)",
+"ok": true,
+"detail": {
+"before": [
+0.0,
+100.0
+],
+"after": [
+-124.246,
+160.583
+]
+}
+},
+{
+"t": 13.39,
+"name": "overview: toolbar button sets State.emoji (\ud83d\udd25 shown in tools node)",
+"ok": true,
+"detail": "\ud83d\udd25"
+},
+{
+"t": 14.43,
+"name": "overview: \u00d7 on a button edge removes it (run_script set_edges)",
+"ok": true,
+"detail": {
+"before": 6,
+"after": 5
+}
+},
+{
+"t": 15.84,
+"name": "overview: 'Node width' input resizes node 2-3 via State.set_dimensions",
+"ok": true,
+"detail": "z-index: 1; transform: translate(80px, 300px); pointer-events: all; visibility: visible; width: 120px; height: 80px;"
+},
+{
+"t": 17.21,
+"name": "overview: Backspace deletes the selected Output Node",
+"ok": true,
+"detail": 10
+},
+{
+"t": 17.98,
+"name": "overview: controls zoom-in changes the viewport transform",
+"ok": true,
+"detail": {
+"before": "transform: translate(578.266px, 69.2162px) scale(0.973872);",
+"after": "transform: translate(553.919px, -6.94062px) scale(1.16865);"
+}
+},
+{
+"t": 21.51,
+"name": "overview: after reload the moved position, deleted node and emoji persist (session state)",
+"ok": true,
+"detail": {
+"moved": [
+-124.246,
+160.583
+],
+"now": [
+-124.246,
+160.583
+]
+}
+},
+{
+"t": 26.69,
+"name": "add-node-on-edge-drop: dropping a connection on the pane adds Node 1 + an edge (on_connect_end + screen_to_flow_position)",
+"ok": true,
+"detail": {
+"before": 1,
+"after": 2,
+"edges": 1
+}
+},
+{
+"t": 29.45,
+"name": "add-node-on-edge-drop: second drop adds Node 2",
+"ok": true,
+"detail": "Node\nNode 1\nNode 2"
+},
+{
+"t": 34.39,
+"name": "add-node-on-edge-drop: a new session starts with only the initial node (no cross-session leak of default_factory list)",
+"ok": true,
+"detail": "Node"
+},
+{
+"t": 39.79,
+"name": "connection-limit: Node 1 -> custom target handle creates an edge",
+"ok": true,
+"detail": 1
+},
+{
+"t": 41.85,
+"name": "connection-limit: second connection to the same handle is refused (is_connectable from get_node_connections)",
+"ok": true,
+"detail": 1
+},
+{
+"t": 46.47,
+"name": "custom-node: color input -> State.on_change_color updates node label",
+"ok": true,
+"detail": "Custom Color Picker Node: #ff0000"
+},
+{
+"t": 46.47,
+"name": "custom-node: background bg_color follows State",
+"ok": true,
+"detail": "rgb(255, 0, 0)"
+},
+{
+"t": 46.47,
+"name": "custom-node: minimap node_color (ArgsFunctionOperation + rx.match on State var) uses the new color",
+"ok": true,
+"detail": [
+"rgb(255, 255, 255)",
+"rgb(255, 0, 0)",
+"rgb(255, 255, 255)",
+"rgb(255, 255, 255)"
+]
+},
+{
+"t": 48.76,
+"name": "custom-node: on_connect adds an animated edge (connection.merge({animated: true}))",
+"ok": true,
+"detail": {
+"before": 3,
+"after": 4,
+"animated": 4
+}
+},
+{
+"t": 54.79,
+"name": "drag-handle: dragging the label text does not move the node",
+"ok": true,
+"detail": {
+"before": [
+200.0,
+200.0
+],
+"after_label_drag": [
+200.0,
+200.0
+]
+}
+},
+{
+"t": 54.79,
+"name": "drag-handle: dragging the custom handle moves the node (uncontrolled default_nodes)",
+"ok": true,
+"detail": {
+"before": [
+200.0,
+200.0
+],
+"after": [
+239.0,
+239.5
+]
+}
+},
+{
+"t": 59.42,
+"name": "intersections: dragging node over Node 3 highlights it (on_node_drag throttle + get_intersecting_nodes)",
+"ok": false,
+"detail": []
+}
+],
+"notes": [
+"guard: 0.10.0a3 0.9.7a5",
+"overview: Output Node shows .selected after click (controlled nodes round trip)"
+],
+"summary": {
+"checks_failed": [
+"intersections: dragging node over Node 3 highlights it (on_node_drag throttle + get_intersecting_nodes)"
+],
+"n_checks": 22,
+"console_total": 45,
+"console_benign": 36,
+"console_errors": 0,
+"console_warnings": 0,
+"page_errors": 0,
+"failed_requests": 0,
+"http_errors": 0
+},
+"anomalies": {
+"console_errors": [],
+"console_warnings": [],
+"page_errors": [],
+"failed_requests": [],
+"http_errors": []
+},
+"console_all": [
+{
+"t": 3.31,
+"ctx": "flow",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 3.67,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 3.69,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 3.87,
+"ctx": "flow",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=9c9443dc",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 4.6,
+"ctx": "flow",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 5.55,
+"ctx": "flow",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/overview",
+"location": {
+"url": "http://localhost:3319/overview",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 5.64,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/overview",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 5.71,
+"ctx": "flow",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/overview",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=9c9443dc",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 5.81,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/overview",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 18.08,
+"ctx": "flow",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/overview",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 18.27,
+"ctx": "flow",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/overview",
+"location": {
+"url": "http://localhost:3319/overview",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 18.66,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/overview",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 18.67,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/overview",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 18.67,
+"ctx": "flow",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/overview",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=9c9443dc",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 21.55,
+"ctx": "flow",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/overview",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 22.09,
+"ctx": "flow",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"location": {
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 22.17,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 22.19,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 22.19,
+"ctx": "flow",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=9c9443dc",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 30.83,
+"ctx": "flow-ctx2",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"location": {
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 31.54,
+"ctx": "flow-ctx2",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 31.69,
+"ctx": "flow-ctx2",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 32.16,
+"ctx": "flow-ctx2",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=9c9443dc",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 34.54,
+"ctx": "flow",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 35.23,
+"ctx": "flow",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/nodes/connection-limit",
+"location": {
+"url": "http://localhost:3319/nodes/connection-limit",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 35.78,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/nodes/connection-limit",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 35.85,
+"ctx": "flow",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/nodes/connection-limit",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=9c9443dc",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 35.85,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/nodes/connection-limit",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 42.02,
+"ctx": "flow",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/nodes/connection-limit",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 42.14,
+"ctx": "flow",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/nodes/custom-node",
+"location": {
+"url": "http://localhost:3319/nodes/custom-node",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 42.4,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/nodes/custom-node",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 42.4,
+"ctx": "flow",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/nodes/custom-node",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=9c9443dc",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 42.46,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/nodes/custom-node",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 49.31,
+"ctx": "flow",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/nodes/custom-node",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 49.96,
+"ctx": "flow",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/nodes/drag-handle",
+"location": {
+"url": "http://localhost:3319/nodes/drag-handle",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 50.32,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/nodes/drag-handle",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 50.32,
+"ctx": "flow",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/nodes/drag-handle",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=9c9443dc",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 50.35,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/nodes/drag-handle",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 54.82,
+"ctx": "flow",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/nodes/drag-handle",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 55.07,
+"ctx": "flow",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/nodes/intersections",
+"location": {
+"url": "http://localhost:3319/nodes/intersections",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 55.1,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/nodes/intersections",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 55.13,
+"ctx": "flow",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/nodes/intersections",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=9c9443dc",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 55.13,
+"ctx": "flow",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/nodes/intersections",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 59.53,
+"ctx": "flow",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3319/nodes/intersections",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 788,
+"column": 14,
+"lineNumber": 788,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 59.77,
+"ctx": "flow-ctx2",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3319/nodes/add-node-on-edge-drop",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 788,
+"column": 14,
+"lineNumber": 788,
+"columnNumber": 14
+},
+"benign": false
+}
+]
+}

@@ -1,0 +1,385 @@
+.EFFF..FEF.........EFF.
+==================================== ERRORS ====================================
+_______________ ERROR at teardown of test_case_ctrl_monkeypatch ________________
+
+cls = <class 'test_v7_undo.Cfg_ctrl_mp'>, name = 'limit'
+value = Field(default=99, is_var=True, annotated_type=<class 'int'>)
+
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update a field's default while retaining its descriptor.
+    
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
+    
+        Args:
+            name: The class attribute being assigned.
+            value: Its new default value or zero-argument default factory.
+    
+        Raises:
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
+        """
+        declared = cls.__fields__.get(name)
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
+        default = value
+>       accepted = _accepts_default(declared, value)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default=99, is_var=True, annotated_type=<class 'int'>)
+value = Field(default=99, is_var=True, annotated_type=<class 'int'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+__________________ ERROR at teardown of test_case_ctrl_nested __________________
+
+cls = <class 'test_v7_undo.Cfg_ctrl_nested'>, name = 'limit'
+value = Field(default=30, is_var=True, annotated_type=<class 'int'>)
+
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update a field's default while retaining its descriptor.
+    
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
+    
+        Args:
+            name: The class attribute being assigned.
+            value: Its new default value or zero-argument default factory.
+    
+        Raises:
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
+        """
+        declared = cls.__fields__.get(name)
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
+        default = value
+>       accepted = _accepts_default(declared, value)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default=30, is_var=True, annotated_type=<class 'int'>)
+value = Field(default=30, is_var=True, annotated_type=<class 'int'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+_________ ERROR at teardown of test_case_c_assign_inside_patch_window __________
+
+cls = <class 'test_v7_undo.Cfg_c_assign_in_window'>, name = 'limit'
+value = Field(default=50, is_var=True, annotated_type=<class 'int'>)
+
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update a field's default while retaining its descriptor.
+    
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
+    
+        Args:
+            name: The class attribute being assigned.
+            value: Its new default value or zero-argument default factory.
+    
+        Raises:
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
+        """
+        declared = cls.__fields__.get(name)
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
+        default = value
+>       accepted = _accepts_default(declared, value)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default=50, is_var=True, annotated_type=<class 'int'>)
+value = Field(default=50, is_var=True, annotated_type=<class 'int'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+=================================== FAILURES ===================================
+_________________________ test_check_ctrl_monkeypatch __________________________
+
+    def test_check_ctrl_monkeypatch():
+>       assert fresh(CTRL_MP) == (10, 10)
+E       assert (99, 10) == (10, 10)
+E         
+E         At index 0 diff: 99 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:59: AssertionError
+_______________________ test_case_ctrl_mock_patch_object _______________________
+
+    def test_case_ctrl_mock_patch_object():
+>       with mock.patch.object(CTRL_MOCK, "_quota", 7):
+
+test_v7_undo.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1586: in __exit__
+    setattr(self.target, self.attribute, self.temp_original)
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: in __setattr__
+    accepted = _accepts_default(declared, value)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default=7, is_var=True, annotated_type=<class 'int'>)
+value = Field(default=7, is_var=True, annotated_type=<class 'int'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+______________________ test_check_ctrl_mock_patch_object _______________________
+
+    def test_check_ctrl_mock_patch_object():
+>       assert fresh(CTRL_MOCK) == (10, 10)
+E       assert (10, 7) == (10, 10)
+E         
+E         At index 1 diff: 7 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:68: AssertionError
+____________________________ test_case_ctrl_nested _____________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f84bdb898e0>
+
+    def test_case_ctrl_nested(monkeypatch):
+        monkeypatch.setattr(CTRL_NESTED, "limit", 20)
+>       with mock.patch.object(CTRL_NESTED, "limit", 30):
+
+test_v7_undo.py:84: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1586: in __exit__
+    setattr(self.target, self.attribute, self.temp_original)
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: in __setattr__
+    accepted = _accepts_default(declared, value)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+declared = Field(default=30, is_var=True, annotated_type=<class 'int'>)
+value = Field(default=30, is_var=True, annotated_type=<class 'int'>)
+
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+    
+        Args:
+            declared: The field.
+            value: The candidate default.
+    
+        Returns:
+            Whether the value satisfies the field's annotation.
+    
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+
+../../../envs/verify_class_state-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+____________________________ test_check_ctrl_nested ____________________________
+
+    def test_check_ctrl_nested():
+>       assert fresh(CTRL_NESTED) == (10, 10)
+E       assert (30, 10) == (10, 10)
+E         
+E         At index 0 diff: 30 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:90: AssertionError
+___________________ test_check_c_assign_inside_patch_window ____________________
+
+    def test_check_c_assign_inside_patch_window():
+        # Plain-Python-attribute semantics would put back what monkeypatch saved (10).
+>       assert fresh(C_ASSIGN_IN_WINDOW) == (10, 10)
+E       assert (50, 10) == (10, 10)
+E         
+E         At index 0 diff: 50 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:143: AssertionError
+_______________________ test_case_d_monkeypatch_delattr ________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f84bdb88620>
+
+    def test_case_d_monkeypatch_delattr(monkeypatch):
+        monkeypatch.delattr(D_MP_DELATTR, "_quota")
+>       print(f"\n[{VERSION}] (d) during the test _quota starts at {fresh(D_MP_DELATTR)[1]}")
+                                                                    ^^^^^^^^^^^^^^^^^^^
+
+test_v7_undo.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'test_v7_undo.Cfg_d_mp_delattr'>
+
+    def fresh(cls):
+        s = cls(_reflex_internal_init=True)
+>       return s.limit, s._quota
+                        ^^^^^^^^
+E       AttributeError: 'Cfg_d_mp_delattr' object has no attribute '_quota'
+
+test_v7_undo.py:37: AttributeError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_v7_undo.py::test_case_ctrl_monkeypatch
+PASSED test_v7_undo.py::test_case_ctrl_rejected_wrong_type
+PASSED test_v7_undo.py::test_check_ctrl_rejected_wrong_type
+PASSED test_v7_undo.py::test_case_a_mock_patch_object_var
+PASSED test_v7_undo.py::test_check_a_mock_patch_object_var
+PASSED test_v7_undo.py::test_case_a2_monkeypatch_var
+PASSED test_v7_undo.py::test_check_a2_monkeypatch_var
+PASSED test_v7_undo.py::test_case_b_mocker_field
+PASSED test_v7_undo.py::test_check_b_mocker_field
+PASSED test_v7_undo.py::test_case_b2_monkeypatch_field
+PASSED test_v7_undo.py::test_check_b2_monkeypatch_field
+PASSED test_v7_undo.py::test_case_c_assign_inside_patch_window
+PASSED test_v7_undo.py::test_check_d_monkeypatch_delattr
+ERROR test_v7_undo.py::test_case_ctrl_monkeypatch - TypeError: A Field cannot...
+ERROR test_v7_undo.py::test_case_ctrl_nested - TypeError: A Field cannot over...
+ERROR test_v7_undo.py::test_case_c_assign_inside_patch_window - TypeError: A ...
+FAILED test_v7_undo.py::test_check_ctrl_monkeypatch - assert (99, 10) == (10,...
+FAILED test_v7_undo.py::test_case_ctrl_mock_patch_object - TypeError: A Field...
+FAILED test_v7_undo.py::test_check_ctrl_mock_patch_object - assert (10, 7) ==...
+FAILED test_v7_undo.py::test_case_ctrl_nested - TypeError: A Field cannot ove...
+FAILED test_v7_undo.py::test_check_ctrl_nested - assert (30, 10) == (10, 10)
+FAILED test_v7_undo.py::test_check_c_assign_inside_patch_window - assert (50,...
+FAILED test_v7_undo.py::test_case_d_monkeypatch_delattr - AttributeError: 'Cf...
+7 failed, 13 passed, 3 errors in 2.62s

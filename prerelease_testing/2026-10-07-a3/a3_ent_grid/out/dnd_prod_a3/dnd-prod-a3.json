@@ -1,0 +1,637 @@
+{
+"name": "dnd-prod-a3",
+"python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+"checks": [
+{
+"t": 4.0,
+"name": "index lists the 3 demo pages",
+"ok": true,
+"detail": [
+"Drag and Drop Basic Demo",
+"Drag and Drop Foreach Demo",
+"Kanban Board Demo"
+]
+},
+{
+"t": 6.41,
+"name": "basic: 4 drop targets, card in target 0, blue backgrounds",
+"ok": true,
+"detail": [
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 7.65,
+"name": "basic: hovered target turns green while dragging (collected_params.is_over)",
+"ok": true,
+"detail": [
+"rgb(0, 0, 255)",
+"rgb(0, 0, 255)",
+"rgb(0, 128, 0)",
+"rgb(0, 0, 255)"
+]
+},
+{
+"t": 8.98,
+"name": "basic: drop moves card to target 2 (State.card_pos)",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 9.0,
+"name": "basic: on_drop toast 'Dropped in position 2'",
+"ok": true,
+"detail": [
+"Dropped in position 2"
+]
+},
+{
+"t": 11.37,
+"name": "basic: second drag to target 3",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 13.11,
+"name": "basic: drop outside a target leaves the card in place",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 15.38,
+"name": "basic: card position survives reload (same tab state)",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 17.78,
+"name": "foreach: 4 drop targets, card in target 0, blue backgrounds",
+"ok": true,
+"detail": [
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 19.05,
+"name": "foreach: hovered target turns green while dragging (collected_params.is_over)",
+"ok": true,
+"detail": [
+"rgb(0, 0, 255)",
+"rgb(0, 0, 255)",
+"rgb(0, 128, 0)",
+"rgb(0, 0, 255)"
+]
+},
+{
+"t": 20.33,
+"name": "foreach: drop moves card to target 2 (State.card_pos)",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 20.46,
+"name": "foreach: on_drop toast 'Dropped in position 2'",
+"ok": true,
+"detail": [
+"Dropped in position 2"
+]
+},
+{
+"t": 23.93,
+"name": "foreach: second drag to target 3",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 25.58,
+"name": "foreach: drop outside a target leaves the card in place",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 28.16,
+"name": "foreach: card position survives reload (same tab state)",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 31.37,
+"name": "basic: a new browser context starts with card at target 0",
+"ok": true,
+"detail": [
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 32.17,
+"name": "demo dropdown navigates to /kanban",
+"ok": true,
+"detail": "http://localhost:3318/kanban"
+},
+{
+"t": 35.24,
+"name": "kanban: first load does not write the LocalStorage default (F-002 class)",
+"ok": true,
+"detail": {
+"theme": "system"
+}
+},
+{
+"t": 37.21,
+"name": "kanban: two columns created via form",
+"ok": true,
+"detail": [
+{
+"col": "Todo",
+"items": []
+},
+{
+"col": "Done",
+"items": []
+}
+]
+},
+{
+"t": 39.75,
+"name": "kanban: items added to columns",
+"ok": true,
+"detail": [
+{
+"col": "Todo",
+"items": [
+"Alpha",
+"Beta"
+]
+},
+{
+"col": "Done",
+"items": [
+"Gamma"
+]
+}
+]
+},
+{
+"t": 39.75,
+"name": "kanban: on_save wrote kanban_data_json to localStorage",
+"ok": true,
+"detail": [
+"{\"columns\": [{\"id\": \"4fb50073-f941-42f1-892d-6382024ede2a\", \"title\": \"Todo\", \"description\": \"\", \"order\": 0}, {\"id\": \"8c33bef0-eec5-489e-abeb-a420e9ce4ec0\", \"title\": \"Done\", \"description\": \"\", \"order\":"
+]
+},
+{
+"t": 42.85,
+"name": "kanban: drag item Alpha onto Done column header moves it to Done (position 0)",
+"ok": true,
+"detail": [
+{
+"col": "Todo",
+"items": [
+"Beta"
+]
+},
+{
+"col": "Done",
+"items": [
+"Alpha",
+"Gamma"
+]
+}
+]
+},
+{
+"t": 42.86,
+"name": "kanban: draggable on_end toast 'You dropped <id>'",
+"ok": true,
+"detail": [
+"You dropped e8ea45d7-d09d-4463-94cf-450aa8246feb"
+]
+},
+{
+"t": 45.17,
+"name": "kanban: same-column reorder (Gamma to top of Done)",
+"ok": true,
+"detail": [
+{
+"col": "Todo",
+"items": [
+"Beta"
+]
+},
+{
+"col": "Done",
+"items": [
+"Gamma",
+"Alpha"
+]
+}
+]
+},
+{
+"t": 47.35,
+"name": "kanban: dragging column Done onto Todo reorders columns",
+"ok": true,
+"detail": [
+{
+"col": "Done",
+"items": [
+"Gamma",
+"Alpha"
+]
+},
+{
+"col": "Todo",
+"items": [
+"Beta"
+]
+}
+]
+},
+{
+"t": 50.2,
+"name": "kanban: board restored from LocalStorage after reload (on_load)",
+"ok": true,
+"detail": {
+"before": [
+{
+"col": "Done",
+"items": [
+"Gamma",
+"Alpha"
+]
+},
+{
+"col": "Todo",
+"items": [
+"Beta"
+]
+}
+],
+"after": [
+{
+"col": "Done",
+"items": [
+"Gamma",
+"Alpha"
+]
+},
+{
+"col": "Todo",
+"items": [
+"Beta"
+]
+}
+]
+}
+},
+{
+"t": 54.01,
+"name": "kanban: second tab loads the same board from LocalStorage",
+"ok": true,
+"detail": [
+"Done",
+"Todo"
+]
+}
+],
+"notes": [
+"guard: 0.10.0a3 0.9.7a5",
+"kanban localStorage after first load: {\"theme\": \"system\"}"
+],
+"summary": {
+"checks_failed": [],
+"n_checks": 27,
+"console_total": 9,
+"console_benign": 0,
+"console_errors": 0,
+"console_warnings": 0,
+"page_errors": 0,
+"failed_requests": 0,
+"http_errors": 0
+},
+"anomalies": {
+"console_errors": [],
+"console_warnings": [],
+"page_errors": [],
+"failed_requests": [],
+"http_errors": []
+},
+"console_all": [
+{
+"t": 4.01,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3318/",
+"location": {
+"url": "http://localhost:3318/assets/createLucideIcon-5OdHydSA.js",
+"line": 1,
+"column": 11195,
+"lineNumber": 1,
+"columnNumber": 11195
+},
+"benign": false
+},
+{
+"t": 13.13,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3318/basic/",
+"location": {
+"url": "http://localhost:3318/assets/createLucideIcon-5OdHydSA.js",
+"line": 1,
+"column": 11195,
+"lineNumber": 1,
+"columnNumber": 11195
+},
+"benign": false
+},
+{
+"t": 15.46,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3318/basic/",
+"location": {
+"url": "http://localhost:3318/assets/createLucideIcon-5OdHydSA.js",
+"line": 1,
+"column": 11195,
+"lineNumber": 1,
+"columnNumber": 11195
+},
+"benign": false
+},
+{
+"t": 25.59,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3318/foreach/",
+"location": {
+"url": "http://localhost:3318/assets/createLucideIcon-5OdHydSA.js",
+"line": 1,
+"column": 11195,
+"lineNumber": 1,
+"columnNumber": 11195
+},
+"benign": false
+},
+{
+"t": 32.21,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3318/foreach/",
+"location": {
+"url": "http://localhost:3318/assets/createLucideIcon-5OdHydSA.js",
+"line": 1,
+"column": 11195,
+"lineNumber": 1,
+"columnNumber": 11195
+},
+"benign": false
+},
+{
+"t": 47.46,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3318/kanban/",
+"location": {
+"url": "http://localhost:3318/assets/createLucideIcon-5OdHydSA.js",
+"line": 1,
+"column": 11195,
+"lineNumber": 1,
+"columnNumber": 11195
+},
+"benign": false
+},
+{
+"t": 54.22,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3318/kanban/",
+"location": {
+"url": "http://localhost:3318/assets/createLucideIcon-5OdHydSA.js",
+"line": 1,
+"column": 11379,
+"lineNumber": 1,
+"columnNumber": 11379
+},
+"benign": false
+},
+{
+"t": 54.23,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3318/kanban/",
+"location": {
+"url": "http://localhost:3318/assets/createLucideIcon-5OdHydSA.js",
+"line": 1,
+"column": 11379,
+"lineNumber": 1,
+"columnNumber": 11379
+},
+"benign": false
+},
+{
+"t": 54.27,
+"ctx": "dnd-tab2",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3318/kanban",
+"location": {
+"url": "http://localhost:3318/assets/createLucideIcon-5OdHydSA.js",
+"line": 1,
+"column": 11379,
+"lineNumber": 1,
+"columnNumber": 11379
+},
+"benign": false
+}
+]
+}

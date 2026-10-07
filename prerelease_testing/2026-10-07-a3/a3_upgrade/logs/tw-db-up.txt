@@ -1,0 +1,5 @@
+alembic_version	rows=1	digest=553c502e456d
+follows	rows=2	digest=42d164314fd8
+tweet	rows=4	digest=e609e08bd136
+user	rows=3	digest=73083f642abe
+alembic_version: [('79336c1da3d1',)]

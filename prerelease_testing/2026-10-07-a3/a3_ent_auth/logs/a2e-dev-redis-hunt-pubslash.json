@@ -1,0 +1,785 @@
+[
+ {
+  "rep": 0,
+  "loads": {
+   "/pid": {
+    "final": "/login?redirect_to=%2Fpid",
+    "pid_text": null,
+    "sent:check_if_iframed": 1,
+    "sent:check_if_iframed_cb": 1,
+    "sent:hydrate_and_load": 1,
+    "sent:on_load_internal": 1,
+    "chained": [
+     "_redirect",
+     "_call_function"
+    ]
+   },
+   "/pid/": {
+    "final": "/login?redirect_to=%2Fpid%2F",
+    "pid_text": null,
+    "sent:hydrate_and_load": 1,
+    "sent:on_load_internal": 1,
+    "chained": [
+     "_redirect"
+    ]
+   },
+   "/": {
+    "final": "/",
+    "pid_text": null,
+    "sent:hydrate_and_load": 1,
+    "chained": []
+   },
+   "/vault": {
+    "final": "/login?redirect_to=%2Fvault",
+    "pid_text": null,
+    "sent:hydrate_and_load": 1,
+    "sent:on_load_internal": 1,
+    "chained": [
+     "_redirect"
+    ]
+   }
+  },
+  "_full_log": [
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405311837.9424,
+    "to": "http://localhost:3340/pid"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405312056.529,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405312366.0664,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791405312384.4976,
+    "url": "ws://localhost:3340/?token=XFXxPmT-qHZS"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791405312394.9744,
+    "url": "ws://localhost:8340/_event/?token=9a422f6c-c0ce-47c8-d125-a48f34b90cd7&EIO=4&tra"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405312395.1528,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405312395.3118,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405312395.4487,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"eg_3MJREUpyd2nRjAABM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405312660.317,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405312685.6055,
+    "to": "http://localhost:3340/pid"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405312858.0867,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405312858.2573,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"NlyKdhpWeFq1SLALAABN\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405313026.0283,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405313026.1824,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405313041.4006,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405313042.5894,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405313056.0789,
+    "to": "http://localhost:3340/login?redirect_to=%2Fpid"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405313056.2468,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405313056.3376,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405313062.44,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405313062.6057,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405313068.2136,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405313072.2795,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405318018.3286,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318039.0654,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_close",
+    "t": 1791405318039.168
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_close",
+    "t": 1791405318081.3142
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405318082.2004,
+    "to": "http://localhost:3340/pid/"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405318144.393,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405318436.796,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791405318475.4504,
+    "url": "ws://localhost:3340/?token=XFXxPmT-qHZS"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791405318525.192,
+    "url": "ws://localhost:8340/_event/?token=9a422f6c-c0ce-47c8-d125-a48f34b90cd7&EIO=4&tra"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405318526.309,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318526.4722,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405318526.8352,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405318546.335,
+    "to": "http://localhost:3340/pid/"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318550.9656,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"XgHY0DkKpm60BlkpAABO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318556.0132,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318560.0454,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"4FNf3lUZEaRIN9ClAABP\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318563.8037,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318563.9456,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318569.6292,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318589.7551,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405318805.9219,
+    "to": "http://localhost:3340/login?redirect_to=%2Fpid%2F"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318806.046,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318806.1582,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405318806.2344,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405324184.0576,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405324184.401,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_close",
+    "t": 1791405324198.5132
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_close",
+    "t": 1791405324347.3416
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405324347.7122,
+    "to": "http://localhost:3340/"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405324717.4893,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405324814.9697,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791405324815.2007,
+    "url": "ws://localhost:3340/?token=XFXxPmT-qHZS"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791405324816.1746,
+    "url": "ws://localhost:8340/_event/?token=9a422f6c-c0ce-47c8-d125-a48f34b90cd7&EIO=4&tra"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405324816.4265,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405324816.5142,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405324816.6287,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405324816.7012,
+    "to": "http://localhost:3340/"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405324816.7747,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"XEsAjFmUGP9fq0ZVAABQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405324902.4177,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405324902.9758,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"Wj3rmmVZ6PgHhaFUAABR\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405324903.0935,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405324903.1687,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405324903.2402,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405330482.8667,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405330490.2783,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_close",
+    "t": 1791405330490.5156
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_close",
+    "t": 1791405330579.0327
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405330579.3516,
+    "to": "http://localhost:3340/vault"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405330641.1064,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405330977.4917,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791405330981.9316,
+    "url": "ws://localhost:3340/?token=XFXxPmT-qHZS"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791405330983.8396,
+    "url": "ws://localhost:8340/_event/?token=9a422f6c-c0ce-47c8-d125-a48f34b90cd7&EIO=4&tra"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405330984.0374,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405330984.1191,
+    "to": "http://localhost:3340/vault"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331000.9714,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405331001.218,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331002.1528,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"1BRY5eujEAcVsoyxAABS\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331002.249,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331002.319,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"NWVngfRcjDuiIs-OAABT\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331002.4626,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331002.5415,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331002.6125,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331002.6802,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791405331003.4753,
+    "to": "http://localhost:3340/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331003.5498,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331003.6367,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791405331003.7043,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791405336618.0723,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   }
+  ]
+ }
+]

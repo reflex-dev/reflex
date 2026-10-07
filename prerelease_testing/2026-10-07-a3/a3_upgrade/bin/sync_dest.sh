@@ -43,7 +43,12 @@ for f in src.rglob("*.json"):
             if isinstance(v, list) and len(v) > 12:
                 d[k] = v[:12] + [f"... {len(v) - 12} more writes trimmed"]
     out.write_text(json.dumps(d, indent=1))
+import re
+KEEP = re.compile(r"(up|cold|prod|session|guide|smoke|stale)")
+DROP = re.compile(r"(base|attempt1|stable|alpha2)")
 for f in src.rglob("*.jpg"):
+    if DROP.search(str(f.relative_to(src))) or not KEEP.search(f.name):
+        continue
     if f.stat().st_size < 150_000:
         out = dst / f.relative_to(src); out.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(f, out)
 PY

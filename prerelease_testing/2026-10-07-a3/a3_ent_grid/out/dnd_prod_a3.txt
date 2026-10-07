@@ -1,0 +1,41 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=a3-ent versions=0.10.0a3 0.9.7a5
+[NOTE] guard: 0.10.0a3 0.9.7a5
+[PASS] index lists the 3 demo pages: ['Drag and Drop Basic Demo', 'Drag and Drop Foreach Demo', 'Kanban Board Demo']
+[PASS] basic: 4 drop targets, card in target 0, blue backgrounds: [{'has_card': True, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] basic: hovered target turns green while dragging (collected_params.is_over): ['rgb(0, 0, 255)', 'rgb(0, 0, 255)', 'rgb(0, 128, 0)', 'rgb(0, 0, 255)']
+[PASS] basic: drop moves card to target 2 (State.card_pos): [{'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': True, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] basic: on_drop toast 'Dropped in position 2': ['Dropped in position 2']
+[PASS] basic: second drag to target 3: [{'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': True, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] basic: drop outside a target leaves the card in place: [{'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': True, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] basic: card position survives reload (same tab state): [{'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': True, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] foreach: 4 drop targets, card in target 0, blue backgrounds: [{'has_card': True, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] foreach: hovered target turns green while dragging (collected_params.is_over): ['rgb(0, 0, 255)', 'rgb(0, 0, 255)', 'rgb(0, 128, 0)', 'rgb(0, 0, 255)']
+[PASS] foreach: drop moves card to target 2 (State.card_pos): [{'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': True, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] foreach: on_drop toast 'Dropped in position 2': ['Dropped in position 2']
+[PASS] foreach: second drag to target 3: [{'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': True, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] foreach: drop outside a target leaves the card in place: [{'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': True, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] foreach: card position survives reload (same tab state): [{'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': True, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] basic: a new browser context starts with card at target 0: [{'has_card': True, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}, {'has_card': False, 'bg': 'rgb(0, 0, 255)'}]
+[PASS] demo dropdown navigates to /kanban: http://localhost:3318/kanban
+[NOTE] kanban localStorage after first load: {"theme": "system"}
+[PASS] kanban: first load does not write the LocalStorage default (F-002 class): {'theme': 'system'}
+[PASS] kanban: two columns created via form: [{'col': 'Todo', 'items': []}, {'col': 'Done', 'items': []}]
+[PASS] kanban: items added to columns: [{'col': 'Todo', 'items': ['Alpha', 'Beta']}, {'col': 'Done', 'items': ['Gamma']}]
+[PASS] kanban: on_save wrote kanban_data_json to localStorage: ['{"columns": [{"id": "4fb50073-f941-42f1-892d-6382024ede2a", "title": "Todo", "description": "", "order": 0}, {"id": "8c33bef0-eec5-489e-abeb-a420e9ce4ec0", "title": "Done", "description": "", "order":']
+[PASS] kanban: drag item Alpha onto Done column header moves it to Done (position 0): [{'col': 'Todo', 'items': ['Beta']}, {'col': 'Done', 'items': ['Alpha', 'Gamma']}]
+[PASS] kanban: draggable on_end toast 'You dropped <id>': ['You dropped e8ea45d7-d09d-4463-94cf-450aa8246feb']
+[PASS] kanban: same-column reorder (Gamma to top of Done): [{'col': 'Todo', 'items': ['Beta']}, {'col': 'Done', 'items': ['Gamma', 'Alpha']}]
+[PASS] kanban: dragging column Done onto Todo reorders columns: [{'col': 'Done', 'items': ['Gamma', 'Alpha']}, {'col': 'Todo', 'items': ['Beta']}]
+[PASS] kanban: board restored from LocalStorage after reload (on_load): {'before': [{'col': 'Done', 'items': ['Gamma', 'Alpha']}, {'col': 'Todo', 'items': ['Beta']}], 'after': [{'col': 'Done', 'items': ['Gamma', 'Alpha']}, {'col': 'Todo', 'items': ['Beta']}]}
+[PASS] kanban: second tab loads the same board from LocalStorage: ['Done', 'Todo']
+{
+ "checks_failed": [],
+ "n_checks": 27,
+ "console_total": 9,
+ "console_benign": 0,
+ "console_errors": 0,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}

@@ -1,0 +1,62 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=a3-ent versions=0.10.0a3 0.9.7a5
+[NOTE] guard: 0.10.0a3 0.9.7a5
+[PASS] index lists the demo pages: ['Dates', 'Pill', 'Tags Input', 'QA Mantine']
+[PASS] dates: 12 picker cards render: 12
+[PASS] dates: DatePicker day click -> on_change toast with ISO date: ['Date selected: 2026-10-15']
+[PASS] dates: MonthPicker -> toast 'Month selected: YYYY-03-01': ['Month selected: 2026-03-01', 'Date selected: 2026-10-15']
+[PASS] dates: YearPicker -> toast 'Year selected: YYYY-01-01': ['Year selected: 2027-01-01', 'Month selected: 2026-03-01', 'Date selected: 2026-10-15']
+[PASS] dates: DatePickerInput popover day -> toast and input shows the date: {'toasts': ['Date selected: 2026-10-20', 'Year selected: 2027-01-01', 'Month selected: 2026-03-01', 'Date selected: 2026-10-15'], 'input': 'DatePickerInput\n\nPick a Date\nOctober 20, 2026'}
+[PASS] dates: preset 'Tomorrow' (dayjs Var) -> toast with tomorrow: ['Date selected: 2026-10-08', 'Date selected: 2026-10-20', 'Year selected: 2027-01-01', 'Month selected: 2026-03-01', 'Date selected: 2026-10-15']
+[NOTE] TimeInput element: <input class="m_468e7eda m_8fb7ebe7 mantine-Input-input mantine-TimeInput-input" data-variant="default" step="60" type="time" aria-invalid="false" id="mantine-cmjrswj96">
+[PASS] dates: TimeInput typing -> on_change toast with time: ['Time selected: 10:30', 'Date selected: 2026-10-08', 'Date selected: 2026-10-20', 'Year selected: 2027-01-01', 'Month selected: 2026-03-01', 'Date selected: 2026-10-15']
+[PASS] pill: 7 pills render: 7
+[PASS] pill: remove button -> on_remove toast 'Removed': ['Removed']
+[PASS] tags-input: initial State.tags rendered: ['Tag1', 'Tag2']
+[PASS] tags-input: typing + Enter adds a tag via on_change -> State: ['Tag1', 'Tag2', 'Tag3']
+[PASS] tags-input: pill remove updates State: ['Tag2', 'Tag3']
+[PASS] tags-input: duplicate tag rejected: ['Tag2', 'Tag3']
+[PASS] tags-input: tags survive reload (session state): ['Tag2', 'Tag3']
+[PASS] tags-input: a second browser context starts from the State default (session isolation): ['Tag1', 'Tag2']
+[PASS] qa: Autocomplete on_option_submit -> State: fruit: Banana
+[NOTE] multiselect dropdown visible options: ['React', 'Vue', 'Svelte']
+[PASS] qa: MultiSelect on_change -> State list: picks: React,Vue
+[PASS] qa: RingProgress label follows State (30 -> 50): 50%
+[NOTE] ring sections stroke-dasharray: ['131.94689145077132, 131.94689145077132', '131.94689145077132, 131.94689145077132']
+[PASS] qa: JsonInput on_change -> State and format_on_blur reformats: {'state': 'json: { "b": [ 1, 2 ] }', 'input': '{\n  "b": [\n    1,\n    2\n  ]\n}'}
+[PASS] qa: JsonInput shows validation_error on invalid JSON: ['Invalid JSON']
+[PASS] qa: Collapse in_=State.opened toggles content: {'before': False, 'after': True}
+[PASS] qa: NumberFormatter renders State-derived value: Fruit
+
+fruit: Banana
+
+Frameworks
+React
+Vue
+
+picks: React,Vue
+
+50%
+
+bump
+JSON
+
+Invalid JSON
+
+json: {bad json
+
+$ 50,000
+toggle collapse
+
+collapsed content
+{
+ "checks_failed": [],
+ "n_checks": 23,
+ "console_total": 7,
+ "console_benign": 0,
+ "console_errors": 0,
+ "console_warnings": 0,
+ "page_errors": 1,
+ "failed_requests": 0,
+ "http_errors": 0
+}
+  page_errors: {"t": 31.87, "ctx": "mantine", "error": "Cannot read properties of null (reading 'name')", "url": "http://localhost:3318/qa-mantine/"}

@@ -1,0 +1,41 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=a3-ent versions=0.10.0a3 0.9.7a5
+[NOTE] guard: 0.10.0a3 0.9.7a5
+[PASS] route /: {'status': 200, 'ag_grids': 0, 'center_rows': 0, 'text': 'Map Demos |  | A collection of examples showcasing Leaflet maps in Reflex Enterprise. |  | Example |  | Source |  | Fly to Location |  | Demonstrates flying to different map locations and using geolocation. |  | Map Controls |  | Demonstrates
+[PASS] route /fly-to-location: {'status': 200, 'ag_grids': 0, 'center_rows': 0, 'text': 'Fly to Location | Map Demos |  | Demonstrates flying to different map locations and using geolocation. |  | Example |  | Source |  | Map Demo with Events |  | Zoom: 13 |  | Located: null |  | Locate | Locate and setView | Fly to Found Locatio
+[PASS] route /map-controls: {'status': 200, 'ag_grids': 0, 'center_rows': 0, 'text': 'Map Controls | Map Demos |  | Demonstrates different map controls including zoom, scale, attribution, and layers. |  | Example |  | Source |  | Map Controls Demo |  | This map demonstrates different controls available in Leaflet. |  |  Leafle
+[PASS] route /vector-layers: {'status': 200, 'ag_grids': 0, 'center_rows': 0, 'text': 'Vector Layers | Map Demos |  | Demonstrates different vector layers like circles, polygons, polylines, and rectangles. |  | Example |  | Source |  | Vector Layers Demo |  | This map demonstrates different vector layers available in Leaflet. |
+{
+ "checks_failed": [],
+ "n_checks": 4,
+ "console_total": 74,
+ "console_benign": 16,
+ "console_errors": 54,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 54,
+ "http_errors": 0
+}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://c.tile.openstreetmap.org/13/4092/2723.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://b.tile.openstreetmap.org/13/4096/2724.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://b.tile.openstreetmap.org/13/4092/2725.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://c.tile.openstreetmap.org/13/4095/2723.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://c.tile.openstreetmap.org/13/4096/2725.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://a.tile.openstreetmap.org/13/4096/2723.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://b.tile.openstreetmap.org/13/4095/2725.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://a.tile.openstreetmap.org/13/4091/2725.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://c.tile.openstreetmap.org/13/4091/2724.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://b.tile.openstreetmap.org/13/4091/2723.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://a.tile.openstreetmap.org/13/4093/2723.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_errors: {"t": 18.8, "ctx": "smoke", "type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:3319/fly-to-location", "location": {"url": "https://b.tile.openstreetmap.org/13/4093/2724.png", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://c.tile.openstreetmap.org/13/4092/2723.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://b.tile.openstreetmap.org/13/4096/2724.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://b.tile.openstreetmap.org/13/4092/2725.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://c.tile.openstreetmap.org/13/4095/2723.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://c.tile.openstreetmap.org/13/4096/2725.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://a.tile.openstreetmap.org/13/4096/2723.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://b.tile.openstreetmap.org/13/4095/2725.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://a.tile.openstreetmap.org/13/4091/2725.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://c.tile.openstreetmap.org/13/4091/2724.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://b.tile.openstreetmap.org/13/4091/2723.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://a.tile.openstreetmap.org/13/4093/2723.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}
+  failed_requests: {"t": 18.8, "ctx": "smoke", "url": "https://b.tile.openstreetmap.org/13/4093/2724.png", "method": "GET", "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"}

@@ -1,0 +1,2133 @@
+{
+"name": "map-smoke",
+"python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+"checks": [
+{
+"t": 4.1,
+"name": "route /",
+"ok": true,
+"detail": {
+"status": 200,
+"ag_grids": 0,
+"center_rows": 0,
+"text": "Map Demos |  | A collection of examples showcasing Leaflet maps in Reflex Enterprise. |  | Example |  | Source |  | Fly to Location |  | Demonstrates flying to different map locations and using geolocation. |  | Map Controls |  | Demonstrates different map controls including zoom, scale, attribution, and layers. |  | Vector Layers"
+}
+},
+{
+"t": 7.94,
+"name": "route /fly-to-location",
+"ok": true,
+"detail": {
+"status": 200,
+"ag_grids": 0,
+"center_rows": 0,
+"text": "Fly to Location | Map Demos |  | Demonstrates flying to different map locations and using geolocation. |  | Example |  | Source |  | Map Demo with Events |  | Zoom: 13 |  | Located: null |  | Locate | Locate and setView | Fly to Found Location | Fly to center | + | \u2212 |  Leaflet | Built with Reflex"
+}
+},
+{
+"t": 11.98,
+"name": "route /map-controls",
+"ok": true,
+"detail": {
+"status": 200,
+"ag_grids": 0,
+"center_rows": 0,
+"text": "Map Controls | Map Demos |  | Demonstrates different map controls including zoom, scale, attribution, and layers. |  | Example |  | Source |  | Map Controls Demo |  | This map demonstrates different controls available in Leaflet. |  |  Leaflet | + | \u2212 | 1 km | 3000 ft |  | Available Controls: |  | Zoom Control - Located at topright (default"
+}
+},
+{
+"t": 17.84,
+"name": "route /vector-layers",
+"ok": true,
+"detail": {
+"status": 200,
+"ag_grids": 0,
+"center_rows": 0,
+"text": "Vector Layers | Map Demos |  | Demonstrates different vector layers like circles, polygons, polylines, and rectangles. |  | Example |  | Source |  | Vector Layers Demo |  | This map demonstrates different vector layers available in Leaflet. |  | Get Bounds | + | \u2212 |  Leaflet |  | The map shows: a red circle (500m radius), a red circle"
+}
+}
+],
+"notes": [
+"guard: 0.10.0a3 0.9.7a5"
+],
+"summary": {
+"checks_failed": [],
+"n_checks": 4,
+"console_total": 58,
+"console_benign": 0,
+"console_errors": 54,
+"console_warnings": 0,
+"page_errors": 0,
+"failed_requests": 54,
+"http_errors": 0
+},
+"anomalies": {
+"console_errors": [
+{
+"t": 4.69,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4091/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.72,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4096/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.75,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4095/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.78,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4096/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.79,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4092/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.8,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4091/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.8,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4094/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.8,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4093/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.81,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4096/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.81,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4091/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.81,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4092/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.82,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4093/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.83,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4093/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.84,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4094/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.85,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4094/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.86,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4092/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.87,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4095/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.9,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4095/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.47,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4091/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.56,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4096/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.57,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4096/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.6,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4091/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.6,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4092/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.6,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4091/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.62,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4094/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.62,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4093/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.63,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4096/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.63,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4094/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.63,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4092/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.65,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4093/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.69,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4095/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.69,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4092/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.72,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4093/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.73,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4095/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.74,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4095/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.75,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4094/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.21,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4091/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.29,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4092/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.29,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4096/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.33,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4096/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.33,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4091/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.34,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4095/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.35,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4094/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.36,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4091/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.37,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4096/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.38,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4093/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.42,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4093/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.48,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4093/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.48,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4092/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.48,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4094/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.5,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4092/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.5,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4095/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.52,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4094/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 14.65,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4095/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+}
+],
+"console_warnings": [],
+"page_errors": [],
+"failed_requests": [
+{
+"t": 4.69,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4091/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.72,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4096/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.75,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4095/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.78,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4096/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.79,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4092/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.8,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4091/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.8,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4094/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.8,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4093/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.81,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4096/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.81,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4091/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.81,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4092/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.82,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4093/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.83,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4093/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.84,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4094/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.85,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4094/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.86,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4092/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.87,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4095/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 4.9,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4095/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.47,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4091/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.56,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4096/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.57,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4096/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.59,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4091/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.6,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4092/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.6,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4091/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.62,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4094/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.62,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4093/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.63,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4096/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.63,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4094/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.63,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4092/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.65,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4093/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.69,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4095/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.69,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4092/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.72,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4093/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.73,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4095/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.74,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4095/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 8.75,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4094/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.21,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4091/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.29,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4092/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.29,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4096/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.33,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4096/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.33,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4091/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.34,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4095/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.35,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4094/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.36,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4091/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.37,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4096/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.38,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4093/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.42,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4093/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.48,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4093/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.48,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4092/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.48,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4094/2725.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.5,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4092/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.5,
+"ctx": "smoke",
+"url": "https://c.tile.openstreetmap.org/13/4095/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 13.52,
+"ctx": "smoke",
+"url": "https://b.tile.openstreetmap.org/13/4094/2723.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+},
+{
+"t": 14.65,
+"ctx": "smoke",
+"url": "https://a.tile.openstreetmap.org/13/4095/2724.png",
+"method": "GET",
+"failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+}
+],
+"http_errors": []
+},
+"console_all": [
+{
+"t": 4.2,
+"ctx": "smoke",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3318/",
+"location": {
+"url": "http://localhost:3318/assets/jsx-runtime-CUbaKNYi.js",
+"line": 1,
+"column": 11195,
+"lineNumber": 1,
+"columnNumber": 11195
+},
+"benign": false
+},
+{
+"t": 4.69,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4091/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.72,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4096/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.75,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4095/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.78,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4096/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.79,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4092/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.8,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4091/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.8,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4094/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.8,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4093/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.81,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4096/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.81,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4091/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.81,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4092/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.82,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4093/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.83,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4093/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.84,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4094/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.85,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4094/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.86,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4092/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.87,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4095/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 4.9,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4095/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.0,
+"ctx": "smoke",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3318/fly-to-location/",
+"location": {
+"url": "http://localhost:3318/assets/jsx-runtime-CUbaKNYi.js",
+"line": 1,
+"column": 11195,
+"lineNumber": 1,
+"columnNumber": 11195
+},
+"benign": false
+},
+{
+"t": 8.47,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4091/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.56,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4096/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.57,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4096/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.6,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4091/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.6,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4092/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.6,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4091/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.62,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4094/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.62,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4093/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.63,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4096/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.63,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4094/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.63,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4092/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.65,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4093/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.69,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4095/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.69,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4092/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.72,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4093/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.73,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4095/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.74,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4095/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 8.75,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4094/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 12.43,
+"ctx": "smoke",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3318/map-controls/",
+"location": {
+"url": "http://localhost:3318/assets/jsx-runtime-CUbaKNYi.js",
+"line": 1,
+"column": 11195,
+"lineNumber": 1,
+"columnNumber": 11195
+},
+"benign": false
+},
+{
+"t": 13.21,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4091/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.29,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4092/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.29,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4096/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.33,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4096/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.33,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4091/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.34,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4095/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.35,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4094/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.36,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4091/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.37,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4096/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.38,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4093/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.42,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4093/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.48,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4093/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.48,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4092/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.48,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4094/2725.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.5,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4092/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.5,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://c.tile.openstreetmap.org/13/4095/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 13.52,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://b.tile.openstreetmap.org/13/4094/2723.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 14.65,
+"ctx": "smoke",
+"type": "error",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "https://a.tile.openstreetmap.org/13/4095/2724.png",
+"line": 0,
+"column": 0,
+"lineNumber": 0,
+"columnNumber": 0
+},
+"benign": false
+},
+{
+"t": 17.98,
+"ctx": "smoke",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3318/vector-layers/",
+"location": {
+"url": "http://localhost:3318/assets/jsx-runtime-CUbaKNYi.js",
+"line": 1,
+"column": 11379,
+"lineNumber": 1,
+"columnNumber": 11379
+},
+"benign": false
+}
+]
+}

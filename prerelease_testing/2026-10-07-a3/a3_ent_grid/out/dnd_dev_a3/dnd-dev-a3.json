@@ -1,0 +1,1178 @@
+{
+"name": "dnd-dev-a3",
+"python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+"checks": [
+{
+"t": 13.4,
+"name": "index lists the 3 demo pages",
+"ok": true,
+"detail": [
+"Drag and Drop Basic Demo",
+"Drag and Drop Foreach Demo",
+"Kanban Board Demo"
+]
+},
+{
+"t": 15.88,
+"name": "basic: 4 drop targets, card in target 0, blue backgrounds",
+"ok": true,
+"detail": [
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 16.7,
+"name": "basic: hovered target turns green while dragging (collected_params.is_over)",
+"ok": true,
+"detail": [
+"rgb(0, 0, 255)",
+"rgb(0, 0, 255)",
+"rgb(0, 128, 0)",
+"rgb(0, 0, 255)"
+]
+},
+{
+"t": 17.91,
+"name": "basic: drop moves card to target 2 (State.card_pos)",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 17.92,
+"name": "basic: on_drop toast 'Dropped in position 2'",
+"ok": true,
+"detail": [
+"Dropped in position 2"
+]
+},
+{
+"t": 19.74,
+"name": "basic: second drag to target 3",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 21.31,
+"name": "basic: drop outside a target leaves the card in place",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 23.59,
+"name": "basic: card position survives reload (same tab state)",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 25.92,
+"name": "foreach: 4 drop targets, card in target 0, blue backgrounds",
+"ok": true,
+"detail": [
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 26.76,
+"name": "foreach: hovered target turns green while dragging (collected_params.is_over)",
+"ok": true,
+"detail": [
+"rgb(0, 0, 255)",
+"rgb(0, 0, 255)",
+"rgb(0, 128, 0)",
+"rgb(0, 0, 255)"
+]
+},
+{
+"t": 27.97,
+"name": "foreach: drop moves card to target 2 (State.card_pos)",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 27.98,
+"name": "foreach: on_drop toast 'Dropped in position 2'",
+"ok": true,
+"detail": [
+"Dropped in position 2"
+]
+},
+{
+"t": 29.78,
+"name": "foreach: second drag to target 3",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 31.36,
+"name": "foreach: drop outside a target leaves the card in place",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 33.84,
+"name": "foreach: card position survives reload (same tab state)",
+"ok": true,
+"detail": [
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 36.88,
+"name": "basic: a new browser context starts with card at target 0",
+"ok": true,
+"detail": [
+{
+"has_card": true,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+},
+{
+"has_card": false,
+"bg": "rgb(0, 0, 255)"
+}
+]
+},
+{
+"t": 37.12,
+"name": "demo dropdown navigates to /kanban",
+"ok": true,
+"detail": "http://localhost:3319/kanban"
+},
+{
+"t": 39.95,
+"name": "kanban: first load does not write the LocalStorage default (F-002 class)",
+"ok": true,
+"detail": {
+"theme": "system",
+"last_compiled_theme": "system"
+}
+},
+{
+"t": 41.44,
+"name": "kanban: two columns created via form",
+"ok": true,
+"detail": [
+{
+"col": "Todo",
+"items": []
+},
+{
+"col": "Done",
+"items": []
+}
+]
+},
+{
+"t": 45.56,
+"name": "kanban: items added to columns",
+"ok": true,
+"detail": [
+{
+"col": "Todo",
+"items": [
+"Alpha",
+"Beta"
+]
+},
+{
+"col": "Done",
+"items": [
+"Gamma"
+]
+}
+]
+},
+{
+"t": 45.77,
+"name": "kanban: on_save wrote kanban_data_json to localStorage",
+"ok": true,
+"detail": [
+"{\"columns\": [{\"id\": \"5595ff45-4ec7-4f0d-9308-7b0d30a67e3f\", \"title\": \"Todo\", \"description\": \"\", \"order\": 0}, {\"id\": \"e7486f7e-1780-4acf-915d-e9baa398cb2f\", \"title\": \"Done\", \"description\": \"\", \"order\":"
+]
+},
+{
+"t": 48.51,
+"name": "kanban: drag item Alpha onto Done column header moves it to Done (position 0)",
+"ok": true,
+"detail": [
+{
+"col": "Todo",
+"items": [
+"Beta"
+]
+},
+{
+"col": "Done",
+"items": [
+"Alpha",
+"Gamma"
+]
+}
+]
+},
+{
+"t": 48.51,
+"name": "kanban: draggable on_end toast 'You dropped <id>'",
+"ok": true,
+"detail": [
+"You dropped 29099894-d755-4f61-929d-d5da0557d54f"
+]
+},
+{
+"t": 51.16,
+"name": "kanban: same-column reorder (Gamma to top of Done)",
+"ok": true,
+"detail": [
+{
+"col": "Todo",
+"items": [
+"Beta"
+]
+},
+{
+"col": "Done",
+"items": [
+"Gamma",
+"Alpha"
+]
+}
+]
+},
+{
+"t": 53.61,
+"name": "kanban: dragging column Done onto Todo reorders columns",
+"ok": true,
+"detail": [
+{
+"col": "Done",
+"items": [
+"Gamma",
+"Alpha"
+]
+},
+{
+"col": "Todo",
+"items": [
+"Beta"
+]
+}
+]
+},
+{
+"t": 57.21,
+"name": "kanban: board restored from LocalStorage after reload (on_load)",
+"ok": true,
+"detail": {
+"before": [
+{
+"col": "Done",
+"items": [
+"Gamma",
+"Alpha"
+]
+},
+{
+"col": "Todo",
+"items": [
+"Beta"
+]
+}
+],
+"after": [
+{
+"col": "Done",
+"items": [
+"Gamma",
+"Alpha"
+]
+},
+{
+"col": "Todo",
+"items": [
+"Beta"
+]
+}
+]
+}
+},
+{
+"t": 62.49,
+"name": "kanban: second tab loads the same board from LocalStorage",
+"ok": true,
+"detail": [
+"Done",
+"Todo"
+]
+}
+],
+"notes": [
+"guard: 0.10.0a3 0.9.7a5",
+"kanban localStorage after first load: {\"theme\": \"system\", \"last_compiled_theme\": \"system\"}"
+],
+"summary": {
+"checks_failed": [],
+"n_checks": 27,
+"console_total": 45,
+"console_benign": 36,
+"console_errors": 0,
+"console_warnings": 0,
+"page_errors": 0,
+"failed_requests": 0,
+"http_errors": 0
+},
+"anomalies": {
+"console_errors": [],
+"console_warnings": [],
+"page_errors": [],
+"failed_requests": [],
+"http_errors": []
+},
+"console_all": [
+{
+"t": 7.03,
+"ctx": "dnd",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 9.12,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 9.12,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 9.28,
+"ctx": "dnd",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=b57d2aab",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 13.4,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 13.49,
+"ctx": "dnd",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/basic",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 13.58,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 13.63,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 13.63,
+"ctx": "dnd",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=b57d2aab",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 21.31,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 21.36,
+"ctx": "dnd",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/basic",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 21.4,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 21.41,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 21.41,
+"ctx": "dnd",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=b57d2aab",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 23.6,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 23.66,
+"ctx": "dnd",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/foreach",
+"location": {
+"url": "http://localhost:3319/foreach",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 23.72,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/foreach",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 23.74,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/foreach",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 23.74,
+"ctx": "dnd",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/foreach",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=b57d2aab",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 31.37,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/foreach",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 31.45,
+"ctx": "dnd",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/foreach",
+"location": {
+"url": "http://localhost:3319/foreach",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 31.56,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/foreach",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 31.59,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/foreach",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 31.59,
+"ctx": "dnd",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/foreach",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=b57d2aab",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 33.97,
+"ctx": "dnd-tab2",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/basic",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 34.12,
+"ctx": "dnd-tab2",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 34.17,
+"ctx": "dnd-tab2",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 34.3,
+"ctx": "dnd-tab2",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/basic",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=b57d2aab",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 37.13,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/foreach",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 37.21,
+"ctx": "dnd",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/kanban",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 37.26,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 37.29,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 37.29,
+"ctx": "dnd",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=b57d2aab",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 53.81,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on page navigation",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 776,
+"column": 14,
+"lineNumber": 776,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 54.13,
+"ctx": "dnd",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/kanban",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 54.17,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 54.17,
+"ctx": "dnd",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=b57d2aab",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 54.17,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 57.4,
+"ctx": "dnd",
+"type": "log",
+"text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/kanban",
+"line": 23,
+"column": 22,
+"lineNumber": 23,
+"columnNumber": 22
+},
+"benign": true
+},
+{
+"t": 57.9,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connecting...",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 933,
+"column": 8,
+"lineNumber": 933,
+"columnNumber": 8
+},
+"benign": true
+},
+{
+"t": 57.98,
+"ctx": "dnd",
+"type": "debug",
+"text": "[vite] connected.",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/@vite/client",
+"line": 1046,
+"column": 11,
+"lineNumber": 1046,
+"columnNumber": 11
+},
+"benign": true
+},
+{
+"t": 58.14,
+"ctx": "dnd",
+"type": "info",
+"text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/node_modules/.vite/deps/react-dom_client.js?v=b57d2aab",
+"line": 15804,
+"column": 48,
+"lineNumber": 15804,
+"columnNumber": 48
+},
+"benign": true
+},
+{
+"t": 62.61,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 788,
+"column": 14,
+"lineNumber": 788,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 62.64,
+"ctx": "dnd",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 788,
+"column": 14,
+"lineNumber": 788,
+"columnNumber": 14
+},
+"benign": false
+},
+{
+"t": 62.72,
+"ctx": "dnd-tab2",
+"type": "log",
+"text": "Disconnect websocket on pagehide",
+"url": "http://localhost:3319/kanban",
+"location": {
+"url": "http://localhost:3319/utils/state.js",
+"line": 788,
+"column": 14,
+"lineNumber": 788,
+"columnNumber": 14
+},
+"benign": false
+}
+]
+}
