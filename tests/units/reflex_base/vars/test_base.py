@@ -1788,16 +1788,18 @@ def test_backend_field_format_raises(name: str):
         f"{getattr(Model, name)}px"
 
 
+@pytest.mark.parametrize("mixin", [False, True])
 @pytest.mark.parametrize(("name", "default"), [("_secret", 42), ("bookkeeping", 0)])
-def test_backend_field_format_error_names_the_fix(name: str, default: int):
+def test_backend_field_format_error_names_the_fix(name: str, default: int, mixin: bool):
     """The backend var format error names the var and how to use it in the UI.
 
     Args:
         name: The backend field to format, underscore-prefixed or is_var=False.
         default: The default value of that field.
+        mixin: Whether the field is declared on a mixin.
     """
 
-    class Model(EvenMoreBasicBaseState):
+    class Model(EvenMoreBasicBaseState, mixin=mixin):
         _secret: int = 42
         bookkeeping: int = field(default=0, is_var=False)
 

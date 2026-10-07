@@ -9,7 +9,7 @@ This page covers the 0.10 changes most likely to break an existing app, or to be
 
 ## Reading a backend var on a state class
 
-Reading a backend var on the state class, such as `State._items`, now returns its `Field` instead of the var's default value ([#7312](https://github.com/reflex-dev/reflex/pull/7312)). Passing it to a component raises `ChildrenTypeError` (as a child) or `TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar` (as a prop), and putting it in an f-string raises `BackendVarFormatError`. Reading the var on a state instance, such as `self._items`, is unchanged.
+Reading a backend var on the state class, such as `State._items`, now returns its `Field` instead of the var's default value ([#7312](https://github.com/reflex-dev/reflex/pull/7312)). Passing it to a component raises `ChildrenTypeError` (as a child) or `TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar` (as a prop), and formatting it in an f-string or with `str.format()` raises `BackendVarFormatError`. Reading the var on a state instance, such as `self._items`, is unchanged.
 
 Replace the class read with what the code meant:
 
