@@ -1,0 +1,135 @@
+--- retained/pyapp/abc_states.py
++++ executed/pyapp/abc_states.py
+@@ -12,15 +12,10 @@
+ 
+     @abstractmethod
+     def target(self) -> str:
+-        """Choose the greeting recipient.
+-
+-        Returns:
+-            Recipient supplied by a concrete subclass.
+-        """
++        """Who to greet."""
+ 
+     @rx.event
+     def greet(self):
+-        """Call the concrete hook from an inherited public event."""
+         self.greeting = f"hello {self.target()}"
+ 
+ 
+@@ -28,9 +23,4 @@
+     """Concrete state using the ABC mixin."""
+ 
+     def target(self) -> str:
+-        """Provide the greeting recipient.
+-
+-        Returns:
+-            The fixed recipient name.
+-        """
+         return "world"
+--- retained/pyapp/future_states.py
++++ executed/pyapp/future_states.py
+@@ -21,15 +21,9 @@
+ 
+     @rx.event
+     def bump(self):
+-        """Update list and dataclass fields with postponed annotations."""
+         self.f_list = [*(self.f_list or []), len(self.f_list or [])]
+         self.f_point = Point(self.f_point.x + 1, self.f_point.y)
+ 
+     @rx.var
+     def f_summary(self) -> str:
+-        """Read the postponed-annotation state values.
+-
+-        Returns:
+-            A stable summary of all five fields.
+-        """
+         return f"{self.f_list}|{self.f_opt}|{self.f_point.x}|{self.f_color.value}|{self.f_when.year}"
+--- retained/pyapp/pyapp.py
++++ executed/pyapp/pyapp.py
+@@ -1,4 +1,4 @@
+-"""Annotation-shape app for the supported Python matrix."""
++"""Annotation-shape app for the Python 3.10 / 3.14 matrix."""
+ 
+ import asyncio
+ import datetime
+@@ -33,25 +33,14 @@
+ 
+     @rx.var
+     def rows(self) -> list[dict[str, int]]:
+-        """Derive iterated rows from the nullable list.
+-
+-        Returns:
+-            Integer rows with their squares.
+-        """
+         return [{"i": i, "sq": i * i} for i in range(len(self.l_opt or []) + 1)]
+ 
+     @rx.var
+     def py_version(self) -> str:
+-        """Report the actual backend interpreter.
+-
+-        Returns:
+-            Three-part Python version.
+-        """
+         return ".".join(map(str, sys.version_info[:3]))
+ 
+     @rx.event
+     def mutate(self):
+-        """Mutate every state annotation shape through a public event."""
+         self.l_opt = [*(self.l_opt or []), 7]
+         self.d_nested["k"].append("v3")
+         self.o_str = "now set"
+@@ -70,13 +59,11 @@
+ 
+     @rx.event
+     def reset_opt(self):
+-        """Restore nullable fields without resetting other values."""
+         self.l_opt = None
+         self.o_str = None
+ 
+     @rx.event(background=True)
+     async def bg(self):
+-        """Increment state around simulated asynchronous work."""
+         async with self:
+             self.bg_running = True
+         for _ in range(3):
+@@ -88,15 +75,6 @@
+ 
+ 
+ def show(label: str, var) -> rx.Component:
+-    """Render a state value as JSON text.
+-
+-    Args:
+-        label: Field name used in the DOM identifier.
+-        var: Reactive value.
+-
+-    Returns:
+-        A labeled state field.
+-    """
+     return rx.hstack(
+         rx.text(label + ":"),
+         rx.text(var.to_string() if hasattr(var, "to_string") else var, id=f"v-{label}"),
+@@ -104,11 +82,6 @@
+ 
+ 
+ def index() -> rx.Component:
+-    """Render the shape controls and computed values.
+-
+-    Returns:
+-        The annotation test dashboard.
+-    """
+     return rx.vstack(
+         rx.heading("shapes", id="page-shapes"),
+         rx.text(Shapes.py_version, id="pyver"),
+@@ -154,11 +127,6 @@
+ 
+ 
+ def other() -> rx.Component:
+-    """Render a second route for state persistence checks.
+-
+-    Returns:
+-        The route's shared state values.
+-    """
+     return rx.vstack(
+         rx.heading("other", id="page-other"),
+         rx.text(Shapes.counter, id="other-counter"),

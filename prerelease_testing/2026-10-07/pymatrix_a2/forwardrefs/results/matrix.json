@@ -1,0 +1,1112 @@
+[
+  {
+    "case": "future_missing_list",
+    "metadata": {
+      "python": "3.11.16",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('list[InventoryItem]') for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('list[InventoryItem]') for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py\", line 126, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1204, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1176, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1147, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 690, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 940, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 241, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_list.py\", line 11, in <module>\n    class Warehouse(rx.State):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 4892, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex/state.py\", line 738, in __init_subclass__\n    cls.base_vars = {\n                    ^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex/state.py\", line 739, in <dictcomp>\n    name: get_var_for_field(cls, name, f)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex/state.py\", line 281, in get_var_for_field\n    return dispatch(\n           ^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 3881, in dispatch\n    ).guess_type()\n      ^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 1287, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('list[InventoryItem]') for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-311",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_list",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-311-future_missing_list.json"
+    ]
+  },
+  {
+    "case": "future_missing_optional",
+    "metadata": {
+      "python": "3.11.16",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('InventoryItem | None') for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('InventoryItem | None') for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py\", line 126, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1204, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1176, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1147, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 690, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 940, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 241, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_optional.py\", line 11, in <module>\n    class Warehouse(rx.State):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 4892, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex/state.py\", line 738, in __init_subclass__\n    cls.base_vars = {\n                    ^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex/state.py\", line 739, in <dictcomp>\n    name: get_var_for_field(cls, name, f)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex/state.py\", line 281, in get_var_for_field\n    return dispatch(\n           ^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 3881, in dispatch\n    ).guess_type()\n      ^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 1287, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('InventoryItem | None') for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-311",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_optional",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-311-future_missing_optional.json"
+    ]
+  },
+  {
+    "case": "future_valid",
+    "metadata": {
+      "python": "3.11.16",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_ce9ccefc907bd3b8d1834cf2e94162d8'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___future_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___future_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___future_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_ce9ccefc907bd3b8d1834cf2e94162d8', 'iterable_state': 'reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_ce9ccefc907bd3b8d1834cf2e94162d8'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-311",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-311-future_valid.json"
+    ]
+  },
+  {
+    "case": "bare_valid",
+    "metadata": {
+      "python": "3.11.16",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/lib/python3.11/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_ce9ccefc907bd3b8d1834cf2e94162d8'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___bare_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___bare_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___bare_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_ce9ccefc907bd3b8d1834cf2e94162d8', 'iterable_state': 'reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_ce9ccefc907bd3b8d1834cf2e94162d8'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-311",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-311/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-311-bare_valid.json"
+    ]
+  },
+  {
+    "case": "future_missing_list",
+    "metadata": {
+      "python": "3.13.15",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('list[InventoryItem]') for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('list[InventoryItem]') for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1395, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1360, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1331, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 935, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 1023, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_list.py\", line 11, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: list[InventoryItem] = []\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/vars/base.py\", line 4892, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/state.py\", line 739, in __init_subclass__\n    name: get_var_for_field(cls, name, f)\n          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/state.py\", line 281, in get_var_for_field\n    return dispatch(\n        field_name=field_name,\n        var_data=VarData.from_state(cls, name),\n        result_var_type=f.outer_type_,\n    )\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/vars/base.py\", line 3881, in dispatch\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/vars/base.py\", line 1287, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('list[InventoryItem]') for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-313",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_list",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-313-future_missing_list.json"
+    ]
+  },
+  {
+    "case": "future_missing_optional",
+    "metadata": {
+      "python": "3.13.15",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('InventoryItem | None') for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('InventoryItem | None') for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1395, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1360, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1331, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 935, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 1023, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_optional.py\", line 11, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: InventoryItem | None = None\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/vars/base.py\", line 4892, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/state.py\", line 739, in __init_subclass__\n    name: get_var_for_field(cls, name, f)\n          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/state.py\", line 281, in get_var_for_field\n    return dispatch(\n        field_name=field_name,\n        var_data=VarData.from_state(cls, name),\n        result_var_type=f.outer_type_,\n    )\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/vars/base.py\", line 3881, in dispatch\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/vars/base.py\", line 1287, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('InventoryItem | None') for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-313",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_optional",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-313-future_missing_optional.json"
+    ]
+  },
+  {
+    "case": "future_valid",
+    "metadata": {
+      "python": "3.13.15",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_05aa532890d2820b3f8ebff7b24d3c6d'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___future_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___future_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___future_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_05aa532890d2820b3f8ebff7b24d3c6d', 'iterable_state': 'reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_05aa532890d2820b3f8ebff7b24d3c6d'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-313",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-313-future_valid.json"
+    ]
+  },
+  {
+    "case": "bare_valid",
+    "metadata": {
+      "python": "3.13.15",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_05aa532890d2820b3f8ebff7b24d3c6d'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___bare_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___bare_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___bare_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_05aa532890d2820b3f8ebff7b24d3c6d', 'iterable_state': 'reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_05aa532890d2820b3f8ebff7b24d3c6d'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-313",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-313-bare_valid.json"
+    ]
+  },
+  {
+    "case": "future_missing_list",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('list[InventoryItem]', is_class=True) for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('list[InventoryItem]', is_class=True) for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_list.py\", line 11, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: list[InventoryItem] = []\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 4892, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/state.py\", line 739, in __init_subclass__\n    name: get_var_for_field(cls, name, f)\n          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/state.py\", line 281, in get_var_for_field\n    return dispatch(\n        field_name=field_name,\n        var_data=VarData.from_state(cls, name),\n        result_var_type=f.outer_type_,\n    )\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 3881, in dispatch\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 1287, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('list[InventoryItem]', is_class=True) for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-314",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_list",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-314-future_missing_list.json"
+    ]
+  },
+  {
+    "case": "future_missing_optional",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('InventoryItem | None', is_class=True) for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('InventoryItem | None', is_class=True) for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_optional.py\", line 11, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: InventoryItem | None = None\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 4892, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/state.py\", line 739, in __init_subclass__\n    name: get_var_for_field(cls, name, f)\n          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/state.py\", line 281, in get_var_for_field\n    return dispatch(\n        field_name=field_name,\n        var_data=VarData.from_state(cls, name),\n        result_var_type=f.outer_type_,\n    )\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 3881, in dispatch\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 1287, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('InventoryItem | None', is_class=True) for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-314",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_optional",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-314-future_missing_optional.json"
+    ]
+  },
+  {
+    "case": "future_valid",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_5b69c79d391ee20b8208d3bd35aee414'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___future_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___future_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___future_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_5b69c79d391ee20b8208d3bd35aee414', 'iterable_state': 'reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_5b69c79d391ee20b8208d3bd35aee414'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-314",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-314-future_valid.json"
+    ]
+  },
+  {
+    "case": "bare_valid",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_5b69c79d391ee20b8208d3bd35aee414'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___bare_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___bare_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___bare_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_5b69c79d391ee20b8208d3bd35aee414', 'iterable_state': 'reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_5b69c79d391ee20b8208d3bd35aee414'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-314",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-314-bare_valid.json"
+    ]
+  },
+  {
+    "case": "bare_missing_list",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": false,
+    "exception_phase": "component_build",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('InventoryItem') for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('InventoryItem') for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 28, in <module>\n    component = module.build_page()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_list.py\", line 21, in build_page\n    return rx.foreach(Warehouse.selection, lambda item: rx.text(item.sku))\n           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_components_core/core/foreach.py\", line 115, in create\n    component.children = [component._render().render_component()]\n                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/components/tags/iter_tag.py\", line 90, in render_component\n    arg = self.get_arg_var()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/components/tags/iter_tag.py\", line 69, in get_arg_var\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 1287, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('InventoryItem') for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-314",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_missing_list",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-314-bare_missing_list.json"
+    ]
+  },
+  {
+    "case": "bare_missing_optional",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "reflex": "0.10.0a2",
+      "reflex_base": "0.10.0a2",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('InventoryItem | None') for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('InventoryItem | None') for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_optional.py\", line 9, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: InventoryItem | None = None\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 4892, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/state.py\", line 739, in __init_subclass__\n    name: get_var_for_field(cls, name, f)\n          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/state.py\", line 281, in get_var_for_field\n    return dispatch(\n        field_name=field_name,\n        var_data=VarData.from_state(cls, name),\n        result_var_type=f.outer_type_,\n    )\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 3881, in dispatch\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 1287, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('InventoryItem | None') for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a2-314",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_missing_optional",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a2-314-bare_missing_optional.json"
+    ]
+  },
+  {
+    "case": "future_missing_list",
+    "metadata": {
+      "python": "3.11.16",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/bin/python",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.NameError",
+    "exception_message": "name 'InventoryItem' is not defined",
+    "exception_repr": "NameError(\"name 'InventoryItem' is not defined\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py\", line 126, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1204, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1176, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1147, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 690, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 940, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 241, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_list.py\", line 11, in <module>\n    class Warehouse(rx.State):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 4291, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/state.py\", line 939, in __init_subclass__\n    cls._check_overridden_basevars()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/state.py\", line 1387, in _check_overridden_basevars\n    hints = cls._get_type_hints()\n            ^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/state.py\", line 1277, in _get_type_hints\n    return get_type_hints(cls, localns=localns)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/typing.py\", line 2377, in get_type_hints\n    value = _eval_type(value, base_globals, base_locals)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/typing.py\", line 395, in _eval_type\n    return t._evaluate(globalns, localns, recursive_guard)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/typing.py\", line 905, in _evaluate\n    eval(self.__forward_code__, globalns, localns),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<string>\", line 1, in <module>\nNameError: name 'InventoryItem' is not defined\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-stable-311",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_list",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-stable-311-future_missing_list.json"
+    ]
+  },
+  {
+    "case": "future_missing_optional",
+    "metadata": {
+      "python": "3.11.16",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/bin/python",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.NameError",
+    "exception_message": "name 'InventoryItem' is not defined",
+    "exception_repr": "NameError(\"name 'InventoryItem' is not defined\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py\", line 126, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1204, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1176, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1147, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 690, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 940, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 241, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_optional.py\", line 11, in <module>\n    class Warehouse(rx.State):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 4291, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/state.py\", line 939, in __init_subclass__\n    cls._check_overridden_basevars()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/state.py\", line 1387, in _check_overridden_basevars\n    hints = cls._get_type_hints()\n            ^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/state.py\", line 1277, in _get_type_hints\n    return get_type_hints(cls, localns=localns)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/typing.py\", line 2377, in get_type_hints\n    value = _eval_type(value, base_globals, base_locals)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/typing.py\", line 395, in _eval_type\n    return t._evaluate(globalns, localns, recursive_guard)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/typing.py\", line 905, in _evaluate\n    eval(self.__forward_code__, globalns, localns),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<string>\", line 1, in <module>\nNameError: name 'InventoryItem' is not defined\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-stable-311",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_optional",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-stable-311-future_missing_optional.json"
+    ]
+  },
+  {
+    "case": "future_valid",
+    "metadata": {
+      "python": "3.11.16",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/bin/python",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_ce9ccefc907bd3b8d1834cf2e94162d8'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___future_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___future_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___future_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_ce9ccefc907bd3b8d1834cf2e94162d8', 'iterable_state': 'reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_ce9ccefc907bd3b8d1834cf2e94162d8'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-stable-311",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-stable-311-future_valid.json"
+    ]
+  },
+  {
+    "case": "bare_valid",
+    "metadata": {
+      "python": "3.11.16",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/bin/python",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_ce9ccefc907bd3b8d1834cf2e94162d8'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___bare_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___bare_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___bare_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_ce9ccefc907bd3b8d1834cf2e94162d8', 'iterable_state': 'reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_ce9ccefc907bd3b8d1834cf2e94162d8'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-stable-311",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-stable-311-bare_valid.json"
+    ]
+  },
+  {
+    "case": "future_missing_list",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.NameError",
+    "exception_message": "name 'InventoryItem' is not defined",
+    "exception_repr": "NameError(\"name 'InventoryItem' is not defined\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_list.py\", line 11, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: list[InventoryItem] = []\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 4291, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 939, in __init_subclass__\n    cls._check_overridden_basevars()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 1387, in _check_overridden_basevars\n    hints = cls._get_type_hints()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 1277, in _get_type_hints\n    return get_type_hints(cls, localns=localns)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/typing.py\", line 2399, in get_type_hints\n    value = _eval_type(value, base_globals, base_locals, (),\n                       format=format, owner=obj, prefer_fwd_module=True)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/typing.py\", line 461, in _eval_type\n    return evaluate_forward_ref(t, globals=globalns, locals=localns,\n                                type_params=type_params, owner=owner,\n                                _recursive_guard=recursive_guard, format=format)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/typing.py\", line 1003, in evaluate_forward_ref\n    value = forward_ref.evaluate(globals=globals, locals=locals,\n                                 type_params=type_params, owner=owner, format=format)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/annotationlib.py\", line 207, in evaluate\n    return eval(code, globals=globals, locals=locals)\n  File \"<string>\", line 1, in <module>\nNameError: name 'InventoryItem' is not defined\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-stable-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_list",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-stable-3147-future_missing_list.json"
+    ]
+  },
+  {
+    "case": "future_missing_optional",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.NameError",
+    "exception_message": "name 'InventoryItem' is not defined",
+    "exception_repr": "NameError(\"name 'InventoryItem' is not defined\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_optional.py\", line 11, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: InventoryItem | None = None\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 4291, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 939, in __init_subclass__\n    cls._check_overridden_basevars()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 1387, in _check_overridden_basevars\n    hints = cls._get_type_hints()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 1277, in _get_type_hints\n    return get_type_hints(cls, localns=localns)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/typing.py\", line 2399, in get_type_hints\n    value = _eval_type(value, base_globals, base_locals, (),\n                       format=format, owner=obj, prefer_fwd_module=True)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/typing.py\", line 461, in _eval_type\n    return evaluate_forward_ref(t, globals=globalns, locals=localns,\n                                type_params=type_params, owner=owner,\n                                _recursive_guard=recursive_guard, format=format)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/typing.py\", line 1003, in evaluate_forward_ref\n    value = forward_ref.evaluate(globals=globals, locals=locals,\n                                 type_params=type_params, owner=owner, format=format)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/annotationlib.py\", line 207, in evaluate\n    return eval(code, globals=globals, locals=locals)\n  File \"<string>\", line 1, in <module>\nNameError: name 'InventoryItem' is not defined\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-stable-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_optional",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-stable-3147-future_missing_optional.json"
+    ]
+  },
+  {
+    "case": "future_valid",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_5b69c79d391ee20b8208d3bd35aee414'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___future_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___future_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___future_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_5b69c79d391ee20b8208d3bd35aee414', 'iterable_state': 'reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_5b69c79d391ee20b8208d3bd35aee414'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-stable-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-stable-3147-future_valid.json"
+    ]
+  },
+  {
+    "case": "bare_valid",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_5b69c79d391ee20b8208d3bd35aee414'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___bare_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___bare_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___bare_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_5b69c79d391ee20b8208d3bd35aee414', 'iterable_state': 'reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_5b69c79d391ee20b8208d3bd35aee414'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-stable-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-stable-3147-bare_valid.json"
+    ]
+  },
+  {
+    "case": "bare_missing_list",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.NameError",
+    "exception_message": "name 'InventoryItem' is not defined",
+    "exception_repr": "NameError(\"name 'InventoryItem' is not defined\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_list.py\", line 9, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: list[InventoryItem] = []\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 4291, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 939, in __init_subclass__\n    cls._check_overridden_basevars()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 1387, in _check_overridden_basevars\n    hints = cls._get_type_hints()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 1277, in _get_type_hints\n    return get_type_hints(cls, localns=localns)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/typing.py\", line 2376, in get_type_hints\n    ann = _lazy_annotationlib.get_annotations(base, format=format)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/annotationlib.py\", line 987, in get_annotations\n    ann = _get_dunder_annotations(obj)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/annotationlib.py\", line 1175, in _get_dunder_annotations\n    ann = _BASE_GET_ANNOTATIONS(obj)\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_list.py\", line 12, in __annotate__\n    selection: list[InventoryItem] = []\n                    ^^^^^^^^^^^^^\nNameError: name 'InventoryItem' is not defined\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-stable-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_missing_list",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-stable-3147-bare_missing_list.json"
+    ]
+  },
+  {
+    "case": "bare_missing_optional",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.NameError",
+    "exception_message": "name 'InventoryItem' is not defined",
+    "exception_repr": "NameError(\"name 'InventoryItem' is not defined\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_optional.py\", line 9, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: InventoryItem | None = None\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 4291, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 939, in __init_subclass__\n    cls._check_overridden_basevars()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 1387, in _check_overridden_basevars\n    hints = cls._get_type_hints()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py\", line 1277, in _get_type_hints\n    return get_type_hints(cls, localns=localns)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/typing.py\", line 2376, in get_type_hints\n    ann = _lazy_annotationlib.get_annotations(base, format=format)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/annotationlib.py\", line 987, in get_annotations\n    ann = _get_dunder_annotations(obj)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/annotationlib.py\", line 1175, in _get_dunder_annotations\n    ann = _BASE_GET_ANNOTATIONS(obj)\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_optional.py\", line 12, in __annotate__\n    selection: InventoryItem | None = None\n               ^^^^^^^^^^^^^\nNameError: name 'InventoryItem' is not defined\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-stable-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_missing_optional",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-stable-3147-bare_missing_optional.json"
+    ]
+  },
+  {
+    "case": "future_missing_list",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "reflex": "0.10.0a1",
+      "reflex_base": "0.10.0a1",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('list[InventoryItem]', is_class=True) for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('list[InventoryItem]', is_class=True) for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_list.py\", line 11, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: list[InventoryItem] = []\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 4743, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/state.py\", line 738, in __init_subclass__\n    name: get_var_for_field(cls, name, f)\n          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/state.py\", line 282, in get_var_for_field\n    return dispatch(\n        field_name=field_name,\n        var_data=VarData.from_state(cls, name),\n        result_var_type=f.outer_type_,\n    )\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 3879, in dispatch\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 1285, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('list[InventoryItem]', is_class=True) for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a1-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_list",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a1-3147-future_missing_list.json"
+    ]
+  },
+  {
+    "case": "future_missing_optional",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "reflex": "0.10.0a1",
+      "reflex_base": "0.10.0a1",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('InventoryItem | None', is_class=True) for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('InventoryItem | None', is_class=True) for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_optional.py\", line 11, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: InventoryItem | None = None\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 4743, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/state.py\", line 738, in __init_subclass__\n    name: get_var_for_field(cls, name, f)\n          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/state.py\", line 282, in get_var_for_field\n    return dispatch(\n        field_name=field_name,\n        var_data=VarData.from_state(cls, name),\n        result_var_type=f.outer_type_,\n    )\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 3879, in dispatch\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 1285, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('InventoryItem | None', is_class=True) for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a1-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_missing_optional",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a1-3147-future_missing_optional.json"
+    ]
+  },
+  {
+    "case": "future_valid",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "reflex": "0.10.0a1",
+      "reflex_base": "0.10.0a1",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_5b69c79d391ee20b8208d3bd35aee414'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___future_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___future_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___future_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_5b69c79d391ee20b8208d3bd35aee414', 'iterable_state': 'reflex___state____state__fixtures___future_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_5b69c79d391ee20b8208d3bd35aee414'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a1-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "future_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a1-3147-future_valid.json"
+    ]
+  },
+  {
+    "case": "bare_valid",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "reflex": "0.10.0a1",
+      "reflex_base": "0.10.0a1",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": true,
+    "control": {
+      "items": "list[fixtures.models.InventoryItem]",
+      "selection": "fixtures.models.InventoryItem | None"
+    },
+    "component": {
+      "class": "Foreach",
+      "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_5b69c79d391ee20b8208d3bd35aee414'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___bare_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___bare_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___bare_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_5b69c79d391ee20b8208d3bd35aee414', 'iterable_state': 'reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_5b69c79d391ee20b8208d3bd35aee414'}"
+    },
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a1-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_valid",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a1-3147-bare_valid.json"
+    ]
+  },
+  {
+    "case": "bare_missing_list",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "reflex": "0.10.0a1",
+      "reflex_base": "0.10.0a1",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": true,
+    "accepted": false,
+    "exception_phase": "component_build",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('InventoryItem') for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('InventoryItem') for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 28, in <module>\n    component = module.build_page()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_list.py\", line 21, in build_page\n    return rx.foreach(Warehouse.selection, lambda item: rx.text(item.sku))\n           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_components_core/core/foreach.py\", line 115, in create\n    component.children = [component._render().render_component()]\n                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/components/tags/iter_tag.py\", line 90, in render_component\n    arg = self.get_arg_var()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/components/tags/iter_tag.py\", line 69, in get_arg_var\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 1285, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('InventoryItem') for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a1-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_missing_list",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a1-3147-bare_missing_list.json"
+    ]
+  },
+  {
+    "case": "bare_missing_optional",
+    "metadata": {
+      "python": "3.14.7",
+      "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "reflex": "0.10.0a1",
+      "reflex_base": "0.10.0a1",
+      "pydantic": "2.13.5",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+    },
+    "imported": false,
+    "accepted": false,
+    "exception_phase": "module_import",
+    "exception_type": "builtins.TypeError",
+    "exception_message": "Unsupported type ForwardRef('InventoryItem | None') for guess_type.",
+    "exception_repr": "TypeError(\"Unsupported type ForwardRef('InventoryItem | None') for guess_type.\")",
+    "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 22, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_optional.py\", line 9, in <module>\n    class Warehouse(rx.State):\n    ...<2 lines>...\n        selection: InventoryItem | None = None\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 4743, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/state.py\", line 738, in __init_subclass__\n    name: get_var_for_field(cls, name, f)\n          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/state.py\", line 282, in get_var_for_field\n    return dispatch(\n        field_name=field_name,\n        var_data=VarData.from_state(cls, name),\n        result_var_type=f.outer_type_,\n    )\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 3879, in dispatch\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 1285, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('InventoryItem | None') for guess_type.\n",
+    "cause": "None",
+    "context": "None",
+    "suppress_context": false,
+    "fixture_expectation_pass": true,
+    "environment": "pymatrix-a1-3147",
+    "returncode": 0,
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+      "python",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py",
+      "bare_missing_optional",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/results/pymatrix-a1-3147-bare_missing_optional.json"
+    ]
+  }
+]

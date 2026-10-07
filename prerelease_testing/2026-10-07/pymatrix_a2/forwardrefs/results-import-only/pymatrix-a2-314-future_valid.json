@@ -1,0 +1,18 @@
+{
+  "case": "future_valid",
+  "metadata": {
+    "python": "3.14.7",
+    "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/python",
+    "reflex": "0.10.0a2",
+    "reflex_base": "0.10.0a2",
+    "pydantic": "2.13.5",
+    "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex/__init__.py",
+    "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/__init__.py"
+  },
+  "imported": true,
+  "control": {
+    "items": "list[fixtures.models.InventoryItem]",
+    "selection": "fixtures.models.InventoryItem | None"
+  },
+  "fixture_expectation_pass": true
+}

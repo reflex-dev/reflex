@@ -1,0 +1,51 @@
+Using CPython 3.14.7 interpreter at: /opt/homebrew/opt/python@3.14/bin/python3.14
+Creating virtual environment at: /private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314
+Activate with: source /private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/bin/activate
+Using Python 3.14.7 environment at: /private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314
+Resolved 45 packages in 3ms
+Installed 45 packages in 45ms
+ + annotated-types==0.8.0
+ + anyio==4.15.1
+ + bidict==0.24.1
+ + certifi==2026.7.22
+ + click==8.5.0
+ + granian==2.8.4
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.20
+ + markdown-it-py==4.2.0
+ + mdurl==0.1.2
+ + packaging==26.3
+ + platformdirs==4.12.3
+ + pydantic==2.13.5
+ + pydantic-core==2.46.5
+ + pygments==2.21.0
+ + python-engineio==4.14.0
+ + python-multipart==0.0.32
+ + python-socketio==5.17.0
+ + redis==7.4.1
+ + reflex==0.10.0a2
+ + reflex-base==0.10.0a2
+ + reflex-build-sdk==0.1.0a1
+ + reflex-components-code==0.10.0a2
+ + reflex-components-core==0.10.0a2
+ + reflex-components-dataeditor==0.10.0a1
+ + reflex-components-gridjs==0.10.0a2
+ + reflex-components-lucide==1.1.0a1
+ + reflex-components-markdown==0.10.0a2
+ + reflex-components-moment==0.10.0a2
+ + reflex-components-plotly==0.10.0a2
+ + reflex-components-radix==0.10.0a2
+ + reflex-components-react-player==0.10.0a1
+ + reflex-components-recharts==0.10.0a2
+ + reflex-components-sonner==0.10.0a1
+ + reflex-hosting-cli==0.2.0a1
+ + rich==15.0.0
+ + simple-websocket==1.1.0
+ + starlette==1.7.0
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.4
+ + watchfiles==1.3.0
+ + wrapt==2.5.0
+ + wsproto==1.3.2

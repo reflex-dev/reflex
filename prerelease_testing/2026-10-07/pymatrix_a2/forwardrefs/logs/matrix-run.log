@@ -1,0 +1,32 @@
+WARN `--no-project` was provided, but no project was found
+pymatrix-a2-311 future_missing_list builtins.TypeError Unsupported type ForwardRef('list[InventoryItem]') for guess_type.
+pymatrix-a2-311 future_missing_optional builtins.TypeError Unsupported type ForwardRef('InventoryItem | None') for guess_type.
+pymatrix-a2-311 future_valid accepted 
+pymatrix-a2-311 bare_valid accepted 
+pymatrix-a2-313 future_missing_list builtins.TypeError Unsupported type ForwardRef('list[InventoryItem]') for guess_type.
+pymatrix-a2-313 future_missing_optional builtins.TypeError Unsupported type ForwardRef('InventoryItem | None') for guess_type.
+pymatrix-a2-313 future_valid accepted 
+pymatrix-a2-313 bare_valid accepted 
+pymatrix-a2-314 future_missing_list builtins.TypeError Unsupported type ForwardRef('list[InventoryItem]', is_class=True) for guess_type.
+pymatrix-a2-314 future_missing_optional builtins.TypeError Unsupported type ForwardRef('InventoryItem | None', is_class=True) for guess_type.
+pymatrix-a2-314 future_valid accepted 
+pymatrix-a2-314 bare_valid accepted 
+pymatrix-a2-314 bare_missing_list builtins.TypeError Unsupported type ForwardRef('InventoryItem') for guess_type.
+pymatrix-a2-314 bare_missing_optional builtins.TypeError Unsupported type ForwardRef('InventoryItem | None') for guess_type.
+pymatrix-stable-311 future_missing_list builtins.NameError name 'InventoryItem' is not defined
+pymatrix-stable-311 future_missing_optional builtins.NameError name 'InventoryItem' is not defined
+pymatrix-stable-311 future_valid accepted 
+pymatrix-stable-311 bare_valid accepted 
+pymatrix-stable-3147 future_missing_list builtins.NameError name 'InventoryItem' is not defined
+pymatrix-stable-3147 future_missing_optional builtins.NameError name 'InventoryItem' is not defined
+pymatrix-stable-3147 future_valid accepted 
+pymatrix-stable-3147 bare_valid accepted 
+pymatrix-stable-3147 bare_missing_list builtins.NameError name 'InventoryItem' is not defined
+pymatrix-stable-3147 bare_missing_optional builtins.NameError name 'InventoryItem' is not defined
+pymatrix-a1-3147 future_missing_list builtins.TypeError Unsupported type ForwardRef('list[InventoryItem]', is_class=True) for guess_type.
+pymatrix-a1-3147 future_missing_optional builtins.TypeError Unsupported type ForwardRef('InventoryItem | None', is_class=True) for guess_type.
+pymatrix-a1-3147 future_valid accepted 
+pymatrix-a1-3147 bare_valid accepted 
+pymatrix-a1-3147 bare_missing_list builtins.TypeError Unsupported type ForwardRef('InventoryItem') for guess_type.
+pymatrix-a1-3147 bare_missing_optional builtins.TypeError Unsupported type ForwardRef('InventoryItem | None') for guess_type.
+Unexpected fixture outcomes: []

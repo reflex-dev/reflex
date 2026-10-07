@@ -1,0 +1,18 @@
+{
+  "cases": 30,
+  "accepted_controls": 12,
+  "rejected_invalid": 18,
+  "error_types": {
+    "builtins.TypeError": 12,
+    "accepted": 12,
+    "builtins.NameError": 6
+  },
+  "rejection_phases": {
+    "module_import": 16,
+    "accepted": 12,
+    "component_build": 2
+  },
+  "artifact_bytes": 548529,
+  "all_expected_outcomes": true,
+  "python_sources_parse": true
+}

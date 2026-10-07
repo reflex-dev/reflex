@@ -1,0 +1,16 @@
+WARN `--no-project` was provided, but no project was found
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix_a2/cli-stable/pyapp/pyapp.py", line 10, in <module>
+    from .abc_states import WorldGreeter
+  File "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix_a2/cli-stable/pyapp/abc_states.py", line 8, in <module>
+    class Greeter(ABC, rx.State, mixin=True):
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4181, in __new__
+    _validate_state_declaration(root, lookup_order, namespace)
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4136, in _validate_state_declaration
+    _validate_inherited_members(root, base, seen)
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4114, in _validate_inherited_members
+    _validate_state_name(root, member, value)
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4090, in _validate_state_name
+    raise StateValueError(msg)
+reflex_base.utils.exceptions.StateValueError: State name `_abc_impl` is reserved by BaseState; use a different name instead.

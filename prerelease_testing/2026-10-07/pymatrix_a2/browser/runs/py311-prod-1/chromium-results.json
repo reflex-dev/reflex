@@ -1,0 +1,1968 @@
+{
+  "engine": "chromium",
+  "checks": [
+    {
+      "name": "initial-all-shapes",
+      "passed": true,
+      "expected": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2"
+          ]
+        },
+        "ann": 5,
+        "point": {
+          "x": 1,
+          "y": 2,
+          "tags": [
+            "t"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a"
+          ],
+          "when": null
+        },
+        "lit": "a",
+        "color": "red",
+        "when": "2026-10-06 12:30:00",
+        "fld": [
+          "f1"
+        ],
+        "uni": 1,
+        "tup": [
+          1,
+          "one"
+        ],
+        "td": {
+          "a": 1,
+          "b": "bee"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "1",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      },
+      "actual": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2"
+          ]
+        },
+        "ann": 5,
+        "point": {
+          "x": 1,
+          "y": 2,
+          "tags": [
+            "t"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a"
+          ],
+          "when": null
+        },
+        "lit": "a",
+        "color": "red",
+        "when": "2026-10-06 12:30:00",
+        "fld": [
+          "f1"
+        ],
+        "uni": 1,
+        "tup": [
+          1,
+          "one"
+        ],
+        "td": {
+          "a": 1,
+          "b": "bee"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "1",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      }
+    },
+    {
+      "name": "backend-python",
+      "passed": true,
+      "expected": "3.11.16",
+      "actual": "3.11.16"
+    },
+    {
+      "name": "nested-mutation-all-shapes",
+      "passed": true,
+      "expected": {
+        "l_opt": [
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3"
+          ]
+        },
+        "ann": 6,
+        "point": {
+          "x": 11,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-07 12:30:00",
+        "fld": [
+          "f1",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "11",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1"
+        ]
+      },
+      "actual": {
+        "l_opt": [
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3"
+          ]
+        },
+        "ann": 6,
+        "point": {
+          "x": 11,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-07 12:30:00",
+        "fld": [
+          "f1",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "11",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1"
+        ]
+      }
+    },
+    {
+      "name": "repeated-mutation-derived-rows",
+      "passed": true,
+      "expected": {
+        "l_opt": [
+          7,
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1",
+          "2->4"
+        ]
+      },
+      "actual": {
+        "l_opt": [
+          7,
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1",
+          "2->4"
+        ]
+      }
+    },
+    {
+      "name": "background-completion",
+      "passed": true,
+      "expected": {
+        "l_opt": [
+          7,
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1",
+          "2->4"
+        ]
+      },
+      "actual": {
+        "l_opt": [
+          7,
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1",
+          "2->4"
+        ]
+      }
+    },
+    {
+      "name": "abstract-mixin-event",
+      "passed": true,
+      "expected": {
+        "l_opt": [
+          7,
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1",
+          "2->4"
+        ]
+      },
+      "actual": {
+        "l_opt": [
+          7,
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1",
+          "2->4"
+        ]
+      }
+    },
+    {
+      "name": "postponed-annotation-event",
+      "passed": true,
+      "expected": {
+        "l_opt": [
+          7,
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1",
+          "2->4"
+        ]
+      },
+      "actual": {
+        "l_opt": [
+          7,
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1",
+          "2->4"
+        ]
+      }
+    },
+    {
+      "name": "reload-all-mutations",
+      "passed": true,
+      "expected": {
+        "l_opt": [
+          7,
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1",
+          "2->4"
+        ]
+      },
+      "actual": {
+        "l_opt": [
+          7,
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1",
+          "2->4"
+        ]
+      }
+    },
+    {
+      "name": "nullable-reset-and-derived-rows",
+      "passed": true,
+      "expected": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      },
+      "actual": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      }
+    },
+    {
+      "name": "client-route-retains-values",
+      "passed": true,
+      "expected": [
+        "3",
+        "[0]|fut|6|green|2030"
+      ],
+      "actual": [
+        "3",
+        "[0]|fut|6|green|2030"
+      ]
+    },
+    {
+      "name": "route-reload-retains-values",
+      "passed": true,
+      "expected": [
+        "3",
+        "[0]|fut|6|green|2030"
+      ],
+      "actual": [
+        "3",
+        "[0]|fut|6|green|2030"
+      ]
+    },
+    {
+      "name": "return-route-all-values",
+      "passed": true,
+      "expected": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      },
+      "actual": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      }
+    },
+    {
+      "name": "independent-tab-all-defaults",
+      "passed": true,
+      "expected": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2"
+          ]
+        },
+        "ann": 5,
+        "point": {
+          "x": 1,
+          "y": 2,
+          "tags": [
+            "t"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a"
+          ],
+          "when": null
+        },
+        "lit": "a",
+        "color": "red",
+        "when": "2026-10-06 12:30:00",
+        "fld": [
+          "f1"
+        ],
+        "uni": 1,
+        "tup": [
+          1,
+          "one"
+        ],
+        "td": {
+          "a": 1,
+          "b": "bee"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "1",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      },
+      "actual": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2"
+          ]
+        },
+        "ann": 5,
+        "point": {
+          "x": 1,
+          "y": 2,
+          "tags": [
+            "t"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a"
+          ],
+          "when": null
+        },
+        "lit": "a",
+        "color": "red",
+        "when": "2026-10-06 12:30:00",
+        "fld": [
+          "f1"
+        ],
+        "uni": 1,
+        "tup": [
+          1,
+          "one"
+        ],
+        "td": {
+          "a": 1,
+          "b": "bee"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "1",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      }
+    },
+    {
+      "name": "independent-tab-mutation",
+      "passed": true,
+      "expected": {
+        "l_opt": [
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3"
+          ]
+        },
+        "ann": 6,
+        "point": {
+          "x": 11,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-07 12:30:00",
+        "fld": [
+          "f1",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "11",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1"
+        ]
+      },
+      "actual": {
+        "l_opt": [
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3"
+          ]
+        },
+        "ann": 6,
+        "point": {
+          "x": 11,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-07 12:30:00",
+        "fld": [
+          "f1",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "11",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1"
+        ]
+      }
+    },
+    {
+      "name": "original-after-other-tab-mutation",
+      "passed": true,
+      "expected": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      },
+      "actual": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      }
+    },
+    {
+      "name": "independent-context-default-factories",
+      "passed": true,
+      "expected": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2"
+          ]
+        },
+        "ann": 5,
+        "point": {
+          "x": 1,
+          "y": 2,
+          "tags": [
+            "t"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a"
+          ],
+          "when": null
+        },
+        "lit": "a",
+        "color": "red",
+        "when": "2026-10-06 12:30:00",
+        "fld": [
+          "f1"
+        ],
+        "uni": 1,
+        "tup": [
+          1,
+          "one"
+        ],
+        "td": {
+          "a": 1,
+          "b": "bee"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "1",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      },
+      "actual": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2"
+          ]
+        },
+        "ann": 5,
+        "point": {
+          "x": 1,
+          "y": 2,
+          "tags": [
+            "t"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a"
+          ],
+          "when": null
+        },
+        "lit": "a",
+        "color": "red",
+        "when": "2026-10-06 12:30:00",
+        "fld": [
+          "f1"
+        ],
+        "uni": 1,
+        "tup": [
+          1,
+          "one"
+        ],
+        "td": {
+          "a": 1,
+          "b": "bee"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "1",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      }
+    },
+    {
+      "name": "independent-context-mutation",
+      "passed": true,
+      "expected": {
+        "l_opt": [
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3"
+          ]
+        },
+        "ann": 6,
+        "point": {
+          "x": 11,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-07 12:30:00",
+        "fld": [
+          "f1",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "11",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1"
+        ]
+      },
+      "actual": {
+        "l_opt": [
+          7
+        ],
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3"
+          ]
+        },
+        "ann": 6,
+        "point": {
+          "x": 11,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-07 12:30:00",
+        "fld": [
+          "f1",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "now set",
+        "cond-list": "has list",
+        "point-x": "11",
+        "pm-name": "pm",
+        "counter": "0",
+        "bg_running": "false",
+        "greeting": "hello",
+        "f_summary": "None|fut|5|green|2030",
+        "fld-items": [
+          "f1",
+          "f2"
+        ],
+        "rows": [
+          "0->0",
+          "1->1"
+        ]
+      }
+    },
+    {
+      "name": "original-reload-after-independent-mutations",
+      "passed": true,
+      "expected": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      },
+      "actual": {
+        "l_opt": null,
+        "d_nested": {
+          "k": [
+            "v1",
+            "v2",
+            "v3",
+            "v3"
+          ]
+        },
+        "ann": 7,
+        "point": {
+          "x": 21,
+          "y": 2,
+          "tags": [
+            "t",
+            "t2",
+            "t2"
+          ]
+        },
+        "pm": {
+          "name": "pm",
+          "tags": [
+            "a",
+            "b",
+            "b"
+          ],
+          "when": "2026-01-01 00:00:00"
+        },
+        "lit": "b",
+        "color": "green",
+        "when": "2026-10-08 12:30:00",
+        "fld": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "uni": "two",
+        "tup": [
+          2,
+          "two"
+        ],
+        "td": {
+          "a": 2,
+          "b": "bee2"
+        },
+        "o_str": "none",
+        "cond-list": "no list",
+        "point-x": "21",
+        "pm-name": "pm",
+        "counter": "3",
+        "bg_running": "false",
+        "greeting": "hello world",
+        "f_summary": "[0]|fut|6|green|2030",
+        "fld-items": [
+          "f1",
+          "f2",
+          "f2"
+        ],
+        "rows": [
+          "0->0"
+        ]
+      }
+    }
+  ],
+  "browser_version": "153.0.8010.12",
+  "anomalies": [],
+  "passed": true,
+  "messages_count": 3,
+  "frames_count": 57
+}

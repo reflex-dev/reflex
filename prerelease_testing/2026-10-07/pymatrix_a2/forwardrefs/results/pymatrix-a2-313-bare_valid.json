@@ -1,0 +1,23 @@
+{
+  "case": "bare_valid",
+  "metadata": {
+    "python": "3.13.15",
+    "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/bin/python",
+    "reflex": "0.10.0a2",
+    "reflex_base": "0.10.0a2",
+    "pydantic": "2.13.5",
+    "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/__init__.py",
+    "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/__init__.py"
+  },
+  "imported": true,
+  "accepted": true,
+  "control": {
+    "items": "list[fixtures.models.InventoryItem]",
+    "selection": "fixtures.models.InventoryItem | None"
+  },
+  "component": {
+    "class": "Foreach",
+    "render": "{'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"', 'key:index_05aa532890d2820b3f8ebff7b24d3c6d'], 'children': [{'contents': 'item_rx_state_?.[\"sku\"]'}]}], 'iterable': Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var.__init_subclass__.<locals>.ArrayCastedVar(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=None, _original=Var(_js_expr='reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', _var_type=list[fixtures.models.InventoryItem], _var_data=VarData(field_dependencies={'reflex___state____state.fixtures___bare_valid____warehouse': ('items',)}, imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__fixtures___bare_valid____warehouse = useContext(StateContexts.reflex___state____state__fixtures___bare_valid____warehouse)',), deps=(), position=None, components=(), app_wraps=((100, {\"name\": \"StateProvider\", \"props\": [], \"children\": []}), (90, {\"name\": \"EventLoopProvider\", \"props\": [], \"children\": []})))))), 'arg_var_name': 'item_rx_state_', 'index_var_name': 'index_05aa532890d2820b3f8ebff7b24d3c6d', 'iterable_state': 'reflex___state____state__fixtures___bare_valid____warehouse.items_rx_state_', 'arg_name': 'item_rx_state_', 'arg_index': 'index_05aa532890d2820b3f8ebff7b24d3c6d'}"
+  },
+  "fixture_expectation_pass": true
+}

@@ -1,0 +1,11 @@
+handlers_0_5.py:62:1: error[type-assertion-failure] Type `Unknown` does not match asserted type `EventCallback[()]`
+handlers_0_5.py:62:13: error[no-matching-overload] No overload matches arguments
+handlers_0_5.py:68:1: error[type-assertion-failure] Type `Unknown` does not match asserted type `EventCallback[()]`
+handlers_0_5.py:68:13: error[no-matching-overload] No overload matches arguments
+handlers_0_5.py:75:25: error[invalid-assignment] Object of type `EventCallback[()]` is not assignable to `() -> Any`
+handlers_0_5.py:80:51: error[invalid-assignment] Object of type `EventCallback[int, str, bool, float, str]` is not assignable to `(int, str, bool, float, str, /) -> Any`
+handlers_0_5.py:88:34: error[no-matching-overload] No overload matches arguments
+handlers_0_5.py:89:39: error[no-matching-overload] No overload matches arguments
+handlers_0_5.py:98:1: error[no-matching-overload] No overload matches arguments
+handlers_0_5.py:99:1: error[no-matching-overload] No overload matches arguments
+Found 10 diagnostics

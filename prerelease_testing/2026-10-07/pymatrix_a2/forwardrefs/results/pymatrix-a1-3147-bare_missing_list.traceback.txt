@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py", line 28, in <module>
+    component = module.build_page()
+  File "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_list.py", line 21, in build_page
+    return rx.foreach(Warehouse.selection, lambda item: rx.text(item.sku))
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_components_core/core/foreach.py", line 115, in create
+    component.children = [component._render().render_component()]
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/components/tags/iter_tag.py", line 90, in render_component
+    arg = self.get_arg_var()
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/components/tags/iter_tag.py", line 69, in get_arg_var
+    ).guess_type()
+      ~~~~~~~~~~^^
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py", line 1285, in guess_type
+    raise TypeError(msg)
+TypeError: Unsupported type ForwardRef('InventoryItem') for guess_type.

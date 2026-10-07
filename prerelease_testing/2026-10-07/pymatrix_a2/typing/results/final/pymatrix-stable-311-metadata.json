@@ -1,0 +1,7 @@
+{
+  "python": "3.11.16 (main, Aug 12 2026, 23:03:19) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "prefix": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311",
+  "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/__init__.py",
+  "reflex": "0.9.12",
+  "reflex_base": "0.9.12"
+}

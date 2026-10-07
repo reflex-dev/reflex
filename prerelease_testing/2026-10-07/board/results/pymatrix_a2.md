@@ -1,0 +1,18 @@
+CLUSTER: pymatrix_a2
+SUMMARY: Published alpha2 passes the supported-Python browser/state matrix on macOS: 216 exact checkpoints across Python 3.11.16, 3.13.15 and 3.14.7, dev/prod and Chromium/WebKit. Python 3.10 is refused cleanly. Existing F-011 and F-016 are independently reverified with matching stable/alpha controls; no additional functional regression is established. Three-scope evidence and replay audit found no substantive issue; checkpoint wording was corrected to distinguish full-state snapshots from route/version assertions.
+ARTIFACTS: prerelease_testing/2026-10-07/pymatrix_a2/; root and browser/typing/forwardrefs NOTES, exact PyPI/interpreter inventories, clean bootstraps, scripts, screenshots, full compressed browser/server evidence and checker/exception output.
+TESTS:
+- [pass] Six alpha2 server runs and twelve browser executions, each with eighteen checkpoints: 180 full-state snapshots, 24 route-value assertions and twelve interpreter assertions. All pass, with zero captured browser anomalies.
+- [pass] Nullable/nested collections, dataclass/Pydantic in-place mutations, Enum, Literal, datetime, TypedDict, Field factory defaults, ABC inherited events, postponed annotations, computed foreach output, background work, reload, routing and independent tabs/contexts.
+- [pass] Actual Python 3.10.21 install exits 1 with >=3.11,<4.0 explanation and no Reflex import remaining. Supported --version, missing-DB-extra and app-import checks pass.
+- [anomaly] Pydantic __fields__ warnings reproduce in minimal public stable/a1/a2 controls. Two dev worker-exit messages occur after intentional shutdown. A whole-fixture stable ABC import was an incompatible warning control; its failure remains preserved and is replaced only for the warning comparison.
+- [fail] F-016 remains on the pinned published checkers: ty rejects a zero-argument handler assigned to Callable, and ty/pyright reject fully applied five-argument calls. Baseline behavior, not an alpha2 regression. All twelve final invocations detect both deliberate invalid calls; both alphas fix stable's one-through-four-argument ty Callable failures.
+- [pass] F-011 matrix: twelve valid real-file model controls resolve and render; eighteen invalid apps are rejected. Two native-lazy list cases defer failure until ordinary component construction. Expected rejection counts do not mean the diagnostic defect is fixed.
+- [fail] F-011 remains low severity: alpha2's internal ForwardRef/guess_type TypeError replaces stable's missing-model NameError. Alpha1 behaves the same; full traces still identify the real user file. No valid-app failure or high-severity impact demonstrated.
+- [pass] Independent audit recomputed raw counts/diagnostics, checked environment parity and negative controls, reconstructed executed sources from the docstring diff and verified hashes/AST parity. All owned servers, browsers and ports cleaned; parent post-interruption inspection found no survivors.
+REVERIFIED:
+- F-011: still-broken — low diagnostic regression vs 0.9.12, unchanged vs a1; pymatrix_a2-2 inbox.
+- F-016: still-broken — low pre-existing typing limitations, no a2 regression; pymatrix_a2-1 inbox.
+ISSUES:
+- F-011 and F-016 above; each includes exact self-contained replay and raw evidence in its subtree NOTES and inbox.
+NOT_COVERED: Native Safari (Computer Use permission gate), Firefox/other OSes, full stable/a1 browser matrix, alternate dependency or newer checker versions, DB operation, separate blank-template wizard, deprecated state_auto_setters setting (coordinator N-043). This passing matrix does not override other release blockers.

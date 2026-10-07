@@ -1,0 +1,23 @@
+{
+  "case": "bare_missing_list",
+  "metadata": {
+    "python": "3.14.7",
+    "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/bin/python",
+    "reflex": "0.10.0a1",
+    "reflex_base": "0.10.0a1",
+    "pydantic": "2.13.5",
+    "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex/__init__.py",
+    "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/__init__.py"
+  },
+  "imported": true,
+  "accepted": false,
+  "exception_phase": "component_build",
+  "exception_type": "builtins.TypeError",
+  "exception_message": "Unsupported type ForwardRef('InventoryItem') for guess_type.",
+  "exception_repr": "TypeError(\"Unsupported type ForwardRef('InventoryItem') for guess_type.\")",
+  "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 28, in <module>\n    component = module.build_page()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_list.py\", line 21, in build_page\n    return rx.foreach(Warehouse.selection, lambda item: rx.text(item.sku))\n           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_components_core/core/foreach.py\", line 115, in create\n    component.children = [component._render().render_component()]\n                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/components/tags/iter_tag.py\", line 90, in render_component\n    arg = self.get_arg_var()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/components/tags/iter_tag.py\", line 69, in get_arg_var\n    ).guess_type()\n      ~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-3147/lib/python3.14/site-packages/reflex_base/vars/base.py\", line 1285, in guess_type\n    raise TypeError(msg)\nTypeError: Unsupported type ForwardRef('InventoryItem') for guess_type.\n",
+  "cause": "None",
+  "context": "None",
+  "suppress_context": false,
+  "fixture_expectation_pass": true
+}

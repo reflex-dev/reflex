@@ -1,0 +1,21 @@
+{
+  "case": "future_missing_optional",
+  "metadata": {
+    "python": "3.11.16",
+    "executable": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/bin/python",
+    "reflex": "0.9.12",
+    "reflex_base": "0.9.12",
+    "pydantic": "2.13.5",
+    "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/__init__.py",
+    "reflex_base_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex_base/__init__.py"
+  },
+  "imported": false,
+  "exception_type": "builtins.NameError",
+  "exception_message": "name 'InventoryItem' is not defined",
+  "exception_repr": "NameError(\"name 'InventoryItem' is not defined\")",
+  "traceback": "Traceback (most recent call last):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py\", line 21, in <module>\n    module = importlib.import_module(f'fixtures.{args.case}')\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py\", line 126, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1204, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1176, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1147, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 690, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 940, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 241, in _call_with_frames_removed\n  File \"/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_optional.py\", line 11, in <module>\n    class Warehouse(rx.State):\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 4291, in __new__\n    new_cls = super().__new__(cls, name, bases, namespace)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen abc>\", line 106, in __new__\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/state.py\", line 939, in __init_subclass__\n    cls._check_overridden_basevars()\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/state.py\", line 1387, in _check_overridden_basevars\n    hints = cls._get_type_hints()\n            ^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/state.py\", line 1277, in _get_type_hints\n    return get_type_hints(cls, localns=localns)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/typing.py\", line 2377, in get_type_hints\n    value = _eval_type(value, base_globals, base_locals)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/typing.py\", line 395, in _eval_type\n    return t._evaluate(globalns, localns, recursive_guard)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.11/3.11.16/Frameworks/Python.framework/Versions/3.11/lib/python3.11/typing.py\", line 905, in _evaluate\n    eval(self.__forward_code__, globalns, localns),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<string>\", line 1, in <module>\nNameError: name 'InventoryItem' is not defined\n",
+  "cause": "None",
+  "context": "None",
+  "suppress_context": false,
+  "fixture_expectation_pass": true
+}

@@ -1,0 +1,36 @@
+Traceback (most recent call last):
+  File "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py", line 22, in <module>
+    module = importlib.import_module(f'fixtures.{args.case}')
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+  File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+  File "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_list.py", line 9, in <module>
+    class Warehouse(rx.State):
+    ...<2 lines>...
+        selection: list[InventoryItem] = []
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex_base/vars/base.py", line 4291, in __new__
+    new_cls = super().__new__(cls, name, bases, namespace)
+  File "<frozen abc>", line 106, in __new__
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py", line 939, in __init_subclass__
+    cls._check_overridden_basevars()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py", line 1387, in _check_overridden_basevars
+    hints = cls._get_type_hints()
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py", line 1277, in _get_type_hints
+    return get_type_hints(cls, localns=localns)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/typing.py", line 2376, in get_type_hints
+    ann = _lazy_annotationlib.get_annotations(base, format=format)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/annotationlib.py", line 987, in get_annotations
+    ann = _get_dunder_annotations(obj)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/annotationlib.py", line 1175, in _get_dunder_annotations
+    ann = _BASE_GET_ANNOTATIONS(obj)
+  File "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/bare_missing_list.py", line 12, in __annotate__
+    selection: list[InventoryItem] = []
+                    ^^^^^^^^^^^^^
+NameError: name 'InventoryItem' is not defined

@@ -1,0 +1,158 @@
+{
+    "version": "1.1.414",
+    "time": "1791362502973",
+    "generalDiagnostics": [
+        {
+            "file": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing/handlers_0_5.py",
+            "severity": "error",
+            "message": "No overloads for \"__call__\" match the provided arguments\n  Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'])",
+            "range": {
+                "start": {
+                    "line": 61,
+                    "character": 12
+                },
+                "end": {
+                    "line": 61,
+                    "character": 43
+                }
+            },
+            "rule": "reportCallIssue"
+        },
+        {
+            "file": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing/handlers_0_5.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"EventCallback[*tuple[()]]\" but received \"Unknown\"",
+            "range": {
+                "start": {
+                    "line": 61,
+                    "character": 12
+                },
+                "end": {
+                    "line": 61,
+                    "character": 43
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing/handlers_0_5.py",
+            "severity": "error",
+            "message": "No overloads for \"__call__\" match the provided arguments\n  Argument types: (int, str, bool, float, str)",
+            "range": {
+                "start": {
+                    "line": 67,
+                    "character": 12
+                },
+                "end": {
+                    "line": 67,
+                    "character": 76
+                }
+            },
+            "rule": "reportCallIssue"
+        },
+        {
+            "file": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing/handlers_0_5.py",
+            "severity": "error",
+            "message": "\"assert_type\" mismatch: expected \"EventCallback[*tuple[()]]\" but received \"Unknown\"",
+            "range": {
+                "start": {
+                    "line": 67,
+                    "character": 12
+                },
+                "end": {
+                    "line": 67,
+                    "character": 76
+                }
+            },
+            "rule": "reportAssertTypeFailure"
+        },
+        {
+            "file": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing/handlers_0_5.py",
+            "severity": "error",
+            "message": "Type \"EventCallback[int, str, bool, float, str]\" is not assignable to declared type \"(int, str, bool, float, str) -> Any\"\n  No overloaded function matches type \"(int, str, bool, float, str) -> Any\"",
+            "range": {
+                "start": {
+                    "line": 79,
+                    "character": 50
+                },
+                "end": {
+                    "line": 79,
+                    "character": 57
+                }
+            },
+            "rule": "reportAssignmentType"
+        },
+        {
+            "file": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing/handlers_0_5.py",
+            "severity": "error",
+            "message": "No overloads for \"__call__\" match the provided arguments\n  Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'])",
+            "range": {
+                "start": {
+                    "line": 87,
+                    "character": 33
+                },
+                "end": {
+                    "line": 87,
+                    "character": 64
+                }
+            },
+            "rule": "reportCallIssue"
+        },
+        {
+            "file": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing/handlers_0_5.py",
+            "severity": "error",
+            "message": "No overloads for \"__call__\" match the provided arguments\n  Argument types: (int, str, bool, float, str)",
+            "range": {
+                "start": {
+                    "line": 88,
+                    "character": 38
+                },
+                "end": {
+                    "line": 88,
+                    "character": 102
+                }
+            },
+            "rule": "reportCallIssue"
+        },
+        {
+            "file": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing/handlers_0_5.py",
+            "severity": "error",
+            "message": "Argument of type \"Literal['not-an-int']\" cannot be assigned to parameter \"value\" of type \"int | Var[int]\" in function \"__call__\"\n  Type \"Literal['not-an-int']\" is not assignable to type \"int | Var[int]\"\n    \"Literal['not-an-int']\" is not assignable to \"int\"\n    \"Literal['not-an-int']\" is not assignable to \"Var[int]\"",
+            "range": {
+                "start": {
+                    "line": 97,
+                    "character": 8
+                },
+                "end": {
+                    "line": 97,
+                    "character": 20
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing/handlers_0_5.py",
+            "severity": "error",
+            "message": "No overloads for \"__call__\" match the provided arguments\n  Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'], Literal['extra'])",
+            "range": {
+                "start": {
+                    "line": 98,
+                    "character": 0
+                },
+                "end": {
+                    "line": 98,
+                    "character": 40
+                }
+            },
+            "rule": "reportCallIssue"
+        }
+    ],
+    "summary": {
+        "filesAnalyzed": 1,
+        "errorCount": 9,
+        "warningCount": 0,
+        "informationCount": 0,
+        "timeInSec": 0.621
+    }
+}
+

@@ -1,0 +1,14 @@
+WARN `--no-project` was provided, but no project was found
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex_base/utils/types.py:710: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  if hasattr(cls, "__fields__") and name in cls.__fields__:
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex_base/utils/types.py:589: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  hasattr(cls, "__fields__")
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex_base/utils/types.py:590: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  and field_name in cls.__fields__
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex_base/utils/types.py:591: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  and hasattr(cls.__fields__[field_name], "annotation")
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex_base/utils/types.py:592: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  and not isinstance(cls.__fields__[field_name].annotation, (str, ForwardRef))
+/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex_base/utils/types.py:594: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+  return cls.__fields__[field_name].annotation
+COMPONENT_CREATED jsx(RadixThemesText,{as:"p"},reflex___state____state____main______inventory.item_rx_state_?.["name"])

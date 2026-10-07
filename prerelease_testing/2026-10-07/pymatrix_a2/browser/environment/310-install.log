@@ -1,0 +1,7 @@
+Using CPython 3.10.21 interpreter at: /opt/homebrew/opt/python@3.10/bin/python3.10
+Creating virtual environment at: /private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-310-refusal
+Activate with: source /private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-310-refusal/bin/activate
+Using Python 3.10.21 environment at: /private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-310-refusal
+error: No solution found when resolving dependencies
+  cause: Because the current Python version (3.10.21) does not satisfy Python>=3.11,<4.0 and reflex==0.10.0a2 depends on Python>=3.11,<4.0, we can conclude that reflex==0.10.0a2 cannot be used.
+         And because only reflex<=0.10.0a2 is available and you require reflex==0.10.0a2, we can conclude that your requirements are unsatisfiable.

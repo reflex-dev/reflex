@@ -1,0 +1,71 @@
+/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/utils/types.py:1478
+1478: def resolve_annotations(
+1479:     raw_annotations: Mapping[str, type[Any]], module_name: str | None
+1480: ) -> dict[str, type[Any]]:
+1481:     """Partially taken from typing.get_type_hints.
+1482: 
+1483:     Resolve string or ForwardRef annotations into type objects if possible.
+1484: 
+1485:     Args:
+1486:         raw_annotations: The raw annotations to resolve.
+1487:         module_name: The name of the module.
+1488: 
+1489:     Returns:
+1490:         The resolved annotations.
+1491:     """
+1492:     module = sys.modules.get(module_name, None) if module_name is not None else None
+1493: 
+1494:     base_globals: dict[str, Any] | None = (
+1495:         module.__dict__ if module is not None else None
+1496:     )
+1497: 
+1498:     annotations = {}
+1499:     for name, value in raw_annotations.items():
+1500:         if isinstance(value, str):
+1501:             value = ForwardRef(value, is_argument=False, is_class=True)
+1502:         try:
+1503:             if sys.version_info >= (3, 13):
+1504:                 value = _eval_type(value, base_globals, None, type_params=())
+1505:             else:
+1506:                 value = _eval_type(value, base_globals, None)
+1507:         except NameError:
+1508:             # this is ok, it can be fixed with update_forward_refs
+1509:             pass
+1510:         annotations[name] = value
+1511:     return annotations
+1512: 
+
+/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py:4614
+4614:         The fields by name.
+4615:     """
+4616:     slots = _slot_names(namespace)
+4617:     fields = {}
+4618:     for key, annotation in types.resolve_annotations(
+4619:         annotations_from_namespace(namespace), namespace["__module__"]
+4620:     ).items():
+4621:         if types.is_classvar(annotation) or key in slots:
+4622:             continue
+
+/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-314/lib/python3.14/site-packages/reflex_base/vars/base.py:1284
+1284: 
+1285:         if not isinstance(fixed_type, type):
+1286:             msg = f"Unsupported type {var_type} for guess_type."
+1287:             raise TypeError(msg)
+
+/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-3147/lib/python3.14/site-packages/reflex/state.py:1262
+1262:     def _get_type_hints(cls) -> builtins.dict[str, Any]:
+1263:         """Get the type hints for this class.
+1264: 
+1265:         If the class is dynamic, evaluate the type hints with the original
+1266:         module in the local namespace.
+1267: 
+1268:         Returns:
+1269:             The type hints dict.
+1270:         """
+1271:         original_module = getattr(cls, "__original_module__", None)
+1272:         if original_module is not None:
+1273:             localns = sys.modules[original_module].__dict__
+1274:         else:
+1275:             localns = None
+1276: 
+1277:         return get_type_hints(cls, localns=localns)

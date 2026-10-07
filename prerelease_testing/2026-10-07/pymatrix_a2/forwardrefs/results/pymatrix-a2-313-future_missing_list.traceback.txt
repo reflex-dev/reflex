@@ -1,0 +1,34 @@
+Traceback (most recent call last):
+  File "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/scripts/probe.py", line 22, in <module>
+    module = importlib.import_module(f'fixtures.{args.case}')
+  File "/opt/homebrew/Cellar/python@3.13/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1395, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1023, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-forwardrefs/fixtures/future_missing_list.py", line 11, in <module>
+    class Warehouse(rx.State):
+    ...<2 lines>...
+        selection: list[InventoryItem] = []
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/vars/base.py", line 4892, in __new__
+    new_cls = super().__new__(cls, name, bases, namespace)
+  File "<frozen abc>", line 106, in __new__
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/state.py", line 739, in __init_subclass__
+    name: get_var_for_field(cls, name, f)
+          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex/state.py", line 281, in get_var_for_field
+    return dispatch(
+        field_name=field_name,
+        var_data=VarData.from_state(cls, name),
+        result_var_type=f.outer_type_,
+    )
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/vars/base.py", line 3881, in dispatch
+    ).guess_type()
+      ~~~~~~~~~~^^
+  File "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a2-313/lib/python3.13/site-packages/reflex_base/vars/base.py", line 1287, in guess_type
+    raise TypeError(msg)
+TypeError: Unsupported type ForwardRef('list[InventoryItem]') for guess_type.

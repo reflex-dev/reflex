@@ -1,0 +1,667 @@
+[
+  {
+    "label": "pymatrix-stable-311-ty",
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-tools/bin/python",
+      "ty",
+      "check",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311",
+      "--python-version",
+      "3.11",
+      "--project",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing",
+      "--output-format",
+      "concise",
+      "--color",
+      "never",
+      "handlers_0_5.py"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing",
+    "returncode": 1,
+    "metadata": {
+      "python": "3.11.16 (main, Aug 12 2026, 23:03:19) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "prefix": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/__init__.py",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12"
+    },
+    "diagnostics": [
+      {
+        "line": 62,
+        "column": 1,
+        "rule": "type-assertion-failure",
+        "message": "Type `Unknown` does not match asserted type `EventCallback[()]`"
+      },
+      {
+        "line": 62,
+        "column": 13,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 68,
+        "column": 1,
+        "rule": "type-assertion-failure",
+        "message": "Type `Unknown` does not match asserted type `EventCallback[()]`"
+      },
+      {
+        "line": 68,
+        "column": 13,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 75,
+        "column": 25,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[()]` is not assignable to `() -> Any`"
+      },
+      {
+        "line": 76,
+        "column": 28,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int]` is not assignable to `(int, /) -> Any`"
+      },
+      {
+        "line": 77,
+        "column": 33,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int, str]` is not assignable to `(int, str, /) -> Any`"
+      },
+      {
+        "line": 78,
+        "column": 39,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int, str, bool]` is not assignable to `(int, str, bool, /) -> Any`"
+      },
+      {
+        "line": 79,
+        "column": 46,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int, str, bool, float]` is not assignable to `(int, str, bool, float, /) -> Any`"
+      },
+      {
+        "line": 80,
+        "column": 51,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int, str, bool, float, str]` is not assignable to `(int, str, bool, float, str, /) -> Any`"
+      },
+      {
+        "line": 88,
+        "column": 34,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 89,
+        "column": 39,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 98,
+        "column": 1,
+        "rule": "invalid-argument-type",
+        "message": "Argument to bound method `EventCallback.__call__` is incorrect: Expected `EventCallback[int | Literal[\"not-an-int\"], str]`, found `EventCallback[int, str]`"
+      },
+      {
+        "line": 99,
+        "column": 1,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      }
+    ],
+    "negative_control_lines": [
+      98,
+      99
+    ],
+    "negative_controls_detected": true,
+    "positive_case_error_lines": [
+      62,
+      68,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      88,
+      89
+    ]
+  },
+  {
+    "label": "pymatrix-stable-311-pyright",
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-tools/bin/python",
+      "pyright",
+      "--pythonpath",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/bin/python",
+      "--pythonversion",
+      "3.11",
+      "--outputjson",
+      "handlers_0_5.py"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing",
+    "returncode": 1,
+    "metadata": {
+      "python": "3.11.16 (main, Aug 12 2026, 23:03:19) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "prefix": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-311/lib/python3.11/site-packages/reflex/__init__.py",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12"
+    },
+    "diagnostics": [
+      {
+        "line": 62,
+        "column": 13,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'])"
+      },
+      {
+        "line": 62,
+        "column": 13,
+        "rule": "reportAssertTypeFailure",
+        "message": "\"assert_type\" mismatch: expected \"EventCallback[*tuple[()]]\" but received \"Unknown\""
+      },
+      {
+        "line": 68,
+        "column": 13,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (int, str, bool, float, str)"
+      },
+      {
+        "line": 68,
+        "column": 13,
+        "rule": "reportAssertTypeFailure",
+        "message": "\"assert_type\" mismatch: expected \"EventCallback[*tuple[()]]\" but received \"Unknown\""
+      },
+      {
+        "line": 80,
+        "column": 51,
+        "rule": "reportAssignmentType",
+        "message": "Type \"EventCallback[int, str, bool, float, str]\" is not assignable to declared type \"(int, str, bool, float, str) -> Any\"\n\u00a0\u00a0No overloaded function matches type \"(int, str, bool, float, str) -> Any\""
+      },
+      {
+        "line": 88,
+        "column": 34,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'])"
+      },
+      {
+        "line": 89,
+        "column": 39,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (int, str, bool, float, str)"
+      },
+      {
+        "line": 98,
+        "column": 9,
+        "rule": "reportArgumentType",
+        "message": "Argument of type \"Literal['not-an-int']\" cannot be assigned to parameter \"value\" of type \"int | Var[int]\" in function \"__call__\"\n\u00a0\u00a0Type \"Literal['not-an-int']\" is not assignable to type \"int | Var[int]\"\n\u00a0\u00a0\u00a0\u00a0\"Literal['not-an-int']\" is not assignable to \"int\"\n\u00a0\u00a0\u00a0\u00a0\"Literal['not-an-int']\" is not assignable to \"Var[int]\""
+      },
+      {
+        "line": 99,
+        "column": 1,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'], Literal['extra'])"
+      }
+    ],
+    "negative_control_lines": [
+      98,
+      99
+    ],
+    "negative_controls_detected": true,
+    "positive_case_error_lines": [
+      62,
+      68,
+      80,
+      88,
+      89
+    ]
+  },
+  {
+    "label": "pymatrix-stable-314-ty",
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-tools/bin/python",
+      "ty",
+      "check",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-314",
+      "--python-version",
+      "3.14",
+      "--project",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing",
+      "--output-format",
+      "concise",
+      "--color",
+      "never",
+      "handlers_0_5.py"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing",
+    "returncode": 1,
+    "metadata": {
+      "python": "3.14.0 (main, Oct 10 2025, 12:54:13) [Clang 20.1.4 ]",
+      "prefix": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-314",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-314/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12"
+    },
+    "diagnostics": [
+      {
+        "line": 62,
+        "column": 1,
+        "rule": "type-assertion-failure",
+        "message": "Type `Unknown` does not match asserted type `EventCallback[()]`"
+      },
+      {
+        "line": 62,
+        "column": 13,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 68,
+        "column": 1,
+        "rule": "type-assertion-failure",
+        "message": "Type `Unknown` does not match asserted type `EventCallback[()]`"
+      },
+      {
+        "line": 68,
+        "column": 13,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 75,
+        "column": 25,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[()]` is not assignable to `() -> Any`"
+      },
+      {
+        "line": 76,
+        "column": 28,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int]` is not assignable to `(int, /) -> Any`"
+      },
+      {
+        "line": 77,
+        "column": 33,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int, str]` is not assignable to `(int, str, /) -> Any`"
+      },
+      {
+        "line": 78,
+        "column": 39,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int, str, bool]` is not assignable to `(int, str, bool, /) -> Any`"
+      },
+      {
+        "line": 79,
+        "column": 46,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int, str, bool, float]` is not assignable to `(int, str, bool, float, /) -> Any`"
+      },
+      {
+        "line": 80,
+        "column": 51,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int, str, bool, float, str]` is not assignable to `(int, str, bool, float, str, /) -> Any`"
+      },
+      {
+        "line": 88,
+        "column": 34,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 89,
+        "column": 39,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 98,
+        "column": 1,
+        "rule": "invalid-argument-type",
+        "message": "Argument to bound method `EventCallback.__call__` is incorrect: Expected `EventCallback[int | Literal[\"not-an-int\"], str]`, found `EventCallback[int, str]`"
+      },
+      {
+        "line": 99,
+        "column": 1,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      }
+    ],
+    "negative_control_lines": [
+      98,
+      99
+    ],
+    "negative_controls_detected": true,
+    "positive_case_error_lines": [
+      62,
+      68,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      88,
+      89
+    ]
+  },
+  {
+    "label": "pymatrix-stable-314-pyright",
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-tools/bin/python",
+      "pyright",
+      "--pythonpath",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-314/bin/python",
+      "--pythonversion",
+      "3.14",
+      "--outputjson",
+      "handlers_0_5.py"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing",
+    "returncode": 1,
+    "metadata": {
+      "python": "3.14.0 (main, Oct 10 2025, 12:54:13) [Clang 20.1.4 ]",
+      "prefix": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-314",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-stable-314/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex": "0.9.12",
+      "reflex_base": "0.9.12"
+    },
+    "diagnostics": [
+      {
+        "line": 62,
+        "column": 13,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'])"
+      },
+      {
+        "line": 62,
+        "column": 13,
+        "rule": "reportAssertTypeFailure",
+        "message": "\"assert_type\" mismatch: expected \"EventCallback[*tuple[()]]\" but received \"Unknown\""
+      },
+      {
+        "line": 68,
+        "column": 13,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (int, str, bool, float, str)"
+      },
+      {
+        "line": 68,
+        "column": 13,
+        "rule": "reportAssertTypeFailure",
+        "message": "\"assert_type\" mismatch: expected \"EventCallback[*tuple[()]]\" but received \"Unknown\""
+      },
+      {
+        "line": 80,
+        "column": 51,
+        "rule": "reportAssignmentType",
+        "message": "Type \"EventCallback[int, str, bool, float, str]\" is not assignable to declared type \"(int, str, bool, float, str) -> Any\"\n\u00a0\u00a0No overloaded function matches type \"(int, str, bool, float, str) -> Any\""
+      },
+      {
+        "line": 88,
+        "column": 34,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'])"
+      },
+      {
+        "line": 89,
+        "column": 39,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (int, str, bool, float, str)"
+      },
+      {
+        "line": 98,
+        "column": 9,
+        "rule": "reportArgumentType",
+        "message": "Argument of type \"Literal['not-an-int']\" cannot be assigned to parameter \"value\" of type \"int | Var[int]\" in function \"__call__\"\n\u00a0\u00a0Type \"Literal['not-an-int']\" is not assignable to type \"int | Var[int]\"\n\u00a0\u00a0\u00a0\u00a0\"Literal['not-an-int']\" is not assignable to \"int\"\n\u00a0\u00a0\u00a0\u00a0\"Literal['not-an-int']\" is not assignable to \"Var[int]\""
+      },
+      {
+        "line": 99,
+        "column": 1,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'], Literal['extra'])"
+      }
+    ],
+    "negative_control_lines": [
+      98,
+      99
+    ],
+    "negative_controls_detected": true,
+    "positive_case_error_lines": [
+      62,
+      68,
+      80,
+      88,
+      89
+    ]
+  },
+  {
+    "label": "pymatrix-a1-314-ty",
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-tools/bin/python",
+      "ty",
+      "check",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-314",
+      "--python-version",
+      "3.14",
+      "--project",
+      "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing",
+      "--output-format",
+      "concise",
+      "--color",
+      "never",
+      "handlers_0_5.py"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing",
+    "returncode": 1,
+    "metadata": {
+      "python": "3.14.0 (main, Oct 10 2025, 12:54:13) [Clang 20.1.4 ]",
+      "prefix": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-314",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-314/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex": "0.10.0a1",
+      "reflex_base": "0.10.0a1"
+    },
+    "diagnostics": [
+      {
+        "line": 62,
+        "column": 1,
+        "rule": "type-assertion-failure",
+        "message": "Type `Unknown` does not match asserted type `EventCallback[()]`"
+      },
+      {
+        "line": 62,
+        "column": 13,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 68,
+        "column": 1,
+        "rule": "type-assertion-failure",
+        "message": "Type `Unknown` does not match asserted type `EventCallback[()]`"
+      },
+      {
+        "line": 68,
+        "column": 13,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 75,
+        "column": 25,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[()]` is not assignable to `() -> Any`"
+      },
+      {
+        "line": 80,
+        "column": 51,
+        "rule": "invalid-assignment",
+        "message": "Object of type `EventCallback[int, str, bool, float, str]` is not assignable to `(int, str, bool, float, str, /) -> Any`"
+      },
+      {
+        "line": 88,
+        "column": 34,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 89,
+        "column": 39,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 98,
+        "column": 1,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      },
+      {
+        "line": 99,
+        "column": 1,
+        "rule": "no-matching-overload",
+        "message": "No overload matches arguments"
+      }
+    ],
+    "negative_control_lines": [
+      98,
+      99
+    ],
+    "negative_controls_detected": true,
+    "positive_case_error_lines": [
+      62,
+      68,
+      75,
+      80,
+      88,
+      89
+    ]
+  },
+  {
+    "label": "pymatrix-a1-314-pyright",
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-tools/bin/python",
+      "pyright",
+      "--pythonpath",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-314/bin/python",
+      "--pythonversion",
+      "3.14",
+      "--outputjson",
+      "handlers_0_5.py"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/pymatrix-typing",
+    "returncode": 1,
+    "metadata": {
+      "python": "3.14.0 (main, Oct 10 2025, 12:54:13) [Clang 20.1.4 ]",
+      "prefix": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-314",
+      "reflex_path": "/private/tmp/reflex-prerelease-macos-pass2/envs/pymatrix-a1-314/lib/python3.14/site-packages/reflex/__init__.py",
+      "reflex": "0.10.0a1",
+      "reflex_base": "0.10.0a1"
+    },
+    "diagnostics": [
+      {
+        "line": 62,
+        "column": 13,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'])"
+      },
+      {
+        "line": 62,
+        "column": 13,
+        "rule": "reportAssertTypeFailure",
+        "message": "\"assert_type\" mismatch: expected \"EventCallback[*tuple[()]]\" but received \"Unknown\""
+      },
+      {
+        "line": 68,
+        "column": 13,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (int, str, bool, float, str)"
+      },
+      {
+        "line": 68,
+        "column": 13,
+        "rule": "reportAssertTypeFailure",
+        "message": "\"assert_type\" mismatch: expected \"EventCallback[*tuple[()]]\" but received \"Unknown\""
+      },
+      {
+        "line": 80,
+        "column": 51,
+        "rule": "reportAssignmentType",
+        "message": "Type \"EventCallback[int, str, bool, float, str]\" is not assignable to declared type \"(int, str, bool, float, str) -> Any\"\n\u00a0\u00a0No overloaded function matches type \"(int, str, bool, float, str) -> Any\""
+      },
+      {
+        "line": 88,
+        "column": 34,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'])"
+      },
+      {
+        "line": 89,
+        "column": 39,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (int, str, bool, float, str)"
+      },
+      {
+        "line": 98,
+        "column": 9,
+        "rule": "reportArgumentType",
+        "message": "Argument of type \"Literal['not-an-int']\" cannot be assigned to parameter \"value\" of type \"int | Var[int]\" in function \"__call__\"\n\u00a0\u00a0Type \"Literal['not-an-int']\" is not assignable to type \"int | Var[int]\"\n\u00a0\u00a0\u00a0\u00a0\"Literal['not-an-int']\" is not assignable to \"int\"\n\u00a0\u00a0\u00a0\u00a0\"Literal['not-an-int']\" is not assignable to \"Var[int]\""
+      },
+      {
+        "line": 99,
+        "column": 1,
+        "rule": "reportCallIssue",
+        "message": "No overloads for \"__call__\" match the provided arguments\n\u00a0\u00a0Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal['t'], Literal['extra'])"
+      }
+    ],
+    "negative_control_lines": [
+      98,
+      99
+    ],
+    "negative_controls_detected": true,
+    "positive_case_error_lines": [
+      62,
+      68,
+      80,
+      88,
+      89
+    ]
+  }
+]
