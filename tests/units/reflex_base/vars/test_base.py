@@ -158,21 +158,96 @@ def test_class_assignment_replaces_field(name: str):
     assert getattr(restored, name) == ["configured"]
 
 
-@pytest.mark.parametrize("replace_field", [False, True])
-def test_class_assignment_refreshes_frontend_metadata(replace_field: bool):
-    """A changed frontend default refreshes schema and nullable Var metadata.
+@pytest.mark.parametrize("name", ["_value", "value"])
+@pytest.mark.parametrize("replacement", ["wrong", ["wrong"], None])
+@pytest.mark.parametrize("configuration", ["value", "field", "raw_field"])
+def test_class_assignment_rejects_invalid_default(
+    name: str, replacement: Any, configuration: str
+):
+    """Invalid defaults cannot change the declared field or its configuration.
 
     Args:
-        replace_field: Whether to assign a Field rather than a plain value.
+        name: The backend or frontend field name.
+        replacement: A value incompatible with the field's type.
+        configuration: Whether to assign a value or a fresh field configuration.
     """
 
     class ConfigState(BaseState):
-        value: Field[int] = field(default=1)
+        _value: list[int] = []
+        value: list[int] = []
 
-    schema = ConfigState._to_schema()
-    ConfigState.value = field(default=None) if replace_field else None  # pyright: ignore[reportAttributeAccessIssue]
-    assert ConfigState._to_schema() != schema
-    assert ConfigState.base_vars["value"]._var_type == int | None
+    declared = ConfigState.get_fields()[name]
+    original_factory = declared.default_factory
+    if configuration == "field":
+        replacement = field(default=replacement)
+    elif configuration == "raw_field":
+        replacement = Field(default=replacement)
+    with pytest.raises(TypeError, match=r"Invalid default.*list\[int\]"):
+        setattr(ConfigState, name, replacement)
+    assert ConfigState.get_fields()[name] is declared
+    assert declared.default_factory is original_factory
+    assert getattr(ConfigState(), name) == []
+
+
+@pytest.mark.parametrize("name", ["_value", "value"])
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "var",
+        "literal",
+        "bound_field",
+        "wrapped_var",
+        "wrapped_field",
+        "configured_var",
+        "configured_field",
+    ],
+)
+def test_class_assignment_rejects_state_references(name: str, kind: str):
+    """State references cannot become defaults, even on an Any-typed field.
+
+    Args:
+        name: The backend or frontend field name.
+        kind: The reference or configuration containing it.
+    """
+
+    class SourceState(BaseState):
+        _source: str = "source"
+        source: str = "source"
+
+    class ConfigState(BaseState):
+        _value: Any = "old"
+        value: str = "old"
+
+    reference = (
+        SourceState.get_fields()["_source"]
+        if "field" in kind
+        else Var.create("literal")
+        if kind == "literal"
+        else SourceState.source
+    )
+    replacement = Field(default=reference) if kind.startswith("wrapped") else reference
+    if kind.startswith("configured"):
+        replacement = field(default=reference)
+    declared = ConfigState.get_fields()[name]
+    advice = "computed var" if "field" in kind else "ClassVar\\[rx.Var\\]"
+    with pytest.raises(TypeError, match=advice):
+        setattr(ConfigState, name, replacement)
+    assert ConfigState.get_fields()[name] is declared
+    assert getattr(ConfigState(), name) == "old"
+    assert SourceState()._source == "source"
+
+
+def test_class_assignment_allows_optional_defaults_and_var_classvars():
+    """Optional defaults and explicit shared Var references remain supported."""
+
+    class ConfigState(BaseState):
+        value: Field[int | None] = field(default=1)
+        reference: ClassVar[Var] = Var.create("old")
+
+    ConfigState.reference = ConfigState.value
+    ConfigState.value = None
+    assert ConfigState().value is None
+    assert ConfigState.reference is ConfigState.value
 
 
 @pytest.mark.parametrize("name", ["_value", "value"])

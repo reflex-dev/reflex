@@ -17,6 +17,7 @@ import sys
 import threading
 from collections import namedtuple
 from collections.abc import AsyncGenerator, Callable, Mapping
+from hashlib import md5
 from textwrap import dedent
 from types import MethodType, ModuleType
 from typing import Any, ClassVar, Literal, TypeVar, cast
@@ -73,6 +74,7 @@ from reflex.state import (
     ImmutableStateError,
     OnLoadInternalState,
     State,
+    is_serializable,
     state_snapshot_hashes,
 )
 from reflex.testing import chdir
@@ -5516,6 +5518,128 @@ class AppObjectState(BaseState):
     """A root state holding instances of app-defined classes."""
 
     _value: Any = None
+
+
+class DefaultSchemaState(BaseState):
+    """A pickleable state used to verify compatibility after default changes."""
+
+    value: Field[int] = field(default=1)
+
+
+@pytest.mark.parametrize(
+    "configuration", [2, field(default=3), field(default_factory=lambda: 4)]
+)
+def test_default_assignment_preserves_serialized_state(configuration: Any):
+    """Changing defaults preserves the schema and previously serialized values.
+
+    Args:
+        configuration: A replacement value or fresh field configuration.
+    """
+    original = DefaultSchemaState.get_fields()["value"]._replace()
+    state = DefaultSchemaState(value=99)
+    data = state._serialize()
+    schema = DefaultSchemaState._to_schema()
+    try:
+        DefaultSchemaState.value = configuration
+        DefaultSchemaState._to_schema.cache_clear()
+        assert DefaultSchemaState._to_schema() == schema
+        restored = BaseState._deserialize(data)
+        assert isinstance(restored, DefaultSchemaState)
+        assert restored.value == 99
+        assert DefaultSchemaState().value == (
+            configuration.default_value()
+            if isinstance(configuration, Field)
+            else configuration
+        )
+    finally:
+        DefaultSchemaState.value = original  # pyright: ignore[reportAttributeAccessIssue]
+        DefaultSchemaState._to_schema.cache_clear()
+
+
+def test_state_schema_depends_on_names_and_types():
+    """Names and declared types affect compatibility; defaults do not."""
+
+    class First(BaseState):
+        value: int = 1
+
+    class DifferentDefault(BaseState):
+        value: int = 2
+
+    class DifferentType(BaseState):
+        value: str = "1"
+
+    class DifferentName(BaseState):
+        other: int = 1
+
+    schema = First._to_schema()
+    assert DifferentDefault._to_schema() == schema
+    assert DifferentType._to_schema() != schema
+    assert DifferentName._to_schema() != schema
+
+
+@pytest.mark.parametrize("type_name", ["builtins.int", "builtins.str"])
+def test_deserialize_previous_schema_format(type_name: str):
+    """Accept compatible hashes from the previous schema format only.
+
+    Args:
+        type_name: The type stored in the previous schema.
+    """
+    previous_fields = [
+        (
+            name,
+            type_name
+            if name == "value"
+            else f"{declared.type_.__module__}.{declared.type_.__qualname__}",
+            declared.default if is_serializable(declared.default) else None,
+        )
+        for name, declared in DefaultSchemaState.get_fields().items()
+        if name in DefaultSchemaState.base_vars
+    ]
+    legacy_schema = md5(pickle.dumps(sorted(previous_fields))).hexdigest()
+    data = pickle.dumps((legacy_schema, DefaultSchemaState(value=99)))
+    if type_name == "builtins.int":
+        restored = BaseState._deserialize(data)
+        assert isinstance(restored, DefaultSchemaState)
+        assert restored.value == 99
+    else:
+        with pytest.raises(StateSchemaMismatchError):
+            BaseState._deserialize(data)
+
+
+@pytest.mark.parametrize("name", ["cookie", "local", "session"])
+def test_reset_client_storage_uses_replacement_factory(name: str):
+    """Hydration resets client storage through its latest default factory.
+
+    Args:
+        name: The browser storage field to configure.
+    """
+
+    class StorageState(BaseState):
+        cookie: rx.Cookie = rx.Cookie("old")
+        local: rx.LocalStorage = rx.LocalStorage("old")
+        session: rx.SessionStorage = rx.SessionStorage("old")
+
+    calls = []
+    storage_type = StorageState.get_fields()[name].type_
+
+    def factory() -> str:
+        """Record calls and return the configured browser default.
+
+        Returns:
+            The new storage value.
+        """
+        calls.append(True)
+        return storage_type("new")
+
+    setattr(StorageState, name, field(default_factory=factory))
+    assert calls == []
+    state = StorageState(**{name: storage_type("saved")})
+    state._reset_client_storage()
+    assert getattr(state, name) == "new"
+    assert calls == [True]
+    state._reset_client_storage()
+    assert getattr(state, name) == "new"
+    assert calls == [True, True]
 
 
 @pytest.mark.parametrize(

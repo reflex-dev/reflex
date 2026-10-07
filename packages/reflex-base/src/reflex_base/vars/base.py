@@ -4684,6 +4684,36 @@ def _is_tree_state(cls: Any) -> bool:
     )
 
 
+def _validate_field_default(declared: Field, value: Any) -> None:
+    """Reject state references and values incompatible with a field's type.
+
+    Args:
+        declared: The field whose default is being changed.
+        value: The proposed default value.
+
+    Raises:
+        TypeError: If the value is a state reference or has an incompatible type.
+    """
+    if isinstance(value, Var):
+        msg = (
+            "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+            "references to vars in state."
+        )
+        raise TypeError(msg)
+    if isinstance(value, Field):
+        msg = (
+            "A field reference cannot overwrite another field. Define a "
+            "computed var to read the field at runtime instead."
+        )
+        raise TypeError(msg)
+    if not _isinstance(value, declared.outer_type_, nested=1, treat_var_as_type=False):
+        msg = (
+            f"Invalid default for field '{declared._name}': expected "
+            f"{declared.outer_type_}, got {value!r} of type {type(value)}."
+        )
+        raise TypeError(msg)
+
+
 def _replace_bound_field(declared: Field, replacement: Field) -> None:
     """Replace a field's configuration while retaining its declaration and binding.
 
@@ -4738,12 +4768,30 @@ class BaseStateMeta(ABCMeta):
         Args:
             name: The class attribute being assigned.
             value: Its new value.
+
+        Raises:
+            TypeError: If a field default is a state reference or has an
+                incompatible type.
         """
         declared = cls.__fields__.get(name)
         if declared is not None and _inherited_value(cls.__mro__, name) is declared:
-            if isinstance(value, Field):
+            if isinstance(value, Field) and value._owner is None:
+                default = value.default
+                factory = value.default_factory
+                if (
+                    default is MISSING
+                    and isinstance(factory, functools.partial)
+                    and factory.func is copy.deepcopy
+                    and factory.args
+                ):
+                    # Mutable defaults are stored as copy factories; check
+                    # their source value without evaluating the factory.
+                    default = factory.args[0]
+                if default is not MISSING:
+                    _validate_field_default(declared, default)
                 _replace_bound_field(declared, value)
             else:
+                _validate_field_default(declared, value)
                 defaults = _default_arguments(value)
                 declared.default = defaults["default"]
                 declared.default_factory = defaults["default_factory"]

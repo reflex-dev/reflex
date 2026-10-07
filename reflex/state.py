@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import builtins
 import contextlib
-import copy
 import dataclasses
 import functools
 import hashlib
@@ -1390,7 +1389,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """
         if (prop := cls.__fields__[name]._var) is not None:
             cls._set_default_value(name, prop)
-            cls._to_schema.cache_clear()
 
     @classmethod
     def _update_substate_vars(cls, vars_to_add: builtins.dict[str, Var]):
@@ -1646,7 +1644,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for prop_name in self.base_vars:
             field = fields[prop_name]
             if self._is_client_storage(field):
-                setattr(self, prop_name, copy.deepcopy(field.default))
+                setattr(self, prop_name, field.default_value())
 
         # Recursively reset the substate client storage.
         for substate in self.substates.values():
@@ -2114,7 +2112,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
     @classmethod
     @functools.lru_cache
     def _to_schema(cls) -> str:
-        """Convert a state to a schema.
+        """Hash the field names and types that determine state compatibility.
 
         Returns:
             The hash of the schema.
@@ -2122,12 +2120,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         def _field_tuple(
             field_name: str,
-        ) -> tuple[str, Any, Any]:
+        ) -> tuple[str, str]:
             model_field = cls.__fields__[field_name]
             return (
                 field_name,
                 _serialize_type(model_field.type_),
-                (model_field.default if is_serializable(model_field.default) else None),
             )
 
         return md5(
@@ -2222,9 +2219,38 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         except Exception as err:
             msg = f"Stored state could not be unpickled: {err!r}"
             raise StateSchemaMismatchError(msg) from err
-        if substate_schema != state._to_schema():
+        if (
+            substate_schema != state._to_schema()
+            and substate_schema != _legacy_state_schema(type(state))
+        ):
             raise StateSchemaMismatchError
         return state
+
+
+def _legacy_state_schema(state_cls: type[BaseState]) -> str:
+    """Hash the previous schema format to restore compatible persisted states.
+
+    Args:
+        state_cls: The class whose previous schema to compute.
+
+    Returns:
+        The schema hash including defaults, as used by older Reflex versions.
+    """
+    fields = state_cls.__fields__
+    return md5(
+        pickle.dumps(
+            sorted(
+                (
+                    name,
+                    _serialize_type(fields[name].type_),
+                    fields[name].default
+                    if is_serializable(fields[name].default)
+                    else None,
+                )
+                for name in state_cls.base_vars
+            )
+        )
+    ).hexdigest()
 
 
 def _serialize_type(type_: Any) -> str:

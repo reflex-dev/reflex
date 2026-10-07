@@ -163,7 +163,7 @@ def editable_text_example():
 Assigning `cls.text` in `get_component` sets the default for that component's new
 state class. Other components keep their own defaults, and `cls.text` still
 references the frontend var when building the UI. Resetting the component's state
-restores its configured default.
+restores its last configured default.
 
 ```python eval
 rx.divider()

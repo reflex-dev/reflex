@@ -1,1 +1,1 @@
-Class-level assignment to a frontend or backend var now updates its default while preserving instance writes, reset, and state persistence. Assign a field to replace its default factory; `ComponentState.get_component` can set per-component defaults with ordinary class assignments.
+Configure per-component defaults in `ComponentState.get_component` with assignments such as `cls.count = 10`. Reset restores the last configured default, and changing defaults no longer invalidates saved state; browser storage resets also honor default factories.
