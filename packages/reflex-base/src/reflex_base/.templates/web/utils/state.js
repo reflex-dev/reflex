@@ -60,6 +60,10 @@ const UPDATE_VARS_INTERNAL =
 // Browser storage values this tab sent to the backend, oldest first, by state
 // key. The backend echoes them back, so that get_delta overrides see them.
 const sentStorageValues = {};
+// Bounds the values kept for a key whose echoes never match, as when a
+// get_delta override replaces them. It exceeds the values of one key in flight
+// at once: a synced var written at 60 Hz over a one second round trip.
+const MAX_SENT_STORAGE_VALUES = 256;
 
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
@@ -1071,11 +1075,11 @@ const recordSentStorageValues = (event) => {
   ) {
     return;
   }
-  for (const [state_key, value] of Object.entries(event.payload.vars ?? {})) {
+  // ReflexEvent leaves out an empty payload.
+  for (const [state_key, value] of Object.entries(event.payload?.vars ?? {})) {
     const sent = (sentStorageValues[state_key] ??= []);
     sent.push(value);
-    // An echo a get_delta override dropped never arrives to consume its value.
-    if (sent.length > 16) {
+    if (sent.length > MAX_SENT_STORAGE_VALUES) {
       sent.shift();
     }
   }
