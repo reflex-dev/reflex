@@ -1,7 +1,9 @@
 # a3_ent_auth — N-032 (reflex#7493) on reflex 0.10.0a3 + reflex-enterprise 0.9.7a5, OIDC/MCP/maps regression sweep
 
-Status: IN PROGRESS — Phase A done; Phase B: N-032 matrix, #7493 regression hunt, N-033, MCP dev done; prod suite,
-a4 matrix, maps pending (see "Remaining" at the end).
+Status: COMPLETE (2026-10-07 ~21:30 UTC). Verdicts: N-032 FIXED (dev/prod/memory, every probe); N-033 UNCHANGED;
+no regression from #7493 in the auth flows; one LOW behaviour change (reset tab not redirected) and one pre-existing
+MEDIUM enterprise finding (protected client storage wiped on client-side navigation with Redis). Inbox files
+`../board/findings-inbox/a3_ent_auth-{1..4}.md`; report `../board/results/a3_ent_auth.md`.
 Big logs are gzipped in `logs/` (`zcat`); screenshots are `.jpg` in `shots/`.
 
 ## Environment
@@ -90,7 +92,15 @@ $DRV hydration_token_probe.py http://localhost:3340 a3e-dev-redis
 MPY="env NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/ent_auth2-drv/bin/python"
 $MPY check_mcp_anon.py http://localhost:8340 a3e-dev-redis --rate; $MPY check_mcp_oauth_redis.py http://localhost:8340 http://localhost:3340 a3e-dev-redis
 $W/scripts/expiry_matrix.sh a3-ent entauth_a3e a3e proactive; $W/scripts/infra.sh restart-oidc 3600   # (expiry_matrix kills the mock)
-# prod (1 worker) suite: GRANIAN_WORKERS=1 $W/scripts/prod_suite.sh a3-ent entauth_a3e a3e-prod-redis
+# prod (1 worker) suite: GRANIAN_WORKERS=1 $W/scripts/prod_suite.sh a3-ent entauth_a3e a3e-prod-redis; $W/bin/stop_app.sh
+# --- 10-05 a4 auth matrix (dev, memory; servers on the venv under test, drivers on ent_auth2-drv)
+$W/scripts/a4_matrix.sh a3-ent a3e; $W/scripts/a4_matrix.sh s912-ent-a5 s912e5; $W/bin/a4_tally.sh a3e; $W/bin/a4_tally.sh s912e5
+# --- maps (mkdir -p $W/mapsapp_a3e; cp -r $W/mapsapp_src/* $W/mapsapp_a3e/)
+VENV=a3-ent APP_DIR=mapsapp_a3e APP_FP=3344 APP_BP=8344 $W/scripts/start_app.sh dev $W/logs/maps-dev-redis-a3e.log
+$W/bin/wait_ready.sh http://localhost:3344/ http://localhost:8344 400; (cd $W/scripts && $DRV drive_maps.py http://localhost:3344 a3e-dev-redis)
+$W/bin/stop_app.sh; VENV=a3-ent APP_DIR=mapsapp_a3e APP_BP=8345 $W/scripts/start_app.sh prod $W/logs/maps-prod-redis-a3e.log
+$W/bin/wait_ready.sh http://localhost:8345/ http://localhost:8345 600; (cd $W/scripts && $DRV drive_maps.py http://localhost:8345 a3e-prod-redis)
+# --- protected client storage incl. memory: NOREDIS=1 $W/bin/run_storx.sh a3-ent:vauthx_a3e:a3e-dev-memory-v2; $DRV storx_table.py <label>...
 $W/bin/stop_app.sh; $W/bin/infra.sh stop
 ```
 
@@ -106,7 +116,7 @@ coregd_app: alpha2 prints only `GET_DELTA_SAW theme='bogus-nav'`; stable 0.9.12 
 (expected: the auth code is byte-identical a4 → a5; the fix is reflex-side #7493).
 
 (c) s912-ent-a5 (0.9.12 + a5), dev Redis: stale 3/3, 3/3, 3/3, 3/3; away 3/3; xtab 6/6 (race 6/6, all healed by tab2's
-return boot) — identical to the a2-pass 0.9.12 + a4 record; a5 does not break 0.9.12 here. (a4 matrix on s912-ent-a5: pending.)
+return boot) — identical to the a2-pass 0.9.12 + a4 record; a4 auth matrix 36/36 + both MCP checks; a5 does not break 0.9.12.
 
 ### N-032 on a3-ent (reflex 0.10.0a3 + enterprise 0.9.7a5) — FIXED
 
@@ -144,13 +154,13 @@ value or action is exposed in either version (the boot snapshot briefly carries 
 | totals per run (cookie syncs) | 1 (the login) | 1 | 1 |
 | `hunt relogin` alice → add → reload → logout → bob on same tab → reload → add → new tab | 2/2 dev, 2/2 prod 1w | 2/2 | — |
 | protected client storage (`storx`, vauthx): reload / new tab /vault / new tab `/` keeps alice's `vx_draft`/`vx_ck` | kept | kept | **wiped** on new-tab boot (LocalStorage) |
-| …client-side navigation to the PUBLIC page `/` while signed in | **wiped** (both written as "") | **wiped** | **wiped** |
+| …any client-side navigation while signed in (Redis; see the extended table below) | **wiped** (both written as "") | **wiped** | **wiped** |
 | `hydration_token_probe.py` flags (entauth) | reload_writes ✓, newtab_writes ✓, garbage_* = 0.9.12 flags | same | same |
 | proactive refresh (75 s tokens, idle 120 s) | refreshed at +69 s, still Alice, protected event allowed | (a2 pass: pass) | — |
 
 => no duplicate cookie syncs, no reconcile loops, F-002 not back from the auth angle; the extra hash write per boot is
 the documented trade-off of #7493 (0.9.12 did the same). The protected-storage wipe on client navigation to a public page
-is pre-existing on all three versions (enterprise delta filter: `update_vars_internal` on a public page does not resolve
+is pre-existing on all three versions (enterprise delta filter: `update_vars_internal` under the Redis manager does not resolve
 the user, so the protected vars are replaced by their anonymous placeholders and the browser persists them) — reported as
 a pre-existing finding; a3 is no worse than a2 and better than 0.9.12 at boot.
 
@@ -178,6 +188,45 @@ upload tickets, background tool, OAuth registration/consent/deny/PKCE/refresh ro
 Pre-existing I-6 unchanged: `scoped_write` denied by token scope returns `{"is_error": false, "delta": {}}`.
 Server log: the known ERROR + traceback for the anonymous read of the protected resource (2 tracebacks, same as a2).
 
-## Remaining (at the time of writing)
-prod suite (entauth, 1 worker: drive_auth_redis, xtab ×5, stale ×2, hydration probe, MCP prod); a4 matrix on a3-ent and
-s912-ent-a5; maps dev + prod.
+### Prod suite on a3-ent (entauth, single port 8341, Redis, `GRANIAN_WORKERS=1`, `scripts/prod_suite.sh`)
+`logs/prod-suite-a3e.out`: `drive_auth_redis.py` cycle/pubnav/twotab/xtab **ALL_PASSED** (a2: twotab/xtab stayed signed in);
+`xtab_probe.py` ×5 **TAB1_LOGGED_OUT 5/5** (a2 prod 3/5); `stale_hash_probe.py` ×2 **CORRECTED 2/2, 2/2, 2/2** (a2 prod 0/2,
+0/2, 2/2); hydration_token_probe reload_writes ✓ newtab_writes ✓; bglive `direct` not live (pre-existing N-034, same as a2);
+MCP OAuth + anonymous prod: structurally identical to a2 prod (`json_cmp.py`: key order, +1 handler, +1-2 boot frames).
+Server log: 2 tracebacks = the known anonymous protected-resource read (as a2).
+
+### Protected client storage, extended (`storx.py`, vauthx with /vault2; `bin/run_storx.sh`, labels `*-v2`)
+| step (alice signed in unless noted) | a3 Redis | a2 Redis | 0.9.12 Redis | a3 memory |
+|---|---|---|---|---|
+| reload /vault, new tab /vault, new tab / | kept | kept | **wiped** (new-tab boot) | kept |
+| client nav /vault → /vault2 (both protected) | **wiped** | **wiped** | **wiped** | kept |
+| client nav /vault2 → /vault, /vault → / | **wiped** | **wiped** | **wiped** | kept |
+| anonymous boot with leftover protected values in the browser | blanked ("" written) | left in browser (not shown) | blanked | blanked |
+=> pre-existing enterprise bug with Redis (`a3_ent_auth-3`): `update_vars_internal` does not load `AuthUserState`, the delta
+filter fails closed and the browser persists the "" placeholders. a3's boot behaviour equals a2's for signed-in tabs and
+0.9.12's for anonymous leftovers (consistent with the filter's "blank stale authed values" design).
+
+### 10-05 a4 auth matrix (dev, memory manager; `scripts/a4_matrix.sh <venv> <label>`, `bin/a4_tally.sh <label>`)
+| part | a3 + a5 | 0.9.12 + a5 | a2 + a4 (a2 pass) |
+|---|---|---|---|
+| full upstream auth app (22 cases) | 22/22 | 22/22 | 22/22 |
+| public nav + 2 reloads | 3/3 | 3/3 | 3/3 |
+| auth_min default | 4/4 | 4/4 | 4/4 |
+| auth_min extra scopes | 4/4 | 4/4 | 4/4 |
+| iframe pending replay | 3/3 | 3/3 | 3/3 |
+| **total** | **36/36** | **36/36** | 36/36 |
+| MCP OAuth / anonymous MCP | pass / pass | pass / pass | pass / pass |
+0 page errors, 0 server tracebacks; failed requests are the known cookie-sync keepalive aborts (a3: 21/11/10, a2: 21/10/11)
+and 3 dev route-module aborts. Logs: `apps/a4auth/logs/{a3e,s912e5}/`.
+
+### Maps (`scripts/drive_maps.py`, mapsapp; dev 3344/8344 and prod 8345 default workers, Redis)
+a3 dev **16/17**, a3 prod (9 workers) **16/17** — the one miss is the pre-existing `on_layeradd` never firing (a2 and 0.9.12
+identical). 200 markers, drag → State, background ticker live (8 distinct geometries, 0 long tasks), reload restores
+state, base-layer/overlay switching from State, geolocation denied/granted all pass. 0 tracebacks; console only the
+favicon 404. Logs `logs/maps-a3e-{dev,prod}-redis.out`, `logs/maps-{dev,prod}-redis-a3e.log`.
+
+### Not covered
+- `a3-ent-a4` (a3 + OLD enterprise a4): not in this item's brief (N-032's fix is reflex-side, the a4 auth code equals a5's,
+  so a3 + a4 is expected to behave like a3 + a5 for auth).
+- a4 matrix in prod; two-provider (`AUTH_MULTI=1`) variant; Redis restart mid-session; expiry scenarios other than
+  `proactive`; bglive `loaded` variant on a3.
