@@ -1,1 +1,0 @@
-Let the early members of a `publish-last` lockstep group release on their own. A `publish-last` member reuses a sibling tag at its version when one exists, and its exact pins are checked against the declared requirement at plan time.
