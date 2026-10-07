@@ -31,10 +31,11 @@ dependencies = [
     # The SDK ships no HTTP library of its own; [httpx] points it at the one
     # `check_version` already pulls in, so the extra costs nothing to install.
     # The SDK is pre-1.0, so every release may break its API: cap at the patch
-    # and raise all three bounds when adopting a new one. The workspace builds
-    # the SDK as a dev release of the next patch (``0.0.6.devN``), which
-    # ``<0.0.6`` would exclude; ``!=0.0.6`` keeps that release itself out.
-    "reflex-build-sdk[httpx] >=0.0.5,<0.0.6.post,!=0.0.6",
+    # and raise all three bounds when adopting a new one. The floor admits the
+    # workspace's dev build until the 0.1.0 alpha publishes and materialization
+    # lifts it; the cap admits 0.1.0 and the ``0.1.1.devN`` builds that follow
+    # its tag, but not 0.1.1 itself.
+    "reflex-build-sdk[httpx] >=0.0.6.dev0,<0.1.1.post,!=0.1.1",
     "rich >=13,<16",
 ]
 
