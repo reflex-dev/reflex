@@ -6976,3 +6976,43 @@ def test_private_attribute_of_underscored_class_and_mixin_is_assignable(
     assert vars(state)["_PrivateState__own"] == 2
     assert vars(state)["_PrivateMixin__from_mixin"] == 1
     assert not state.dirty_vars
+
+
+def test_undeclared_double_underscore_name_is_rejected(clean_registration_context):
+    """Only dunders and names a class of the state mangles are plain attributes.
+
+    A name like ``_x__y`` has the form of ``__y`` mangled by a class ``x``, but
+    no class of the state has that name, so it is an undeclared var.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class GuardMixin(BaseState, mixin=True):
+        def bump_mixin(self):
+            self.__from_mixin = 1
+
+    def make_state() -> type[BaseState]:
+        class GuardState(GuardMixin, BaseState):
+            def bump(self):
+                self.__scratch = 1
+                self.__marker__ = 2
+
+        return GuardState
+
+    # A second local class with the same name is renamed, but its methods
+    # mangle with the name it was defined with.
+    make_state()
+    state_cls = make_state()
+    assert state_cls.__name__ != "GuardState"
+    state = state_cls()  # pyright: ignore[reportCallIssue]
+    state.bump()  # pyright: ignore[reportAttributeAccessIssue]
+    state.bump_mixin()  # pyright: ignore[reportAttributeAccessIssue]
+    assert vars(state)["_GuardState__scratch"] == 1
+    assert vars(state)["_GuardMixin__from_mixin"] == 1
+    assert vars(state)["__marker__"] == 2
+    state._BaseState__private = 3  # pyright: ignore[reportAttributeAccessIssue]
+    for name in ("_x__y", "_sneaky__name", "_GuardStat__y", "_GuardState_y__z"):
+        with pytest.raises(SetUndefinedStateVarError):
+            setattr(state, name, 1)
+    assert not state.dirty_vars

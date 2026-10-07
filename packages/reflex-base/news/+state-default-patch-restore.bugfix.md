@@ -1,0 +1,1 @@
+Assigning a field (or its Var, read through the class) back to its state class, or deleting the class attribute, undoes the most recent default assignment, so patch-and-restore tools round-trip a class-level default.

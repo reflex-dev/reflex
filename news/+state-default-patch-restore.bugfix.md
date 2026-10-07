@@ -1,0 +1,1 @@
+Undoing a patch of a state var's default, such as with pytest's `monkeypatch.setattr` or `unittest.mock.patch.object` on a state class, restores the previous default instead of raising `TypeError` at teardown and leaking the patched default into later tests.

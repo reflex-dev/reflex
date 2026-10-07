@@ -1,4 +1,4 @@
-"""Browser regressions for client-storage writes during hydration."""
+"""Browser regressions for client-storage writes during hydration and assigned defaults."""
 
 from collections.abc import Generator
 
@@ -56,6 +56,51 @@ def HydrationStorageApp():
                 subdelta["token_hash" + FIELD_MARKER] = "fresh"
             return delta
 
+    class AssignedStorageState(rx.State):
+        local: str = rx.LocalStorage("declared", name="assigned-local")
+        session: str = rx.SessionStorage("declared", name="assigned-session")
+        cookie: str = rx.Cookie("declared", name="assigned-cookie")
+        factory: rx.Field[str] = rx.field(
+            default_factory=lambda: rx.LocalStorage("declared", name="assigned-factory")
+        )
+
+        @rx.event
+        def change(self):
+            """Change the values the browser stores."""
+            self.local = "changed"
+            self.session = "changed"
+            self.cookie = "changed"
+            self.factory = "changed"
+
+    AssignedStorageState.local = "assigned"
+    AssignedStorageState.session = "assigned"
+    AssignedStorageState.cookie = "assigned"
+    AssignedStorageState.factory = "assigned"
+
+    class PreferenceState(rx.ComponentState):
+        pref: str = rx.LocalStorage("declared", name="assigned-pref")
+
+        @rx.event
+        def change(self):
+            """Change the preference the browser stores."""
+            self.pref = "changed"
+
+        @classmethod
+        def get_component(cls, initial: str) -> rx.Component:
+            """Configure the preference default for this component.
+
+            Args:
+                initial: The preference's default value.
+
+            Returns:
+                The preference and a button changing it.
+            """
+            cls.pref = initial
+            return rx.box(
+                rx.text(cls.pref, id="assigned-pref"),
+                rx.button("Change", on_click=cls.change, id="change-pref"),
+            )
+
     def index():
         """Display hydration and normalized storage values.
 
@@ -68,9 +113,26 @@ def HydrationStorageApp():
             rx.text(ReconcileState.token_hash, id="token-hash"),
         )
 
+    def assigned():
+        """Display browser storage vars whose defaults are assigned to their class.
+
+        Returns:
+            The page component.
+        """
+        return rx.box(
+            rx.text(AssignedStorageState.local, id="assigned-local"),
+            rx.text(AssignedStorageState.session, id="assigned-session"),
+            rx.text(AssignedStorageState.cookie, id="assigned-cookie"),
+            rx.text(AssignedStorageState.factory, id="assigned-factory"),
+            rx.button("Change", on_click=AssignedStorageState.change, id="change"),
+            PreferenceState.create(initial="assigned"),
+            rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
+        )
+
     app = rx.App()
     app.add_page(index)
     app.add_page(index, route="/loaded", on_load=StorageState.load)
+    app.add_page(assigned, route="/assigned")
 
 
 @pytest.fixture(scope="module", params=[AppHarness, AppHarnessProd])
@@ -153,3 +215,50 @@ def test_hydration_reconciles_storage_in_get_delta(
     expect(page.locator("#hydrated")).to_have_text("true")
     expect(page.locator("#token-hash")).to_have_text("fresh")
     page.wait_for_function("localStorage.getItem('hydrate-token-hash') === 'fresh'")
+
+
+# The browser storage vars of the assigned page, by element id suffix.
+VARS = ("local", "session", "cookie", "factory", "pref")
+
+
+def test_assigned_storage_default_persists(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A plain default assigned to a browser storage var keeps it in the browser.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    assert hydration_storage_app.frontend_url is not None
+    url = f"{hydration_storage_app.frontend_url.rstrip('/')}/assigned"
+    page.goto(url)
+    expect(page.locator("#hydrated")).to_have_text("true")
+    for var in VARS:
+        expect(page.locator(f"#assigned-{var}")).to_have_text("assigned")
+
+    page.locator("#change").click()
+    page.locator("#change-pref").click()
+    page.wait_for_function("""() =>
+        localStorage.getItem('assigned-local') === 'changed' &&
+        sessionStorage.getItem('assigned-session') === 'changed' &&
+        localStorage.getItem('assigned-pref') === 'changed' &&
+        localStorage.getItem('assigned-factory') === 'changed' &&
+        document.cookie.split('; ').includes('assigned-cookie=changed')
+    """)
+
+    # A new tab starts a new session, which reads the values from the browser.
+    other = page.context.new_page()
+    other.goto(url)
+    expect(other.locator("#hydrated")).to_have_text("true")
+    # Session storage belongs to its tab, so the new tab starts from the default.
+    for var in VARS:
+        expected = "assigned" if var == "session" else "changed"
+        expect(other.locator(f"#assigned-{var}")).to_have_text(expected)
+
+    # Reloading the tab keeps its session storage.
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+    for var in VARS:
+        expect(page.locator(f"#assigned-{var}")).to_have_text("changed")
+    assert page.evaluate("sessionStorage.getItem('assigned-session')") == "changed"
