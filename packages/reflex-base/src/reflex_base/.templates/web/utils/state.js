@@ -60,8 +60,8 @@ const UPDATE_VARS_INTERNAL =
 // Browser storage values this tab sent to the backend, oldest first, by state
 // key. The backend echoes them back, so that get_delta overrides see them.
 const sentStorageValues = {};
-// Bounds the values kept for a key whose echoes never match, as when a
-// get_delta override replaces them. It exceeds the values of one key in flight
+// Bounds the values kept for a key whose replies never arrive, as when a
+// get_delta override drops them. It exceeds the values of one key in flight
 // at once: a synced var written at 60 Hz over a one second round trip.
 const MAX_SENT_STORAGE_VALUES = 256;
 
@@ -1086,18 +1086,21 @@ const recordSentStorageValues = (event) => {
 };
 
 /**
- * Consume the echo of a browser storage value this tab sent to the backend.
- * Values sent before it are dropped too, as their echoes have passed.
+ * Consume the reply to a browser storage value this tab sent to the backend.
+ * The backend answers the values in the order they were sent, so a reply that
+ * matches none of them, changed by a handler or get_delta override, answers
+ * the oldest. Values sent before a matching one were answered already.
  * @param state_key The state key of the browser storage var.
  * @param value The value the backend sent for it.
  * @returns Whether the value echoes one this tab sent.
  */
 const consumeStorageEcho = (state_key, value) => {
   const sent = sentStorageValues[state_key];
-  const index = sent ? sent.indexOf(value) : -1;
-  if (index !== -1) {
-    sent.splice(0, index + 1);
+  if (!sent?.length) {
+    return false;
   }
+  const index = sent.indexOf(value);
+  sent.splice(0, index === -1 ? 1 : index + 1);
   return index !== -1;
 };
 

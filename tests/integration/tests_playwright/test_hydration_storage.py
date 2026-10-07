@@ -114,6 +114,29 @@ def HydrationStorageApp():
             """
             self.value = value
 
+    class ReplaceState(rx.State):
+        value: str = rx.LocalStorage("", name="hydrate-replace", sync=True)
+        _keep: bool = False
+
+        @rx.event
+        def keep_sent(self):
+            """Store the value the override replaced at boot, now unreplaced."""
+            self._keep = True
+            self.value = "sent"
+
+        @rx.state._override_base_method
+        def get_delta(self):
+            """Replace the stored value until a handler stores it on purpose.
+
+            Returns:
+                The delta, with the value replaced.
+            """
+            delta = super().get_delta()
+            subdelta = delta.get(self.get_full_name(), {})
+            if not self._keep and subdelta.get("value" + FIELD_MARKER) == "sent":
+                subdelta["value" + FIELD_MARKER] = "replaced"
+            return delta
+
     def synced():
         """Display a browser storage var synced across tabs.
 
@@ -124,6 +147,8 @@ def HydrationStorageApp():
             rx.text(SyncState.value, id="sync-value"),
             rx.button("Old", on_click=SyncState.set_value("old"), id="set-old"),
             rx.button("New", on_click=SyncState.set_value("new"), id="set-new"),
+            rx.text(ReplaceState.value, id="replace-value"),
+            rx.button("Keep", on_click=ReplaceState.keep_sent, id="keep-sent"),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
         )
 
@@ -452,3 +477,28 @@ def test_synced_storage_resyncs_after_crossed_echo(
     page.wait_for_timeout(500)
     assert page.evaluate("window.syncWrites") == ["newer"]
     assert page.evaluate("localStorage.getItem('hydrate-sync')") == "newer"
+
+
+def test_replaced_storage_echo_does_not_hide_later_change(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """A value sent at boot whose echo was replaced is written when a handler sets it.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    assert hydration_storage_app.frontend_url is not None
+    page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/synced")
+    expect(page.locator("#hydrated")).to_have_text("true")
+    page.evaluate("localStorage.setItem('hydrate-replace', 'sent')")
+    page.reload()
+    expect(page.locator("#hydrated")).to_have_text("true")
+    expect(page.locator("#replace-value")).to_have_text("replaced")
+    page.wait_for_function("localStorage.getItem('hydrate-replace') === 'replaced'")
+
+    page.locator("#keep-sent").click()
+    expect(page.locator("#replace-value")).to_have_text("sent")
+    page.wait_for_function("localStorage.getItem('hydrate-replace') === 'sent'")
+    page.wait_for_timeout(500)
+    expect(page.locator("#replace-value")).to_have_text("sent")
