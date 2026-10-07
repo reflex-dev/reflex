@@ -62,6 +62,9 @@ classifiers = [
 [project.optional-dependencies]
 db = [
   "alembic >=1.15.2,<2.0",
+  # SQLAlchemy 2.1 made greenlet an optional extra, but reflex.model imports
+  # sqlalchemy.ext.asyncio, which needs it at import time.
+  "greenlet >=3.2",
   "pydantic >=2.12.0,<3.0",
   "sqlmodel >=0.0.24",
 ]
