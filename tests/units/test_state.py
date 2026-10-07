@@ -5574,6 +5574,20 @@ def test_state_schema_depends_on_names_and_types():
     assert DifferentName._to_schema() != schema
 
 
+def _previous_release_type(type_: Any) -> str:
+    """Serialize a field type as workers before 0.10.0a2 did.
+
+    Args:
+        type_: The declared type of the field.
+
+    Returns:
+        The dotted path of a class, or the text form of any other annotation.
+    """
+    if not isinstance(type_, type):
+        return f"{type_}"
+    return f"{type_.__module__}.{type_.__qualname__}"
+
+
 def _previous_release_schema(state_cls: type[BaseState], **types: str) -> str:
     """Hash a schema as workers before 0.10.0a2 did, defaults included.
 
@@ -5589,8 +5603,7 @@ def _previous_release_schema(state_cls: type[BaseState], **types: str) -> str:
             sorted(
                 (
                     name,
-                    types.get(name)
-                    or f"{declared.type_.__module__}.{declared.type_.__qualname__}",
+                    types.get(name) or _previous_release_type(declared.type_),
                     declared.default if is_serializable(declared.default) else None,
                 )
                 for name, declared in state_cls.get_fields().items()
