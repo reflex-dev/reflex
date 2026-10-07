@@ -70,7 +70,7 @@ def PlotlyLocaleApp():
                 self.clicks += 1
 
     class PlotlyMigrationState(rx.State):
-        figure: go.Figure = go.Figure(go.Scatter(x=[1], y=[1]))
+        figure: rx.Field[go.Figure | None] = rx.field(None)
 
         @rx.event
         def use_mapbox(self):
@@ -153,20 +153,39 @@ def PlotlyLocaleApp():
         )
 
     @app.add_page
-    def mapbox_literal():
+    def mapbox_literal() -> rx.Component:
+        """Render a literal figure containing an unsupported Mapbox trace.
+
+        Returns:
+            The default renderer with a legacy map figure.
+        """
         return rx.plotly(
             data=go.Figure(go.Scattermapbox(lat=[37.77], lon=[-122.42])),
             id="migration-plot",
         )
 
     @app.add_page
-    def mapbox_layout():
+    def mapbox_layout() -> rx.Component:
+        """Render a figure with a separate legacy Mapbox subplot setting.
+
+        Returns:
+            The default renderer with a numbered Mapbox layout.
+        """
         return rx.plotly(data=figure, layout={"mapbox2": {}}, id="migration-plot")
 
     @app.add_page
-    def mapbox_state():
+    def mapbox_state() -> rx.Component:
+        """Render a loading figure that receives a legacy map through state.
+
+        Returns:
+            The default renderer and a button that loads a Mapbox figure.
+        """
         return rx.vstack(
-            rx.plotly(data=PlotlyMigrationState.figure, id="migration-plot"),
+            rx.plotly(
+                data=PlotlyMigrationState.figure.to(go.Figure),
+                template=None,
+                id="migration-plot",
+            ),
             rx.button(
                 "Use Mapbox", id="use-mapbox", on_click=PlotlyMigrationState.use_mapbox
             ),
@@ -372,6 +391,8 @@ def test_plotly_mapbox_migration_warning(
 ):
     """Warn for literal and reactive Mapbox inputs to the default renderer."""
     assert plotly_locale_app.frontend_url is not None
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
     warnings: list[str] = []
     page.on(
         "console",
@@ -393,3 +414,4 @@ def test_plotly_mapbox_migration_warning(
             page.locator("#use-mapbox").click()
     assert len(warnings) == 1
     assert "layout.map" in warnings[0]
+    assert not errors

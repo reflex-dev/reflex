@@ -262,8 +262,8 @@ const extractPoints = (points) => {
 let _rxDidWarnPlotlyMapbox = false;
 const _rxWarnPlotlyMapbox = (figure) => {
     if (!_rxDidWarnPlotlyMapbox && (
-        figure.data?.some(trace => trace.type?.endsWith("mapbox")) ||
-        Object.keys(figure.layout ?? {}).some(key => /^mapbox\\d*$/.test(key))
+        figure?.data?.some(trace => trace.type?.endsWith("mapbox")) ||
+        Object.keys(figure?.layout ?? {}).some(key => /^mapbox\\d*$/.test(key))
     )) {
         _rxDidWarnPlotlyMapbox = true;
         console.warn(

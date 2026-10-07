@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 
 import numpy as np
@@ -189,9 +190,11 @@ def test_plotly_mapbox_deprecation_preserves_bundle(
         ({"data": [{"type": "scattermap"}], "layout": {"map": {}}}, False),
         ({"data": [{"x": [1], "y": [2]}]}, False),
         ({}, False),
+        (None, False),
     ],
 )
-def test_plotly_mapbox_warning(figure: dict, warns: bool):
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+def test_plotly_mapbox_warning(figure: dict | None, warns: bool):
     """Warn once for removed Mapbox inputs without changing the figure."""
     component = rx.plotly()
     code = next(
@@ -202,6 +205,7 @@ const assert = require('node:assert/strict');
 const warnings = [];
 console.warn = message => warnings.push(message);
 {code}
+assert.equal(_rxWarnPlotlyMapbox(undefined), undefined);
 const figure = {json.dumps(figure)};
 assert.equal(_rxWarnPlotlyMapbox(figure), figure);
 assert.equal(_rxWarnPlotlyMapbox(figure), figure);
