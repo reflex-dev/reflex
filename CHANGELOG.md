@@ -1,3 +1,23 @@
+## v0.10.0a2 (2026-10-06)
+
+### Breaking Changes
+
+- Drop support for Python 3.10, which reaches end of life in October 2026. Reflex now requires Python 3.11 or newer. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Bug Fixes
+
+- `AppHarness` now forgets the states of every module of the app's package when it stops, not only those of the app module, so a state defined elsewhere in the app (for example one using `rx.dynamic`) no longer breaks the next app started in the same test process. ([#7359](https://github.com/reflex-dev/reflex/issues/7359))
+- Deliver changes to client-storage and other state vars made by computed vars during hydration to the browser. ([#7460](https://github.com/reflex-dev/reflex/issues/7460))
+- Prevent hydration from persisting client-storage defaults. ([#7460](https://github.com/reflex-dev/reflex/issues/7460))
+- Configure per-component defaults in `ComponentState.get_component` with assignments such as `cls.count = 10`. Reset restores the last configured default. Defaults are no longer part of the saved-state schema, so changing one keeps state saved by this release or later loadable. Browser storage vars keep their storage settings when a factory is assigned, and declared factories are honored when compiled and reset. ([#7461](https://github.com/reflex-dev/reflex/issues/7461))
+- Assigning a double-underscore private attribute on a state (`self.__counter = 1`) from a mixin, a base, or a class whose name starts with an underscore no longer raises `SetUndefinedStateVarError` in dev mode. Private names not explicitly declared with `rx.field()` are plain Python attributes: vars do not update in response to them. ([#7465](https://github.com/reflex-dev/reflex/issues/7465))
+
+### Miscellaneous
+
+- Allow wrapt 2.4 and 2.5. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))
+- Require sibling package versions from the Python 3.11 release train. ([#7464](https://github.com/reflex-dev/reflex/issues/7464))
+
+
 ## v0.10.0a1 (2026-10-05)
 
 ### Breaking Changes
