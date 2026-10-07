@@ -1,0 +1,7 @@
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+E       AssertionError: assert 99 == 5
+E        +  where 99 = Field(default=99, is_var=True, annotated_type=<class 'int'>).default
+PASSED test_min.py::test_patch
+ERROR test_min.py::test_patch - TypeError: A Field cannot overwrite another f...
+FAILED test_min.py::test_default_is_back - AssertionError: assert 99 == 5
+1 failed, 1 passed, 1 error in 0.37s

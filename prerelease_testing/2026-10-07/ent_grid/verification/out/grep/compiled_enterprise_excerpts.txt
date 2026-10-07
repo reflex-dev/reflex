@@ -1,0 +1,108 @@
+### entv_a2/.web/app_components/entv/entv.jsx: formatColumnDefs as compiled (the jsx/Fragment locals are not visible to createParamsFormatter's eval)
+
+// Create specific formatters using the generic factory
+const formatColumnDefs = (() => {
+  // Special handling for formatColumnDefs due to __reflex checks
+  const baseFormatter = createParamsFormatter(
+    ['tooltipComponent', 'cellRenderer', 'loadingCellRenderer', 'headerComponent', 'filterValueGetter', 'floatingFilterComponent', 'editable', 'valueGetter', 'valueFormatter', 'keyCreator', 'equals', 'context'],
+    {
+      builtInComponents: ['agDateColumnFilter', 'agMultiColumnFilter', 'agNumberColumnFilter', 'agSetColumnFilter', 'agTextColumnFilter', 'agCheckboxCellEditor', 'agDateCellEditor', 'agDateStringCellEditor', 'agLargeTextCellEditor', 'agNumberCellEditor', 'agRichSelectCellEditor', 'agSelectCellEditor', 'agTextCellEditor', 'agAnimateShowChangeCellRenderer', 'agAnimateSlideCellRenderer', 'agCheckboxCellRenderer', 'agGroupCellRenderer', 'agLoadingCellRenderer', 'agPopupCellRenderer', 'agRichSelectCellRenderer', 'agSkeletonCellRenderer', 'agAggregationComponent', 'agFilteredRowCountComponent', 'agTotalAndFilteredRowCountComponent', 'agSelectedRowCountComponent', 'agTotalRowCountComponent'],
+      isArray: true
+    }
+  );
+
+  return function(list) {
+    if (typeof __reflex === 'undefined' || typeof window === "undefined") {
+      return [];
+    }
+    if (!Array.isArray(list)) {
+      throw new Error("Expected an array of objects");
+    }
+    const jsx = __reflex["@emotion/react"]?.jsx;
+    const Fragment = __reflex["react"]?.Fragment;
+
+    return baseFormatter(list);
+  };
+})();
+
+const formatDetailCellRendererParams = createParamsFormatter(
+  ['getDetailRowData', 'detailCellRenderer'],
+  {
+    nestedHandlers: {
+      detailGridOptions: createParamsFormatter([], {
+        nestedHandlers: {
+          columnDefs: formatColumnDefs
+        }
+      })
+    }
+  }
+);
+
+const formatLoadingCellRendererParams = createParamsFormatter(
+  ['loadingRenderer']
+);
+
+const formatFullWidthCellRendererParams = createParamsFormatter(
+  ['fullWidthRenderer']
+);
+
+// Keep formatDetailGridOptions for backward compatibility
+const formatDetailGridOptions = createParamsFormatter([], {
+  nestedHandlers: {
+    columnDefs: formatColumnDefs
+  }
+});
+
+
+function ReflexProbe({label, value}) {
+
+### call sites of formatColumnDefs (render-time, inside memoized components)
+173:        jsx("div",{css:({ ["width"] : "420px", ["height"] : "180px" })},jsx(AgGridReact,{className:((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.()) ? "ag-theme-quartz" : "ag-theme-quartz-dark"),columnDefs:(formatColumnDefs(colsRxMemo)),gridId:"me
+189:        jsx("div",{css:({ ["width"] : "420px", ["height"] : "180px" })},jsx(AgGridReact,{className:((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.()) ? "ag-theme-quartz" : "ag-theme-quartz-dark"),columnDefs:(formatColumnDefs(reflex___state____state
+277:        jsx(AgGridReact,{...mergeSlotProps(rest, ({ className:((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.()) ? "ag-theme-quartz" : "ag-theme-quartz-dark"), columnDefs:(formatColumnDefs(reflex___state____state__entv___entv____grid_state.cols_rx_
+323:        jsx(AgGridReact,{...mergeSlotProps(rest, ({ className:((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.()) ? "ag-theme-quartz" : "ag-theme-quartz-dark"), columnDefs:(formatColumnDefs(reflex___state____state__entv___entv____load_state.cols_rx_
+339:        jsx(AgGridReact,{...mergeSlotProps(rest, ({ className:((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.()) ? "ag-theme-quartz" : "ag-theme-quartz-dark"), columnDefs:(formatColumnDefs(reflex___state____state__entv___entv____grid_state.cols_rx_
+355:        jsx(AgGridReact,{...mergeSlotProps(rest, ({ className:((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.()) ? "ag-theme-quartz" : "ag-theme-quartz-dark"), columnDefs:[({ ["cellRenderer"] : "agGroupCellRenderer", ["field"] : "id" }), ({ ["field
+
+### Python-lambda cell renderer (LiteralLambdaVar): __reflex is read inside the arrow function, i.e. when AG Grid renders a cell
+    return(
+        jsx(AgGridReact,{...mergeSlotProps(rest, ({ className:((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.()) ? "ag-theme-quartz" : "ag-theme-quartz-dark"), columnDefs:[({ ["cellRenderer"] : ((params) => {
+const jsx = __reflex['@emotion/react']?.jsx;
+const Fragment = __reflex['react']?.Fragment;
+const RadixThemesBadge = __reflex['@radix-ui/themes']?.Badge;
+const pyOr = __reflex['$/utils/state']?.pyOr;
+return (jsx(RadixThemesBadge, ({}), (JSON.stringify(params?.["value"]))))
+}), ["field"] : "make" }), ({ ["field"] : "price" })], gridId:"w_renderer_grid", ref:ref_w_renderer_grid, rowData:[({ ["make"] : "Tesla", ["price"] : 1 }), ({ ["make"] : "Ford", ["price"] : 2 }), ({ ["make"] : "Toyota", ["price"] : 3 })] }))},)
+
+### lazy flag root.jsx (entv_a2lazy): window.__reflex assigned at MODULE scope; @radix-ui/themes moved to a lazy loader
+import { Outlet } from 'react-router';
+import * as React from "react";
+import * as emotion_react from "@emotion/react";
+import * as utils_context from "$/utils/context";
+import * as utils_state from "$/utils/state";
+
+if (typeof window !== "undefined") {
+  window.__reflex = { ...window.__reflex,
+        "react": React,
+    "@emotion/react": emotion_react,
+    "$/utils/context": utils_context,
+    "$/utils/state": utils_state,
+  };
+  const loaders = {
+    "@radix-ui/themes": () => import("@radix-ui/themes"),
+  };
+  let pending;
+  window.__reflex_load = () => {
+    if (!pending) {
+      pending = Promise.all(Object.entries(loaders).map(async ([name, load]) => {
+        window.__reflex[name] = await load();
+      })).catch((error) => {
+        pending = undefined;
+        throw error;
+      });
+    }
+    return pending;
+  };
+}
+
+

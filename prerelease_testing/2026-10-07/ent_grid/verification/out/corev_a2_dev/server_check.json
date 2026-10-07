@@ -1,0 +1,13 @@
+{
+ "listeners": [
+  {
+   "pid": "30144",
+   "cmd": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/reflex run --frontend-port 3686 --backend-port 8686 --loglevel debug "
+  },
+  {
+   "pid": "30394",
+   "cmd": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/reflex run --frontend-port 3686 --backend-port 8686 --loglevel debug "
+  }
+ ],
+ "venv": "alpha2"
+}

@@ -1,0 +1,25 @@
+server check ok: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/ent_grid-a1/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a
+[s11 detail] {'w_detail_state': {'detail_rows': 1, 'detail_headers': [], 'detail_cells': 0}, 'w_detail_literal': {'detail_rows': 1, 'detail_headers': ['Count', 'Value'], 'detail_cells': 4}}
+[s11_detail_expand] grids(headers,cells)={'w_detail_state': (2, 4), 'w_detail_literal': (4, 8)} probes={} counts={} reflexSetAt=242.90000000037253
+   t=242.2 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=360.8 delta substates=['reflex___state____state']
+   t=361.5 delta substates=['reflex___state____state']
+   console errors/warnings: 29; pageerrors: 0
+     error: Failed to load resource: the server responded with a status of 404 (Not Found)
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+[s12 renderer] badges=3
+[s12_renderer_full_load] grids(headers,cells)={'w_renderer': (2, 6)} probes={} counts={} reflexSetAt=241.09999999962747
+   t=240.2 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=341 delta substates=['reflex___state____state']
+   t=341.8 delta substates=['reflex___state____state']
+   console errors/warnings: 7; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************

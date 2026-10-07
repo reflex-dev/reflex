@@ -1,0 +1,59 @@
+=== corev_s912
+corev_s912/.web/app/_document.js:2:import reflexGlobalStyles from "$/styles/__reflex_global_styles.css?url"
+corev_s912/.web/app/root.jsx:28:    window.__reflex = {
+corev_s912/.web/app/routes/_index.jsx:13:  const has = isClient && typeof window.__reflex !== "undefined";
+corev_s912/.web/utils/helpers/upload.js:83:    formdata.append("__reflex_event_args", JSON.stringify(extra_args));
+corev_s912/.web/utils/helpers/upload.js:161:    window.__reflex_otel?.onUploadSend?.(handler, trace_headers);
+corev_s912/.web/utils/helpers/json.js:10:const NAN_SENTINEL_PREFIX = "__reflex_nan";
+corev_s912/.web/utils/context.jsx:10:export const StateContexts = {reflex___state____state: getStateContext("reflex___state____state"),reflex___state____state__corev___corev____other: getStateContext("reflex___state____s
+corev_s912/.web/utils/context.jsx:175:createElement(SubstateProvider, {substateName: 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', contextName: 'reflex___state____state__reflex___istat
+corev_s912/.web/utils/context.jsx:176:createElement(SubstateProvider, {substateName: 'reflex___state____state.reflex___state____frontend_event_exception_state', contextName: 'reflex___state____state__reflex___state____fr
+corev_s912/.web/utils/context.jsx:177:createElement(SubstateProvider, {substateName: 'reflex___state____state.reflex___state____on_load_internal_state', contextName: 'reflex___state____state__reflex___state____on_load_in
+corev_s912/.web/utils/context.jsx:178:createElement(SubstateProvider, {substateName: 'reflex___state____state.reflex___state____update_vars_internal_state', contextName: 'reflex___state____state__reflex___state____update
+corev_s912/.web/utils/state.js:170:  await window.__reflex_load?.();
+corev_s912/.web/utils/state.js:171:  if (!window.React && window.__reflex) {
+corev_s912/.web/utils/state.js:172:    window.React = window.__reflex.react;
+corev_s912/.web/utils/state.js:431:    window.__reflex_otel?.onEventSend?.(event);
+corev_s912/.web/utils/state.js:448:    for (const name of event.payload.__reflex_event_arg_names ?? []) {
+corev_s912/.web/utils/state.js:653:    window.__reflex_otel?.onSocketConnect?.();
+corev_s912/.web/utils/state.js:683:    window.__reflex_otel?.onSocketDisconnect?.(reason);
+=== corev_a1
+corev_a1/.web/app/_document.js:2:import reflexGlobalStyles from "$/styles/__reflex_global_styles.css?url"
+corev_a1/.web/app/root.jsx:28:    window.__reflex = {
+corev_a1/.web/app/routes/_index.jsx:13:  const has = isClient && typeof window.__reflex !== "undefined";
+corev_a1/.web/utils/helpers/upload.js:83:    formdata.append("__reflex_event_args", JSON.stringify(extra_args));
+corev_a1/.web/utils/helpers/upload.js:161:    window.__reflex_otel?.onUploadSend?.(handler, trace_headers);
+corev_a1/.web/utils/helpers/json.js:10:const NAN_SENTINEL_PREFIX = "__reflex_nan";
+corev_a1/.web/utils/context.jsx:11:export const StateContexts = {reflex___state____state: getStateContext("reflex___state____state"),reflex___state____state__corev___corev____other: getStateContext("reflex___state____sta
+corev_a1/.web/utils/context.jsx:193:  ['reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state__reflex___istate___shared____shared_state_base_internal'],
+corev_a1/.web/utils/context.jsx:194:  ['reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state__reflex___state____frontend_event_exception_state'],
+corev_a1/.web/utils/context.jsx:195:  ['reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state__reflex___state____on_load_internal_state'],
+corev_a1/.web/utils/context.jsx:196:  ['reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state__reflex___state____update_vars_internal_state'],
+corev_a1/.web/utils/state.js:285:  await window.__reflex_load?.();
+corev_a1/.web/utils/state.js:286:  if (!window.React && window.__reflex) {
+corev_a1/.web/utils/state.js:287:    window.React = window.__reflex.react;
+corev_a1/.web/utils/state.js:518:    window.__reflex_otel?.onEventSend?.(routed_event);
+corev_a1/.web/utils/state.js:572:    for (const name of event.payload.__reflex_event_arg_names ?? []) {
+corev_a1/.web/utils/state.js:706:    window.__reflex_otel?.onEventSend?.(boot_event);
+corev_a1/.web/utils/state.js:798:    window.__reflex_otel?.onSocketConnect?.();
+corev_a1/.web/utils/state.js:824:    window.__reflex_otel?.onSocketDisconnect?.(reason);
+=== corev_a2
+corev_a2/.web/app/_document.js:2:import reflexGlobalStyles from "$/styles/__reflex_global_styles.css?url"
+corev_a2/.web/app/root.jsx:28:    window.__reflex = {
+corev_a2/.web/app/routes/_index.jsx:13:  const has = isClient && typeof window.__reflex !== "undefined";
+corev_a2/.web/utils/helpers/upload.js:83:    formdata.append("__reflex_event_args", JSON.stringify(extra_args));
+corev_a2/.web/utils/helpers/upload.js:161:    window.__reflex_otel?.onUploadSend?.(handler, trace_headers);
+corev_a2/.web/utils/helpers/json.js:10:const NAN_SENTINEL_PREFIX = "__reflex_nan";
+corev_a2/.web/utils/context.jsx:11:export const StateContexts = {reflex___state____state: getStateContext("reflex___state____state"),reflex___state____state__corev___corev____other: getStateContext("reflex___state____sta
+corev_a2/.web/utils/context.jsx:193:  ['reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state__reflex___istate___shared____shared_state_base_internal'],
+corev_a2/.web/utils/context.jsx:194:  ['reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state__reflex___state____frontend_event_exception_state'],
+corev_a2/.web/utils/context.jsx:195:  ['reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state__reflex___state____on_load_internal_state'],
+corev_a2/.web/utils/context.jsx:196:  ['reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state__reflex___state____update_vars_internal_state'],
+corev_a2/.web/utils/state.js:285:  await window.__reflex_load?.();
+corev_a2/.web/utils/state.js:286:  if (!window.React && window.__reflex) {
+corev_a2/.web/utils/state.js:287:    window.React = window.__reflex.react;
+corev_a2/.web/utils/state.js:518:    window.__reflex_otel?.onEventSend?.(routed_event);
+corev_a2/.web/utils/state.js:572:    for (const name of event.payload.__reflex_event_arg_names ?? []) {
+corev_a2/.web/utils/state.js:706:    window.__reflex_otel?.onEventSend?.(boot_event);
+corev_a2/.web/utils/state.js:798:    window.__reflex_otel?.onSocketConnect?.();
+corev_a2/.web/utils/state.js:824:    window.__reflex_otel?.onSocketDisconnect?.(reason);

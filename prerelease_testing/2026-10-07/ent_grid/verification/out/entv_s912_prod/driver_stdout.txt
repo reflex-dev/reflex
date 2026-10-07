@@ -1,0 +1,77 @@
+server check ok: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/ent_grid-s912/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9
+[s1_full_load] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 1} reflexSetAt=239.79999999981374
+   t=334.2 ws_out {"nsp": "/_event"}
+   t=339.3 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=339.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=342.1 delta substates=['reflex___state____state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____load_state']
+   t=369.4 delta substates=['reflex___state____state']
+   console errors/warnings: 1; pageerrors: 0
+     error: Failed to load resource: the server responded with a status of 404 (Not Found)
+[s2_reload] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 1} reflexSetAt=151.6000000005588
+   t=210.2 ws_out {"nsp": "/_event"}
+   t=212.6 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=212.9 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=216 delta substates=['reflex___state____state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____load_state']
+   t=231.7 delta substates=['reflex___state____state']
+[s3_after_unrelated_event] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 1} reflexSetAt=151.6000000005588
+   t=210.2 ws_out {"nsp": "/_event"}
+   t=212.6 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=212.9 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=216 delta substates=['reflex___state____state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____load_state']
+   t=231.7 delta substates=['reflex___state____state']
+   t=7471 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.entv___entv____other_state.bump", "payload_keys": []}
+   t=7475.6 delta substates=['reflex___state____state.entv___entv____other_state']
+[s4_after_same_substate_event] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 3, 'literal': 1} reflexSetAt=151.6000000005588
+   t=210.2 ws_out {"nsp": "/_event"}
+   t=212.6 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=212.9 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=216 delta substates=['reflex___state____state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____load_state']
+   t=231.7 delta substates=['reflex___state____state']
+   t=7471 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.entv___entv____other_state.bump", "payload_keys": []}
+   t=7475.6 delta substates=['reflex___state____state.entv___entv____other_state']
+   t=13633.5 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.entv___entv____grid_state.bump", "payload_keys": []}
+   t=13641.2 delta substates=['reflex___state____state.entv___entv____grid_state']
+[s5_reload_after_state_changed] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 1} reflexSetAt=101.1000000005588
+   t=155.6 ws_out {"nsp": "/_event"}
+   t=160.5 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=160.7 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=163.2 delta substates=['reflex___state____state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____load_state']
+   t=177.8 delta substates=['reflex___state____state']
+[s6_client_nav_from_other] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 1, 'literal': 1} reflexSetAt=204.40000000037253
+   t=212.1 ws_out {"nsp": "/_event"}
+   t=216.1 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=216.2 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=222 delta substates=['reflex___state____state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____load_state']
+   t=223 delta substates=['reflex___state____state']
+   t=3579.8 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=3629.6 delta substates=['reflex___state____state']
+[s7_full_load_then_nav_away_and_back] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 3, 'literal': 3} reflexSetAt=219.20000000018626
+   t=318.9 ws_out {"nsp": "/_event"}
+   t=321.8 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=322 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=324.1 delta substates=['reflex___state____state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____load_state']
+   t=325.9 delta substates=['reflex___state____state']
+   t=3527.8 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=3617 delta substates=['reflex___state____state']
+   t=6754.8 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=6806 delta substates=['reflex___state____state']
+[s8_memo_full_load] grids(headers,cells)={'w_memo_props': (2, 6), 'w_memo_state': (2, 6)} probes={} counts={} reflexSetAt=239.70000000018626
+   t=318.1 ws_out {"nsp": "/_event"}
+   t=321.7 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=321.9 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=325.4 delta substates=['reflex___state____state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____load_state']
+   t=370.3 delta substates=['reflex___state____state']
+[s9_onload_page_full_load] grids(headers,cells)={'w_onload': (2, 6), 'w_state2': (2, 6)} probes={} counts={} reflexSetAt=220
+   t=299.7 ws_out {"nsp": "/_event"}
+   t=304.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=304.7 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=306.7 delta substates=['reflex___state____state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____load_state']
+   t=341.7 delta substates=['reflex___state____state']
+   t=345.7 delta substates=['reflex___state____state.entv___entv____load_state']
+   t=345.9 delta substates=['reflex___state____state']
+[s10_full_load_second_context] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|NO_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 1} reflexSetAt=214.1000000005588
+   t=328.5 ws_out {"nsp": "/_event"}
+   t=339.6 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=339.7 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=341.9 delta substates=['reflex___state____state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____load_state']
+   t=379.6 delta substates=['reflex___state____state']

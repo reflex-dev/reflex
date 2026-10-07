@@ -1,0 +1,9 @@
+unannotated `_untyped = None`  <- zero-arg function        -> assigned | called-during-assign=[] | instance reads <bound method hook of Svc({'reflex___state____state.__main______svc': {}})>
+unannotated `_untyped = None`  <- 1-arg function           -> assigned | called-during-assign=[] | instance reads <bound method needs_arg of Svc({'reflex___state____state.__main______svc': {}})>
+unannotated `_untyped = None`  <- lambda x: x              -> assigned | called-during-assign=[] | instance reads <bound method <lambda> of Svc({'reflex___state____state.__main______svc': {}})>
+unannotated `_untyped = None`  <- class (type)             -> assigned | called-during-assign=[] | instance reads <class 'dict'>
+`_any: Any = None`             <- zero-arg function        -> assigned | called-during-assign=[] | instance reads <bound method hook of Svc({'reflex___state____state.__main______svc': {}})>
+`_typed: Callable|None = None` <- zero-arg function        -> assigned | called-during-assign=[] | instance reads <bound method hook of Svc({'reflex___state____state.__main______svc': {}})>
+`_typed: Callable|None = None` <- 1-arg function           -> assigned | called-during-assign=[] | instance reads <bound method needs_arg of Svc({'reflex___state____state.__main______svc': {}})>
+`_typed: Callable|None = None` <- functools.partial        -> assigned | called-during-assign=[] | instance reads functools.partial(<function needs_arg at 0x7ff8da88e020>, 1)
+`_str: str = ''`               <- zero-arg function        -> assigned | called-during-assign=[] | instance reads <bound method hook of Svc({'reflex___state____state.__main______svc': {}})>

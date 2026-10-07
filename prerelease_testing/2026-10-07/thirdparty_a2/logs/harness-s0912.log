@@ -1,0 +1,82 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/harness
+plugins: platformdirs-4.12.3, anyio-4.15.1
+collected 2 items
+
+test_local_auth_harness.py Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 27/26 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [19406]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8504 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3504/
+
+.INFO:     127.0.0.1:49632 - "WebSocket /_event/?token=b0f362c5-9860-4c83-8518-9c5d487dc6a3&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:49648 - "WebSocket /_event/?token=b0f362c5-9860-4c83-8518-9c5d487dc6a3&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:49652 - "WebSocket /_event/?token=b0f362c5-9860-4c83-8518-9c5d487dc6a3&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:49654 - "WebSocket /_event/?token=b0f362c5-9860-4c83-8518-9c5d487dc6a3&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:49660 - "WebSocket /_event/?token=b0f362c5-9860-4c83-8518-9c5d487dc6a3&EIO=4&transport=websocket" [accepted]
+URL_AFTER_LOGOUT=http://localhost:3504/login
+INFO:     127.0.0.1:60666 - "WebSocket /_event/?token=b0f362c5-9860-4c83-8518-9c5d487dc6a3&EIO=4&transport=websocket" [accepted]
+.INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [19406]
+
+
+=============================== warnings summary ===============================
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_base/utils/types.py:710: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    if hasattr(cls, "__fields__") and name in cls.__fields__:
+
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_base/utils/types.py:589: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    hasattr(cls, "__fields__")
+
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_base/utils/types.py:590: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and field_name in cls.__fields__
+
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_base/utils/types.py:591: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and hasattr(cls.__fields__[field_name], "annotation")
+
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_base/utils/types.py:592: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and not isinstance(cls.__fields__[field_name].annotation, (str, ForwardRef))
+
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+test_local_auth_harness.py::test_ports_pinned
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_base/utils/types.py:594: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return cls.__fields__[field_name].annotation
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 2 passed, 28 warnings in 13.22s ========================

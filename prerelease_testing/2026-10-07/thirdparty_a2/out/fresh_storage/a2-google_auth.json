@@ -1,0 +1,358 @@
+{
+ "checks": [],
+ "anomalies": {
+  "console_nonbenign": [
+   {
+    "where": "start",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 403 ()",
+    "benign": false
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "type": "warning",
+    "text": "[GSI_LOGGER]: google.accounts.id.initialize() is called multiple times. This could cause unexpected behavior and only the last initialized instance will be used.",
+    "benign": false
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 403 ()",
+    "benign": false
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+    "benign": false
+   }
+  ],
+  "page_errors": [
+   {
+    "where": "start",
+    "page": "main",
+    "error": "gis is not defined"
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "error": "gis is not defined"
+   }
+  ],
+  "failed_requests": [
+   {
+    "where": "start",
+    "page": "main",
+    "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.sXJlnxl1ifM.L.W.O/am=AAAAAYIARhsF/d=1/rs=AF0KOtV2AjMOb0o5MKTEa0-iWHfQdebzXg/m=credential_button_library",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.o3L34wTzb5M.O/am=AAAAAIIARhsF/d=1/rs=AF0KOtVg8ShvvYDQ4xkTPFQUqUVxBZ2ltQ/m=credential_button_library",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_721094_61925&cas=24GXI1nlSnf8WoiEf0z4D1DSUn8yPWK3wO9JVqXc3Lw",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.sXJlnxl1ifM.L.W.O/am=AAAAAYIAZhMF/d=1/rs=AF0KOtXaorXBcIxvWJBL-2PEsVKHo8E9CA/m=credential_button_library",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.o3L34wTzb5M.O/am=AAAAAIIAZhMF/d=1/rs=AF0KOtXAdKkwLV5a8k9Hp0bznko8uzSLkg/m=credential_button_library",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "bad_responses": [
+   {
+    "where": "start",
+    "page": "main",
+    "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_716847_451956&cas=YMVqy4eBrTnsaJXd27m%2Byh7wUfyku7HpEI2Gs%2Bg8PL0",
+    "status": 403
+   },
+   {
+    "where": "start",
+    "page": "main",
+    "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_721102_999784&cas=HC3Qa1KFauZxbf1Qus3f6Yr959uMG%2FJpX7BgygijuPA",
+    "status": 403
+   }
+  ]
+ },
+ "console_all": [
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 403 ()",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "warning",
+   "text": "[GSI_LOGGER]: google.accounts.id.initialize() is called multiple times. This could cause unexpected behavior and only the last initialized instance will be used.",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 403 ()",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [
+  {
+   "where": "start",
+   "page": "main",
+   "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.sXJlnxl1ifM.L.W.O/am=AAAAAYIARhsF/d=1/rs=AF0KOtV2AjMOb0o5MKTEa0-iWHfQdebzXg/m=credential_button_library",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.o3L34wTzb5M.O/am=AAAAAIIARhsF/d=1/rs=AF0KOtVg8ShvvYDQ4xkTPFQUqUVxBZ2ltQ/m=credential_button_library",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_721094_61925&cas=24GXI1nlSnf8WoiEf0z4D1DSUn8yPWK3wO9JVqXc3Lw",
+   "failure": "net::ERR_ABORTED"
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "url": "https://ssl.gstatic.com/_/gsi/_/ss/k=gsi.gsi.sXJlnxl1ifM.L.W.O/am=AAAAAYIAZhMF/d=1/rs=AF0KOtXaorXBcIxvWJBL-2PEsVKHo8E9CA/m=credential_button_library",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "url": "https://ssl.gstatic.com/_/gsi/_/js/k=gsi.gsi.en_US.o3L34wTzb5M.O/am=AAAAAIIAZhMF/d=1/rs=AF0KOtXAdKkwLV5a8k9Hp0bznko8uzSLkg/m=credential_button_library",
+   "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "bad_responses_all": [
+  {
+   "where": "start",
+   "page": "main",
+   "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_716847_451956&cas=YMVqy4eBrTnsaJXd27m%2Byh7wUfyku7HpEI2Gs%2Bg8PL0",
+   "status": 403
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefined&locale=undefined&click_listener=undefined&is_fedcm_supported=true&client_id=123456789012-dummyclientid.apps.googleusercontent.com&iframe_id=gsi_721102_999784&cas=HC3Qa1KFauZxbf1Qus3f6Yr959uMG%2FJpX7BgygijuPA",
+   "status": 403
+  }
+ ],
+ "ws": [],
+ "label": "a2-google_auth",
+ "visits": [
+  {
+   "path": "/",
+   "url": "http://localhost:3500/",
+   "local": {
+    "theme": "system",
+    "last_compiled_theme": "system"
+   },
+   "session": {
+    "token": "b94ff26b-b4f3-4d24-b276-d202574fb8de"
+   },
+   "cookie": ""
+  },
+  {
+   "path": "/protected",
+   "url": "http://localhost:3500/protected",
+   "local": {
+    "theme": "system",
+    "last_compiled_theme": "system"
+   },
+   "session": {
+    "token": "b94ff26b-b4f3-4d24-b276-d202574fb8de",
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "cookie": "g_state={\"i_l\":0,\"i_ll\":1791376716843,\"i_b\":\"Y8fIz441aCiDc7T0mLUB/slrqnhGL7mhRSeNvAm2fCQ\",\"i_e\":{\"enable_itp_optimization\":24},\"i_et\":1791376716843}"
+  },
+  {
+   "path": "/partially-protected",
+   "url": "http://localhost:3500/partially-protected",
+   "local": {
+    "theme": "system",
+    "last_compiled_theme": "system"
+   },
+   "session": {
+    "token": "b94ff26b-b4f3-4d24-b276-d202574fb8de",
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "cookie": "g_state={\"i_l\":0,\"i_ll\":1791376721100,\"i_b\":\"Y8fIz441aCiDc7T0mLUB/slrqnhGL7mhRSeNvAm2fCQ\",\"i_e\":{\"enable_itp_optimization\":24},\"i_et\":1791376721100}"
+  }
+ ],
+ "context_cookies": [
+  {
+   "name": "g_state",
+   "value": "{\"i_l\":0,\"i_ll\":1791376721100,\"i_b\":\"Y8fIz441aCiDc7T0mLUB/slrqnhGL7mhRSeNvAm2fCQ\",\"i_e\":{\"enable_itp_optimization\":24},\"i_et\":1791376721100}",
+   "expires": 1806928721
+  }
+ ]
+}

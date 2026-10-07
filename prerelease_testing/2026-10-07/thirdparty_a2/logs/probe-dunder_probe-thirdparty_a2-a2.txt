@@ -1,0 +1,10 @@
+body-declared __data_source_params_class__ (class read): type <class '__main__.SubParams'>
+  .from_request(1): tuple ('sub-params-from', 1)
+annotated dunder directly on a state (class read): type <class '__main__.Params'>
+  .from_request(1): tuple ('params-from', 1)
+annotated dunder inherited from the mixin by a plain subclass: type <class '__main__.Params'>
+setattr-after-creation __data_source_params_class__ (class read): type <class '__main__.Params'>
+setattr(cls, '__other_dunder__', Params) (class read): type <class '__main__.Params'>
+single-underscore control _plain_private (class read): type <class '__main__.Params'>
+'__data_source_params_class__' in get_fields(): bool False
+instance read __data_source_params_class__: type <class '__main__.Params'>

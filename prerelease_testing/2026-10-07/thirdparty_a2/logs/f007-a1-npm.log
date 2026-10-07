@@ -1,0 +1,26 @@
+### reflex 0.10.0a1 REFLEX_USE_NPM=1 app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a1-npm
+frontend up; reflex CLI pid=10464; process group before SIGTERM:
+10464 10257 10464 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/bin/python /tmp
+10634 10464 10464 Sl   npm run dev
+10645 10634 10464 S    sh -c react-router dev --host
+10646 10645 10464 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a1-n
+10655 10464 10464 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/bin/python /tmp
+--- kill -TERM 10464 (single process, no TTY)
+RESULT: reflex CLI STILL RUNNING 30s after SIGTERM
+listeners on 3501/8501 after 30s:
+node      10646 root   23u  IPv4 406857      0t0  TCP *:3501 (LISTEN)
+process group after 30s:
+10464 10257 10464 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/bin/python /tmp
+10634 10464 10464 Z    [npm run dev] <defunct>
+10646     1 10464 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a1-n
+  thread 10464 wchan=futex_do_wait
+  thread 10632 wchan=anon_pipe_read
+--- cleanup: SIGKILL process group 10464
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/npm_sigterm_repro.sh: line 27: 10464 Killed                  REFLEX_USE_NPM=$USE_NPM REFLEX_TELEMETRY_ENABLED=false setsid "$VENV/bin/reflex" run --frontend-port "$FP" --backend-port "$BP" > "$LOG.server" 2>&1
+  ports free
+server log tail:
+  | ───────────────────────────── Starting Reflex App ──────────────────────────────
+  | Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+  | ───────────────────────────────── App Running ──────────────────────────────────
+  | App running at: http://localhost:3501/
+  | Backend running at: http://0.0.0.0:8501

@@ -1,0 +1,8 @@
+### enterprise wheel /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/downloads/enterprise_wheel/reflex_enterprise-0.9.7a4-py3-none-any.whl (unzip -l | grep -c, then every __reflex reference that is not __reflex_<suffix>)
+d9fdd6a54c422e3f2efd6d8d2dc4ed0b27b99d44419beebbc6308e55722b7647  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/downloads/enterprise_wheel/reflex_enterprise-0.9.7a4-py3-none-any.whl
+reflex_enterprise/vars.py:127: from the __reflex object using the same mechanism from (reflex.components.dynamic).
+reflex_enterprise/vars.py:174: f"const {alias} = __reflex['{normalize_package}']?.{iv.tag};"
+reflex_enterprise/components/ag_grid/aggrid.py:2277: // Special handling for formatColumnDefs due to __reflex checks
+reflex_enterprise/components/ag_grid/aggrid.py:2287: if (typeof __reflex === 'undefined' || typeof window === "undefined") {{
+reflex_enterprise/components/ag_grid/aggrid.py:2293: const jsx = __reflex["@emotion/react"]?.jsx;
+reflex_enterprise/components/ag_grid/aggrid.py:2294: const Fragment = __reflex["react"]?.Fragment;

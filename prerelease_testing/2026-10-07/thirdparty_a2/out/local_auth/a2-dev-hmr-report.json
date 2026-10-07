@@ -1,0 +1,254 @@
+{
+ "checks": [
+  {
+   "name": "logged in (redirect_to /need2login)",
+   "ok": true,
+   "detail": "http://localhost:3500/need2login"
+  },
+  {
+   "name": "protected data before edit",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "backend answers /ping again after the edit",
+   "ok": true,
+   "detail": "after 4.1s"
+  },
+  {
+   "name": "still authenticated after backend reload (reload tab)",
+   "ok": true,
+   "detail": "This is truly private data for hmr78128\nHome\nNeed 2 Login\nProtected Page\nCustom Register\nUser Info\nLogout"
+  },
+  {
+   "name": "second tab sees the user",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "logout works after the reload",
+   "ok": true,
+   "detail": "http://localhost:3500/login"
+  },
+  {
+   "name": "no traceback in the server log during the run",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "anomalies": {
+  "console_nonbenign": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq)",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq)",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "tab2",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "tab2",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "tab2",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "tab2",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "benign": false
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "verbose",
+   "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+   "benign": false
+  }
+ ],
+ "failed_requests_all": [],
+ "bad_responses_all": [],
+ "ws": [],
+ "user": "hmr78128"
+}

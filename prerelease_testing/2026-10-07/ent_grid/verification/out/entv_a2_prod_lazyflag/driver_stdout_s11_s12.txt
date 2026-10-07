@@ -1,0 +1,26 @@
+server check ok: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2-ent/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a9
+[s11 detail] {'w_detail_state': {'detail_rows': 1, 'detail_headers': ['Count', 'Value'], 'detail_cells': 4}, 'w_detail_literal': {'detail_rows': 1, 'detail_headers': ['Count', 'Value'], 'detail_cells': 4}}
+[s11_detail_expand] grids(headers,cells)={'w_detail_state': (4, 8), 'w_detail_literal': (4, 8)} probes={} counts={} reflexSetAt=116.09999999962747
+   t=220.3 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=325.1 delta substates=['reflex___state____state']
+   t=325.7 delta substates=['reflex___state____state']
+   console errors/warnings: 29; pageerrors: 0
+     error: Failed to load resource: the server responded with a status of 404 (Not Found)
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+[s12 renderer] badges=0
+[s12_renderer_full_load] grids(headers,cells)={} probes={} counts={} reflexSetAt=125.90000000037253
+   t=208.8 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=356.7 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", "payload_keys": ["component_stack", "info"]
+   t=372.3 delta substates=['reflex___state____state']
+   t=372.8 delta substates=['reflex___state____state']
+   console errors/warnings: 8; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************

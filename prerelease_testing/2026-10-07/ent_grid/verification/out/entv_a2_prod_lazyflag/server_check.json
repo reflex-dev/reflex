@@ -1,0 +1,9 @@
+{
+ "listeners": [
+  {
+   "pid": "10653",
+   "cmd": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2-ent/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2-ent/bin/reflex run --frontend-port 3684 --backend-port 3684 --loglevel debug --env prod "
+  }
+ ],
+ "venv": "alpha2-ent"
+}

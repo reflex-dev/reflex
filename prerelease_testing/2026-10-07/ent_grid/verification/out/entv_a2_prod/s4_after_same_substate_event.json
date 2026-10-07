@@ -1,0 +1,284 @@
+{
+ "scenario": "s4_after_same_substate_event",
+ "measure": {
+  "grids": {
+   "w_state": {
+    "headers": [
+     "Make",
+     "Price"
+    ],
+    "cells": 6,
+    "rows": 0
+   },
+   "w_literal": {
+    "headers": [
+     "Make",
+     "Price"
+    ],
+    "cells": 6,
+    "rows": 0
+   }
+  },
+  "probes": {
+   "probe-gridstate_cols": "gridstate_cols|HAS_REFLEX|[{\"field\":\"make\"},{\"field\":\"price\"}]",
+   "probe-literal": "literal|NO_REFLEX|\"lit\""
+  },
+  "probeCounts": {
+   "gridstate_cols": 2,
+   "literal": 1
+  },
+  "reflexDefinedNow": true,
+  "reflexSetAt": 129.09999999962747,
+  "path": "/",
+  "heading": "entv index"
+ },
+ "measure_plus4s": {
+  "grids": {
+   "w_state": {
+    "headers": [
+     "Make",
+     "Price"
+    ],
+    "cells": 6,
+    "rows": 0
+   },
+   "w_literal": {
+    "headers": [
+     "Make",
+     "Price"
+    ],
+    "cells": 6,
+    "rows": 0
+   }
+  },
+  "probes": {
+   "probe-gridstate_cols": "gridstate_cols|HAS_REFLEX|[{\"field\":\"make\"},{\"field\":\"price\"}]",
+   "probe-literal": "literal|NO_REFLEX|\"lit\""
+  },
+  "probeCounts": {
+   "gridstate_cols": 2,
+   "literal": 1
+  },
+  "reflexDefinedNow": true,
+  "reflexSetAt": 129.09999999962747,
+  "path": "/",
+  "heading": "entv index"
+ },
+ "boot_frames": [
+  {
+   "t": 95.9,
+   "dir": "ws_in",
+   "len": 108,
+   "head": "0{"
+  },
+  {
+   "t": 128.7,
+   "dir": "ws_out",
+   "len": 328,
+   "head": "40",
+   "nsp": "/_event",
+   "auth_keys": [
+    "event"
+   ],
+   "auth_mentions_hydrate_and_load": true,
+   "auth_event_name": "reflex___state____state.hydrate_and_load"
+  },
+  {
+   "t": 156.9,
+   "dir": "ws_in",
+   "len": 40,
+   "head": "40",
+   "nsp": "/_event",
+   "auth_keys": [
+    "sid"
+   ],
+   "auth_mentions_hydrate_and_load": false
+  },
+  {
+   "t": 177.8,
+   "dir": "ws_in",
+   "len": 1784,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_",
+     "rx_router_headers_rx_state_",
+     "rx_router_page_rx_state_",
+     "rx_router_route_id_rx_state_",
+     "rx_router_session_rx_state_",
+     "rx_router_url_rx_state_"
+    ]
+   },
+   "final": null,
+   "events": null
+  },
+  {
+   "t": 178,
+   "dir": "ws_in",
+   "len": 88,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "final": null,
+   "events": null
+  },
+  {
+   "t": 7429.3,
+   "dir": "ws_out",
+   "len": 130,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "event_name": "reflex___state____state.entv___entv____other_state.bump",
+   "payload_keys": []
+  },
+  {
+   "t": 7431.4,
+   "dir": "ws_in",
+   "len": 102,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "delta": {
+    "reflex___state____state.entv___entv____other_state": [
+     "x_rx_state_"
+    ]
+   },
+   "final": null,
+   "events": null
+  },
+  {
+   "t": 13529.3,
+   "dir": "ws_out",
+   "len": 129,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "event_name": "reflex___state____state.entv___entv____grid_state.bump",
+   "payload_keys": []
+  },
+  {
+   "t": 13538.8,
+   "dir": "ws_in",
+   "len": 106,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "delta": {
+    "reflex___state____state.entv___entv____grid_state": [
+     "clicks_rx_state_"
+    ]
+   },
+   "final": null,
+   "events": null
+  }
+ ],
+ "timeline": [
+  "     15.3ms grid counts (headers, cells) {}",
+  "     61.2ms ws_open_call {\"url\": \"ws://localhost:3680/_event/?token=400d16d2-9144-4b33-ee4d-b0cbad0354dc&EIO=4&transport=websocket\"}",
+  "     91.9ms grid counts (headers, cells) {\"w_state\": [0, 0], \"w_literal\": [0, 0]}",
+  "     92.1ms ws_open {}",
+  "     95.9ms ws_in {\"len\": 108}",
+  "    102.9ms probe render gridstate_cols #1 NO_REFLEX value=[{\"field\":\"make\"},{\"field\":\"price\"}]",
+  "    102.9ms probe render literal #1 NO_REFLEX value=\"lit\"",
+  "    128.7ms ws_out {\"len\": 328, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+  "    129.1ms window.__reflex ASSIGNED (5 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3680/assets/root-CP2xDksN.js:82:324 |     at El (http://localhost:3680/assets/entry.client-_aG2pkzF.js:8:94972) |     at Uu (http://localhost:3680/assets/entry.client-_aG2pkzF.js:8:118140) |     at Hu (http://localhost:3680/assets/entry.client",
+  "    156.9ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+  "    174.5ms grid counts (headers, cells) {\"w_state\": [0, 0], \"w_literal\": [2, 6]}",
+  "    177.8ms ws_in {\"len\": 1784, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+  "    178.0ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
+  "   7429.3ms ws_out {\"len\": 130, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"event_name\": \"reflex___state____state.entv___entv____other_state.bump\", \"payload_keys\": []}",
+  "   7431.4ms ws_in {\"len\": 102, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state.entv___entv____other_state\": [\"x_rx_state_\"]}, \"final\": null, \"events\": null}",
+  "  13529.3ms ws_out {\"len\": 129, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"event_name\": \"reflex___state____state.entv___entv____grid_state.bump\", \"payload_keys\": []}",
+  "  13538.8ms ws_in {\"len\": 106, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state.entv___entv____grid_state\": [\"clicks_rx_state_\"]}, \"final\": null, \"events\": null}",
+  "  13539.8ms probe render gridstate_cols #2 HAS_REFLEX value=[{\"field\":\"make\"},{\"field\":\"price\"}]",
+  "  13589.6ms grid counts (headers, cells) {\"w_state\": [2, 6], \"w_literal\": [2, 6]}"
+ ],
+ "console": [],
+ "pageerrors": [],
+ "pw_frames": [
+  {
+   "dir": "out",
+   "t": 0.047,
+   "summary": {
+    "len": 129,
+    "head": "42",
+    "nsp": "/_event",
+    "sio_event": "event",
+    "event_name": "reflex___state____state.entv___entv____grid_state.bump",
+    "payload_keys": []
+   }
+  },
+  {
+   "dir": "in",
+   "t": 2.049,
+   "summary": {
+    "len": 106,
+    "head": "42",
+    "nsp": "/_event",
+    "sio_event": "event",
+    "delta": {
+     "reflex___state____state.entv___entv____grid_state": [
+      "clicks_rx_state_"
+     ]
+    },
+    "final": null,
+    "events": null
+   }
+  }
+ ],
+ "raw_ws": [
+  {
+   "t": 95.9,
+   "dir": "ws_in",
+   "data": "0{\"sid\":\"GqvIkCtDWP4UM4JzAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 128.7,
+   "dir": "ws_out",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f05849ba59c543dd\",\"b084fc0c68f7c73a\",\"34fd6223f7cd2e3c\",\"f4263b8274e9e12c\",\"dcc2ada93d26b909\",\"f958b7853c5a3438\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "t": 156.9,
+   "dir": "ws_in",
+   "data": "40/_event,{\"sid\":\"b7zRXPAqHbk72n7xAAAD\"}"
+  },
+  {
+   "t": 177.8,
+   "dir": "ws_in",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3680\",\"origin\":\"http://localhost:3680\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"JQLA7LYgxwErco3r7ZzWLw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3680\",\"origin\":\"http://localhost:3680\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"JQLA7LYgxwErco3r7ZzWLw==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3680\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3680/index\",\"full_raw_path\":\"http://localhost:3680/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"400d16d2-9144-4b33-ee4d-b0cbad0354dc\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"b7zRXPAqHbk72n7xAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3680\",\"origin\":\"http://localhost:3680\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3680/\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 178,
+   "dir": "ws_in",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 7429.3,
+   "dir": "ws_out",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.entv___entv____other_state.bump\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 7431.4,
+   "dir": "ws_in",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.entv___entv____other_state\":{\"x_rx_state_\":1}}}]"
+  },
+  {
+   "t": 13529.3,
+   "dir": "ws_out",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.entv___entv____grid_state.bump\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 13538.8,
+   "dir": "ws_in",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.entv___entv____grid_state\":{\"clicks_rx_state_\":1}}}]"
+  }
+ ]
+}

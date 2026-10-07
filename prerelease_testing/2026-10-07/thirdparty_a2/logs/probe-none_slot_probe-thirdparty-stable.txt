@@ -1,0 +1,12 @@
+`_client = None`  <- Client()                                -> ok | instance reads None
+`_client = None`  <- 'a string'                              -> ok | instance reads None
+`_client = None`  <- 42                                      -> ok | instance reads None
+`_client = None`  <- None (control)                          -> ok | instance reads None
+`_opt: Optional[Client] = None` <- Client() (control)        -> ok | instance reads None
+`_n = 0`         <- 5                                        -> ok | instance reads 0
+`_n = 0`         <- 'five'                                   -> ok | instance reads 0
+`_n = 0`         <- 2.5 (float into int)                     -> ok | instance reads 0
+`_s = ''`        <- None                                     -> ok | instance reads ''
+`_lst = []`      <- ['a']                                    -> ok | instance reads MutableProxy([])
+`_lst = []`      <- ('a',)  (tuple into list)                -> ok | instance reads MutableProxy([])
+declared types: {'_client': "<class 'NoneType'>", '_n': "<class 'int'>", '_s': "<class 'str'>", '_lst': 'collections.abc.Sequence[typing.NoReturn]', '_any': "<class 'NoneType'>", '_opt': 'typing.Optional[__main__.Client]'}

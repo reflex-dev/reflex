@@ -298,3 +298,15 @@ python scripts/drive_rxeapp.py http://localhost:3304 out/rxeapp_dev_a2 ent_grid-
 All servers were started through `scripts/start_server.sh` (one at a time, own process group) and stopped with
 `scripts/stop_server.sh`, which verifies ports 3300-3319/8300-8319 are free; no redis was needed. `ag_grid_lazy/` (a copy of
 ag_grid used for the `frontend_lazy_bundled_libraries` experiment) was deleted afterwards.
+
+## VERIFICATION (verify_ent_grid_0, 2026-10-07)
+H-1 (§1a) **CONFIRMED** with independent fixtures (`verification/apps/entv`, `verification/apps/corev`, driver `verification/drivers/drive.py`):
+State-var `column_defs` grid empty (0 header / 0 cells) on full load, reload, after an unrelated event, in `@rx.memo` grids and next to an
+on_load-changed grid on a1 prod and a2 prod; correct on 0.9.12 prod with the same wheel and on a2 dev. Recovers after a same-substate
+event, client-side navigation, or a reload once the substate differs from its defaults. **Narrowed:** only prerendered (static) routes
+in prod — a dynamic `/item/[pid]` route renders correctly. **Mechanism confirmed:** `window.__reflex` is assigned in the same
+`ReflexProviders` useEffect on 0.9.12/a1/a2 (compiled root.jsx identical); 0.9.12's first boot delta carries every substate, a1/a2's
+`hydrate_and_load` delta carries only the root state and on_load-changed substates (#7064). **Additional affected feature:** Var-valued
+`detail_cell_renderer_params` (expanded detail grid has no columns on a1/a2 prod). Lazy-libraries flag fixes the grids but a lambda
+`cell_renderer` returning `rx.badge` crashes the page (React #130). Your written repro reproduces on my ports; the probe scripts'
+guard hard-codes this cluster's pid file (`$SB/apps/ent_grid/pids/current.pid`). Details, rerun commands and evidence: `verification/NOTES.md`.

@@ -1,0 +1,4 @@
+session A messages: ['GREETING', 'typed-in-session-A']
+session B messages: ['GREETING', 'typed-in-session-A']
+shared list object with the module-level `initial`: ['GREETING', 'typed-in-session-A']
+LEAK across sessions: True

@@ -1,0 +1,9 @@
+{
+ "listeners": [
+  {
+   "pid": "13946",
+   "cmd": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/ent_grid-a1/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/ent_grid-a1/bin/reflex run --frontend-port 3682 --backend-port 3682 --loglevel debug --env prod "
+  }
+ ],
+ "venv": "ent_grid-a1"
+}

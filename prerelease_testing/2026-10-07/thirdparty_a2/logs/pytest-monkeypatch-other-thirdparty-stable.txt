@@ -1,0 +1,11 @@
+PASSED test_monkeypatch_other_attrs.py::test_public_var_restored
+PASSED test_monkeypatch_other_attrs.py::test_plain_method_restored
+PASSED test_monkeypatch_other_attrs.py::test_event_handler_restored
+PASSED test_monkeypatch_other_attrs.py::test_patch_computed_var
+PASSED test_monkeypatch_other_attrs.py::test_computed_var_restored
+PASSED test_monkeypatch_other_attrs.py::test_patch_classvar
+PASSED test_monkeypatch_other_attrs.py::test_classvar_restored
+FAILED test_monkeypatch_other_attrs.py::test_patch_public_var_default - Asser...
+FAILED test_monkeypatch_other_attrs.py::test_patch_plain_method - AssertionEr...
+FAILED test_monkeypatch_other_attrs.py::test_patch_event_handler_fn - assert []
+3 failed, 7 passed in 0.33s

@@ -1,0 +1,157 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/harness
+plugins: platformdirs-4.12.3, anyio-4.15.1
+collected 1 item
+
+test_two_apps.py Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 27/26 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [4408]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8504 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3504/
+
+INFO:     127.0.0.1:60932 - "WebSocket /_event/?token=5ae30a05-5a1e-4a97-9a0e-5fb4abdba3aa&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:60940 - "WebSocket /_event/?token=5ae30a05-5a1e-4a97-9a0e-5fb4abdba3aa&EIO=4&transport=websocket" [accepted]
+INFO:     127.0.0.1:39534 - "WebSocket /_event/?token=5ae30a05-5a1e-4a97-9a0e-5fb4abdba3aa&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [4408]
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 21/20 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [4408]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8504 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3504/
+
+INFO:     127.0.0.1:39542 - "WebSocket /_event/?token=ee22f24d-e4e2-4a23-c1f1-35fae68f802e&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [4408]
+F
+
+=================================== FAILURES ===================================
+________________ test_two_apps_sharing_a_package_in_one_process ________________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f5b479c4830>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-17'), _retention_count=3, _retention_policy='all')
+
+    def test_two_apps_sharing_a_package_in_one_process(tmp_path_factory):
+        """TWO_ORDER=ab (default): demo then min; ba: min then demo; aa: the demo twice (restart of the same app)."""
+        order = os.environ.get("TWO_ORDER", "ab")
+        apps = {"a": (SRC, "two_a", _flow_demo), "b": (MIN_SRC, "two_b", _flow_min)}
+        for i, key in enumerate(order):
+            src, name, flow = apps[key]
+>           _run(tmp_path_factory, src, f"{name}_{i}", flow)
+
+test_two_apps.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test_two_apps.py:75: in _run
+    flow(h.frontend_url.rstrip("/"), pg)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+base = 'http://localhost:3504', pg = <Page url='http://localhost:3504/gated'>
+
+    def _flow_min(base: str, pg) -> None:
+        user = f"twoB{int(time.time()) % 100000}"
+        pg.goto(base + "/gated")
+>       assert _wait_url(pg, r"/login$"), pg.url
+E       AssertionError: http://localhost:3504/gated
+E       assert False
+E        +  where False = _wait_url(<Page url='http://localhost:3504/gated'>, '/login$')
+
+test_two_apps.py:47: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    reflex_base.event.processor.event_processor:event_processor.py:874 Error processing event queue entry for Event(name='reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.redir', router_data={'pathname': '/gated', 'asPath': '/gated', 'sid': 'voog1tzMvKPt-0R_AAAB', 'headers': {'host': '127.0.0.1:8504', 'connection': 'Upgrade', 'pragma': 'no-cache', 'cache-control': 'no-cache', 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36', 'upgrade': 'websocket', 'origin': 'http://localhost:3504', 'sec-websocket-version': '13', 'accept-encoding': 'gzip, deflate, br, zstd', 'accept-language': 'en-US,en;q=0.9', 'sec-websocket-key': 'PbP3owt28j/HRDb2DYen1g==', 'asgi-scope-client': '127.0.0.1'}, 'ip': '127.0.0.1', 'query': {}, 'token': 'ee22f24d-e4e2-4a23-c1f1-35fae68f802e'}, payload={}) [txid=eb4aca82206c]:
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 854, in _process_queue
+    registered_handler = RegistrationContext.get().event_handlers[
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.redir'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 861, in _process_queue
+    raise KeyError(msg) from ke
+KeyError: 'No registered handler found for event: reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.redir'
+ERROR    reflex_base.event.processor.event_processor:event_processor.py:874 Error processing event queue entry for Event(name='reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.redir', router_data={'pathname': '/gated', 'asPath': '/gated', 'sid': 'voog1tzMvKPt-0R_AAAB', 'headers': {'host': '127.0.0.1:8504', 'connection': 'Upgrade', 'pragma': 'no-cache', 'cache-control': 'no-cache', 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36', 'upgrade': 'websocket', 'origin': 'http://localhost:3504', 'sec-websocket-version': '13', 'accept-encoding': 'gzip, deflate, br, zstd', 'accept-language': 'en-US,en;q=0.9', 'sec-websocket-key': 'PbP3owt28j/HRDb2DYen1g==', 'asgi-scope-client': '127.0.0.1'}, 'ip': '127.0.0.1', 'query': {}, 'token': 'ee22f24d-e4e2-4a23-c1f1-35fae68f802e'}, payload={}) [txid=ab232fae1fda]:
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 854, in _process_queue
+    registered_handler = RegistrationContext.get().event_handlers[
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.redir'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py", line 861, in _process_queue
+    raise KeyError(msg) from ke
+KeyError: 'No registered handler found for event: reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___login____login_state.redir'
+=============================== warnings summary ===============================
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/utils/types.py:707: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    if hasattr(cls, "__fields__") and name in cls.__fields__:
+
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/utils/types.py:586: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    hasattr(cls, "__fields__")
+
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/utils/types.py:587: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and field_name in cls.__fields__
+
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/utils/types.py:588: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and hasattr(cls.__fields__[field_name], "annotation")
+
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/utils/types.py:589: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and not isinstance(cls.__fields__[field_name].annotation, (str, ForwardRef))
+
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+test_two_apps.py::test_two_apps_sharing_a_package_in_one_process
+  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_base/utils/types.py:591: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return cls.__fields__[field_name].annotation
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test_two_apps.py::test_two_apps_sharing_a_package_in_one_process - Ass...
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+======================= 1 failed, 28 warnings in 33.36s ========================

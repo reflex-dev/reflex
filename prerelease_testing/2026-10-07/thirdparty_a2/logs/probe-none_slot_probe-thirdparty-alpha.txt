@@ -1,0 +1,12 @@
+`_client = None`  <- Client()                                -> ok | instance reads <__main__.Client object at 0x7f3567bb73b0>
+`_client = None`  <- 'a string'                              -> ok | instance reads 'a string'
+`_client = None`  <- 42                                      -> ok | instance reads 42
+`_client = None`  <- None (control)                          -> ok | instance reads None
+`_opt: Optional[Client] = None` <- Client() (control)        -> ok | instance reads <__main__.Client object at 0x7f3566308680>
+`_n = 0`         <- 5                                        -> ok | instance reads 5
+`_n = 0`         <- 'five'                                   -> ok | instance reads 'five'
+`_n = 0`         <- 2.5 (float into int)                     -> ok | instance reads 2.5
+`_s = ''`        <- None                                     -> ok | instance reads None
+`_lst = []`      <- ['a']                                    -> ok | instance reads ['a']
+`_lst = []`      <- ('a',)  (tuple into list)                -> ok | instance reads ('a',)
+declared types: {'_client': "<class 'NoneType'>", '_n': "<class 'int'>", '_s': "<class 'str'>", '_lst': 'collections.abc.Sequence[typing.NoReturn]', '_any': "<class 'NoneType'>", '_opt': 'typing.Optional[__main__.Client]'}

@@ -1,0 +1,46 @@
+59:EVV boot reflex==0.10.0a2 file=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py redis_url='redis://localhost:8659' sm_mode=None
+198:EVV 1791377542.319 direct_raise: status=direct-partial then raise
+199:EVV 1791377542.319 backend_exception_handler mode=default exc=RuntimeError('boom direct')
+200:[Reflex Backend Exception]
+232:    raise RuntimeError("boom direct")
+233:RuntimeError: boom direct
+236:EVV 1791377545.366 ping
+237:EVV 1791377548.870 gen_raise: status=gen-flushed, yield
+238:EVV 1791377548.870 gen_raise: status=gen-after, log+=gen-after-log, raise
+239:EVV 1791377548.871 backend_exception_handler mode=default exc=RuntimeError('boom gen')
+240:[Reflex Backend Exception]
+272:    raise RuntimeError("boom gen")
+273:RuntimeError: boom gen
+276:EVV 1791377551.920 ping
+277:EVV 1791377555.625 spinner_finally: spinner=on, yield
+278:EVV 1791377555.926 spinner_finally: raising
+279:EVV 1791377555.926 spinner_finally: finally -> spinner=off
+280:EVV 1791377555.927 backend_exception_handler mode=default exc=RuntimeError('boom spinner')
+281:[Reflex Backend Exception]
+312:    raise RuntimeError("boom spinner")
+313:RuntimeError: boom spinner
+316:EVV 1791377558.647 ping
+317:EVV 1791377562.069 bg_raise_inside: in `async with self`: status=bg-inside-partial then raise
+318:EVV 1791377562.070 backend_exception_handler mode=default exc=RuntimeError('boom bg inside')
+319:[Reflex Backend Exception]
+351:    raise RuntimeError("boom bg inside")
+352:RuntimeError: boom bg inside
+355:EVV 1791377565.095 ping
+356:EVV 1791377568.536 bg_two_blocks: block1 status=bg-block1-committed
+357:EVV 1791377568.638 bg_two_blocks: block2 status=bg-block2-partial then raise
+358:EVV 1791377568.640 backend_exception_handler mode=default exc=RuntimeError('boom bg block2')
+359:[Reflex Backend Exception]
+391:    raise RuntimeError("boom bg block2")
+392:RuntimeError: boom bg block2
+395:EVV 1791377571.581 ping
+396:EVV 1791377574.966 sup_split[a]: start
+397:EVV 1791377574.967 sup_split[a]: after-yield
+401:EVV 1791377575.498 sup_split[b]: other=b-ran
+402:EVV 1791377579.029 ping
+403:EVV 1791377582.622 sup_same[a]: start
+404:EVV 1791377582.625 sup_same[a]: after-yield
+408:EVV 1791377583.148 sup_same[b]: start
+409:EVV 1791377583.148 sup_same[b]: after-yield
+410:EVV 1791377585.151 sup_same[b]: end
+411:Warning: Lock for token 
+416:EVV 1791377586.698 ping

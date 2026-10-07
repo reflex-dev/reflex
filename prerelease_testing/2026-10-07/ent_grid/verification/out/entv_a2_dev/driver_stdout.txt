@@ -1,0 +1,55 @@
+server check ok: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2-ent/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a9
+[s1_full_load] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 2} reflexSetAt=1995
+   t=1994.2 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=2018.1 delta substates=['reflex___state____state']
+   t=2018.8 delta substates=['reflex___state____state']
+[s2_reload] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 2} reflexSetAt=190.29999999981374
+   t=190 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=199 delta substates=['reflex___state____state']
+   t=201.3 delta substates=['reflex___state____state']
+[s3_after_unrelated_event] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 2} reflexSetAt=190.29999999981374
+   t=190 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=199 delta substates=['reflex___state____state']
+   t=201.3 delta substates=['reflex___state____state']
+   t=7511.6 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.entv___entv____other_state.bump", "payload_keys": []}
+   t=7513.8 delta substates=['reflex___state____state.entv___entv____other_state']
+[s4_after_same_substate_event] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 4, 'literal': 2} reflexSetAt=190.29999999981374
+   t=190 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=199 delta substates=['reflex___state____state']
+   t=201.3 delta substates=['reflex___state____state']
+   t=7511.6 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.entv___entv____other_state.bump", "payload_keys": []}
+   t=7513.8 delta substates=['reflex___state____state.entv___entv____other_state']
+   t=13637.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.entv___entv____grid_state.bump", "payload_keys": []}
+   t=13646 delta substates=['reflex___state____state.entv___entv____grid_state']
+[s5_reload_after_state_changed] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 2} reflexSetAt=132.79999999981374
+   t=132.6 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=138.6 delta substates=['reflex___state____state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.entv___entv____grid_state']
+   t=139 delta substates=['reflex___state____state']
+[s6_client_nav_from_other] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 2} reflexSetAt=544
+   t=543.3 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=557.7 delta substates=['reflex___state____state']
+   t=558.4 delta substates=['reflex___state____state']
+   t=3939.2 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=4000.9 delta substates=['reflex___state____state']
+[s7_full_load_then_nav_away_and_back] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 4, 'literal': 6} reflexSetAt=432.3999999994412
+   t=431.5 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=443.9 delta substates=['reflex___state____state']
+   t=444.7 delta substates=['reflex___state____state']
+   t=3595.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=3616.7 delta substates=['reflex___state____state']
+   t=6680.5 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=6733 delta substates=['reflex___state____state']
+[s8_memo_full_load] grids(headers,cells)={'w_memo_props': (2, 6), 'w_memo_state': (2, 6)} probes={} counts={} reflexSetAt=509.79999999981374
+   t=506.2 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=517.2 delta substates=['reflex___state____state']
+   t=517.7 delta substates=['reflex___state____state']
+[s9_onload_page_full_load] grids(headers,cells)={'w_onload': (2, 6), 'w_state2': (2, 6)} probes={} counts={} reflexSetAt=445.79999999981374
+   t=445.2 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=453.2 delta substates=['reflex___state____state']
+   t=453.8 delta substates=['reflex___state____state']
+   t=453.9 delta substates=['reflex___state____state.entv___entv____load_state']
+   t=454 delta substates=['reflex___state____state']
+[s10_full_load_second_context] grids(headers,cells)={'w_state': (2, 6), 'w_literal': (2, 6)} probes={'probe-gridstate_cols': 'gridstate_cols|HAS_REFLEX|[{"field":"make"},{"field":"price"}]', 'probe-literal': 'literal|HAS_REFLEX|"lit"'} counts={'gridstate_cols': 2, 'literal': 2} reflexSetAt=528.6000000005588
+   t=527.9 ws_out {"nsp": "/_event", "auth_keys": ["event"], "auth_mentions_hydrate_and_load": true, "auth_event_name": "reflex___state____state.hydrate_and_load"}
+   t=542 delta substates=['reflex___state____state']
+   t=542.5 delta substates=['reflex___state____state']

@@ -1,0 +1,40 @@
+───────────────────────────── Initializing hydapp ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized hydapp. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 43/42 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:04
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3510/
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791376513.066 cc37b61a index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791376513.253 cc37b61a index_load#2 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=300000|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791376515.321 c390bc5d index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791376549.592 22ee0d86 slow_load run1 step1
+HYDTRACE 1791376549.611 22ee0d86 other_load#1 path=/other
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791376559.443 efa0b7f0 slow_load run1 step1
+HYDTRACE 1791376559.451 efa0b7f0 other_load#1 path=/other
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(hydapp/hydapp.py:180)
+HYDTRACE 1791376569.295 725e449a item_load id=1
+HYDTRACE 1791376569.297 725e449a item_load id=2
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791376579.576 291c187b item_load id=1
+HYDTRACE 1791376579.584 291c187b item_load id=2
+Info: Reflex app stopped.

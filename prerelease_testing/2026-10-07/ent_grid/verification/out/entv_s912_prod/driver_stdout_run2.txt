@@ -1,0 +1,29 @@
+server check ok: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/ent_grid-s912/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9
+[s11 detail] {'w_detail_state': {'detail_rows': 1, 'detail_headers': ['Count', 'Value'], 'detail_cells': 4}, 'w_detail_literal': {'detail_rows': 1, 'detail_headers': ['Count', 'Value'], 'detail_cells': 4}}
+[s11_detail_expand] grids(headers,cells)={'w_detail_state': (4, 8), 'w_detail_literal': (4, 8)} probes={} counts={} reflexSetAt=198.5
+   t=303.4 ws_out {"nsp": "/_event"}
+   t=308.3 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=308.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=311.6 delta substates=['reflex___state____state', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.entv___entv____detail_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.entv___entv____load_state']
+   t=313.2 delta substates=['reflex___state____state']
+   console errors/warnings: 29; pageerrors: 0
+     error: Failed to load resource: the server responded with a status of 404 (Not Found)
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+[s12 renderer] badges=3
+[s12_renderer_full_load] grids(headers,cells)={'w_renderer': (2, 6)} probes={} counts={} reflexSetAt=231
+   t=325.2 ws_out {"nsp": "/_event"}
+   t=328.4 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.hydrate", "payload_keys": []}
+   t=328.6 ws_out {"nsp": "/_event", "sio_event": "event", "event_name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "payload_keys": []}
+   t=332.3 delta substates=['reflex___state____state', 'reflex___state____state.reflex___state____frontend_event_exception_state', 'reflex___state____state.entv___entv____detail_state', 'reflex___state____state.reflex___state____on_load_internal_state', 'reflex___state____state.reflex___state____update_vars_internal_state', 'reflex___state____state.entv___entv____other_state', 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', 'reflex___state____state.entv___entv____grid_state', 'reflex___state____state.entv___entv____load_state']
+   t=333.3 delta substates=['reflex___state____state']
+   console errors/warnings: 7; pageerrors: 0
+     error: ****************************************************************************************************************************
+     error: ************************************************ AG Grid Enterprise License ************************************************
+     error: ************************************************** License Key Not Found ***************************************************
+     error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *
+     error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *
+     error: ****************************************************************************************************************************

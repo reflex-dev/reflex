@@ -1,0 +1,352 @@
+{
+ "scenario": "s5_reload_after_state_changed",
+ "measure": {
+  "grids": {
+   "w_state": {
+    "headers": [
+     "Make",
+     "Price"
+    ],
+    "cells": 6,
+    "rows": 0
+   },
+   "w_literal": {
+    "headers": [
+     "Make",
+     "Price"
+    ],
+    "cells": 6,
+    "rows": 0
+   }
+  },
+  "probes": {
+   "probe-gridstate_cols": "gridstate_cols|HAS_REFLEX|[{\"field\":\"make\"},{\"field\":\"price\"}]",
+   "probe-literal": "literal|NO_REFLEX|\"lit\""
+  },
+  "probeCounts": {
+   "gridstate_cols": 2,
+   "literal": 1
+  },
+  "reflexDefinedNow": true,
+  "reflexSetAt": 131.19999999925494,
+  "path": "/",
+  "heading": "entv index"
+ },
+ "measure_plus4s": {
+  "grids": {
+   "w_state": {
+    "headers": [
+     "Make",
+     "Price"
+    ],
+    "cells": 6,
+    "rows": 0
+   },
+   "w_literal": {
+    "headers": [
+     "Make",
+     "Price"
+    ],
+    "cells": 6,
+    "rows": 0
+   }
+  },
+  "probes": {
+   "probe-gridstate_cols": "gridstate_cols|HAS_REFLEX|[{\"field\":\"make\"},{\"field\":\"price\"}]",
+   "probe-literal": "literal|NO_REFLEX|\"lit\""
+  },
+  "probeCounts": {
+   "gridstate_cols": 2,
+   "literal": 1
+  },
+  "reflexDefinedNow": true,
+  "reflexSetAt": 131.19999999925494,
+  "path": "/",
+  "heading": "entv index"
+ },
+ "boot_frames": [
+  {
+   "t": 90.5,
+   "dir": "ws_in",
+   "len": 108,
+   "head": "0{"
+  },
+  {
+   "t": 130.9,
+   "dir": "ws_out",
+   "len": 328,
+   "head": "40",
+   "nsp": "/_event",
+   "auth_keys": [
+    "event"
+   ],
+   "auth_mentions_hydrate_and_load": true,
+   "auth_event_name": "reflex___state____state.hydrate_and_load"
+  },
+  {
+   "t": 155.6,
+   "dir": "ws_in",
+   "len": 40,
+   "head": "40",
+   "nsp": "/_event",
+   "auth_keys": [
+    "sid"
+   ],
+   "auth_mentions_hydrate_and_load": false
+  },
+  {
+   "t": 179.3,
+   "dir": "ws_in",
+   "len": 1930,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_",
+     "rx_router_headers_rx_state_",
+     "rx_router_page_rx_state_",
+     "rx_router_route_id_rx_state_",
+     "rx_router_session_rx_state_",
+     "rx_router_url_rx_state_"
+    ],
+    "reflex___state____state.entv___entv____other_state": [
+     "x_rx_state_"
+    ],
+    "reflex___state____state.entv___entv____grid_state": [
+     "clicks_rx_state_"
+    ]
+   },
+   "final": null,
+   "events": null
+  },
+  {
+   "t": 179.6,
+   "dir": "ws_in",
+   "len": 88,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "final": null,
+   "events": null
+  }
+ ],
+ "timeline": [
+  "     38.3ms grid counts (headers, cells) {}",
+  "     82.2ms ws_open_call {\"url\": \"ws://localhost:3680/_event/?token=400d16d2-9144-4b33-ee4d-b0cbad0354dc&EIO=4&transport=websocket\"}",
+  "     89.0ms ws_open {}",
+  "     90.4ms grid counts (headers, cells) {\"w_state\": [0, 0], \"w_literal\": [0, 0]}",
+  "     90.5ms ws_in {\"len\": 108}",
+  "     98.2ms probe render gridstate_cols #1 NO_REFLEX value=[{\"field\":\"make\"},{\"field\":\"price\"}]",
+  "     98.3ms probe render literal #1 NO_REFLEX value=\"lit\"",
+  "    130.9ms ws_out {\"len\": 328, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+  "    131.2ms window.__reflex ASSIGNED (5 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3680/assets/root-CP2xDksN.js:82:324 |     at El (http://localhost:3680/assets/entry.client-_aG2pkzF.js:8:94972) |     at Uu (http://localhost:3680/assets/entry.client-_aG2pkzF.js:8:118140) |     at Hu (http://localhost:3680/assets/entry.client",
+  "    155.6ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+  "    175.5ms grid counts (headers, cells) {\"w_state\": [0, 0], \"w_literal\": [2, 6]}",
+  "    179.3ms ws_in {\"len\": 1930, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"], \"reflex___state____state.entv___entv____other_state\": [\"x_rx_state_\"], \"reflex___state____state.entv___entv____grid_state\": [\"clicks_rx_state_\"]}, \"final\": null, \"events\": null}",
+  "    179.6ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
+  "    180.4ms probe render gridstate_cols #2 HAS_REFLEX value=[{\"field\":\"make\"},{\"field\":\"price\"}]",
+  "    225.6ms grid counts (headers, cells) {\"w_state\": [2, 6], \"w_literal\": [2, 6]}"
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 0.007
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.297
+  },
+  {
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "t": 0.297
+  },
+  {
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "t": 0.297
+  },
+  {
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "t": 0.298
+  },
+  {
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "t": 0.298
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.298
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.299
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.299
+  },
+  {
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "t": 0.299
+  },
+  {
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "t": 0.299
+  },
+  {
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "t": 0.299
+  },
+  {
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "t": 0.299
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.299
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.299
+  }
+ ],
+ "pageerrors": [],
+ "pw_frames": [
+  {
+   "dir": "out",
+   "t": 0.013,
+   "summary": {
+    "len": 10,
+    "head": "41",
+    "nsp": "/_event"
+   }
+  },
+  {
+   "dir": "in",
+   "t": 0.095,
+   "summary": {
+    "len": 108,
+    "head": "0{"
+   }
+  },
+  {
+   "dir": "out",
+   "t": 0.3,
+   "summary": {
+    "len": 328,
+    "head": "40",
+    "nsp": "/_event",
+    "auth_keys": [
+     "event"
+    ],
+    "auth_mentions_hydrate_and_load": true,
+    "auth_event_name": "reflex___state____state.hydrate_and_load"
+   }
+  },
+  {
+   "dir": "in",
+   "t": 0.3,
+   "summary": {
+    "len": 40,
+    "head": "40",
+    "nsp": "/_event",
+    "auth_keys": [
+     "sid"
+    ],
+    "auth_mentions_hydrate_and_load": false
+   }
+  },
+  {
+   "dir": "in",
+   "t": 0.3,
+   "summary": {
+    "len": 1930,
+    "head": "42",
+    "nsp": "/_event",
+    "sio_event": "event",
+    "delta": {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_",
+      "rx_router_headers_rx_state_",
+      "rx_router_page_rx_state_",
+      "rx_router_route_id_rx_state_",
+      "rx_router_session_rx_state_",
+      "rx_router_url_rx_state_"
+     ],
+     "reflex___state____state.entv___entv____other_state": [
+      "x_rx_state_"
+     ],
+     "reflex___state____state.entv___entv____grid_state": [
+      "clicks_rx_state_"
+     ]
+    },
+    "final": null,
+    "events": null
+   }
+  },
+  {
+   "dir": "in",
+   "t": 0.3,
+   "summary": {
+    "len": 88,
+    "head": "42",
+    "nsp": "/_event",
+    "sio_event": "event",
+    "delta": {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_"
+     ]
+    },
+    "final": null,
+    "events": null
+   }
+  }
+ ],
+ "raw_ws": [
+  {
+   "t": 90.5,
+   "dir": "ws_in",
+   "data": "0{\"sid\":\"I9u3HWf4Lxcg06UmAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 130.9,
+   "dir": "ws_out",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f05849ba59c543dd\",\"b084fc0c68f7c73a\",\"34fd6223f7cd2e3c\",\"f4263b8274e9e12c\",\"dcc2ada93d26b909\",\"f958b7853c5a3438\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "t": 155.6,
+   "dir": "ws_in",
+   "data": "40/_event,{\"sid\":\"O-dgsWUSi5w_x67xAAAF\"}"
+  },
+  {
+   "t": 179.3,
+   "dir": "ws_in",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3680\",\"origin\":\"http://localhost:3680\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"GjX6j/9Ultr3c6gK8qa3Dg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3680\",\"origin\":\"http://localhost:3680\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"GjX6j/9Ultr3c6gK8qa3Dg==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3680\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3680/index\",\"full_raw_path\":\"http://localhost:3680/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"400d16d2-9144-4b33-ee4d-b0cbad0354dc\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"O-dgsWUSi5w_x67xAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3680\",\"origin\":\"http://localhost:3680\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3680/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.entv___entv____other_state\":{\"x_rx_state_\":1},\"reflex___state____state.entv___entv____grid_state\":{\"clicks_rx_state_\":1}}}]"
+  },
+  {
+   "t": 179.6,
+   "dir": "ws_in",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ]
+}

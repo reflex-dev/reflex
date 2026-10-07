@@ -1,0 +1,61 @@
+### diff root.jsx s912 vs a2
+4c4
+< import {Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737} from "$/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737"
+---
+> import {Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b} from "$/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b"
+48c48
+< return (jsx(StrictMode,{},jsx(StateProvider,{},jsx(EventLoopProvider,{},jsx(Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737,{},jsx(RadixThemesColorModeProvider,{},jsx(Fragment,{},jsx(MemoizedToastProvider_18b15038,{},),jsx(RadixThemesTheme,{accentColor:"blue",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},jsx(Fragment,{},jsx(DefaultOverlayComponents_04c36749,{},),jsx(Fragment,{},children,jsx(Fragment,{},jsx(MemoizedBadge_04c36749,{},))))))))))))
+---
+> return (jsx(StrictMode,{},jsx(StateProvider,{},jsx(EventLoopProvider,{},jsx(Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b,{},jsx(RadixThemesColorModeProvider,{},jsx(Fragment,{},jsx(MemoizedToastProvider_18b15038,{},),jsx(RadixThemesTheme,{accentColor:"blue",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},jsx(Fragment,{},jsx(DefaultOverlayComponents_04c36749,{},),jsx(Fragment,{},children,jsx(Fragment,{},jsx(MemoizedBadge_04c36749,{},))))))))))))
+### diff root.jsx a1 vs a2
+### sed ReflexProviders a2
+import * as radix_ui_themes from "@radix-ui/themes";
+
+
+
+
+function ReflexProviders({children}) {
+  useEffect(() => {
+    // Make contexts and state objects available globally for dynamic eval'd components
+    window.__reflex = {
+          "react": React,
+    "@emotion/react": emotion_react,
+    "$/utils/context": utils_context,
+    "$/utils/state": utils_state,
+    "@radix-ui/themes": radix_ui_themes,
+    };
+  }, []);
+
+  return jsx(ThemeProvider, {defaultTheme: defaultColorMode, attribute: "class"},
+    jsx(AppWrap, {}, children)
+  );
+}
+
+
+function AppWrap({children}) {
+
+
+
+
+return (jsx(StrictMode,{},jsx(StateProvider,{},jsx(EventLoopProvider,{},jsx(Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b,{},jsx(RadixThemesColorModeProvider,{},jsx(Fragment,{},jsx(MemoizedToastProvider_18b15038,{},),jsx(RadixThemesTheme,{accentColor:"blue",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},jsx(Fragment,{},jsx(DefaultOverlayComponents_04c36749,{},),jsx(Fragment,{},children,jsx(Fragment,{},jsx(MemoizedBadge_04c36749,{},))))))))))))
+}
+
+export function Layout({children}) {
+  return jsx(AppLayout, {}, jsx(ReflexProviders, {}, children));
+}
+### prerendered html contains probe text?
+untouched|NO_REFLEX|[&quot;a&quot;,&quot;b&quot;]
+untouched|NO_REFLEX|[&quot;a&quot;,&quot;b&quot;]
+untouched|NO_REFLEX|[&quot;a&quot;,&quot;b&quot;]
+404.html
+404.html.gz
+__spa-fallback.html
+__spa-fallback.html.gz
+assets
+index.html
+index.html.gz
+second
+second.html
+second.html.gz
+corev_a2/.web/react-router.config.js:1:export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "prerender": true, "build": "build"};
+corev_s912/.web/react-router.config.js:1:export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "prerender": true, "build": "build"};

@@ -1,0 +1,138 @@
+DeprecationWarning: state_auto_setters has been deprecated in version 0.9.0. 
+auto setters will be removed; use explicit event handlers instead. It will be 
+completely removed in 1.0. (rxconfig.py:3)
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n1.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+Instantiating components directly is not supported. Use `Calendar.create` method
+instead.
+[tp_components] page /dynoselect failed to build: EventFnArgMismatchError: Event on_open_auto_focus only provides 0 arguments, but <function Dynoselect.get_component.<locals>.<lambda> at 0x7fcbcbec8c20> requires at least 1 arguments to be passed to the event handler.
+See https://reflex.dev/docs/events/event-arguments/
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n2.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n3.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 53/52 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n1.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+[tp_components] page /dynoselect failed to build: EventFnArgMismatchError: Event on_open_auto_focus only provides 0 arguments, but <function Dynoselect.get_component.<locals>.<lambda> at 0x7fcbc54672e0> requires at least 1 arguments to be passed to the event handler.
+See https://reflex.dev/docs/events/event-arguments/
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n2.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+Warning: Event handler on_submit expects (dict[str, typing.Any]) -> () but got 
+(dict[str, str]) -> () as annotated in Chat_n3.submit_message instead. This may 
+lead to unexpected behavior but is intentionally ignored for on_submit.
+App running at: http://localhost:3500/
+Backend running at: http://0.0.0.0:8500
+[Reflex Frontend Exception]
+ TypeError: err is not a function
+TypeError: err is not a function
+    at http://localhost:3500/app/routes/\[audio]._index.jsx?import:91:72
+
+[Reflex Frontend Exception]
+ ReferenceError: muted is not defined
+ReferenceError: muted is not defined
+    at Component 
+(http://localhost:3500/app/routes/\[webcam]._index.jsx?import:51:8)
+    at Object.react_stack_bottom_frame 
+(http://localhost:3500/node_modules/.vite/deps/react-dom_client.js?v=ab319d7c:12
+866:12)
+    at renderWithHooks 
+(http://localhost:3500/node_modules/.vite/deps/react-dom_client.js?v=ab319d7c:42
+13:19)
+    at updateFunctionComponent 
+(http://localhost:3500/node_modules/.vite/deps/react-dom_client.js?v=ab319d7c:55
+69:16)
+    at beginWork 
+(http://localhost:3500/node_modules/.vite/deps/react-dom_client.js?v=ab319d7c:61
+40:20)
+    at runWithFiberInDEV 
+(http://localhost:3500/node_modules/.vite/deps/react-dom_client.js?v=ab319d7c:85
+1:66)
+    at performUnitOfWork 
+(http://localhost:3500/node_modules/.vite/deps/react-dom_client.js?v=ab319d7c:84
+29:92)
+    at workLoopSync 
+(http://localhost:3500/node_modules/.vite/deps/react-dom_client.js?v=ab319d7c:83
+25:37)
+    at renderRootSync 
+(http://localhost:3500/node_modules/.vite/deps/react-dom_client.js?v=ab319d7c:83
+09:6)
+    at performWorkOnRoot 
+(http://localhost:3500/node_modules/.vite/deps/react-dom_client.js?v=ab319d7c:79
+94:27)
+
+[Reflex Frontend Exception]
+ undefined: undefined
+undefined
+
+[Reflex Frontend Exception]
+ undefined: undefined
+undefined
+
+[Reflex Frontend Exception]
+ SyntaxError: missing ) after argument list
+SyntaxError: missing ) after argument list
+    at applyEvent (http://localhost:3500/utils/state.js:376:32)
+    at processEvent (http://localhost:3500/utils/state.js:537:11)
+    at queueEvents (http://localhost:3500/utils/state.js:502:9)
+    at Socket.<anonymous> (http://localhost:3500/utils/state.js:758:9)
+    at Emitter.emit 
+(http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:3
+26:70)
+    at Socket.emitEvent 
+(http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:2
+564:14)
+    at Socket.onevent 
+(http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:2
+556:28)
+    at Socket.onpacket 
+(http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:2
+531:10)
+    at Emitter.emit 
+(http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:3
+26:70)
+    at 
+http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:31
+15:9
+
+[Reflex Frontend Exception]
+ SyntaxError: missing ) after argument list
+SyntaxError: missing ) after argument list
+    at applyEvent (http://localhost:3500/utils/state.js:376:32)
+    at processEvent (http://localhost:3500/utils/state.js:537:11)
+    at queueEvents (http://localhost:3500/utils/state.js:502:9)
+    at Socket.<anonymous> (http://localhost:3500/utils/state.js:758:9)
+    at Emitter.emit 
+(http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:3
+26:70)
+    at Socket.emitEvent 
+(http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:2
+564:14)
+    at Socket.onevent 
+(http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:2
+556:28)
+    at Socket.onpacket 
+(http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:2
+531:10)
+    at Emitter.emit 
+(http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:3
+26:70)
+    at 
+http://localhost:3500/node_modules/.vite/deps/socket__io-client.js?v=ab319d7c:31
+15:9
+
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

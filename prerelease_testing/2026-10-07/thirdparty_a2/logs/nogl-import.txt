@@ -1,0 +1,6 @@
+--- import reflex_local_auth
+ok
+--- import reflex_magic_link_auth
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty_a2-nogl/lib/python3.12/site-packages/sqlalchemy/util/concurrency.py", line 79, in _initialize
+    raise ImportError(_ERROR_MESSAGE) from e
+ImportError: The SQLAlchemy asyncio module requires that the Python 'greenlet' library is installed.  In order to ensure this dependency is available, use the 'sqlalchemy[asyncio]' install target:  'pip install sqlalchemy[asyncio]'

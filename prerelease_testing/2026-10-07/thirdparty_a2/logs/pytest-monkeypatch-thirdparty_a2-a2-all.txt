@@ -1,0 +1,9 @@
+                msg = f"Default factory for field '{name}' failed: {err}"
+PASSED test_monkeypatch_backend_var.py::test_monkeypatch_setattr_value_of_declared_type
+ERROR test_monkeypatch_backend_var.py::test_monkeypatch_setattr_value_of_declared_type
+FAILED test_monkeypatch_backend_var.py::test_after_monkeypatch_default_is_restored
+FAILED test_monkeypatch_backend_var.py::test_monkeypatch_setattr_mock - TypeE...
+FAILED test_monkeypatch_backend_var.py::test_mock_patch_object_context_manager
+FAILED test_monkeypatch_backend_var.py::test_mock_patch_object_decorator - Ty...
+FAILED test_monkeypatch_backend_var.py::test_after_all_default_is_restored - ...
+5 failed, 1 passed, 1 error in 0.68s

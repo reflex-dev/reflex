@@ -1,0 +1,12 @@
+`_client = None`  <- Client()                                -> EXC TypeError: Invalid default for field '_client': expected <class 'NoneType'>, got <__main__.Client object at 0x7f25cd72f3b0> of type
+`_client = None`  <- 'a string'                              -> EXC TypeError: Invalid default for field '_client': expected <class 'NoneType'>, got 'a string' of type <class 'str'>.
+`_client = None`  <- 42                                      -> EXC TypeError: Invalid default for field '_client': expected <class 'NoneType'>, got 42 of type <class 'int'>.
+`_client = None`  <- None (control)                          -> ok | instance reads None
+`_opt: Optional[Client] = None` <- Client() (control)        -> ok | instance reads <__main__.Client object at 0x7f25cd5f2d50>
+`_n = 0`         <- 5                                        -> ok | instance reads 5
+`_n = 0`         <- 'five'                                   -> EXC TypeError: Invalid default for field '_n': expected <class 'int'>, got 'five' of type <class 'str'>.
+`_n = 0`         <- 2.5 (float into int)                     -> EXC TypeError: Invalid default for field '_n': expected <class 'int'>, got 2.5 of type <class 'float'>.
+`_s = ''`        <- None                                     -> EXC TypeError: Invalid default for field '_s': expected <class 'str'>, got None of type <class 'NoneType'>.
+`_lst = []`      <- ['a']                                    -> ok | instance reads MutableProxy(['a'])
+`_lst = []`      <- ('a',)  (tuple into list)                -> ok | instance reads ('a',)
+declared types: {'_client': "<class 'NoneType'>", '_n': "<class 'int'>", '_s': "<class 'str'>", '_lst': 'collections.abc.Sequence[typing.NoReturn]', '_any': "<class 'NoneType'>", '_opt': 'typing.Optional[__main__.Client]'}

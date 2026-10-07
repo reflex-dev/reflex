@@ -1,0 +1,58 @@
+{
+ "checks": [],
+ "anomalies": {
+  "console_nonbenign": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+ },
+ "console_all": [
+  {
+   "where": "start",
+   "page": "main",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connecting...",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "debug",
+   "text": "[vite] connected.",
+   "benign": true
+  },
+  {
+   "where": "start",
+   "page": "main",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+   "benign": true
+  }
+ ],
+ "failed_requests_all": [],
+ "bad_responses_all": [],
+ "ws": [],
+ "label": "a2-magic_link",
+ "visits": [
+  {
+   "path": "/",
+   "url": "http://localhost:3500/",
+   "local": {
+    "theme": "system",
+    "last_compiled_theme": "system"
+   },
+   "session": {
+    "token": "cdd4467f-7645-4163-f3d2-5ff3729ade45"
+   },
+   "cookie": ""
+  }
+ ],
+ "context_cookies": []
+}

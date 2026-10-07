@@ -1,0 +1,12 @@
+baseline instance _client/_limit: (None, 5)
+1 class assign Client('real') -> instance: None
+2 patch.object(Svc, '_client', new=Client('patched')) (declared type): 'during=None'
+2b after: instance _client / type in __dict__: (None, 'Client')
+3 patch.object(Svc, '_client', new=Mock()): "during='NoneType'"
+3b after: instance _client / type in __dict__: (None, 'Client')
+4 patch.object(Svc, '_limit', new=99): 'during=5'
+4b after: instance _limit / type in __dict__: (5, 'int')
+5 class assign 'not-an-int' to an int var -> instance: 5
+5b instance _limit afterwards: 5
+6 Svc._items.append('x') at class level -> instance: MutableProxy(['x'])
+7 pickle round trip of instance: None

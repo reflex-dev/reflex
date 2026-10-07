@@ -1,0 +1,281 @@
+{
+ "scenario": "s12_renderer_full_load",
+ "measure": {
+  "grids": {},
+  "probes": {},
+  "probeCounts": {},
+  "reflexDefinedNow": true,
+  "reflexSetAt": 125.90000000037253,
+  "path": "/renderer/",
+  "heading": null
+ },
+ "measure_plus4s": {
+  "grids": {},
+  "probes": {},
+  "probeCounts": {},
+  "reflexDefinedNow": true,
+  "reflexSetAt": 125.90000000037253,
+  "path": "/renderer/",
+  "heading": null
+ },
+ "boot_frames": [
+  {
+   "t": 163.8,
+   "dir": "ws_in",
+   "len": 108,
+   "head": "0{"
+  },
+  {
+   "t": 208.8,
+   "dir": "ws_out",
+   "len": 346,
+   "head": "40",
+   "nsp": "/_event",
+   "auth_keys": [
+    "event"
+   ],
+   "auth_mentions_hydrate_and_load": true,
+   "auth_event_name": "reflex___state____state.hydrate_and_load"
+  },
+  {
+   "t": 244,
+   "dir": "ws_in",
+   "len": 40,
+   "head": "40",
+   "nsp": "/_event",
+   "auth_keys": [
+    "sid"
+   ],
+   "auth_mentions_hydrate_and_load": false
+  },
+  {
+   "t": 356.7,
+   "dir": "ws_out",
+   "len": 5673,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "event_name": "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception",
+   "payload_keys": [
+    "component_stack",
+    "info"
+   ]
+  },
+  {
+   "t": 372.3,
+   "dir": "ws_in",
+   "len": 1829,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_",
+     "rx_router_headers_rx_state_",
+     "rx_router_page_rx_state_",
+     "rx_router_route_id_rx_state_",
+     "rx_router_session_rx_state_",
+     "rx_router_url_rx_state_"
+    ]
+   },
+   "final": null,
+   "events": null
+  },
+  {
+   "t": 372.8,
+   "dir": "ws_in",
+   "len": 88,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "final": null,
+   "events": null
+  }
+ ],
+ "timeline": [
+  "     23.4ms grid counts (headers, cells) {}",
+  "     88.8ms grid counts (headers, cells) {\"w_renderer\": [0, 0]}",
+  "    125.9ms window.__reflex ASSIGNED (4 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3684/assets/root-C2KBScJC.js:27:290",
+  "    138.3ms ws_open_call {\"url\": \"ws://localhost:3684/_event/?token=3e848e21-06ca-41c8-9f79-747fcb797387&EIO=4&transport=websocket\"}",
+  "    158.9ms ws_open {}",
+  "    163.8ms ws_in {\"len\": 108}",
+  "    208.8ms ws_out {\"len\": 346, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+  "    244.0ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+  "    356.7ms ws_out {\"len\": 5673, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"event_name\": \"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\", \"payload_keys\": [\"component_stack\", \"info\"]}",
+  "    372.2ms grid counts (headers, cells) {}",
+  "    372.3ms ws_in {\"len\": 1829, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+  "    372.8ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}"
+ ],
+ "console": [
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.369
+  },
+  {
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "t": 0.369
+  },
+  {
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "t": 0.369
+  },
+  {
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "t": 0.37
+  },
+  {
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "t": 0.37
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.37
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.37
+  },
+  {
+   "type": "error",
+   "text": "Error: Minified React error #130; visit https://react.dev/errors/130?args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.\n    at qi (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:30784)\n    at _ (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:43968)\n    at http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:44825\n    at R (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:68369)\n    at ",
+   "t": 0.37
+  }
+ ],
+ "pageerrors": [],
+ "pw_frames": [
+  {
+   "dir": "in",
+   "t": 0.167,
+   "summary": {
+    "len": 108,
+    "head": "0{"
+   }
+  },
+  {
+   "dir": "out",
+   "t": 0.37,
+   "summary": {
+    "len": 346,
+    "head": "40",
+    "nsp": "/_event",
+    "auth_keys": [
+     "event"
+    ],
+    "auth_mentions_hydrate_and_load": true,
+    "auth_event_name": "reflex___state____state.hydrate_and_load"
+   }
+  },
+  {
+   "dir": "in",
+   "t": 0.37,
+   "summary": {
+    "len": 40,
+    "head": "40",
+    "nsp": "/_event",
+    "auth_keys": [
+     "sid"
+    ],
+    "auth_mentions_hydrate_and_load": false
+   }
+  },
+  {
+   "dir": "out",
+   "t": 0.37,
+   "summary": {
+    "len": 5673,
+    "head": "42",
+    "nsp": "/_event",
+    "sio_event": "event",
+    "event_name": "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception",
+    "payload_keys": [
+     "component_stack",
+     "info"
+    ]
+   }
+  },
+  {
+   "dir": "in",
+   "t": 0.376,
+   "summary": {
+    "len": 1829,
+    "head": "42",
+    "nsp": "/_event",
+    "sio_event": "event",
+    "delta": {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_",
+      "rx_router_headers_rx_state_",
+      "rx_router_page_rx_state_",
+      "rx_router_route_id_rx_state_",
+      "rx_router_session_rx_state_",
+      "rx_router_url_rx_state_"
+     ]
+    },
+    "final": null,
+    "events": null
+   }
+  },
+  {
+   "dir": "in",
+   "t": 0.376,
+   "summary": {
+    "len": 88,
+    "head": "42",
+    "nsp": "/_event",
+    "sio_event": "event",
+    "delta": {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_"
+     ]
+    },
+    "final": null,
+    "events": null
+   }
+  }
+ ],
+ "raw_ws": [
+  {
+   "t": 163.8,
+   "dir": "ws_in",
+   "data": "0{\"sid\":\"-h5z2ofP4tV1vlEXAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 208.8,
+   "dir": "ws_out",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f05849ba59c543dd\",\"b084fc0c68f7c73a\",\"34fd6223f7cd2e3c\",\"f4263b8274e9e12c\",\"dcc2ada93d26b909\",\"f958b7853c5a3438\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/renderer/\",\"asPath\":\"/renderer/\"}}}"
+  },
+  {
+   "t": 244,
+   "dir": "ws_in",
+   "data": "40/_event,{\"sid\":\"NtDftgCKOoPKPfSRAAAD\"}"
+  },
+  {
+   "t": 356.7,
+   "dir": "ws_out",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception\",\"payload\":{\"info\":\"Error: Minified React error #130; visit https://react.dev/errors/130?args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.\\nError: Minified React error #130; visit https://react.dev/errors/130?args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.\\n    at qi (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:30784)\\n    at _ (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:43968)\\n    at http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:44825\\n    at R (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:68369)\\n    at Xc (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:71963)\\n    at _l (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:82771)\\n    at Zd (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:127901)\\n    at Jd (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:126984)\\n    at qd (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:126823)\\n    at Fd (http://localhost:3684/assets/entry.client-IOSmM7QD.js:8:123551)\",\"component_stack\":\"\\n    at cellRenderer (<anonymous>)\\n    at Suspense (<anonymous>)\\n    at div (<anonymous>)\\n    at CellComp (http://localhost:3684/assets/entv-xZiCNALv.js:74:42695)\\n    at div (<anonymous>)\\n    at div (<anonymous>)\\n    at RowComp (http://localhost:3684/assets/entv-xZiCNALv.js:74:48856)\\n    at div (<anonymous>)\\n    at RowContainerComp (http://localhost:3684/assets/entv-xZiCNALv.js:74:55717)\\n    at div (<anonymous>)\\n    at div (<anonymous>)\\n    at div (<anonymous>)\\n    at div (<anonymous>)\\n    at GridBodyComp (http://localhost:3684/assets/entv-xZiCNALv.js:74:58268)\\n    at TabGuardCompRef (http://localhost:3684/assets/entv-xZiCNALv.js:74:63378)\\n    at div (<anonymous>)\\n    at div (<anonymous>)\\n    at GridComp (http://localhost:3684/assets/entv-xZiCNALv.js:74:64932)\\n    at div (<anonymous>)\\n    at div (<anonymous>)\\n    at div (<anonymous>)\\n    at div (<anonymous>)\\n    at AgGridReactUi (http://localhost:3684/assets/entv-xZiCNALv.js:74:69642)\\n    at AgGridReact (http://localhost:3684/assets/entv-xZiCNALv.js:74:76685)\\n    at http://localhost:3684/assets/entv-xZiCNALv.js:74:211059\\n    at div (<anonymous>)\\n    at http://localhost:3684/assets/emotion-react.browser.esm-Ne-RHRfi.js:1:17169\\n    at div (<anonymous>)\\n    at http://localhost:3684/assets/esm-DieT9rrl.js:49:100785\\n    at div (<anonymous>)\\n    at http://localhost:3684/assets/esm-DieT9rrl.js:49:102443\\n    at p (http://localhost:3684/assets/_renderer_._index-DgbnPoYQ.js:1:285)\\n    at http://localhost:3684/assets/components-Bl0Za3ky.js:1:86417\\n    at lr (http://localhost:3684/assets/components-Bl0Za3ky.js:1:77008)\\n    at Nr (http://localhost:3684/assets/components-Bl0Za3ky.js:1:85392)\\n    at http://localhost:3684/assets/components-Bl0Za3ky.js:1:86417\\n    at div (<anonymous>)\\n    at http://localhost:3684/assets/esm-DieT9rrl.js:49:91349\\n    at http://localhost:3684/assets/esm-DieT9rrl.js:49:90281\\n    at DirectionProvider (http://localhost:3684/assets/esm-DieT9rrl.js:4:27820)\\n    at Provider (http://localhost:3684/assets/esm-DieT9rrl.js:4:11007)\\n    at TooltipProvider (http://localhost:3684/assets/esm-DieT9rrl.js:49:71664)\\n    at http://localhost:3684/assets/esm-DieT9rrl.js:49:89964\\n    at http://localhost:3684/assets/emotion-react.browser.esm-Ne-RHRfi.js:1:17169\\n    at re (http://localhost:3684/assets/root-C2KBScJC.js:5:2967)\\n    at k (http://localhost:3684/assets/root-C2KBScJC.js:2:498)\\n    at j (http://localhost:3684/assets/root-C2KBScJC.js:2:743)\\n    at http://localhost:3684/assets/root-C2KBScJC.js:2:1778\\n    at M (http://localhost:3684/assets/context-604mJ2TT.js:1:4938)\\n    at F (http://localhost:3684/assets/context-604mJ2TT.js:1:5281)\\n    at F (http://localhost:3684/assets/context-604mJ2TT.js:1:5281)\\n    at F (http://localhost:3684/assets/context-604mJ2TT.js:1:5281)\\n    at F (http://localhost:3684/assets/context-604mJ2TT.js:1:5281)\\n    at F (http://localhost:3684/assets/context-604mJ2TT.js:1:5281)\\n    at F (http://localhost:3684/assets/context-604mJ2TT.js:1:5281)\\n    at F (http://localhost:3684/assets/context-604mJ2TT.js:1:5281)\\n    at F (http://localhost:3684/assets/context-604mJ2TT.js:1:5281)\\n    at F (http://localhost:3684/assets/context-604mJ2TT.js:1:5281)\\n    at P (http://localhost:3684/assets/context-604mJ2TT.js:1:5166)\\n    at L (http://localhost:3684/assets/context-604mJ2TT.js:1:6601)\\n    at Le (http://localhost:3684/assets/root-C2KBScJC.js:27:734)\\n    at I (http://localhost:3684/assets/root-C2KBScJC.js:5:1432)\\n    at Ie (http://localhost:3684/assets/root-C2KBScJC.js:27:650)\\n    at body (<anonymous>)\\n    at html (<anonymous>)\\n    at Fe (http://localhost:3684/assets/root-C2KBScJC.js:5:41057)\\n    at Re (http://localhost:3684/assets/root-C2KBScJC.js:27:1001)\\n    at lr (http://localhost:3684/assets/components-Bl0Za3ky.js:1:77008)\\n    at or (http://localhost:3684/assets/components-Bl0Za3ky.js:1:75205)\\n    at Mr (http://localhost:3684/assets/components-Bl0Za3ky.js:1:85138)\\n    at Pr (http://localhost:3684/assets/components-Bl0Za3ky.js:1:85423)\\n    at kr (http://localhost:3684/assets/components-Bl0Za3ky.js:1:80750)\\n    at S (<anonymous>)\\n    at dt (http://localhost:3684/assets/errorBoundaries-B2FODbHN.js:12:1372)\\n    at ce (http://localhost:3684/assets/entry.client-IOSmM7QD.js:9:53733)\"},\"router_data\":{\"pathname\":\"/renderer/\",\"asPath\":\"/renderer/\"}}]"
+  },
+  {
+   "t": 372.3,
+   "dir": "ws_in",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3684\",\"origin\":\"http://localhost:3684\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"wFvxux9YFUs+i/D+sku0EQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3684\",\"origin\":\"http://localhost:3684\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"wFvxux9YFUs+i/D+sku0EQ==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3684\",\"path\":\"/renderer\",\"raw_path\":\"/renderer/\",\"full_path\":\"http://localhost:3684/renderer\",\"full_raw_path\":\"http://localhost:3684/renderer/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/renderer\",\"rx_router_session_rx_state_\":{\"client_token\":\"3e848e21-06ca-41c8-9f79-747fcb797387\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"NtDftgCKOoPKPfSRAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3684\",\"origin\":\"http://localhost:3684\",\"path\":\"/renderer/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3684/renderer/\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 372.8,
+   "dir": "ws_in",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "badges": 0
+}

@@ -1,0 +1,32 @@
+== a2-npm (venv thirdparty_a2-a2 npm=1)
+### reflex 0.10.0a2 REFLEX_USE_NPM=1 app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a2-npm
+ 8875  8874  7785 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a2-n
+RESULT: reflex CLI STILL RUNNING 30s after SIGTERM
+listeners on 3501/8501 after 30s:
+node       8875 root   27u  IPv4 400703      0t0  TCP *:3501 (LISTEN)
+ 8863  7785  7785 Z    [npm run dev] <defunct>
+ 8875     1  7785 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a2-n
+  ports free
+== a2-bun (venv thirdparty_a2-a2 npm=0)
+### reflex 0.10.0a2 REFLEX_USE_NPM=0 app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a2-bun
+ 9896  9895  9792 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a2-b
+RESULT: reflex CLI exited
+listeners on 3501/8501 after 30s:
+  ports free
+== a1-npm (venv thirdparty-alpha npm=1)
+### reflex 0.10.0a1 REFLEX_USE_NPM=1 app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a1-npm
+10646 10645 10464 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a1-n
+RESULT: reflex CLI STILL RUNNING 30s after SIGTERM
+listeners on 3501/8501 after 30s:
+node      10646 root   23u  IPv4 406857      0t0  TCP *:3501 (LISTEN)
+10634 10464 10464 Z    [npm run dev] <defunct>
+10646     1 10464 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_a1-n
+  ports free
+== s0912-npm (venv thirdparty-stable npm=1)
+### reflex 0.9.12 REFLEX_USE_NPM=1 app=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_s0912-npm
+12263 12262 12148 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_s091
+RESULT: reflex CLI STILL RUNNING 30s after SIGTERM
+listeners on 3501/8501 after 30s:
+node      12263 root   22u  IPv4 409848      0t0  TCP *:3501 (LISTEN)
+12263 12262 12148 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/thirdparty_a2/f007/app_s091
+  ports free

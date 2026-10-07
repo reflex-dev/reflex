@@ -1,0 +1,153 @@
+{
+ "name": "probe_core_rerender-prod-a2-verifier",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 4.33,
+   "name": "untouched substate probe re-rendered after hydration (HAS_REFLEX)",
+   "ok": false,
+   "detail": {
+    "untouched": "NO_REFLEX:[\"a\",\"b\"]",
+    "touched": "HAS_REFLEX:[\"x\",\"y\"]",
+    "root": "HAS_REFLEX:true",
+    "n": "0"
+   }
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 -",
+  "{\"full load\": {\"untouched\": \"NO_REFLEX:[\\\"a\\\",\\\"b\\\"]\", \"touched\": \"HAS_REFLEX:[\\\"x\\\",\\\"y\\\"]\", \"root\": \"HAS_REFLEX:true\", \"n\": \"0\"}, \"reload\": {\"untouched\": \"NO_REFLEX:[\\\"a\\\",\\\"b\\\"]\", \"touched\": \"HAS_REFLEX:[\\\"x\\\",\\\"y\\\"]\", \"root\": \"HAS_REFLEX:true\", \"n\": \"0\"}, \"after bump (other var of same substate)\": {\"untouched\": \"HAS_REFLEX:[\\\"a\\\",\\\"b\\\"]\", \"touched\": \"HAS_REFLEX:[\\\"x\\\",\\\"y\\\"]\", \"root\": \"HAS_REFLEX:true\", \"n\": \"1\"}, \"after client-side nav back\": {\"untouched\": \"HAS_REFLEX:[\\\"a\\\",\\\"b\\\"]\", \"touched\": \"HAS_REFLEX:[\\\"x\\\",\\\"y\\\"]\", \"root\": \"HAS_REFLEX:true\", \"n\": \"1\"}}"
+ ],
+ "summary": {
+  "checks_failed": [
+   "untouched substate probe re-rendered after hydration (HAS_REFLEX)"
+  ],
+  "n_checks": 1,
+  "console_total": 3,
+  "console_benign": 0,
+  "console_errors": 1,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [
+   {
+    "t": 0.83,
+    "ctx": "core",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "url": "http://localhost:3691/",
+    "location": {
+     "url": "http://localhost:3691/favicon.ico",
+     "line": 0,
+     "column": 0,
+     "lineNumber": 0,
+     "columnNumber": 0
+    },
+    "benign": false
+   }
+  ],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 0.83,
+   "ctx": "core",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "url": "http://localhost:3691/",
+   "location": {
+    "url": "http://localhost:3691/favicon.ico",
+    "line": 0,
+    "column": 0,
+    "lineNumber": 0,
+    "columnNumber": 0
+   },
+   "benign": false
+  },
+  {
+   "t": 4.38,
+   "ctx": "core",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3691/",
+   "location": {
+    "url": "http://localhost:3691/assets/link-Detz5zfF.js",
+    "line": 1,
+    "column": 11226,
+    "lineNumber": 1,
+    "columnNumber": 11226
+   },
+   "benign": false
+  },
+  {
+   "t": 13.18,
+   "ctx": "core",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3691/",
+   "location": {
+    "url": "http://localhost:3691/assets/link-Detz5zfF.js",
+    "line": 1,
+    "column": 11410,
+    "lineNumber": 1,
+    "columnNumber": 11410
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3691/_event/?token=87c354de-5d7f-4cbe-c920-7b6d199269da&EIO=4&transport=websocket": {
+   "ctx": "core",
+   "sent": 6,
+   "recv": 17,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"a2c3048686a60ccd\",\"b084fc0c68f7c73a\",\"9fb1bb4e6b7bf267\",\"b8157d02b24d4357\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"a2c3048686a60ccd\",\"b084fc0c68f7c73a\",\"9fb1bb4e6b7bf267\",\"b8157d02b24d4357\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_rerender___core_rerender____untouched.bump\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"eKWkekPC_KniaTbDAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"90eKTpILffD7miBKAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3691\",\"origin\":\"http://localhost:3691\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"5qYmt59uHOMTFGIOnB4oPQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_rerender___core_rerender____touched\":{\"cols_rx_state_\":[\"x\",\"y\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"5pH2c66uGVoFZCHAAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"UaG1dw-uowC9pG1lAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3691\",\"origin\":\"http://localhost:3691\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ze4QxESPVG8KvehyOioRJg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_rerender___core_rerender____touched\":{\"cols_rx_state_\":[\"x\",\"y\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_rerender___core_rerender____untouched\":{\"n_rx_state_\":1}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true,\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3691\",\"path\":\"/other\",\"raw_path\":\"/other\",\"full_path\":\"http://localhost:3691/other\",\"full_raw_path\":\"http://localhost:3691/other\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/other\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3691\",\"origin\":\"http://localhost:3691\",\"path\":\"/other\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3691/other\"}}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3691\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3691/index\",\"full_raw_path\":\"http://localhost:3691/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3691\",\"origin\":\"http://localhost:3691\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3691/\"}}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_rerender___core_rerender____touched\":{\"cols_rx_state_\":[\"x\",\"y\"]}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": true
+  }
+ },
+ "requests": [
+  {
+   "t": 0.69,
+   "ctx": "core",
+   "url": "http://localhost:3691/",
+   "method": "GET"
+  },
+  {
+   "t": 4.38,
+   "ctx": "core",
+   "url": "http://localhost:3691/",
+   "method": "GET"
+  }
+ ]
+}

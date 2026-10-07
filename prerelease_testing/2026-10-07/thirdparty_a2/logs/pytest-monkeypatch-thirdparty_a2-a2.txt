@@ -1,0 +1,62 @@
+.E
+==================================== ERRORS ====================================
+_____ ERROR at teardown of test_monkeypatch_setattr_value_of_declared_type _____
+cls = <class 'test_monkeypatch_backend_var.Svc'>, name = '_limit'
+value = Field(default=99, is_var=True, annotated_type=<class 'int'>)
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update a field's default while retaining its descriptor.
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
+        Args:
+            name: The class attribute being assigned.
+            value: Its new default value or zero-argument default factory.
+        Raises:
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
+        """
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
+        default = value
+>       accepted = _accepts_default(declared, value)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../envs/thirdparty_a2-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+declared = Field(default=99, is_var=True, annotated_type=<class 'int'>)
+value = Field(default=99, is_var=True, annotated_type=<class 'int'>)
+    def _accepts_default(declared: Field, value: Any) -> bool:
+        """Whether a field's annotation accepts a value as its default.
+        Args:
+            declared: The field.
+            value: The candidate default.
+        Returns:
+            Whether the value satisfies the field's annotation.
+        Raises:
+            TypeError: If the value is a Var or a Field, which no field defaults to.
+        """
+        if isinstance(value, Var):
+            msg = (
+                "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                "references to vars in state."
+            )
+            raise TypeError(msg)
+        if isinstance(value, Field):
+            msg = (
+                "A Field cannot overwrite another field. Define a "
+                "computed var to read the field at runtime instead."
+            )
+>           raise TypeError(msg)
+E           TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+../../../envs/thirdparty_a2-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_monkeypatch_backend_var.py::test_monkeypatch_setattr_value_of_declared_type
+ERROR test_monkeypatch_backend_var.py::test_monkeypatch_setattr_value_of_declared_type
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 passed, 1 error in 0.34s

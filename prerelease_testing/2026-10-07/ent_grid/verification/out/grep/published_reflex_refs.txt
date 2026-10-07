@@ -1,0 +1,37 @@
+### alpha2-ent: reflex, reflex_base, reflex_components_* (published wheels as installed): __reflex not followed by an identifier char
+reflex_base/components/dynamic.py:228:            window_library = f"window.__reflex['{module['lib']}']"
+reflex_base/components/dynamic.py:261:        module_code_lines.insert(0, "const React = window.__reflex.react;")
+reflex_base/config.py:180:        frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Default
+reflex_base/.templates/web/utils/state.js:286:  if (!window.React && window.__reflex) {
+reflex_base/.templates/web/utils/state.js:287:    window.React = window.__reflex.react;
+reflex_base/compiler/templates.py:216:    window.__reflex = {{
+reflex_base/compiler/templates.py:231:  window.__reflex = {{ ...window.__reflex,
+reflex_base/compiler/templates.py:241:        window.__reflex[name] = await load();
+### stable: reflex, reflex_base, reflex_components_* (published wheels as installed): __reflex not followed by an identifier char
+reflex_base/components/dynamic.py:228:            window_library = f"window.__reflex['{module['lib']}']"
+reflex_base/components/dynamic.py:261:        module_code_lines.insert(0, "const React = window.__reflex.react;")
+reflex_base/config.py:180:        frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Default
+reflex_base/.templates/web/utils/state.js:171:  if (!window.React && window.__reflex) {
+reflex_base/.templates/web/utils/state.js:172:    window.React = window.__reflex.react;
+reflex_base/compiler/templates.py:216:    window.__reflex = {{
+reflex_base/compiler/templates.py:231:  window.__reflex = {{ ...window.__reflex,
+reflex_base/compiler/templates.py:241:        window.__reflex[name] = await load();
+### compiled .web of the enterprise fixture (a2 prod), app sources only (no node_modules)
+entv_a2/.web/app/root.jsx:28:    window.__reflex = {
+entv_a2/.web/app/routes/_index.jsx:13:  const has = isClient && typeof window.__reflex !== "undefined";
+entv_a2/.web/utils/state.js:286:  if (!window.React && window.__reflex) {
+entv_a2/.web/utils/state.js:287:    window.React = window.__reflex.react;
+entv_a2/.web/app_components/entv/entv.jsx:88:  // Special handling for formatColumnDefs due to __reflex checks
+entv_a2/.web/app_components/entv/entv.jsx:98:    if (typeof __reflex === 'undefined' || typeof window === "undefined") {
+entv_a2/.web/app_components/entv/entv.jsx:104:    const jsx = __reflex["@emotion/react"]?.jsx;
+entv_a2/.web/app_components/entv/entv.jsx:105:    const Fragment = __reflex["react"]?.Fragment;
+entv_a2/.web/app_components/entv/entv.jsx:142:  const has = isClient && typeof window.__reflex !== "undefined";
+entv_a2/.web/app_components/entv/entv.jsx:387:const jsx = __reflex['@emotion/react']?.jsx;
+entv_a2/.web/app_components/entv/entv.jsx:388:const Fragment = __reflex['react']?.Fragment;
+entv_a2/.web/app_components/entv/entv.jsx:389:const RadixThemesBadge = __reflex['@radix-ui/themes']?.Badge;
+entv_a2/.web/app_components/entv/entv.jsx:390:const pyOr = __reflex['$/utils/state']?.pyOr;
+### built bundle of the enterprise fixture (a2 prod): files containing __reflex reads
+entv_a2/.web/build/client/assets/_index-DPCyIAjO.js
+entv_a2/.web/build/client/assets/entv-CPuqwVMS.js
+entv_a2/.web/build/client/assets/link-C5pssgIX.js
+entv_a2/.web/build/client/assets/root-CP2xDksN.js
