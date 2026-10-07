@@ -8,7 +8,6 @@ notices live, so the new API carries none of them.
 
 from __future__ import annotations
 
-import dataclasses
 from typing import Any
 
 from reflex_base.client_state import ClientStateVar as _ClientStateVar
@@ -54,9 +53,12 @@ def _legacy_name(var_name: str | None, global_ref: bool | Any) -> str | None:
     return var_name
 
 
-@dataclasses.dataclass(eq=False, frozen=True, slots=True)
 class ClientStateVar(_ClientStateVar):
     """The promoted class, with ``create`` taking the original argument order."""
+
+    # No new fields, so no dataclass decorator: ``slots=True`` would rebuild
+    # the class and leave ``super()`` bound to the discarded one.
+    __slots__ = ()
 
     @classmethod
     def create(  # pyright: ignore [reportIncompatibleMethodOverride]
