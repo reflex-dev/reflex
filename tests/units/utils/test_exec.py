@@ -708,6 +708,7 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
             self.backlog = 16
             self.wrks = []
             self.shutdowns = []
+            self.interrupt_signal = False
             self._ssp = self._shd = self._sfd = None
             self._sso: Any = None
             servers.append(self)
@@ -789,15 +790,41 @@ def test_run_granian_backend_treats_group_sigterm_as_parent_shutdown(
     tmp_path: Path, mocker: MockerFixture
 ):
     """A worker terminated by group SIGTERM is intentional during shutdown."""
-    server = _dev_granian_supervisor(mocker, tmp_path, _free_port())
+    port = _free_port()
+    server = _dev_granian_supervisor(mocker, tmp_path, port)
     mocker.patch.object(exec_utils.constants, "IS_WINDOWS", False)
-    worker = _spawn_supervisor_worker(server)
-    worker.inner.exitcode = -signal.SIGTERM
+    try:
+        worker = _spawn_supervisor_worker(server)
+        worker.inner.exitcode = -signal.SIGTERM
+        server.interrupt_signal = True
 
-    worker._watcher()
+        worker._watcher()
 
-    assert worker.inner.joined is True
-    assert worker.interrupt_by_parent_when_watched is True
+        assert worker.inner.joined is True
+        assert worker.interrupt_by_parent_when_watched is True
+    finally:
+        server._close_shared_socket()
+
+
+def test_run_granian_backend_releases_socket_on_worker_sigterm(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """A worker-only SIGTERM does not leave the listener open without workers."""
+    port = _free_port()
+    server = _dev_granian_supervisor(mocker, tmp_path, port)
+    mocker.patch.object(exec_utils.constants, "IS_WINDOWS", False)
+    try:
+        worker = _spawn_supervisor_worker(server)
+        worker.alive = False
+        worker.inner.exitcode = -signal.SIGTERM
+
+        worker._watcher()
+
+        assert worker.inner.joined is True
+        assert worker.interrupt_by_parent_when_watched is False
+        assert _port_is_bindable(port)
+    finally:
+        server._close_shared_socket()
 
 
 def test_run_granian_backend_keeps_unexpected_worker_exit_unmarked(
@@ -806,12 +833,15 @@ def test_run_granian_backend_keeps_unexpected_worker_exit_unmarked(
     """Non-SIGTERM worker exits retain Granian's unexpected-exit handling."""
     server = _dev_granian_supervisor(mocker, tmp_path, _free_port())
     mocker.patch.object(exec_utils.constants, "IS_WINDOWS", False)
-    worker = _spawn_supervisor_worker(server)
-    worker.inner.exitcode = -signal.SIGINT
+    try:
+        worker = _spawn_supervisor_worker(server)
+        worker.inner.exitcode = -signal.SIGINT
 
-    worker._watcher()
+        worker._watcher()
 
-    assert worker.interrupt_by_parent_when_watched is False
+        assert worker.interrupt_by_parent_when_watched is False
+    finally:
+        server._close_shared_socket()
 
 
 def test_run_granian_backend_rebinds_socket_for_the_next_worker(

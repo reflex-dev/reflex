@@ -891,7 +891,10 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
                 inner = getattr(wrk, "inner", None)
                 if not constants.IS_WINDOWS and inner is not None:
                     inner.join()
-                    if getattr(inner, "exitcode", None) == -signal.SIGTERM:
+                    if (
+                        getattr(inner, "exitcode", None) == -signal.SIGTERM
+                        and self.interrupt_signal
+                    ):
                         wrk.interrupt_by_parent = True
                 granian_watcher()
                 self._release_socket_unless_served(wrk, spawn_count)
