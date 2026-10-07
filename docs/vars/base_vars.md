@@ -106,14 +106,12 @@ An unannotated var is typed from its default, so `_client = None` only accepts
 for every instance, so a live client, lock, or connection cannot be shared this
 way. Assigning one to an `Any` or `Optional[...]` var is accepted, but reading the
 var on a new instance then raises `TypeError: cannot pickle '_thread.lock' object`.
-Declare an object that all sessions share as a `ClassVar`, as described under
-[Backend-only Vars](#backend-only-vars).
+Declare an object that all sessions share as a `ClassVar`.
 
-Assigning on a mixin only affects states created afterwards. An assignment made
-while the app runs, such as in an event handler, only affects the worker process
-that ran it, so configure defaults while the app is being defined. On 0.9 an
-assignment did not change the default of new instances
-([upgrading from 0.9](/docs/changelog/upgrading/upgrading-to-0-10/#assigning-a-default-through-a-state-class)).
+Assigning on a mixin only affects states created afterwards. Do not assign
+defaults in event handlers, lifespan tasks, or at any other time after the app
+has started running: such an assignment only affects the worker process that ran
+it.
 
 ## Backend-only Vars
 
@@ -148,10 +146,7 @@ Reading `MyState._token` through the class returns its field descriptor, whose
 `default_value()` method returns the default (a fresh copy if it is mutable). Use
 it to build the UI from a constant, such as
 `rx.foreach(MyState._options.default_value(), rx.text)` for a backend var
-`_options`. `default_value()` is new in 0.10; code that must also run on 0.9 can
-call `MyState.get_fields()["_options"].default_value()`
-([upgrading from 0.9](/docs/changelog/upgrading/upgrading-to-0-10/#reading-a-backend-var-on-a-state-class)).
-Assigning to `MyState._token` updates its default as described above.
+`_options`. Assigning to `MyState._token` updates its default as described above.
 
 For configuration shared by all sessions, declare a `ClassVar` instead:
 
