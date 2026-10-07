@@ -1,0 +1,1 @@
+In development mode, assigning an undeclared state attribute whose name only looks name-mangled, such as `self._typo__name = 1`, raises `SetUndefinedStateVarError` again. Names starting with a double underscore and private names mangled by the state's own class, its bases or its mixins remain plain attributes.

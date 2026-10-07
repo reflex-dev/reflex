@@ -361,6 +361,30 @@ def _has_data_descriptor(cls: type, name: str) -> bool:
     return False
 
 
+def _is_plain_private_name(cls: type, name: str) -> bool:
+    """Whether assigning a name sets a plain private attribute rather than a var.
+
+    Names starting with a double underscore, like dunders and computed var
+    caches, are plain attributes, and so are private names a class of the
+    state mangles: Python rewrites ``__x`` in a class body to ``_Cls__x``,
+    from the name the class was defined with, stripped of leading underscores.
+
+    Args:
+        cls: The state class.
+        name: The attribute name.
+
+    Returns:
+        True for dunders and names mangled by the class, a base or a mixin.
+    """
+    return name.startswith((
+        "__",
+        *(
+            f"_{klass.__dict__.get('__original_name__', klass.__name__).lstrip('_')}__"
+            for klass in cls.__mro__
+        ),
+    ))
+
+
 def _bind_attr(cls: type, name: str, value: Any) -> None:
     """Set a descriptor on a class, binding it to the class as class creation does.
 
@@ -1490,9 +1514,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             cls = type(self)
             if name not in (settable := cls._settable_names):
                 if not (
-                    # Dunder names, like computed var caches, and private names
-                    # mangled by this class, a base or a mixin: plain attributes.
-                    (name.startswith("_") and "__" in name)
+                    _is_plain_private_name(cls, name)
                     # A field, a property, or a bookkeeping slot handles the assignment.
                     or _has_data_descriptor(cls, name)
                 ):
