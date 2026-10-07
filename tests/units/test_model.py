@@ -93,6 +93,8 @@ def test_utc_datetime_migration_and_roundtrip(
     with reflex.model.session() as session:
         assert session.exec(sqlmodel.select(UTCPost)).all() == []
 
+    model_registry.get_metadata().clear()
+
 
 @pytest.fixture
 def model_default_primary() -> Model:
@@ -182,6 +184,10 @@ def test_automigration(
     version_scripts = list(versions.glob("*.py"))
     assert len(version_scripts) == 1
     assert version_scripts[0].name.endswith("initial_revision.py")
+    assert set(sa.inspect(get_engine()).get_table_names()) == {
+        "alembic_version",
+        "alembicthing",
+    }
 
     with reflex.model.session() as session:
         session.add(AlembicThing(id=None, t1="foo"))

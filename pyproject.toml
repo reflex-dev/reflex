@@ -486,9 +486,6 @@ backend_held = [
     # (including `get_state`, so it is not test-only). See #7026 for the reproduction
     # and the A/B that isolated it; requested in #6764.
     "redis",
-    # 0.0.45 changes datetime storage and requires existing database migrations.
-    # Keep naive datetime defaults working until a compatibility path is available.
-    "sqlmodel",
 ]
 backend_pinned = [
     # Linters are pinned deliberately and bumped on their own cadence.

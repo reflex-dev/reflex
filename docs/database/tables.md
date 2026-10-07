@@ -34,8 +34,7 @@ It is not currently possible to create a table without a primary key.
 
 ### Datetimes and SQLModel upgrades
 
-`reflex[db]` supports SQLModel 0.0.45 and later without downgrading an existing
-installation. From SQLModel 0.0.45, a plain `datetime` field uses `UTCDateTime`:
+From SQLModel 0.0.45, a plain `datetime` field uses `UTCDateTime`:
 database writes require timezone-aware values, and reads return UTC-aware values,
 including on SQLite. Migrations generated with these versions reference
 `sqlmodel.sql.sqltypes.UTCDateTime()` and require SQLModel 0.0.45 or later when
