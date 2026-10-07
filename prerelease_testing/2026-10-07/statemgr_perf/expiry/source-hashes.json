@@ -1,0 +1,19 @@
+{
+  "algorithm": "sha256",
+  "scope": "Final replay scripts, unchanged app fixture and frozen package graphs; historical aborted restart harness was superseded as described in NOTES.",
+  "files": {
+    "app/rxconfig.py": "039cb10990b0abebce3c536c25332177bae85e074e6f70202ee8db241d51a65b",
+    "app/expiry_dashboard/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "app/expiry_dashboard/expiry_dashboard.py": "e3e3907c52d0110bbbc102d3b4b08b9a4a2cf5a012eb2d6ea6c4f7b8df8f9bbb",
+    "run_case.py": "0657e2c335cf03ff25c7e7e1cd268d42d787319e09ac8a4f125a3175396dd61e",
+    "churn.py": "852e9a01cae87f6e9387b83c546c5544917e28aaa408f00cae9bfca549e1e548",
+    "duration_probe.py": "69215c549311bc38bbe52638653e47ca3e9085e548f1977a3400344b93e4fb5c",
+    "run_duration_probes.py": "0ad76b77f63423772a0b825d481f829566e3891a893db97f7a47e1bc25c1fd62",
+    "archive_run.py": "e1d7021d89917ef2644f63492ad620a31f446e8e3a29167cb99dbaf5a93bc1f4",
+    "summarize.py": "6eeeb77aaaa9079b8f082286e218c2bd4c813d52759a28fff6b3efdc25a55f73",
+    "bootstrap.sh": "5c91dddbea1c5865929bf2d4993f06ef3c050ce3d82e2bb53820821eeff7ec1f",
+    "environment/alpha2.txt": "82d470326d30a4e2d89390d1f3b3b13cfa84dd057bcb16a38ff907748d2833fc",
+    "environment/stable.txt": "e34cc89658ecd947fb818127017bc6e3a89030979bc3a0babb4352cda32604e1",
+    "environment/driver.txt": "aefb07244f9db33e869708ee918c2354093c003ef68a5d823e0bcec61215fbe4"
+  }
+}

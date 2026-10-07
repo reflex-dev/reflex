@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-07",
+  "time_utc_reported_by_parent": "08:26",
+  "source": "Parent /root independently inspected ps and lsof after all churn cases completed and before releasing the performance timing gate.",
+  "parent_observation": "No campaign server/browser processes; no listeners on 3260-3279 or 8260-8279.",
+  "owned_frontend_ports": "3260-3267",
+  "owned_backend_ports": "8260-8267",
+  "per_run_evidence": "Every runs/*/run.json records empty servers[].after_cleanup and servers[].listeners_after_cleanup; SUMMARY.json records cleanup_empty per case.",
+  "all_browser_contexts_closed": true,
+  "all_browser_instances_closed": true,
+  "further_runtimes_started_after_gate": false
+}

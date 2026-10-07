@@ -1,0 +1,328 @@
+[
+  {
+    "label": "new-ms",
+    "train": "alpha2",
+    "environment": {
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE": "250ms"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "debounce"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 0,
+    "expected_seconds": 0.25,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36174,
+      "setting": "debounce",
+      "generated": false,
+      "seconds": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "manager": "StateManagerDisk",
+      "manager_debounce_seconds": 0.25
+    }
+  },
+  {
+    "label": "new-bare",
+    "train": "alpha2",
+    "environment": {
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE": "0.25"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "debounce"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 0,
+    "expected_seconds": 0.25,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36175,
+      "setting": "debounce",
+      "generated": false,
+      "seconds": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "manager": "StateManagerDisk",
+      "manager_debounce_seconds": 0.25
+    }
+  },
+  {
+    "label": "new-zero",
+    "train": "alpha2",
+    "environment": {
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE": "0"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "debounce"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 0,
+    "expected_seconds": 0.0,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36180,
+      "setting": "debounce",
+      "generated": false,
+      "seconds": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "manager": "StateManagerDisk",
+      "manager_debounce_seconds": 0.0
+    }
+  },
+  {
+    "label": "new-negative",
+    "train": "alpha2",
+    "environment": {
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE": "-5s"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "debounce"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 0,
+    "expected_seconds": -5.0,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36184,
+      "setting": "debounce",
+      "generated": false,
+      "seconds": [
+        -5.0,
+        -5.0,
+        -5.0
+      ],
+      "manager": "StateManagerDisk",
+      "manager_debounce_seconds": -5.0
+    }
+  },
+  {
+    "label": "new-abc",
+    "train": "alpha2",
+    "environment": {
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE": "abc"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "debounce"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 1,
+    "expected_seconds": null,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36204,
+      "setting": "debounce",
+      "generated": false,
+      "error": "EnvironmentVarValueError: Invalid duration value: 'abc' for REFLEX_STATE_MANAGER_DISK_DEBOUNCE. Expected a number of seconds, optionally suffixed with one of us, ms, s, m, h, d."
+    }
+  },
+  {
+    "label": "new-5x",
+    "train": "alpha2",
+    "environment": {
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE": "5x"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "debounce"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 1,
+    "expected_seconds": null,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36205,
+      "setting": "debounce",
+      "generated": false,
+      "error": "EnvironmentVarValueError: Invalid duration value: '5x' for REFLEX_STATE_MANAGER_DISK_DEBOUNCE. Expected a number of seconds, optionally suffixed with one of us, ms, s, m, h, d."
+    }
+  },
+  {
+    "label": "old-direct",
+    "train": "alpha2",
+    "environment": {
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS": "0.25"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "debounce"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 0,
+    "expected_seconds": 0.25,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36206,
+      "setting": "debounce",
+      "generated": false,
+      "seconds": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "manager": "StateManagerDisk",
+      "manager_debounce_seconds": 0.25
+    }
+  },
+  {
+    "label": "old-generated",
+    "train": "alpha2",
+    "environment": {
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS": "0.25"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "debounce",
+      "--generated"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 0,
+    "expected_seconds": 0.25,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36220,
+      "setting": "debounce",
+      "generated": true,
+      "seconds": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "manager": "StateManagerDisk",
+      "manager_debounce_seconds": 0.25
+    }
+  },
+  {
+    "label": "old-stable",
+    "train": "stable",
+    "environment": {
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS": "0.25"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "debounce"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 0,
+    "expected_seconds": 0.25,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36221,
+      "setting": "debounce",
+      "generated": false,
+      "legacy_seconds": 0.25,
+      "manager": "StateManagerDisk",
+      "manager_debounce_seconds": 0.25
+    }
+  },
+  {
+    "label": "both-priority",
+    "train": "alpha2",
+    "environment": {
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE": "500ms",
+      "REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS": "0.25"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "debounce"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 0,
+    "expected_seconds": 0.5,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36223,
+      "setting": "debounce",
+      "generated": false,
+      "seconds": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "manager": "StateManagerDisk",
+      "manager_debounce_seconds": 0.5
+    }
+  },
+  {
+    "label": "cooldown-old-generated",
+    "train": "alpha2",
+    "environment": {
+      "REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS": "500"
+    },
+    "command": [
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/python",
+      "/Users/masen/.codex/worktrees/3564/reflex/prerelease_testing/2026-10-07/statemgr_perf/expiry/duration_probe.py",
+      "--setting",
+      "cooldown",
+      "--generated"
+    ],
+    "cwd": "/private/tmp/reflex-prerelease-macos-pass2/apps/statemgr_expiry/duration-probes",
+    "returncode": 0,
+    "expected_seconds": 0.5,
+    "passed": true,
+    "result": {
+      "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+      "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "pid": 36225,
+      "setting": "cooldown",
+      "generated": true,
+      "seconds": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    }
+  }
+]

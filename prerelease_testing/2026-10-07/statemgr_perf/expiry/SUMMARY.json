@@ -1,0 +1,1301 @@
+{
+  "cases": {
+    "alpha2-disk-churn-new-prod-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "disk",
+        "scenario": "churn",
+        "mode": "prod",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3263,
+        "backend_port": 3263,
+        "browsers": "chromium",
+        "contexts": 300,
+        "workers": 6,
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 6,
+          "pass": 6,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "alpha2-disk-expiry-new-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "disk",
+        "scenario": "expiry",
+        "mode": "dev",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3261,
+        "backend_port": 8261,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 15,
+          "pass": 15,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "alpha2-disk-expiry-new-prod-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "disk",
+        "scenario": "expiry",
+        "mode": "prod",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3262,
+        "backend_port": 3262,
+        "browsers": "chromium,webkit",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 15,
+          "pass": 15,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        },
+        "webkit": {
+          "checkpoints": 15,
+          "pass": 15,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "26.6"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "alpha2-disk-expiry-old-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "disk",
+        "scenario": "expiry",
+        "mode": "dev",
+        "debounce_name": "old",
+        "debounce_value": "0.25",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3262,
+        "backend_port": 8262,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 15,
+          "pass": 15,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 2
+        }
+      ]
+    },
+    "alpha2-disk-jobs-new-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "disk",
+        "scenario": "jobs",
+        "mode": "dev",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3261,
+        "backend_port": 8261,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 12,
+          "pass": 12,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "alpha2-disk-restart-new-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "disk",
+        "scenario": "restart",
+        "mode": "dev",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 120,
+        "port": 3262,
+        "backend_port": 8262,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 7,
+          "pass": 7,
+          "failed": [],
+          "driver_error": "Error: Page.reload: Protocol error (Page.reload): Not attached to an active page\nCall log:\n  - waiting for navigation until \"load\"\n",
+          "browser_anomalies": 5,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 2,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        },
+        {
+          "file": "server-2.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "alpha2-disk-restart-new-dev-2": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "disk",
+        "scenario": "restart",
+        "mode": "dev",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 120,
+        "port": 3262,
+        "backend_port": 8262,
+        "browsers": "chromium",
+        "contexts": 300,
+        "workers": 6,
+        "attempt": "2",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 10,
+          "pass": 10,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 5,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 2,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        },
+        {
+          "file": "server-2.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "alpha2-disk-worker-reload-new-dev-2": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "disk",
+        "scenario": "worker-reload",
+        "mode": "dev",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 120,
+        "port": 3262,
+        "backend_port": 8262,
+        "browsers": "chromium",
+        "contexts": 300,
+        "workers": 6,
+        "attempt": "2",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 10,
+          "pass": 10,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "alpha2-memory-churn-new-prod-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "memory",
+        "scenario": "churn",
+        "mode": "prod",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3263,
+        "backend_port": 3263,
+        "browsers": "chromium",
+        "contexts": 300,
+        "workers": 6,
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 5,
+          "pass": 5,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "alpha2-memory-expiry-new-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "memory",
+        "scenario": "expiry",
+        "mode": "dev",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3260,
+        "backend_port": 8260,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 12,
+          "pass": 12,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "alpha2-memory-jobs-new-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "alpha2",
+        "manager": "memory",
+        "scenario": "jobs",
+        "mode": "dev",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3261,
+        "backend_port": 8261,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 10,
+          "pass": 10,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 0,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 0,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "stable-disk-churn-old-prod-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "stable",
+        "manager": "disk",
+        "scenario": "churn",
+        "mode": "prod",
+        "debounce_name": "old",
+        "debounce_value": "0.25",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3263,
+        "backend_port": 3263,
+        "browsers": "chromium",
+        "contexts": 300,
+        "workers": 6,
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 6,
+          "pass": 5,
+          "failed": [
+            {
+              "name": "locks-after-expiry",
+              "expected": 0,
+              "actual": 301,
+              "passed": false
+            }
+          ],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "stable-disk-expiry-old-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "stable",
+        "manager": "disk",
+        "scenario": "expiry",
+        "mode": "dev",
+        "debounce_name": "old",
+        "debounce_value": "0.25",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3261,
+        "backend_port": 8261,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 15,
+          "pass": 14,
+          "failed": [
+            {
+              "name": "idle-locks-purged",
+              "passed": false,
+              "expected": 0,
+              "actual": 1
+            }
+          ],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "stable-disk-expiry-old-prod-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "stable",
+        "manager": "disk",
+        "scenario": "expiry",
+        "mode": "prod",
+        "debounce_name": "old",
+        "debounce_value": "0.25",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3262,
+        "backend_port": 3262,
+        "browsers": "chromium,webkit",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 15,
+          "pass": 14,
+          "failed": [
+            {
+              "name": "idle-locks-purged",
+              "passed": false,
+              "expected": 0,
+              "actual": 1
+            }
+          ],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        },
+        "webkit": {
+          "checkpoints": 15,
+          "pass": 14,
+          "failed": [
+            {
+              "name": "idle-locks-purged",
+              "passed": false,
+              "expected": 0,
+              "actual": 2
+            }
+          ],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "26.6"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "stable-disk-jobs-old-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "stable",
+        "manager": "disk",
+        "scenario": "jobs",
+        "mode": "dev",
+        "debounce_name": "old",
+        "debounce_value": "0.25",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3261,
+        "backend_port": 8261,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 12,
+          "pass": 12,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "stable-disk-restart-old-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "stable",
+        "manager": "disk",
+        "scenario": "restart",
+        "mode": "dev",
+        "debounce_name": "old",
+        "debounce_value": "0.25",
+        "debounce_seconds": "0.25",
+        "expiration": 120,
+        "port": 3262,
+        "backend_port": 8262,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 7,
+          "pass": 7,
+          "failed": [],
+          "driver_error": "Error: Page.reload: Protocol error (Page.reload): Not attached to an active page\nCall log:\n  - waiting for navigation until \"load\"\n",
+          "browser_anomalies": 5,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 2,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        },
+        {
+          "file": "server-2.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "stable-disk-restart-old-dev-2": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "stable",
+        "manager": "disk",
+        "scenario": "restart",
+        "mode": "dev",
+        "debounce_name": "old",
+        "debounce_value": "0.25",
+        "debounce_seconds": "0.25",
+        "expiration": 120,
+        "port": 3262,
+        "backend_port": 8262,
+        "browsers": "chromium",
+        "contexts": 300,
+        "workers": 6,
+        "attempt": "2",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 10,
+          "pass": 10,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 5,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 2,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        },
+        {
+          "file": "server-2.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "stable-disk-worker-reload-old-dev-2": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "stable",
+        "manager": "disk",
+        "scenario": "worker-reload",
+        "mode": "dev",
+        "debounce_name": "old",
+        "debounce_value": "0.25",
+        "debounce_seconds": "0.25",
+        "expiration": 120,
+        "port": 3262,
+        "backend_port": 8262,
+        "browsers": "chromium",
+        "contexts": 300,
+        "workers": 6,
+        "attempt": "2",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 10,
+          "pass": 10,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 2,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 2,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "stable-memory-churn-new-prod-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "stable",
+        "manager": "memory",
+        "scenario": "churn",
+        "mode": "prod",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3263,
+        "backend_port": 3263,
+        "browsers": "chromium",
+        "contexts": 300,
+        "workers": 6,
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 5,
+          "pass": 5,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "stable-memory-expiry-new-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "stable",
+        "manager": "memory",
+        "scenario": "expiry",
+        "mode": "dev",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3261,
+        "backend_port": 8261,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 12,
+          "pass": 12,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 0,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    },
+    "stable-memory-jobs-new-dev-1": {
+      "args": {
+        "sb": "/private/tmp/reflex-prerelease-macos-pass2",
+        "train": "stable",
+        "manager": "memory",
+        "scenario": "jobs",
+        "mode": "dev",
+        "debounce_name": "new",
+        "debounce_value": "250ms",
+        "debounce_seconds": "0.25",
+        "expiration": 5,
+        "port": 3261,
+        "backend_port": 8261,
+        "browsers": "chromium",
+        "attempt": "1",
+        "out": "/private/tmp/reflex-prerelease-macos-pass2/results/statemgr_expiry"
+      },
+      "browsers": {
+        "chromium": {
+          "checkpoints": 10,
+          "pass": 10,
+          "failed": [],
+          "driver_error": null,
+          "browser_anomalies": 0,
+          "browser_version": "153.0.8010.12"
+        }
+      },
+      "cleanup_empty": true,
+      "runner_error": null,
+      "servers": 1,
+      "log_observations": [
+        {
+          "file": "server-1.log.gz",
+          "cancelled_lifespan_tracebacks": 1,
+          "unexpected_worker_exit": 1,
+          "traceback_headers": 1,
+          "deprecated_debounce_warnings": 0
+        }
+      ]
+    }
+  },
+  "checkpoints": 249,
+  "pass": 245,
+  "fail": 4,
+  "driver_errors": 2,
+  "browser_executions": 23,
+  "background_visible_anomalies": [
+    {
+      "case": "alpha2-disk-jobs-new-dev-1",
+      "engine": "chromium",
+      "expected_server_values": {
+        "root": 10,
+        "child": 0,
+        "a": 0,
+        "b": 0
+      },
+      "actual_dom": {
+        "root": 10,
+        "child": 3,
+        "a": 2,
+        "b": 1
+      },
+      "server_check": {
+        "name": "expired-background-reacquire-server",
+        "passed": true,
+        "expected": {
+          "root": 10,
+          "child": 0,
+          "a": 0,
+          "b": 0
+        },
+        "actual": {
+          "a": 0,
+          "b": 0,
+          "child": 0,
+          "root": 10
+        }
+      }
+    },
+    {
+      "case": "alpha2-memory-jobs-new-dev-1",
+      "engine": "chromium",
+      "expected_server_values": {
+        "root": 10,
+        "child": 0,
+        "a": 0,
+        "b": 0
+      },
+      "actual_dom": {
+        "root": 10,
+        "child": 3,
+        "a": 2,
+        "b": 1
+      },
+      "server_check": {
+        "name": "expired-background-reacquire-server",
+        "passed": true,
+        "expected": {
+          "root": 10,
+          "child": 0,
+          "a": 0,
+          "b": 0
+        },
+        "actual": {
+          "a": 0,
+          "b": 0,
+          "child": 0,
+          "root": 10
+        }
+      }
+    },
+    {
+      "case": "stable-disk-jobs-old-dev-1",
+      "engine": "chromium",
+      "expected_server_values": {
+        "root": 10,
+        "child": 0,
+        "a": 0,
+        "b": 0
+      },
+      "actual_dom": {
+        "root": 10,
+        "child": 3,
+        "a": 2,
+        "b": 1
+      },
+      "server_check": {
+        "name": "expired-background-reacquire-server",
+        "passed": true,
+        "expected": {
+          "root": 10,
+          "child": 0,
+          "a": 0,
+          "b": 0
+        },
+        "actual": {
+          "a": 0,
+          "b": 0,
+          "child": 0,
+          "root": 10
+        }
+      }
+    },
+    {
+      "case": "stable-memory-jobs-new-dev-1",
+      "engine": "chromium",
+      "expected_server_values": {
+        "root": 10,
+        "child": 0,
+        "a": 0,
+        "b": 0
+      },
+      "actual_dom": {
+        "root": 10,
+        "child": 3,
+        "a": 2,
+        "b": 1
+      },
+      "server_check": {
+        "name": "expired-background-reacquire-server",
+        "passed": true,
+        "expected": {
+          "root": 10,
+          "child": 0,
+          "a": 0,
+          "b": 0
+        },
+        "actual": {
+          "a": 0,
+          "b": 0,
+          "child": 0,
+          "root": 10
+        }
+      }
+    }
+  ],
+  "churn": {
+    "alpha2-disk-churn-new-prod-1": {
+      "before": {
+        "time": 1791361372.7995808,
+        "pid": 40231,
+        "manager": "StateManagerDisk",
+        "expiration_seconds": 5,
+        "debounce_seconds": 0.25,
+        "states": 0,
+        "locks": 0,
+        "locked": 0,
+        "pending_writes": 0,
+        "deadlines": 0,
+        "touched": 0,
+        "rss_kib": 68880,
+        "sample_time": 1791361373.578451
+      },
+      "peak": {
+        "rss_kib": 85104,
+        "states": 102,
+        "locks": 102
+      },
+      "after_load": {
+        "time": 1791361389.123233,
+        "pid": 40231,
+        "manager": "StateManagerDisk",
+        "expiration_seconds": 5,
+        "debounce_seconds": 0.25,
+        "states": 100,
+        "locks": 100,
+        "locked": 0,
+        "pending_writes": 11,
+        "deadlines": 0,
+        "touched": 100,
+        "rss_kib": 85040,
+        "sample_time": 1791361389.32391
+      },
+      "after_expiry": {
+        "time": 1791361398.65678,
+        "pid": 40231,
+        "manager": "StateManagerDisk",
+        "expiration_seconds": 5,
+        "debounce_seconds": 0.25,
+        "states": 0,
+        "locks": 0,
+        "locked": 0,
+        "pending_writes": 0,
+        "deadlines": 0,
+        "touched": 0,
+        "rss_kib": 79920,
+        "sample_time": 1791361399.3413398
+      },
+      "load_started": 1791361373.578509,
+      "load_finished": 1791361389.31894,
+      "contexts": 300,
+      "successful_contexts": 300,
+      "warmup": true
+    },
+    "alpha2-memory-churn-new-prod-1": {
+      "before": {
+        "time": 1791361290.2469199,
+        "pid": 39090,
+        "manager": "StateManagerMemory",
+        "expiration_seconds": 5,
+        "debounce_seconds": null,
+        "states": 0,
+        "locks": 0,
+        "locked": 0,
+        "pending_writes": 0,
+        "deadlines": 0,
+        "touched": 0,
+        "rss_kib": 68352,
+        "sample_time": 1791361291.1822011
+      },
+      "peak": {
+        "rss_kib": 83312,
+        "states": 100,
+        "locks": 100
+      },
+      "after_load": {
+        "time": 1791361306.795912,
+        "pid": 39090,
+        "manager": "StateManagerMemory",
+        "expiration_seconds": 5,
+        "debounce_seconds": null,
+        "states": 99,
+        "locks": 99,
+        "locked": 0,
+        "pending_writes": 0,
+        "deadlines": 99,
+        "touched": 0,
+        "rss_kib": 83312,
+        "sample_time": 1791361306.804112
+      },
+      "after_expiry": {
+        "time": 1791361315.918839,
+        "pid": 39090,
+        "manager": "StateManagerMemory",
+        "expiration_seconds": 5,
+        "debounce_seconds": null,
+        "states": 0,
+        "locks": 0,
+        "locked": 0,
+        "pending_writes": 0,
+        "deadlines": 0,
+        "touched": 0,
+        "rss_kib": 77184,
+        "sample_time": 1791361316.820457
+      },
+      "load_started": 1791361291.1822562,
+      "load_finished": 1791361306.7988648,
+      "contexts": 300,
+      "successful_contexts": 300,
+      "warmup": true
+    },
+    "stable-disk-churn-old-prod-1": {
+      "before": {
+        "time": 1791361413.7222881,
+        "pid": 40637,
+        "manager": "StateManagerDisk",
+        "expiration_seconds": 5,
+        "debounce_seconds": 0.25,
+        "states": 0,
+        "locks": 1,
+        "locked": 0,
+        "pending_writes": 0,
+        "deadlines": 0,
+        "touched": 0,
+        "rss_kib": 68176,
+        "sample_time": 1791361414.6279979
+      },
+      "peak": {
+        "rss_kib": 86944,
+        "states": 102,
+        "locks": 301
+      },
+      "after_load": {
+        "time": 1791361430.277333,
+        "pid": 40637,
+        "manager": "StateManagerDisk",
+        "expiration_seconds": 5,
+        "debounce_seconds": 0.25,
+        "states": 97,
+        "locks": 301,
+        "locked": 0,
+        "pending_writes": 18,
+        "deadlines": 0,
+        "touched": 97,
+        "rss_kib": 86944,
+        "sample_time": 1791361430.372129
+      },
+      "after_expiry": {
+        "time": 1791361439.615639,
+        "pid": 40637,
+        "manager": "StateManagerDisk",
+        "expiration_seconds": 5,
+        "debounce_seconds": 0.25,
+        "states": 0,
+        "locks": 301,
+        "locked": 0,
+        "pending_writes": 0,
+        "deadlines": 0,
+        "touched": 0,
+        "rss_kib": 82032,
+        "sample_time": 1791361440.3824499
+      },
+      "load_started": 1791361414.6280599,
+      "load_finished": 1791361430.366046,
+      "contexts": 300,
+      "successful_contexts": 300,
+      "warmup": true
+    },
+    "stable-memory-churn-new-prod-1": {
+      "before": {
+        "time": 1791361331.197292,
+        "pid": 39496,
+        "manager": "StateManagerMemory",
+        "expiration_seconds": 5,
+        "debounce_seconds": null,
+        "states": 0,
+        "locks": 0,
+        "locked": 0,
+        "pending_writes": 0,
+        "deadlines": 0,
+        "touched": 0,
+        "rss_kib": 68368,
+        "sample_time": 1791361332.122192
+      },
+      "peak": {
+        "rss_kib": 85104,
+        "states": 100,
+        "locks": 100
+      },
+      "after_load": {
+        "time": 1791361347.3311749,
+        "pid": 39496,
+        "manager": "StateManagerMemory",
+        "expiration_seconds": 5,
+        "debounce_seconds": null,
+        "states": 98,
+        "locks": 98,
+        "locked": 0,
+        "pending_writes": 0,
+        "deadlines": 98,
+        "touched": 0,
+        "rss_kib": 85024,
+        "sample_time": 1791361348.249141
+      },
+      "after_expiry": {
+        "time": 1791361358.245739,
+        "pid": 39496,
+        "manager": "StateManagerMemory",
+        "expiration_seconds": 5,
+        "debounce_seconds": null,
+        "states": 0,
+        "locks": 0,
+        "locked": 0,
+        "pending_writes": 0,
+        "deadlines": 0,
+        "touched": 0,
+        "rss_kib": 79696,
+        "sample_time": 1791361358.267209
+      },
+      "load_started": 1791361332.122228,
+      "load_finished": 1791361348.243777,
+      "contexts": 300,
+      "successful_contexts": 300,
+      "warmup": true
+    }
+  },
+  "duration_probes": {
+    "total": 11,
+    "pass": 11
+  }
+}

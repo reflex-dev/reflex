@@ -1,0 +1,30 @@
+[
+  {
+    "label": "old-direct",
+    "count": 1,
+    "real_user_file": true,
+    "pseudo_location": false,
+    "passed": true
+  },
+  {
+    "label": "old-generated",
+    "count": 1,
+    "real_user_file": true,
+    "pseudo_location": false,
+    "passed": true
+  },
+  {
+    "label": "both-priority",
+    "count": 1,
+    "real_user_file": true,
+    "pseudo_location": false,
+    "passed": true
+  },
+  {
+    "label": "cooldown-old-generated",
+    "count": 1,
+    "real_user_file": true,
+    "pseudo_location": false,
+    "passed": true
+  }
+]
