@@ -161,7 +161,12 @@ F-014 [#7490](https://github.com/reflex-dev/reflex/issues/7490); N-021/N-022 add
 [#6122](https://github.com/reflex-dev/reflex/issues/6122#issuecomment-6040383717) (see also #7248 / PR #7412).
 Not filed: N-016 (tracked by the existing #7253), F-019 (existing #5534 / #5394), F-013 / F-015 / F-016 (cosmetic),
 F-018 (reflex-clerk only), N-040 (folded into #7474).
-reflex-enterprise: N-025 and N-032 enterprise sides, N-033, N-034, N-035, N-036, N-037, N-027, N-029, N-026, N-030, N-031, N-038
-(issue numbers in the campaign status file; the two cross-reference issues are assigned to @masenf).
-reflex-chat: F-009. Not filed (no access to the repos): reflex-clerk `set_clerk_session` Field TypeError, N-042 (monaco /
+reflex-enterprise: N-025 enterprise side [#260](https://github.com/reflex-dev/reflex-enterprise/issues/260) and N-032 enterprise side
+[#261](https://github.com/reflex-dev/reflex-enterprise/issues/261) (both assigned to @masenf), N-033 [#262](https://github.com/reflex-dev/reflex-enterprise/issues/262),
+N-034 [#263](https://github.com/reflex-dev/reflex-enterprise/issues/263), N-035 [#264](https://github.com/reflex-dev/reflex-enterprise/issues/264),
+N-036 [#265](https://github.com/reflex-dev/reflex-enterprise/issues/265), N-037 [#266](https://github.com/reflex-dev/reflex-enterprise/issues/266),
+N-027 [#267](https://github.com/reflex-dev/reflex-enterprise/issues/267), N-029 [#268](https://github.com/reflex-dev/reflex-enterprise/issues/268),
+N-026 [#269](https://github.com/reflex-dev/reflex-enterprise/issues/269), N-030 [#270](https://github.com/reflex-dev/reflex-enterprise/issues/270),
+N-031 [#271](https://github.com/reflex-dev/reflex-enterprise/issues/271), N-038 [#272](https://github.com/reflex-dev/reflex-enterprise/issues/272).
+reflex-chat: F-009 [#61](https://github.com/reflex-dev/reflex-chat/issues/61). Not filed (no access to the repos): reflex-clerk `set_clerk_session` Field TypeError, N-042 (monaco /
 webcam / clerk prod builds).
