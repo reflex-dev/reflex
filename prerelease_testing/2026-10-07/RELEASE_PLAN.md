@@ -150,7 +150,7 @@ Fix-before-release items, assigned to @masenf, each with a fix branch in progres
 | N-006 | [reflex#7475](https://github.com/reflex-dev/reflex/issues/7475) | `claude/docs-0.10-migration` |
 | N-001 | PR [reflex#7466](https://github.com/reflex-dev/reflex/pull/7466) | `claude/db-extra-greenlet` |
 
-All five fix branches are pushed (no pull requests opened yet): `claude/n025-reflex-before-render` 655b22259 (window.__reflex at
+All five fix branches are pushed and have pull requests (label `on deck`, milestone v0.10.x): [#7492](https://github.com/reflex-dev/reflex/pull/7492) N-025, [#7493](https://github.com/reflex-dev/reflex/pull/7493) N-032, [#7494](https://github.com/reflex-dev/reflex/pull/7494) N-004, [#7495](https://github.com/reflex-dev/reflex/pull/7495) class assignment, [#7496](https://github.com/reflex-dev/reflex/pull/7496) docs: `claude/n025-reflex-before-render` 655b22259 (window.__reflex at
 module scope; compiler unit test + Playwright test; verifier fixtures: probe NO_REFLEX→HAS_REFLEX, enterprise grid 0→2 headers),
 `claude/n032-boot-reconcile` 33568493e (client-storage vars applied at boot are re-marked dirty after the guarded snapshot so the
 event delta goes through `get_delta`; verifier fixtures: `away` 0/3→3/3 dev and prod, stale-hash probes 3/3), `claude/n004-pickle-compat`
