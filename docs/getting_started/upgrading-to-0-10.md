@@ -1,6 +1,6 @@
 ---
 title: "Upgrading to Reflex 0.10"
-meta_description: "Changes to review when upgrading an app from Reflex 0.9 to 0.10, with the fix for each: backend vars read on a state class, class-level defaults, and background tasks."
+meta_description: "Changes to review when upgrading an app from Reflex 0.9 to 0.10, with the fix for each: backend vars read on a state class, class-level defaults, background tasks, and state stores shared with 0.9 instances."
 ---
 
 # Upgrading to Reflex 0.10
@@ -87,6 +87,17 @@ class Child(Parent):
         async with self:
             self.bump()
 ```
+
+## Sharing a state store between 0.9 and 0.10 instances
+
+Instances of 0.9 and 0.10 cannot share a Redis or disk state store. A 0.10
+instance loads state saved by 0.9, but a 0.9 instance discards state saved by
+0.10 and starts the session over, so a rolling deploy that runs both versions,
+or a rollback to 0.9 against the same store, resets the sessions that reach the
+older instance. Upgrade every instance of an app together, and clear the store
+(or point the app at a fresh one) when rolling back. See
+[Self Hosting](/docs/hosting/self-hosting/#production-mode) for how the state
+store is shared between instances.
 
 ## Other changes
 
