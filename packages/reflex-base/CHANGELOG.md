@@ -1,3 +1,19 @@
+## v0.10.0a2 (2026-10-06)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Features
+
+- A double-underscore state attribute (a name-mangled `__private` name or a dunder) can now be a backend var by declaring it with an explicit `rx.field()` value, e.g. `__counter: rx.Field[int] = rx.field(0)`. Without one it stays a plain class attribute, like in 0.9.x. ([#7465](https://github.com/reflex-dev/reflex/issues/7465))
+
+### Bug Fixes
+
+- Formatting a backend var as a string, e.g. `width=f"{State._size}px"`, now raises `BackendVarFormatError` (a `VarTypeError`) instead of silently embedding the field's repr in the page. ([#7456](https://github.com/reflex-dev/reflex/issues/7456))
+- Assign a value through a state class to update a declared field's default. The default cannot be a Field or Var instance, and must satisfy the field's annotation. A zero-argument callable the annotation does not accept becomes the default factory, validated by calling it once. ([#7461](https://github.com/reflex-dev/reflex/issues/7461))
+
+
 ## v0.10.0a1 (2026-10-05)
 
 ### Breaking Changes
