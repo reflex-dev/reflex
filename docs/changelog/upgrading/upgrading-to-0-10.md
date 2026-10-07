@@ -49,10 +49,10 @@ State.get_fields()["_items"].default_value()
 On 0.9, `State.count = 10` replaced the class attribute, but new instances still started at the declared default. In 0.10 it updates the var's default and the var stays a var ([#7461](https://github.com/reflex-dev/reflex/pull/7461)); [Changing Defaults](/docs/vars/base-vars/#changing-defaults) has the full rules. Check these before relying on it:
 
 - It changes the default for values not yet stored on an instance, which includes every new session and `reset()`. A value already stored on an instance keeps it.
-- The value must satisfy the var's annotation, or `TypeError: Invalid default for field` is raised. An unannotated var is typed from its default, so `_client = None` accepts only `None`; annotate the var with the type you assign, or declare it `ClassVar[...]` if it holds an object that all sessions share (below).
+- The value must satisfy the var's annotation, or `TypeError: Invalid default for field` is raised. An unannotated var is typed from its default, so `_client = None` accepts only `None`; annotate the var with the type you assign.
 - A zero-argument callable that the annotation does not accept, such as a function or a class, is called once during the assignment to check what it returns, then becomes the default factory. Do not assign something whose call has side effects.
 - Mutable defaults are copied for every instance. A live client, lock or connection assigned to an `Any` or `Optional[...]` var is accepted, but reading the var on a new instance then raises `TypeError: cannot pickle '_thread.lock' object`. Declare an object that all sessions share as `ClassVar[...]`, which is never copied.
-- Assigning on a mixin only affects states created afterwards, and an assignment made while the app runs, such as in an event handler, only affects the worker process that ran it. Configure defaults while the app is being defined.
+- Assigning on a mixin only affects states created afterwards. Do not assign defaults in event handlers, lifespan tasks, or at any other time after the app has started running: such an assignment only affects the worker process that ran it.
 
 ## Calling inherited handlers from background tasks
 
