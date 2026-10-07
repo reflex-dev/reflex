@@ -9,7 +9,13 @@ Previous pass (a2 train): [../2026-10-07/FINDINGS.md](../2026-10-07/FINDINGS.md)
 - Baselines: reflex 0.10.0a2 (+ enterprise 0.9.7a4), reflex 0.9.12 (+ enterprise 0.9.7a5 / a4).
 
 ## Pre-flight (orchestrator)
-_pending_
+- 19:25 UTC: `Release from changelog` run 37673748075 built reflex-base 0.10.0a3; its `publish` job waits for environment
+  approval, so reflex / reflex-base 0.10.0a3 are not on PyPI yet (discovery script: 18/20 OK, the two a3 packages
+  "NOT ON PYPI"). Agents started with positive controls on a2 / 0.9.12 meanwhile.
+- reflex-enterprise 0.9.7a5: the offline wheel and the PyPI wheel differ only in `constants.py` (`IS_OFFLINE = True`).
+  a4 → a5 changes only `formatColumnDefs` in `components/ag_grid/aggrid.py` (the `typeof __reflex === 'undefined'` early
+  return and the unused `jsx`/`Fragment` lookups are gone) plus the CHANGELOG entry (enterprise#260). Metadata unchanged:
+  `reflex[db]>=0.9.6`, `Requires-Python >=3.10,<4.0`.
 
 ## Re-verification table (must-fix findings of the a2 pass)
 | id | a2-pass status | a3 result | evidence | item |
