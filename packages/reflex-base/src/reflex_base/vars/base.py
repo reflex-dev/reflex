@@ -4139,12 +4139,15 @@ class Field(Generic[FIELD_TYPE]):
         Raises:
             BackendVarFormatError: Always; the field has no frontend var.
         """
-        name = f"'{self._owner.__name__}.{self._name}'" if self._owner else repr(self)
+        path = f"{self._owner.__name__}.{self._name}" if self._owner else None
+        name = f"'{path}'" if path else repr(self)
         if self._backend:
             msg = (
                 f"Backend var {name} exists only on the server and has no"
-                " frontend value, so it cannot be used in the UI. Use a regular"
-                " state var instead."
+                " frontend value, so it cannot be used in the UI. Use"
+                f" {path}.default_value() for its default value, declare it as"
+                " ClassVar[...] for a constant shared by all sessions, or use a"
+                " regular state var for a value the UI should show and update."
             )
         elif getattr(self._owner, "_mixin", False):
             msg = (
