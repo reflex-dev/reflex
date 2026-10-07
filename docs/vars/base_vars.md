@@ -90,6 +90,8 @@ stored as the default. Otherwise, assigning a zero-argument callable updates the
 default factory: Reflex calls it once when assigned to validate its result, then
 calls it whenever an instance needs a new default or resets. If that validation
 call fails or returns an invalid default, the previous default remains in place.
+A factory that produces a browser storage value is called once at assignment,
+and its result becomes the default so the storage name and options are kept.
 Frontend vars remain usable in the UI after assigning a new default value or
 factory.
 

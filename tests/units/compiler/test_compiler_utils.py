@@ -265,6 +265,34 @@ def test_compile_client_storage_honors_default_factories(
     }
 
 
+@pytest.mark.parametrize(
+    "storage_type", [rx.Cookie, rx.LocalStorage, rx.SessionStorage]
+)
+def test_storage_factory_assignment_keeps_classification(
+    storage_type: type, forked_registration_context: RegistrationContext
+):
+    """A factory assigned to a str-annotated storage var stays browser storage.
+
+    Args:
+        storage_type: The browser storage type the declaration uses.
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+
+    class StorageState(State):
+        value: str = storage_type("old", name="custom-key")
+
+    declared = StorageState.get_fields()["value"]
+    StorageState.value = lambda: storage_type("new", name="custom-key")  # pyright: ignore[reportAttributeAccessIssue]
+    assert declared.default_value() == "new"
+    field_type, options = utils._compile_client_storage_field(declared)
+    assert field_type is storage_type
+    assert options is not None
+    assert options["name"] == "custom-key"
+    state = StorageState(value="changed")
+    state._reset_client_storage()
+    assert state.value == "new"
+
+
 def test_document_root_allows_static_id_on_head_script():
     """A head script's ID should remain an HTML attribute without a hook."""
     head_script = Script.create(src="/probe.js", id="head-probe")

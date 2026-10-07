@@ -3966,6 +3966,11 @@ class Field(Generic[FIELD_TYPE]):
     # Until then no value is a proxy: isinstance against () is always false.
     _proxy: ClassVar[Any] = ()
 
+    # The browser storage base class, installed by reflex.istate.storage: a
+    # factory producing such a value collapses to the value, which carries the
+    # storage classification and options. Until then nothing matches ().
+    _client_storage: ClassVar[Any] = ()
+
     # The class and attribute the field is bound to, set by __set_name__.
     _owner: type | None = None
     _name: str = ""
@@ -4733,7 +4738,8 @@ class BaseStateMeta(ABCMeta):
 
         A value the field's annotation accepts becomes the default. A
         zero-argument callable it does not accept becomes the default factory,
-        after one call validates what it produces.
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
 
         Args:
             name: The class attribute being assigned.
@@ -4751,15 +4757,11 @@ class BaseStateMeta(ABCMeta):
             # A value read from a state instance is proxied for dirty tracking;
             # the default must not retain that instance through the proxy.
             value = value.__wrapped__
-        if _accepts_default(declared, value):
-            defaults = _default_arguments(value)
-            declared.default = defaults["default"]
-            declared.default_factory = defaults["default_factory"]
-            return
         default = value
-        if callable(value):
+        accepted = _accepts_default(declared, value)
+        if not accepted and callable(value):
             # The field cannot hold the callable itself, so it is a factory:
-            # call it once to validate what it produces, then keep the callable.
+            # call it once to validate what it produces.
             try:
                 default = value()
             except Exception as err:
@@ -4767,15 +4769,24 @@ class BaseStateMeta(ABCMeta):
                 raise TypeError(msg) from err
             if inspect.iscoroutine(default):
                 default.close()
-            if _accepts_default(declared, default):
+            accepted = _accepts_default(declared, default)
+            if accepted and not isinstance(default, declared._client_storage):
+                # Keep the callable to produce future defaults.
                 declared.default = MISSING
                 declared.default_factory = value
                 return
-        msg = (
-            f"Invalid default for field '{name}': expected "
-            f"{declared.outer_type_}, got {default!r} of type {type(default)}."
-        )
-        raise TypeError(msg)
+            # Browser storage is classified and configured by the value itself,
+            # and the browser supplies later values, so the value produced once
+            # here is the default rather than the factory.
+        if not accepted:
+            msg = (
+                f"Invalid default for field '{name}': expected "
+                f"{declared.outer_type_}, got {default!r} of type {type(default)}."
+            )
+            raise TypeError(msg)
+        defaults = _default_arguments(default)
+        declared.default = defaults["default"]
+        declared.default_factory = defaults["default_factory"]
 
     def __new__(
         cls,
