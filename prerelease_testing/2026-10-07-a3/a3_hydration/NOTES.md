@@ -199,8 +199,8 @@ reflex-google-auth: see §4 (real Google login/logout impossible in the sandbox;
 Independent verifier `verify_hydration` (2026-10-07, 22:00-23:15). Repro'd A3-11 / A3-12 from the written repro with my
 own app and drivers first, then reran the explorer's fixtures. Published packages only (`$SB/envs/a3` 0.10.0a3,
 `$SB/envs/alpha2`, `$SB/envs/stable` 0.9.12, `$SB/envs/driver`), everything run from `$SB/apps/verify_hydration/run/<name>`;
-the app asserts `reflex.__file__` is under `/scratchpad/envs/$VH_VENV/`, drivers assert the driver venv. Ports 3660-3666 (+3664 /
-8664 for the explorer reruns) / 8660-8661, redis 8669, CDP 8670; one app server at a time; everything stopped at the end (`lsof` shows nothing in
+the app asserts `reflex.__file__` is under `/scratchpad/envs/$VH_VENV/`, drivers assert the driver venv. Ports: frontend
+3660-3666, backend 8660-8664, redis 8669, CDP 8670; one app server at a time; everything stopped at the end (`lsof` shows nothing in
 3660-3679/8660-8679). Sources, compact per-run JSON, traces and trimmed logs: `verification/`.
 
 ```bash
