@@ -41,6 +41,16 @@ including on SQLite. Migrations generated with these versions reference
 they run. Keep the SQLModel version used to generate migrations in your deployment
 dependencies; for example, `sqlmodel>=0.0.45` if a migration uses `UTCDateTime`.
 
+Reflex does not cap the SQLModel version, so a fresh install, or an upgrade that
+refreshes every dependency such as `uv pip install -U`, can move an app from
+SQLModel 0.0.44 to 0.0.45 or later. `pip install -U` and `uv pip install` without
+`-U` leave an installed SQLModel in place. After the move, naive `datetime` values
+are rejected when written, and values read back are timezone-aware, so comparing
+them with `datetime.now()` raises
+`TypeError: can't compare offset-naive and offset-aware datetimes`. To keep naive
+datetimes, declare the column explicitly as shown below, or pin `sqlmodel<0.0.45`
+while no migration references `UTCDateTime`.
+
 For existing apps that store naive datetimes, declare the SQLAlchemy type
 explicitly to preserve that behavior across SQLModel versions:
 

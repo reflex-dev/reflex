@@ -1788,6 +1788,33 @@ def test_backend_field_format_raises(name: str):
         f"{getattr(Model, name)}px"
 
 
+@pytest.mark.parametrize("mixin", [False, True])
+@pytest.mark.parametrize(("name", "default"), [("_secret", 42), ("bookkeeping", 0)])
+def test_backend_field_format_error_names_the_fix(name: str, default: int, mixin: bool):
+    """The backend var format error names the var and how to use it in the UI.
+
+    Args:
+        name: The backend field to format, underscore-prefixed or is_var=False.
+        default: The default value of that field.
+        mixin: Whether the field is declared on a mixin.
+    """
+
+    class Model(EvenMoreBasicBaseState, mixin=mixin):
+        _secret: int = 42
+        bookkeeping: int = field(default=0, is_var=False)
+
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        f"{getattr(Model, name)}px"
+
+    message = str(exc_info.value)
+    assert f"Backend var 'Model.{name}' exists only on the server" in message
+    assert f"Use Model.{name}.default_value() for its default value" in message
+    assert "declare it as ClassVar[...]" in message
+    assert "use a regular state var" in message
+    # The suggested call returns the default.
+    assert getattr(Model, name).default_value() == default
+
+
 def test_mixin_field_format_raises():
     """A mixin's frontend field has no Var, and the error says to use the including state."""
 
