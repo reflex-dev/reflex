@@ -129,6 +129,26 @@ class Child2(Parent):
         async with self:
             self.result = f"own outside: {outcome}"
 
+    @rx.event(background=True)
+    async def work_direct_inherited(self):
+        try:
+            self.count += 100  # inherited var, written directly outside `async with self`
+            outcome = "no error"
+        except Exception as e:  # noqa: BLE001
+            outcome = type(e).__name__
+        async with self:
+            self.result = f"direct inherited write outside: {outcome}"
+
+    @rx.event(background=True)
+    async def work_direct_own(self):
+        try:
+            self.own += 100  # own var, written directly outside `async with self`
+            outcome = "no error"
+        except Exception as e:  # noqa: BLE001
+            outcome = type(e).__name__
+        async with self:
+            self.result = f"direct own write outside: {outcome}"
+
     @rx.event
     def refresh(self):
         pass
@@ -159,6 +179,8 @@ def bg():
         rx.button("type", on_click=Child2.work_type, id="b_type"),
         rx.button("own outside", on_click=Child2.work_own_outside, id="b_own"),
         rx.button("own var outside", on_click=Child2.work_own_var_outside, id="b_own_var"),
+        rx.button("direct inherited", on_click=Child2.work_direct_inherited, id="b_direct_inh"),
+        rx.button("direct own", on_click=Child2.work_direct_own, id="b_direct_own"),
         rx.text("own: ", rx.text.span(Child2.own, id="own")),
         rx.button("refresh", on_click=Child2.refresh, id="b_refresh"),
     )

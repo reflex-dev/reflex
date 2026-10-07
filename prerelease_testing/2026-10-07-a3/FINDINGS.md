@@ -39,7 +39,7 @@ Previous pass (a2 train): [../2026-10-07/FINDINGS.md](../2026-10-07/FINDINGS.md)
 ## New findings on 0.10.0a3
 Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
 
-### A3-01: #7495's undo stack restores the latest entry, not what the patch saved: a rejected patch, `monkeypatch.delattr`, or an assignment inside a patch window loses a configured default or leaks the patched one (LOW, regression vs a2 in 3 of 4 cases; pending verification)
+### A3-01: #7495's undo stack restores the latest entry, not what the patch saved: a rejected `mock.patch.object` / `pytest-mock` patch, `monkeypatch.delattr`, or an assignment inside a patch window loses a configured default or leaks the patched one (LOW, regression vs a2 in 3 of 4 cases; CONFIRMED and narrowed by independent verifier)
 - Item `a3_class_state` (inbox 7). With `Svc.limit = 10` configured at import: (a) `mock.patch.object(Svc, "limit", Other.y)` raises
   TypeError but mock's exit still restores, popping the configuration → later tests see 0; (b) same for `mocker.patch.object(Svc, "_quota",
   rx.field(5))`; (c) `monkeypatch.setattr(Svc, "limit", 99)` then code under test assigns `Svc.limit = 50` → teardown undoes the 50 and
@@ -49,20 +49,49 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
 - Cause (published reflex-base 0.10.0a3 `vars/base.py`): `_keep_client_storage` / `_accepts_default` raise before `_keep_default`
   pushes the "failed assignment" entry (4895–4903, 4918); `__delattr__` pops (4926–4939); identity restore pops whatever is on top (4888).
 - Repro: `a3_class_state/probes/undo_edge/test_undo_edge.py` (needs reflex[db]==0.10.0a3, pytest, pytest-mock).
+- **Verification (`verify_class_state`, own repro `a3_class_state/verification/probes/test_v7_undo.py` first): CONFIRMED, narrowed.**
+  a3 4 failed / 16 passed (controls — plain monkeypatch/mock round trips, nested patches, a rejected wrong-type value — pass).
+  Only Var/Field values skip the undo entry (wrong types, raising factories, Literal/dict/dataclass/tuple mismatches round-trip);
+  `monkeypatch.setattr` with a Var/Field does NOT lose the default (pytest records the undo only after a successful setattr) —
+  `unittest.mock` / pytest-mock restore the saved Field even when their own setattr failed, which pops one entry. Regression vs a2
+  for (a), (b), (d); (c) leaked on a2 too (loudly, N-039) and now leaks silently. Impact: pytest suites only; (a)/(b) only after a
+  patch that already raised; (c) needs code under test reconfiguring a patched class default; (d) needs `monkeypatch.delattr` on a
+  declared var. Docs: base_vars.md says a restore "undoes the most recent default assignment" ((c)/(d) match that literally) but
+  also promises monkeypatch and `mock.patch.object` round trips, and the `__setattr__` docstring says a failed assignment "leaves the
+  default as it was". Code: `__setattr__` 4861-4924 (identity restore 4888-4890; `_keep_client_storage` 4895 and `_accepts_default`
+  4896 run before `_keep_default` 4903/4918; Var 4738-4743, Field 4744-4749), `Field._restore_default` 4130-4133 pops the newest entry,
+  `__delattr__` 4926-4939. Also confirmed: a frontend `str` var with a non-storage declared `default_factory` has that factory called on a
+  plain str assignment (a raising factory surfaces its raw exception; a2 accepted).
 
-### A3-02: The N-005 fix covers only `str` values: assigning `None` to an `Optional[str]` storage var (or a non-str to a Union var) still silently drops browser storage (LOW, regression vs 0.9.12, same as a2; pending verification)
+### A3-02: The N-005 fix covers only `str` values: assigning `None` to an `Optional[str]` storage var (or a non-str to a Union var) still silently drops browser storage (LOW, regression vs 0.9.12, same as a2; CONFIRMED by independent verifier)
 - Item `a3_class_state` (inbox 8). `opt: Optional[str] = rx.LocalStorage("d", name="k_opt")`; `St.opt = None` → no client-storage entry;
   e2e `apps/clse2e`: `k_opt` never written, a new tab shows "". 0.9.12 ignored the assignment and kept storage.
+- **Verification: CONFIRMED** (`verification/probes/probe_v8_storage.py`, e2e a3 dev): `None` → `Optional[str]` LocalStorage, `5` →
+  `Union[str, int]`, `None` → `Optional[str]` Cookie are accepted silently and the var leaves storage; a later str assignment does not
+  bring it back; `_is_client_storage` is lru-cached, so it can stay True for a var looked up before the assignment while the compiled
+  frontend omits it. Rare in practice (GitHub search: 2 repos declare Optional storage vars, none assign None through the class; the
+  docs only promise the plain-string case). Code: `reflex/istate/storage.py` 24-37 (`_with_value` wraps only str, line 34),
+  `reflex_base/vars/base.py` `_keep_client_storage` 4753-4780, `_accepts_default` 4725-4750, `reflex/state.py` 1635-1656.
 
-### A3-03: ComponentState + named storage var + `cls.x = initial` (the a3 changelog's example) makes every instance share one browser key (LOW, pre-existing on 0.9.12; pending verification)
+### A3-03: ComponentState + named storage var + `cls.x = initial` (the a3 changelog's example) makes every instance share one browser key (LOW, docs; NARROWED by independent verifier to a documentation caveat)
 - Item `a3_class_state` (inbox 9). csbox on a3 dev and prod/Redis: one `box_pref` key for all instances; after a reload one instance
   shows another's choice. 0.9.12 shares the key too; a2 hid it only because N-005 dropped storage.
+- **Verification: NARROWED to docs.** A named key is shared by definition (instances that assign nothing collide identically on
+  0.9.12); a per-instance `name=` or an unnamed storage var gets its own key. a3 keeps the name exactly as #7495 promises, but the
+  a3 changelog example (`cls.theme = initial` in `get_component` on `rx.LocalStorage("light", name="theme")`) and base_vars.md
+  ("independently for each component") do not say that a named key is shared by every instance.
 
 ### A3-04: Concurrent class-default assign/restore from several threads leaves a stale patched default (LOW, pre-existing on a2)
 - Item `a3_class_state` (inbox 10). 8 threads × 1500 assign/restore: final default corrupted on 3.11/3.12/3.14 (a2 too, plus TypeErrors).
 
-### A3-05: AppHarness: a second app in one pytest process rendering a state from a shared module crashes on first render on 0.10 (`useContext` of a missing StateContext); 0.9.12 renders (LOW, regression vs 0.9.12, same on a2; pending verification; related to N-041/N-003, reflex#7479)
-- Item `a3_class_state` (inbox 11). `a3_class_state/harness/test_shared_state_harness.py`: 2 failed, 1 passed on a3 and a2; 0.9.12 passes.
+### A3-05: AppHarness: a second app in one pytest process rendering a state from a shared module crashes on first render (`useContext` of a missing StateContext) (LOW, pre-existing — REFUTED as a regression by independent verifier; same root cause as reflex#7479)
+- Item `a3_class_state` (inbox 11). `a3_class_state/harness/test_shared_state_harness.py`: 2 failed, 1 passed on a3 and a2.
+- **Verification: REFUTED as a regression.** 0.9.12 crashes identically when the shared module is first imported inside app one
+  (the explorer's 0.9.12 pass used `H_ASSIGN=1`, which on 0.9.12 replaces the class attribute with a plain value, so the pages never
+  referenced the shared state). Importing the shared module before the first harness makes both apps work on a3 and 0.9.12. Cause:
+  `reflex/testing.py` 296-304 forks the registration context per app; a state registers into the context active at first import
+  (`reflex/state.py:807`, `reflex_base/registry.py` 192-221); `_reload_state_module` (322-331) reloads only the app package. Add the
+  render-crash symptom and the import-first workaround to reflex#7479; no new issue.
 
 ## Cluster summaries
 

@@ -1,0 +1,54 @@
+{
+ "cmd": "run --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable",
+ "chatty": false,
+ "signal": "INT-pid",
+ "slow_rate": 100000.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 3.7,
+  "pause_start": 6.71,
+  "signal": 10.71,
+  "signal_wall": "21:00:16.565Z",
+  "exit": 70.72
+ },
+ "signal_to_eof_s": NaN,
+ "signal_to_exit_s": 60.02,
+ "returncode": "TIMEOUT",
+ "lines_total": 5,
+ "lines_after_signal": 0,
+ "invalid_json": 5,
+ "invalid_samples": [
+  {
+   "t": 2.05,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 App Running \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 [len 80]"
+  },
+  {
+   "t": 5.22,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "App running at: http://localhost:3210/ [len 38]"
+  },
+  {
+   "t": 5.22,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "Backend running at: http://0.0.0.0:8210 [len 39]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": null,
+ "seq_max_received": null,
+ "seq_written_at_signal": null,
+ "seq_written_final": null,
+ "lost_tail": null,
+ "seq_gaps": [],
+ "last_line": "Backend running at: http://0.0.0.0:8210\n",
+ "last_non_seq_lines": [
+  "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Starting Reflex App \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n",
+  "Compiling: \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 100% 18/17 0:00:00\n",
+  "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 App Running \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n",
+  "App running at: http://localhost:3210/\n",
+  "Backend running at: http://0.0.0.0:8210\n"
+ ],
+ "leftover_after_exit": "12164 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/bin/reflex run --frontend-port 3210 --backend-port 8210\n12218 S    /root/.bun/bin/bun run dev\n12219 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/jsondrain/.web/node_modules/.bin/react-router dev --host\n12219"
+}

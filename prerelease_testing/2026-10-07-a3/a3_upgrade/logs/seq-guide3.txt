@@ -1,0 +1,13 @@
+### guide3 stable dev 21:03:54
+started reflex pid=19785 (21:03:54) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/guide3-stable-dev.server.log
+UP after 8s (frontend 200, backend /ping 200)
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "main", "t": 2.764, "url": "http://localhost:3214/app/routes/[404]._index.jsx?import", "failure": "net::ERR_ABORTED"}]
+== guide3-stable-dev: {'pass': 13, 'fail': 0, 'anomaly': 1, 'skipped': 1}  console_total=24 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 1) ws_frames=81
+SHUTDOWN: main pid 19785 still alive 15s after SIGTERM
+ORPHAN after SIGTERM: port=3214 pid=19901 cmd=node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/guide/app/.web/node_modules/.bin/react-
+### guide3 a3 dev 21:05:09
+started reflex pid=23171 (21:05:09) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/guide3-a3-dev.server.log
+UP after 4s (frontend 200, backend /ping 200)
+== guide3-a3-dev: {'pass': 15, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=24 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=72
+SHUTDOWN: main pid 23171 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid

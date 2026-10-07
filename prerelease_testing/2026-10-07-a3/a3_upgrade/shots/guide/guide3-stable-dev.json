@@ -1,0 +1,407 @@
+{
+ "tag": "guide3-stable-dev",
+ "results": [
+  {
+   "name": "/portable: get_fields()['_items'].default_value() + ClassVar render",
+   "status": "pass",
+   "detail": "a\n\nb\n\nhttps://example.com/api\n\nreflex 0.9.12",
+   "t": 2.537
+  },
+  {
+   "name": "/sample: not registered on 0.9 (default_value() missing)",
+   "status": "skipped",
+   "detail": "status 200",
+   "t": 2.662
+  },
+  {
+   "name": "guide verbatim Child.work (self.bump() outside the lock)",
+   "status": "pass",
+   "detail": "{'result': '', 'c2': '1', 'c1': '1', 'c3': '1', 'p': '1', 'own': '0', 'before': '', 'count_before': '0'}",
+   "t": 8.367
+  },
+  {
+   "name": "guide verbatim fix Child3.work (async with self: self.bump()) increments Parent.count by 1",
+   "status": "pass",
+   "detail": "{'result': '', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': '', 'count_before': '1'}",
+   "t": 12.281
+  },
+  {
+   "name": "bg outside",
+   "status": "pass",
+   "detail": "{'result': 'outside: no error', 'c2': '3', 'c1': '3', 'c3': '3', 'p': '3', 'own': '0', 'before': '', 'count_before': '2'}",
+   "t": 16.223
+  },
+  {
+   "name": "bg inside",
+   "status": "pass",
+   "detail": "{'result': 'inside: ok', 'c2': '4', 'c1': '4', 'c3': '4', 'p': '4', 'own': '0', 'before': 'outside: no error', 'count_before': '3'}",
+   "t": 20.144
+  },
+  {
+   "name": "bg readonly",
+   "status": "pass",
+   "detail": "{'result': 'readonly outside: ran, returned 4', 'c2': '4', 'c1': '4', 'c3': '4', 'p': '4', 'own': '0', 'before': 'inside: ok', 'count_before': '4'}",
+   "t": 24.082
+  },
+  {
+   "name": "bg type",
+   "status": "pass",
+   "detail": "{'result': 'type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True', 'c2': '4', 'c1': '4', 'c3': '4', 'p': '4', 'own': '0', 'before': 'readonly outside: ran, returned 4', 'count_before': '4'}",
+   "t": 27.993
+  },
+  {
+   "name": "bg own_outside",
+   "status": "pass",
+   "detail": "{'result': 'own outside: no error', 'c2': '14', 'c1': '14', 'c3': '14', 'p': '14', 'own': '0', 'before': 'type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True', 'count_before': '4'}",
+   "t": 31.877
+  },
+  {
+   "name": "bg own_var_outside",
+   "status": "pass",
+   "detail": "{'result': 'own-var outside: ImmutableStateError', 'c2': '14', 'c1': '14', 'c3': '14', 'p': '14', 'own': '0', 'before': 'own outside: no error', 'count_before': '14'}",
+   "t": 35.782
+  },
+  {
+   "name": "bg direct_inherited",
+   "status": "pass",
+   "detail": "{'result': 'direct inherited write outside: no error', 'c2': '114', 'c1': '114', 'c3': '114', 'p': '114', 'own': '0', 'before': 'own-var outside: ImmutableStateError', 'count_before': '14'}",
+   "t": 39.667
+  },
+  {
+   "name": "bg direct_own",
+   "status": "pass",
+   "detail": "{'result': 'direct own write outside: ImmutableStateError', 'c2': '114', 'c1': '114', 'c3': '114', 'p': '114', 'own': '0', 'before': 'direct inherited write outside: no error', 'count_before': '114'}",
+   "t": 43.542
+  },
+  {
+   "name": "runtime type(self).level = 77: new sessions (level, worker pid)",
+   "status": "pass",
+   "detail": "{'tabA': ('20', '19912'), 'new_tabs': [('20', '19912')]}",
+   "t": 49.214
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 49.371
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"main\", \"t\": 2.764, \"url\": \"http://localhost:3214/app/routes/[404]._index.jsx?import\", \"failure\": \"net::ERR_ABORTED\"}]",
+   "t": 49.371
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 1.963,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 2.174,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 2.227,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 2.371,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 2.544,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 2.619,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 2.655,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 2.704,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 2.712,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 2.761,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "main",
+   "t": 2.807,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 2.874,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 2.894,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 2.895,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 43.578,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 43.692,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 43.744,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 43.753,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 43.753,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "tab0",
+   "t": 46.516,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "tab0",
+   "t": 46.748,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "tab0",
+   "t": 46.809,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "tab0",
+   "t": 46.987,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "tab0",
+   "t": 49.191,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [
+  {
+   "page": "main",
+   "t": 2.764,
+   "url": "http://localhost:3214/app/routes/[404]._index.jsx?import",
+   "failure": "net::ERR_ABORTED"
+  }
+ ],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 2.417,
+   "dir": "open",
+   "payload": "ws://localhost:8214/_event/?token=2c6b4f44-2ea8-4164-cf58-0350946ca020&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 2.427,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"-GM8CIbSBMXkEd6OAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 2.427,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 2.437,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"rnpQPyMaolQYDXbBAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 2.438,
+   "dir": "out",
+   "len": 122,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/portable\",\"asPath\":\"/portable\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.438,
+   "dir": "out",
+   "len": 172,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/portable\",\"asPath\":\"/portable\"}}]"
+  },
+  "{\"page\": \"main\", \"t\": 2.452, \"dir\": \"in\", \"len\": 2689, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8214\\\",\\\"origin\\\":\\\"http://localhost:3214\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safa...",
+  {
+   "page": "main",
+   "t": 2.453,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  "... 73 more frames trimmed"
+ ],
+ "notes": {
+  "version": "reflex 0.9.12",
+  "verbatim": {
+   "result": "",
+   "c2": "1",
+   "c1": "1",
+   "c3": "1",
+   "p": "1",
+   "own": "0",
+   "before": "",
+   "count_before": "0"
+  },
+  "outside": {
+   "result": "outside: no error",
+   "c2": "3",
+   "c1": "3",
+   "c3": "3",
+   "p": "3",
+   "own": "0",
+   "before": "",
+   "count_before": "2"
+  },
+  "inside": {
+   "result": "inside: ok",
+   "c2": "4",
+   "c1": "4",
+   "c3": "4",
+   "p": "4",
+   "own": "0",
+   "before": "outside: no error",
+   "count_before": "3"
+  },
+  "readonly": {
+   "result": "readonly outside: ran, returned 4",
+   "c2": "4",
+   "c1": "4",
+   "c3": "4",
+   "p": "4",
+   "own": "0",
+   "before": "inside: ok",
+   "count_before": "4"
+  },
+  "type": {
+   "result": "type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True",
+   "c2": "4",
+   "c1": "4",
+   "c3": "4",
+   "p": "4",
+   "own": "0",
+   "before": "readonly outside: ran, returned 4",
+   "count_before": "4"
+  },
+  "own_outside": {
+   "result": "own outside: no error",
+   "c2": "14",
+   "c1": "14",
+   "c3": "14",
+   "p": "14",
+   "own": "0",
+   "before": "type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True",
+   "count_before": "4"
+  },
+  "own_var_outside": {
+   "result": "own-var outside: ImmutableStateError",
+   "c2": "14",
+   "c1": "14",
+   "c3": "14",
+   "p": "14",
+   "own": "0",
+   "before": "own outside: no error",
+   "count_before": "14"
+  },
+  "direct_inherited": {
+   "result": "direct inherited write outside: no error",
+   "c2": "114",
+   "c1": "114",
+   "c3": "114",
+   "p": "114",
+   "own": "0",
+   "before": "own-var outside: ImmutableStateError",
+   "count_before": "14"
+  },
+  "direct_own": {
+   "result": "direct own write outside: ImmutableStateError",
+   "c2": "114",
+   "c1": "114",
+   "c3": "114",
+   "p": "114",
+   "own": "0",
+   "before": "direct inherited write outside: no error",
+   "count_before": "114"
+  },
+  "defaults": {
+   "tabA": [
+    "20",
+    "19912"
+   ],
+   "new_tabs": [
+    [
+     "20",
+     "19912"
+    ]
+   ]
+  }
+ }
+}

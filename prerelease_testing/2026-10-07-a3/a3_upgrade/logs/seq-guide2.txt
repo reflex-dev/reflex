@@ -7,3 +7,7 @@ SHUTDOWN: main pid 2709 still alive 15s after SIGTERM
 ORPHAN after SIGTERM: port=3214 pid=2781 cmd=node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/guide/app/.web/node_modules/.bin/react-
 ### guide2 a3 dev 20:53:19
 started reflex pid=4685 (20:53:19) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/guide2-a3-dev.server.log
+UP after 19s (frontend 200, backend /ping 200)
+== guide2-a3-dev: {'pass': 13, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=24 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=66
+SHUTDOWN: main pid 4685 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid

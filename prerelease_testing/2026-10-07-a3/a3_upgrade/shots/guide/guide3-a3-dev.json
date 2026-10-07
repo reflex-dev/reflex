@@ -1,0 +1,399 @@
+{
+ "tag": "guide3-a3-dev",
+ "results": [
+  {
+   "name": "/portable: get_fields()['_items'].default_value() + ClassVar render",
+   "status": "pass",
+   "detail": "a\n\nb\n\nhttps://example.com/api\n\nreflex 0.10.0a3",
+   "t": 3.049
+  },
+  {
+   "name": "/sample: guide sample 1 verbatim renders a, b and the ClassVar",
+   "status": "pass",
+   "detail": "a\n\nb\n\nhttps://example.com/api",
+   "t": 4.758
+  },
+  {
+   "name": "guide verbatim Child.work (self.bump() outside the lock)",
+   "status": "pass",
+   "detail": "{'result': '', 'c2': '0', 'c1': '0', 'c3': '0', 'p': '0', 'own': '0', 'before': '', 'count_before': '0'}",
+   "t": 10.672
+  },
+  {
+   "name": "guide verbatim fix Child3.work (async with self: self.bump()) increments Parent.count by 1",
+   "status": "pass",
+   "detail": "{'result': '', 'c2': '1', 'c1': '1', 'c3': '1', 'p': '1', 'own': '0', 'before': '', 'count_before': '0'}",
+   "t": 14.567
+  },
+  {
+   "name": "bg outside",
+   "status": "pass",
+   "detail": "{'result': 'outside: ImmutableStateError', 'c2': '1', 'c1': '1', 'c3': '1', 'p': '1', 'own': '0', 'before': '', 'count_before': '1'}",
+   "t": 18.446
+  },
+  {
+   "name": "bg inside",
+   "status": "pass",
+   "detail": "{'result': 'inside: ok', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'outside: ImmutableStateError', 'count_before': '1'}",
+   "t": 22.335
+  },
+  {
+   "name": "bg readonly",
+   "status": "pass",
+   "detail": "{'result': 'readonly outside: ran, returned 2', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'inside: ok', 'count_before': '2'}",
+   "t": 26.259
+  },
+  {
+   "name": "bg type",
+   "status": "pass",
+   "detail": "{'result': 'type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'readonly outside: ran, returned 2', 'count_before': '2'}",
+   "t": 30.13
+  },
+  {
+   "name": "bg own_outside",
+   "status": "pass",
+   "detail": "{'result': 'own outside: ImmutableStateError', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True', 'count_before': '2'}",
+   "t": 34.035
+  },
+  {
+   "name": "bg own_var_outside",
+   "status": "pass",
+   "detail": "{'result': 'own-var outside: ImmutableStateError', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'own outside: ImmutableStateError', 'count_before': '2'}",
+   "t": 37.945
+  },
+  {
+   "name": "bg direct_inherited",
+   "status": "pass",
+   "detail": "{'result': 'direct inherited write outside: ImmutableStateError', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'own-var outside: ImmutableStateError', 'count_before': '2'}",
+   "t": 41.824
+  },
+  {
+   "name": "bg direct_own",
+   "status": "pass",
+   "detail": "{'result': 'direct own write outside: ImmutableStateError', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'own': '0', 'before': 'direct inherited write outside: ImmutableStateError', 'count_before': '2'}",
+   "t": 45.69
+  },
+  {
+   "name": "runtime type(self).level = 77: new sessions (level, worker pid)",
+   "status": "pass",
+   "detail": "{'tabA': ('20', '23320'), 'new_tabs': [('77', '23320')]}",
+   "t": 51.21
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 51.333
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 51.333
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 2.347,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 2.691,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 2.745,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 2.938,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 3.057,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 3.115,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 3.19,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 4.699,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 4.699,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 4.8,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 4.987,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 5.068,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 5.084,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 5.085,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 45.724,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 45.815,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 45.863,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 45.889,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 45.889,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "tab0",
+   "t": 48.639,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "tab0",
+   "t": 48.852,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "tab0",
+   "t": 48.897,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "tab0",
+   "t": 49.039,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "tab0",
+   "t": 51.19,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 2.744,
+   "dir": "open",
+   "payload": "ws://localhost:8214/_event/?token=762994de-27a0-4c7b-bb76-81646c12d4b4&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 2.745,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"q9xJzm8aO4OgJLmLAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 2.981,
+   "dir": "out",
+   "len": 382,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"29a6b9e1d820bb7d\",\"b084fc0c68f7c73a\",\"d6b790cc50e55fbe\",\"ee0a50c258153c28\",\"bf21a9e8fbc5a384\",\"3c60b481f5d6e139\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/portable\",\"asPath\":\"/portable\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 3.014,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Pm98Z2hrPv-QQTTiAAAB\"}"
+  },
+  "{\"page\": \"main\", \"t\": 3.016, \"dir\": \"in\", \"len\": 1825, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8214\\\",\\\"origin\\\":\\\"http://localhost:3214\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_vers...",
+  {
+   "page": "main",
+   "t": 3.019,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.058,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 3.058,
+   "dir": "close",
+   "payload": ""
+  },
+  "... 64 more frames trimmed"
+ ],
+ "notes": {
+  "version": "reflex 0.10.0a3",
+  "verbatim": {
+   "result": "",
+   "c2": "0",
+   "c1": "0",
+   "c3": "0",
+   "p": "0",
+   "own": "0",
+   "before": "",
+   "count_before": "0"
+  },
+  "outside": {
+   "result": "outside: ImmutableStateError",
+   "c2": "1",
+   "c1": "1",
+   "c3": "1",
+   "p": "1",
+   "own": "0",
+   "before": "",
+   "count_before": "1"
+  },
+  "inside": {
+   "result": "inside: ok",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "outside: ImmutableStateError",
+   "count_before": "1"
+  },
+  "readonly": {
+   "result": "readonly outside: ran, returned 2",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "inside: ok",
+   "count_before": "2"
+  },
+  "type": {
+   "result": "type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "readonly outside: ran, returned 2",
+   "count_before": "2"
+  },
+  "own_outside": {
+   "result": "own outside: ImmutableStateError",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True",
+   "count_before": "2"
+  },
+  "own_var_outside": {
+   "result": "own-var outside: ImmutableStateError",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "own outside: ImmutableStateError",
+   "count_before": "2"
+  },
+  "direct_inherited": {
+   "result": "direct inherited write outside: ImmutableStateError",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "own-var outside: ImmutableStateError",
+   "count_before": "2"
+  },
+  "direct_own": {
+   "result": "direct own write outside: ImmutableStateError",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "own": "0",
+   "before": "direct inherited write outside: ImmutableStateError",
+   "count_before": "2"
+  },
+  "defaults": {
+   "tabA": [
+    "20",
+    "23320"
+   ],
+   "new_tabs": [
+    [
+     "77",
+     "23320"
+    ]
+   ]
+  }
+ }
+}

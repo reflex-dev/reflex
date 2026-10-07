@@ -5,223 +5,193 @@
    "name": "A: dave signs up on the old version",
    "status": "pass",
    "detail": "/",
-   "t": 6.425
+   "t": 2.286
   },
   {
    "name": "A: dave tweets + follows alice",
    "status": "pass",
    "detail": "[['daver', 'dave pre-upgrade twr-stale-prod'], ['bobr', 'bob tweet twr-base-prod']]",
-   "t": 7.68
+   "t": 2.933
   },
   {
    "name": "C: did the old tab reload itself after the new server came up?",
    "status": "anomaly",
-   "detail": "marker=old-tab-1791406178353",
-   "t": 48.801
+   "detail": "marker=old-tab-1791406915723",
+   "t": 33.35
   },
   {
    "name": "C: dave still logged in after restart WITHOUT re-login (same token)",
    "status": "pass",
-   "detail": "{'marker': 'old-tab-1791406178353', 'path': '/', 'on_home': True, 'on_login': False, 'avatar': 'da', 'token': '4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6', 'feed': [['daver', 'dave pre-upgrade twr-stale-prod'], ['bobr', 'bob tweet twr-base-prod'], ['alicer', 'alice tweet two twr-base-prod'], ['alicer', 'alice tweet one twr-base-prod']], 'following': [], 'toasts': [], 'body_tail': 'PySocial\\nHome\\nFollowers\\nSign out\\nHome\\nDA\\nTweet\\nDA\\n\\n@daver\\n\\ndave pre-upgrade twr-stale-prod\\n\\nBO\\n\\n@bobr\\n\\nbob tweet twr-base-prod\\n\\nAL\\n\\n@alicer\\n\\nalice tweet two twr-base-prod\\n\\nAL\\n\\n@alicer\\n\\nalice tweet one twr-base-prod\\n\\nAL\\n\\nalicer\\n\\nFollowing\\nBuilt with Reflex'}",
-   "t": 48.801
+   "detail": "{'marker': 'old-tab-1791406915723', 'path': '/', 'on_home': True, 'on_login': False, 'avatar': 'da', 'token': '4172ce8b-0cbd-4915-b0f5-6fe89b68b898', 'feed': [['daver', 'dave pre-upgrade twr-stale-prod'], ['bobr', 'bob tweet twr-base-prod'], ['alicer', 'alice tweet two twr-base-prod'], ['alicer', 'alice tweet one twr-base-prod']], 'following': [], 'toasts': [], 'body_tail': 'PySocial\\nHome\\nFollowers\\nSign out\\nHome\\nDA\\nTweet\\nDA\\n\\n@daver\\n\\ndave pre-upgrade twr-stale-prod\\n\\nBO\\n\\n@bobr\\n\\nbob tweet twr-base-prod\\n\\nAL\\n\\n@alicer\\n\\nalice tweet two twr-base-prod\\n\\nAL\\n\\n@alicer\\n\\nalice tweet one twr-base-prod\\n\\nAL\\n\\nalicer\\n\\nFollowing\\nBuilt with Reflex'}",
+   "t": 33.35
   },
   {
    "name": "D: the tab posts a tweet through the new backend",
    "status": "pass",
    "detail": "[['daver', 'dave after upgrade twr-stale-prod'], ['daver', 'dave pre-upgrade twr-stale-prod'], ['bobr', 'bob tweet twr-base-prod']]",
-   "t": 49.182
+   "t": 33.758
   },
   {
    "name": "E: manual reload keeps dave's session",
    "status": "pass",
    "detail": "da",
-   "t": 50.829
+   "t": 34.695
   },
   {
    "name": "F: sign out on new version",
    "status": "pass",
    "detail": "/login",
-   "t": 51.292
+   "t": 35.128
   },
   {
    "name": "F: dave logs back in with the 0.9.12-written password row",
    "status": "pass",
    "detail": "/",
-   "t": 52.688
+   "t": 36.497
   },
   {
    "name": "F: dave Following lists alice after fresh login",
    "status": "pass",
    "detail": "['alicer']",
-   "t": 53.693
+   "t": 37.512
   },
   {
    "name": "console: no unexpected errors/warnings + no page errors",
    "status": "anomaly",
-   "detail": "[{\"page\": \"dave\", \"t\": 3.166, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"dave\", \"t\": 9.15, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 9.796, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 9.975, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 10.58, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 11.386, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 12.392, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_",
-   "t": 54.493
+   "detail": "[{\"page\": \"dave\", \"t\": 0.814, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"dave\", \"t\": 4.993, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 5.2, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 5.596, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 6.2, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 7.005, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED\"}, {\"page\": \"dave\", \"t\": 8.024, \"type\": \"error\", \"text\": \"WebSocket connection to 'ws://localhost:3232/_event",
+   "t": 38.143
   },
   {
    "name": "network: no unexpected failed/4xx/5xx requests",
    "status": "anomaly",
-   "detail": "[{\"page\": \"dave\", \"t\": 3.166, \"url\": \"http://localhost:3232/signup/bg.svg\", \"status\": 404}, {\"page\": \"dave\", \"t\": 51.281, \"url\": \"http://localhost:3232/bg.svg\", \"status\": 404}]",
-   "t": 54.494
+   "detail": "[{\"page\": \"dave\", \"t\": 0.814, \"url\": \"http://localhost:3232/signup/bg.svg\", \"status\": 404}, {\"page\": \"dave\", \"t\": 35.017, \"url\": \"http://localhost:3232/bg.svg\", \"status\": 404}]",
+   "t": 38.143
   }
  ],
  "console": [
   {
    "page": "dave",
-   "t": 3.166,
-   "type": "verbose",
-   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
-  },
-  {
-   "page": "dave",
-   "t": 3.166,
-   "type": "verbose",
-   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
-  },
-  {
-   "page": "dave",
-   "t": 3.166,
+   "t": 0.814,
    "type": "error",
    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
   },
   {
    "page": "dave",
-   "t": 9.15,
-   "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "t": 0.831,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
   },
   {
    "page": "dave",
-   "t": 9.796,
-   "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "t": 0.831,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
   },
   {
    "page": "dave",
-   "t": 9.975,
+   "t": 4.993,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 10.58,
+   "t": 5.2,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 11.386,
+   "t": 5.596,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 12.392,
+   "t": 6.2,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 13.668,
+   "t": 7.005,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 15.072,
+   "t": 8.024,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 16.702,
+   "t": 9.232,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 18.563,
+   "t": 10.682,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 20.712,
+   "t": 12.292,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 22.744,
+   "t": 14.093,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 24.743,
+   "t": 16.112,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 26.757,
+   "t": 18.106,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 28.776,
+   "t": 20.111,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 30.804,
+   "t": 22.117,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 32.921,
+   "t": 24.145,
    "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
   },
   {
    "page": "dave",
-   "t": 34.935,
-   "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
-  },
-  {
-   "page": "dave",
-   "t": 36.992,
-   "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
-  },
-  {
-   "page": "dave",
-   "t": 39.06,
-   "type": "error",
-   "text": "WebSocket connection to 'ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
-  },
-  {
-   "page": "dave",
-   "t": 49.31,
+   "t": 33.939,
    "type": "log",
    "text": "Disconnect websocket on page navigation"
   },
   {
    "page": "dave",
-   "t": 51.281,
+   "t": 35.017,
    "type": "error",
    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
   },
   {
    "page": "dave",
-   "t": 51.281,
+   "t": 35.122,
    "type": "verbose",
    "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
   }
@@ -230,13 +200,13 @@
  "bad_requests": [
   {
    "page": "dave",
-   "t": 3.166,
+   "t": 0.814,
    "url": "http://localhost:3232/signup/bg.svg",
    "status": 404
   },
   {
    "page": "dave",
-   "t": 51.281,
+   "t": 35.017,
    "url": "http://localhost:3232/bg.svg",
    "status": 404
   }
@@ -244,65 +214,65 @@
  "ws_frames": [
   {
    "page": "dave",
-   "t": 3.176,
+   "t": 0.941,
    "dir": "open",
-   "payload": "ws://localhost:3232/_event/?token=4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6&EIO=4&transport=websocket"
+   "payload": "ws://localhost:3232/_event/?token=4172ce8b-0cbd-4915-b0f5-6fe89b68b898&EIO=4&transport=websocket"
   },
   {
    "page": "dave",
-   "t": 3.177,
+   "t": 0.953,
    "dir": "in",
    "len": 108,
-   "payload": "0{\"sid\":\"b5EsgiCLm4UfAmwNAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   "payload": "0{\"sid\":\"TEBgyaMaRIgR8BsyAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
   },
   {
    "page": "dave",
-   "t": 3.177,
+   "t": 0.954,
    "dir": "out",
    "len": 10,
    "payload": "40/_event,"
   },
   {
    "page": "dave",
-   "t": 3.501,
+   "t": 0.963,
    "dir": "in",
    "len": 40,
-   "payload": "40/_event,{\"sid\":\"Bs5lqEAUcofrYDKOAAAB\"}"
+   "payload": "40/_event,{\"sid\":\"s3j5NG2Ya5QMgU37AAAD\"}"
   },
   {
    "page": "dave",
-   "t": 3.501,
+   "t": 0.963,
    "dir": "out",
    "len": 120,
    "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/signup/\",\"asPath\":\"/signup/\"}}]"
   },
   {
    "page": "dave",
-   "t": 3.501,
+   "t": 0.964,
    "dir": "out",
    "len": 170,
    "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/signup/\",\"asPath\":\"/signup/\"}}]"
   },
-  "{\"page\": \"dave\", \"t\": 3.517, \"dir\": \"in\", \"len\": 2668, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3232\\\",\\\"origin\\\":\\\"http://localhost:3232\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safa...",
+  "{\"page\": \"dave\", \"t\": 0.968, \"dir\": \"in\", \"len\": 2668, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3232\\\",\\\"origin\\\":\\\"http://localhost:3232\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safa...",
   {
    "page": "dave",
-   "t": 3.551,
+   "t": 0.971,
    "dir": "in",
    "len": 88,
    "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
   },
-  "... 101 more frames trimmed"
+  "... 91 more frames trimmed"
  ],
  "notes": {
   "expect_session": true,
   "dialogs": [],
   "A_before": {
-   "marker": "old-tab-1791406178353",
+   "marker": "old-tab-1791406915723",
    "path": "/",
    "on_home": true,
    "on_login": false,
    "avatar": "da",
-   "token": "4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6",
+   "token": "4172ce8b-0cbd-4915-b0f5-6fe89b68b898",
    "feed": [
     [
      "daver",
@@ -326,12 +296,12 @@
    "body_tail": "PySocial\nHome\nFollowers\nSign out\nHome\nDA\nTweet\nDA\n\n@daver\n\ndave pre-upgrade twr-stale-prod\n\nBO\n\n@bobr\n\nbob tweet twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet two twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet one twr-base-prod\n\nAL\n\nalicer\n\nFollowing\nBuilt with Reflex"
   },
   "B_server_down": {
-   "marker": "old-tab-1791406178353",
+   "marker": "old-tab-1791406915723",
    "path": "/",
    "on_home": true,
    "on_login": false,
    "avatar": "da",
-   "token": "4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6",
+   "token": "4172ce8b-0cbd-4915-b0f5-6fe89b68b898",
    "feed": [
     [
      "daver",
@@ -356,14 +326,14 @@
    ],
    "body_tail": "r is reachable at ws://localhost:3232/_event\nPySocial\nHome\nFollowers\nSign out\nHome\nDA\nTweet\nDA\n\n@daver\n\ndave pre-upgrade twr-stale-prod\n\nBO\n\n@bobr\n\nbob tweet twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet two twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet one twr-base-prod\n\nAL\n\nalicer\n\nFollowing\nBuilt with Reflex"
   },
-  "t_up": 43.658,
+  "t_up": 28.244,
   "C_after_up": {
-   "marker": "old-tab-1791406178353",
+   "marker": "old-tab-1791406915723",
    "path": "/",
    "on_home": true,
    "on_login": false,
    "avatar": "da",
-   "token": "4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6",
+   "token": "4172ce8b-0cbd-4915-b0f5-6fe89b68b898",
    "feed": [
     [
      "daver",
@@ -387,12 +357,12 @@
    "body_tail": "PySocial\nHome\nFollowers\nSign out\nHome\nDA\nTweet\nDA\n\n@daver\n\ndave pre-upgrade twr-stale-prod\n\nBO\n\n@bobr\n\nbob tweet twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet two twr-base-prod\n\nAL\n\n@alicer\n\nalice tweet one twr-base-prod\n\nAL\n\nalicer\n\nFollowing\nBuilt with Reflex"
   },
   "D_interact": {
-   "marker": "old-tab-1791406178353",
+   "marker": "old-tab-1791406915723",
    "path": "/",
    "on_home": true,
    "on_login": false,
    "avatar": "da",
-   "token": "4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6",
+   "token": "4172ce8b-0cbd-4915-b0f5-6fe89b68b898",
    "feed": [
     [
      "daver",
@@ -425,7 +395,7 @@
    "on_home": true,
    "on_login": false,
    "avatar": "da",
-   "token": "4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6",
+   "token": "4172ce8b-0cbd-4915-b0f5-6fe89b68b898",
    "feed": [
     [
      "daver",
@@ -458,7 +428,7 @@
    "on_home": true,
    "on_login": false,
    "avatar": "da",
-   "token": "4ff61c95-1fb5-4b7f-f2f7-b6857e6b31c6",
+   "token": "4172ce8b-0cbd-4915-b0f5-6fe89b68b898",
    "feed": [],
    "following": [
     "alicer"

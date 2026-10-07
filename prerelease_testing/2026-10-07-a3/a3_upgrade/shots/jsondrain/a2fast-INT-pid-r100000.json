@@ -1,0 +1,37 @@
+{
+ "cmd": "run --json --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2",
+ "chatty": false,
+ "signal": "INT-pid",
+ "slow_rate": 100000.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 9.97,
+  "pause_start": 12.97,
+  "signal": 16.98,
+  "signal_wall": "20:56:33.948Z",
+  "exit": 76.99
+ },
+ "signal_to_eof_s": NaN,
+ "signal_to_exit_s": 60.01,
+ "returncode": "TIMEOUT",
+ "lines_total": 4,
+ "lines_after_signal": 0,
+ "invalid_json": 0,
+ "invalid_samples": [],
+ "last_line_valid_json": true,
+ "seq_first": null,
+ "seq_max_received": null,
+ "seq_written_at_signal": null,
+ "seq_written_final": null,
+ "lost_tail": null,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T20:56:29.394087+00:00\", \"level\": \"info\", \"logger\": \"reflex.console\", \"message\": \"Backend running at: http://0.0.0.0:8210\", \"pid\": 7745}\n",
+ "last_non_seq_lines": [
+  "{\"timestamp\": \"2026-10-07T20:56:18.982000+00:00\", \"level\": \"info\", \"logger\": \"reflex.utils.frontend_skeleton\", \"message\": \"Initializing the web directory.\", \"location\": \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9",
+  "{\"timestamp\": \"2026-10-07T20:56:21.287148+00:00\", \"level\": \"success\", \"logger\": \"reflex.reflex\", \"message\": \"Initialized jsondrain. Install dependencies from `requirements.txt` with `uv pip install -r requirements.txt` (",
+  "{\"timestamp\": \"2026-10-07T20:56:29.332113+00:00\", \"level\": \"info\", \"logger\": \"reflex.console\", \"message\": \"App running at: http://localhost:3210/\", \"pid\": 7745}\n",
+  "{\"timestamp\": \"2026-10-07T20:56:29.394087+00:00\", \"level\": \"info\", \"logger\": \"reflex.console\", \"message\": \"Backend running at: http://0.0.0.0:8210\", \"pid\": 7745}\n"
+ ],
+ "leftover_after_exit": "7741 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/reflex run --json --frontend-port 3210 --backend-port 8210\n 7745 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/python -m reflex run --json --frontend-port 3210 --backend-port 8210\n 7850 S    /root/.bun/bin/bun run dev\n 7851 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/jsondrain/.web/node_modules/.bin/react-router dev --host\n 7905 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/python -m reflex run --json --frontend-port 3210 --backend-port 8210\n7851\n7745\n7905"
+}

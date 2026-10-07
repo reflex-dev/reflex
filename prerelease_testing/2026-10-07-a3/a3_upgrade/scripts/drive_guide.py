@@ -55,7 +55,7 @@ with sync_playwright() as p:
     run.notes["verbatim"] = r
     r = click_and_read("#b_fix")
     run.check("guide verbatim fix Child3.work (async with self: self.bump()) increments Parent.count by 1", (r["p"] or "").isdigit() and (r["count_before"] or "").isdigit() and int(r["p"]) - int(r["count_before"]) == 1, r)
-    for name, btn in [("outside", "#b_outside"), ("inside", "#b_inside"), ("readonly", "#b_readonly"), ("type", "#b_type"), ("own_outside", "#b_own"), ("own_var_outside", "#b_own_var")]:
+    for name, btn in [("outside", "#b_outside"), ("inside", "#b_inside"), ("readonly", "#b_readonly"), ("type", "#b_type"), ("own_outside", "#b_own"), ("own_var_outside", "#b_own_var"), ("direct_inherited", "#b_direct_inh"), ("direct_own", "#b_direct_own")]:
         r = click_and_read(btn)
         run.notes[name] = r
         run.check(f"bg {name}", "pass", r)

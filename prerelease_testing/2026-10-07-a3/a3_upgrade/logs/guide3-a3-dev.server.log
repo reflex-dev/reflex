@@ -17,8 +17,8 @@ frontend_compression_formats=['gzip'], frontend_packages=[],
 frontend_lazy_bundled_libraries=False, 
 state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
 redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
-_non_default_attributes={'loglevel', 'app_name', 'plugins', 
-'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+_non_default_attributes={'plugins', 'app_name', 'telemetry_enabled', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
 default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
 extra_overlay_function=None, hydrate_fallback=None, 
 plugins=[SitemapPlugin(trailing_slash='preserve'), 
@@ -54,8 +54,8 @@ frontend_compression_formats=['gzip'], frontend_packages=[],
 frontend_lazy_bundled_libraries=False, 
 state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
 redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
-_non_default_attributes={'loglevel', 'app_name', 'plugins', 
-'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+_non_default_attributes={'plugins', 'app_name', 'telemetry_enabled', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
 default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
 extra_overlay_function=None, hydrate_fallback=None, 
 plugins=[SitemapPlugin(trailing_slash='preserve'), 
@@ -104,10 +104,10 @@ Debug: Initializing the public directory.
 Debug: Initializing the react-router.config.js file.
 Debug: Initializing the vite.config.js file.
 Debug: Initializing the reflex.json file.
-Debug: Setting project hash to 83998192198932880254075874544770584584.
+Debug: Setting project hash to 298659964469143147061202156489958296137.
 Debug: Checking for the latest version of reflex...
 Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
-Debug: Received response from https://pypi.org/pypi/reflex/json in 0.303 seconds
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.037 seconds
 Debug: Latest version of reflex: 0.9.12
 Debug: Creating .gitignore
 Debug: requirements.txt already has reflex as dependency.
@@ -131,7 +131,7 @@ Debug: Checking if Backend port: 8214 is in use for families:
 [<AddressFamily.AF_INET: 2>].
 Debug: Backend port: 8214 is not in use.
 Debug: Registered lifespan task: _setup_event_processor
-Debug: [timing] Compile pages: 0.08s
+Debug: [timing] Compile pages: 0.05s
 Debug: [timing] Copy assets: 0.00s
 Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 23/22 0:00:00
 Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
@@ -160,61 +160,59 @@ Debug: + socket.io-client@4.8.3
 Debug: + sonner@2.0.8
 Debug: + universal-cookie@8.1.2
 Debug: 
-Debug: 226 packages installed [255.00ms]
+Debug: 226 packages installed [210.00ms]
 Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
-'-d', '@react-router/dev@8.4.0', 'postcss-import@17.0.0', 'postcss@8.5.29', 
-'vite@8.3.2', '@react-router/fs-routes@8.4.0', '@emotion/react@11.14.0', 
-'autoprefixer@10.6.1']
+'-d', 'autoprefixer@10.6.1', '@react-router/fs-routes@8.4.0', 'postcss@8.5.29', 
+'postcss-import@17.0.0', 'vite@8.3.2', '@emotion/react@11.14.0', 
+'@react-router/dev@8.4.0']
 Debug: Installing frontend development dependencies
 Debug: bun add v1.4.2 (744846f84)
 Debug: Saved lockfile
 Debug: 
-Debug: installed @react-router/dev@8.4.0 with binaries:
-Debug:  - react-router
-Debug: installed postcss-import@17.0.0
-Debug: installed postcss@8.5.29
-Debug: installed vite@8.3.2 with binaries:
-Debug:  - vite
-Debug: installed @react-router/fs-routes@8.4.0
-Debug: installed @emotion/react@11.14.0
 Debug: installed autoprefixer@10.6.1 with binaries:
 Debug:  - autoprefixer
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss@8.5.29
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
 Debug: 
-Debug: 7 packages installed [26.00ms]
+Debug: 7 packages installed [16.00ms]
 Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
-'@react-router/node@8.4.0', 'react@19.3.0', 'mergician@v2.0.2', 
-'react-error-boundary@6.1.6', 'lucide-react@1.26.0', '@radix-ui/themes@3.3.0', 
-'sonner@2.0.8', 'react-router@8.4.0', 'socket.io-client@4.8.4', 'isbot@5.2.2', 
-'universal-cookie@8.1.2', 'react-helmet@6.1.0', 'react-dom@19.3.0']
+'react-helmet@6.1.0', '@radix-ui/themes@3.3.0', 'sonner@2.0.8', 
+'react-error-boundary@6.1.6', 'mergician@v2.0.2', 'universal-cookie@8.1.2', 
+'@react-router/node@8.4.0', 'socket.io-client@4.8.4', 'isbot@5.2.2', 
+'lucide-react@1.26.0', 'react-router@8.4.0', 'react@19.3.0', 'react-dom@19.3.0']
 Debug: Installing frontend packages
 Debug: bun add v1.4.2 (744846f84)
-Debug: Resolving dependencies
-Debug: Resolved, downloaded and extracted [4]
 Debug: Saved lockfile
 Debug: 
-Debug: installed @react-router/node@8.4.0
-Debug: installed react@19.3.0
-Debug: installed mergician@2.0.2
-Debug: installed react-error-boundary@6.1.6
-Debug: installed lucide-react@1.26.0
+Debug: installed react-helmet@6.1.0
 Debug: installed @radix-ui/themes@3.3.0
 Debug: installed sonner@2.0.8
-Debug: installed react-router@8.4.0
+Debug: installed react-error-boundary@6.1.6
+Debug: installed mergician@2.0.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed @react-router/node@8.4.0
 Debug: installed socket.io-client@4.8.4
 Debug: installed isbot@5.2.2
-Debug: installed universal-cookie@8.1.2
-Debug: installed react-helmet@6.1.0
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.4.0
+Debug: installed react@19.3.0
 Debug: installed react-dom@19.3.0
 Debug: 
-Debug: 13 packages installed [370.00ms]
+Debug: 13 packages installed [18.00ms]
 Debug: Copying .web/bun.lock to 
 /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
 apps/a3_upgrade/guide/app/reflex.lock/bun.lock
 Debug: Copying .web/package.json to 
 /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
 apps/a3_upgrade/guide/app/reflex.lock/package.json
-Debug: [timing] Install Frontend Packages: 0.90s
-Debug: [timing] Write to Disk: 0.11s
+Debug: [timing] Install Frontend Packages: 0.27s
+Debug: [timing] Write to Disk: 0.00s
 ───────────────────────────────── App Running ──────────────────────────────────
 Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
 Debug: Starting frontend
@@ -229,9 +227,9 @@ d/apps/a3_upgrade/guide/app/guideapp',
 /apps/a3_upgrade/guide/app/assets', 
 '/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
 /apps/a3_upgrade/guide/app/rxconfig.py']
-[INFO] Starting granian (main PID: 4685)
+[INFO] Starting granian (main PID: 23171)
 [INFO] Listening at: http://0.0.0.0:8214
-[INFO] Spawning worker-1 with PID: 4892
+[INFO] Spawning worker-1 with PID: 23320
 Debug: Registered lifespan task: _setup_event_processor
 Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
 [INFO] Started worker-1
@@ -239,8 +237,7 @@ Debug:   ➜  Local:   http://localhost:3214/
 App running at: http://localhost:3214/
 Backend running at: http://0.0.0.0:8214
 Debug:   ➜  Network: http://192.0.2.2:3214/  eth0
-Debug: 8:53:30 PM [vite] (ssr) connected.
-Debug: 8:53:30 PM [vite] (client) [optimizer] bundling dependencies...
+Debug: 9:05:12 PM [vite] (ssr) connected.
 [Reflex Backend Exception]
  Traceback (most recent call last):
   File 

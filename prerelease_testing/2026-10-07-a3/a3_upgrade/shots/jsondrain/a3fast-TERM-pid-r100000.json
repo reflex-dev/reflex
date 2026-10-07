@@ -1,0 +1,37 @@
+{
+ "cmd": "run --json --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3",
+ "chatty": false,
+ "signal": "TERM-pid",
+ "slow_rate": 100000.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 5.63,
+  "pause_start": 8.66,
+  "signal": 12.7,
+  "signal_wall": "20:56:12.765Z",
+  "eof": 14.67,
+  "exit": 14.67
+ },
+ "signal_to_eof_s": 1.98,
+ "signal_to_exit_s": 1.98,
+ "returncode": 0,
+ "lines_total": 3,
+ "lines_after_signal": 1,
+ "invalid_json": 0,
+ "invalid_samples": [],
+ "last_line_valid_json": true,
+ "seq_first": null,
+ "seq_max_received": null,
+ "seq_written_at_signal": null,
+ "seq_written_final": null,
+ "lost_tail": null,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T20:56:14.060841+00:00\", \"level\": \"info\", \"logger\": \"reflex.utils.processes\", \"message\": \"Reflex app stopped.\", \"location\": \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/lib/python3.12/site-packages/reflex/utils/processes.py:570\", \"",
+ "last_non_seq_lines": [
+  "{\"timestamp\": \"2026-10-07T20:56:07.610054+00:00\", \"level\": \"info\", \"logger\": \"reflex.console\", \"message\": \"App running at: http://localhost:3210/\", \"pid\": 7235}\n",
+  "{\"timestamp\": \"2026-10-07T20:56:07.616277+00:00\", \"level\": \"info\", \"logger\": \"reflex.console\", \"message\": \"Backend running at: http://0.0.0.0:8210\", \"pid\": 7235}\n",
+  "{\"timestamp\": \"2026-10-07T20:56:14.060841+00:00\", \"level\": \"info\", \"logger\": \"reflex.utils.processes\", \"message\": \"Reflex app stopped.\", \"location\": \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/s"
+ ],
+ "leftover_after_exit": ""
+}

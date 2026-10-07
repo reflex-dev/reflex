@@ -2,30 +2,272 @@
  "tag": "twr-up-prod",
  "results": [
   {
-   "name": "driver exception in up",
-   "status": "fail",
-   "detail": "FileNotFoundError(2, 'No such file or directory')",
-   "t": 2.338
+   "name": "alice's pre-restart session survives: / renders home without re-login",
+   "status": "pass",
+   "detail": "path=/ avatar=al token_now=76f45559-5e9a-4efa-9431-23c46af375f2 same_token=True",
+   "t": 3.562
+  },
+  {
+   "name": "alice posts after upgrade; pre-upgrade tweets still in feed",
+   "status": "pass",
+   "detail": "[['alicer', 'alice after twr-up-prod'], ['daver', 'dave after upgrade twr-stale-prod'], ['daver', 'dave pre-upgrade twr-stale-prod'], ['bobr', 'bob tweet twr-base-prod'], ['alicer', 'alice tweet two twr-base-prod'], ['alicer', 'alice tweet one twr-base-prod']]",
+   "t": 4.033
+  },
+  {
+   "name": "bob's pre-restart session survives (token)",
+   "status": "pass",
+   "detail": "path=/ avatar=bo",
+   "t": 5.911
+  },
+  {
+   "name": "bob logs in with pre-upgrade password row",
+   "status": "pass",
+   "detail": "bo",
+   "t": 7.656
+  },
+  {
+   "name": "bob Following lists alice after login (pre-upgrade follow row)",
+   "status": "pass",
+   "detail": "['alicer']",
+   "t": 8.463
+  },
+  {
+   "name": "bob loads full feed (pre+post upgrade tweets)",
+   "status": "pass",
+   "detail": "[['alicer', 'alice after twr-up-prod'], ['daver', 'dave after upgrade twr-stale-prod'], ['daver', 'dave pre-upgrade twr-stale-prod'], ['bobr', 'bob tweet twr-base-prod'], ['alicer', 'alice tweet two twr-base-prod'], ['alicer', 'alice tweet one twr-base-prod']]",
+   "t": 8.762
+  },
+  {
+   "name": "new user carolupprod signup after upgrade",
+   "status": "pass",
+   "detail": "/",
+   "t": 10.358
+  },
+  {
+   "name": "carolupprod follows alice",
+   "status": "pass",
+   "detail": "['alicer']",
+   "t": 10.634
+  },
+  {
+   "name": "alice sign out -> /login",
+   "status": "pass",
+   "detail": "/login",
+   "t": 11.981
+  },
+  {
+   "name": "alice re-login -> home",
+   "status": "pass",
+   "detail": "al",
+   "t": 13.494
+  },
+  {
+   "name": "alice Followers = bob + carolupprod",
+   "status": "pass",
+   "detail": "['bobr', 'carolupprod', 'daver']",
+   "t": 14.5
+  },
+  {
+   "name": "alice still logged in after reload",
+   "status": "pass",
+   "detail": "al",
+   "t": 14.745
   },
   {
    "name": "console: no unexpected errors/warnings + no page errors",
-   "status": "pass",
-   "detail": "[]",
-   "t": 2.996
+   "status": "anomaly",
+   "detail": "[{\"page\": \"bob-pw\", \"t\": 6.255, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"carol\", \"t\": 8.977, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"alice-tok\", \"t\": 11.974, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"page\": \"alice-tok\", \"t\": 12.054, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}]",
+   "t": 14.899
   },
   {
    "name": "network: no unexpected failed/4xx/5xx requests",
-   "status": "pass",
-   "detail": "[]",
-   "t": 2.996
+   "status": "anomaly",
+   "detail": "[{\"page\": \"bob-pw\", \"t\": 6.252, \"url\": \"http://localhost:3232/login/bg.svg\", \"status\": 404}, {\"page\": \"carol\", \"t\": 8.977, \"url\": \"http://localhost:3232/signup/bg.svg\", \"status\": 404}, {\"page\": \"alice-tok\", \"t\": 11.974, \"url\": \"http://localhost:3232/bg.svg\", \"status\": 404}, {\"page\": \"alice-tok\", \"t\": 12.054, \"url\": \"http://localhost:3232/login/bg.svg\", \"status\": 404}]",
+   "t": 14.899
   }
  ],
- "console": [],
+ "console": [
+  {
+   "page": "bob-tok",
+   "t": 5.919,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "bob-pw",
+   "t": 6.255,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "bob-pw",
+   "t": 6.27,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob-pw",
+   "t": 8.768,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "carol",
+   "t": 8.977,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "carol",
+   "t": 8.987,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol",
+   "t": 8.988,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol",
+   "t": 11.64,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "alice-tok",
+   "t": 11.974,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "alice-tok",
+   "t": 11.974,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice-tok",
+   "t": 11.991,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice-tok",
+   "t": 12.053,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice-tok",
+   "t": 12.054,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "alice-tok",
+   "t": 14.563,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
  "page_errors": [],
- "bad_requests": [],
- "ws_frames": [],
+ "bad_requests": [
+  {
+   "page": "bob-pw",
+   "t": 6.252,
+   "url": "http://localhost:3232/login/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "carol",
+   "t": 8.977,
+   "url": "http://localhost:3232/signup/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "alice-tok",
+   "t": 11.974,
+   "url": "http://localhost:3232/bg.svg",
+   "status": 404
+  },
+  {
+   "page": "alice-tok",
+   "t": 12.054,
+   "url": "http://localhost:3232/login/bg.svg",
+   "status": 404
+  }
+ ],
+ "ws_frames": [
+  {
+   "page": "alice-tok",
+   "t": 1.898,
+   "dir": "open",
+   "payload": "ws://localhost:3232/_event/?token=76f45559-5e9a-4efa-9431-23c46af375f2&EIO=4&transport=websocket"
+  },
+  {
+   "page": "alice-tok",
+   "t": 1.899,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"cWB00PdpznMZ3QEHAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.031,
+   "dir": "out",
+   "len": 309,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.115,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"CX4GGluXr9g5YZq3AAAF\"}"
+  },
+  "{\"page\": \"alice-tok\", \"t\": 2.127, \"dir\": \"in\", \"len\": 2277, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3232\\\",\\\"origin\\\":\\\"http://localhost:3232\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket...",
+  {
+   "page": "alice-tok",
+   "t": 2.128,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 2.13,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice-tok",
+   "t": 3.767,
+   "dir": "out",
+   "len": 223,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.set_tweet\",\"payload\":{\"tweet\":\"alice after twr-up-prod\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  "... 85 more frames trimmed"
+ ],
  "notes": {
   "expect_session": true,
-  "dialogs": []
+  "dialogs": [],
+  "tokens_in": {
+   "alice": "76f45559-5e9a-4efa-9431-23c46af375f2",
+   "bob": "5b4123dd-5f6c-48af-b96a-c1d3ef4ab94c"
+  },
+  "observations": {
+   "A_feed_on_restore": [],
+   "A_followers_on_restore": [
+    "bobr"
+   ],
+   "B_following_on_restore": []
+  },
+  "tokens_out": {
+   "alice": "76f45559-5e9a-4efa-9431-23c46af375f2",
+   "bob": "5b4123dd-5f6c-48af-b96a-c1d3ef4ab94c"
+  }
  }
 }

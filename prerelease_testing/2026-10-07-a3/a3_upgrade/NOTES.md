@@ -77,7 +77,10 @@ doing `type(self).level = 77` (the section 2 warning), then N fresh browser cont
 | documented fix (`async with self: self.bump()`) | +1 | +1 | +1 | +1 ("works on both versions": true) |
 | read-only inherited handler outside the lock | runs, returns the value | same | same | runs |
 | `type(self)` / `self.__class__` / `isinstance(self, Parent)` inside the lock | `StateProxy` / `Child2` / True | same | same | same (0.9.12 too) |
-| handler declared on the SAME state, writing an inherited var, outside the lock | `ImmutableStateError` | same | same | **no error, +10** -> see O-3 |
+| handler declared on the SAME state, writing an inherited var, outside the lock | `ImmutableStateError` | same | same | **no error, +10** |
+| (guide2/3 runs, `bin/seq_guide2.sh`) same-state handler writing a same-state var outside the lock | `ImmutableStateError` | - | - | `ImmutableStateError` (as the guide says) |
+| direct `self.count += 100` on the INHERITED var outside the lock | `ImmutableStateError` | - | (a2 = a3) | **no error, 14 -> 114** -> new finding a3_upgrade-5 (guide misses this break) |
+| direct `self.own += 100` on an own var outside the lock | `ImmutableStateError` | - | - | `ImmutableStateError` |
 | runtime `type(self).level = 77` | the clicking tab keeps 20 (value already stored), new sessions on the same (only) worker see 77 | clicking tab on worker 646; 8 new sessions served by workers 632-644 all see **20** | like a3 dev | new sessions 20 (0.9 ignores class assignment) |
 
 All four guide runs: no unexpected console errors, no failed requests (the prod console "404" is the browser's own `/favicon.ico` fetch, the guide app has no favicon: known-benign).
@@ -104,10 +107,12 @@ drops `--json`, `QA_CHATTY_OFF=1` disables the printer, `QA_EOF_CAP`/`QA_WAIT_CA
 | run (signal, consumer) | a3 | a2 | 0.9.12 (no supervisor) |
 |---|---|---|---|
 | Ctrl-C (SIGINT to the process group), 40 lines/s | exit 6.5 s rc 0, **0 lost, 0 invalid** (two runs) | exit 5.6 s rc 0, **63 lines lost + a truncated last record** (`{"timestamp": ..., "message": "QA-SEQ 0001` cut) | exit 0.25 s; QA-SEQ lines are not JSON on 0.9.12 (pre-#7350) |
-| SIGTERM to the pid, 40 lines/s | exit 6.7 s rc 0, **0 lost, 0 invalid** | exit 5.2 s rc 0, **49 lost + truncated record** | did not exit within 60 s (killed) — chatty back-pressure suspected, rerun with a fast consumer queued |
+| SIGTERM to the pid, 40 lines/s | exit 6.7 s rc 0, **0 lost, 0 invalid** | exit 5.2 s rc 0, **49 lost + truncated record** | did not exit within 60 s (0.9.12 dev never stops on a pid-only SIGTERM, see fast-consumer row) |
 | SIGTERM to the pid, 6 lines/s (backlog > 30 s) | exit **30.4 s** (wall cap) rc 0, 82 lost, **truncated last record** `{"timestamp": "...", "level"` with no newline | exit 5.5 s, 249 lost + truncated record | - |
-| SIGINT to the pid only, 40 lines/s | **never exits** (killed after 210 s; child `reflex run` + server keep running) | **never exits** (same) | did not exit within 60 s (see above) |
-| SIGINT to the pid only, plain `reflex run` (no --json) | exit 0.25 s rc 0 | exit 0.2 s rc 0 | (queued) |
+| SIGINT to the pid only, 40 lines/s | **never exits** (killed after 210 s; child `reflex run` + server keep running) | **never exits** (same) | did not exit within 60 s |
+| SIGINT to the pid only, plain `reflex run` (no --json) | exit 0.25 s rc 0 | exit 0.2 s rc 0 | never (60 s) |
+| fast consumer, no chatty output (`QA_CHATTY_OFF=1`, `bin/seq_json2.sh`): SIGINT to the pid, --json | **never** (60 s) | **never** | never (with or without --json) |
+| fast consumer: SIGTERM to the pid, --json | 2.0 s rc 0 | - | never (60 s; pre-#7328) |
 
 `Unexpected exit from worker-1` (`_granian`, level error) on stderr whenever the whole group gets SIGINT: known-benign, same on 0.9.12/a2 (a2-pass events/ent_auth reports).
 
@@ -177,3 +182,23 @@ Server log: `Warning: Frontend version 0.9.12 for session ... does not match the
 | a3 in place `up` (QA_EXPECT_SESSION=0: `reflex run` wipes `.states` in dev, so users log in again — same on 0.9.12) | 14/0/0 | 14/0/0 |
 | a3 cold `base` (new users, suffix `c`) | 21/0/0 | 21/0/0 |
 `reflex db migrate` after the upgrade rc 0; alembic head unchanged, 0.9.12 rows intact (only additions).
+
+### twitter, prod + Redis (`logs/seq-twr.txt`, `shots/twr/`; attempt 1 in `logs/twr-attempt1/`, `shots/twr-attempt1/`)
+Rerun: `$W/bin/twr_rerun.sh` (rebuilds `$SB/envs/a3_upgrade-twr` with 0.9.12 via `uv venv --clear`, then `bin/seq_twr.sh`): redis 8209, prod on 3232,
+`REFLEX_REDIS_URL=redis://localhost:8209 REFLEX_API_URL=http://localhost:3232 QA_USER_SUFFIX=r`; upgrade with `'reflex[db]==0.10.0a3'` (SQLAlchemy 2.0.54 -> 2.1.4, greenlet kept);
+rollback = `uv pip sync freeze/twr-base.txt` (exact 0.9.12 graph) against the same Redis.
+| run | result | a2 pass |
+|---|---|---|
+| 0.9.12 prod `base` | 19/0/2 (anomalies: the app's `bg.svg` 404s, pre-existing) | 19/0/2 |
+| stale tab (dave) kept open across stop -> upgrade -> a3 | 8/0/3 (old tab does not reload itself, keeps working against a3, session kept; F-019 log-only version warning) | 8/0/3 |
+| a3 prod `up` with the 0.9.12 tokens (QA_EXPECT_SESSION=1) | 12/0/2: alice's and bob's 0.9.12-pickled sessions load on a3 without re-login, pre-upgrade rows intact | 12/0/2 |
+| a3 prod `base` (new users) | 19/0/2 | 19/0/2 |
+| **rollback to 0.9.12 against the same Redis** (guide/self-hosting statement) | 11/1/2: alice's session (modified under a3) is discarded -> `/login`, silently (nothing in the log, no crash); bob's token is still logged in because a3 only READ his auth substate and never re-pickled it; the 1 FAIL is my driver expecting every session to reset | - |
+Granian spawns 9 workers on 4 CPUs on both 0.9.12 and a3 (`2 * cpu_count + 1`, as self-hosting.md says) and logs its own
+`[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available ... Consider using 4 workers` on every prod+Redis start, 0.9.12 included (O-4, pre-existing).
+Attempt 1 (20:48, load average ~20 from the other agents): the 0.9.12 baseline timed out at "alice still logged in after reload" (avatar not rendered within 10 s),
+so no token file was written and the later drives could not run; the rerun (load ~8) passed 19/0/2. Treated as a load timeout of the baseline, not a finding.
+
+Conclusion #7428: fixed as described — no lost lines and no truncated record for a consumer that can keep up within 30 s, bounded shutdown (30.4 s) for one that cannot;
+remaining wart at the cap = a truncated final record (inbox a3_upgrade-3). Separate pre-existing gap: `reflex run --json` never stops on a SIGINT sent to its pid
+(the supervisor swallows it; plain `reflex run` exits in 0.25 s) — inbox a3_upgrade-4 (0.9.12 does not stop on it either, so not a regression).
