@@ -1,0 +1,21 @@
+f3-a2-seed4 serving:  (expected venv alpha2)
+SHUTDOWN: main pid 14840 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+f3-a2-seed4 DONE
+f3-a1-seed4 serving:  (expected venv upgrade_sweep-a1)
+SHUTDOWN: main pid 22630 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+f3-a1-seed4 DONE
+f3-stable-seed4 serving:  (expected venv stable)
+SHUTDOWN: main pid 28894 still alive 15s after SIGTERM
+ORPHAN after SIGTERM: port=3158 pid=28957 cmd=node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/f3/cvstore-stable/.web/node_modules/
+f3-stable-seed4 DONE
+f3-a2-seed0 serving:  (expected venv alpha2)
+SHUTDOWN: main pid 1488 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+f3-a2-seed0 DONE
+f3-stable-seed0 serving:  (expected venv stable)
+SHUTDOWN: main pid 5359 still alive 15s after SIGTERM
+ORPHAN after SIGTERM: port=3158 pid=5417 cmd=node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/f3/cvstore-stable/.web/node_modules/
+f3-stable-seed0 DONE
+ALL_F3_DONE

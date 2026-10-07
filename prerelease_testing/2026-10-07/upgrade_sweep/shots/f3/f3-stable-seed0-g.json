@@ -1,0 +1,174 @@
+{
+ "variant": "g",
+ "label": "f3-stable-seed0",
+ "phases": [
+  {
+   "phase": "initial",
+   "storage": {
+    "local:v_g": null
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0",
+    "plain": "plain=initial"
+   },
+   "url": "http://localhost:3158/g",
+   "hydrated": true
+  },
+  {
+   "phase": "after-set-bad",
+   "storage": {
+    "local:v_g": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0",
+    "plain": "plain=initial"
+   },
+   "url": "http://localhost:3158/g"
+  },
+  {
+   "phase": "reload",
+   "storage": {
+    "local:v_g": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=saw-bad",
+    "seen": "seen=",
+    "noop_count": "noop=0",
+    "plain": "plain=initial"
+   },
+   "url": "http://localhost:3158/g",
+   "hydrated": true
+  },
+  {
+   "phase": "probe",
+   "storage": {
+    "local:v_g": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=saw-bad",
+    "seen": "seen=backend ls='bad' plain='set-by-cv'",
+    "noop_count": "noop=0",
+    "plain": "plain=initial"
+   },
+   "url": "http://localhost:3158/g"
+  },
+  {
+   "phase": "noop-event",
+   "storage": {
+    "local:v_g": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=saw-bad",
+    "seen": "seen=backend ls='bad' plain='set-by-cv'",
+    "noop_count": "noop=1",
+    "plain": "plain=initial"
+   },
+   "url": "http://localhost:3158/g"
+  },
+  {
+   "phase": "after-client-nav",
+   "storage": {
+    "local:v_g": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=saw-bad",
+    "seen": "seen=backend ls='bad' plain='set-by-cv'",
+    "noop_count": "noop=1",
+    "plain": "plain=initial"
+   },
+   "url": "http://localhost:3158/g",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2",
+   "storage": {
+    "local:v_g": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=saw-bad",
+    "seen": "seen=backend ls='bad' plain='set-by-cv'",
+    "noop_count": "noop=1",
+    "plain": "plain=set-by-cv"
+   },
+   "url": "http://localhost:3158/g",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2-probe",
+   "storage": {
+    "local:v_g": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=saw-bad",
+    "seen": "seen=backend ls='bad' plain='set-by-cv'",
+    "noop_count": "noop=1",
+    "plain": "plain=set-by-cv"
+   },
+   "url": "http://localhost:3158/g"
+  }
+ ],
+ "ws": [
+  {
+   "t": 0.575,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:3158/?token=WCwLPHQ-0ST0"
+  },
+  {
+   "t": 0.58,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 0.855,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=58147af0-97f9-4892-ac3b-6b072b74a7d8&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.873,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "0{\"sid\":\"3bQq4LeYGBGo6OZ3AAAq\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 0.873,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 0.898,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"GUfoL1iYn6bqfqi6AAAr\"}"
+  },
+  {
+   "t": 0.899,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/g\",\"asPath\":\"/g\"}}]"
+  },
+  {
+   "t": 0.899,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/g\",\"asPath\":\"/g\"}}]"
+  },
+  "... 45 more frames trimmed"
+ ],
+ "console": []
+}

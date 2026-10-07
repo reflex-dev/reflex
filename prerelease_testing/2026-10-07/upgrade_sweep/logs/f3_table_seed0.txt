@@ -1,0 +1,9 @@
+variant    f3-stable-seed0                    | f3-a2-seed0                       
+a          reload='bad' probe='bad' r2='bad'  | reload='' probe='' r2=''          
+b          reload='bad' probe='bad' r2='bad'  | reload='' probe='' r2=''          
+c          reload='','','' probe='','','' r2='','','' | reload='','','' probe='','','' r2='','',''
+d          reload='bad','bad','bad' probe='','','' r2='','','' | reload='bad','bad','bad' probe='','','' r2='','',''
+e_cookie   reload='bad' probe='bad' r2='bad'  | reload='' probe='' r2=''          
+e_session  reload='bad' probe='bad' r2='bad'  | reload='' probe='' r2=''          
+f          reload='bad' probe='bad' r2='bad'  | reload='' probe='' r2=''          
+g          reload='bad' probe='bad' r2='bad'  | reload='bad' probe='bad' r2='bad' 

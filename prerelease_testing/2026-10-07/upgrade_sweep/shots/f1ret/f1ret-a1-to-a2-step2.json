@@ -1,0 +1,210 @@
+{
+ "tag": "f1ret-a1-to-a2-step2",
+ "url": "http://localhost:3156",
+ "args": {
+  "url": "http://localhost:3156",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/f1ret",
+  "tag": "f1ret-a1-to-a2-step2",
+  "profile": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/profiles/f1ret-a1-to-a2",
+  "wait": 5.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "pass",
+   "detail": "[]"
+  }
+ ],
+ "cookies_before": [
+  {
+   "name": "wu_ck",
+   "value": "wu-unset",
+   "domain": "localhost",
+   "path": "/",
+   "expires": 1791359535.738857,
+   "httpOnly": false,
+   "secure": false,
+   "sameSite": "Lax"
+  }
+ ],
+ "end": {
+  "ls": {
+   "cu_ls": "cu-light",
+   "theme": "system",
+   "wt_ls": "wt-light",
+   "wu_ls": "wu-light",
+   "wu_sync": "wu-sync-default",
+   "last_compiled_theme": "system"
+  },
+  "ss": {
+   "token": "4bac9c5a-fc20-4935-f109-5d990ca4c1d1"
+  },
+  "cookie": "wu_ck=wu-unset"
+ },
+ "body_text": "H:yes\n\npl-dark-v2\n\nwu-light\n\nwu-sync-default\n\n6b5037b8d5d44e84aaa8a84a538ccfa2\n\ncs-dark-v2\n\ncu-light\n\nws-light\n\n[\"alpha\",\"beta\",\"gamma\",\"zeta\",\"delta\",\"eta\",\"epsilon\"]\n\nwt-light\n\n1791358956667884179\n\nsync A",
+ "cookies_after": [
+  {
+   "name": "wu_ck",
+   "value": "wu-unset",
+   "domain": "localhost",
+   "path": "/",
+   "expires": 1791359535.738857,
+   "httpOnly": false,
+   "secure": false,
+   "sameSite": "Lax"
+  }
+ ],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {
+   "cu_ls": "cu-light",
+   "theme": "system",
+   "wt_ls": "wt-light",
+   "wu_ls": "wu-light",
+   "wu_sync": "wu-sync-default",
+   "last_compiled_theme": "system"
+  },
+  "ss": {},
+  "cookie": "wu_ck=wu-unset",
+  "t": 99,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {},
+ "writes_total": 2,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 2419,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "4bac9c5a-fc20-4935-f109-5d990ca4c1d1",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 2665,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 2419,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "4bac9c5a-fc20-4935-f109-5d990ca4c1d1",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 2665,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 7.47,
+   "dir": "recv",
+   "data": "0{\"sid\":\"i2o1HbbhZwq52DueAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 7.47,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.f1combo___f1combo____with_uuid.wu_ck_rx_state_\":\"wu-unset\",\"reflex___state____state.f1combo___f1combo____with_uuid.wu_ls_rx_state_\":\"wu-light\",\"reflex___state____state.f1combo___f1combo____with_uuid.wu_sync_rx_state_\":\"wu-sync-default\",\"reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid.cu_ls_rx_state_\":\"cu-light\",\"reflex___state____state.f1combo___f1combo____with_clock_var.wt_ls_rx_state_\":\"wt-light\"},\"hashes\":[\"67434bbc0c2ac128\",\"b084fc0c68f7c73a\",\"8997247f7197d310\",\"6b0c5891007064e5\",\"364f9138d7d63f10\",\"3134a972c7d046ff\",\"4aa1284e1a9f0775\",\"45c45484af325b58\",\"8087d765714bf763\",\"037ac9e366e116ca\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "t": 7.47,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"kDr1W-E2fRns3V2GAAAB\"}"
+  },
+  {
+   "t": 7.47,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8156\",\"origin\":\"http://localhost:3156\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"wu_ck=wu-unset\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"jxdp4Ahf9HkxYetBBV+7RA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"cookie\":\"wu_ck=wu-unset\",\"host\":\"localhost:8156\",\"origin\":\"http://localhost:3156\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"jxdp4Ahf9HkxYetBBV+7RA==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3156\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3156/index\",\"full_raw_path\":\"http://localhost:3156/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"4bac9c5a-fc20-4935-f109-5d990ca4c1d1\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"kDr1W-E2fRns3V2GAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3156/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_ck_rx_state_\":\"wu-unset\",\"wu_id_rx_state_\":\"6b5037b8d5d44e84aaa8a84a538ccfa2\",\"wu_ls_rx_state_\":\"wu-light\",\"wu_ss_rx_state_\":\"wu-x\",\"wu_sync_rx_state_\":\"wu-sync-default\"},\"reflex___state____state.f1combo___f1combo____with_set\":{\"ws_ls_rx_state_\":\"ws-light\",\"ws_tags_rx_state_\":[\"alpha\",\"beta\",\"gamma\",\"zeta\",\"delta\",\"eta\",\"epsilon\"]},\"reflex___state____state.f1combo___f1combo____with_clock_var\":{\"wt_ls_rx_state_\":\"wt-light\",\"wt_stamp_rx_state_\":\"1791358956667884179\"},\"reflex___state____state.f1combo___f1combo____parent_uuid\":{\"pu_id_rx_state_\":\"9d29fe079b6447b9a16f733ed313d975\"},\"reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid\":{\"cu_ck_rx_state_\":\"cu-ck-v2\",\"cu_id_rx_state_\":\"3014db1840c043d2b1b092fdebbb4abd\",\"cu_ls_rx_state_\":\"cu-light\",\"cu_ss_rx_state_\":\"cu-x\"}}}]"
+  },
+  {
+   "t": 7.47,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "console": [
+  {
+   "t": 2.09,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 2.44,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 7.46,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 7.47,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [
+   "cu_ls",
+   "last_compiled_theme",
+   "theme",
+   "wt_ls",
+   "wu_ls",
+   "wu_sync"
+  ],
+  "doc_start_cookie_names": [
+   "wu_ck"
+  ],
+  "end_ls_keys": [
+   "cu_ls",
+   "last_compiled_theme",
+   "theme",
+   "wt_ls",
+   "wu_ls",
+   "wu_sync"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [
+   "wu_ck"
+  ],
+  "n_writes": 2,
+  "n_changing": 2,
+  "n_changing_app": 0,
+  "n_idempotent": 0,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {}
+ }
+}

@@ -1,0 +1,443 @@
+{
+ "tag": "f1ret-a1-to-a1-step2",
+ "url": "http://localhost:3156",
+ "args": {
+  "url": "http://localhost:3156",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/f1ret",
+  "tag": "f1ret-a1-to-a1-step2",
+  "profile": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/profiles/f1ret-a1-to-a1",
+  "wait": 5.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "fail",
+   "detail": "[('cookie', 'cu_ck', 'cu_ck=cu-ck-v2; Path=/; SameSite=Lax'), ('setItem', 'cu_ss', 'cu-x'), ('setItem', 'wu_ss', 'wu-x')]"
+  }
+ ],
+ "cookies_before": [
+  {
+   "name": "wu_ck",
+   "value": "wu-unset",
+   "domain": "localhost",
+   "path": "/",
+   "expires": 1791359497.427219,
+   "httpOnly": false,
+   "secure": false,
+   "sameSite": "Lax"
+  }
+ ],
+ "end": {
+  "ls": {
+   "cu_ls": "cu-light",
+   "theme": "system",
+   "wt_ls": "wt-light",
+   "wu_ls": "wu-light",
+   "wu_sync": "wu-sync-default",
+   "last_compiled_theme": "system"
+  },
+  "ss": {
+   "cu_ss": "cu-x",
+   "token": "53e2d621-470c-402e-b766-278b5414f264",
+   "wu_ss": "wu-x"
+  },
+  "cookie": "wu_ck=wu-unset; cu_ck=cu-ck-v2"
+ },
+ "body_text": "H:yes\n\npl-dark-v2\n\nwu-light\n\nwu-sync-default\n\n21f9e9e4a59447d99f4af1d284823674\n\ncs-dark-v2\n\ncu-light\n\nws-light\n\n[\"eta\",\"zeta\",\"epsilon\",\"gamma\",\"delta\",\"beta\",\"alpha\"]\n\nwt-light\n\n1791358915711303687\n\nsync A",
+ "cookies_after": [
+  {
+   "name": "wu_ck",
+   "value": "wu-unset",
+   "domain": "localhost",
+   "path": "/",
+   "expires": 1791359515.734816,
+   "httpOnly": false,
+   "secure": false,
+   "sameSite": "Lax"
+  },
+  {
+   "name": "cu_ck",
+   "value": "cu-ck-v2",
+   "domain": "localhost",
+   "path": "/",
+   "expires": -1,
+   "httpOnly": false,
+   "secure": false,
+   "sameSite": "Lax"
+  }
+ ],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {
+   "cu_ls": "cu-light",
+   "theme": "system",
+   "wt_ls": "wt-light",
+   "wu_ls": "wu-light",
+   "wu_sync": "wu-sync-default",
+   "last_compiled_theme": "system"
+  },
+  "ss": {},
+  "cookie": "wu_ck=wu-unset",
+  "t": 90,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {
+  "setItem cu_ls": 1,
+  "setItem wt_ls": 1,
+  "cookie wu_ck": 1,
+  "setItem wu_ls": 1,
+  "setItem wu_sync": 1
+ },
+ "writes_total": 10,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 2264,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "53e2d621-470c-402e-b766-278b5414f264",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 2655,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "cu_ck=cu-ck-v2; Path=/; SameSite=Lax",
+   "prev_cookie_header": "wu_ck=wu-unset",
+   "t": 2691,
+   "path": "/",
+   "cookie_name": "cu_ck",
+   "cookie_val": "cu-ck-v2",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "cu_ls",
+   "value": "cu-light",
+   "prev": "cu-light",
+   "same": true,
+   "vlen": 8,
+   "t": 2692,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "cu_ss",
+   "value": "cu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 2692,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wt_ls",
+   "value": "wt-light",
+   "prev": "wt-light",
+   "same": true,
+   "vlen": 8,
+   "t": 2692,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "wu_ck=wu-unset; Max-Age=600; Path=/; SameSite=Lax",
+   "prev_cookie_header": "wu_ck=wu-unset; cu_ck=cu-ck-v2",
+   "t": 2693,
+   "path": "/",
+   "cookie_name": "wu_ck",
+   "cookie_val": "wu-unset",
+   "prev_val": "wu-unset"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_ls",
+   "value": "wu-light",
+   "prev": "wu-light",
+   "same": true,
+   "vlen": 8,
+   "t": 2694,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "wu_ss",
+   "value": "wu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 2695,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_sync",
+   "value": "wu-sync-default",
+   "prev": "wu-sync-default",
+   "same": true,
+   "vlen": 15,
+   "t": 2695,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 2264,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "53e2d621-470c-402e-b766-278b5414f264",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 2655,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "cu_ck=cu-ck-v2; Path=/; SameSite=Lax",
+   "prev_cookie_header": "wu_ck=wu-unset",
+   "t": 2691,
+   "path": "/",
+   "cookie_name": "cu_ck",
+   "cookie_val": "cu-ck-v2",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "cu_ss",
+   "value": "cu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 2692,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "wu_ss",
+   "value": "wu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 2695,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [
+  {
+   "type": "cookie",
+   "value": "cu_ck=cu-ck-v2; Path=/; SameSite=Lax",
+   "prev_cookie_header": "wu_ck=wu-unset",
+   "t": 2691,
+   "path": "/",
+   "cookie_name": "cu_ck",
+   "cookie_val": "cu-ck-v2",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "cu_ss",
+   "value": "cu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 2692,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "wu_ss",
+   "value": "wu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 2695,
+   "path": "/"
+  }
+ ],
+ "writes_idempotent": [
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "cu_ls",
+   "value": "cu-light",
+   "prev": "cu-light",
+   "same": true,
+   "vlen": 8,
+   "t": 2692,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wt_ls",
+   "value": "wt-light",
+   "prev": "wt-light",
+   "same": true,
+   "vlen": 8,
+   "t": 2692,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "wu_ck=wu-unset; Max-Age=600; Path=/; SameSite=Lax",
+   "prev_cookie_header": "wu_ck=wu-unset; cu_ck=cu-ck-v2",
+   "t": 2693,
+   "path": "/",
+   "cookie_name": "wu_ck",
+   "cookie_val": "wu-unset",
+   "prev_val": "wu-unset"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_ls",
+   "value": "wu-light",
+   "prev": "wu-light",
+   "same": true,
+   "vlen": 8,
+   "t": 2694,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_sync",
+   "value": "wu-sync-default",
+   "prev": "wu-sync-default",
+   "same": true,
+   "vlen": 15,
+   "t": 2695,
+   "path": "/"
+  }
+ ],
+ "ws": [
+  {
+   "t": 7.4,
+   "dir": "recv",
+   "data": "0{\"sid\":\"7SlIKmF8OHZuBPXNAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 7.41,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.f1combo___f1combo____with_uuid.wu_ck_rx_state_\":\"wu-unset\",\"reflex___state____state.f1combo___f1combo____with_clock_var.wt_ls_rx_state_\":\"wt-light\",\"reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid.cu_ls_rx_state_\":\"cu-light\",\"reflex___state____state.f1combo___f1combo____with_uuid.wu_ls_rx_state_\":\"wu-light\",\"reflex___state____state.f1combo___f1combo____with_uuid.wu_sync_rx_state_\":\"wu-sync-default\"},\"hashes\":[\"67434bbc0c2ac128\",\"b084fc0c68f7c73a\",\"8997247f7197d310\",\"eee222e63537e0b9\",\"99938958b3d054b2\",\"3134a972c7d046ff\",\"4aa1284e1a9f0775\",\"fc1b1f2f8c995806\",\"d437581b721f736d\",\"5269c3cce14b4ad5\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "t": 7.41,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"9k52mknrAC1haxHMAAAB\"}"
+  },
+  {
+   "t": 7.41,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8156\",\"origin\":\"http://localhost:3156\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"wu_ck=wu-unset\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"sAbnM6aQVEcCR3DdB+FNeQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"cookie\":\"wu_ck=wu-unset\",\"host\":\"localhost:8156\",\"origin\":\"http://localhost:3156\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"sAbnM6aQVEcCR3DdB+FNeQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3156\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3156/index\",\"full_raw_path\":\"http://localhost:3156/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"53e2d621-470c-402e-b766-278b5414f264\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"9k52mknrAC1haxHMAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3156/\"}},\"reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid\":{\"cu_ck_rx_state_\":\"cu-ck-v2\",\"cu_id_rx_state_\":\"b73cd3bc04b04c7a9676b38a83d19711\",\"cu_ls_rx_state_\":\"cu-light\",\"cu_ss_rx_state_\":\"cu-x\"},\"reflex___state____state.f1combo___f1combo____with_clock_var\":{\"wt_ls_rx_state_\":\"wt-light\",\"wt_stamp_rx_state_\":\"1791358915711303687\"},\"reflex___state____state.f1combo___f1combo____parent_uuid\":{\"pu_id_rx_state_\":\"9dfb14c561b44a4a8c37a8b3acedbabb\"},\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_ck_rx_state_\":\"wu-unset\",\"wu_id_rx_state_\":\"21f9e9e4a59447d99f4af1d284823674\",\"wu_ls_rx_state_\":\"wu-light\",\"wu_ss_rx_state_\":\"wu-x\",\"wu_sync_rx_state_\":\"wu-sync-default\"}}}]"
+  },
+  {
+   "t": 7.42,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "console": [
+  {
+   "t": 1.9,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 2.38,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 7.4,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 7.41,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [
+   "cu_ls",
+   "last_compiled_theme",
+   "theme",
+   "wt_ls",
+   "wu_ls",
+   "wu_sync"
+  ],
+  "doc_start_cookie_names": [
+   "wu_ck"
+  ],
+  "end_ls_keys": [
+   "cu_ls",
+   "last_compiled_theme",
+   "theme",
+   "wt_ls",
+   "wu_ls",
+   "wu_sync"
+  ],
+  "end_ss_keys": [
+   "cu_ss",
+   "token",
+   "wu_ss"
+  ],
+  "end_cookie_names": [
+   "cu_ck",
+   "wu_ck"
+  ],
+  "n_writes": 10,
+  "n_changing": 5,
+  "n_changing_app": 3,
+  "n_idempotent": 5,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {
+   "setItem cu_ls": 1,
+   "setItem wt_ls": 1,
+   "cookie wu_ck": 1,
+   "setItem wu_ls": 1,
+   "setItem wu_sync": 1
+  }
+ }
+}

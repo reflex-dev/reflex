@@ -1,0 +1,5 @@
+f3-a2-seed4 serving:  (expected venv alpha2)
+f3-a1-seed4 serving:  (expected venv upgrade_sweep-a1)
+f3-stable-seed4 serving:  (expected venv stable)
+f3-a2-seed0 serving:  (expected venv alpha2)
+f3-stable-seed0 serving:  (expected venv stable)

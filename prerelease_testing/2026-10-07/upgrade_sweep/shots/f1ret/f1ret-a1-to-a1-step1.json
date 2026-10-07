@@ -1,0 +1,501 @@
+{
+ "tag": "f1ret-a1-to-a1-step1",
+ "url": "http://localhost:3156",
+ "args": {
+  "url": "http://localhost:3156",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/f1ret",
+  "tag": "f1ret-a1-to-a1-step1",
+  "profile": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/profiles/f1ret-a1-to-a1",
+  "wait": 5.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "fail",
+   "detail": "[('cookie', 'wu_ck', 'wu_ck=wu-unset; Max-Age=600; Path=/; SameSite=Lax'), ('setItem', 'wu_ls', 'wu-light'), ('setItem', 'wu_ss', 'wu-x'), ('setItem', 'wu_sync', 'wu-sync-default'), ('cookie', 'cu_ck', 'cu_ck=cu-unset; Path=/; SameSite=Lax'), ('setItem', 'cu_ls', 'cu-light'), ('setItem', 'cu_ss', 'cu-x'), ('setItem', 'wt_ls', 'wt-light')]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "cu_ls": "cu-light",
+   "theme": "system",
+   "wu_sync": "wu-sync-default",
+   "wu_ls": "wu-light",
+   "wt_ls": "wt-light",
+   "last_compiled_theme": "system"
+  },
+  "ss": {
+   "cu_ss": "cu-x",
+   "token": "2c5bbdeb-68d8-446f-bac0-377c0b141e91",
+   "wu_ss": "wu-x"
+  },
+  "cookie": "wu_ck=wu-unset; cu_ck=cu-unset"
+ },
+ "body_text": "H:yes\n\npl-light\n\nwu-light\n\nwu-sync-default\n\n004b8432511b4f0d984fc62e88e4f23b\n\ncs-light\n\ncu-light\n\nws-light\n\n[\"eta\",\"alpha\",\"delta\",\"zeta\",\"epsilon\",\"beta\",\"gamma\"]\n\nwt-light\n\n1791358897417092120\n\nsync A",
+ "cookies_after": [
+  {
+   "name": "wu_ck",
+   "value": "wu-unset",
+   "domain": "localhost",
+   "path": "/",
+   "expires": 1791359497.427219,
+   "httpOnly": false,
+   "secure": false,
+   "sameSite": "Lax"
+  },
+  {
+   "name": "cu_ck",
+   "value": "cu-unset",
+   "domain": "localhost",
+   "path": "/",
+   "expires": -1,
+   "httpOnly": false,
+   "secure": false,
+   "sameSite": "Lax"
+  }
+ ],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {},
+  "ss": {},
+  "cookie": "",
+  "t": 47,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {},
+ "writes_total": 12,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1690,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "2c5bbdeb-68d8-446f-bac0-377c0b141e91",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1951,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1957,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1957,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "wu_ck=wu-unset; Max-Age=600; Path=/; SameSite=Lax",
+   "prev_cookie_header": "",
+   "t": 1974,
+   "path": "/",
+   "cookie_name": "wu_ck",
+   "cookie_val": "wu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_ls",
+   "value": "wu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "wu_ss",
+   "value": "wu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_sync",
+   "value": "wu-sync-default",
+   "prev": null,
+   "same": false,
+   "vlen": 15,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "cu_ck=cu-unset; Path=/; SameSite=Lax",
+   "prev_cookie_header": "wu_ck=wu-unset",
+   "t": 1975,
+   "path": "/",
+   "cookie_name": "cu_ck",
+   "cookie_val": "cu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "cu_ls",
+   "value": "cu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "cu_ss",
+   "value": "cu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wt_ls",
+   "value": "wt-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 1976,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1690,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "2c5bbdeb-68d8-446f-bac0-377c0b141e91",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1951,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1957,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1957,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "wu_ck=wu-unset; Max-Age=600; Path=/; SameSite=Lax",
+   "prev_cookie_header": "",
+   "t": 1974,
+   "path": "/",
+   "cookie_name": "wu_ck",
+   "cookie_val": "wu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_ls",
+   "value": "wu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "wu_ss",
+   "value": "wu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_sync",
+   "value": "wu-sync-default",
+   "prev": null,
+   "same": false,
+   "vlen": 15,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "cu_ck=cu-unset; Path=/; SameSite=Lax",
+   "prev_cookie_header": "wu_ck=wu-unset",
+   "t": 1975,
+   "path": "/",
+   "cookie_name": "cu_ck",
+   "cookie_val": "cu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "cu_ls",
+   "value": "cu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "cu_ss",
+   "value": "cu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wt_ls",
+   "value": "wt-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 1976,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [
+  {
+   "type": "cookie",
+   "value": "wu_ck=wu-unset; Max-Age=600; Path=/; SameSite=Lax",
+   "prev_cookie_header": "",
+   "t": 1974,
+   "path": "/",
+   "cookie_name": "wu_ck",
+   "cookie_val": "wu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_ls",
+   "value": "wu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "wu_ss",
+   "value": "wu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_sync",
+   "value": "wu-sync-default",
+   "prev": null,
+   "same": false,
+   "vlen": 15,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "cu_ck=cu-unset; Path=/; SameSite=Lax",
+   "prev_cookie_header": "wu_ck=wu-unset",
+   "t": 1975,
+   "path": "/",
+   "cookie_name": "cu_ck",
+   "cookie_val": "cu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "cu_ls",
+   "value": "cu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "cu_ss",
+   "value": "cu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 1975,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wt_ls",
+   "value": "wt-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 1976,
+   "path": "/"
+  }
+ ],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 6.72,
+   "dir": "recv",
+   "data": "0{\"sid\":\"jIFxq8WO-ZNZ498HAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 6.72,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"67434bbc0c2ac128\",\"b084fc0c68f7c73a\",\"8997247f7197d310\",\"39036f22d6905c67\",\"737f87d66d5a0411\",\"4b2fd1758fda42a6\",\"a80c25b9224a715c\",\"4fddedafe35d0a58\",\"9812690daa757157\",\"10223003777e3969\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "t": 6.73,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"0o-epMRYQJv6GWUjAAAB\"}"
+  },
+  {
+   "t": 6.73,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8156\",\"origin\":\"http://localhost:3156\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"IfHe1d8nH3FXWW0pOqLg+g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8156\",\"origin\":\"http://localhost:3156\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"IfHe1d8nH3FXWW0pOqLg+g==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3156\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3156/index\",\"full_raw_path\":\"http://localhost:3156/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"2c5bbdeb-68d8-446f-bac0-377c0b141e91\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"0o-epMRYQJv6GWUjAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3156/\"}},\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_ck_rx_state_\":\"wu-unset\",\"wu_id_rx_state_\":\"004b8432511b4f0d984fc62e88e4f23b\",\"wu_ls_rx_state_\":\"wu-light\",\"wu_ss_rx_state_\":\"wu-x\",\"wu_sync_rx_state_\":\"wu-sync-default\"},\"reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid\":{\"cu_ck_rx_state_\":\"cu-unset\",\"cu_id_rx_state_\":\"9102cc97913c46519de19b4f310e86bf\",\"cu_ls_rx_state_\":\"cu-light\",\"cu_ss_rx_state_\":\"cu-x\"},\"reflex___state____state.f1combo___f1combo____parent_uuid\":{\"pu_id_rx_state_\":\"e8d5f99ceaa94985b843dd26d899df7b\"},\"reflex___state____state.f1combo___f1combo____with_clock_var\":{\"wt_ls_rx_state_\":\"wt-light\",\"wt_stamp_rx_state_\":\"1791358897417092120\"}}}]"
+  },
+  {
+   "t": 6.73,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "console": [
+  {
+   "t": 1.28,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 1.68,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 6.72,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 6.72,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "cu_ls",
+   "last_compiled_theme",
+   "theme",
+   "wt_ls",
+   "wu_ls",
+   "wu_sync"
+  ],
+  "end_ss_keys": [
+   "cu_ss",
+   "token",
+   "wu_ss"
+  ],
+  "end_cookie_names": [
+   "cu_ck",
+   "wu_ck"
+  ],
+  "n_writes": 12,
+  "n_changing": 12,
+  "n_changing_app": 8,
+  "n_idempotent": 0,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {}
+ }
+}

@@ -1,0 +1,55 @@
+SUMMARY f3-a1-seed4 a:
+   reload            [l='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen='seen=' noop_count='noop=0'
+   probe             [l='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen="seen=backend ls=''" noop_count='noop=0'
+   noop-event        [l='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen="seen=backend ls=''" noop_count='noop=1'
+   after-client-nav  [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2           [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2-probe     [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+SUMMARY f3-a1-seed4 b:
+   reload            [l='bad'] var='var=bad' check='check=cleared-by-uncached-cv' seen='seen=' noop_count='noop=0'
+   probe             [l='bad'] var='var=bad' check='check=cleared-by-uncached-cv' seen="seen=backend ls=''" noop_count='noop=0'
+   noop-event        [l='bad'] var='var=bad' check='check=cleared-by-uncached-cv' seen="seen=backend ls=''" noop_count='noop=1'
+   after-client-nav  [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2           [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2-probe     [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+SUMMARY f3-a1-seed4 c:
+   reload            [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' loads='loads=2' seen='seen='
+   probe             [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' loads='loads=2' seen="seen=backend ls='' ck='' ss=''"
+   after-client-nav  [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' loads='loads=3' seen="seen=backend ls='' ck='' ss=''"
+   reload2           [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' loads='loads=4' seen="seen=backend ls='' ck='' ss=''"
+   reload2-probe     [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' loads='loads=4' seen="seen=backend ls='' ck='' ss=''"
+SUMMARY f3-a1-seed4 d:
+   reload            [l='bad',c='bad',s='bad'] ls='ls=bad' ck='ck=bad' ss='ss=bad' seen='seen='
+   fix-event         [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' seen='seen='
+   probe             [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' seen="seen=backend ls='' ck='' ss=''"
+   after-client-nav  [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' seen="seen=backend ls='' ck='' ss=''"
+   reload2           [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' seen="seen=backend ls='' ck='' ss=''"
+   reload2-probe     [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' seen="seen=backend ls='' ck='' ss=''"
+SUMMARY f3-a1-seed4 e_cookie:
+   reload            [c='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen='seen=' noop_count='noop=0'
+   probe             [c='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen="seen=backend ck=''" noop_count='noop=0'
+   noop-event        [c='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen="seen=backend ck=''" noop_count='noop=1'
+   after-client-nav  [c=''] var='var=' check="check=value=''" seen="seen=backend ck=''" noop_count='noop=1'
+   reload2           [c=''] var='var=' check="check=value=''" seen="seen=backend ck=''" noop_count='noop=1'
+   reload2-probe     [c=''] var='var=' check="check=value=''" seen="seen=backend ck=''" noop_count='noop=1'
+SUMMARY f3-a1-seed4 e_session:
+   reload            [s='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen='seen=' noop_count='noop=0'
+   probe             [s='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen="seen=backend ss=''" noop_count='noop=0'
+   noop-event        [s='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen="seen=backend ss=''" noop_count='noop=1'
+   after-client-nav  [s=''] var='var=' check="check=value=''" seen="seen=backend ss=''" noop_count='noop=1'
+   reload2           [s=''] var='var=' check="check=value=''" seen="seen=backend ss=''" noop_count='noop=1'
+   reload2-probe     [s=''] var='var=' check="check=value=''" seen="seen=backend ss=''" noop_count='noop=1'
+SUMMARY f3-a1-seed4 f:
+   reload            [l='bad'] var='var=bad' check='check=cleared-by-substate-cached-cv' seen='seen=' noop_count='noop=0'
+   probe             [l='bad'] var='var=bad' check='check=cleared-by-substate-cached-cv' seen="seen=backend ls=''" noop_count='noop=0'
+   noop-event        [l='bad'] var='var=bad' check='check=cleared-by-substate-cached-cv' seen="seen=backend ls=''" noop_count='noop=1'
+   after-client-nav  [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2           [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2-probe     [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+SUMMARY f3-a1-seed4 g:
+   reload            [l='bad'] var='var=bad' check='check=saw-bad' seen='seen=' noop_count='noop=0' plain='plain=initial'
+   probe             [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=0' plain='plain=initial'
+   noop-event        [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=initial'
+   after-client-nav  [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=initial'
+   reload2           [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=set-by-cv'
+   reload2-probe     [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=set-by-cv'

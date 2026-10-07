@@ -1,0 +1,31 @@
+Would download 14 packages
+Would uninstall 14 packages
+Would install 14 packages
+ - reflex==0.10.0a1
+ + reflex==0.10.0a2
+ - reflex-base==0.10.0a1
+ + reflex-base==0.10.0a2
+ - reflex-components-code==0.10.0a1
+ + reflex-components-code==0.10.0a2
+ - reflex-components-core==0.10.0a1
+ + reflex-components-core==0.10.0a2
+ - reflex-components-dataeditor==0.9.3.post1
+ + reflex-components-dataeditor==0.10.0a1
+ - reflex-components-gridjs==0.10.0a1
+ + reflex-components-gridjs==0.10.0a2
+ - reflex-components-lucide==1.0.4
+ + reflex-components-lucide==1.1.0a1
+ - reflex-components-markdown==0.10.0a1
+ + reflex-components-markdown==0.10.0a2
+ - reflex-components-moment==0.10.0a1
+ + reflex-components-moment==0.10.0a2
+ - reflex-components-plotly==0.10.0a1
+ + reflex-components-plotly==0.10.0a2
+ - reflex-components-radix==0.10.0a1
+ + reflex-components-radix==0.10.0a2
+ - reflex-components-react-player==0.9.2
+ + reflex-components-react-player==0.10.0a1
+ - reflex-components-recharts==0.10.0a1
+ + reflex-components-recharts==0.10.0a2
+ - reflex-components-sonner==0.9.4
+ + reflex-components-sonner==0.10.0a1

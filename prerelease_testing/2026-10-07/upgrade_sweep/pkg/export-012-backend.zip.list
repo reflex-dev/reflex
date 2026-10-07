@@ -1,0 +1,11 @@
+.web/backend/bundled_libraries.json
+.web/backend/stateful_pages.json
+assets/favicon.ico
+github_stats/__init__.py
+github_stats/fetchers.py
+github_stats/github_stats.py
+github_stats/widget.py
+reflex.lock/bun.lock
+reflex.lock/package.json
+requirements.txt
+rxconfig.py

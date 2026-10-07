@@ -1,0 +1,156 @@
+{
+ "variant": "a",
+ "label": "f3-a2-seed4",
+ "phases": [
+  {
+   "phase": "initial",
+   "storage": {
+    "local:v_a": null
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/a",
+   "hydrated": true
+  },
+  {
+   "phase": "after-set-bad",
+   "storage": {
+    "local:v_a": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/a"
+  },
+  {
+   "phase": "reload",
+   "storage": {
+    "local:v_a": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/a",
+   "hydrated": true
+  },
+  {
+   "phase": "probe",
+   "storage": {
+    "local:v_a": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ls=''",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/a"
+  },
+  {
+   "phase": "noop-event",
+   "storage": {
+    "local:v_a": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ls=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/a"
+  },
+  {
+   "phase": "after-client-nav",
+   "storage": {
+    "local:v_a": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ls=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/a",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2",
+   "storage": {
+    "local:v_a": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ls=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/a",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2-probe",
+   "storage": {
+    "local:v_a": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ls=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/a"
+  }
+ ],
+ "ws": [
+  {
+   "t": 5.995,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:3158/?token=vz1XnNpE82z6"
+  },
+  {
+   "t": 5.999,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 6.057,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=b43af805-6838-4ffb-87a1-108bd056d930&EIO=4&transport=websocket"
+  },
+  {
+   "t": 6.087,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "0{\"sid\":\"MhhBS_NHinzggi8fAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  "{\"t\": 7.031, \"phase\": \"initial\", \"dir\": \"sent\", \"data\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"hashes\\\":[\\\"50b9647d50ef9efa\\\",\\\"b084fc0c68f7c73a\\\",\\\"7d80b10b8df39cb1\\\",\\\"9684f20c5620471d\\\",\\\"9684f20c5620471d\\\",\\\"2c9184b8fdb3d038\\\",\\\"492db276d0ba3cc2\\\",\\\"3532e4457bf7bdb1\\\",\\\"369d30cd38bed584\\\",\\\"0535eeb1e3805f24\\\",\\\"9684f20c5620471d\\\",\\\"5c9818618dab5a4b\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\"]},\\\"ro...",
+  {
+   "t": 7.031,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"nkZXNRqm81FWgyqdAAAB\"}"
+  },
+  "{\"t\": 7.031, \"phase\": \"initial\", \"dir\": \"recv\", \"data\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8158\\\",\\\"origin\\\":\\\"http://localhost:3158\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13...",
+  {
+   "t": 7.031,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  "... 34 more frames trimmed"
+ ],
+ "console": []
+}

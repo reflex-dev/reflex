@@ -1,0 +1,2 @@
+SHUTDOWN: main pid 15567 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid

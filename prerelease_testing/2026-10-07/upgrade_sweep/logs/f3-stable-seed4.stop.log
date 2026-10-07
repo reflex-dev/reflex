@@ -1,0 +1,2 @@
+SHUTDOWN: main pid 28894 still alive 15s after SIGTERM
+ORPHAN after SIGTERM: port=3158 pid=28957 cmd=node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/f3/cvstore-stable/.web/node_modules/

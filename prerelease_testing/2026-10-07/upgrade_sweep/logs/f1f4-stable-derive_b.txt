@@ -1,0 +1,10 @@
+reflex 0.9.12  REFLEX_ENV_MODE=<unset>
+before: type(Cfg.__dict__['_key']) = NoneType
+after : type(Cfg.__dict__['_key']) = str | Cfg._key = 'sk_live'
+get_fields()['_key'] still: Field(default=None, is_var=True, annotated_type=str | None)
+fresh instance a._key                  : None | a._brand_new: 'plain'
+SAME instance a._key after pickle.dumps: None | '_key' in vars(a): True
+unpickled b._key                       : None
+instance write c._key='set-on-instance': dirty_vars= ['_key'] | touched= True
+control write d.hits+=1                : dirty_vars= ['hits'] | touched= True
+control backend write (descriptor kept): dirty_vars= ['_undeclared_ok'] | touched= True

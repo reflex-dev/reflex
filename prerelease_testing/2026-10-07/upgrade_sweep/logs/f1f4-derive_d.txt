@@ -1,0 +1,9 @@
+=== stable direct: ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (derive_d.py:18) 
+=== stable model_here: 
+=== stable model_import: 
+=== alpha direct: ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (derive_d.py:18) 
+=== alpha model_here: reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (envs/alpha/lib/python3.12/site-packa 
+=== alpha model_import: reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (envs/alpha/lib/python3.12/site-packa 
+=== alpha2 direct: ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (derive_d.py:18) 
+=== alpha2 model_here: reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (envs/alpha2/lib/python3.12/site-pack 
+=== alpha2 model_import: reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (envs/alpha2/lib/python3.12/site-pack 

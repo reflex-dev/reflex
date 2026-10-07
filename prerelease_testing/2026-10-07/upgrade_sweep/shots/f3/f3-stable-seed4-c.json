@@ -121,49 +121,49 @@
  ],
  "ws": [
   {
-   "t": 0.529,
+   "t": 0.69,
    "phase": "initial",
    "dir": "open",
-   "data": "ws://localhost:3158/?token=bJU5ZFwPRJ78"
+   "data": "ws://localhost:3158/?token=qML6N9arxe2T"
   },
   {
-   "t": 0.535,
+   "t": 0.691,
    "phase": "initial",
    "dir": "recv",
    "data": "{\"type\":\"connected\"}"
   },
   {
-   "t": 0.779,
+   "t": 1.434,
    "phase": "initial",
    "dir": "open",
-   "data": "ws://localhost:8158/_event/?token=eb70f9e9-4659-4741-8e9b-07c65608d9b1&EIO=4&transport=websocket"
+   "data": "ws://localhost:8158/_event/?token=82258fcd-d8f9-477d-bd35-b18896c592f6&EIO=4&transport=websocket"
   },
   {
-   "t": 0.795,
+   "t": 1.435,
    "phase": "initial",
    "dir": "recv",
-   "data": "0{\"sid\":\"8gtHFbVcgldK48yvAAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   "data": "0{\"sid\":\"TvCmWdaGOxx8sdUnAAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
   },
   {
-   "t": 0.795,
+   "t": 1.435,
    "phase": "initial",
    "dir": "sent",
    "data": "40/_event,"
   },
   {
-   "t": 0.814,
+   "t": 1.435,
    "phase": "initial",
    "dir": "recv",
-   "data": "40/_event,{\"sid\":\"ih2rgQgRzbARQTDZAAAN\"}"
+   "data": "40/_event,{\"sid\":\"4cc2bhVbavGCztLbAAAN\"}"
   },
   {
-   "t": 0.815,
+   "t": 1.435,
    "phase": "initial",
    "dir": "sent",
    "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/c\",\"asPath\":\"/c\"}}]"
   },
   {
-   "t": 0.815,
+   "t": 1.435,
    "phase": "initial",
    "dir": "sent",
    "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/c\",\"asPath\":\"/c\"}}]"

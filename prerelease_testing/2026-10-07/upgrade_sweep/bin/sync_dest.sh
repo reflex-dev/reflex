@@ -8,7 +8,7 @@ mkdir -p "$DEST"
 cpx() { # cpx <srcdir> <destdir> [tar --exclude args...]
   local src=$1 dst=$2; shift 2; mkdir -p "$dst"; tar -C "$src" "$@" -cf - . | tar -C "$dst" -xf -; }
 EXC=(--exclude=.web --exclude=node_modules --exclude=.states --exclude=assets/external --exclude='*.db' --exclude=reflex.lock --exclude=__pycache__ --exclude=.git --exclude='*.pyc' --exclude=uploaded_files)
-for a in form-designer github-stats clock twitter twitter-redis; do [ -d "$W/$a" ] && cpx "$W/$a" "$DEST/$a" "${EXC[@]}"; done
+for a in form-designer github-stats clock twitter twitter-redis dtapp smoke_blank/myapp f1combo-a2 f3/cvstore-a2 f1f4; do [ -d "$W/$a" ] && cpx "$W/$a" "$DEST/$a" "${EXC[@]}"; done
 cpx "$W/bin" "$DEST/bin" --exclude=__pycache__
 cpx "$W/scripts" "$DEST/scripts" --exclude=__pycache__
 cpx "$W/patches" "$DEST/patches"
@@ -16,6 +16,18 @@ cpx "$W/freeze" "$DEST/freeze" --exclude='*.lock.dir'
 cpx "$W/pkg" "$DEST/pkg" --exclude='*.lock.dir'
 cpx "$W/logs" "$DEST/logs" --exclude='*.pid'
 [ -d "$W/baseline_a1" ] && cpx "$W/baseline_a1" "$DEST/baseline_a1" || true
+# trim oversized logs (the github-stats unknown-user refetch loop floods them): head + tail + repeated-line counts
+$SB/envs/driver/bin/python -I - "$DEST/logs" <<'PY'
+import sys
+from collections import Counter
+from pathlib import Path
+for f in Path(sys.argv[1]).glob("*"):
+    if f.is_file() and f.stat().st_size > 100_000:
+        lines = f.read_text(errors="replace").splitlines()
+        c = Counter(l.strip()[:160] for l in lines)
+        rep = [f"  x{n}: {l}" for l, n in c.most_common(6) if n > 20]
+        f.write_text("\n".join(lines[:350] + [f"... [{len(lines) - 450} lines trimmed by sync_dest.sh; most repeated lines:"] + rep + ["...]"] + lines[-100:]) + "\n")
+PY
 mkdir -p "$DEST/shots"
 # JSON (trim ws frames) + a handful of PNGs
 $SB/envs/driver/bin/python -I - "$W/shots" "$DEST/shots" <<'PY'

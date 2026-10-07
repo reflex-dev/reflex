@@ -1,0 +1,166 @@
+{
+ "variant": "e_session",
+ "label": "f3-stable-seed0",
+ "phases": [
+  {
+   "phase": "initial",
+   "storage": {
+    "session:v_e_ss": null
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/e_session",
+   "hydrated": true
+  },
+  {
+   "phase": "after-set-bad",
+   "storage": {
+    "session:v_e_ss": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/e_session"
+  },
+  {
+   "phase": "reload",
+   "storage": {
+    "session:v_e_ss": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=cleared-by-cached-cv",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/e_session",
+   "hydrated": true
+  },
+  {
+   "phase": "probe",
+   "storage": {
+    "session:v_e_ss": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=cleared-by-cached-cv",
+    "seen": "seen=backend ss=''",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/e_session"
+  },
+  {
+   "phase": "noop-event",
+   "storage": {
+    "session:v_e_ss": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=cleared-by-cached-cv",
+    "seen": "seen=backend ss=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/e_session"
+  },
+  {
+   "phase": "after-client-nav",
+   "storage": {
+    "session:v_e_ss": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=cleared-by-cached-cv",
+    "seen": "seen=backend ss=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/e_session",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2",
+   "storage": {
+    "session:v_e_ss": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=cleared-by-cached-cv",
+    "seen": "seen=backend ss=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/e_session",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2-probe",
+   "storage": {
+    "session:v_e_ss": "bad"
+   },
+   "ui": {
+    "var": "var=bad",
+    "check": "check=cleared-by-cached-cv",
+    "seen": "seen=backend ss=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/e_session"
+  }
+ ],
+ "ws": [
+  {
+   "t": 0.354,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:3158/?token=WCwLPHQ-0ST0"
+  },
+  {
+   "t": 0.365,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 0.614,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=f0ba90ee-e493-40f3-f0e0-d87ba040471f&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.626,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "0{\"sid\":\"amtQpfRY3OrKSEp8AAAe\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 0.627,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 0.633,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"jVcnPBx-zvVNT1O0AAAf\"}"
+  },
+  {
+   "t": 0.634,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/e_session\",\"asPath\":\"/e_session\"}}]"
+  },
+  {
+   "t": 0.634,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/e_session\",\"asPath\":\"/e_session\"}}]"
+  },
+  "... 45 more frames trimmed"
+ ],
+ "console": []
+}

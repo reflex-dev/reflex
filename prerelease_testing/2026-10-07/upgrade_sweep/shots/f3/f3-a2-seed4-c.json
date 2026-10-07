@@ -1,0 +1,164 @@
+{
+ "variant": "c",
+ "label": "f3-a2-seed4",
+ "phases": [
+  {
+   "phase": "initial",
+   "storage": {
+    "local:v_c_ls": null,
+    "cookie:v_c_ck": null,
+    "session:v_c_ss": null
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=1",
+    "seen": "seen="
+   },
+   "url": "http://localhost:3158/c",
+   "hydrated": true
+  },
+  {
+   "phase": "after-set-bad",
+   "storage": {
+    "local:v_c_ls": "bad",
+    "cookie:v_c_ck": "bad",
+    "session:v_c_ss": "bad"
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=1",
+    "seen": "seen="
+   },
+   "url": "http://localhost:3158/c"
+  },
+  {
+   "phase": "reload",
+   "storage": {
+    "local:v_c_ls": "",
+    "cookie:v_c_ck": "",
+    "session:v_c_ss": ""
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=2",
+    "seen": "seen="
+   },
+   "url": "http://localhost:3158/c",
+   "hydrated": true
+  },
+  {
+   "phase": "probe",
+   "storage": {
+    "local:v_c_ls": "",
+    "cookie:v_c_ck": "",
+    "session:v_c_ss": ""
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=2",
+    "seen": "seen=backend ls='' ck='' ss=''"
+   },
+   "url": "http://localhost:3158/c"
+  },
+  {
+   "phase": "after-client-nav",
+   "storage": {
+    "local:v_c_ls": "",
+    "cookie:v_c_ck": "",
+    "session:v_c_ss": ""
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=3",
+    "seen": "seen=backend ls='' ck='' ss=''"
+   },
+   "url": "http://localhost:3158/c",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2",
+   "storage": {
+    "local:v_c_ls": "",
+    "cookie:v_c_ck": "",
+    "session:v_c_ss": ""
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=4",
+    "seen": "seen=backend ls='' ck='' ss=''"
+   },
+   "url": "http://localhost:3158/c",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2-probe",
+   "storage": {
+    "local:v_c_ls": "",
+    "cookie:v_c_ck": "",
+    "session:v_c_ss": ""
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=4",
+    "seen": "seen=backend ls='' ck='' ss=''"
+   },
+   "url": "http://localhost:3158/c"
+  }
+ ],
+ "ws": [
+  {
+   "t": 0.557,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:3158/?token=vz1XnNpE82z6"
+  },
+  {
+   "t": 0.564,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=029cb3d3-f260-48a1-8f5e-04ec90d0110d&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.567,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 0.568,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "0{\"sid\":\"o7KBTf83Wd-0OGpmAAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  "{\"t\": 0.951, \"phase\": \"initial\", \"dir\": \"sent\", \"data\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"hashes\\\":[\\\"50b9647d50ef9efa\\\",\\\"b084fc0c68f7c73a\\\",\\\"7d80b10b8df39cb1\\\",\\\"9684f20c5620471d\\\",\\\"9684f20c5620471d\\\",\\\"2c9184b8fdb3d038\\\",\\\"492db276d0ba3cc2\\\",\\\"3532e4457bf7bdb1\\\",\\\"369d30cd38bed584\\\",\\\"0535eeb1e3805f24\\\",\\\"9684f20c5620471d\\\",\\\"5c9818618dab5a4b\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\"]},\\\"ro...",
+  {
+   "t": 0.961,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"lLdRxjkO5D-9NJOoAAAN\"}"
+  },
+  "{\"t\": 0.966, \"phase\": \"initial\", \"dir\": \"recv\", \"data\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8158\\\",\\\"origin\\\":\\\"http://localhost:3158\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13...",
+  {
+   "t": 0.968,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  "... 40 more frames trimmed"
+ ],
+ "console": []
+}

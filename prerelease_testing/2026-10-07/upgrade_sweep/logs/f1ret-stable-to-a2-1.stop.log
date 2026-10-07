@@ -1,0 +1,2 @@
+SHUTDOWN: main pid 14553 still alive 15s after SIGTERM
+ORPHAN after SIGTERM: port=3156 pid=14635 cmd=node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/f1ret-stable-to-a2/.web/node_modules
