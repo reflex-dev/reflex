@@ -16,7 +16,6 @@ import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 
-import psycopg
 import pytest
 import pytest_asyncio
 from sqlalchemy import DateTime, String, func, insert, literal, select, update
@@ -25,15 +24,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 URL = os.environ.get("REFLEX_TEST_POSTGRES", "")
+if not URL:
+    pytest.skip(
+        "set REFLEX_TEST_POSTGRES to test against Postgres", allow_module_level=True
+    )
 ASYNC_URL = URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
-pytestmark = [
-    pytest.mark.skipif(
-        not URL, reason="set REFLEX_TEST_POSTGRES to test against Postgres"
-    ),
-    pytest.mark.asyncio(loop_scope="module"),
-]
+pytestmark = pytest.mark.asyncio(loop_scope="module")
 
+import psycopg  # noqa: E402
 from reflex_workflow import (  # noqa: E402
     AttemptLog,
     Cron,
