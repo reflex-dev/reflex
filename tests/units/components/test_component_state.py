@@ -61,3 +61,49 @@ def test_init_component_state() -> None:
 
     with pytest.raises(ReflexRuntimeError):
         SubCS()
+
+
+def test_component_state_defaults_from_props():
+    """Class assignments configure defaults independently for each component."""
+
+    class ConfiguredComponentState(rx.ComponentState):
+        count: int = 0
+        labels: rx.Field[list[str]] = rx.field(default_factory=list)
+
+        @classmethod
+        def get_component(cls, initial_count: int, label: str) -> rx.Component:
+            """Configure the new state class before returning its component.
+
+            Args:
+                initial_count: The counter's default value.
+                label: The label's default value.
+
+            Returns:
+                The component using the configured state vars.
+            """
+            cls.count = initial_count
+            cls.labels = lambda: [label]  # pyright: ignore[reportAttributeAccessIssue]
+            return rx.text(cls.count, cls.labels)
+
+    first = ConfiguredComponentState.create(initial_count=5, label="first")
+    second = ConfiguredComponentState.create(initial_count=10, label="second")
+    assert first.State is not None
+    assert second.State is not None
+    assert issubclass(first.State, ConfiguredComponentState)
+    assert issubclass(second.State, ConfiguredComponentState)
+    first_state, second_state = first.State(), second.State()
+    assert first_state.count == 5
+    assert second_state.count == 10
+    assert first_state.labels == ["first"]
+    assert second_state.labels == ["second"]
+    assert ConfiguredComponentState.get_fields()["count"].default_value() == 0
+    assert ConfiguredComponentState.get_fields()["labels"].default_value() == []
+    assert first.State.count is first.State.base_vars["count"]
+    assert first.State.labels is first.State.base_vars["labels"]
+    first_state.count = 99
+    first_state.labels.append("changed")
+    first_state.reset()
+    assert first_state.count == 5
+    assert first_state.labels == ["first"]
+    assert second_state.count == 10
+    assert second_state.labels == ["second"]

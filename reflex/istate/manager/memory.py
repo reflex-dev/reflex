@@ -4,8 +4,7 @@ import asyncio
 import contextlib
 import dataclasses
 import time
-from collections.abc import AsyncIterator
-from typing import Any, cast
+from typing import Any, Generic, cast
 
 from typing_extensions import Unpack, override
 
@@ -179,36 +178,19 @@ class StateManagerMemory(StateManager):
         self._track_token(token)
 
     @override
-    @contextlib.asynccontextmanager
-    async def modify_state(
+    def modify_state(
         self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
             token: The token to modify the state for.
             context: The state modification context.
 
-        Yields:
-            The state for the token.
+        Returns:
+            An async context manager yielding the state for the token.
         """
-        token = self._coerce_token(token)
-        state_lock = await self._get_state_lock(token)
-
-        try:
-            async with state_lock:
-                state = self._get_or_create_state(token)
-                self._track_token(token)
-                try:
-                    yield state
-                finally:
-                    # Treat modify_state like a read followed by a write so the
-                    # expiration window starts after the state is no longer busy.
-                    self._track_token(token)
-        finally:
-            # Re-run expiration after the lock is released in case only locked
-            # tokens were being tracked when the worker last ran.
-            self._ensure_expiration_task()
+        return _ModifyState(self, token)
 
     async def close(self):
         """Cancel the in-memory expiration task."""
@@ -222,3 +204,58 @@ class StateManagerMemory(StateManager):
             for token, lock in tuple(self._states_locks.items()):
                 if not lock.locked():
                     self._states_locks.pop(token)
+
+
+class _ModifyState(Generic[TOKEN_TYPE]):
+    """Async context manager behind `StateManagerMemory.modify_state`.
+
+    Not an `asynccontextmanager`: building its async generator costs more than
+    the locking it wraps, and it runs for every event.
+    """
+
+    __slots__ = ("_lock", "_manager", "_token")
+
+    def __init__(self, manager: StateManagerMemory, token: StateToken[TOKEN_TYPE]):
+        """Store the arguments of `modify_state`.
+
+        Args:
+            manager: The state manager.
+            token: The token to modify the state for.
+        """
+        self._manager = manager
+        self._token = token
+
+    async def __aenter__(self) -> TOKEN_TYPE:
+        """Take the state lock.
+
+        Returns:
+            The state for the token.
+        """
+        manager = self._manager
+        token = self._token = manager._coerce_token(self._token)
+        lock = self._lock = await manager._get_state_lock(token)
+        try:
+            await lock.acquire()
+            try:
+                state = manager._get_or_create_state(token)
+                manager._track_token(token)
+            except BaseException:
+                lock.release()
+                raise
+        except BaseException:
+            manager._ensure_expiration_task()
+            raise
+        return state
+
+    async def __aexit__(self, *exc_info):
+        """Release the state lock."""
+        manager = self._manager
+        try:
+            # Treat modify_state like a read followed by a write so the
+            # expiration window starts after the state is no longer busy.
+            manager._track_token(self._token)
+        finally:
+            self._lock.release()
+            # Re-run expiration after the lock is released in case only locked
+            # tokens were being tracked when the worker last ran.
+            manager._ensure_expiration_task()

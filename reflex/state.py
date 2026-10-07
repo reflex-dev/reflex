@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import builtins
 import contextlib
-import copy
 import dataclasses
 import functools
 import hashlib
@@ -23,6 +22,7 @@ from typing import (
     BinaryIO,
     ClassVar,
     ParamSpec,
+    Self,
     TypeVar,
     cast,
     get_type_hints,
@@ -70,7 +70,6 @@ from reflex_base.vars.base import (
     is_computed_var,
 )
 from rich.markup import escape
-from typing_extensions import Self
 
 import reflex.istate.dynamic
 from reflex import event
@@ -108,19 +107,24 @@ _PREVIOUS_RELEASE_PICKLE_KEYS: dict[str, Any] = {
 
 
 @functools.cache
-def _stale_pickle_keys(cls: type) -> frozenset[str]:
-    """Get the keys of older pickles that are not restored into the instance dict.
+def _stale_pickle_keys(cls: type[BaseState]) -> frozenset[str]:
+    """Get the keys of pickles that are not restored into the instance dict.
 
     Args:
         cls: The state class.
 
     Returns:
-        The slot names of the class, now holding bookkeeping, and the RouterData
+        The slot names of the class, now holding bookkeeping, the RouterData
         entry from before the router split (not `constants.ROUTER`: the name is
-        frozen into payloads already on disk).
+        frozen into payloads already on disk) and the fields inherited from a
+        parent state, whose values live on the instance of the state declaring
+        them.
     """
     return frozenset(
-        {"router"}.union(*(_slot_names(vars(klass)) for klass in cls.__mro__))
+        {"router"}.union(
+            *(_slot_names(vars(klass)) for klass in cls.__mro__),
+            (name for name, f in cls.__fields__.items() if f._owner is not cls),
+        )
     )
 
 
@@ -140,11 +144,10 @@ if TYPE_CHECKING:
 var = computed_var
 
 
-if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
-    # If the state is this large, it's considered a performance issue.
-    TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
-    # Only warn about each state class size once.
-    _WARNED_ABOUT_STATE_SIZE: set[str] = set()
+# If the state is this large, it's considered a performance issue.
+TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
+# Only warn about each state class size once.
+_WARNED_ABOUT_STATE_SIZE: set[str] = set()
 
 
 # For BaseState.get_var_value
@@ -361,12 +364,14 @@ def _has_data_descriptor(cls: type, name: str) -> bool:
 def _bind_attr(cls: type, name: str, value: Any) -> None:
     """Set a descriptor on a class, binding it to the class as class creation does.
 
+    Bypass the metaclass's default assignment handling during field registration.
+
     Args:
         cls: The class.
         name: The attribute name.
         value: The descriptor.
     """
-    setattr(cls, name, value)
+    type.__setattr__(cls, name, value)
     value.__set_name__(cls, name)
 
 
@@ -1168,6 +1173,16 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     @classmethod
     @functools.lru_cache
+    def _get_substate_path(cls) -> tuple[str, ...]:
+        """Get the path of the state from the root state.
+
+        Returns:
+            The names of the states from the root state down to this state.
+        """
+        return tuple(cls.get_full_name().split("."))
+
+    @classmethod
+    @functools.lru_cache
     def get_class_substate(cls, path: Sequence[str] | str) -> type[BaseState]:
         """Get the class substate.
 
@@ -1475,11 +1490,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             cls = type(self)
             if name not in (settable := cls._settable_names):
                 if not (
-                    # Dunder names, like computed var caches, and mangled private names.
-                    name.startswith((
-                        "__",
-                        f"_{getattr(cls, '__original_name__', cls.__name__)}__",
-                    ))
+                    # Dunder names, like computed var caches, and private names
+                    # mangled by this class, a base or a mixin: plain attributes.
+                    (name.startswith("_") and "__" in name)
                     # A field, a property, or a bookkeeping slot handles the assignment.
                     or _has_data_descriptor(cls, name)
                 ):
@@ -1619,7 +1632,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for prop_name in self.base_vars:
             field = fields[prop_name]
             if self._is_client_storage(field):
-                setattr(self, prop_name, copy.deepcopy(field.default))
+                setattr(self, prop_name, field.default_value())
 
         # Recursively reset the substate client storage.
         for substate in self.substates.values():
@@ -1637,16 +1650,19 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Raises:
             ValueError: If the substate is not found.
         """
-        if len(path) == 0:
-            return self
-        if path[0] == self.get_name():
-            if len(path) == 1:
-                return self
-            path = path[1:]
-        if path[0] not in self.substates:
-            msg = f"Invalid path: {path}"
-            raise ValueError(msg)
-        return self.substates[path[0]].get_substate(path[1:])
+        state = self
+        index = 0
+        while index < len(path):
+            if path[index] == state.get_name():
+                index += 1
+                if index == len(path):
+                    return state
+            if path[index] not in state.substates:
+                msg = f"Invalid path: {path[index:]}"
+                raise ValueError(msg)
+            state = state.substates[path[index]]
+            index += 1
+        return state
 
     @classmethod
     def _get_potentially_dirty_states(cls) -> set[type[BaseState]]:
@@ -1726,7 +1742,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             StateMismatchError: If the state instance is not of the expected type.
         """
         root_state = self._get_root_state()
-        substate = root_state.get_substate(state_cls.get_full_name().split("."))
+        substate = root_state.get_substate(state_cls._get_substate_path())
         if not isinstance(substate, state_cls):
             msg = (
                 f"Searched for state {state_cls.get_full_name()} but found {substate}."
@@ -1825,14 +1841,19 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             self.dirty_vars.update(recomputed)
             if var_names is not None:
                 var_names = (*var_names, *recomputed)
+        dependencies = self._var_dependencies
+        # Only vars that have dependents are worth queuing.
         pending: list[tuple[BaseState, str]] = [
             (self, name)
             for name in (self.dirty_vars if var_names is None else var_names)
+            if name in dependencies
         ]
+        if not pending:
+            return
         seen: set[tuple[str, str]] = set()
         while pending:
             state, name = pending.pop()
-            for dependent in state._var_dependencies.get(name, ()):
+            for dependent in state._var_dependencies[name]:
                 if dependent in seen:
                     continue
                 seen.add(dependent)
@@ -1844,7 +1865,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     target._mark_ancestors_dirty()
                 target.computed_vars[cvar_name].mark_dirty(instance=target)
                 target.dirty_vars.add(cvar_name)
-                pending.append((target, cvar_name))
+                if cvar_name in target._var_dependencies:
+                    pending.append((target, cvar_name))
 
     def _expired_computed_vars(self) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the expiration time.
@@ -1921,6 +1943,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             TypeError: If the key is not a string or MutableProxy.
         """
         if isinstance(key, str):
+            # A StateProxy reports the wrapped state's __class__ but not its type,
+            # and reads through getattr below, on the state it wraps.
+            if (cls := type(self)) is self.__class__ and (
+                field := cls.__fields__.get(key)
+            ) is not None:
+                return field._get_raw(self)
             if isinstance(val := getattr(self, key), MutableProxy):
                 return val.__wrapped__
             return val
@@ -2033,16 +2061,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             state: The state dict for deserialization.
         """
         self._init_bookkeeping()
-        cls = type(self)
         # Older pickles kept the backend vars in a dict of their own.
-        state.update(state.pop("_backend_vars", {}))
-        stale = _stale_pickle_keys(cls)
-        fields = cls.__fields__
-        vars(self).update(
-            (key, value)
-            for key, value in state.items()
-            if key not in stale and ((f := fields.get(key)) is None or f._owner is cls)
-        )
+        if backend_vars := state.pop("_backend_vars", None):
+            state.update(backend_vars)
+        instance_dict = vars(self)
+        instance_dict.update(state)
+        for key in _stale_pickle_keys(type(self)).intersection(instance_dict):
+            del instance_dict[key]
 
     def _check_state_size(
         self,
@@ -2075,7 +2100,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
     @classmethod
     @functools.lru_cache
     def _to_schema(cls) -> str:
-        """Convert a state to a schema.
+        """Hash the field names and types that determine state compatibility.
 
         Returns:
             The hash of the schema.
@@ -2083,12 +2108,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         def _field_tuple(
             field_name: str,
-        ) -> tuple[str, Any, Any]:
+        ) -> tuple[str, str]:
             model_field = cls.__fields__[field_name]
             return (
                 field_name,
                 _serialize_type(model_field.type_),
-                (model_field.default if is_serializable(model_field.default) else None),
             )
 
         return md5(
@@ -2133,17 +2157,19 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
 
-        if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+        if (
+            len(payload) > TOO_LARGE_SERIALIZED_STATE
+            and environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF
+        ):
             self._check_state_size(len(payload))
 
         if not payload:
             e = StateSerializationError(error)
-            if sys.version_info >= (3, 11):
-                try:
-                    debug_failed_pickles(self, pickle_function)
-                except HANDLED_PICKLE_ERRORS as ex:
-                    for note in ex.__notes__:
-                        e.add_note(note)
+            try:
+                debug_failed_pickles(self, pickle_function)
+            except HANDLED_PICKLE_ERRORS as ex:
+                for note in ex.__notes__:
+                    e.add_note(note)
             raise e
 
         return payload
@@ -2181,9 +2207,38 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         except Exception as err:
             msg = f"Stored state could not be unpickled: {err!r}"
             raise StateSchemaMismatchError(msg) from err
-        if substate_schema != state._to_schema():
+        if (
+            substate_schema != state._to_schema()
+            and substate_schema != _legacy_state_schema(type(state))
+        ):
             raise StateSchemaMismatchError
         return state
+
+
+def _legacy_state_schema(state_cls: type[BaseState]) -> str:
+    """Hash the previous schema format to restore compatible persisted states.
+
+    Args:
+        state_cls: The class whose previous schema to compute.
+
+    Returns:
+        The schema hash including defaults, as used by older Reflex versions.
+    """
+    fields = state_cls.__fields__
+    return md5(
+        pickle.dumps(
+            sorted(
+                (
+                    name,
+                    _serialize_type(fields[name].type_),
+                    fields[name].default
+                    if is_serializable(fields[name].default)
+                    else None,
+                )
+                for name in state_cls.base_vars
+            )
+        )
+    ).hexdigest()
 
 
 def _serialize_type(type_: Any) -> str:
@@ -2310,6 +2365,7 @@ class State(BaseState):
         self._reset_client_storage()
         if vars:
             await _apply_client_storage_vars(self, vars)
+        self._clean()
         # The snapshot must carry is_hydrated=False: the frontend skips
         # writing client storage for a delta that is not yet hydrated, and
         # the reset defaults above must not be written back to the browser.
@@ -2319,8 +2375,12 @@ class State(BaseState):
             delta = await _resolve_delta(self.dict())
             if hashes:
                 delta = await _diff_against_initial_state(type(self), delta, hashes)
+            # Include the guard and values changed while resolving the snapshot.
+            for state_name, changes in (await self._get_resolved_delta()).items():
+                delta.setdefault(state_name, {}).update(changes)
             await ctx.emit_delta(delta=delta)
-        self._clean()
+            # Follow-up corrections must be allowed to write browser storage.
+            self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
             return None
@@ -2819,6 +2879,9 @@ class StateUpdate:
             )
 
 
+_STATE_UPDATE_FIELDS = tuple(field.name for field in dataclasses.fields(StateUpdate))
+
+
 @serializer(to=dict)
 def serialize_state_update(update: StateUpdate) -> dict:
     """Serialize a StateUpdate to a dictionary.
@@ -2830,7 +2893,7 @@ def serialize_state_update(update: StateUpdate) -> dict:
         The serialized StateUpdate.
     """
     return {
-        k.name: v for k in dataclasses.fields(update) if (v := getattr(update, k.name))
+        name: value for name in _STATE_UPDATE_FIELDS if (value := getattr(update, name))
     }
 
 
