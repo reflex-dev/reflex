@@ -1,1 +1,1 @@
-Assign a value to update a declared field's default while retaining its descriptor and instance tracking. Incompatible defaults and all Var or Field assignments raise a descriptive error; initialized instance values and ordinary `ClassVar` assignments are preserved.
+Assign a value through a state class to update a declared field's default. The default cannot be a Field or Var instance, and must satisfy the field's annotation.

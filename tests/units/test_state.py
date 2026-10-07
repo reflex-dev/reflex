@@ -5526,12 +5526,12 @@ class DefaultSchemaState(BaseState):
     value: Field[int] = field(default=1)
 
 
-@pytest.mark.parametrize("default", [2, 3, 4])
-def test_default_assignment_preserves_serialized_state(default: int):
+@pytest.mark.parametrize("default", [2, 3, lambda: 4])
+def test_default_assignment_preserves_serialized_state(default: Any):
     """Changing defaults preserves the schema and previously serialized values.
 
     Args:
-        default: The new default value.
+        default: The new default value or factory.
     """
     original = DefaultSchemaState().value
     state = DefaultSchemaState(value=99)
@@ -5544,7 +5544,9 @@ def test_default_assignment_preserves_serialized_state(default: int):
         restored = BaseState._deserialize(data)
         assert isinstance(restored, DefaultSchemaState)
         assert restored.value == 99
-        assert DefaultSchemaState().value == default
+        assert DefaultSchemaState().value == (
+            default() if callable(default) else default
+        )
     finally:
         DefaultSchemaState.value = original
         DefaultSchemaState._to_schema.cache_clear()

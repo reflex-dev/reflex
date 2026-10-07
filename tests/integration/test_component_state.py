@@ -68,7 +68,8 @@ def ComponentStateApp():
             """
             eid = props.get("id", "default")
             cls.count = props.pop("initial_count", 0)
-            cls.label = props.pop("initial_label", "")
+            initial_label = props.pop("initial_label", "")
+            cls.label = lambda: initial_label  # pyright: ignore[reportAttributeAccessIssue]
             return rx.vstack(
                 *children,
                 rx.heading(cls.count, id=f"count-{eid}"),

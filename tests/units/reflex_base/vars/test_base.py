@@ -1,5 +1,6 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
+import asyncio
 import dataclasses
 import datetime
 import enum
@@ -101,6 +102,171 @@ def test_class_assignment_preserves_field(mutable: bool, name: str):
     if mutable:
         getattr(first, name).append("session-only")
         assert getattr(second, name) == replacement == ["configured"]
+
+
+@pytest.mark.parametrize("name", ["_value", "value"])
+@pytest.mark.parametrize("inherited", [False, True])
+def test_class_assignment_sets_default_factory(name: str, inherited: bool):
+    """Validate a factory once and retain its descriptor for future defaults.
+
+    Args:
+        name: The backend or frontend field name.
+        inherited: Whether to configure the factory through a subclass.
+    """
+
+    class ConfigState(BaseState):
+        _value: list[str] = ["old"]
+        value: list[str] = ["old"]
+
+    class Child(ConfigState):
+        pass
+
+    declared = ConfigState.get_fields()[name]
+    original = ConfigState()
+    assert getattr(original, name) == ["old"]
+    calls = []
+
+    def factory() -> list[str]:
+        """Record calls and return a fresh mutable default.
+
+        Returns:
+            An independent configured value.
+        """
+        calls.append(True)
+        return ["new"]
+
+    setattr(Child if inherited else ConfigState, name, factory)
+    assert calls == [True]
+    assert ConfigState.get_fields()[name] is Child.get_fields()[name] is declared
+    assert ConfigState.__dict__[name] is declared
+    assert declared.default is dataclasses.MISSING
+    assert declared.default_factory is factory
+    assert name not in Child.__dict__
+    assert getattr(original, name) == ["old"]
+
+    first, second = ConfigState(), ConfigState()
+    assert getattr(first, name) == getattr(second, name) == ["new"]
+    assert calls == [True] * 3
+    getattr(first, name).append("session")
+    assert getattr(second, name) == ["new"]
+    first.reset()
+    assert getattr(first, name) == ["new"]
+    assert calls == [True] * 4
+
+
+@pytest.mark.parametrize("name", ["_value", "value"])
+@pytest.mark.parametrize(
+    "failure", ["wrong_type", "raises", "needs_argument", "var", "field"]
+)
+def test_class_assignment_rejects_invalid_factory(name: str, failure: str):
+    """A failed factory validation cannot change an existing default.
+
+    Args:
+        name: The backend or frontend field name.
+        failure: The invalid result or invocation failure to test.
+    """
+
+    class ConfigState(BaseState):
+        _value: str = "old"
+        value: str = "old"
+
+    calls = []
+    error = RuntimeError("factory failed")
+
+    def factory() -> Any:
+        """Return an invalid value or raise during validation.
+
+        Returns:
+            An invalid default.
+
+        Raises:
+            RuntimeError: When testing a failing factory invocation.
+        """
+        calls.append(True)
+        if failure == "raises":
+            raise error
+        if failure == "var":
+            return ConfigState.value
+        if failure == "field":
+            return field("new")
+        return 1
+
+    def needs_argument(value: str) -> str:
+        """Require an argument that a default factory cannot supply.
+
+        Args:
+            value: A required argument.
+
+        Returns:
+            The argument.
+        """
+        return value
+
+    declared = ConfigState.get_fields()[name]
+    previous_default, previous_factory = declared.default, declared.default_factory
+    expected = {
+        "wrong_type": "Invalid default",
+        "raises": "Default factory.*failed",
+        "needs_argument": "Default factory.*failed",
+        "var": r"ClassVar\[rx.Var\]",
+        "field": "computed var",
+    }[failure]
+    with pytest.raises(TypeError, match=expected) as exc:
+        setattr(
+            ConfigState,
+            name,
+            needs_argument if failure == "needs_argument" else factory,
+        )
+    if failure == "raises":
+        assert exc.value.__cause__ is error
+    assert ConfigState.get_fields()[name] is declared
+    assert declared.default is previous_default
+    assert declared.default_factory is previous_factory
+    assert getattr(ConfigState(), name) == "old"
+    assert calls == ([] if failure == "needs_argument" else [True])
+
+
+@pytest.mark.parametrize("name", ["_value", "value"])
+def test_class_assignment_closes_coroutine_probe(name: str):
+    """Close a validation coroutine while retaining supported future defaults.
+
+    Args:
+        name: The permissive backend or string-typed frontend field name.
+    """
+
+    class ConfigState(BaseState):
+        _value: Any = None
+        value: str = "old"
+
+    probes = []
+
+    async def result() -> str:
+        """Return a value when a coroutine default is awaited.
+
+        Returns:
+            The configured value.
+        """
+        await asyncio.sleep(0)
+        return "new"
+
+    def factory() -> typing.Coroutine[Any, Any, str]:
+        """Record the created coroutine so its cleanup can be checked.
+
+        Returns:
+            A new coroutine.
+        """
+        coroutine = result()
+        probes.append(coroutine)
+        return coroutine
+
+    if name == "value":
+        with pytest.raises(TypeError, match="Invalid default"):
+            setattr(ConfigState, name, factory)
+        assert ConfigState().value == "old"
+    else:
+        setattr(ConfigState, name, factory)
+        assert asyncio.run(ConfigState()._value) == "new"
+    assert probes[0].cr_frame is None
 
 
 @pytest.mark.parametrize("name", ["_value", "value"])

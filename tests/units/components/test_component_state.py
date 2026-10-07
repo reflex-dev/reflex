@@ -82,7 +82,7 @@ def test_component_state_defaults_from_props():
                 The component using the configured state vars.
             """
             cls.count = initial_count
-            cls.labels = [label]
+            cls.labels = lambda: [label]  # pyright: ignore[reportAttributeAccessIssue]
             return rx.text(cls.count, cls.labels)
 
     first = ConfiguredComponentState.create(initial_count=5, label="first")

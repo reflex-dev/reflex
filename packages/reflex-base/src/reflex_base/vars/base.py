@@ -4701,41 +4701,57 @@ class BaseStateMeta(ABCMeta):
         _reflex_state_root: BaseStateMeta
 
     def __setattr__(cls, name: str, value: Any) -> None:
-        """Update field defaults while retaining their descriptors and bindings.
+        """Update field defaults or factories while retaining their descriptors.
 
         Args:
             name: The class attribute being assigned.
-            value: Its new value.
+            value: Its new default value or zero-argument default factory.
 
         Raises:
-            TypeError: If a field default is a Var, a Field, or has an
-                incompatible type.
+            TypeError: If the factory fails or a default is a Var, a Field,
+                or has an incompatible type.
         """
         declared = cls.__fields__.get(name)
         if declared is not None and _inherited_value(cls.__mro__, name) is declared:
-            if isinstance(value, Var):
+            factory = (
+                value
+                if callable(value) and not isinstance(value, (Var, Field))
+                else None
+            )
+            try:
+                default = factory() if factory is not None else value
+            except Exception as err:
+                msg = f"Default factory for field '{name}' failed: {err}"
+                raise TypeError(msg) from err
+            if factory is not None and inspect.iscoroutine(default):
+                default.close()
+            if isinstance(default, Var):
                 msg = (
                     "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
                     "references to vars in state."
                 )
                 raise TypeError(msg)
-            if isinstance(value, Field):
+            if isinstance(default, Field):
                 msg = (
                     "A Field cannot overwrite another field. Define a "
                     "computed var to read the field at runtime instead."
                 )
                 raise TypeError(msg)
             if not _isinstance(
-                value, declared.outer_type_, nested=1, treat_var_as_type=False
+                default, declared.outer_type_, nested=1, treat_var_as_type=False
             ):
                 msg = (
                     f"Invalid default for field '{name}': expected "
-                    f"{declared.outer_type_}, got {value!r} of type {type(value)}."
+                    f"{declared.outer_type_}, got {default!r} of type {type(default)}."
                 )
                 raise TypeError(msg)
-            defaults = _default_arguments(value)
-            declared.default = defaults["default"]
-            declared.default_factory = defaults["default_factory"]
+            if factory is not None:
+                declared.default = MISSING
+                declared.default_factory = factory
+            else:
+                defaults = _default_arguments(default)
+                declared.default = defaults["default"]
+                declared.default_factory = defaults["default_factory"]
             return
         super().__setattr__(name, value)
 

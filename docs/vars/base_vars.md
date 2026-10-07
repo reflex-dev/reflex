@@ -84,8 +84,11 @@ configured default, and changing defaults preserves saved state compatibility.
 Assigned defaults must match the field's declared type. Var and Field assignments
 are rejected, including fresh `rx.field(...)` objects. Declare a `ClassVar[rx.Var]` to
 store a Var reference, or define a computed var to read another field at runtime.
-Declare default factories in the class body. Frontend vars remain usable in the
-UI after assigning a new default value.
+Assign a zero-argument callable to update the default factory. Reflex calls it
+once when assigned to validate its result, then calls it whenever an instance
+needs a new default or resets. If that validation call fails or returns an invalid
+default, the previous default remains in place. Frontend vars remain usable in
+the UI after assigning a new default value or factory.
 
 An inherited var belongs to the state that declared it, so assigning a default
 through a subclass also changes that declaring state's default. Each generated
