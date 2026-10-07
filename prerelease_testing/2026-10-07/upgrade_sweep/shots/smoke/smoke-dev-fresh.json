@@ -1,0 +1,223 @@
+{
+ "tag": "smoke-dev-fresh",
+ "url": "http://localhost:3157",
+ "args": {
+  "url": "http://localhost:3157",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/smoke",
+  "tag": "smoke-dev-fresh",
+  "profile": "-",
+  "wait": 5.0,
+  "expect_text": [
+   "Welcome to Reflex"
+  ],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "text visible: 'Welcome to Reflex'",
+   "status": "pass",
+   "detail": "Welcome to Reflex! |  | Get started by editing myapp/myapp.py |  | Check out our docs!"
+  },
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "pass",
+   "detail": "[]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "system",
+   "last_compiled_theme": "system"
+  },
+  "ss": {
+   "token": "86292327-544a-4329-e8e5-674b1100d583"
+  },
+  "cookie": ""
+ },
+ "body_text": "Welcome to Reflex!\n\nGet started by editing myapp/myapp.py\n\nCheck out our docs!",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {},
+  "ss": {},
+  "cookie": "",
+  "t": 82,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {},
+ "writes_total": 4,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1645,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "86292327-544a-4329-e8e5-674b1100d583",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1867,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1872,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1873,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1645,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "86292327-544a-4329-e8e5-674b1100d583",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1867,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1872,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1873,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 6.68,
+   "dir": "recv",
+   "data": "0{\"sid\":\"eFTQecD9Ta7Fc_pCAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 6.68,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d7d884bd7dfad907\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "t": 6.68,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"PCjAuBTPZkKEhqUzAAAB\"}"
+  },
+  {
+   "t": 6.68,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8157\",\"origin\":\"http://localhost:3157\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"2dlNWywslqqyV1TT/GrP5w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8157\",\"origin\":\"http://localhost:3157\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"2dlNWywslqqyV1TT/GrP5w==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3157\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3157/index\",\"full_raw_path\":\"http://localhost:3157/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"86292327-544a-4329-e8e5-674b1100d583\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"PCjAuBTPZkKEhqUzAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3157\",\"origin\":\"http://localhost:3157\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3157/\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 6.68,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 6.87,
+   "dir": "sent",
+   "data": "41/_event,"
+  }
+ ],
+ "console": [
+  {
+   "t": 1.42,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 1.65,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 6.68,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 6.68,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "t": 6.86,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "last_compiled_theme",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 4,
+  "n_changing": 4,
+  "n_changing_app": 0,
+  "n_idempotent": 0,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {}
+ }
+}

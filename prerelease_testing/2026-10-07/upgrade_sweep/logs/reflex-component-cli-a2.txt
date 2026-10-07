@@ -1,0 +1,5 @@
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+rc=2

@@ -314,13 +314,7 @@
    "len": 108,
    "payload": "0{\"sid\":\"S3tHU32gA70AA6X6AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
   },
-  {
-   "page": "main",
-   "t": 3.64,
-   "dir": "out",
-   "len": 569,
-   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"03405a93-5ddd-4179-eadf-365698aa3ec9\"},\"hashes\":[\"7f02077446d480d6\",\"0b97b0aeacae1d37\",\"72c4c6e4d5ca6372\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"ce9ce44eccafc12e\",\"b0b4835a001a4843\",\"dc444275bfc30eb3\",\"c68bb4ed71ecc55b\",\"b971016ed11f5146\",\"f13ccfd1edf5d20e\",\"cb3bd1e58984a23f\",\"475ba198521ff3f6\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
-  },
+  "{\"page\": \"main\", \"t\": 3.64, \"dir\": \"out\", \"len\": 569, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\\\":\\\"03405a93-5ddd-4179-eadf-365698aa3ec9\\\"},\\\"hashes\\\":[\\\"7f02077446d480d6\\\",\\\"0b97b0aeacae1d37\\\",\\\"72c4c6e4d5ca6372\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"ce9ce44eccafc12e\\\",\\\"b0b4835a001...",
   {
    "page": "main",
    "t": 3.674,
@@ -328,14 +322,8 @@
    "len": 40,
    "payload": "40/_event,{\"sid\":\"bLnV36yGYvzK-uu0AAAB\"}"
   },
-  "{\"page\": \"main\", \"t\": 3.679, \"dir\": \"in\", \"len\": 2176, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"p6DjeIl3YxkyTc6BSBeZ8A==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"gzip, deflate, br, zstd\\\",\\\"accept_lan...",
-  {
-   "page": "main",
-   "t": 3.68,
-   "dir": "in",
-   "len": 418,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\":{\"authenticated_user_rx_state_\":{\"id\":1,\"username\":\"qa_admin\",\"enabled\":true},\"is_authenticated_rx_state_\":true},\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\":{\"is_admin_rx_state_\":true}}}]"
-  },
+  "{\"page\": \"main\", \"t\": 3.679, \"dir\": \"in\", \"len\": 2176, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_vers...",
+  "{\"page\": \"main\", \"t\": 3.68, \"dir\": \"in\", \"len\": 418, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":true},\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state\\\":{\\\"authenticated_user_rx_state_\\\":{\\\"id\\\":1,\\\"username\\\":\\\"qa_admin\\\",\\\"enabled\\\":true},\\\"is_authenticated_rx_state_\\\":true},\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state\\\":{\\\"is_admin_rx_state_\\\"...",
   {
    "page": "main",
    "t": 5.634,
@@ -349,118 +337,7 @@
    "dir": "close",
    "payload": ""
   },
-  {
-   "page": "main",
-   "t": 6.146,
-   "dir": "open",
-   "payload": "ws://localhost:8140/_event/?token=b56f2e88-ae0b-4717-e798-51d8cf7f3f08&EIO=4&transport=websocket"
-  },
-  {
-   "page": "main",
-   "t": 6.161,
-   "dir": "in",
-   "len": 108,
-   "payload": "0{\"sid\":\"XdLhWiP6OymHrCrQAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
-  },
-  "{\"page\": \"main\", \"t\": 6.21, \"dir\": \"out\", \"len\": 589, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\\\":\\\"03405a93-5ddd-4179-eadf-365698aa3ec9\\\"},\\\"hashes\\\":[\\\"7f02077446d480d6\\\",\\\"0b97b0aeacae1d37\\\",\\\"72c4c6e4d5ca6372\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"bf21a9e8fbc5a384\\\",\\\"ce9ce44eccafc12e\\\",\\\"b0b4835a001a4843\\\",\\\"dc444275bfc30eb3\\\",\\\"c68bb4ed71ecc55b\\\",\\\"b971016ed11f5146\\\",\\\"f13ccfd1edf5d20e\\\",\\\"cb3bd1e58984a23f\\\",\\\"475ba198521ff3f6\\\"]},\\\"router_data\\\":{\\\"pathname\\\":\\\"/edit/form/\\\",\\\"asPath\\\":\\\"/edit...",
-  {
-   "page": "main",
-   "t": 6.216,
-   "dir": "in",
-   "len": 40,
-   "payload": "40/_event,{\"sid\":\"xe0dF8MtLx6kJuSaAAAD\"}"
-  },
-  "{\"page\": \"main\", \"t\": 6.226, \"dir\": \"in\", \"len\": 2228, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"H3kPcBdtPthY2+ob+8HXHw==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"gzip, deflate, br, zstd\\\",\\\"accept_lan...",
-  {
-   "page": "main",
-   "t": 6.228,
-   "dir": "in",
-   "len": 89,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
-  },
-  {
-   "page": "main",
-   "t": 6.229,
-   "dir": "in",
-   "len": 298,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_editor____form_editor_state\":{\"form_rx_state_\":{\"owner_id\":1,\"id\":null,\"name\":\"\",\"fields\":[],\"responses\":[],\"user\":null}}}}]"
-  },
-  {
-   "page": "main",
-   "t": 6.23,
-   "dir": "in",
-   "len": 88,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
-  },
-  {
-   "page": "main",
-   "t": 6.324,
-   "dir": "out",
-   "len": 277,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
-  },
-  {
-   "page": "main",
-   "t": 6.325,
-   "dir": "out",
-   "len": 277,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
-  },
-  "{\"page\": \"main\", \"t\": 6.332, \"dir\": \"in\", \"len\": 1190, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\\\":{\\\"forms_rx_state_\\\":[{\\\"owner_id\\\":1,\\\"name\\\":\\\"Upgrade Survey\\\",\\\"id\\\":1,\\\"fields\\\":[{\\\"name\\\":\\\"favorite_food\\\",\\\"type_\\\":\\\"text\\\",\\\"prompt\\\":\\\"What is your favorite food?\\\",\\\"form_id\\\":1,\\\"id\\\":1,\\\"required\\\":false,\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"name\\\":\\\"age\\\",\\\"type_\\\":\\\"number\\\",\\\"prompt\\\":\\\"How old are you?\\\",\\\"form_id\\\":1,\\\"id\\\":2,\\\"required\\\":true,\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"name\\\":\\\"color\\\",\\...",
-  "{\"page\": \"main\", \"t\": 6.343, \"dir\": \"in\", \"len\": 1190, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\\\":{\\\"forms_rx_state_\\\":[{\\\"owner_id\\\":1,\\\"name\\\":\\\"Upgrade Survey\\\",\\\"id\\\":1,\\\"fields\\\":[{\\\"name\\\":\\\"favorite_food\\\",\\\"type_\\\":\\\"text\\\",\\\"prompt\\\":\\\"What is your favorite food?\\\",\\\"form_id\\\":1,\\\"id\\\":1,\\\"required\\\":false,\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"name\\\":\\\"age\\\",\\\"type_\\\":\\\"number\\\",\\\"prompt\\\":\\\"How old are you?\\\",\\\"form_id\\\":1,\\\"id\\\":2,\\\"required\\\":true,\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"name\\\":\\\"color\\\",\\...",
-  {
-   "page": "main",
-   "t": 6.552,
-   "dir": "out",
-   "len": 307,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.on_select_change\",\"payload\":{\"value\":\"1\"},\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
-  },
-  {
-   "page": "main",
-   "t": 6.557,
-   "dir": "in",
-   "len": 151,
-   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/edit/form/1\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
-  },
-  {
-   "page": "main",
-   "t": 6.667,
-   "dir": "out",
-   "len": 277,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/\",\"asPath\":\"/edit/form/\"}}]"
-  },
-  {
-   "page": "main",
-   "t": 6.667,
-   "dir": "out",
-   "len": 368,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.auth_token_rx_state_\":\"03405a93-5ddd-4179-eadf-365698aa3ec9\"}},\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
-  },
-  {
-   "page": "main",
-   "t": 6.667,
-   "dir": "out",
-   "len": 202,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
-  },
-  {
-   "page": "main",
-   "t": 6.667,
-   "dir": "out",
-   "len": 303,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state.load_forms\",\"router_data\":{\"pathname\":\"/edit/form/1\",\"asPath\":\"/edit/form/1\",\"query\":{\"form_id\":\"1\"}}}]"
-  },
-  "{\"page\": \"main\", \"t\": 6.678, \"dir\": \"in\", \"len\": 1190, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\\\":{\\\"forms_rx_state_\\\":[{\\\"owner_id\\\":1,\\\"name\\\":\\\"Upgrade Survey\\\",\\\"id\\\":1,\\\"fields\\\":[{\\\"name\\\":\\\"favorite_food\\\",\\\"type_\\\":\\\"text\\\",\\\"prompt\\\":\\\"What is your favorite food?\\\",\\\"form_id\\\":1,\\\"id\\\":1,\\\"required\\\":false,\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"name\\\":\\\"age\\\",\\\"type_\\\":\\\"number\\\",\\\"prompt\\\":\\\"How old are you?\\\",\\\"form_id\\\":1,\\\"id\\\":2,\\\"required\\\":true,\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"name\\\":\\\"color\\\",\\...",
-  "{\"page\": \"main\", \"t\": 6.678, \"dir\": \"in\", \"len\": 1017, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_url_rx_state_\\\":{\\\"scheme\\\":\\\"http\\\",\\\"netloc\\\":\\\"localhost:3140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"path\\\":\\\"/edit/form/1\\\",\\\"query\\\":\\\"\\\",\\\"query_parameters\\\":{},\\\"fragment\\\":\\\"\\\",\\\"href\\\":\\\"http://localhost:3140/edit/form/1\\\"},\\\"form_id_rx_state_\\\":\\\"1\\\",\\\"field_id_rx_state_\\\":\\\"\\\",\\\"rx_router_route_id_rx_state_\\\":\\\"/edit/form/[form_id]\\\",\\\"rx_router_page_rx_state_\\\":{\\\"host\\\":\\\"http://localhost:3140\\\",\\\"path\\\":\\\"/edit/form/[form_id]\\\",\\\"raw_path\\\":\\\"/edit/form/1\\\",\\\"full_path\\\":\\\"http://localhost:3140/edit/form/[form_id]\\\",\\\"full_raw_path\\\":\\\"h...",
-  {
-   "page": "main",
-   "t": 6.694,
-   "dir": "in",
-   "len": 89,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
-  },
-  "{\"page\": \"main\", \"t\": 6.698, \"dir\": \"in\", \"len\": 1190, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.form_designer___state____app_state.form_designer___components___form_select____form_select_state\\\":{\\\"forms_rx_state_\\\":[{\\\"owner_id\\\":1,\\\"name\\\":\\\"Upgrade Survey\\\",\\\"id\\\":1,\\\"fields\\\":[{\\\"name\\\":\\\"favorite_food\\\",\\\"type_\\\":\\\"text\\\",\\\"prompt\\\":\\\"What is your favorite food?\\\",\\\"form_id\\\":1,\\\"id\\\":1,\\\"required\\\":false,\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"name\\\":\\\"age\\\",\\\"type_\\\":\\\"number\\\",\\\"prompt\\\":\\\"How old are you?\\\",\\\"form_id\\\":1,\\\"id\\\":2,\\\"required\\\":true,\\\"options\\\":[],\\\"field_values\\\":[]},{\\\"name\\\":\\\"color\\\",\\...",
-  "... 108 more frames trimmed"
+  "... 130 more frames trimmed"
  ],
  "notes": {
   "mode": "up",

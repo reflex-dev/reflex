@@ -1,0 +1,166 @@
+{
+ "variant": "e_session",
+ "label": "f3-stable-seed4",
+ "phases": [
+  {
+   "phase": "initial",
+   "storage": {
+    "session:v_e_ss": null
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/e_session",
+   "hydrated": true
+  },
+  {
+   "phase": "after-set-bad",
+   "storage": {
+    "session:v_e_ss": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/e_session"
+  },
+  {
+   "phase": "reload",
+   "storage": {
+    "session:v_e_ss": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=cleared-by-cached-cv",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/e_session",
+   "hydrated": true
+  },
+  {
+   "phase": "probe",
+   "storage": {
+    "session:v_e_ss": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=cleared-by-cached-cv",
+    "seen": "seen=backend ss=''",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/e_session"
+  },
+  {
+   "phase": "noop-event",
+   "storage": {
+    "session:v_e_ss": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=cleared-by-cached-cv",
+    "seen": "seen=backend ss=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/e_session"
+  },
+  {
+   "phase": "after-client-nav",
+   "storage": {
+    "session:v_e_ss": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ss=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/e_session",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2",
+   "storage": {
+    "session:v_e_ss": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ss=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/e_session",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2-probe",
+   "storage": {
+    "session:v_e_ss": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ss=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/e_session"
+  }
+ ],
+ "ws": [
+  {
+   "t": 0.436,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:3158/?token=bJU5ZFwPRJ78"
+  },
+  {
+   "t": 0.447,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 0.688,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=b7afe87b-bc8f-487e-bcd7-3d1ed33bf298&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.704,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "0{\"sid\":\"SYaJ_bHALtix89KGAAAe\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 0.704,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 0.707,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"8-Q-wLpbxznA57kYAAAf\"}"
+  },
+  {
+   "t": 0.707,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/e_session\",\"asPath\":\"/e_session\"}}]"
+  },
+  {
+   "t": 0.707,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/e_session\",\"asPath\":\"/e_session\"}}]"
+  },
+  "... 45 more frames trimmed"
+ ],
+ "console": []
+}

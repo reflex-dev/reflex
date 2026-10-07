@@ -122,7 +122,7 @@
    "len": 108,
    "payload": "0{\"sid\":\"-DY8gT3oqATGGIUtAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
   },
-  "{\"page\": \"main\", \"t\": 1.484, \"dir\": \"out\", \"len\": 1839, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_\\\":\\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"Alice\\\\\\\", \\\\\\\"login\\\\\\\": \\\\\\\"alice\\\\\\\", \\\\\\\"contributionsCollection\\\\\\\": {\\\\\\\"totalCommitContributions\\\\\\\": 491, \\\\\\\"totalPullRequestReviewContributions\\\\\\\": 54}, \\\\\\\"repositoriesContributedTo\\\\\\\": 26, \\\\\\\"pullRequests\\\\\\\": 252, \\\\\\\"mergedPullRequests\\\\\\\": 191, \\\\\\\"openIssues\\\\\\\": 38, \\\\\\\"closedIssues\\\\\\\": 25, \\\\\\\"followers\\\\\\\": 185, \\\\\\\"repositoryDiscussions\\\\\\\": 7, \\\\\\\"repositoryDiscussionComments\\\\\\\": 19}]\\\",\\\"r...",
+  "{\"page\": \"main\", \"t\": 1.484, \"dir\": \"out\", \"len\": 1839, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_\\\":\\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"Alice\\\\\\\", \\\\\\\"login\\\\\\\": \\\\\\\"alice\\\\\\\", \\\\\\\"contributionsCollection\\\\\\\": {\\\\\\\"totalCommitContributions\\\\\\\": 491, \\\\\\\"totalPullRequestReviewContributions\\\\\\\": 54}, \\\\\\\"repositoriesContributedTo\\\\\\\": 26, \\\\\\\"pullRequests...",
   {
    "page": "main",
    "t": 1.485,
@@ -130,7 +130,7 @@
    "len": 40,
    "payload": "40/_event,{\"sid\":\"cTAMwFW1yOuTWYrtAAAD\"}"
   },
-  "{\"page\": \"main\", \"t\": 1.485, \"dir\": \"in\", \"len\": 3209, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3144\\\",\\\"origin\\\":\\\"http://localhost:3144\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"1HQxtYbegliKjxIsnqHAYg==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"gzip, deflate, br, zstd\\\",\\\"accept_lan...",
+  "{\"page\": \"main\", \"t\": 1.485, \"dir\": \"in\", \"len\": 3209, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3144\\\",\\\"origin\\\":\\\"http://localhost:3144\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_vers...",
   {
    "page": "main",
    "t": 1.485,
@@ -138,7 +138,7 @@
    "len": 89,
    "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
   },
-  "{\"page\": \"main\", \"t\": 1.485, \"dir\": \"in\", \"len\": 1744, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.github_stats___github_stats____state\\\":{\\\"user_stats_rx_state_\\\":[{\\\"name\\\":\\\"Alice\\\",\\\"login\\\":\\\"alice\\\",\\\"contributionsCollection\\\":{\\\"totalCommitContributions\\\":491,\\\"totalPullRequestReviewContributions\\\":54},\\\"repositoriesContributedTo\\\":26,\\\"pullRequests\\\":252,\\\"mergedPullRequests\\\":191,\\\"openIssues\\\":38,\\\"closedIssues\\\":25,\\\"followers\\\":185,\\\"repositoryDiscussions\\\":7,\\\"repositoryDiscussionComments\\\":19},{\\\"name\\\":\\\"Carol\\\",\\\"login\\\":\\\"carol\\\",\\\"contributionsCollection\\\":{\\\"totalCommitContributions\\\":319,\\\"totalPullRequestReviewContributions\\\":20},\\\"repositories...",
+  "{\"page\": \"main\", \"t\": 1.485, \"dir\": \"in\", \"len\": 1744, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.github_stats___github_stats____state\\\":{\\\"user_stats_rx_state_\\\":[{\\\"name\\\":\\\"Alice\\\",\\\"login\\\":\\\"alice\\\",\\\"contributionsCollection\\\":{\\\"totalCommitContributions\\\":491,\\\"totalPullRequestReviewContributions\\\":54},\\\"repositoriesContributedTo\\\":26,\\\"pullRequests\\\":252,\\\"mergedPullRequests\\\":191,\\\"openIssues\\\":38,\\\"closedIssues\\\":25,\\\"followers\\\":185,\\\"repositoryDiscussions\\\"...",
   {
    "page": "main",
    "t": 1.485,
@@ -146,121 +146,7 @@
    "len": 88,
    "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
   },
-  {
-   "page": "main",
-   "t": 1.485,
-   "dir": "in",
-   "len": 122,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
-  },
-  "{\"page\": \"main\", \"t\": 1.485, \"dir\": \"in\", \"len\": 899, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.github_stats___github_stats____state\\\":{\\\"fetching_rx_state_\\\":false,\\\"user_stats_json_rx_state_\\\":\\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"Alice\\\\\\\", \\\\\\\"login\\\\\\\": \\\\\\\"alice\\\\\\\", \\\\\\\"contributionsCollection\\\\\\\": {\\\\\\\"totalCommitContributions\\\\\\\": 491, \\\\\\\"totalPullRequestReviewContributions\\\\\\\": 54}, \\\\\\\"repositoriesContributedTo\\\\\\\": 26, \\\\\\\"pullRequests\\\\\\\": 252, \\\\\\\"mergedPullRequests\\\\\\\": 191, \\\\\\\"openIssues\\\\\\\": 38, \\\\\\\"closedIssues\\\\\\\": 25, \\\\\\\"followers\\\\\\\": 185, \\\\\\\"repositoryDiscussions\\\\\\\": 7, \\\\\\\"repositoryDiscussionComments\\\\\\\": 19}, {\\\\\\\"name\\\\\\\": \\\\\\\"Carol\\\\\\\", \\\\\\\"login\\...",
-  {
-   "page": "main",
-   "t": 3.759,
-   "dir": "out",
-   "len": 179,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.github_stats___github_stats____state.set_username\",\"payload\":{\"username\":\"carol\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
-  },
-  {
-   "page": "main",
-   "t": 3.76,
-   "dir": "out",
-   "len": 144,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.github_stats___github_stats____state.add_user\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
-  },
-  {
-   "page": "main",
-   "t": 3.761,
-   "dir": "in",
-   "len": 125,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"username_rx_state_\":\"carol\"}}}]"
-  },
-  {
-   "page": "main",
-   "t": 4.828,
-   "dir": "out",
-   "len": 10,
-   "payload": "41/_event,"
-  },
-  {
-   "page": "main",
-   "t": 4.828,
-   "dir": "close",
-   "payload": ""
-  },
-  {
-   "page": "main",
-   "t": 4.904,
-   "dir": "open",
-   "payload": "ws://localhost:3144/_event/?token=b02d7963-b963-4ab6-cf4d-15675d935f48&EIO=4&transport=websocket"
-  },
-  {
-   "page": "main",
-   "t": 4.913,
-   "dir": "in",
-   "len": 108,
-   "payload": "0{\"sid\":\"TZSNsVj_F3T_wk4oAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
-  },
-  "{\"page\": \"main\", \"t\": 4.915, \"dir\": \"out\", \"len\": 1839, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_\\\":\\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"Alice\\\\\\\", \\\\\\\"login\\\\\\\": \\\\\\\"alice\\\\\\\", \\\\\\\"contributionsCollection\\\\\\\": {\\\\\\\"totalCommitContributions\\\\\\\": 491, \\\\\\\"totalPullRequestReviewContributions\\\\\\\": 54}, \\\\\\\"repositoriesContributedTo\\\\\\\": 26, \\\\\\\"pullRequests\\\\\\\": 252, \\\\\\\"mergedPullRequests\\\\\\\": 191, \\\\\\\"openIssues\\\\\\\": 38, \\\\\\\"closedIssues\\\\\\\": 25, \\\\\\\"followers\\\\\\\": 185, \\\\\\\"repositoryDiscussions\\\\\\\": 7, \\\\\\\"repositoryDiscussionComments\\\\\\\": 19}]\\\",\\\"r...",
-  {
-   "page": "main",
-   "t": 4.931,
-   "dir": "in",
-   "len": 40,
-   "payload": "40/_event,{\"sid\":\"TkrluTeavN09Nz_dAAAF\"}"
-  },
-  "{\"page\": \"main\", \"t\": 4.941, \"dir\": \"in\", \"len\": 4886, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:3144\\\",\\\"origin\\\":\\\"http://localhost:3144\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"MbXUfYznWOjnp/uNwgvmPw==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate; client_max_window_bits\\\",\\\"accept_encoding\\\":\\\"gzip, deflate, br, zstd\\\",\\\"accept_lan...",
-  {
-   "page": "main",
-   "t": 4.941,
-   "dir": "in",
-   "len": 89,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
-  },
-  "{\"page\": \"main\", \"t\": 4.941, \"dir\": \"in\", \"len\": 1744, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.github_stats___github_stats____state\\\":{\\\"user_stats_rx_state_\\\":[{\\\"name\\\":\\\"Alice\\\",\\\"login\\\":\\\"alice\\\",\\\"contributionsCollection\\\":{\\\"totalCommitContributions\\\":491,\\\"totalPullRequestReviewContributions\\\":54},\\\"repositoriesContributedTo\\\":26,\\\"pullRequests\\\":252,\\\"mergedPullRequests\\\":191,\\\"openIssues\\\":38,\\\"closedIssues\\\":25,\\\"followers\\\":185,\\\"repositoryDiscussions\\\":7,\\\"repositoryDiscussionComments\\\":19},{\\\"name\\\":\\\"Carol\\\",\\\"login\\\":\\\"carol\\\",\\\"contributionsCollection\\\":{\\\"totalCommitContributions\\\":319,\\\"totalPullRequestReviewContributions\\\":20},\\\"repositories...",
-  {
-   "page": "main",
-   "t": 4.941,
-   "dir": "in",
-   "len": 88,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
-  },
-  {
-   "page": "main",
-   "t": 4.941,
-   "dir": "in",
-   "len": 122,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___github_stats____state\":{\"fetching_rx_state_\":true}}}]"
-  },
-  "{\"page\": \"main\", \"t\": 4.941, \"dir\": \"in\", \"len\": 899, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state.github_stats___github_stats____state\\\":{\\\"fetching_rx_state_\\\":false,\\\"user_stats_json_rx_state_\\\":\\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"Alice\\\\\\\", \\\\\\\"login\\\\\\\": \\\\\\\"alice\\\\\\\", \\\\\\\"contributionsCollection\\\\\\\": {\\\\\\\"totalCommitContributions\\\\\\\": 491, \\\\\\\"totalPullRequestReviewContributions\\\\\\\": 54}, \\\\\\\"repositoriesContributedTo\\\\\\\": 26, \\\\\\\"pullRequests\\\\\\\": 252, \\\\\\\"mergedPullRequests\\\\\\\": 191, \\\\\\\"openIssues\\\\\\\": 38, \\\\\\\"closedIssues\\\\\\\": 25, \\\\\\\"followers\\\\\\\": 185, \\\\\\\"repositoryDiscussions\\\\\\\": 7, \\\\\\\"repositoryDiscussionComments\\\\\\\": 19}, {\\\\\\\"name\\\\\\\": \\\\\\\"Carol\\\\\\\", \\\\\\\"login\\...",
-  {
-   "page": "main",
-   "t": 5.677,
-   "dir": "out",
-   "len": 10,
-   "payload": "41/_event,"
-  },
-  {
-   "page": "main",
-   "t": 5.678,
-   "dir": "close",
-   "payload": ""
-  },
-  {
-   "page": "main",
-   "t": 5.762,
-   "dir": "open",
-   "payload": "ws://localhost:3144/_event/?token=b02d7963-b963-4ab6-cf4d-15675d935f48&EIO=4&transport=websocket"
-  },
-  {
-   "page": "main",
-   "t": 5.779,
-   "dir": "in",
-   "len": 108,
-   "payload": "0{\"sid\":\"_TwodmfZM9WzB4XfAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
-  },
-  "{\"page\": \"main\", \"t\": 5.78, \"dir\": \"out\", \"len\": 1939, \"payload\": \"40/_event,{\\\"event\\\":{\\\"name\\\":\\\"reflex___state____state.hydrate_and_load\\\",\\\"payload\\\":{\\\"vars\\\":{\\\"reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_\\\":\\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"Alice\\\\\\\", \\\\\\\"login\\\\\\\": \\\\\\\"alice\\\\\\\", \\\\\\\"contributionsCollection\\\\\\\": {\\\\\\\"totalCommitContributions\\\\\\\": 491, \\\\\\\"totalPullRequestReviewContributions\\\\\\\": 54}, \\\\\\\"repositoriesContributedTo\\\\\\\": 26, \\\\\\\"pullRequests\\\\\\\": 252, \\\\\\\"mergedPullRequests\\\\\\\": 191, \\\\\\\"openIssues\\\\\\\": 38, \\\\\\\"closedIssues\\\\\\\": 25, \\\\\\\"followers\\\\\\\": 185, \\\\\\\"repositoryDiscussions\\\\\\\": 7, \\\\\\\"repositoryDiscussionComments\\\\\\\": 19}]\\\",\\\"re...",
-  "... 18 more frames trimmed"
+  "... 40 more frames trimmed"
  ],
  "notes": {
   "stub_counts_start": {

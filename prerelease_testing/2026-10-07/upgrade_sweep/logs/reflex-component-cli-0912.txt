@@ -1,0 +1,9 @@
+Usage: reflex component [OPTIONS] COMMAND [ARGS]...
+
+  CLI for creating custom components.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+rc=0

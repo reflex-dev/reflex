@@ -1,0 +1,166 @@
+{
+ "variant": "f",
+ "label": "f3-stable-seed4",
+ "phases": [
+  {
+   "phase": "initial",
+   "storage": {
+    "local:v_f": null
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/f",
+   "hydrated": true
+  },
+  {
+   "phase": "after-set-bad",
+   "storage": {
+    "local:v_f": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/f"
+  },
+  {
+   "phase": "reload",
+   "storage": {
+    "local:v_f": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=cleared-by-substate-cached-cv",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/f",
+   "hydrated": true
+  },
+  {
+   "phase": "probe",
+   "storage": {
+    "local:v_f": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=cleared-by-substate-cached-cv",
+    "seen": "seen=backend ls=''",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/f"
+  },
+  {
+   "phase": "noop-event",
+   "storage": {
+    "local:v_f": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=cleared-by-substate-cached-cv",
+    "seen": "seen=backend ls=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/f"
+  },
+  {
+   "phase": "after-client-nav",
+   "storage": {
+    "local:v_f": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ls=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/f",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2",
+   "storage": {
+    "local:v_f": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ls=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/f",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2-probe",
+   "storage": {
+    "local:v_f": ""
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=backend ls=''",
+    "noop_count": "noop=1"
+   },
+   "url": "http://localhost:3158/f"
+  }
+ ],
+ "ws": [
+  {
+   "t": 0.581,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:3158/?token=bJU5ZFwPRJ78"
+  },
+  {
+   "t": 0.59,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 0.786,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=43d6b257-f270-44d8-c7c9-c0705111c113&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.793,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "0{\"sid\":\"VsdULhwSsEegTYFUAAAk\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 0.793,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 0.8,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"ziYmtXLyxDsBA87gAAAl\"}"
+  },
+  {
+   "t": 0.8,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/f\",\"asPath\":\"/f\"}}]"
+  },
+  {
+   "t": 0.8,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/f\",\"asPath\":\"/f\"}}]"
+  },
+  "... 45 more frames trimmed"
+ ],
+ "console": []
+}

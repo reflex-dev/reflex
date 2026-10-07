@@ -1,0 +1,174 @@
+{
+ "variant": "c",
+ "label": "f3-stable-seed4",
+ "phases": [
+  {
+   "phase": "initial",
+   "storage": {
+    "local:v_c_ls": null,
+    "cookie:v_c_ck": null,
+    "session:v_c_ss": null
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=1",
+    "seen": "seen="
+   },
+   "url": "http://localhost:3158/c",
+   "hydrated": true
+  },
+  {
+   "phase": "after-set-bad",
+   "storage": {
+    "local:v_c_ls": "bad",
+    "cookie:v_c_ck": "bad",
+    "session:v_c_ss": "bad"
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=1",
+    "seen": "seen="
+   },
+   "url": "http://localhost:3158/c"
+  },
+  {
+   "phase": "reload",
+   "storage": {
+    "local:v_c_ls": "",
+    "cookie:v_c_ck": "",
+    "session:v_c_ss": ""
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=2",
+    "seen": "seen="
+   },
+   "url": "http://localhost:3158/c",
+   "hydrated": true
+  },
+  {
+   "phase": "probe",
+   "storage": {
+    "local:v_c_ls": "",
+    "cookie:v_c_ck": "",
+    "session:v_c_ss": ""
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=2",
+    "seen": "seen=backend ls='' ck='' ss=''"
+   },
+   "url": "http://localhost:3158/c"
+  },
+  {
+   "phase": "after-client-nav",
+   "storage": {
+    "local:v_c_ls": "",
+    "cookie:v_c_ck": "",
+    "session:v_c_ss": ""
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=3",
+    "seen": "seen=backend ls='' ck='' ss=''"
+   },
+   "url": "http://localhost:3158/c",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2",
+   "storage": {
+    "local:v_c_ls": "",
+    "cookie:v_c_ck": "",
+    "session:v_c_ss": ""
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=4",
+    "seen": "seen=backend ls='' ck='' ss=''"
+   },
+   "url": "http://localhost:3158/c",
+   "hydrated": true
+  },
+  {
+   "phase": "reload2-probe",
+   "storage": {
+    "local:v_c_ls": "",
+    "cookie:v_c_ck": "",
+    "session:v_c_ss": ""
+   },
+   "ui": {
+    "ls": "ls=",
+    "ck": "ck=",
+    "ss": "ss=",
+    "loads": "loads=4",
+    "seen": "seen=backend ls='' ck='' ss=''"
+   },
+   "url": "http://localhost:3158/c"
+  }
+ ],
+ "ws": [
+  {
+   "t": 0.529,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:3158/?token=bJU5ZFwPRJ78"
+  },
+  {
+   "t": 0.535,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 0.779,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=eb70f9e9-4659-4741-8e9b-07c65608d9b1&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.795,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "0{\"sid\":\"8gtHFbVcgldK48yvAAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 0.795,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 0.814,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"ih2rgQgRzbARQTDZAAAN\"}"
+  },
+  {
+   "t": 0.815,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/c\",\"asPath\":\"/c\"}}]"
+  },
+  {
+   "t": 0.815,
+   "phase": "initial",
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/c\",\"asPath\":\"/c\"}}]"
+  },
+  "... 51 more frames trimmed"
+ ],
+ "console": []
+}

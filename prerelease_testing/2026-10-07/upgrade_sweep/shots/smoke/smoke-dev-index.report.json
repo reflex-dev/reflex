@@ -1,0 +1,29 @@
+{
+ "url": "http://localhost:3157/",
+ "title": "404 - Not Found",
+ "clean": true,
+ "load_error": null,
+ "actions_performed": [
+  "expect_text: 'Welcome to Reflex!'",
+  "wait: 800",
+  "click: 'button'",
+  "wait: 800",
+  "screenshot: '/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/smoke/smoke-dev-dark.png'",
+  "goto: 'http://localhost:3157/nope'",
+  "wait: 800",
+  "screenshot: '/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/smoke/smoke-dev-404.png'"
+ ],
+ "action_error": null,
+ "screenshot_error": null,
+ "read_error": null,
+ "console": [
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "body_text": "404: Page not found"
+}

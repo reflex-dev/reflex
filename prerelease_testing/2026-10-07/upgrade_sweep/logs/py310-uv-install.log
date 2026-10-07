@@ -1,0 +1,8 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.10.20 environment at: envs/upgrade_sweep-py310
+  × No solution found when resolving dependencies:
+  ╰─▶ Because the current Python version (3.10.20) does not satisfy
+      Python>=3.11,<4.0 and reflex==0.10.0a2 depends on Python>=3.11,<4.0, we
+      can conclude that reflex==0.10.0a2 cannot be used.
+      And because you require reflex==0.10.0a2, we can conclude that your
+      requirements are unsatisfiable.

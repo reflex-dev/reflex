@@ -1,0 +1,158 @@
+{
+ "tag": "f1combo-a2-prod-fresh",
+ "url": "http://localhost:3156",
+ "args": {
+  "url": "http://localhost:3156",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/f1",
+  "tag": "f1combo-a2-prod-fresh",
+  "profile": "-",
+  "wait": 6.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "pass",
+   "detail": "[]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "system"
+  },
+  "ss": {
+   "token": "ad838599-fc39-4f8b-ffe5-9bbf93864ae7"
+  },
+  "cookie": ""
+ },
+ "body_text": "H:yes\n\npl-light\n\nwu-light\n\nwu-sync-default\n\nc9027544caa94c30a194896b4dbda485\n\ncs-light\n\ncu-light\n\nws-light\n\n[\"delta\",\"eta\",\"alpha\",\"beta\",\"epsilon\",\"gamma\",\"zeta\"]\n\nwt-light\n\n1791356371850529578\n\nsync A\nBuilt with Reflex",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {},
+  "ss": {},
+  "cookie": "",
+  "t": 47,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {},
+ "writes_total": 2,
+ "writes": [
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "ad838599-fc39-4f8b-ffe5-9bbf93864ae7",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 283,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 286,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "ad838599-fc39-4f8b-ffe5-9bbf93864ae7",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 283,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 286,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 6.24,
+   "dir": "recv",
+   "data": "0{\"sid\":\"ffFsJ8PgwlJnghMuAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 6.24,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"67434bbc0c2ac128\",\"b084fc0c68f7c73a\",\"8997247f7197d310\",\"cf0ac8b1d06df7ac\",\"03e903e75d9b3eda\",\"4b2fd1758fda42a6\",\"a80c25b9224a715c\",\"e3f1bea66fce9fcd\",\"dfdf0933dae70595\",\"f5fd51c188accc99\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "t": 6.24,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"YaZxgWsZEA6S_DiZAAAB\"}"
+  },
+  {
+   "t": 6.24,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"IEBOoVw8mMVwqjWOWjIJSw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"IEBOoVw8mMVwqjWOWjIJSw==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3156\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3156/index\",\"full_raw_path\":\"http://localhost:3156/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"ad838599-fc39-4f8b-ffe5-9bbf93864ae7\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"YaZxgWsZEA6S_DiZAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3156/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.f1combo___f1combo____parent_uuid\":{\"pu_id_rx_state_\":\"d2c3e247cd2c4b4899b26a199751201a\"},\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_ck_rx_state_\":\"wu-unset\",\"wu_id_rx_state_\":\"c9027544caa94c30a194896b4dbda485\",\"wu_ls_rx_state_\":\"wu-light\",\"wu_ss_rx_state_\":\"wu-x\",\"wu_sync_rx_state_\":\"wu-sync-default\"},\"reflex___state____state.f1combo___f1combo____with_clock_var\":{\"wt_ls_rx_state_\":\"wt-light\",\"wt_stamp_rx_state_\":\"1791356371850529578\"},\"reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid\":{\"cu_ck_rx_state_\":\"cu-unset\",\"cu_id_rx_state_\":\"f7aad22bf36646749756f3602070d393\",\"cu_ls_rx_state_\":\"cu-light\",\"cu_ss_rx_state_\":\"cu-x\"}}}]"
+  },
+  {
+   "t": 6.24,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "console": [
+  {
+   "t": 6.24,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "t": 6.34,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 2,
+  "n_changing": 2,
+  "n_changing_app": 0,
+  "n_idempotent": 0,
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {}
+ }
+}

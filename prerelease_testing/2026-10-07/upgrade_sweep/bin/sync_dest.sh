@@ -28,17 +28,17 @@ for f in src.rglob("*.json"):
     d = json.loads(f.read_text())
     for k in ("ws_frames", "ws", "probe_ws"):
         v = d.get(k)
-        if isinstance(v, list) and len(v) > 30:
-            d[k] = [(x if len(json.dumps(x)) < 700 else (json.dumps(x)[:700] + "...")) for x in v[:30]] + [f"... {len(v) - 30} more frames trimmed"]
+        if isinstance(v, list) and len(v) > 8:
+            d[k] = [(x if len(json.dumps(x)) < 500 else (json.dumps(x)[:500] + "...")) for x in v[:8]] + [f"... {len(v) - 8} more frames trimmed"]
     for k in ("writes",):
         v = d.get(k)
-        if isinstance(v, list) and len(v) > 60:
-            d[k] = v[:60] + [f"... {len(v) - 60} more writes trimmed"]
+        if isinstance(v, list) and len(v) > 12:
+            d[k] = v[:12] + [f"... {len(v) - 12} more writes trimmed"]
     out.write_text(json.dumps(d, indent=1))
-keep = ("_home.png", "_final.png", "01_initial", "N_new_tab", "firstload", "fresh", "_form_persisted", "_responses.png", "02_alice", "N_", "04_after_reload", "_page.png")
+keep = ("fd-up-up_home.png", "fd-up-entry_responses.png", "gh-up-firstload-home.png", "gh-up_01", "ck-up_01_initial", "ck-session-up-a2_N_new_tab", "tw-up_", "smoke-dev-dark", "smoke-prod-index", "f1combo-a1-dev-fresh", "dt-a2-inplace_02")
 n = 0
 for f in src.rglob("*.png"):
-    if any(k in f.name for k in keep) and f.stat().st_size < 120_000:
+    if any(k in f.name for k in keep) and f.stat().st_size < 90_000:
         out = dst / f.relative_to(src)
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(f, out)

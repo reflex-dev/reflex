@@ -1,0 +1,226 @@
+{
+ "tag": "f1combo-stable-dev-fresh",
+ "url": "http://localhost:3156",
+ "args": {
+  "url": "http://localhost:3156",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/f1",
+  "tag": "f1combo-stable-dev-fresh",
+  "profile": "-",
+  "wait": 6.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "pass",
+   "detail": "[]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "system",
+   "last_compiled_theme": "system"
+  },
+  "ss": {
+   "token": "cec8897b-61b0-4723-93ed-d6781ee7d130"
+  },
+  "cookie": ""
+ },
+ "body_text": "H:yes\n\npl-light\n\nwu-light\n\nwu-sync-default\n\n4a52cf92706e4d2f815946dd24cb5b16\n\ncs-light\n\ncu-light\n\nws-light\n\n[\"beta\",\"gamma\",\"alpha\",\"zeta\",\"eta\",\"delta\",\"epsilon\"]\n\nwt-light\n\n1791356255942575007\n\nsync A",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {},
+  "ss": {},
+  "cookie": "",
+  "t": 62,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {},
+ "writes_total": 4,
+ "writes": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1473,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "cec8897b-61b0-4723-93ed-d6781ee7d130",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1742,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1751,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1755,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "removeItem",
+   "store": "local",
+   "key": "debug",
+   "prev": null,
+   "t": 1473,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "cec8897b-61b0-4723-93ed-d6781ee7d130",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 1742,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "last_compiled_theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1751,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 1755,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 7.53,
+   "dir": "recv",
+   "data": "0{\"sid\":\"qWp7XvBkXXYkIX-8AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 7.53,
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 7.53,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"hXYVt5YwznYKs2LFAAAB\"}"
+  },
+  {
+   "t": 7.53,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 7.53,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 7.53,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8156\",\"origin\":\"http://localhost:3156\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"eH8pJ8Qj8UOvVh4kyPEemA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8156\",\"origin\":\"http://localhost:3156\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"eH8pJ8Qj8UOvVh4kyPEemA==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3156\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3156/index\",\"full_raw_path\":\"http://localhost:3156/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"cec8897b-61b0-4723-93ed-d6781ee7d130\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"hXYVt5YwznYKs2LFAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3156/\"}},\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_ck_rx_state_\":\"wu-unset\",\"wu_id_rx_state_\":\"4a52cf92706e4d2f815946dd24cb5b16\",\"wu_ls_rx_state_\":\"wu-light\",\"wu_ss_rx_state_\":\"wu-x\",\"wu_sync_rx_state_\":\"wu-sync-default\"},\"reflex___state____state.f1combo___f1combo____parent_uuid\":{\"pu_id_rx_state_\":\"5dab593e3c404d17a30f25ea0ba823c9\"},\"reflex___state____state.f1combo___f1combo____parent_uuid.f1combo___f1combo____child_storage\":{\"cs_ck_rx_state_\":\"cs-unset\",\"cs_ls_rx_state_\":\"cs-light\",\"cs_ss_rx_state_\":\"cs-x\"},\"reflex___state____state.f1combo___f1combo____with_clock_var\":{\"wt_ls_rx_state_\":\"wt-light\",\"wt_stamp_rx_state_\":\"1791356255942575007\"},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.f1combo___f1combo____with_set\":{\"ws_ls_rx_state_\":\"ws-light\",\"ws_tags_rx_state_\":[\"beta\",\"gamma\",\"alpha\",\"zeta\",\"eta\",\"delta\",\"epsilon\"]},\"reflex___state____state.f1combo___f1combo____parent_plain\":{\"pp_n_rx_state_\":0},\"reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid\":{\"cu_ck_rx_state_\":\"cu-unset\",\"cu_id_rx_state_\":\"bd69da0f723140449e11d7a65ec5f9d5\",\"cu_ls_rx_state_\":\"cu-light\",\"cu_ss_rx_state_\":\"cu-x\"},\"r"
+  },
+  {
+   "t": 7.53,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "t": 7.64,
+   "dir": "sent",
+   "data": "41/_event,"
+  }
+ ],
+ "console": [
+  {
+   "t": 1.18,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "t": 1.52,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "t": 7.53,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "t": 7.53,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "t": 7.64,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "last_compiled_theme",
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 4,
+  "n_changing": 4,
+  "n_changing_app": 0,
+  "n_idempotent": 0,
+  "console_errors": [],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {}
+ }
+}

@@ -1,0 +1,222 @@
+######## form-designer up (dev): a1-saved | a2 in-place | a2 cold
+a1                     checks={'pass': 10, 'anomaly': 2} console=36 page_errors=0 bad_req=0 ws_frames=136
+a2                     checks={'pass': 12, 'anomaly': 1} console=35 page_errors=0 bad_req=0 ws_frames=140
+a2cold                 checks={'pass': 12, 'anomaly': 1} console=36 page_errors=0 bad_req=0 ws_frames=138
+   X . . error: %o  %s  %s  Error: `FormMessage` must be used within `FormField` or specify the `name` pro
+check-status differences a1 -> a2: {
+ "console: no unexpected errors/warnings + no page errors": [
+  "anomaly",
+  "pass"
+ ],
+ "entry page /form/<id>: renders (pre-existing FormMessage crash unless FD_FIX)": [
+  "anomaly",
+  "pass"
+ ],
+ "re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x)": [
+  null,
+  "anomaly"
+ ]
+}
+check-status differences a1 -> a2cold: {
+ "console: no unexpected errors/warnings + no page errors": [
+  "anomaly",
+  "pass"
+ ],
+ "entry page /form/<id>: renders (pre-existing FormMessage crash unless FD_FIX)": [
+  "anomaly",
+  "pass"
+ ],
+ "re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x)": [
+  null,
+  "anomaly"
+ ]
+}
+
+######## form-designer entry (dev)
+a1                     checks={'pass': 14, 'anomaly': 1} console=25 page_errors=0 bad_req=0 ws_frames=62
+a2                     checks={'pass': 14, 'anomaly': 1} console=25 page_errors=0 bad_req=0 ws_frames=64
+a2cold                 checks={'pass': 14, 'anomaly': 1} console=25 page_errors=0 bad_req=0 ws_frames=64
+   X X X error: <%s> cannot contain a nested %s. See this log for the ancestor stack trace. button <button
+   X X X error: In HTML, %s cannot be a descendant of <%s>. This will cause a hydration error.%s <button> 
+   X X X error: Received `%s` for a non-boolean attribute `%s`.  If you want to write it to the DOM, pass 
+   X X X error: The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Tr
+check-status differences a1 -> a2: none
+check-status differences a1 -> a2cold: none
+
+######## form-designer up (prod)
+a1                     checks={'pass': 12, 'anomaly': 1} console=7 page_errors=0 bad_req=0 ws_frames=118
+a2                     checks={'pass': 12, 'anomaly': 1} console=8 page_errors=0 bad_req=0 ws_frames=128
+check-status differences a1 -> a2: none
+
+######## form-designer entry (prod)
+a1                     checks={'pass': 15} console=3 page_errors=0 bad_req=0 ws_frames=59
+a2                     checks={'pass': 15} console=3 page_errors=0 bad_req=0 ws_frames=59
+check-status differences a1 -> a2: none
+
+######## github-stats persist (dev)
+a1                     checks={'pass': 12, 'anomaly': 2} console=21 page_errors=0 bad_req=0 ws_frames=346
+a2                     checks={'pass': 12, 'anomaly': 2} console=21 page_errors=0 bad_req=0 ws_frames=162
+a2cold                 checks={'pass': 12, 'anomaly': 2} console=21 page_errors=0 bad_req=0 ws_frames=45
+base0912ctl            checks={'pass': 11, 'anomaly': 2, 'fail': 1} console=21 page_errors=0 bad_req=0 ws_frames=134
+   X X X X error: You provided a `value` prop to a form field without an `onChange` handler. This will rende
+check-status differences a1 -> a2: none
+check-status differences a1 -> a2cold: none
+check-status differences a1 -> base0912ctl: {
+ "widget: reload within 60s served from LocalStorage cache (no refetch)": [
+  "pass",
+  "fail"
+ ]
+}
+
+######## github-stats persist (prod)
+a1                     checks={'pass': 13, 'anomaly': 1} console=3 page_errors=0 bad_req=0 ws_frames=48
+a2                     checks={'pass': 13, 'anomaly': 1} console=3 page_errors=0 bad_req=0 ws_frames=48
+check-status differences a1 -> a2: none
+
+######## clock
+a1                     checks={'pass': 17} console=14 page_errors=0 bad_req=0 ws_frames=45
+a2                     checks={'pass': 17} console=14 page_errors=0 bad_req=0 ws_frames=45
+a2cold                 checks={'pass': 17} console=14 page_errors=0 bad_req=0 ws_frames=45
+check-status differences a1 -> a2: none
+check-status differences a1 -> a2cold: none
+
+######## clock stale-tab/session dev
+a1                     checks={'pass': 8, 'anomaly': 1} console=36 page_errors=0 bad_req=0 ws_frames=99
+a2                     checks={'pass': 10, 'anomaly': 1} console=33 page_errors=0 bad_req=0 ws_frames=99
+ctl0912                checks={'pass': 10, 'anomaly': 1} console=35 page_errors=0 bad_req=0 ws_frames=115
+   X X X error: WebSocket connection to 'ws://localhost:8146/_event/?&EIO=4&transport=websocket' failed: E
+check-status differences a1 -> a2: {
+ "N: new tab did not write/overwrite any app cookie or storage value on load": [
+  null,
+  "pass"
+ ],
+ "N: new tab right after the upgrade shows the zone written under the old version (Europe/Paris)": [
+  null,
+  "pass"
+ ]
+}
+check-status differences a1 -> ctl0912: {
+ "N: new tab did not write/overwrite any app cookie or storage value on load": [
+  null,
+  "pass"
+ ],
+ "N: new tab right after the upgrade shows the zone written under the old version (Europe/Paris)": [
+  null,
+  "pass"
+ ]
+}
+
+######## twitter dev up/cold
+a1                     checks={'pass': 14} console=36 page_errors=0 bad_req=0 ws_frames=109
+a2                     checks={'pass': 14} console=36 page_errors=0 bad_req=0 ws_frames=109
+a2cold                 checks={'pass': 14} console=36 page_errors=0 bad_req=0 ws_frames=109
+ctl0912                checks={'pass': 14} console=36 page_errors=0 bad_req=0 ws_frames=121
+check-status differences a1 -> a2: none
+check-status differences a1 -> a2cold: {
+ "alice Followers = bob + caroltwcold": [
+  null,
+  "pass"
+ ],
+ "alice Followers = bob + caroltwup": [
+  "pass",
+  null
+ ],
+ "caroltwcold follows alice": [
+  null,
+  "pass"
+ ],
+ "caroltwup follows alice": [
+  "pass",
+  null
+ ],
+ "new user caroltwcold signup after upgrade": [
+  null,
+  "pass"
+ ],
+ "new user caroltwup signup after upgrade": [
+  "pass",
+  null
+ ]
+}
+check-status differences a1 -> ctl0912: {
+ "alice Followers = bob + carol0912up": [
+  null,
+  "pass"
+ ],
+ "alice Followers = bob + caroltwup": [
+  "pass",
+  null
+ ],
+ "carol0912up follows alice": [
+  null,
+  "pass"
+ ],
+ "caroltwup follows alice": [
+  "pass",
+  null
+ ],
+ "new user carol0912up signup after upgrade": [
+  null,
+  "pass"
+ ],
+ "new user caroltwup signup after upgrade": [
+  "pass",
+  null
+ ]
+}
+
+######## twitter dev full flow
+a1base0912             checks={'pass': 21} console=55 page_errors=0 bad_req=0 ws_frames=178
+a2base0912             checks={'pass': 21} console=55 page_errors=0 bad_req=0 ws_frames=178
+a1cold                 checks={'pass': 21} console=55 page_errors=0 bad_req=0 ws_frames=160
+a2cold                 checks={'pass': 21} console=55 page_errors=0 bad_req=0 ws_frames=160
+check-status differences a1base0912 -> a2base0912: none
+check-status differences a1base0912 -> a1cold: none
+check-status differences a1base0912 -> a2cold: none
+
+######## twitter prod+redis
+a1base                 checks={'pass': 19, 'anomaly': 2} console=27 page_errors=0 bad_req=8 ws_frames=178
+a2base0912             checks={'pass': 19, 'anomaly': 2} console=27 page_errors=0 bad_req=8 ws_frames=178
+   X X error: Failed to load resource: the server responded with a status of 404 (Not Found)
+check-status differences a1base -> a2base0912: none
+a1up                   checks={'pass': 12, 'anomaly': 2} console=14 page_errors=0 bad_req=4 ws_frames=93
+a2up                   checks={'pass': 12, 'anomaly': 2} console=14 page_errors=0 bad_req=4 ws_frames=93
+ctl0912                checks={'pass': 12, 'anomaly': 2} console=14 page_errors=0 bad_req=4 ws_frames=105
+   X X X error: Failed to load resource: the server responded with a status of 404 (Not Found)
+check-status differences a1up -> a2up: none
+check-status differences a1up -> ctl0912: {
+ "alice Followers = bob + carolestart": [
+  null,
+  "pass"
+ ],
+ "alice Followers = bob + carolupprod": [
+  "pass",
+  null
+ ],
+ "carolestart follows alice": [
+  null,
+  "pass"
+ ],
+ "carolupprod follows alice": [
+  "pass",
+  null
+ ],
+ "new user carolestart signup after upgrade": [
+  null,
+  "pass"
+ ],
+ "new user carolupprod signup after upgrade": [
+  "pass",
+  null
+ ]
+}
+a1stale                checks={'pass': 8, 'anomaly': 3} console=17 page_errors=0 bad_req=2 ws_frames=91
+a2stale                checks={'pass': 8, 'anomaly': 3} console=20 page_errors=0 bad_req=2 ws_frames=97
+   X X error: Failed to load resource: the server responded with a status of 404 (Not Found)
+   . X error: WebSocket connection to 'ws://localhost:3152/_event/?&EIO=4&transport=websocket' failed: E
+   X . error: WebSocket connection to 'ws://localhost:3181/_event/?&EIO=4&transport=websocket' failed: E
+check-status differences a1stale -> a2stale: none
+a1upbase               checks={'pass': 19, 'anomaly': 2} console=27 page_errors=0 bad_req=8 ws_frames=160
+a2upbase               checks={'pass': 19, 'anomaly': 2} console=27 page_errors=0 bad_req=8 ws_frames=160
+   X X error: Failed to load resource: the server responded with a status of 404 (Not Found)
+check-status differences a1upbase -> a2upbase: none

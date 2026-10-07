@@ -1,0 +1,168 @@
+{
+ "tag": "f1combo-stable-prod-fresh",
+ "url": "http://localhost:3156",
+ "args": {
+  "url": "http://localhost:3156",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/f1",
+  "tag": "f1combo-stable-prod-fresh",
+  "profile": "-",
+  "wait": 6.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "pass",
+   "detail": "[]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "theme": "system"
+  },
+  "ss": {
+   "token": "5f149a02-fac5-4bb9-cdba-e1f1a6a3c042"
+  },
+  "cookie": ""
+ },
+ "body_text": "H:yes\n\npl-light\n\nwu-light\n\nwu-sync-default\n\n48dd9dc10b4243b68c3b48f01ccfe86f\n\ncs-light\n\ncu-light\n\nws-light\n\n[\"beta\",\"delta\",\"gamma\",\"zeta\",\"epsilon\",\"eta\",\"alpha\"]\n\nwt-light\n\n1791356330989442617\n\nsync A\nBuilt with Reflex",
+ "cookies_after": [],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {},
+  "ss": {},
+  "cookie": "",
+  "t": 66,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {},
+ "writes_total": 2,
+ "writes": [
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "5f149a02-fac5-4bb9-cdba-e1f1a6a3c042",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 305,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 310,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "5f149a02-fac5-4bb9-cdba-e1f1a6a3c042",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 305,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 310,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 6.29,
+   "dir": "recv",
+   "data": "0{\"sid\":\"d9j6ZgcDqwAzYoDSAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 6.29,
+   "dir": "sent",
+   "data": "40/_event,"
+  },
+  {
+   "t": 6.29,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"z2nqDChFy3fBJB2CAAAB\"}"
+  },
+  {
+   "t": 6.29,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 6.29,
+   "dir": "sent",
+   "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "t": 6.29,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"wo6Kw+ilr8cogszG+i7Pcw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"wo6Kw+ilr8cogszG+i7Pcw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3156\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3156/index\",\"full_raw_path\":\"http://localhost:3156/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"5f149a02-fac5-4bb9-cdba-e1f1a6a3c042\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"z2nqDChFy3fBJB2CAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3156/\"}},\"reflex___state____state.f1combo___f1combo____parent_plain\":{\"pp_n_rx_state_\":0},\"reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid\":{\"cu_ck_rx_state_\":\"cu-unset\",\"cu_id_rx_state_\":\"335173452ab745f587b9c223b20f1d85\",\"cu_ls_rx_state_\":\"cu-light\",\"cu_ss_rx_state_\":\"cu-x\"},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.f1combo___f1combo____with_set\":{\"ws_ls_rx_state_\":\"ws-light\",\"ws_tags_rx_state_\":[\"beta\",\"delta\",\"gamma\",\"zeta\",\"epsilon\",\"eta\",\"alpha\"]},\"reflex___state____state.f1combo___f1combo____plain\":{\"pl_ck_rx_state_\":\"pl-unset\",\"pl_ls_rx_state_\":\"pl-light\",\"pl_ss_rx_state_\":\"pl-x\"},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.f1combo___f1combo____with_clock_var\":{\"wt_ls_rx_state_\":\"wt-light\",\"wt_stamp_rx_state_\":\"1791356330989442617\"},\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_ck_rx_state_\":\"wu-unset\",\"wu_id_rx_state_\":\"48dd9dc10b4243b68c3b48f01ccfe86f\",\"wu_ls_rx_state_\":"
+  },
+  {
+   "t": 6.29,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "console": [
+  {
+   "t": 6.29,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "t": 6.54,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "theme"
+  ],
+  "end_ss_keys": [
+   "token"
+  ],
+  "end_cookie_names": [],
+  "n_writes": 2,
+  "n_changing": 2,
+  "n_changing_app": 0,
+  "n_idempotent": 0,
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {}
+ }
+}

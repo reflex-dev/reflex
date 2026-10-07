@@ -1,0 +1,27 @@
+=== uv pip install --dry-run reflex==0.10.0a2 (no --prerelease flag)
+  × No solution found when resolving dependencies:
+  ╰─▶ Because there is no version of reflex-base==0.10.0a2 and
+      reflex>=0.10.0a2 depends on reflex-base==0.10.0a2, we can conclude that
+      reflex>=0.10.0a2 cannot be used.
+      And because you require reflex==0.10.0a2, we can conclude that your
+      requirements are unsatisfiable.
+
+hint: `reflex-base` was requested with a pre-release marker (e.g., reflex-base==0.10.0a2), but pre-releases weren't enabled (try: `--prerelease=allow`)
+=== uv pip install --dry-run -U reflex==0.10.0a2 (no --prerelease flag)
+  × No solution found when resolving dependencies:
+  ╰─▶ Because there is no version of reflex-base==0.10.0a2 and
+      reflex>=0.10.0a2 depends on reflex-base==0.10.0a2, we can conclude that
+      reflex>=0.10.0a2 cannot be used.
+      And because you require reflex==0.10.0a2, we can conclude that your
+      requirements are unsatisfiable.
+
+hint: `reflex-base` was requested with a pre-release marker (e.g., reflex-base==0.10.0a2), but pre-releases weren't enabled (try: `--prerelease=allow`)
+=== uv pip install --dry-run -U reflex[db]==0.10.0a2 (no --prerelease flag)
+  × No solution found when resolving dependencies:
+  ╰─▶ Because there is no version of reflex-base==0.10.0a2 and
+      reflex>=0.10.0a2 depends on reflex-base==0.10.0a2, we can conclude that
+      reflex>=0.10.0a2 cannot be used.
+      And because you require reflex[db]==0.10.0a2, we can conclude that your
+      requirements are unsatisfiable.
+
+hint: `reflex-base` was requested with a pre-release marker (e.g., reflex-base==0.10.0a2), but pre-releases weren't enabled (try: `--prerelease=allow`)

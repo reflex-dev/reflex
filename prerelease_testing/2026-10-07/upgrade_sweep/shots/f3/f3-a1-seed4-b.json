@@ -1,0 +1,522 @@
+{
+ "variant": "b",
+ "label": "f3-a1-seed4",
+ "phases": [
+  {
+   "phase": "initial",
+   "storage": {
+    "local:v_b": null
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/b",
+   "hydrated": false
+  },
+  {
+   "phase": "after-set-bad",
+   "storage": {
+    "local:v_b": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/b"
+  },
+  {
+   "phase": "reload",
+   "storage": {
+    "local:v_b": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/b",
+   "hydrated": false
+  },
+  {
+   "phase": "probe",
+   "storage": {
+    "local:v_b": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/b"
+  },
+  {
+   "phase": "noop-event",
+   "storage": {
+    "local:v_b": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/b"
+  },
+  {
+   "phase": "after-client-nav",
+   "storage": {
+    "local:v_b": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/b",
+   "hydrated": false
+  },
+  {
+   "phase": "reload2",
+   "storage": {
+    "local:v_b": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/b",
+   "hydrated": false
+  },
+  {
+   "phase": "reload2-probe",
+   "storage": {
+    "local:v_b": "bad"
+   },
+   "ui": {
+    "var": "var=",
+    "check": "check=value=''",
+    "seen": "seen=",
+    "noop_count": "noop=0"
+   },
+   "url": "http://localhost:3158/b"
+  }
+ ],
+ "ws": [
+  {
+   "t": 0.394,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:3158/?token=bJU5ZFwPRJ78"
+  },
+  {
+   "t": 0.405,
+   "phase": "initial",
+   "dir": "recv",
+   "data": "{\"type\":\"connected\"}"
+  },
+  {
+   "t": 0.671,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket"
+  },
+  {
+   "t": 0.878,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket"
+  },
+  {
+   "t": 1.28,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket"
+  },
+  {
+   "t": 1.884,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket"
+  },
+  {
+   "t": 2.688,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket"
+  },
+  {
+   "t": 3.691,
+   "phase": "initial",
+   "dir": "open",
+   "data": "ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket"
+  },
+  "... 72 more frames trimmed"
+ ],
+ "console": [
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "initial",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "noop-event",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "nav",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload2",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload2",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload2",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload2",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload2",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload2",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload2",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  },
+  {
+   "phase": "reload2-probe",
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8158/_event/?token=4f6a5966-6476-4032-fa1f-f62955e960f5&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  }
+ ]
+}

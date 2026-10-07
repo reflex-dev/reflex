@@ -152,11 +152,7 @@
    "dir": "sent",
    "data": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
   },
-  {
-   "t": 7.25,
-   "dir": "recv",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8146\",\"origin\":\"http://localhost:3146\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"/dqN94FBtNYGasS3gOpwmQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8146\",\"origin\":\"http://localhost:3146\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"/dqN94FBtNYGasS3gOpwmQ==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3146\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3146/index\",\"full_raw_path\":\"http://localhost:3146/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"28f6543a-bab3-430b-9135-ba47cf7e81c2\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"0AZVCg_2_oTalqp7AAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3146\",\"origin\":\"http://localhost:3146\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3146/\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.clock___clock____state\":{\"running_rx_state_\":false,\"time_info_rx_state_\":{\"hour\":4,\"minute\":0,\"second\":0,\"meridiem\":\"PM\",\"minute_display\":\"00\",\"second_display\":\"00\",\"hour_rotation\":\"rotate(390deg)\",\"minute_rotation\":\"rotate(-90.0deg)\",\"second_rotation\":\"rotate(-90.0deg)\"},\"valid_zone_rx_state_\":\"US/Pacific\",\"zone_rx_state_\":\"US/Pacific\"},\"reflex___state____state.reflex___state____update_vars_internal_state\":{}}}]"
-  },
+  "{\"t\": 7.25, \"dir\": \"recv\", \"data\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8146\\\",\\\"origin\\\":\\\"http://localhost:3146\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_ver...",
   {
    "t": 7.25,
    "dir": "recv",
@@ -167,16 +163,7 @@
    "dir": "recv",
    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.clock___clock____state\":{\"time_info_rx_state_\":{\"hour\":11,\"minute\":44,\"second\":10,\"meridiem\":\"PM\",\"minute_display\":\"44\",\"second_display\":\"10\",\"hour_rotation\":\"rotate(600deg)\",\"minute_rotation\":\"rotate(174.52800000000002deg)\",\"second_rotation\":\"rotate(-29.88000000000001deg)\"},\"running_rx_state_\":false}}}]"
   },
-  {
-   "t": 7.25,
-   "dir": "recv",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
-  },
-  {
-   "t": 7.33,
-   "dir": "sent",
-   "data": "41/_event,"
-  }
+  "... 2 more frames trimmed"
  ],
  "console": [
   {

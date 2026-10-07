@@ -498,7 +498,7 @@
    "len": 156,
    "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
   },
-  "{\"page\": \"main\", \"t\": 1.522, \"dir\": \"in\", \"len\": 4200, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"field_id_rx_state_\\\":\\\"\\\",\\\"form_id_rx_state_\\\":\\\"\\\",\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"u7U1RE/LlJbG+3E1TjMBJA==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate...",
+  "{\"page\": \"main\", \"t\": 1.522, \"dir\": \"in\", \"len\": 4200, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"field_id_rx_state_\\\":\\\"\\\",\\\"form_id_rx_state_\\\":\\\"\\\",\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/5...",
   {
    "page": "main",
    "t": 1.522,
@@ -506,145 +506,7 @@
    "len": 88,
    "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
   },
-  {
-   "page": "main",
-   "t": 3.366,
-   "dir": "out",
-   "len": 10,
-   "payload": "41/_event,"
-  },
-  {
-   "page": "main",
-   "t": 3.369,
-   "dir": "close",
-   "payload": ""
-  },
-  {
-   "page": "main",
-   "t": 3.848,
-   "dir": "open",
-   "payload": "ws://localhost:8140/_event/?token=03405a93-5ddd-4179-eadf-365698aa3ec9&EIO=4&transport=websocket"
-  },
-  {
-   "page": "main",
-   "t": 3.851,
-   "dir": "in",
-   "len": 108,
-   "payload": "0{\"sid\":\"GMuqF_xsEDBueDaMAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
-  },
-  {
-   "page": "main",
-   "t": 3.851,
-   "dir": "out",
-   "len": 10,
-   "payload": "40/_event,"
-  },
-  {
-   "page": "main",
-   "t": 3.854,
-   "dir": "in",
-   "len": 40,
-   "payload": "40/_event,{\"sid\":\"1LwtxNUmdhHQXSAqAAAH\"}"
-  },
-  {
-   "page": "main",
-   "t": 3.854,
-   "dir": "out",
-   "len": 122,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/register\",\"asPath\":\"/register\"}}]"
-  },
-  {
-   "page": "main",
-   "t": 3.854,
-   "dir": "out",
-   "len": 172,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/register\",\"asPath\":\"/register\"}}]"
-  },
-  "{\"page\": \"main\", \"t\": 3.865, \"dir\": \"in\", \"len\": 4241, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"field_id_rx_state_\\\":\\\"\\\",\\\"form_id_rx_state_\\\":\\\"\\\",\\\"is_hydrated_rx_state_\\\":false,\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_key\\\":\\\"f5W4/P85W5cSf5SNIGR1Sw==\\\",\\\"sec_websocket_extensions\\\":\\\"permessage-deflate...",
-  {
-   "page": "main",
-   "t": 3.869,
-   "dir": "in",
-   "len": 88,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
-  },
-  {
-   "page": "main",
-   "t": 4.078,
-   "dir": "out",
-   "len": 350,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___registration____registration_state.handle_registration\",\"payload\":{\"form_data\":{\"username\":\"qa_admin\",\"password\":\"S3cretPass!42\",\"confirm_password\":\"S3cretPass!42\"}},\"router_data\":{\"pathname\":\"/register\",\"asPath\":\"/register\"}}]"
-  },
-  {
-   "page": "main",
-   "t": 4.386,
-   "dir": "in",
-   "len": 191,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___registration____registration_state\":{\"new_user_id_rx_state_\":1}}}]"
-  },
-  {
-   "page": "main",
-   "t": 4.39,
-   "dir": "in",
-   "len": 246,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___registration____registration_state\":{\"new_user_id_rx_state_\":-1,\"error_message_rx_state_\":\"\",\"success_rx_state_\":true}}}]"
-  },
-  {
-   "page": "main",
-   "t": 4.901,
-   "dir": "in",
-   "len": 145,
-   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/login\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
-  },
-  {
-   "page": "main",
-   "t": 4.917,
-   "dir": "in",
-   "len": 191,
-   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_local_auth___local_auth____local_auth_state.reflex_local_auth___registration____registration_state\":{\"success_rx_state_\":false}}}]"
-  },
-  {
-   "page": "main",
-   "t": 5.063,
-   "dir": "out",
-   "len": 166,
-   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
-  },
-  "{\"page\": \"main\", \"t\": 5.073, \"dir\": \"in\", \"len\": 574, \"payload\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"is_hydrated_rx_state_\\\":true,\\\"rx_router_route_id_rx_state_\\\":\\\"/login\\\",\\\"rx_router_url_rx_state_\\\":{\\\"scheme\\\":\\\"http\\\",\\\"netloc\\\":\\\"localhost:3140\\\",\\\"origin\\\":\\\"http://localhost:3140\\\",\\\"path\\\":\\\"/login\\\",\\\"query\\\":\\\"\\\",\\\"query_parameters\\\":{},\\\"fragment\\\":\\\"\\\",\\\"href\\\":\\\"http://localhost:3140/login\\\"},\\\"rx_router_page_rx_state_\\\":{\\\"host\\\":\\\"http://localhost:3140\\\",\\\"path\\\":\\\"/login\\\",\\\"raw_path\\\":\\\"/login\\\",\\\"full_path\\\":\\\"http://localhost:3140/login\\\",\\\"full_raw_path\\\":\\\"http://localhost:3140/login\\\",\\\"params\\\":{}},\\\"form_id_rx_state_\\\":\\\"\\\",\\\"field_id_rx_s...",
-  {
-   "page": "main",
-   "t": 5.087,
-   "dir": "out",
-   "len": 10,
-   "payload": "41/_event,"
-  },
-  {
-   "page": "main",
-   "t": 5.088,
-   "dir": "close",
-   "payload": ""
-  },
-  {
-   "page": "main",
-   "t": 5.338,
-   "dir": "open",
-   "payload": "ws://localhost:8140/_event/?token=03405a93-5ddd-4179-eadf-365698aa3ec9&EIO=4&transport=websocket"
-  },
-  {
-   "page": "main",
-   "t": 5.342,
-   "dir": "in",
-   "len": 108,
-   "payload": "0{\"sid\":\"Z4E07CuG6HkVPEyfAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
-  },
-  {
-   "page": "main",
-   "t": 5.342,
-   "dir": "out",
-   "len": 10,
-   "payload": "40/_event,"
-  },
-  "... 315 more frames trimmed"
+  "... 337 more frames trimmed"
  ],
  "notes": {
   "mode": "full",

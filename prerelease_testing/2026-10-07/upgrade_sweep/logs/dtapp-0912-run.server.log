@@ -1,0 +1,441 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='dtapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///reflex.db', async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'db_url', 'telemetry_enabled'},
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/upgrade_sweep-dt/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='dtapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///reflex.db', async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'db_url', 'telemetry_enabled'},
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/upgrade_sweep-dt/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────────────────────── Initializing dtapp ──────────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/upgrade_sweep-dt/lib/python3.12/site-packages/reflex_base/.templates/web to
+.web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/upgrade_sweep/dtapp/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 186297217798387854630282418917283672355.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.396 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized dtapp. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3144
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8144
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3144 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3144 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3144 is not in use.
+Debug: Checking if Backend port: 8144 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8144 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8144 is not in use.
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/reflex_components_radix/plug
+in.py:76)
+Debug: [timing] Compile pages: 0.06s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'autoprefixer@10.5.4', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'@react-router/dev@8.4.0', '@react-router/fs-routes@8.4.0', 'postcss@8.5.26', 
+'vite@8.2.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [14]
+Debug: Saved lockfile
+Debug: 
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss@8.5.26
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: 
+Debug: 128 packages installed [848.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'mergician@v2.0.2', 'react@19.2.8', 'sonner@2.0.8', 'universal-cookie@8.1.2', 
+'react-moment@2.0.2', 'isbot@5.2.2', 'lucide-react@1.26.0', 
+'@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 'react-router@8.4.0', 
+'socket.io-client@4.8.3', 'react-helmet@6.1.0', 'react-error-boundary@6.1.2', 
+'moment@2.30.1', '@react-router/node@8.4.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [4]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed mergician@2.0.2
+Debug: installed react@19.2.8
+Debug: installed sonner@2.0.8
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-moment@2.0.2
+Debug: installed isbot@5.2.2
+Debug: installed lucide-react@1.26.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-router@8.4.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-helmet@6.1.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed moment@2.30.1
+Debug: installed @react-router/node@8.4.0
+Debug: 
+Debug: 101 packages installed [659.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/upgrade_sweep/dtapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/upgrade_sweep/dtapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 1.53s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpa
+d/apps/upgrade_sweep/dtapp/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrade_sweep/dtapp/alembic.ini', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrade_sweep/dtapp/reflex.db', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrade_sweep/dtapp/dtapp', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrade_sweep/dtapp/alembic', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrade_sweep/dtapp/rxconfig.py']
+[INFO] Starting granian (main PID: 26341)
+[INFO] Listening at: http://0.0.0.0:8144
+[INFO] Spawning worker-1 with PID: 26456
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3144/
+App running at: http://localhost:3144/
+Backend running at: http://0.0.0.0:8144
+Debug:   ➜  Network: http://192.0.2.2:3144/  eth0
+Debug: 7:06:56 AM [vite] (ssr) connected.
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/engine/base.py", 
+line 1817, in _execute_context
+    context = constructor(
+              ^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/engine/default.py
+", line 1496, in _init_compiled
+    flattened_processors[key](compiled_params[key])
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/sql/type_api.py",
+ line 2103, in process
+    fixed_process_param(value, dialect)
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlmodel/sql/sqltypes.py", 
+line 34, in process_bind_param
+    raise ValueError(
+ValueError: Datetime values must have timezone information. Use 
+datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive 
+storage.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/reflex_base/event/processor/
+event_processor.py", line 916, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/reflex_base/event/processor/
+event_processor.py", line 907, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/reflex_base/event/processor/
+event_processor.py", line 704, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/reflex_base/event/processor/
+base_state_processor.py", line 470, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/reflex_base/event/processor/
+base_state_processor.py", line 308, in process_event
+    events = fn(**payload)
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/upgrade_sweep/dtapp/dtapp/dtapp.py", line 33, in add_naive
+    s.commit()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/session.py", 
+line 2035, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/state_changes
+.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/session.py", 
+line 1316, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/state_changes
+.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/session.py", 
+line 1290, in _prepare_impl
+    self.session.flush()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/session.py", 
+line 4353, in flush
+    self._flush(objects)
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/session.py", 
+line 4488, in _flush
+    with util.safe_reraise():
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.
+py", line 122, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/session.py", 
+line 4449, in _flush
+    flush_context.execute()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py
+", line 465, in execute
+    rec.execute(self)
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py
+", line 641, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/persistence.p
+y", line 94, in save_obj
+    _emit_insert_statements(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/orm/persistence.p
+y", line 1234, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/engine/base.py", 
+line 1421, in execute
+    return meth(
+           ^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/sql/elements.py",
+ line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/engine/base.py", 
+line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/engine/base.py", 
+line 1823, in _execute_context
+    self._handle_dbapi_exception(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/engine/base.py", 
+line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/engine/base.py", 
+line 1817, in _execute_context
+    context = constructor(
+              ^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/engine/default.py
+", line 1496, in _init_compiled
+    flattened_processors[key](compiled_params[key])
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlalchemy/sql/type_api.py",
+ line 2103, in process
+    fixed_process_param(value, dialect)
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/upgrade_sweep-dt/lib/python3.12/site-packages/sqlmodel/sql/sqltypes.py", 
+line 34, in process_bind_param
+    raise ValueError(
+sqlalchemy.exc.StatementError: (builtins.ValueError) Datetime values must have 
+timezone information. Use datetime.now(timezone.utc), or annotate the field with
+NaiveDatetime for naive storage.
+[SQL: INSERT INTO post (title, created_at) VALUES (?, ?)]
+[parameters: [{'title': 'naive', 'created_at': datetime.datetime(2026, 10, 7, 7,
+7, 7, 758044)}]]
+
+
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!

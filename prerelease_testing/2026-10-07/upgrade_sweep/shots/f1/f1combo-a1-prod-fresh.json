@@ -1,0 +1,453 @@
+{
+ "tag": "f1combo-a1-prod-fresh",
+ "url": "http://localhost:3156",
+ "args": {
+  "url": "http://localhost:3156",
+  "outdir": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/upgrade_sweep/shots/f1",
+  "tag": "f1combo-a1-prod-fresh",
+  "profile": "-",
+  "wait": 6.0,
+  "expect_text": [],
+  "keep": [],
+  "forbid_writes": true,
+  "reload": false,
+  "path": ""
+ },
+ "checks": [
+  {
+   "name": "no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored)",
+   "status": "fail",
+   "detail": "[('cookie', 'cu_ck', 'cu_ck=cu-unset; Path=/; SameSite=Lax'), ('setItem', 'cu_ls', 'cu-light'), ('setItem', 'cu_ss', 'cu-x'), ('cookie', 'wu_ck', 'wu_ck=wu-unset; Max-Age=600; Path=/; SameSite=Lax'), ('setItem', 'wu_ls', 'wu-light'), ('setItem', 'wu_ss', 'wu-x'), ('setItem', 'wu_sync', 'wu-sync-default'), ('setItem', 'wt_ls', 'wt-light')]"
+  }
+ ],
+ "cookies_before": [],
+ "end": {
+  "ls": {
+   "cu_ls": "cu-light",
+   "theme": "system",
+   "wu_ls": "wu-light",
+   "wu_sync": "wu-sync-default",
+   "wt_ls": "wt-light"
+  },
+  "ss": {
+   "cu_ss": "cu-x",
+   "token": "5543df92-583c-4b14-f248-d50848704371",
+   "wu_ss": "wu-x"
+  },
+  "cookie": "cu_ck=cu-unset; wu_ck=wu-unset"
+ },
+ "body_text": "H:yes\n\npl-light\n\nwu-light\n\nwu-sync-default\n\n5379e3df101c46a58d2e5462ff427432\n\ncs-light\n\ncu-light\n\nws-light\n\n[\"beta\",\"zeta\",\"epsilon\",\"alpha\",\"delta\",\"eta\",\"gamma\"]\n\nwt-light\n\n1791356351425893909\n\nsync A\nBuilt with Reflex",
+ "cookies_after": [
+  {
+   "name": "cu_ck",
+   "value": "cu-unset",
+   "domain": "localhost",
+   "path": "/",
+   "expires": -1,
+   "httpOnly": false,
+   "secure": false,
+   "sameSite": "Lax"
+  },
+  {
+   "name": "wu_ck",
+   "value": "wu-unset",
+   "domain": "localhost",
+   "path": "/",
+   "expires": 1791356951.440944,
+   "httpOnly": false,
+   "secure": false,
+   "sameSite": "Lax"
+  }
+ ],
+ "doc_start": {
+  "type": "snapshot",
+  "when": "doc_start",
+  "ls": {},
+  "ss": {},
+  "cookie": "",
+  "t": 63,
+  "path": "/"
+ },
+ "writes_idempotent_counts": {},
+ "writes_total": 10,
+ "writes": [
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "5543df92-583c-4b14-f248-d50848704371",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 355,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 358,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "cu_ck=cu-unset; Path=/; SameSite=Lax",
+   "prev_cookie_header": "",
+   "t": 377,
+   "path": "/",
+   "cookie_name": "cu_ck",
+   "cookie_val": "cu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "cu_ls",
+   "value": "cu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 378,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "cu_ss",
+   "value": "cu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 378,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "wu_ck=wu-unset; Max-Age=600; Path=/; SameSite=Lax",
+   "prev_cookie_header": "cu_ck=cu-unset",
+   "t": 378,
+   "path": "/",
+   "cookie_name": "wu_ck",
+   "cookie_val": "wu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_ls",
+   "value": "wu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 379,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "wu_ss",
+   "value": "wu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 379,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_sync",
+   "value": "wu-sync-default",
+   "prev": null,
+   "same": false,
+   "vlen": 15,
+   "t": 380,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wt_ls",
+   "value": "wt-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 380,
+   "path": "/"
+  }
+ ],
+ "writes_changing": [
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "token",
+   "value": "5543df92-583c-4b14-f248-d50848704371",
+   "prev": null,
+   "same": false,
+   "vlen": 36,
+   "t": 355,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "theme",
+   "value": "system",
+   "prev": null,
+   "same": false,
+   "vlen": 6,
+   "t": 358,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "cu_ck=cu-unset; Path=/; SameSite=Lax",
+   "prev_cookie_header": "",
+   "t": 377,
+   "path": "/",
+   "cookie_name": "cu_ck",
+   "cookie_val": "cu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "cu_ls",
+   "value": "cu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 378,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "cu_ss",
+   "value": "cu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 378,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "wu_ck=wu-unset; Max-Age=600; Path=/; SameSite=Lax",
+   "prev_cookie_header": "cu_ck=cu-unset",
+   "t": 378,
+   "path": "/",
+   "cookie_name": "wu_ck",
+   "cookie_val": "wu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_ls",
+   "value": "wu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 379,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "wu_ss",
+   "value": "wu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 379,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_sync",
+   "value": "wu-sync-default",
+   "prev": null,
+   "same": false,
+   "vlen": 15,
+   "t": 380,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wt_ls",
+   "value": "wt-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 380,
+   "path": "/"
+  }
+ ],
+ "writes_changing_app": [
+  {
+   "type": "cookie",
+   "value": "cu_ck=cu-unset; Path=/; SameSite=Lax",
+   "prev_cookie_header": "",
+   "t": 377,
+   "path": "/",
+   "cookie_name": "cu_ck",
+   "cookie_val": "cu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "cu_ls",
+   "value": "cu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 378,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "cu_ss",
+   "value": "cu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 378,
+   "path": "/"
+  },
+  {
+   "type": "cookie",
+   "value": "wu_ck=wu-unset; Max-Age=600; Path=/; SameSite=Lax",
+   "prev_cookie_header": "cu_ck=cu-unset",
+   "t": 378,
+   "path": "/",
+   "cookie_name": "wu_ck",
+   "cookie_val": "wu-unset",
+   "prev_val": null
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_ls",
+   "value": "wu-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 379,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "session",
+   "key": "wu_ss",
+   "value": "wu-x",
+   "prev": null,
+   "same": false,
+   "vlen": 4,
+   "t": 379,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wu_sync",
+   "value": "wu-sync-default",
+   "prev": null,
+   "same": false,
+   "vlen": 15,
+   "t": 380,
+   "path": "/"
+  },
+  {
+   "type": "setItem",
+   "store": "local",
+   "key": "wt_ls",
+   "value": "wt-light",
+   "prev": null,
+   "same": false,
+   "vlen": 8,
+   "t": 380,
+   "path": "/"
+  }
+ ],
+ "writes_idempotent": [],
+ "ws": [
+  {
+   "t": 6.31,
+   "dir": "recv",
+   "data": "0{\"sid\":\"5dhUxOrwWc1TaQV-AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 6.31,
+   "dir": "sent",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"67434bbc0c2ac128\",\"b084fc0c68f7c73a\",\"8997247f7197d310\",\"ebe7087fc30c1362\",\"cb7939a712359f92\",\"4b2fd1758fda42a6\",\"a80c25b9224a715c\",\"6df3f17332d81a37\",\"df0c8fb8a6b57003\",\"057d79d209e757f0\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "t": 6.31,
+   "dir": "recv",
+   "data": "40/_event,{\"sid\":\"AcSWAMVDkqPhq7QUAAAB\"}"
+  },
+  {
+   "t": 6.31,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"oInm9Y0PJ8LpfvbEpkUsCA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"oInm9Y0PJ8LpfvbEpkUsCA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3156\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3156/index\",\"full_raw_path\":\"http://localhost:3156/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"5543df92-583c-4b14-f248-d50848704371\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"AcSWAMVDkqPhq7QUAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3156\",\"origin\":\"http://localhost:3156\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3156/\"}},\"reflex___state____state.f1combo___f1combo____parent_uuid\":{\"pu_id_rx_state_\":\"c71e12d981144ce88735067d88bc33ee\"},\"reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid\":{\"cu_ck_rx_state_\":\"cu-unset\",\"cu_id_rx_state_\":\"aa5c42c2d0ca41fa80b176a9cb517abb\",\"cu_ls_rx_state_\":\"cu-light\",\"cu_ss_rx_state_\":\"cu-x\"},\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_ck_rx_state_\":\"wu-unset\",\"wu_id_rx_state_\":\"5379e3df101c46a58d2e5462ff427432\",\"wu_ls_rx_state_\":\"wu-light\",\"wu_ss_rx_state_\":\"wu-x\",\"wu_sync_rx_state_\":\"wu-sync-default\"},\"reflex___state____state.f1combo___f1combo____with_clock_var\":{\"wt_ls_rx_state_\":\"wt-light\",\"wt_stamp_rx_state_\":\"1791356351425893909\"}}}]"
+  },
+  {
+   "t": 6.31,
+   "dir": "recv",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "console": [
+  {
+   "t": 6.31,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "t": 6.4,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "bad_requests": [],
+ "summary": {
+  "doc_start_ls_keys": [],
+  "doc_start_cookie_names": [],
+  "end_ls_keys": [
+   "cu_ls",
+   "theme",
+   "wt_ls",
+   "wu_ls",
+   "wu_sync"
+  ],
+  "end_ss_keys": [
+   "cu_ss",
+   "token",
+   "wu_ss"
+  ],
+  "end_cookie_names": [
+   "cu_ck",
+   "wu_ck"
+  ],
+  "n_writes": 10,
+  "n_changing": 10,
+  "n_changing_app": 8,
+  "n_idempotent": 0,
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "pageerrors": [],
+  "bad_requests": [],
+  "idempotent_counts": {}
+ }
+}

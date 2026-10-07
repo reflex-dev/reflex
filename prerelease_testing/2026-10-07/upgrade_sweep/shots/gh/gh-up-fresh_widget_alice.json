@@ -187,11 +187,7 @@
    "dir": "recv",
    "data": "40/_event,{\"sid\":\"Czl_nGotJ1ulCX6vAAAN\"}"
   },
-  {
-   "t": 6.43,
-   "dir": "recv",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8144\",\"origin\":\"http://localhost:3144\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"iREiwli8tNVmO06iiRU2Yw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8144\",\"origin\":\"http://localhost:3144\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"iREiwli8tNVmO06iiRU2Yw==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3144\",\"path\":\"/widget/[selected_user_param]\",\"raw_path\":\"/widget/alice\",\"full_path\":\"http://localhost:3144/widget/[selected_user_param]\",\"full_raw_path\":\"http://localhost:3144/widget/alice\",\"params\":{\"selected_user_param\":\"alice\"}},\"rx_router_route_id_rx_state_\":\"/widget/[selected_user_param]\",\"rx_router_session_rx_state_\":{\"client_token\":\"ac749136-39b3-4759-e0e6-20327625447e\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Czl_nGotJ1ulCX6vAAAN\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3144\",\"origin\":\"http://localhost:3144\",\"path\":\"/widget/alice\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3144/widget/alice\"},\"selected_user_param_rx_state_\":\"alice\",\"is_hydrated_rx_state_\":false}}}]"
-  },
+  "{\"t\": 6.43, \"dir\": \"recv\", \"data\": \"42/_event,[\\\"event\\\",{\\\"delta\\\":{\\\"reflex___state____state\\\":{\\\"rx_router_headers_rx_state_\\\":{\\\"host\\\":\\\"localhost:8144\\\",\\\"origin\\\":\\\"http://localhost:3144\\\",\\\"upgrade\\\":\\\"websocket\\\",\\\"connection\\\":\\\"Upgrade\\\",\\\"cookie\\\":\\\"\\\",\\\"pragma\\\":\\\"no-cache\\\",\\\"cache_control\\\":\\\"no-cache\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\\\",\\\"sec_websocket_version\\\":\\\"13\\\",\\\"sec_websocket_ke...",
   {
    "t": 6.43,
    "dir": "recv",
@@ -212,21 +208,7 @@
    "dir": "recv",
    "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___widget____widget_state\":{\"fetching_rx_state_\":true,\"user_stats_rx_state_\":[]}}}]"
   },
-  {
-   "t": 6.43,
-   "dir": "recv",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___widget____widget_state\":{\"user_stats_rx_state_\":[{\"name\":\"Alice\",\"login\":\"alice\",\"contributionsCollection\":{\"totalCommitContributions\":491,\"totalPullRequestReviewContributions\":54},\"repositoriesContributedTo\":26,\"pullRequests\":252,\"mergedPullRequests\":191,\"openIssues\":38,\"closedIssues\":25,\"followers\":185,\"repositoryDiscussions\":7,\"repositoryDiscussionComments\":19}]}}}]"
-  },
-  {
-   "t": 6.43,
-   "dir": "recv",
-   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.github_stats___widget____widget_state\":{\"fetching_rx_state_\":false,\"user_stats_json_rx_state_\":\"[{\\\"name\\\": \\\"Alice\\\", \\\"login\\\": \\\"alice\\\", \\\"contributionsCollection\\\": {\\\"totalCommitContributions\\\": 491, \\\"totalPullRequestReviewContributions\\\": 54}, \\\"repositoriesContributedTo\\\": 26, \\\"pullRequests\\\": 252, \\\"mergedPullRequests\\\": 191, \\\"openIssues\\\": 38, \\\"closedIssues\\\": 25, \\\"followers\\\": 185, \\\"repositoryDiscussions\\\": 7, \\\"repositoryDiscussionComments\\\": 19}]\",\"last_fetch_rx_state_\":\"[\\\"alice\\\", 1791355291.3322594]\"}}}]"
-  },
-  {
-   "t": 6.53,
-   "dir": "sent",
-   "data": "41/_event,"
-  }
+  "... 3 more frames trimmed"
  ],
  "console": [
   {
