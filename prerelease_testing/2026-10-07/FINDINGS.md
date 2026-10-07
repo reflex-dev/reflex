@@ -65,6 +65,7 @@ train) and 0.9.12.
   pydantic and sqlmodel. reflex-local-auth users (`reflex[db]>=0.8.1`) hit it too. Fix options: add `greenlet`
   or `sqlalchemy[asyncio]` to the `db` extra, import the asyncio module lazily, or cap `SQLAlchemy<2.1`.
 - Campaign impact: greenlet was added to the shared alpha2 venvs after this report so the other clusters test the framework.
+- Fix PR: [reflex-dev/reflex#7466](https://github.com/reflex-dev/reflex/pull/7466) adds `greenlet >=3.2` to the `db` extra (regression test included).
 
 ### N-002: No changelog entry for the sqlmodel cap removal (#7462); a1→a2 `uv -U` upgraders of naive-datetime apps silently change semantics (LOW)
 - Cluster: `reverify_db_install`. The v0.10.0a2 CHANGELOG has no sqlmodel/datetime/#7462 entry (the PR only
