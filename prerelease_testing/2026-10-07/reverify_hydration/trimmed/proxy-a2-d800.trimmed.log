@@ -1,0 +1,18 @@
+### head
+upgrade-delay proxy 3229 -> 3228, /_event upgrade delay 800ms
+1791357065.235 delaying ws upgrade 800ms: b'GET /_event/?token=56eb5b38-9bf5-405d-fe43-9d2a1fcba2b7&EIO=4&transport=websocke'
+1791357067.979 delaying ws upgrade 800ms: b'GET /_event/?token=da7b0139-6c6a-4eff-a39c-166823d17fe9&EIO=4&transport=websocke'
+1791357071.658 delaying ws upgrade 800ms: b'GET /_event/?token=5b66cc7d-0359-4e4c-c51c-d09d3d942b5f&EIO=4&transport=websocke'
+1791357074.296 delaying ws upgrade 800ms: b'GET /_event/?token=6d55bd06-fede-46e8-bfe8-f6afbea3341f&EIO=4&transport=websocke'
+1791357076.891 delaying ws upgrade 800ms: b'GET /_event/?token=5b85fd05-fd28-4d5f-ddd7-a591488304a0&EIO=4&transport=websocke'
+1791357079.604 delaying ws upgrade 800ms: b'GET /_event/?token=fa4285dc-5e58-4b92-d082-ebd33a1c019d&EIO=4&transport=websocke'
+### warnings/errors (deduped, with counts)
+### HYDTRACE (first 400)
+### tail
+upgrade-delay proxy 3229 -> 3228, /_event upgrade delay 800ms
+1791357065.235 delaying ws upgrade 800ms: b'GET /_event/?token=56eb5b38-9bf5-405d-fe43-9d2a1fcba2b7&EIO=4&transport=websocke'
+1791357067.979 delaying ws upgrade 800ms: b'GET /_event/?token=da7b0139-6c6a-4eff-a39c-166823d17fe9&EIO=4&transport=websocke'
+1791357071.658 delaying ws upgrade 800ms: b'GET /_event/?token=5b66cc7d-0359-4e4c-c51c-d09d3d942b5f&EIO=4&transport=websocke'
+1791357074.296 delaying ws upgrade 800ms: b'GET /_event/?token=6d55bd06-fede-46e8-bfe8-f6afbea3341f&EIO=4&transport=websocke'
+1791357076.891 delaying ws upgrade 800ms: b'GET /_event/?token=5b85fd05-fd28-4d5f-ddd7-a591488304a0&EIO=4&transport=websocke'
+1791357079.604 delaying ws upgrade 800ms: b'GET /_event/?token=fa4285dc-5e58-4b92-d082-ebd33a1c019d&EIO=4&transport=websocke'

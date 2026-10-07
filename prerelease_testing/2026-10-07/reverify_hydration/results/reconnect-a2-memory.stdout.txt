@@ -1,0 +1,207 @@
+started recon-alpha2-memory pid=3318 venv=alpha2 mode=prod env=[REFLEX_STATE_MANAGER_MODE=memory] log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_hydration/logs/recon-alpha2-memory-1.log 
+UP http://localhost:3231/ after 9.1s
+UP http://localhost:3231/ping after 9.1s
+stopped recon-alpha2-memory (pgid 3318)
+redis-ser 31799 root    6u  IPv4 320642      0t0  TCP *:8239 (LISTEN)
+started recon-alpha2-memory pid=3598 venv=alpha2 mode=prod env=[REFLEX_STATE_MANAGER_MODE=memory HYD_SUB_LS_DEFAULT=sub-ls-NEWDEFAULT] log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_hydration/logs/recon-alpha2-memory-2.log 
+UP http://localhost:3231/ping after 7.2s
+UP http://localhost:3231/ after 7.2s
+stopped recon-alpha2-memory (pgid 3598)
+redis-ser 31799 root    6u  IPv4 320642      0t0  TCP *:8239 (LISTEN)
+{
+ "venv": "alpha2",
+ "manager": "memory",
+ "startup_s": 9.2,
+ "dc_phaseA_sub_ls": "sub-ls-default",
+ "dc_phaseA_storage": {
+  "local": {
+   "theme": "system"
+  },
+  "session": {
+   "token": "b8b4ac76-c5bf-4453-f7b6-5872f7cdb902"
+  },
+  "cookie": ""
+ },
+ "before": {
+  "counter": "3",
+  "ls-plain": "ls-A",
+  "sub-ls": "sub-ls-S1",
+  "sub-uuid": "a5f1e933f2b4459ab9d48dc13296af66",
+  "load-count": "1"
+ },
+ "while_down": {
+  "hyd": "H:yes",
+  "counter": "3",
+  "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_hydration/results/reconnect-a2-memory/while_down.png",
+  "body_has_connection_msg": "Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:3231/_event\nindex\nhome\nother\nredir\nbgload\nraise\nslow\nmulti\nscript\nitem1\nitem2\ndocsab\ndocsroot\nlsload\ndefaults\nclickfast\ngate\nupload\nnested\n\nH:yes\n\n3\n\nincrement\n\n[\"index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|"
+ },
+ "restart_s": 7.3,
+ "after_restart": {
+  "counter": "0",
+  "ls-plain": "ls-A",
+  "sub-ls": "sub-ls-S1",
+  "sub-uuid": "a2783906864a4d66b0810f95dbc4c639",
+  "load-count": "1",
+  "hyd-flag": "H:yes",
+  "rehydrated_in_s": null,
+  "token_same": true,
+  "trace_tail": [
+   "index_load#1 ls=ls-A|sync=sync-A|ss=ss-A|ck=ck-A|int='5'|same=same-value|big=0|sub_ls=sub-ls-S1|sub_ck=sub-ck-S1|clean_ls=clean-default|hyd=False"
+  ],
+  "boot_events_sent": [
+   {
+    "t": 26.081,
+    "dir": "out",
+    "kind": "connect",
+    "len": 647,
+    "boot": "reflex___state____state.hydrate_and_load",
+    "boot_payload_keys": [
+     "vars"
+    ],
+    "boot_vars": {
+     "ck_val_rx_state_": "ck-A",
+     "sub_ck_rx_state_": "sub-ck-S1",
+     "ls_plain_rx_state_": "ls-A",
+     "ls_sync_rx_state_": "sync-A",
+     "sub_ls_rx_state_": "sub-ls-S1",
+     "ss_val_rx_state_": "ss-A"
+    }
+   }
+  ],
+  "frames": [
+   {
+    "t": 26.081,
+    "dir": "in",
+    "kind": "eio",
+    "len": 108
+   },
+   {
+    "t": 26.081,
+    "dir": "out",
+    "kind": "connect",
+    "len": 647,
+    "boot": "reflex___state____state.hydrate_and_load",
+    "boot_payload_keys": [
+     "vars"
+    ],
+    "boot_vars": {
+     "ck_val_rx_state_": "ck-A",
+     "sub_ck_rx_state_": "sub-ck-S1",
+     "ls_plain_rx_state_": "ls-A",
+     "ls_sync_rx_state_": "sync-A",
+     "sub_ls_rx_state_": "sub-ls-S1",
+     "ss_val_rx_state_": "ss-A"
+    }
+   },
+   {
+    "t": 26.081,
+    "dir": "in",
+    "kind": "connect",
+    "len": 40,
+    "boot": null,
+    "boot_payload_keys": []
+   },
+   {
+    "t": 26.082,
+    "dir": "in",
+    "kind": "event-trunc",
+    "len": 4372
+   },
+   {
+    "t": 26.082,
+    "dir": "in",
+    "kind": "event",
+    "len": 89,
+    "delta": {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_"
+     ]
+    },
+    "events": []
+   },
+   {
+    "t": 26.082,
+    "dir": "in",
+    "kind": "event",
+    "len": 277,
+    "delta": {
+     "hydapp___hydapp____state": [
+      "load_count_rx_state_",
+      "trace_rx_state_"
+     ]
+    },
+    "events": []
+   },
+   {
+    "t": 26.082,
+    "dir": "in",
+    "kind": "event",
+    "len": 88,
+    "delta": {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_"
+     ]
+    },
+    "events": []
+   },
+   {
+    "t": 51.066,
+    "dir": "in",
+    "kind": "eio",
+    "len": 1
+   },
+   {
+    "t": 51.066,
+    "dir": "out",
+    "kind": "eio",
+    "len": 1
+   },
+   {
+    "t": 76.09,
+    "dir": "in",
+    "kind": "eio",
+    "len": 1
+   },
+   {
+    "t": 76.09,
+    "dir": "out",
+    "kind": "eio",
+    "len": 1
+   }
+  ],
+  "hyd_series_tail": [
+   [
+    108,
+    "H:no"
+   ],
+   [
+    256,
+    "H:yes"
+   ],
+   [
+    14350,
+    "H:no"
+   ],
+   [
+    14352,
+    "H:yes"
+   ]
+  ],
+  "counter_after_click": "1"
+ },
+ "offline": {
+  "hyd_while_offline": "H:yes",
+  "ws_events": [],
+  "after_online": {
+   "counter": "1",
+   "ls-plain": "ls-A",
+   "load-count": "1",
+   "hyd-flag": "H:yes"
+  },
+  "load_count_before": "1",
+  "frames": [],
+  "counter_after_click": "2"
+ },
+ "dc_phaseB_returning_visitor_sub_ls": "sub-ls-NEWDEFAULT",
+ "dc_phaseB_fresh_visitor_sub_ls": "sub-ls-NEWDEFAULT"
+}

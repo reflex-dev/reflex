@@ -1,0 +1,72 @@
+{
+ "label": "a2-prod",
+ "hold_ms": 2000,
+ "runs": {
+  "slow_to_other": [
+   {
+    "url": "http://localhost:3228/other",
+    "connected_before_nav": false,
+    "hyd_after": "H:yes",
+    "trace": [
+     "slow_load run1 step1",
+     "other_load#1 path=/other"
+    ],
+    "sent": [
+     "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"930fadbda7aef0c7\",\"711d0d85b26c973b\",\"5dcec70f14652f08\",\"30faa97466b75591\",\"43",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]"
+    ],
+    "console_errors": [],
+    "#other-count": "1",
+    "#slow-progress-other": "1"
+   },
+   {
+    "url": "http://localhost:3228/other",
+    "connected_before_nav": false,
+    "hyd_after": "H:yes",
+    "trace": [
+     "slow_load run1 step1",
+     "other_load#1 path=/other"
+    ],
+    "sent": [
+     "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"930fadbda7aef0c7\",\"711d0d85b26c973b\",\"5dcec70f14652f08\",\"30faa97466b75591\",\"43",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]"
+    ],
+    "console_errors": [],
+    "#other-count": "1",
+    "#slow-progress-other": "1"
+   }
+  ],
+  "item1_to_item2": [
+   {
+    "url": "http://localhost:3228/items/2",
+    "connected_before_nav": false,
+    "hyd_after": "H:yes",
+    "trace": [
+     "item_load id=1",
+     "item_load id=2"
+    ],
+    "sent": [
+     "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"930fadbda7aef0c7\",\"711d0d85b26c973b\",\"5dcec70f14652f08\",\"30faa97466b75591\",\"43",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/items/2\",\"asPath\":\"/items/2\",\"q"
+    ],
+    "console_errors": [],
+    "#item-trace": "[\"id=1|path=/items/1|url=http://localhost:3228/items/1\",\"id=2|path=/items/2|url=http://localhost:3228/items/2\"]"
+   },
+   {
+    "url": "http://localhost:3228/items/2",
+    "connected_before_nav": false,
+    "hyd_after": "H:yes",
+    "trace": [
+     "item_load id=1",
+     "item_load id=2"
+    ],
+    "sent": [
+     "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"930fadbda7aef0c7\",\"711d0d85b26c973b\",\"5dcec70f14652f08\",\"30faa97466b75591\",\"43",
+     "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/items/2\",\"asPath\":\"/items/2\",\"q"
+    ],
+    "console_errors": [],
+    "#item-trace": "[\"id=1|path=/items/1|url=http://localhost:3228/items/1\",\"id=2|path=/items/2|url=http://localhost:3228/items/2\"]"
+   }
+  ]
+ }
+}

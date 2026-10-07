@@ -1,0 +1,70 @@
+### head
+API_URL=http://localhost:3230
+───────────────────────────────── System Info ──────────────────────────────────
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/config.py'
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3230', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url='redis://localhost:8239', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'plugins', 'api_url', 'redis_url', 'loglevel', 
+'app_name', 'disable_plugins', 'telemetry_enabled'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[RadixThemesPlugin(theme={"name": 
+"RadixThemesTheme", "props": ["accentColor:\"blue\"", 
+"css:{...theme.styles.global[':root'], ...theme.styles.global.body}"], 
+"children": []})], disable_plugins=[<class 
+'reflex_base.plugins.sitemap.SitemapPlugin'>], transport='websocket')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+### warnings/errors (deduped, with counts)
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+### HYDTRACE (first 400)
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE 1791357310.054 4d882c28 index_load#7 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+### tail
+Debug: Started lifespan task: mutate_in_lifespan as coroutine
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+[INFO] Started worker-8
+Debug: Started lifespan task: mutate_in_lifespan as coroutine
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+[INFO] Started worker-7
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791357310.054 4d882c28 index_load#7 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[INFO] Stopping worker-6
+[INFO] Stopping worker-8
+[INFO] Stopping worker-2
+[INFO] Stopping worker-4
+[INFO] Stopping worker-5
+[INFO] Stopping worker-7
+[INFO] Stopping worker-9
+[INFO] Stopping worker-3
+[INFO] Stopped worker-1
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Stopped worker-9
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

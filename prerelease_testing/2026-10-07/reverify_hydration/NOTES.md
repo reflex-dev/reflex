@@ -149,3 +149,108 @@ $NP $DRV drive_cvnav.py http://localhost:3223 a2-dev-seed0
 $W/scripts/srv.sh start gauth-a2dev reverify_hydration-galpha2 dev $W/src/google_auth_demo 3225 8225 PYTHONHASHSEED=4 GOOGLE_CLIENT_ID=123456789012-dummyclientid.apps.googleusercontent.com
 $NP $DRV drive_gauth.py http://localhost:3225 out.json a2-dev-seed4 ; $NP $DRV drive_google_auth.py http://localhost:3225 /tmp/gout a2
 ```
+
+## 3. Full regression sweep of the hydration probe app (s1–s13), dev + prod on 0.10.0a2
+
+`src/hydapp` (unchanged source except the venv guard), `drivers/hyd_driver.py`. alpha2 dev 3227/8227, alpha2 prod
+3228. Compared field-by-field against the saved 10-06 results with `scripts/cmp_hyd.py <a2> <alpha> <stable>`
+(ignores timestamps/ids/ports).
+
+| scenario | a2-dev | a2-prod | 0.10.0a1 dev/prod (10-06) | 0.9.12 dev/prod (10-06) | notes |
+|---|---|---|---|---|---|
+| s1 storage roundtrip, on_load sees restored values | pass | pass | pass/pass | pass/pass | a2 no longer has `hyd_sub_*` defaults in storage after the first load (a1 did) |
+| s1b keys written by a fresh first load | **pass (none)** | **pass (none)** | anomaly/anomaly (`hyd_sub_ls`, `hyd_sub_ss`, cookie `hyd_sub_ck`) | pass/pass | F-002 fixed |
+| s2 `sync=True` two tabs, tokens per tab, `window.open` dup, new ctx | pass | pass | pass | pass | `b_counter_after_close_a` differs by run timing only (driver reads before/after the click lands) |
+| s3 clear storage / `remove_local_storage` | pass | pass | pass | pass | identical fields |
+| s4 int Cookie set to `abc` | anomaly (same) | anomaly (same) | anomaly | anomaly | pre-existing API looseness, identical values |
+| s5 300k LS ok; 1.2M LS storm | pass / **storm** | pass / **storm** | pass / storm | pass / storm | F-008 unchanged, see §4 |
+| s6 redirect, bg, raising, multi, call_script, LsLoad | pass | pass | pass | pass | identical |
+| s6b slow on_load superseded by link / back | pass | pass | pass | pass | a2-dev pressed Back at step 2 (a1/stable at 1) — timing; the chain stops where it was on all |
+| s7 `is_hydrated` gate flips once | pass | pass | fail*/pass | pass/pass | *a1-dev driver artifact noted on 10-06 |
+| s8 defaults displayed == backend, per-session ids | pass | pass | pass | pass | |
+| s9 dynamic + catch-all routes, back/forward | pass | pass | pass | pass | identical traces |
+| s10 click during on_load | info | info (1/3 runs lost the pre-hydration click, see below) | info | info | |
+| s11 #7357 upload + nav supersedes slow on_load | pass | pass | pass | **fail** | fix still holds |
+| s12 event list + failing `rx.set_value` | pass | pass | pass | pass | |
+| s13 boot bytes | in 3044 / out 414 (dev), 3049/416 (prod) | | 3014/414, 3019/416 | 4711/292, 4716/296 | +30 B inbound = the explicit `"is_hydrated_rx_state_":false` now in the boot delta |
+
+No console errors/warnings, page errors, failed requests or HTTP ≥400 in any alpha2 scenario (benign lines filtered).
+Server logs: only the expected `Expected field 'State.ck_int' ...` (s4) and the intentional `ValueError: boom from on_load`
+(s6) — same as 10-06. **No scenario that passed on 0.10.0a1 fails on 0.10.0a2.**
+
+s10 anomaly (a2-prod, 1 of 3 runs in the sweep): the "always visible" button clicked before hydration never produced a
+websocket event (frames in `results/hyd/a2-prod/s10.raw.json` were not kept; summary in `s10.json` run[1]): the frontend
+never sent `cf_click(always)`, i.e. the click hit the prerendered HTML before React attached its root listeners. 3 more
+`--only s10` repetitions (9 runs) and `drivers/s10_react_check.py` (20 runs, records `__reactProps` presence at click
+time) never lost a click again (12/20 clicks landed before React attached and were still replayed by React). Classified
+as browser/prerender timing, not a hydration regression; 0/6 in the 10-06 alpha/stable prod runs, so the rate is ~1/32.
+
+Rerun:
+```bash
+$W/scripts/srv.sh start hyd-a2dev alpha2 dev $W/src/hydapp 3227 8227
+$NP $DRV $W/drivers/hyd_driver.py --base http://localhost:3227 --label a2-dev --out $W/results/hyd/a2-dev
+$W/scripts/srv.sh start hyd-a2prod alpha2 prod $W/src/hydapp 3228 3228   # --base http://localhost:3228
+$DRV $W/scripts/cmp_hyd.py $W/results/hyd/a2-prod /home/user/reflex/prerelease_testing/2026-10-06/hydration/results/{alpha-prod,stable-prod}
+```
+
+## 4. F-008 (oversized client-storage value → reconnect storm) — **STILL BROKEN** (unchanged, pre-existing)
+
+s5 with `localStorage.hyd_big = 'x'.repeat(1200000)` then reload (`results/hyd/s5_storm_summary_a2.json`):
+
+| run | websocket opens | window | opens/s | uploaded | hydrated |
+|---|---|---|---|---|---|
+| a2 dev | 602 | 22.4 s | 26.9 | 721 MB | no (`H:no`, compiled defaults) |
+| a2 prod | 654 | 22.1 s | 29.5 | 784 MB | no |
+| a1 dev (10-06) | 866 | 22.2 s | 39.1 | 1038 MB | no |
+| 0.9.12 dev (10-06) | 754 | 22.2 s | 33.9 | ~900 MB | no |
+
+Mechanism unchanged: the 1.2 MB value rides in the socket.io CONNECT (`40/_event,{"event":{"name":"...hydrate_and_load","payload":{"vars":...` len 1200808),
+Engine.IO `maxPayload` 1000000 closes it, the client reconnects immediately. No banner, no console error, no server log line.
+300k chars still hydrates in 0.2–0.3 s. (Rates are lower than 10-06 only because this machine is shared/loaded.)
+
+## 5. F-010 (client-side navigation before the websocket CONNECT runs the left page's on_load) — **UNCHANGED**
+
+`state.js` is byte-identical to 0.10.0a1 (`bootAuth()` at `state.js:703-708`, assigned once at mount `:728`).
+* `drivers/prenav_test.py` (2 s `route_web_socket` hold), a2 prod 3228, 2 invocations × 2 runs each × 2 cases = 8/8:
+  `/slow → /other`: trace `slow_load run1 step1`, `other_load#1`, `#slow-progress-other=1` lands on `/other`;
+  `/items/1 → /items/2`: `item_load id=1` then `item_load id=2`. Identical to 0.10.0a1 (0.9.12: new page's on_load twice).
+  Backend trace `results/f010/prenav_a2.hydtrace.log`.
+* Redirect hijack with the verifier's websocket-upgrade delay proxy (`drivers/upgrade_delay_proxy.py`, D=800 ms,
+  app rebuilt with `REFLEX_API_URL=http://localhost:3229`, proxy 3229→3228), `drivers/f6_natural.py ... 2 0 /redir`:
+  **2/2 trace `redirect_load, item_load id=2, other_load#1`, final URL `/other`** (user clicked `/items/2`, got bounced) —
+  same as 0.10.0a1 2/2; 0.9.12 stays on `/items/2`. `/items/1 → /items/2` at click delay 0 and 300 ms: 4/4 in-window,
+  `item_load id=1` then `id=2` (`results/f010/f6nat_a2_d800.json`, `f6redir_a2_d800.json`).
+
+Rerun:
+```bash
+$W/scripts/srv.sh start hyd-a2prod alpha2 prod $W/src/hydapp 3228 3228
+$NP $DRV $W/drivers/prenav_test.py http://localhost:3228 a2-prod prenav.json 2000
+$W/scripts/srv.sh stop hyd-a2prod; $W/scripts/srv.sh start hyd-a2prod alpha2 prod $W/src/hydapp 3228 3228 REFLEX_API_URL=http://localhost:3229
+$W/scripts/proxy.sh start 3229 3228 800 proxy-a2-d800
+$NP $DRV $W/drivers/f6_natural.py http://localhost:3229 a2-redir redir.json 2 0 /redir
+$NP $DRV $W/drivers/f6_natural.py http://localhost:3229 a2-items items.json 2 0,300
+$W/scripts/proxy.sh stop 3229
+```
+
+## 6. F-017 (redis prod restart lost token after a granian/pyo3 shutdown panic) — **NOT REPRODUCED** (0/9 stops)
+
+redis-server on 8239 (`--save '' --appendonly no`), prod 9 workers (granian 2.8.4, same as before).
+* `drivers/reconnect_driver.py --venv alpha2 --port 3230 --manager redis` (`results/reconnect-a2-redis/result.json`):
+  kill with tab open → "Cannot connect to server" banner; restart → token same, counter 3 kept, `ls-A`/`sub-ls-S1` kept,
+  boot CONNECT carries only `vars` (no hashes → full snapshot), load-count 1→2, click works (4), no panic in either log.
+* `drivers/redis_restart_loop.py alpha2 3230 6`: **6/6 rounds** token same, counter kept (1→6), no leftover
+  `token_manager_socket_record_*` keys, no `panicked` in any of the 7 server logs, no `new_token` frames.
+  (`results/redis_restart_loop_alpha2.json`)
+* Memory manager (`--manager memory --default-change`, port 3231): restart → counter 0 (state gone, by design), client
+  storage re-applied, token same; **returning visitor after `HYD_SUB_LS_DEFAULT=sub-ls-NEWDEFAULT` sees
+  `sub-ls-NEWDEFAULT`** (0.10.0a1: stale `sub-ls-default`; 0.9.12: NEWDEFAULT) — F-002 fixed in the full app too.
+Console during outages: only the expected `WebSocket connection ... failed` lines (11 per outage).
+
+Rerun:
+```bash
+cd $W/run && setsid redis-server --port 8239 --save '' --appendonly no &      # kill when done
+$NP $DRV $W/drivers/reconnect_driver.py --venv alpha2 --port 3230 --manager redis --out $W/results/reconnect-a2-redis
+$NP $DRV $W/drivers/redis_restart_loop.py alpha2 3230 6
+$NP $DRV $W/drivers/reconnect_driver.py --venv alpha2 --port 3231 --manager memory --out $W/results/reconnect-a2-memory --default-change
+```
+(`$W/srv.sh` is a compat wrapper giving these 10-06 drivers the old `srv.sh start <name> <venv> <mode> <FP> <BP>` signature.)

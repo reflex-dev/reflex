@@ -218,34 +218,50 @@ HYDTRACE 1791356836.636 790daa76 cf_click always loaded=True hyd=True
 HYDTRACE 1791356838.587 4cc21b68 clickfast_load begin
 HYDTRACE 1791356839.588 4cc21b68 clickfast_load end
 HYDTRACE 1791356839.589 4cc21b68 cf_click always loaded=True hyd=True
+HYDTRACE 1791356900.643 c7a587a0 slow_load run1 step1
+HYDTRACE 1791356900.660 c7a587a0 other_load#1 path=/other
+HYDTRACE 1791356910.575 7c4a9ae7 slow_load run1 step1
+HYDTRACE 1791356910.593 7c4a9ae7 other_load#1 path=/other
+HYDTRACE 1791356920.494 84bf27db item_load id=1
+HYDTRACE 1791356920.507 84bf27db item_load id=2
+HYDTRACE 1791356930.904 6380b45b item_load id=1
+HYDTRACE 1791356930.917 6380b45b item_load id=2
+HYDTRACE 1791356944.083 07048388 slow_load run1 step1
+HYDTRACE 1791356944.102 07048388 other_load#1 path=/other
+HYDTRACE 1791356954.162 782f1f81 slow_load run1 step1
+HYDTRACE 1791356954.183 782f1f81 other_load#1 path=/other
+HYDTRACE 1791356964.172 373c7bc3 item_load id=1
+HYDTRACE 1791356964.200 373c7bc3 item_load id=2
+HYDTRACE 1791356974.624 4fb8785e item_load id=1
+HYDTRACE 1791356974.645 4fb8785e item_load id=2
 ### tail
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791356944.083 07048388 slow_load run1 step1
+Debug: Cancelling the previous unfinished 
+reflex___state____state.reflex___state____on_load_internal_state.on_load_interna
+l chain for token 07048388-838b-4101-c1c9-6553c3e8166c, superseded by a newer 
+invocation.
+HYDTRACE 1791356944.102 07048388 other_load#1 path=/other
 Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
 type '<class 'reflex.istate.storage.Cookie'>'.
-HYDTRACE 1791356823.869 6222d9e8 clickfast_load begin
-HYDTRACE 1791356824.871 6222d9e8 clickfast_load end
-HYDTRACE 1791356824.872 6222d9e8 cf_click always loaded=True hyd=True
+HYDTRACE 1791356954.162 782f1f81 slow_load run1 step1
+Debug: Cancelling the previous unfinished 
+reflex___state____state.reflex___state____on_load_internal_state.on_load_interna
+l chain for token 782f1f81-8df9-4244-cceb-be0316e5ed4e, superseded by a newer 
+invocation.
+HYDTRACE 1791356954.183 782f1f81 other_load#1 path=/other
 Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
 type '<class 'reflex.istate.storage.Cookie'>'.
-HYDTRACE 1791356826.748 8c79ec16 clickfast_load begin
-HYDTRACE 1791356827.749 8c79ec16 clickfast_load end
-HYDTRACE 1791356827.750 8c79ec16 cf_click always loaded=True hyd=True
+HYDTRACE 1791356964.172 373c7bc3 item_load id=1
+HYDTRACE 1791356964.200 373c7bc3 item_load id=2
 Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
 type '<class 'reflex.istate.storage.Cookie'>'.
-HYDTRACE 1791356829.646 0bc98097 clickfast_load begin
-HYDTRACE 1791356830.649 0bc98097 clickfast_load end
-HYDTRACE 1791356830.650 0bc98097 cf_click always loaded=True hyd=True
-Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
-type '<class 'reflex.istate.storage.Cookie'>'.
-HYDTRACE 1791356832.695 d553e969 clickfast_load begin
-HYDTRACE 1791356833.697 d553e969 clickfast_load end
-HYDTRACE 1791356833.702 d553e969 cf_click always loaded=True hyd=True
-Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
-type '<class 'reflex.istate.storage.Cookie'>'.
-HYDTRACE 1791356835.633 790daa76 clickfast_load begin
-HYDTRACE 1791356836.635 790daa76 clickfast_load end
-HYDTRACE 1791356836.636 790daa76 cf_click always loaded=True hyd=True
-Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
-type '<class 'reflex.istate.storage.Cookie'>'.
-HYDTRACE 1791356838.587 4cc21b68 clickfast_load begin
-HYDTRACE 1791356839.588 4cc21b68 clickfast_load end
-HYDTRACE 1791356839.589 4cc21b68 cf_click always loaded=True hyd=True
+HYDTRACE 1791356974.624 4fb8785e item_load id=1
+HYDTRACE 1791356974.645 4fb8785e item_load id=2
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

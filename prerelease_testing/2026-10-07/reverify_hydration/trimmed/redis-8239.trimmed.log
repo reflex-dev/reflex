@@ -1,0 +1,24 @@
+### head
+31799:C 07 Oct 2026 07:11:54.687 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+31799:C 07 Oct 2026 07:11:54.687 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=31799, just started
+31799:C 07 Oct 2026 07:11:54.687 # Configuration loaded
+31799:M 07 Oct 2026 07:11:54.688 * monotonic clock: POSIX clock_gettime
+31799:M 07 Oct 2026 07:11:54.688 # Warning: Could not create server TCP listening socket ::*:8239: unable to bind socket, errno: 97
+31799:M 07 Oct 2026 07:11:54.689 * Running mode=standalone, port=8239.
+31799:M 07 Oct 2026 07:11:54.689 # Server initialized
+31799:M 07 Oct 2026 07:11:54.689 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+31799:M 07 Oct 2026 07:11:54.690 * Ready to accept connections
+### warnings/errors (deduped, with counts)
+      1 31799:M 07 Oct 2026 07:11:54.689 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+      1 31799:M 07 Oct 2026 07:11:54.688 # Warning: Could not create server TCP listening socket ::*:8239: unable to bind socket, errno: 97
+### HYDTRACE (first 400)
+### tail
+31799:C 07 Oct 2026 07:11:54.687 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+31799:C 07 Oct 2026 07:11:54.687 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=31799, just started
+31799:C 07 Oct 2026 07:11:54.687 # Configuration loaded
+31799:M 07 Oct 2026 07:11:54.688 * monotonic clock: POSIX clock_gettime
+31799:M 07 Oct 2026 07:11:54.688 # Warning: Could not create server TCP listening socket ::*:8239: unable to bind socket, errno: 97
+31799:M 07 Oct 2026 07:11:54.689 * Running mode=standalone, port=8239.
+31799:M 07 Oct 2026 07:11:54.689 # Server initialized
+31799:M 07 Oct 2026 07:11:54.689 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+31799:M 07 Oct 2026 07:11:54.690 * Ready to accept connections

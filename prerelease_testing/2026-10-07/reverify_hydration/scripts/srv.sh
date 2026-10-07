@@ -28,7 +28,7 @@ case $cmd in
     setsid env REFLEX_TELEMETRY_ENABLED=false REFLEX_API_URL=$API RVH_VENV=$venv VERIFY_VENV=$venv "$@" \
       $SB/envs/$venv/bin/reflex run --env $mode --frontend-port $FP --backend-port $BP --loglevel debug > $LOG 2>&1 < /dev/null &
     echo $! > $W/run/$name.pid
-    echo "started $name pid=$(cat $W/run/$name.pid) venv=$venv mode=$mode log=$LOG env=$*";;
+    echo "started $name pid=$(cat $W/run/$name.pid) venv=$venv mode=$mode env=[$*] log=$LOG";;
   stop)
     pid=$(cat $W/run/$name.pid 2>/dev/null)
     if [ -n "$pid" ]; then
