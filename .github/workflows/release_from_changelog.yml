@@ -19,9 +19,9 @@ name: Release from changelog
 # r/pre-* or r/hotfix/** (the Dispatch release workflow
 # materializes alphas on r/pre-* branches).
 #
-# Lockstep packages that pin their siblings exactly publish strictly after
-# every other package in the batch, once those siblings are tagged; detect
-# fails closed if a lockstep invariant is broken.
+# Lockstep packages that pin their siblings exactly publish in a second leg,
+# after the rest of the batch, and only once the siblings they pin are tagged;
+# detect fails closed if a lockstep invariant is broken.
 #
 # workflow_dispatch exists so the Dispatch release workflow can trigger a
 # check on a branch it just pushed (pushes made with GITHUB_TOKEN do not fire
