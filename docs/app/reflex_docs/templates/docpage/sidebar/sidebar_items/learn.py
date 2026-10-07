@@ -1,7 +1,7 @@
 from reflex_docs.pages.docs import cloud_cliref
 
-from ..state import SideBarItem
-from .item import create_item
+from reflex_docs.templates.docpage.sidebar.state import SideBarItem
+from reflex_docs.templates.docpage.sidebar.sidebar_items.item import create_item
 
 
 def get_sidebar_items_learn():

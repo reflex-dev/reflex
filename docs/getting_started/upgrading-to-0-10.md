@@ -61,6 +61,8 @@ In a background task, `self` is a proxy that only allows changes inside `async w
 - Outside `async with self`, a call that modifies state raises `ImmutableStateError`; a read-only handler still runs.
 - Inside it, `self` in the called handler is the proxy, so `type(self)` is `StateProxy`. Use `self.__class__` to get the state class; `isinstance(self, Parent)` still works.
 
+On 0.9 this background task wrote to the parent state without the lock; on 0.10 the first call raises `ImmutableStateError`:
+
 ```python
 class Parent(rx.State):
     count: int = 0
@@ -73,10 +75,17 @@ class Parent(rx.State):
 class Child(Parent):
     @rx.event(background=True)
     async def work(self):
-        self.bump()  # 0.9: wrote without the lock. 0.10: ImmutableStateError.
+        self.bump()  # Raises ImmutableStateError on 0.10.
+```
 
+Make the call inside `async with self`, which works on both versions:
+
+```python
+class Child(Parent):
+    @rx.event(background=True)
+    async def work(self):
         async with self:
-            self.bump()  # Works on both.
+            self.bump()
 ```
 
 ## Other changes
