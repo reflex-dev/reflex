@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_db_install/scripts/dt_probe.py", line 15, in <module>
+    os.chdir(sys.argv[2])
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/reverify_db_install/run/dtprobe/rdi-a2db-gl'

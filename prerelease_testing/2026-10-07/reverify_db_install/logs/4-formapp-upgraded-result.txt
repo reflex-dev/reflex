@@ -1,0 +1,2 @@
+{"bool_input": true, "empty_input": "", "name_input": "foo"}
+non-control ids submitted: none

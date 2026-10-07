@@ -1,0 +1,33 @@
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (<frozen abc>:106)
+{
+ "reflex": "0.9.12",
+ "sqlmodel": "0.0.47",
+ "python": "3.12.3",
+ "column_type": "UTCDateTime()",
+ "rows": [
+  {
+   "label": "naive",
+   "input": "2026-10-06T12:00:00",
+   "insert": "StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage"
+  },
+  {
+   "label": "aware_utc",
+   "input": "2026-10-06T12:00:00+00:00",
+   "insert": "ok",
+   "read_back": "2026-10-06T12:00:00+00:00",
+   "read_back_tz": "UTC",
+   "raw_sqlite": "2026-10-06 12:00:00.000000"
+  },
+  {
+   "label": "aware_plus2",
+   "input": "2026-10-06T12:00:00+02:00",
+   "insert": "ok",
+   "read_back": "2026-10-06T10:00:00+00:00",
+   "read_back_tz": "UTC",
+   "raw_sqlite": "2026-10-06 10:00:00.000000"
+  }
+ ],
+ "naive_filter": "StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage",
+ "aware_filter": "ok matches=1",
+ "reflex_json_dumps_model": "{\"at\": \"2026-10-06 12:00:00+00:00\", \"label\": \"aware_utc\", \"id\": 1}"
+}

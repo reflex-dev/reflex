@@ -1,0 +1,41 @@
+### uv pip install reflex==0.10.0a2 (no prerelease flag) on 3.10
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.10.20 environment at: envs/rdi-py310
+  × No solution found when resolving dependencies:
+  ╰─▶ Because the current Python version (3.10.20) does not satisfy
+      Python>=3.11,<4.0 and reflex==0.10.0a2 depends on Python>=3.11,<4.0, we
+      can conclude that reflex==0.10.0a2 cannot be used.
+      And because you require reflex==0.10.0a2, we can conclude that your
+      requirements are unsatisfiable.
+rc=1
+
+### uv pip install --prerelease=allow reflex==0.10.0a2 on 3.10
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.10.20 environment at: envs/rdi-py310
+  × No solution found when resolving dependencies:
+  ╰─▶ Because the current Python version (3.10.20) does not satisfy
+      Python>=3.11,<4.0 and reflex==0.10.0a2 depends on Python>=3.11,<4.0, we
+      can conclude that reflex==0.10.0a2 cannot be used.
+      And because you require reflex==0.10.0a2, we can conclude that your
+      requirements are unsatisfiable.
+rc=1
+
+### uv pip install --prerelease=allow reflex[db]==0.10.0a2 on 3.10
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.10.20 environment at: envs/rdi-py310
+  × No solution found when resolving dependencies:
+  ╰─▶ Because the current Python version (3.10.20) does not satisfy
+      Python>=3.11,<4.0 and you require reflex[db]==0.10.0a2, we can conclude
+      that your requirements are unsatisfiable.
+rc=1
+
+### uv pip install --prerelease=allow reflex-base==0.10.0a2 (sub-package) on 3.10
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.10.20 environment at: envs/rdi-py310
+  × No solution found when resolving dependencies:
+  ╰─▶ Because the current Python version (3.10.20) does not satisfy
+      Python>=3.11 and reflex-base==0.10.0a2 depends on Python>=3.11, we can
+      conclude that reflex-base==0.10.0a2 cannot be used.
+      And because you require reflex-base==0.10.0a2, we can conclude that your
+      requirements are unsatisfiable.
+rc=1

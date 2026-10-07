@@ -1,0 +1,15 @@
+--- 01_initial_load: {"status": "loaded 0", "rows": [], "ages": [], "toasts_seen_so_far": []}
+[PASS   ] initial on_load handler completed: loaded 0
+--- 02_add_aware: {"status": "loaded 1", "rows": ["1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00"], "ages": ["1:aware:recent"], "toasts_seen_so_far": []}
+[PASS   ] add aware persisted a row and reloaded the list: {'status': 'loaded 1', 'rows': ['1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00'], 'ages': ['1:aware:recent'], 'toasts_seen_so_far': []}
+--- TOAST: An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage. | [SQL: INSERT INTO post (title, created_at) VALUES (?, ?)] | [parameters: [{'title': 'naive', 'created_at': datetime.da
+--- 03_add_naive: {"status": "loaded 1", "rows": ["1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00"], "ages": ["1:aware:recent"], "toasts_seen_so_far": ["An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or an
+[FAIL   ] add naive persisted a row and reloaded the list: {'status': 'loaded 1', 'rows': ['1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00'], 'ages': ['1:aware:recent'], 'toasts_seen_so_far': ["An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone informati
+--- 04_after_reload: {"status": "loaded 1", "rows": ["1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00"], "ages": ["1:aware:recent"], "toasts_seen_so_far": ["An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or
+[PASS   ] on_load after reload completed: {'status': 'loaded 1', 'rows': ['1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00'], 'ages': ['1:aware:recent'], 'toasts_seen_so_far': ["An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.
+[PASS   ] no error dialogs: []
+[FAIL   ] no error toasts: ["An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage. | [SQL: INSERT INTO post (title, created_at) VALUES (?, ?)] | [parameters: [{'title': 'naive', 'create
+[PASS   ] console: no unexpected errors/warnings + no page errors: []
+[PASS   ] network: no unexpected failed/4xx/5xx requests: []
+
+== stable: {'pass': 6, 'fail': 2, 'anomaly': 0, 'skipped': 0}  console_total=9 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=27

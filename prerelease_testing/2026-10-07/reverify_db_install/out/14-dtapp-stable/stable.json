@@ -1,0 +1,353 @@
+{
+ "tag": "stable",
+ "results": [
+  {
+   "name": "initial on_load handler completed",
+   "status": "pass",
+   "detail": "loaded 0",
+   "t": 5.935
+  },
+  {
+   "name": "add aware persisted a row and reloaded the list",
+   "status": "pass",
+   "detail": "{'status': 'loaded 1', 'rows': ['1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00'], 'ages': ['1:aware:recent'], 'toasts_seen_so_far': []}",
+   "t": 9.667
+  },
+  {
+   "name": "add naive persisted a row and reloaded the list",
+   "status": "fail",
+   "detail": "{'status': 'loaded 1', 'rows': ['1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00'], 'ages': ['1:aware:recent'], 'toasts_seen_so_far': [\"An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage. | [SQL: INSERT INTO post (title, created_at) VALUES (?, ?)] | [parameters: [{'title': 'naive', 'created_at': datetime.datetime(2026, 10, 7, 6, 37, 21, 894087)}]] | See logs for details.\"]}",
+   "t": 21.419
+  },
+  {
+   "name": "on_load after reload completed",
+   "status": "pass",
+   "detail": "{'status': 'loaded 1', 'rows': ['1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00'], 'ages': ['1:aware:recent'], 'toasts_seen_so_far': [\"An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage. | [SQL: INSERT INTO post (title, created_at) VALUES (?, ?)] | [parameters: [{'title': 'naive', 'created_at': datetime.datetime(2026, 10, 7, 6, 37, 21, 894087)}]] | See logs for details.\"]}",
+   "t": 25.464
+  },
+  {
+   "name": "no error dialogs",
+   "status": "pass",
+   "detail": "[]",
+   "t": 25.464
+  },
+  {
+   "name": "no error toasts",
+   "status": "fail",
+   "detail": "[\"An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage. | [SQL: INSERT INTO post (title, created_at) VALUES (?, ?)] | [parameters: [{'title': 'naive', 'created_at': datetime.datetime(2026, 10, 7, 6, 37, 21, 894087)}]] | See logs for details.\"]",
+   "t": 25.464
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 25.584
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 25.585
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 1.708,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 1.924,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 1.974,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 2.145,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 21.436,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 21.62,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 21.725,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 21.755,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 21.756,
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 2.204,
+   "dir": "open",
+   "payload": "ws://localhost:8385/_event/?token=35381265-09de-4c44-bb6f-ea6a8df50f1d&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 2.217,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"tkTHXP5qtt_DelpqAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 2.218,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 2.224,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"mP8MwFopi_qArE3UAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 2.224,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.224,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.239,
+   "dir": "in",
+   "len": 2206,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8385\",\"origin\":\"http://localhost:3385\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CXtreJRVI6L7csjGrmQQgw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8385\",\"origin\":\"http://localhost:3385\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"CXtreJRVI6L7csjGrmQQgw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3385\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3385/index\",\"full_raw_path\":\"http://localhost:3385/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"35381265-09de-4c44-bb6f-ea6a8df50f1d\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"mP8MwFopi_qArE3UAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3385\",\"origin\":\"http://localhost:3385\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3385/\"}},\"reflex___state____state.dtapp___dtapp____state\":{\"ages_rx_state_\":[],\"posts_rx_state_\":[],\"status_rx_state_\":\"idle\"},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.239,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.255,
+   "dir": "in",
+   "len": 153,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dtapp___dtapp____state\":{\"posts_rx_state_\":[],\"ages_rx_state_\":[],\"status_rx_state_\":\"loaded 0\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.256,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.988,
+   "dir": "out",
+   "len": 131,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.dtapp___dtapp____state.add_aware\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.997,
+   "dir": "in",
+   "len": 115,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dtapp___dtapp____state\":{\"status_rx_state_\":\"added aware\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 6.005,
+   "dir": "in",
+   "len": 241,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dtapp___dtapp____state\":{\"posts_rx_state_\":[{\"title\":\"aware\",\"created_at\":\"2026-10-07 06:37:18.179005+00:00\",\"id\":1}],\"ages_rx_state_\":[\"1:aware:recent\"],\"status_rx_state_\":\"loaded 1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.704,
+   "dir": "out",
+   "len": 131,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.dtapp___dtapp____state.add_naive\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 9.914,
+   "dir": "in",
+   "len": 815,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage.\\\\n[SQL: INSERT INTO post (title, created_at) VALUES (?, ?)]\\\\n[parameters: [{'title': 'naive', 'created_at': datetime.datetime(2026, 10, 7, 6, 37, 21, 894087)}]]\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 21.436,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 21.436,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 21.798,
+   "dir": "open",
+   "payload": "ws://localhost:8385/_event/?token=35381265-09de-4c44-bb6f-ea6a8df50f1d&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 21.8,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"cHhebCtOLV594EJZAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 21.8,
+   "dir": "out",
+   "len": 10,
+   "payload": "40/_event,"
+  },
+  {
+   "page": "main",
+   "t": 21.803,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"fwoXH2TNoDoKD-0CAAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 21.803,
+   "dir": "out",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 21.803,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 21.814,
+   "dir": "in",
+   "len": 2298,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8385\",\"origin\":\"http://localhost:3385\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"d9qt+SVFxtDQZkxSuntXaA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8385\",\"origin\":\"http://localhost:3385\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"d9qt+SVFxtDQZkxSuntXaA==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3385\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3385/index\",\"full_raw_path\":\"http://localhost:3385/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"35381265-09de-4c44-bb6f-ea6a8df50f1d\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"fwoXH2TNoDoKD-0CAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3385\",\"origin\":\"http://localhost:3385\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3385/\"}},\"reflex___state____state.dtapp___dtapp____state\":{\"ages_rx_state_\":[\"1:aware:recent\"],\"posts_rx_state_\":[{\"title\":\"aware\",\"created_at\":\"2026-10-07 06:37:18.179005+00:00\",\"id\":1}],\"status_rx_state_\":\"loaded 1\"},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{}}}]"
+  },
+  {
+   "page": "main",
+   "t": 21.814,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 21.817,
+   "dir": "in",
+   "len": 241,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dtapp___dtapp____state\":{\"posts_rx_state_\":[{\"title\":\"aware\",\"created_at\":\"2026-10-07 06:37:18.179005+00:00\",\"id\":1}],\"ages_rx_state_\":[\"1:aware:recent\"],\"status_rx_state_\":\"loaded 1\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 21.817,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "notes": {
+  "dialogs": [],
+  "01_initial_load": {
+   "status": "loaded 0",
+   "rows": [],
+   "ages": [],
+   "toasts_seen_so_far": []
+  },
+  "02_add_aware": {
+   "status": "loaded 1",
+   "rows": [
+    "1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00"
+   ],
+   "ages": [
+    "1:aware:recent"
+   ],
+   "toasts_seen_so_far": []
+  },
+  "03_add_naive": {
+   "status": "loaded 1",
+   "rows": [
+    "1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00"
+   ],
+   "ages": [
+    "1:aware:recent"
+   ],
+   "toasts_seen_so_far": [
+    "An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage. | [SQL: INSERT INTO post (title, created_at) VALUES (?, ?)] | [parameters: [{'title': 'naive', 'created_at': datetime.datetime(2026, 10, 7, 6, 37, 21, 894087)}]] | See logs for details."
+   ]
+  },
+  "04_after_reload": {
+   "status": "loaded 1",
+   "rows": [
+    "1 |  | aware |  | 2026-10-07 06:37:18.179005+00:00 |  | 2026-10-07 02:37 -04:00"
+   ],
+   "ages": [
+    "1:aware:recent"
+   ],
+   "toasts_seen_so_far": [
+    "An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage. | [SQL: INSERT INTO post (title, created_at) VALUES (?, ?)] | [parameters: [{'title': 'naive', 'created_at': datetime.datetime(2026, 10, 7, 6, 37, 21, 894087)}]] | See logs for details."
+   ]
+  },
+  "toasts": [
+   "An error occurred. | StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage. | [SQL: INSERT INTO post (title, created_at) VALUES (?, ?)] | [parameters: [{'title': 'naive', 'created_at': datetime.datetime(2026, 10, 7, 6, 37, 21, 894087)}]] | See logs for details."
+  ],
+  "error_frames": [
+   "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage.\\\\n[SQL: INSERT INTO post (title, created_at) VALUES (?, ?)]\\\\n[parameters: [{'title': 'naive', 'created_at': datetime.datetime(2026, 10, 7, 6, 37, 21, 894087)}]]\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-ce"
+  ],
+  "created_at_frames": [
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dtapp___dtapp____state\":{\"posts_rx_state_\":[{\"title\":\"aware\",\"created_at\":\"2026-10-07 06:37:18.179005+00:00\",\"id\":1}],\"ages_rx_state_\":[\"1:aware:recent\"],\"status_rx_state_\":\"loaded 1\"}}}]",
+   "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage.\\\\n[SQL: INSERT INTO post (title, created_at) VALUES (?, ?)]\\\\n[parameters: [{'title': 'naive', 'created_at': datetime.datetime(2026, 10, 7, 6, 37, 21, 894087)}]]\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8385\",\"origin\":\"http://localhost:3385\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"d9qt+SVFxtDQZkxSuntXaA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8385\",\"origin\":\"http://localhost:3385\",\"pragma\":\"no-cache\",\"sec-websocket-ex"
+  ]
+ }
+}

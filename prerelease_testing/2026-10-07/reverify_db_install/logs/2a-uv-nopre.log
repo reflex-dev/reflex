@@ -1,0 +1,12 @@
+++ uv --no-config pip install --python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-uvnopre312/bin/python reflex==0.10.0a2
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/rdi-uvnopre312
+  × No solution found when resolving dependencies:
+  ╰─▶ Because there is no version of reflex-base==0.10.0a2 and
+      reflex>=0.10.0a2 depends on reflex-base==0.10.0a2, we can conclude that
+      reflex>=0.10.0a2 cannot be used.
+      And because you require reflex==0.10.0a2, we can conclude that your
+      requirements are unsatisfiable.
+
+hint: `reflex-base` was requested with a pre-release marker (e.g., reflex-base==0.10.0a2), but pre-releases weren't enabled (try: `--prerelease=allow`)++ echo rc=1
+rc=1

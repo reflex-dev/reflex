@@ -1,0 +1,146 @@
+Collecting reflex==0.10.0a2 (from reflex[db]==0.10.0a2)
+  Using cached reflex-0.10.0a2-py3-none-any.whl.metadata (7.0 kB)
+Requirement already satisfied: click>=8.2 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex==0.10.0a2->reflex[db]==0.10.0a2) (8.5.0)
+Requirement already satisfied: granian>=2.7.4 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from granian[reload]>=2.7.4->reflex==0.10.0a2->reflex[db]==0.10.0a2) (2.8.4)
+Requirement already satisfied: httpx<1.0,>=0.26 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex==0.10.0a2->reflex[db]==0.10.0a2) (0.28.1)
+Requirement already satisfied: packaging<27,>=24.2 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex==0.10.0a2->reflex[db]==0.10.0a2) (26.3)
+Requirement already satisfied: python-multipart<1.0,>=0.0.32 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex==0.10.0a2->reflex[db]==0.10.0a2) (0.0.32)
+Requirement already satisfied: python-socketio<6.0,>=5.12.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex==0.10.0a2->reflex[db]==0.10.0a2) (5.17.0)
+Requirement already satisfied: redis<8.0,>=6.4 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex==0.10.0a2->reflex[db]==0.10.0a2) (7.4.1)
+Collecting reflex-base==0.10.0a2 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_base-0.10.0a2-py3-none-any.whl.metadata (881 bytes)
+Collecting reflex-components-code>=0.10.0a2 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_code-0.10.0a2-py3-none-any.whl.metadata (849 bytes)
+Collecting reflex-components-core>=0.10.0a2 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_core-0.10.0a2-py3-none-any.whl.metadata (903 bytes)
+Collecting reflex-components-dataeditor>=0.10.0a1 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_dataeditor-0.10.0a1-py3-none-any.whl.metadata (759 bytes)
+Collecting reflex-components-gridjs>=0.10.0a2 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_gridjs-0.10.0a2-py3-none-any.whl.metadata (695 bytes)
+Collecting reflex-components-lucide>=1.1.0a1 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_lucide-1.1.0a1-py3-none-any.whl.metadata (694 bytes)
+Collecting reflex-components-markdown>=0.10.0a2 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_markdown-0.10.0a2-py3-none-any.whl.metadata (848 bytes)
+Collecting reflex-components-moment>=0.10.0a2 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_moment-0.10.0a2-py3-none-any.whl.metadata (695 bytes)
+Collecting reflex-components-plotly>=0.10.0a2 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_plotly-0.10.0a2-py3-none-any.whl.metadata (743 bytes)
+Collecting reflex-components-radix>=0.10.0a2 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_radix-0.10.0a2-py3-none-any.whl.metadata (788 bytes)
+Collecting reflex-components-react-player>=0.10.0a1 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_react_player-0.10.0a1-py3-none-any.whl.metadata (767 bytes)
+Collecting reflex-components-recharts>=0.10.0a2 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_recharts-0.10.0a2-py3-none-any.whl.metadata (751 bytes)
+Collecting reflex-components-sonner>=0.10.0a1 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_components_sonner-0.10.0a1-py3-none-any.whl.metadata (744 bytes)
+Collecting reflex-hosting-cli!=0.1.73a1,>=0.2.0a1 (from reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_hosting_cli-0.2.0a1-py3-none-any.whl.metadata (920 bytes)
+Requirement already satisfied: rich<16,>=13 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex==0.10.0a2->reflex[db]==0.10.0a2) (15.0.0)
+Requirement already satisfied: starlette>=1.3.1 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex==0.10.0a2->reflex[db]==0.10.0a2) (1.7.0)
+Requirement already satisfied: typing-extensions>=4.13.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex==0.10.0a2->reflex[db]==0.10.0a2) (4.16.0)
+Requirement already satisfied: wrapt<2.6,>=1.17.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex==0.10.0a2->reflex[db]==0.10.0a2) (2.3.0)
+Requirement already satisfied: platformdirs<5.0,>=4.3.7 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex-base==0.10.0a2->reflex==0.10.0a2->reflex[db]==0.10.0a2) (4.12.3)
+Requirement already satisfied: alembic<2.0,>=1.15.2 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex[db]==0.10.0a2) (1.20.0)
+Requirement already satisfied: pydantic<3.0,>=2.12.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex[db]==0.10.0a2) (2.13.5)
+Requirement already satisfied: sqlmodel>=0.0.24 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from reflex[db]==0.10.0a2) (0.0.44)
+Requirement already satisfied: SQLAlchemy>=2.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from alembic<2.0,>=1.15.2->reflex[db]==0.10.0a2) (2.0.54)
+Requirement already satisfied: Mako in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from alembic<2.0,>=1.15.2->reflex[db]==0.10.0a2) (1.4.3)
+Requirement already satisfied: anyio in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from httpx<1.0,>=0.26->reflex==0.10.0a2->reflex[db]==0.10.0a2) (4.15.1)
+Requirement already satisfied: certifi in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from httpx<1.0,>=0.26->reflex==0.10.0a2->reflex[db]==0.10.0a2) (2026.7.22)
+Requirement already satisfied: httpcore==1.* in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from httpx<1.0,>=0.26->reflex==0.10.0a2->reflex[db]==0.10.0a2) (1.0.9)
+Requirement already satisfied: idna in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from httpx<1.0,>=0.26->reflex==0.10.0a2->reflex[db]==0.10.0a2) (3.20)
+Requirement already satisfied: h11>=0.16 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from httpcore==1.*->httpx<1.0,>=0.26->reflex==0.10.0a2->reflex[db]==0.10.0a2) (0.16.0)
+Requirement already satisfied: annotated-types>=0.6.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from pydantic<3.0,>=2.12.0->reflex[db]==0.10.0a2) (0.8.0)
+Requirement already satisfied: pydantic-core==2.46.5 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from pydantic<3.0,>=2.12.0->reflex[db]==0.10.0a2) (2.46.5)
+Requirement already satisfied: typing-inspection>=0.4.2 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from pydantic<3.0,>=2.12.0->reflex[db]==0.10.0a2) (0.4.4)
+Requirement already satisfied: bidict>=0.21.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from python-socketio<6.0,>=5.12.0->reflex==0.10.0a2->reflex[db]==0.10.0a2) (0.24.1)
+Requirement already satisfied: python-engineio>=4.13.2 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from python-socketio<6.0,>=5.12.0->reflex==0.10.0a2->reflex[db]==0.10.0a2) (4.14.0)
+Requirement already satisfied: markdown-it-py>=2.2.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from rich<16,>=13->reflex==0.10.0a2->reflex[db]==0.10.0a2) (4.2.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from rich<16,>=13->reflex==0.10.0a2->reflex[db]==0.10.0a2) (2.21.0)
+Requirement already satisfied: watchfiles~=1.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from granian[reload]>=2.7.4->reflex==0.10.0a2->reflex[db]==0.10.0a2) (1.3.0)
+Requirement already satisfied: mdurl~=0.1 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from markdown-it-py>=2.2.0->rich<16,>=13->reflex==0.10.0a2->reflex[db]==0.10.0a2) (0.1.2)
+Requirement already satisfied: simple-websocket>=0.10.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from python-engineio>=4.13.2->python-socketio<6.0,>=5.12.0->reflex==0.10.0a2->reflex[db]==0.10.0a2) (1.1.0)
+Collecting reflex-build-sdk!=0.1.1,<0.1.1.post,>=0.1.0a1 (from reflex-build-sdk[httpx]!=0.1.1,<0.1.1.post,>=0.1.0a1->reflex-hosting-cli!=0.1.73a1,>=0.2.0a1->reflex==0.10.0a2->reflex[db]==0.10.0a2)
+  Using cached reflex_build_sdk-0.1.0a1-py3-none-any.whl.metadata (12 kB)
+Requirement already satisfied: wsproto in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from simple-websocket>=0.10.0->python-engineio>=4.13.2->python-socketio<6.0,>=5.12.0->reflex==0.10.0a2->reflex[db]==0.10.0a2) (1.3.2)
+Requirement already satisfied: greenlet>=1 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from SQLAlchemy>=2.0->alembic<2.0,>=1.15.2->reflex[db]==0.10.0a2) (3.5.6)
+Requirement already satisfied: MarkupSafe>=2.0 in ./envs/rdi-sm044-pipU/lib/python3.12/site-packages (from Mako->alembic<2.0,>=1.15.2->reflex[db]==0.10.0a2) (3.0.4)
+Using cached reflex-0.10.0a2-py3-none-any.whl (307 kB)
+Using cached reflex_base-0.10.0a2-py3-none-any.whl (401 kB)
+Using cached reflex_components_code-0.10.0a2-py3-none-any.whl (24 kB)
+Using cached reflex_components_core-0.10.0a2-py3-none-any.whl (179 kB)
+Using cached reflex_components_dataeditor-0.10.0a1-py3-none-any.whl (10 kB)
+Using cached reflex_components_gridjs-0.10.0a2-py3-none-any.whl (4.4 kB)
+Using cached reflex_components_lucide-1.1.0a1-py3-none-any.whl (20 kB)
+Using cached reflex_components_markdown-0.10.0a2-py3-none-any.whl (9.9 kB)
+Using cached reflex_components_moment-0.10.0a2-py3-none-any.whl (5.8 kB)
+Using cached reflex_components_plotly-0.10.0a2-py3-none-any.whl (8.7 kB)
+Using cached reflex_components_radix-0.10.0a2-py3-none-any.whl (271 kB)
+Using cached reflex_components_react_player-0.10.0a1-py3-none-any.whl (11 kB)
+Using cached reflex_components_recharts-0.10.0a2-py3-none-any.whl (48 kB)
+Using cached reflex_components_sonner-0.10.0a1-py3-none-any.whl (7.5 kB)
+Using cached reflex_hosting_cli-0.2.0a1-py3-none-any.whl (88 kB)
+Using cached reflex_build_sdk-0.1.0a1-py3-none-any.whl (111 kB)
+Installing collected packages: reflex-build-sdk, reflex-base, reflex-hosting-cli, reflex-components-moment, reflex-components-lucide, reflex-components-gridjs, reflex-components-sonner, reflex-components-core, reflex-components-recharts, reflex-components-react-player, reflex-components-radix, reflex-components-plotly, reflex-components-dataeditor, reflex-components-code, reflex-components-markdown, reflex
+  Attempting uninstall: reflex-base
+    Found existing installation: reflex-base 0.9.11
+    Uninstalling reflex-base-0.9.11:
+      Successfully uninstalled reflex-base-0.9.11
+  Attempting uninstall: reflex-hosting-cli
+    Found existing installation: reflex-hosting-cli 0.1.72
+    Uninstalling reflex-hosting-cli-0.1.72:
+      Successfully uninstalled reflex-hosting-cli-0.1.72
+  Attempting uninstall: reflex-components-moment
+    Found existing installation: reflex-components-moment 0.9.4
+    Uninstalling reflex-components-moment-0.9.4:
+      Successfully uninstalled reflex-components-moment-0.9.4
+  Attempting uninstall: reflex-components-lucide
+    Found existing installation: reflex-components-lucide 1.0.4
+    Uninstalling reflex-components-lucide-1.0.4:
+      Successfully uninstalled reflex-components-lucide-1.0.4
+  Attempting uninstall: reflex-components-gridjs
+    Found existing installation: reflex-components-gridjs 0.9.2
+    Uninstalling reflex-components-gridjs-0.9.2:
+      Successfully uninstalled reflex-components-gridjs-0.9.2
+  Attempting uninstall: reflex-components-sonner
+    Found existing installation: reflex-components-sonner 0.9.4
+    Uninstalling reflex-components-sonner-0.9.4:
+      Successfully uninstalled reflex-components-sonner-0.9.4
+  Attempting uninstall: reflex-components-core
+    Found existing installation: reflex-components-core 0.9.9
+    Uninstalling reflex-components-core-0.9.9:
+      Successfully uninstalled reflex-components-core-0.9.9
+  Attempting uninstall: reflex-components-recharts
+    Found existing installation: reflex-components-recharts 0.9.3
+    Uninstalling reflex-components-recharts-0.9.3:
+      Successfully uninstalled reflex-components-recharts-0.9.3
+  Attempting uninstall: reflex-components-react-player
+    Found existing installation: reflex-components-react-player 0.9.2
+    Uninstalling reflex-components-react-player-0.9.2:
+      Successfully uninstalled reflex-components-react-player-0.9.2
+  Attempting uninstall: reflex-components-radix
+    Found existing installation: reflex-components-radix 0.9.9
+    Uninstalling reflex-components-radix-0.9.9:
+      Successfully uninstalled reflex-components-radix-0.9.9
+  Attempting uninstall: reflex-components-plotly
+    Found existing installation: reflex-components-plotly 0.9.6
+    Uninstalling reflex-components-plotly-0.9.6:
+      Successfully uninstalled reflex-components-plotly-0.9.6
+  Attempting uninstall: reflex-components-dataeditor
+    Found existing installation: reflex-components-dataeditor 0.9.2
+    Uninstalling reflex-components-dataeditor-0.9.2:
+      Successfully uninstalled reflex-components-dataeditor-0.9.2
+  Attempting uninstall: reflex-components-code
+    Found existing installation: reflex-components-code 0.9.6
+    Uninstalling reflex-components-code-0.9.6:
+      Successfully uninstalled reflex-components-code-0.9.6
+  Attempting uninstall: reflex-components-markdown
+    Found existing installation: reflex-components-markdown 0.9.3
+    Uninstalling reflex-components-markdown-0.9.3:
+      Successfully uninstalled reflex-components-markdown-0.9.3
+  Attempting uninstall: reflex
+    Found existing installation: reflex 0.9.11
+    Uninstalling reflex-0.9.11:
+      Successfully uninstalled reflex-0.9.11
+
+Successfully installed reflex-0.10.0a2 reflex-base-0.10.0a2 reflex-build-sdk-0.1.0a1 reflex-components-code-0.10.0a2 reflex-components-core-0.10.0a2 reflex-components-dataeditor-0.10.0a1 reflex-components-gridjs-0.10.0a2 reflex-components-lucide-1.1.0a1 reflex-components-markdown-0.10.0a2 reflex-components-moment-0.10.0a2 reflex-components-plotly-0.10.0a2 reflex-components-radix-0.10.0a2 reflex-components-react-player-0.10.0a1 reflex-components-recharts-0.10.0a2 reflex-components-sonner-0.10.0a1 reflex-hosting-cli-0.2.0a1

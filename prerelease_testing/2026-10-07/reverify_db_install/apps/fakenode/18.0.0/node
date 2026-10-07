@@ -1,0 +1,4 @@
+#!/bin/sh
+# fake node: reports v18.0.0 for --version, otherwise behaves like the real node
+if [ "$1" = "--version" ] || [ "$1" = "-v" ]; then echo "v18.0.0"; exit 0; fi
+exec /opt/node22/bin/node "$@"

@@ -1,0 +1,62 @@
+{
+ "label": "uvU-R1 recipe on sqlmodel 0.0.48",
+ "toasts": [],
+ "steps": {
+  "01_load": {
+   "status": "loaded 2",
+   "rows": [
+    "1 |  | naive |  | 2026-10-07 06:39:32.658984",
+    "2 |  | naive |  | 2026-10-07 06:39:37.217842"
+   ],
+   "ages": [
+    "1:naive:recent",
+    "2:naive:recent"
+   ]
+  },
+  "02_add_1": {
+   "status": "loaded 3",
+   "rows": [
+    "1 |  | naive |  | 2026-10-07 06:39:32.658984",
+    "2 |  | naive |  | 2026-10-07 06:39:37.217842",
+    "3 |  | naive |  | 2026-10-07 06:43:19.570091"
+   ],
+   "ages": [
+    "1:naive:recent",
+    "2:naive:recent",
+    "3:naive:recent"
+   ]
+  },
+  "02_add_2": {
+   "status": "loaded 4",
+   "rows": [
+    "1 |  | naive |  | 2026-10-07 06:39:32.658984",
+    "2 |  | naive |  | 2026-10-07 06:39:37.217842",
+    "3 |  | naive |  | 2026-10-07 06:43:19.570091",
+    "4 |  | naive |  | 2026-10-07 06:43:24.142334"
+   ],
+   "ages": [
+    "1:naive:recent",
+    "2:naive:recent",
+    "3:naive:recent",
+    "4:naive:recent"
+   ]
+  },
+  "03_reload": {
+   "status": "loaded 4",
+   "rows": [
+    "1 |  | naive |  | 2026-10-07 06:39:32.658984",
+    "2 |  | naive |  | 2026-10-07 06:39:37.217842",
+    "3 |  | naive |  | 2026-10-07 06:43:19.570091",
+    "4 |  | naive |  | 2026-10-07 06:43:24.142334"
+   ],
+   "ages": [
+    "1:naive:recent",
+    "2:naive:recent",
+    "3:naive:recent",
+    "4:naive:recent"
+   ]
+  }
+ },
+ "console_errors": [],
+ "page_errors": []
+}

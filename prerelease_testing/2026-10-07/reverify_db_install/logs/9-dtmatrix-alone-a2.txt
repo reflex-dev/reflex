@@ -1,0 +1,57 @@
+######## alone: alpha2 (0.10.0a2 + sqlmodel 0.0.48 + sqlalchemy 2.1.3 + greenlet)
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-a2db-gl/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:156)
+### write with reflex 0.10.0a2 / sqlmodel 0.0.48 / pydantic 2.13.5
+  plain    column type: UTCDateTime()
+  rxplain  column type: UTCDateTime()
+  rxtz     column type: DateTime(timezone=True)
+  write plain    awareUTC@0.0.48 : accepted
+  write plain    aware+02@0.0.48 : accepted
+  write plain    naive@0.0.48    : REJECTED StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annot
+  write rxplain  awareUTC@0.0.48 : accepted
+  write rxplain  aware+02@0.0.48 : accepted
+  write rxplain  naive@0.0.48    : REJECTED StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annot
+  write rxtz     awareUTC@0.0.48 : accepted
+  write rxtz     aware+02@0.0.48 : accepted
+  write rxtz     naive@0.0.48    : accepted
+  read plain    awareUTC@0.0.48  -> AWARE 2026-10-06T17:00:00+00:00  serialize()='2026-10-06 17:00:00+00:00'  | < aware now: OK(True) | < naive now: TypeError | sqlite text '2026-10-06 17:00:00.000000'
+  read plain    aware+02@0.0.48  -> AWARE 2026-10-06T17:00:00+00:00  serialize()='2026-10-06 17:00:00+00:00'  | < aware now: OK(True) | < naive now: TypeError | sqlite text '2026-10-06 17:00:00.000000'
+  read rxplain  awareUTC@0.0.48  -> AWARE 2026-10-06T17:00:00+00:00  serialize()='2026-10-06 17:00:00+00:00'  | < aware now: OK(True) | < naive now: TypeError | sqlite text '2026-10-06 17:00:00.000000'
+  read rxplain  aware+02@0.0.48  -> AWARE 2026-10-06T17:00:00+00:00  serialize()='2026-10-06 17:00:00+00:00'  | < aware now: OK(True) | < naive now: TypeError | sqlite text '2026-10-06 17:00:00.000000'
+  read rxtz     awareUTC@0.0.48  -> naive 2026-10-06T17:00:00        serialize()='2026-10-06 17:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 17:00:00.000000'
+  read rxtz     aware+02@0.0.48  -> naive 2026-10-06T19:00:00        serialize()='2026-10-06 19:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 19:00:00.000000'
+  read rxtz     naive@0.0.48     -> naive 2026-10-06T17:00:00        serialize()='2026-10-06 17:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 17:00:00.000000'
+  where plain    at > aware 2026-10-06T00:00Z -> 2 rows
+  where plain    at > naive cutoff -> StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annot
+  where rxplain  created_at > aware 2026-10-06T00:00Z -> 2 rows
+  where rxplain  created_at > naive cutoff -> StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annot
+  where rxtz     created_at > aware 2026-10-06T00:00Z -> 3 rows
+  where rxtz     created_at > naive 2026-10-06T00:00  -> 3 rows
+
+######## alone: alpha2 control (sqlalchemy 2.0.54)
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/rdi-a2db-sa20/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:156)
+### write with reflex 0.10.0a2 / sqlmodel 0.0.48 / pydantic 2.13.5
+  plain    column type: UTCDateTime()
+  rxplain  column type: UTCDateTime()
+  rxtz     column type: DateTime(timezone=True)
+  write plain    awareUTC@0.0.48 : accepted
+  write plain    aware+02@0.0.48 : accepted
+  write plain    naive@0.0.48    : REJECTED StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annot
+  write rxplain  awareUTC@0.0.48 : accepted
+  write rxplain  aware+02@0.0.48 : accepted
+  write rxplain  naive@0.0.48    : REJECTED StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annot
+  write rxtz     awareUTC@0.0.48 : accepted
+  write rxtz     aware+02@0.0.48 : accepted
+  write rxtz     naive@0.0.48    : accepted
+  read plain    awareUTC@0.0.48  -> AWARE 2026-10-06T17:00:00+00:00  serialize()='2026-10-06 17:00:00+00:00'  | < aware now: OK(True) | < naive now: TypeError | sqlite text '2026-10-06 17:00:00.000000'
+  read plain    aware+02@0.0.48  -> AWARE 2026-10-06T17:00:00+00:00  serialize()='2026-10-06 17:00:00+00:00'  | < aware now: OK(True) | < naive now: TypeError | sqlite text '2026-10-06 17:00:00.000000'
+  read rxplain  awareUTC@0.0.48  -> AWARE 2026-10-06T17:00:00+00:00  serialize()='2026-10-06 17:00:00+00:00'  | < aware now: OK(True) | < naive now: TypeError | sqlite text '2026-10-06 17:00:00.000000'
+  read rxplain  aware+02@0.0.48  -> AWARE 2026-10-06T17:00:00+00:00  serialize()='2026-10-06 17:00:00+00:00'  | < aware now: OK(True) | < naive now: TypeError | sqlite text '2026-10-06 17:00:00.000000'
+  read rxtz     awareUTC@0.0.48  -> naive 2026-10-06T17:00:00        serialize()='2026-10-06 17:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 17:00:00.000000'
+  read rxtz     aware+02@0.0.48  -> naive 2026-10-06T19:00:00        serialize()='2026-10-06 19:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 19:00:00.000000'
+  read rxtz     naive@0.0.48     -> naive 2026-10-06T17:00:00        serialize()='2026-10-06 17:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 17:00:00.000000'
+  where plain    at > aware 2026-10-06T00:00Z -> 2 rows
+  where plain    at > naive cutoff -> StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annot
+  where rxplain  created_at > aware 2026-10-06T00:00Z -> 2 rows
+  where rxplain  created_at > naive cutoff -> StatementError: (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annot
+  where rxtz     created_at > aware 2026-10-06T00:00Z -> 3 rows
+  where rxtz     created_at > naive 2026-10-06T00:00  -> 3 rows

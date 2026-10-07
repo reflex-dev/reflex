@@ -1,0 +1,5 @@
+### R2 makemigrations
+rc=0
+versions: b33e613b4cdb_.py
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+migrate rc=0
