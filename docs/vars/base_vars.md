@@ -73,6 +73,34 @@ def ticker_example():
     )
 ```
 
+## Changing Defaults
+
+Assigning a value to a declared var on its state class updates the default for
+values that have not yet been initialized and for `reset()`. This works for both
+frontend and backend vars. Values already stored on a state instance stay the
+same, and mutable defaults are copied for each instance. Reset uses the last
+configured default. Defaults are not part of the saved-state schema, so changing
+one does not invalidate state saved by this release or later.
+
+Assigned defaults must match the field's declared type. Var and Field assignments
+are rejected, including fresh `rx.field(...)` objects. Declare a `ClassVar[rx.Var]` to
+store a Var reference, or define a computed var to read another field at runtime.
+A callable the annotation accepts, such as for a `Callable` or `Any` var, is
+stored as the default. Otherwise, assigning a zero-argument callable updates the
+default factory: Reflex calls it once when assigned to validate its result, then
+calls it whenever an instance needs a new default or resets. If that validation
+call fails or returns an invalid default, the previous default remains in place.
+A factory that produces a browser storage value is called once at assignment,
+and its result becomes the default so the storage name and options are kept.
+Frontend vars remain usable in the UI after assigning a new default value or
+factory.
+
+An inherited var belongs to the state that declared it, so assigning a default
+through a subclass also changes that declaring state's default. Each generated
+`ComponentState` class owns its copied fields, allowing
+[`get_component` to configure defaults](/docs/state-structure/component-state/#passing-props)
+independently for each component.
+
 ## Backend-only Vars
 
 Any Var in a state class that starts with an underscore (`_`) is considered backend
@@ -100,6 +128,26 @@ client.
 
 For example, a backend-only var is used to store a large data structure which is
 then paged to the frontend using cached vars.
+
+Read and write a backend var through a state instance, such as `self._token`.
+Reading `MyState._token` through the class returns its field descriptor. Assigning
+to `MyState._token` updates its default as described above.
+
+For configuration shared by all sessions, declare a `ClassVar` instead:
+
+```python
+from typing import ClassVar
+
+
+class MyState(rx.State):
+    _endpoint: ClassVar[str] = "https://example.com/api"
+    _token: str = ""
+
+
+MyState._endpoint = "https://example.com/v2"
+```
+
+`ClassVar` values are ordinary class attributes and are not part of session state.
 
 ```python demo exec
 import numpy as np

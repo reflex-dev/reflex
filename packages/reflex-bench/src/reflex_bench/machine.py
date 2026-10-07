@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import warnings
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -33,6 +34,16 @@ _CPU_NOISE = re.compile(
 )
 _CPU_VENDORS = re.compile(r"\b(?:amd|intel|genuineintel|authenticamd)\b", re.IGNORECASE)
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
+# (CPU implementer, CPU part) of /proc/cpuinfo to the core's name, for the Arm
+# Ltd cores of cloud and CI machines; other cores keep their numbers.
+_ARM_PARTS = {
+    ("0x41", "0xd08"): "Cortex-A72",
+    ("0x41", "0xd0b"): "Cortex-A76",
+    ("0x41", "0xd0c"): "Neoverse-N1",
+    ("0x41", "0xd40"): "Neoverse-V1",
+    ("0x41", "0xd49"): "Neoverse-N2",
+    ("0x41", "0xd4f"): "Neoverse-V2",
+}
 _PROFILE_UNSAFE = re.compile(r"[^A-Za-z0-9._-]+")
 
 CheckStatus = Literal["ok", "warn", "info"]
@@ -166,17 +177,39 @@ def profile_id(
 def _cpu_model(cpuinfo: str | None) -> str | None:
     """Find the CPU model name.
 
+    Linux on arm64 names no model, only each core's implementer and part
+    numbers, which tell a Cortex-A72 from a Neoverse-N2: the model is built from
+    them, naming every core type with its count when the cores differ.
+
     Args:
         cpuinfo: The content of ``/proc/cpuinfo`` on Linux.
 
     Returns:
         The model name, or ``None`` when unknown.
     """
-    if cpuinfo:
-        for line in cpuinfo.splitlines():
-            key, _, value = line.partition(":")
-            if key.strip() in {"model name", "Model", "Hardware"} and value.strip():
-                return value.strip()
+    fields: dict[str, str] = {}
+    cores: Counter[tuple[str, str]] = Counter()
+    implementer = ""
+    for line in (cpuinfo or "").splitlines():
+        key, _, value = line.partition(":")
+        key, value = key.strip(), value.strip()
+        if key == "CPU implementer":
+            implementer = value.lower()
+        elif key == "CPU part":
+            cores[implementer, value.lower()] += 1
+        elif value:
+            fields.setdefault(key, value)
+    for key in ("model name", "Model", "Hardware"):
+        if key in fields:
+            return fields[key]
+    names = [
+        (_ARM_PARTS.get(core, f"implementer {core[0]} part {core[1]}"), count)
+        for core, count in sorted(cores.items())
+    ]
+    if len(names) > 1:
+        return " + ".join(f"{count}x {name}" for name, count in names)
+    if names:
+        return names[0][0]
     return platform.processor() or None
 
 

@@ -55,6 +55,7 @@ from reflex_site_shared.components.blocks.headings import (
     h2_comp_xd,
     h3_comp_xd,
     h4_comp_xd,
+    heading_comp,
     img_comp_xd,
 )
 from reflex_site_shared.components.blocks.typography import (
@@ -79,22 +80,6 @@ if _PARENT_PKG not in sys.modules:
     _pkg.__path__ = []  # package needs __path__ for submodule imports
     _pkg.__package__ = _PARENT_PKG
     sys.modules[_PARENT_PKG] = _pkg
-
-
-def _add_exception_note(error: BaseException, note: str) -> None:
-    """Attach a rendering-context note to an exception.
-
-    Uses PEP 678 notes on Python 3.11+, falling back to setting ``__notes__``
-    directly on Python 3.10 so callers and tests see uniform behavior.
-
-    Args:
-        error: Exception being re-raised.
-        note: Context describing the failing document and block.
-    """
-    if hasattr(error, "add_note"):
-        error.add_note(note)
-    else:
-        error.__notes__ = [*getattr(error, "__notes__", ()), note]
 
 
 def _make_module_name(filename: str) -> str:
@@ -167,34 +152,66 @@ def _exec_code(content: str, env: dict, filename: str) -> None:
     _executed_blocks.add(key)
 
 
-def _render_spans(spans: tuple[Span, ...]) -> list[rx.Component | str]:
-    """Convert a sequence of spans into a list of Reflex children."""
+def _render_spans(
+    spans: tuple[Span, ...], links: bool = True
+) -> list[rx.Component | str]:
+    """Convert a sequence of spans into a list of Reflex children.
+
+    Args:
+        spans: The spans to render.
+        links: Whether links render as anchors. Where the spans are already
+            inside an anchor, such as a heading's link to itself, a link
+            renders as its text instead, since anchors cannot nest.
+
+    Returns:
+        The rendered children.
+    """
     out: list[rx.Component | str] = []
     for span in spans:
         match span:
             case TextSpan(text=text):
                 out.append(text)
             case BoldSpan(children=children):
-                out.append(rx.el.strong(*_render_spans(children)))
+                out.append(rx.el.strong(*_render_spans(children, links)))
             case ItalicSpan(children=children):
-                out.append(rx.el.em(*_render_spans(children)))
+                out.append(rx.el.em(*_render_spans(children, links)))
             case StrikethroughSpan(children=children):
                 inner = "".join(
-                    c if isinstance(c, str) else "" for c in _render_spans(children)
+                    c if isinstance(c, str) else ""
+                    for c in _render_spans(children, links)
                 )
                 out.append(rx.text("~" + inner + "~", as_="span"))
             case CodeSpan(code=code):
                 out.append(code_comp(text=code))
             case LinkSpan(children=children, target=target):
-                inner = "".join(
-                    c if isinstance(c, str) else "" for c in _render_spans(children)
-                )
-                out.append(doclink2(text=inner, href=target))
+                if links:
+                    out.append(_render_link(children, target))
+                else:
+                    out.extend(_render_spans(children, links))
             case ImageSpan(src=src):
                 out.append(img_comp_xd(src=src))
             case LineBreakSpan(soft=soft):
                 out.append("\n" if soft else rx.el.br())
     return out
+
+
+def _render_link(children: tuple[Span, ...], target: str) -> rx.Component:
+    """Render a link, keeping inline markup such as code inside its text.
+
+    Args:
+        children: The spans that make up the link text.
+        target: The link destination.
+
+    Returns:
+        The link, with plain text kept as a string so plain links render as before.
+    """
+    parts = _render_spans(children)
+    text = (
+        "".join(parts)
+        if all(isinstance(part, str) for part in parts)
+        else rx.fragment(*parts)
+    )
+    return doclink2(text=text, href=target)
 
 
 def _spans_to_plaintext(spans: tuple[Span, ...]) -> str:
@@ -258,6 +275,12 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
     def heading(self, block: HeadingBlock) -> rx.Component:
         text = _spans_to_plaintext(block.children)
+        if not all(isinstance(span, TextSpan) for span in block.children):
+            # Shown with its markup, and anchored on the same plain text, so a
+            # link to the heading does not change. The heading is itself a
+            # link to that anchor, so a link inside it shows as its text.
+            content = rx.fragment(*_render_spans(block.children, links=False))
+            return heading_comp(text, block.level, content)
         match block.level:
             case 1:
                 return h1_comp_xd(text=text)
@@ -458,8 +481,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         return code_comp(text=span.code)
 
     def link(self, span: LinkSpan) -> rx.Component:
-        inner = _spans_to_plaintext(span.children)
-        return doclink2(text=inner, href=span.target)
+        return _render_link(span.children, span.target)
 
     def image(self, span: ImageSpan) -> rx.Component:
         return img_comp_xd(src=span.src)
@@ -505,9 +527,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             else:
                 comp = eval(content, self.env, self.env)
         except Exception as e:
-            _add_exception_note(
-                e,
-                f"While rendering demo block in {self.virtual_filepath}:\n{content[:200]}",
+            e.add_note(
+                f"While rendering demo block in {self.virtual_filepath}:\n{content[:200]}"
             )
             raise
 
@@ -541,9 +562,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             else:
                 comp = eval(content, self.env, self.env)
         except Exception as e:
-            _add_exception_note(
-                e,
-                f"While rendering demo-only block in {self.virtual_filepath}:\n{content[:200]}",
+            e.add_note(
+                f"While rendering demo-only block in {self.virtual_filepath}:\n{content[:200]}"
             )
             raise
 

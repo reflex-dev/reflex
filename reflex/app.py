@@ -2154,20 +2154,32 @@ class EventNamespace(AsyncNamespace):
         # For backward compatibility, expose the underlying dict
         return self._token_manager.sid_to_token
 
-    async def on_connect(self, sid: str, environ: dict):
+    async def on_connect(self, sid: str, environ: dict, auth: Any = None):
         """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
+            auth: The payload of the socket.io CONNECT packet. The frontend
+                puts its hydrate event here so it is processed without waiting
+                for the connect acknowledgement round trip.
         """
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
+        boot_event = (
+            auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
+            if isinstance(auth, dict)
+            else None
+        )
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
         if token_list:
-            await self.link_token_to_sid(sid, token_list[0])
+            # The boot event is the connection's first event: processing it
+            # records the new sid and token on the state under the state lock.
+            await self.link_token_to_sid(
+                sid, token_list[0], update_state=boot_event is None
+            )
         else:
             logger.warning(f"No token provided in connection for session {sid}")
 
@@ -2182,6 +2194,18 @@ class EventNamespace(AsyncNamespace):
         # Headers, client IP, and session id cannot change for the lifetime of
         # the connection; compute them once instead of on every event.
         self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+
+        if boot_event is not None:
+            try:
+                await self.on_event(sid, boot_event)
+            except Exception:
+                # A refused connect never reaches on_disconnect, so drop the
+                # token link and connection data made above before the error
+                # refuses the connect.
+                self._static_router_data.pop(sid, None)
+                if (linked_token := self.sid_to_token.get(sid)) is not None:
+                    await self._token_manager.disconnect_token(linked_token, sid)
+                raise
 
     def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
         """Build the connection-scoped router_data entries for a socket.
@@ -2454,12 +2478,18 @@ class EventNamespace(AsyncNamespace):
         # handlers (e.g. error trackers) receive client errors too.
         self.app.frontend_exception_handler(Exception(report))
 
-    async def link_token_to_sid(self, sid: str, token: str):
+    async def link_token_to_sid(
+        self, sid: str, token: str, *, update_state: bool = True
+    ):
         """Link a token to a session id.
 
         Args:
             sid: The Socket.IO session id.
             token: The client token.
+            update_state: Whether to record the new sid and token on the state
+                now. The connect skips it when the CONNECT packet carries the
+                boot event, which records them as the connection's first event
+                without an extra load and save of the whole state tree.
         """
         # Use TokenManager for duplicate detection and Redis support
         new_token = await self._token_manager.link_token_to_sid(token, sid)
@@ -2469,7 +2499,7 @@ class EventNamespace(AsyncNamespace):
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
-        if self.app._state is not None:
+        if update_state and self.app._state is not None:
             async with self.app.state_manager.modify_state(
                 BaseStateToken(ident=new_token or token, cls=self.app._state)
             ) as state:

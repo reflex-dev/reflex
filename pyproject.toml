@@ -18,7 +18,7 @@ maintainers = [
 ]
 readme = "README.md"
 keywords = ["web", "framework"]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 dependencies = [
   "click >=8.2",
   "granian[reload] >=2.7.4",
@@ -31,8 +31,8 @@ dependencies = [
   "rich >=13,<16",
   "starlette >=1.3.1",
   "typing_extensions >=4.13.0",
-  "wrapt >=1.17.0,<2.4",
-  "reflex-base >= 0.9.12.dev0",
+  "wrapt >=1.17.0,<2.6",
+  "reflex-base >= 0.9.13.dev0",
   "reflex-components-code >= 0.9.0",
   "reflex-components-core >= 0.9.6",
   "reflex-components-dataeditor >= 0.9.0",
@@ -52,18 +52,18 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
 ]
 
 [project.optional-dependencies]
 db = [
   "alembic >=1.15.2,<2.0",
   "pydantic >=2.12.0,<3.0",
-  "sqlmodel >=0.0.24,<0.1",
+  "sqlmodel >=0.0.24",
 ]
 pydantic = ["reflex-base[pydantic]"]
 testing = [
@@ -137,6 +137,9 @@ dev = [
   "cronsim",
   "croniter",
 ]
+# The benchmark CI jobs: the harness without the dev group (libsass builds from
+# source on arm64).
+bench = ["reflex-bench"]
 
 
 [build-system]
@@ -148,6 +151,7 @@ source = "uv-dynamic-versioning"
 
 [tool.uv-dynamic-versioning]
 fallback-version = "0.0.0dev0"
+bump = true
 
 [tool.hatch.build]
 # Leading slashes anchor to the repo root; unanchored patterns match nested
@@ -203,7 +207,7 @@ exclude = [
 reportIncompatibleMethodOverride = false
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 output-format = "concise"
 extend-exclude = ["tests/units/reflex_base/utils/pyi_generator/golden"]
 lint.isort.split-on-trailing-comma = false
@@ -215,6 +219,8 @@ lint.ignore = [
   "ANN2",
   "ANN4",
   "ARG",
+  # Timeouts are explicit parameters of the testing and state-manager APIs.
+  "ASYNC109",
   # Background event handlers hold `async with self` across `yield` by design.
   "ASYNC119",
   "BLE",
@@ -254,6 +260,9 @@ lint.ignore = [
   "TD",
   "TRY0",
   "TRY400", # User-facing errors deliberately omit tracebacks; debug logs carry diagnostics where appropriate.
+  # `StrEnum` renders members as their value where `(str, Enum)` renders
+  # `Cls.NAME`; these enums rely on the latter in `str()` and f-strings.
+  "UP042",
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [
@@ -484,9 +493,10 @@ backend_pinned = [
     "ruff",
 ]
 frontend_held = [
-    # 2.x restructures the component props and drops the `filter` prop, so `rx.moment`
-    # needs a migration first (#7003).
-    "react-moment",
+    # 18.x removes the bundled MIME fallback table; 19.x partially accepts batches
+    # over max_files instead of rejecting them. Preserve rx.upload behavior until
+    # these changes have a compatibility path.
+    "react-dropzone",
     # plotly.js and plotly.js-locales move in lockstep, and 4.x removes the mapbox traces
     # and subplot that `rx.plotly.mapbox` is built on, so both need a deprecation first
     # (#7002). `react-plotly.js` is current and deliberately not held.

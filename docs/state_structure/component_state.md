@@ -61,7 +61,7 @@ class are treated similarly to a normal State class, but will be scoped to the c
 
 The `get_component` classmethod is used to define the UI for the component and link it up to the State, which
 is accessed via the `cls` argument. Other states may also be referenced by the returned component, but
-`cls` will always be the instance of the `ComponentState` that is unique to the component being returned.
+`cls` is the newly created state class unique to the component being returned.
 
 ## Passing Props
 
@@ -108,8 +108,7 @@ class EditableText(rx.ComponentState):
         # Set the initial value of the State var.
         initial_value = props.pop("initial_value", None)
         if initial_value is not None:
-            # Update the pydantic model to use the initial value as default.
-            cls.__fields__["text"].default = initial_value
+            cls.text = initial_value
 
         # Form elements for editing, saving and reverting the text.
         edit_controls = rx.hstack(
@@ -160,6 +159,11 @@ def editable_text_example():
         ),
     )
 ```
+
+Assigning `cls.text` in `get_component` sets the default for that component's new
+state class. Other components keep their own defaults, and `cls.text` still
+references the frontend var when building the UI. Resetting the component's state
+restores its last configured default.
 
 ```python eval
 rx.divider()

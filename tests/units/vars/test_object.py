@@ -1,6 +1,6 @@
 import dataclasses
 from collections.abc import Sequence
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, assert_type
 
 import pytest
 from reflex_base.utils.exceptions import VarAttributeError
@@ -10,7 +10,6 @@ from reflex_base.vars.base import Var, VarData
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.object import LiteralObjectVar, ObjectVar, RestProp
 from reflex_base.vars.sequence import ArrayVar
-from typing_extensions import assert_type
 
 import reflex as rx
 
