@@ -1,0 +1,148 @@
+reflex 0.10.0a3   (venv a3_class_state-a3)
+
+== private annotated (_v: int = 5)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== public annotated (v: int = 5)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== rx.field public (v: int = rx.field(default=5))
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== rx.field private (_v: int = rx.field(default=5))
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== unannotated private (_v = 5)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== unannotated public (v = 5)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== mutable default private (_v: list[int] = [1])
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== default_factory private (rx.field(default_factory))
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== annotation excludes None default (_v: int = None)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              BROKEN patch visible   UNDO-ERR TypeError: Invalid default for field '_v': expected <class 'int'>, got; LEAK inst None->99 field None->99
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== Optional[int] = None (_v: Optional[int] = None)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== mixin private (patch S._v)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== mixin public (patch S.v)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== substate private (patch Child._v, declared on Parent)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               BROKEN patch invisible PATCH-ERR KeyError: '_v'
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== ComponentState private (generated state)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== ComponentState public (generated state)
+   monkeypatch.setattr(cls,name,v)                          CLEAN  patch visible   
+   mock.patch.object(cls,name,v)                            CLEAN  patch visible   
+   manual: old=cls.__dict__[n]; set; set(old)               CLEAN  patch visible   
+   manual: old=getattr(cls,n); set; set(old)                CLEAN  patch visible   
+   manual: old=<original value>; set; set(old)              CLEAN  patch visible   
+   monkeypatch.setattr(Field,'default',v)  [workaround?]    CLEAN  patch visible   
+   monkeypatch.delattr(cls,name)                            CLEAN  patch invisible 
+
+== control group (claimed fine)
+   method helper                                  monkeypatch.setattr  patch_err=None during='patched' undo_err=None after='orig'
+   method helper                                  mock.patch.object    patch_err=None during='patched' undo_err=None after='orig'
+   classmethod cm                                 monkeypatch.setattr  patch_err=None during='cm-patched' undo_err=None after='cm-orig'
+   classmethod cm                                 mock.patch.object    patch_err=None during='cm-patched' undo_err=None after='cm-orig'
+   ClassVar CV                                    monkeypatch.setattr  patch_err=None during=11 undo_err=None after=10
+   ClassVar CV                                    mock.patch.object    patch_err=None during=11 undo_err=None after=10
+   computed var doubled                           monkeypatch.setattr  patch_err=None during=12345 undo_err=None after=2
+   computed var doubled                           mock.patch.object    patch_err=None during=12345 undo_err=None after=2
+   event handler bump (replace with plain func)   monkeypatch.setattr  patch_err=None during='callable' undo_err=None after='callable'
+   event handler bump (replace with plain func)   mock.patch.object    patch_err=None during='callable' undo_err=None after='callable'

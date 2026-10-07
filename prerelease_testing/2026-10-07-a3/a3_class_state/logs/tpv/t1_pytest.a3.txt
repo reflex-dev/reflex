@@ -1,0 +1,26 @@
+......................                                                   [100%]
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_t1_pytest.py::test_01_monkeypatch_private_var
+PASSED test_t1_pytest.py::test_02_sentinel_private_default_restored
+PASSED test_t1_pytest.py::test_03_mock_patch_object_private_var
+PASSED test_t1_pytest.py::test_04_sentinel_private_after_mock
+PASSED test_t1_pytest.py::test_05_monkeypatch_public_var
+PASSED test_t1_pytest.py::test_06_sentinel_public_default_restored
+PASSED test_t1_pytest.py::test_07_monkeypatch_rx_field_var
+PASSED test_t1_pytest.py::test_08_sentinel_rx_field_default_restored
+PASSED test_t1_pytest.py::test_09_pytest_mock_patch_object
+PASSED test_t1_pytest.py::test_10_sentinel_after_pytest_mock
+PASSED test_t1_pytest.py::test_11_monkeypatch_mixin_var
+PASSED test_t1_pytest.py::test_12_sentinel_mixin_default_restored
+PASSED test_t1_pytest.py::test_13_monkeypatch_child_of_declaring_parent
+PASSED test_t1_pytest.py::test_14_sentinel_parent_default_restored
+PASSED test_t1_pytest.py::test_20_monkeypatch_method
+PASSED test_t1_pytest.py::test_21_method_restored
+PASSED test_t1_pytest.py::test_22_monkeypatch_classvar
+PASSED test_t1_pytest.py::test_23_classvar_restored
+PASSED test_t1_pytest.py::test_30_workaround_patch_field_default
+PASSED test_t1_pytest.py::test_31_sentinel_after_workaround
+PASSED test_t1_pytest.py::test_32_workaround_reassign_original_value
+PASSED test_t1_pytest.py::test_33_sentinel_after_original_value_restore
+22 passed in 0.29s

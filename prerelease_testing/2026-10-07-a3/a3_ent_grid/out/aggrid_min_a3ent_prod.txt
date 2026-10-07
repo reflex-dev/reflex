@@ -1,0 +1,18 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python server venv=a3-ent versions=0.10.0a3 0.9.7a5
+[NOTE] guard: 0.10.0a3 0.9.7a5
+[PASS] load 1: grid with column_defs=State var shows its columns: {'state_cols': ['Make', 'Price'], 'literal_cols': ['Make', 'Price']}
+[PASS] load 1: grid with literal column_defs shows its columns: ['Make', 'Price']
+[PASS] load 2: grid with column_defs=State var shows its columns: {'state_cols': ['Make', 'Price'], 'literal_cols': ['Make', 'Price']}
+[PASS] load 2: grid with literal column_defs shows its columns: ['Make', 'Price']
+{
+ "checks_failed": [],
+ "n_checks": 4,
+ "console_total": 3,
+ "console_benign": 0,
+ "console_errors": 1,
+ "console_warnings": 0,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 0
+}
+  console_errors: {"t": 1.04, "ctx": "min", "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)", "url": "http://localhost:3309/", "location": {"url": "http://localhost:3309/favicon.ico", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}

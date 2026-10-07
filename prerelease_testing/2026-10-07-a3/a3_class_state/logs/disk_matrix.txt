@@ -1,0 +1,63 @@
+== writer=a3 reader=a3
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a3 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a3 step: found user='alice' count=6 history=['0.10.0a3:6:v1'] _visits=1 child.note='by 0.10.0a3' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a3 load: found user='alice' count=7 history=['0.10.0a3:6:v1', '0.10.0a3:7:v2'] _visits=2 child.note='by 0.10.0a3' | files=2
+== writer=a3 reader=alpha2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a3 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a2 step: found user='alice' count=6 history=['0.10.0a3:6:v1'] _visits=1 child.note='by 0.10.0a3' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a3 load: found user='alice' count=7 history=['0.10.0a3:6:v1', '0.10.0a2:7:v2'] _visits=2 child.note='by 0.10.0a2' | files=2
+== writer=a3 reader=stable
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a3 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.9.12 step: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a3 load: found user='alice' count=6 history=['0.9.12:6:v1'] _visits=1 child.note='by 0.9.12' | files=2
+== writer=alpha2 reader=a3
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a2 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a3 step: found user='alice' count=6 history=['0.10.0a2:6:v1'] _visits=1 child.note='by 0.10.0a2' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a2 load: found user='alice' count=7 history=['0.10.0a2:6:v1', '0.10.0a3:7:v2'] _visits=2 child.note='by 0.10.0a3' | files=2
+== writer=alpha2 reader=alpha2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a2 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a2 step: found user='alice' count=6 history=['0.10.0a2:6:v1'] _visits=1 child.note='by 0.10.0a2' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a2 load: found user='alice' count=7 history=['0.10.0a2:6:v1', '0.10.0a2:7:v2'] _visits=2 child.note='by 0.10.0a2' | files=2
+== writer=alpha2 reader=stable
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a2 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.9.12 step: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a2 load: found user='alice' count=6 history=['0.9.12:6:v1'] _visits=1 child.note='by 0.9.12' | files=2
+== writer=stable reader=a3
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.9.12 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a3 step: found user='alice' count=6 history=['0.9.12:6:v1'] _visits=1 child.note='by 0.9.12' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.9.12 load: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+== writer=stable reader=alpha2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.9.12 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.10.0a2 step: found user='alice' count=6 history=['0.9.12:6:v1'] _visits=1 child.note='by 0.9.12' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.9.12 load: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+== writer=stable reader=stable
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.9.12 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.9.12 step: found user='alice' count=6 history=['0.9.12:6:v1'] _visits=1 child.note='by 0.9.12' | files=2
+Passing a string to modify_state has been deprecated in version 0.9.0. Use rx.BaseStateToken(token, state_cls) instead of the legacy string format. It will be completely removed in 1.0. (disk_probe.py:30)
+reflex 0.9.12 load: found user='alice' count=7 history=['0.9.12:6:v1', '0.9.12:7:v2'] _visits=2 child.note='by 0.9.12' | files=2

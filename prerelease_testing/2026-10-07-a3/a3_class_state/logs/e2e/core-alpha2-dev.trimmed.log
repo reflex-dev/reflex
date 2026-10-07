@@ -1,0 +1,60 @@
+Debug: installed react-router@8.4.0
+Debug: installed @radix-ui/react-form@0.1.16
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: 104 packages installed [1349.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/core-alpha2/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/core-alpha2/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 3.86s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpa
+d/apps/a3_class_state/run/core-alpha2/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_class_state/run/core-alpha2/rxconfig.py', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_class_state/run/core-alpha2/core_a2']
+[INFO] Starting granian (main PID: 12531)
+[INFO] Listening at: http://0.0.0.0:8101
+[INFO] Spawning worker-1 with PID: 12632
+Debug: Registered lifespan task: _setup_event_processor
+Debug: BE Evaluating stateful page: index
+Debug: BE Evaluating stateful page: cs
+Debug: BE Evaluating stateful page: storage
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3101/
+App running at: http://localhost:3101/
+Backend running at: http://0.0.0.0:8101
+Debug:   ➜  Network: http://192.0.2.2:3101/  eth0
+Debug: 7:52:12 PM [vite] (ssr) connected.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'changed-decl' of type '<class 
+'str'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'changed-decl' of type '<class 
+'str'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'decl-fac' of type '<class 
+'str'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'decl-fac' of type '<class 
+'str'>'.
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

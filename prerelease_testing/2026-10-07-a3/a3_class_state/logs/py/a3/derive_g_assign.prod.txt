@@ -1,0 +1,68 @@
+reflex 0.10.0a3  REFLEX_ENV_MODE=prod
+--- frontend var default
+A.count = 10 -> type(A.count) (still a Var for the UI?)            -> NumberCastedVar
+   fresh(A).count                                                  -> 10
+   fresh(A).doubled                                                -> 20
+   A.dict(initial=True) count                                      -> 10
+   rx.text(A.count) renders a var                                  -> jsx(RadixThemesText,{as:"p"},reflex___state____state____main_____a.count_rx_stat
+--- type validation
+A.count = "ten"                                                    -> EXC TypeError: Invalid default for field 'count': expected <class 'int'>, got 'ten' of type <class 'str'>.
+   default after rejected assignment                               -> 10
+A.count = True (bool is an int subclass)                           -> True
+A.ratio = 1 (int to float var)                                     -> 1
+A.nums = ["x"] (wrong element type)                                -> EXC TypeError: Invalid default for field 'nums': expected list[int], got ['x'] of type <class 'list'>.
+A.mapping = {"a": "b"} (wrong value type)                          -> EXC TypeError: Invalid default for field 'mapping': expected dict[str, int], got {'a': 'b'} of type <class 'dict'>.
+A.mode = "c" (outside Literal)                                     -> EXC TypeError: Invalid default for field 'mode': expected typing.Literal['a', 'b'], got 'c' of type <class 'str'>.
+A.mode = "b"                                                       -> b
+A.when = datetime(2026,1,1)                                        -> datetime.datetime(2026, 1, 1, 0, 0)
+A.pt = Pt(5) (dataclass)                                           -> PtMutableProxy(Pt(x=5))
+A.opt = None                                                       -> None
+A._k = "sk" (backend)                                              -> sk
+A._k = 5 (backend wrong type)                                      -> EXC TypeError: Invalid default for field '_k': expected str | None, got 5 of type <class 'int'>.
+--- Field / Var rejection
+A.count = rx.field(5)                                              -> EXC TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+A.count = rx.Var.create(5)                                         -> EXC TypeError: A Var cannot be a field default. Use ClassVar[rx.Var] to save references to vars in state.
+A.count = Other.o (another state's var)                            -> EXC TypeError: A Var cannot be a field default. Use ClassVar[rx.Var] to save references to vars in state.
+A._k = A._k (its own Field read on the class)                      -> None
+   A still works: fresh(A).count / _k                              -> (10, 'sk')
+--- factories
+A.items = items_factory                                            -> 1
+   calls after assignment (validated once)                         -> 1
+   get_fields()['items'] default / factory                         -> (<dataclasses._MISSING_TYPE object at 0x7f1cab9c0d70>, <function items_factory at 0x7f1cab79e340>)
+   two fresh instances                                             -> (MutableProxy(['from-factory']), MutableProxy(['from-factory']), 3)
+   mutation on one does not leak                                   -> (MutableProxy(['from-factory', 'mut']), MutableProxy(['from-factory']), MutableProxy(['from-factory']))
+   reset() calls the factory again                                 -> (MutableProxy(['from-factory']), 5)
+A.items = lambda: 1/0 (raising factory)                            -> EXC TypeError: Default factory for field 'items' failed: division by zero
+   previous factory kept                                           -> MutableProxy(['from-factory'])
+A.items = lambda: 5 (factory with wrong type)                      -> EXC TypeError: Invalid default for field 'items': expected list[str], got 5 of type <class 'int'>.
+   previous factory kept                                           -> MutableProxy(['from-factory'])
+A.count = lambda x: 1 (one-arg callable)                           -> EXC TypeError: Default factory for field 'count' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'
+A._fn = len (Any accepts callables: stored as-is)                  -> <built-in function len>
+A._cb = lambda: 7 (Callable annotation accepts it)                 -> 7
+A.text = str.upper (unbound 1-arg builtin)                         -> EXC TypeError: Default factory for field 'text' failed: unbound method str.upper() needs an argument
+A.text = dict (a type: zero-arg callable)                          -> EXC TypeError: Invalid default for field 'text': expected <class 'str'>, got {} of type <class 'dict'>.
+A.text = str (type str: zero-arg callable -> '')                   -> ("''", <class 'str'>)
+--- mutable default copy and proxy unwrap
+A.items = [x,y]; j1 mutates -> j2 / fresh / class default          -> (MutableProxy(['x', 'y']), MutableProxy(['x', 'y']), ['x', 'y'])
+A.items = j1.items (MutableProxy) -> stored type                   -> list
+--- pickle / reset keep the configured default
+pickle round trip of fresh(PK) (count/_k/items configured on class) -> (10, 'sk', MutableProxy(['from-factory']))
+state._serialize/_deserialize round trip                           -> (10, 'sk', MutableProxy(['from-factory']))
+reset() -> count back to configured 10                             -> 10
+--- inheritance / mixins
+C1.pv = 5 -> fresh(P).pv / fresh(C2).pv (documented: declaring state changes) -> (5, 5)
+U1.mv=5, U1._mbe=6 -> U1 / U2 fresh                                -> ((5, 6), (1, 1))
+Mx.mv = 7 (on the mixin itself)                                    -> None
+   U1 / U2 / U3 (created after) fresh mv                           -> (5, 1, 7)
+--- computed var / event handler (not fields)
+Q.cv = 5 (computed var: not a field)                               -> int
+   fresh(Q).cv afterwards                                          -> 5
+--- client storage classification after assignment
+St.ls_plain: is_client_storage / default                           -> (True, 'assigned-plain-str')
+St.ls_fac_assigned: is_client_storage / default                    -> (True, 'from-factory')
+St.ls_fac_plain: is_client_storage / default                       -> (True, 'factory-plain-str')
+St.ls_inst: is_client_storage / default                            -> (True, 'inst-new')
+St.ck: is_client_storage / default                                 -> (True, 'assigned-cookie-plain')
+St.ls_declared_fac: is_client_storage / default                    -> (True, "factory:'decl-fac'")
+   compiled cookies: {'reflex___state____state.__main______st.ck_rx_state_': {'name': 'ck_key', 'path': '/', 'maxAge': 3600, 'sameSite': 'lax'}}
+   compiled local_storage: {'reflex___state____state.__main______st.ls_plain_rx_state_': {'name': 'ls_plain_key', 'sync': False}, 'reflex___state____state.__main______st.ls_fac_assigned_rx_state_': {'name': 'ls_fac_key2', 'sync': True}, 'reflex___state____state.__main______st.ls_fac_plain_rx_state_': {'name': 'ls_facplain_key', 'sync': False}, 'reflex___state____state.__main______st.ls_inst_rx_state_': {'name': 'ls_inst_key2', 'sync': False}, 'reflex___state____state.__main______st.ls_declared_fac_rx_state_': {'name': 'decl_fac_key', 'sync': True}}

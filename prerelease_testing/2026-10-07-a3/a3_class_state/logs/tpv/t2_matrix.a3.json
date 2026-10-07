@@ -1,0 +1,2391 @@
+{
+ "reflex": "0.10.0a3",
+ "venv": "a3_class_state-a3",
+ "rows": [
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got <__main__.Client object at 0x7f1a5aa40260> of type <class '__main__.Client'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got <__main__.Client object at 0x7f1a5aa40260> of type <class '__main__.Client'>.",
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "42",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got <MagicMock name='mock()' id='139751151613472'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got <MagicMock name='mock()' id='139751179923776'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got <httpx.Client object at 0x7f1a5b7ab740> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got <__main__.Client object at 0x7f1a5b7ab740> of type <class '__main__.Client'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got <__main__.Client object at 0x7f1a5b7ab740> of type <class '__main__.Client'>.",
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "'a-string'",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "42",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "None",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got None of type <class 'NoneType'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": 0,
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got <MagicMock name='mock()' id='139751149936784'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got <MagicMock name='mock()' id='139751181787856'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got <httpx.Client object at 0x7f1a59a709e0> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got <__main__.Client object at 0x7f1a59dd9820> of type <class '__main__.Client'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got <__main__.Client object at 0x7f1a59a2da30> of type <class '__main__.Client'>.",
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "'a-string'",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "42",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "None",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got None of type <class 'NoneType'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": "from-callable",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": "from-fn",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": "",
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got <MagicMock name='mock()' id='139751161986464'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got <MagicMock name='mock()' id='139751149916272'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got <httpx.Client object at 0x7f1a59a71e80> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got <__main__.Client object at 0x7f1a5a5dfda0> of type <class '__main__.Client'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got <__main__.Client object at 0x7f1a5a5dfda0> of type <class '__main__.Client'>.",
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "'a-string'",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "42",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "None",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got None of type <class 'NoneType'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": false,
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got <MagicMock name='mock()' id='139751149798224'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got <MagicMock name='mock()' id='139751165346064'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": false,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'bool'>, got <httpx.Client object at 0x7f1a59a43c80> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": false,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": [],
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got <__main__.Client object at 0x7f1a59a62030> of type <class '__main__.Client'>.",
+   "side_effects": {},
+   "after_inst": [],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": [],
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got <__main__.Client object at 0x7f1a59a62030> of type <class '__main__.Client'>.",
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": [],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "'a-string'",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "42",
+   "before_inst": [],
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": [],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "None",
+   "before_inst": [],
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got None of type <class 'NoneType'>.",
+   "side_effects": {},
+   "after_inst": [],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": [],
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": [],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": "from-callable",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": "from-fn",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": [],
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": [],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": [],
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": [],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": [],
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got <MagicMock name='mock()' id='139751150010096'> of type <class 'unittest.mock.Ma",
+   "side_effects": {},
+   "after_inst": [],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": [],
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got <MagicMock name='mock()' id='139751150000496'> of type <class 'unittest.mock.Ma",
+   "side_effects": {},
+   "after_inst": [],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": [],
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got <httpx.Client object at 0x7f1a59a43e60> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": [],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got <__main__.Client object at 0x7f1a59a43e60> of type <class '__ma",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got <__main__.Client object at 0x7f1a5ad79190> of type <class '__ma",
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "'a-string'",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "42",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "None",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got None of type <class 'NoneType'>.",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": {},
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got <MagicMock name='mock()' id='139751150394000'> of type <class '",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got <MagicMock name='mock()' id='139751149999104'> of type <class '",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": {},
+   "error": "TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoReturn], got <httpx.Client object at 0x7f1a59a71a90> of type <class 'httpx.C",
+   "side_effects": {},
+   "after_inst": {},
+   "class_read": "Field"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got <__main__.Client object at 0x7f1a59a71a90> of type <class '__main__.Client'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got <__main__.Client object at 0x7f1a59a71a90> of type <class '__main__.Client'>.",
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "42",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": "TypeError: Default factory for field 'slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got <MagicMock name='mock()' id='139751150001840'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got <MagicMock name='mock()' id='139751150581904'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got <httpx.Client object at 0x7f1a59afd8b0> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneCastedVar"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "Client() instance (not callable)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got <__main__.Client object at 0x7f1a59afd8b0> of type <class '__main__.Client'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got <__main__.Client object at 0x7f1a59afc0b0> of type <class '__main__.Client'>.",
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "'a-string'",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "42",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "None",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got None of type <class 'NoneType'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "[1] (list)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": "from-callable",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": "from-fn",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": "",
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "MagicMock()",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got <MagicMock name='mock()' id='139751149060752'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got <MagicMock name='mock()' id='139751149802688'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": "",
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'str'>, got <httpx.Client object at 0x7f1a5998fe30> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": "",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "Client() instance (not callable)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got <__main__.Client object at 0x7f1a5998fe30> of type <class '__main__.Client'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got <__main__.Client object at 0x7f1a59afd550> of type <class '__main__.Client'>.",
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "'a-string'",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "42",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "None",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got None of type <class 'NoneType'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "[1] (list)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": 0,
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "MagicMock()",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got <MagicMock name='mock()' id='139751149073424'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got <MagicMock name='mock()' id='139751149169952'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": 0,
+   "error": "TypeError: Invalid default for field '_slot': expected <class 'int'>, got <httpx.Client object at 0x7f1a599a7110> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": 0,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": "<Client>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "42",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got <MagicMock name='mock()' id='139751149166640'> of type <class 'unittest.mock.MagicMock'>",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got <httpx.Client object at 0x7f1a5998c080> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": "<Client>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "42",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got <MagicMock name='mock()' id='139751149167168'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got <httpx.Client object at 0x7f1a59a433e0> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": "<Client>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "42",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got <MagicMock name='mock()' id='139751149809456'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected __main__.Client | None, got <httpx.Client object at 0x7f1a599c2060> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<function>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<function>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<function>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<TypeError: cannot pickle '_thread.RLock' object>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got <__main__.Client object at 0x7f1a59affce0> of type <class '__main__.Cli",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "42",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<function>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<function>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<function>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got <httpx.Client object at 0x7f1a5998e960> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<function>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<function>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<function>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<TypeError: cannot pickle '_thread.RLock' object>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": "<Client>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "42",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "None",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got None of type <class 'NoneType'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got <MagicMock name='mock()' id='139751147494032'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got <httpx.Client object at 0x7f1a5980e5a0> of type <class 'httpx.Client'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got <__main__.Client object at 0x7f1a599a6720> of type <class '__main__.Client'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got <__main__.Client object at 0x7f1a59a709e0> of type <class '__main__.Client'>.",
+   "side_effects": {
+    "Client.made": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 'a-string' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "42",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 42 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 'five' of type <class 'str'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got [1] of type <class 'list'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 'from-callable' of type <class 'str'>.",
+   "side_effects": {
+    "CallableThing.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 'from-fn' of type <class 'str'>.",
+   "side_effects": {
+    "fn.calls": 1
+   },
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 1 of type <class 'int'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": "TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional argument: 'x'",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got <MagicMock name='mock()' id='139751147498208'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": "TypeError: Invalid default for field '_slot': expected httpx.Client | None, got <MagicMock name='mock()' id='139751149070208'> of type <class 'unittest.mock.MagicMock'>.",
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "Field"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<TypeError: cannot pickle '_thread.RLock' object>",
+   "class_read": "Field"
+  }
+ ]
+}

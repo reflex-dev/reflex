@@ -1,0 +1,408 @@
+{
+ "scenario": "s11_detail_expand",
+ "measure": {
+  "grids": {
+   "w_detail_state": {
+    "headers": [
+     "Id",
+     "Name",
+     "Count",
+     "Value"
+    ],
+    "cells": 8,
+    "rows": 0
+   },
+   "w_detail_literal": {
+    "headers": [
+     "Id",
+     "Name",
+     "Count",
+     "Value"
+    ],
+    "cells": 8,
+    "rows": 0
+   }
+  },
+  "probes": {},
+  "probeCounts": {},
+  "reflexDefinedNow": true,
+  "reflexSetAt": 264.89999999990687,
+  "path": "/detail/",
+  "heading": "entv detail"
+ },
+ "measure_plus4s": {
+  "grids": {
+   "w_detail_state": {
+    "headers": [
+     "Id",
+     "Name",
+     "Count",
+     "Value"
+    ],
+    "cells": 8,
+    "rows": 0
+   },
+   "w_detail_literal": {
+    "headers": [
+     "Id",
+     "Name",
+     "Count",
+     "Value"
+    ],
+    "cells": 8,
+    "rows": 0
+   }
+  },
+  "probes": {},
+  "probeCounts": {},
+  "reflexDefinedNow": true,
+  "reflexSetAt": 264.89999999990687,
+  "path": "/detail/",
+  "heading": "entv detail"
+ },
+ "boot_frames": [
+  {
+   "t": 208.1,
+   "dir": "ws_in",
+   "len": 108,
+   "head": "0{"
+  },
+  {
+   "t": 264.4,
+   "dir": "ws_out",
+   "len": 342,
+   "head": "40",
+   "nsp": "/_event",
+   "auth_keys": [
+    "event"
+   ],
+   "auth_mentions_hydrate_and_load": true,
+   "auth_event_name": "reflex___state____state.hydrate_and_load"
+  },
+  {
+   "t": 315.6,
+   "dir": "ws_in",
+   "len": 40,
+   "head": "40",
+   "nsp": "/_event",
+   "auth_keys": [
+    "sid"
+   ],
+   "auth_mentions_hydrate_and_load": false
+  },
+  {
+   "t": 384.8,
+   "dir": "ws_in",
+   "len": 1815,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_",
+     "rx_router_headers_rx_state_",
+     "rx_router_page_rx_state_",
+     "rx_router_route_id_rx_state_",
+     "rx_router_session_rx_state_",
+     "rx_router_url_rx_state_"
+    ]
+   },
+   "final": null,
+   "events": null
+  },
+  {
+   "t": 385.6,
+   "dir": "ws_in",
+   "len": 88,
+   "head": "42",
+   "nsp": "/_event",
+   "sio_event": "event",
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "final": null,
+   "events": null
+  }
+ ],
+ "timeline": [
+  "     32.1ms grid counts (headers, cells) {}",
+  "    115.3ms grid counts (headers, cells) {\"w_detail_state\": [0, 0], \"w_detail_literal\": [0, 0]}",
+  "    178.6ms ws_open_call {\"url\": \"ws://localhost:3301/_event/?token=d422ab36-a7e2-48d7-ca9a-98b5be1fa534&EIO=4&transport=websocket\"}",
+  "    203.4ms ws_open {}",
+  "    208.1ms ws_in {\"len\": 108}",
+  "    264.4ms ws_out {\"len\": 342, \"nsp\": \"/_event\", \"auth_keys\": [\"event\"], \"auth_mentions_hydrate_and_load\": true, \"auth_event_name\": \"reflex___state____state.hydrate_and_load\"}",
+  "    264.9ms window.__reflex ASSIGNED (5 libs) at     at set (<anonymous>:13:63) |     at http://localhost:3301/assets/root-ByH-tAp0.js:82:324 |     at El (http://localhost:3301/assets/entry.client-H-Leh00q.js:8:94941) |     at Uu (http://localhost:3301/assets/entry.client-H-Leh00q.js:8:118109) |     at Hu (http://localhost:3301/assets/entry.client",
+  "    315.6ms ws_in {\"len\": 40, \"nsp\": \"/_event\", \"auth_keys\": [\"sid\"], \"auth_mentions_hydrate_and_load\": false}",
+  "    374.2ms grid counts (headers, cells) {\"w_detail_state\": [2, 4], \"w_detail_literal\": [2, 4]}",
+  "    384.8ms ws_in {\"len\": 1815, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\", \"rx_router_headers_rx_state_\", \"rx_router_page_rx_state_\", \"rx_router_route_id_rx_state_\", \"rx_router_session_rx_state_\", \"rx_router_url_rx_state_\"]}, \"final\": null, \"events\": null}",
+  "    385.6ms ws_in {\"len\": 88, \"nsp\": \"/_event\", \"sio_event\": \"event\", \"delta\": {\"reflex___state____state\": [\"is_hydrated_rx_state_\"]}, \"final\": null, \"events\": null}",
+  "   3596.2ms grid counts (headers, cells) {\"w_detail_state\": [4, 8], \"w_detail_literal\": [2, 4]}",
+  "   3674.9ms grid counts (headers, cells) {\"w_detail_state\": [4, 8], \"w_detail_literal\": [4, 8]}"
+ ],
+ "console": [
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.417
+  },
+  {
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "t": 0.418
+  },
+  {
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "t": 0.419
+  },
+  {
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "t": 0.419
+  },
+  {
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "t": 0.419
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.419
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.42
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.42
+  },
+  {
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "t": 0.42
+  },
+  {
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "t": 0.42
+  },
+  {
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "t": 0.42
+  },
+  {
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "t": 0.42
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.42
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 0.42
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 3.528
+  },
+  {
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "t": 3.529
+  },
+  {
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "t": 3.529
+  },
+  {
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "t": 3.529
+  },
+  {
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "t": 3.53
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 3.53
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 3.53
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 6.139
+  },
+  {
+   "type": "error",
+   "text": "************************************************ AG Grid Enterprise License ************************************************",
+   "t": 6.139
+  },
+  {
+   "type": "error",
+   "text": "************************************************** License Key Not Found ***************************************************",
+   "t": 6.14
+  },
+  {
+   "type": "error",
+   "text": "* All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+   "t": 6.14
+  },
+  {
+   "type": "error",
+   "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+   "t": 6.14
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 6.14
+  },
+  {
+   "type": "error",
+   "text": "****************************************************************************************************************************",
+   "t": 6.14
+  }
+ ],
+ "pageerrors": [],
+ "pw_frames": [
+  {
+   "dir": "in",
+   "t": 0.215,
+   "summary": {
+    "len": 108,
+    "head": "0{"
+   }
+  },
+  {
+   "dir": "out",
+   "t": 0.421,
+   "summary": {
+    "len": 342,
+    "head": "40",
+    "nsp": "/_event",
+    "auth_keys": [
+     "event"
+    ],
+    "auth_mentions_hydrate_and_load": true,
+    "auth_event_name": "reflex___state____state.hydrate_and_load"
+   }
+  },
+  {
+   "dir": "in",
+   "t": 0.421,
+   "summary": {
+    "len": 40,
+    "head": "40",
+    "nsp": "/_event",
+    "auth_keys": [
+     "sid"
+    ],
+    "auth_mentions_hydrate_and_load": false
+   }
+  },
+  {
+   "dir": "in",
+   "t": 0.421,
+   "summary": {
+    "len": 1815,
+    "head": "42",
+    "nsp": "/_event",
+    "sio_event": "event",
+    "delta": {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_",
+      "rx_router_headers_rx_state_",
+      "rx_router_page_rx_state_",
+      "rx_router_route_id_rx_state_",
+      "rx_router_session_rx_state_",
+      "rx_router_url_rx_state_"
+     ]
+    },
+    "final": null,
+    "events": null
+   }
+  },
+  {
+   "dir": "in",
+   "t": 0.421,
+   "summary": {
+    "len": 88,
+    "head": "42",
+    "nsp": "/_event",
+    "sio_event": "event",
+    "delta": {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_"
+     ]
+    },
+    "final": null,
+    "events": null
+   }
+  }
+ ],
+ "raw_ws": [
+  {
+   "t": 208.1,
+   "dir": "ws_in",
+   "data": "0{\"sid\":\"6O7Gto6zjmfWAHqTAAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "t": 264.4,
+   "dir": "ws_out",
+   "data": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"f05849ba59c543dd\",\"95c87de63afdd5da\",\"34fd6223f7cd2e3c\",\"f4263b8274e9e12c\",\"dcc2ada93d26b909\",\"f958b7853c5a3438\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/detail/\",\"asPath\":\"/detail/\"}}}"
+  },
+  {
+   "t": 315.6,
+   "dir": "ws_in",
+   "data": "40/_event,{\"sid\":\"6ImjWkmeMj1lo3yZAAAP\"}"
+  },
+  {
+   "t": 384.8,
+   "dir": "ws_in",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"+Z9iOuE/uxud9j2GL00tSA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"+Z9iOuE/uxud9j2GL00tSA==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3301\",\"path\":\"/detail\",\"raw_path\":\"/detail/\",\"full_path\":\"http://localhost:3301/detail\",\"full_raw_path\":\"http://localhost:3301/detail/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/detail\",\"rx_router_session_rx_state_\":{\"client_token\":\"d422ab36-a7e2-48d7-ca9a-98b5be1fa534\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"6ImjWkmeMj1lo3yZAAAP\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3301\",\"origin\":\"http://localhost:3301\",\"path\":\"/detail/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3301/detail/\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "t": 385.6,
+   "dir": "ws_in",
+   "data": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "detail": {
+  "w_detail_state": {
+   "detail_rows": 1,
+   "detail_headers": [
+    "Count",
+    "Value"
+   ],
+   "detail_cells": 4
+  },
+  "w_detail_literal": {
+   "detail_rows": 1,
+   "detail_headers": [
+    "Count",
+    "Value"
+   ],
+   "detail_cells": 4
+  }
+ }
+}

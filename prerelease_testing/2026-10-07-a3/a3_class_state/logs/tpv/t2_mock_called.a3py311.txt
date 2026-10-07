@@ -1,0 +1,14 @@
+reflex 0.10.0a3
+  setattr(Svc,'_client', MagicMock())  [typed Optional[Client] slot]             -> RAISES TypeError: Invalid default for field '_client': expected typing.Optional[__main__.Client], got <MagicMock name=
+     plain MagicMock .called after the assignment attempt: True call_count: 1
+  setattr(Svc,'_untyped', MagicMock())  [unannotated None placeholder]           -> RAISES TypeError: Invalid default for field '_untyped': expected <class 'NoneType'>, got <MagicMock name='untyped_mock
+     MagicMock .called: True call_count: 1
+  setattr(Svc,'_client', MagicMock(spec=Client))                                 -> None
+     spec'd MagicMock .called: False
+  setattr(Svc,'_client', FakeClient())  [duck-typed double]                      -> RAISES TypeError: Invalid default for field '_client': expected typing.Optional[__main__.Client], got <__main__.FakeCl
+  setattr(Svc,'_n', MagicMock(return_value=7))  [int slot; mock acts as factory] -> None
+     int-returning mock .called: True call_count: 1
+  fresh Svc()._n  (each new instance calls the mock again?)                      -> 7
+     mock call_count after one more instance: 2
+  mock.patch.object(Svc,'_n', MagicMock(return_value=8)).start()                 -> <MagicMock id='140684648178320'>
+    ... then .stop()                                                             -> False

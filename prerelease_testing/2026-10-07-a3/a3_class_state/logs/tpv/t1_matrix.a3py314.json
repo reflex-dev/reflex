@@ -1,0 +1,2770 @@
+{
+ "reflex": "0.10.0a3",
+ "venv": "a3_class_state-a3-py314",
+ "matrix": [
+  {
+   "kind": "private annotated (_v: int = 5)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "private annotated (_v: int = 5)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "private annotated (_v: int = 5)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "private annotated (_v: int = 5)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "private annotated (_v: int = 5)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "private annotated (_v: int = 5)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "private annotated (_v: int = 5)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "public annotated (v: int = 5)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "public annotated (v: int = 5)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "public annotated (v: int = 5)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "public annotated (v: int = 5)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "public annotated (v: int = 5)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "public annotated (v: int = 5)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "public annotated (v: int = 5)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "rx.field public (v: int = rx.field(default=5))",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field public (v: int = rx.field(default=5))",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field public (v: int = rx.field(default=5))",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field public (v: int = rx.field(default=5))",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field public (v: int = rx.field(default=5))",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field public (v: int = rx.field(default=5))",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field public (v: int = rx.field(default=5))",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "rx.field private (_v: int = rx.field(default=5))",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field private (_v: int = rx.field(default=5))",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field private (_v: int = rx.field(default=5))",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field private (_v: int = rx.field(default=5))",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field private (_v: int = rx.field(default=5))",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field private (_v: int = rx.field(default=5))",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "rx.field private (_v: int = rx.field(default=5))",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "unannotated private (_v = 5)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated private (_v = 5)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated private (_v = 5)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated private (_v = 5)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated private (_v = 5)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated private (_v = 5)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated private (_v = 5)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "unannotated public (v = 5)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated public (v = 5)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated public (v = 5)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated public (v = 5)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated public (v = 5)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated public (v = 5)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "unannotated public (v = 5)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "mutable default private (_v: list[int] = [1])",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mutable default private (_v: list[int] = [1])",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mutable default private (_v: list[int] = [1])",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mutable default private (_v: list[int] = [1])",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mutable default private (_v: list[int] = [1])",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mutable default private (_v: list[int] = [1])",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mutable default private (_v: list[int] = [1])",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "default_factory private (rx.field(default_factory))",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "default_factory private (rx.field(default_factory))",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "default_factory private (rx.field(default_factory))",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "default_factory private (rx.field(default_factory))",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "default_factory private (rx.field(default_factory))",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "default_factory private (rx.field(default_factory))",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     99
+    ],
+    "field": [
+     99
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "default_factory private (rx.field(default_factory))",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": [
+     1
+    ],
+    "field": [
+     1
+    ],
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "annotation excludes None default (_v: int = None)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "annotation excludes None default (_v: int = None)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "annotation excludes None default (_v: int = None)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "annotation excludes None default (_v: int = None)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "annotation excludes None default (_v: int = None)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": "TypeError: Invalid default for field '_v': expected <class 'int'>, got None of type <class 'NoneType'>.",
+   "after": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "leaked": true,
+   "patch_visible_to_instances": true,
+   "clean": false
+  },
+  {
+   "kind": "annotation excludes None default (_v: int = None)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "annotation excludes None default (_v: int = None)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "Optional[int] = None (_v: Optional[int] = None)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "Optional[int] = None (_v: Optional[int] = None)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "Optional[int] = None (_v: Optional[int] = None)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "Optional[int] = None (_v: Optional[int] = None)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "Optional[int] = None (_v: Optional[int] = None)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "Optional[int] = None (_v: Optional[int] = None)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "Optional[int] = None (_v: Optional[int] = None)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": null,
+    "field": null,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "mixin private (patch S._v)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin private (patch S._v)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin private (patch S._v)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin private (patch S._v)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin private (patch S._v)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin private (patch S._v)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin private (patch S._v)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "mixin public (patch S.v)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin public (patch S.v)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin public (patch S.v)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin public (patch S.v)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin public (patch S.v)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin public (patch S.v)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "mixin public (patch S.v)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "substate private (patch Child._v, declared on Parent)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "<absent>"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "substate private (patch Child._v, declared on Parent)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "<absent>"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "substate private (patch Child._v, declared on Parent)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "patch_error": "KeyError: '_v'",
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": false
+  },
+  {
+   "kind": "substate private (patch Child._v, declared on Parent)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "<absent>"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "substate private (patch Child._v, declared on Parent)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "<absent>"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "substate private (patch Child._v, declared on Parent)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "<absent>"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "substate private (patch Child._v, declared on Parent)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "<absent>"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState private (generated state)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState private (generated state)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState private (generated state)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState private (generated state)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState private (generated state)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState private (generated state)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState private (generated state)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState public (generated state)",
+   "mech": "monkeypatch.setattr(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState public (generated state)",
+   "mech": "mock.patch.object(cls,name,v)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState public (generated state)",
+   "mech": "manual: old=cls.__dict__[n]; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState public (generated state)",
+   "mech": "manual: old=getattr(cls,n); set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState public (generated state)",
+   "mech": "manual: old=<original value>; set; set(old)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState public (generated state)",
+   "mech": "monkeypatch.setattr(Field,'default',v)  [workaround?]",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 99,
+    "field": 99,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": true,
+   "clean": true
+  },
+  {
+   "kind": "ComponentState public (generated state)",
+   "mech": "monkeypatch.delattr(cls,name)",
+   "before": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "patch_error": null,
+   "during": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "undo_error": null,
+   "after": {
+    "inst": 5,
+    "field": 5,
+    "dict": "Field"
+   },
+   "leaked": false,
+   "patch_visible_to_instances": false,
+   "clean": true
+  }
+ ],
+ "control": [
+  {
+   "control": "method helper",
+   "monkeypatch.setattr": {
+    "patch_error": null,
+    "during": "patched",
+    "undo_error": null,
+    "after": "orig"
+   },
+   "mock.patch.object": {
+    "patch_error": null,
+    "during": "patched",
+    "undo_error": null,
+    "after": "orig"
+   }
+  },
+  {
+   "control": "classmethod cm",
+   "monkeypatch.setattr": {
+    "patch_error": null,
+    "during": "cm-patched",
+    "undo_error": null,
+    "after": "cm-orig"
+   },
+   "mock.patch.object": {
+    "patch_error": null,
+    "during": "cm-patched",
+    "undo_error": null,
+    "after": "cm-orig"
+   }
+  },
+  {
+   "control": "ClassVar CV",
+   "monkeypatch.setattr": {
+    "patch_error": null,
+    "during": 11,
+    "undo_error": null,
+    "after": 10
+   },
+   "mock.patch.object": {
+    "patch_error": null,
+    "during": 11,
+    "undo_error": null,
+    "after": 10
+   }
+  },
+  {
+   "control": "computed var doubled",
+   "monkeypatch.setattr": {
+    "patch_error": null,
+    "during": 12345,
+    "undo_error": null,
+    "after": 2
+   },
+   "mock.patch.object": {
+    "patch_error": null,
+    "during": 12345,
+    "undo_error": null,
+    "after": 2
+   }
+  },
+  {
+   "control": "event handler bump (replace with plain func)",
+   "monkeypatch.setattr": {
+    "patch_error": null,
+    "during": "callable",
+    "undo_error": null,
+    "after": "callable"
+   },
+   "mock.patch.object": {
+    "patch_error": null,
+    "during": "callable",
+    "undo_error": null,
+    "after": "callable"
+   }
+  }
+ ]
+}

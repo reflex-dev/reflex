@@ -1,0 +1,13 @@
+..F...                                                                   [100%]
+=================================== FAILURES ===================================
+E   TypeError: Invalid default for field '_client': expected test_monkeypatch_backend_var.Client | None, got <Mock name='fake()' id='140624363339264'> of type <class 'unittest.mock.Mock'>.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3_class_state-a3-py313/lib/python3.13/site-packages/reflex_base/vars/base.py:4923: TypeError: Invalid default for field '_client': expected test_monkeypatch_backend_var.Client | None, got <Mock name='fake()' id='140624363339264'> of type <class 'unittest.mock.Mock'>.
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_monkeypatch_backend_var.py::test_monkeypatch_setattr_value_of_declared_type
+PASSED test_monkeypatch_backend_var.py::test_after_monkeypatch_default_is_restored
+PASSED test_monkeypatch_backend_var.py::test_mock_patch_object_context_manager
+PASSED test_monkeypatch_backend_var.py::test_mock_patch_object_decorator
+PASSED test_monkeypatch_backend_var.py::test_after_all_default_is_restored
+FAILED test_monkeypatch_backend_var.py::test_monkeypatch_setattr_mock - TypeE...
+1 failed, 5 passed in 0.23s

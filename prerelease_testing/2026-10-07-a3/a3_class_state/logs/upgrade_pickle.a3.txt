@@ -1,0 +1,9 @@
+reflex 0.10.0a3
+saved-stable.bin: count=42 _secret='be' dirty_vars=set() dirty_substates=set() instance-dict keys=['_secret', 'count', 'label']
+   after mutation dirty_vars={'_secret', 'count'}
+   re-serialized: stale keys present=[]
+   reload: count=43 _secret='changed'
+saved-alpha2.bin: count=42 _secret='be' dirty_vars=set() dirty_substates=set() instance-dict keys=['_secret', 'count', 'label']
+   after mutation dirty_vars={'_secret', 'count'}
+   re-serialized: stale keys present=[]
+   reload: count=43 _secret='changed'

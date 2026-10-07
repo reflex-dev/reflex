@@ -1,0 +1,3 @@
+object(): TypeError: Invalid default for field '_client': expected <class 'NoneType'>, got <object object at 0x7f2e3
+callable: TypeError: Invalid default for field '_client': expected <class 'NoneType'>, got 'x' of type <class 'str'>
+user callable ran: ['called']

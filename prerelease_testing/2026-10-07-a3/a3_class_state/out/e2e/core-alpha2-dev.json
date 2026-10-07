@@ -1,0 +1,287 @@
+{
+ "home": {
+  "fstring_label": "label=label-const",
+  "sized_width": "16px",
+  "items": [
+   "i1",
+   "i2"
+  ],
+  "classvar_label": "classvar-const",
+  "cs_btn_label": "+5",
+  "cs_count_after_click": "5",
+  "1_show": {
+   "shown": "key='sk_live'",
+   "log": "key='sk_live'"
+  },
+  "2_show_after_3.5s": {
+   "shown": "key='sk_live'",
+   "log": "key='sk_live' | key='sk_live'"
+  },
+  "3_set_instance": {
+   "shown": "key='sk_live'",
+   "log": "key='sk_live' | key='sk_live'"
+  },
+  "4_show": {
+   "shown": "key='set-on-instance'",
+   "log": "key='sk_live' | key='sk_live' | key='set-on-instance'"
+  },
+  "5_reset": {
+   "shown": "",
+   "log": "reset-done"
+  },
+  "6_show": {
+   "shown": "key='sk_live'",
+   "log": "reset-done | key='sk_live'"
+  },
+  "7_after_reload": {
+   "shown": "key='sk_live'",
+   "log": "reset-done | key='sk_live'"
+  }
+ },
+ "cs": {
+  "0_initial": {
+   "count_a": "10",
+   "label_a": "lbl10",
+   "tags_a": "init10",
+   "hidden_a": "",
+   "count_b": "20",
+   "label_b": "lbl20",
+   "tags_b": "init20",
+   "hidden_b": ""
+  },
+  "1_after_incr_a2_b1": {
+   "count_a": "12",
+   "label_a": "lbl10",
+   "tags_a": "init10,t11,t12",
+   "hidden_a": "",
+   "count_b": "21",
+   "label_b": "lbl20",
+   "tags_b": "init20,t21",
+   "hidden_b": ""
+  },
+  "2_after_reset_a": {
+   "count_a": "10",
+   "label_a": "lbl10",
+   "tags_a": "init10",
+   "hidden_a": "",
+   "count_b": "21",
+   "label_b": "lbl20",
+   "tags_b": "init20,t21",
+   "hidden_b": ""
+  },
+  "3_after_showhidden": {
+   "count_a": "10",
+   "label_a": "lbl10",
+   "tags_a": "init10",
+   "hidden_a": "hidden=1001",
+   "count_b": "21",
+   "label_b": "lbl20",
+   "tags_b": "init20,t21",
+   "hidden_b": "hidden=2001"
+  },
+  "4_after_reconf_b(type(self).count=77;reset)": {
+   "count_a": "10",
+   "label_a": "lbl10",
+   "tags_a": "init10",
+   "hidden_a": "hidden=1001",
+   "count_b": "77",
+   "label_b": "lbl20",
+   "tags_b": "init20",
+   "hidden_b": ""
+  },
+  "editable_text": {
+   "et_default": "Click to edit",
+   "et_editme": "Edit me!",
+   "et_fun": "Reflex is fun",
+   "editme_input_visible": true,
+   "editme_input_value": "Edit me!",
+   "after_edit": {
+    "et_default": "Click to edit",
+    "et_editme": "Edited!",
+    "et_fun": "Reflex is fun"
+   }
+  },
+  "5_after_reload_same_session": {
+   "count_a": "10",
+   "label_a": "lbl10",
+   "tags_a": "init10",
+   "hidden_a": "hidden=1001",
+   "count_b": "77",
+   "label_b": "lbl20",
+   "tags_b": "init20",
+   "hidden_b": ""
+  },
+  "6_new_session_tab2": {
+   "count_a": "10",
+   "label_a": "lbl10",
+   "tags_a": "init10",
+   "count_b": "77",
+   "label_b": "lbl20",
+   "tags_b": "init20"
+  }
+ },
+ "storage": {
+  "0_initial": {
+   "v_ls_fac_assigned": "from-factory",
+   "v_ls_declared_fac": "decl-fac",
+   "v_ls_plain": "assigned-plain",
+   "v_ls_untouched": "untouched-default",
+   "v_ck": "assigned-ck",
+   "lscs_value": "cs-initial"
+  },
+  "0_browser_storage": {
+   "local": {
+    "theme": "system",
+    "last_compiled_theme": "system"
+   },
+   "cookie": ""
+  },
+  "1_after_change": {
+   "v_ls_fac_assigned": "changed-fac",
+   "v_ls_declared_fac": "changed-decl",
+   "v_ls_plain": "changed-plain",
+   "v_ls_untouched": "changed-untouched",
+   "v_ck": "changed-ck",
+   "lscs_value": "cs-changed"
+  },
+  "1_browser_storage": {
+   "local": {
+    "theme": "system",
+    "decl_fac_key": "changed-decl",
+    "ls_untouched_key": "changed-untouched",
+    "ls_fac_key2": "changed-fac",
+    "last_compiled_theme": "system"
+   },
+   "cookie": ""
+  },
+  "2_new_tab_same_browser": {
+   "v_ls_fac_assigned": "changed-fac",
+   "v_ls_declared_fac": "changed-decl",
+   "v_ls_plain": "assigned-plain",
+   "v_ls_untouched": "changed-untouched",
+   "v_ck": "assigned-ck",
+   "lscs_value": "cs-initial"
+  },
+  "3_after_reset": {
+   "v_ls_fac_assigned": "from-factory",
+   "v_ls_declared_fac": "decl-fac",
+   "v_ls_plain": "assigned-plain",
+   "v_ls_untouched": "untouched-default",
+   "v_ck": "assigned-ck",
+   "lscs_value": "cs-changed"
+  },
+  "3_browser_storage": {
+   "local": {
+    "theme": "system",
+    "decl_fac_key": "decl-fac",
+    "ls_untouched_key": "untouched-default",
+    "ls_fac_key2": "from-factory",
+    "last_compiled_theme": "system"
+   },
+   "cookie": ""
+  }
+ },
+ "dunder": {
+  "0_initial": {
+   "d_view": "",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "1_bump": {
+   "d_view": "counter=1",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "2_bump_silent": {
+   "d_view": "counter=1",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "3_bump_silent": {
+   "d_view": "counter=1",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "4_show": {
+   "d_view": "counter=3 fielded=0 params=Params(1)",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "0"
+  },
+  "5_bump_fielded": {
+   "d_view": "counter=3 fielded=0 params=Params(1)",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "1"
+  },
+  "6_bump_mx": {
+   "d_view": "mx=1",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "1"
+  },
+  "7_bump_mx": {
+   "d_view": "mx=2",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "1"
+  },
+  "8_after_reload": {
+   "d_view": "mx=2",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "1"
+  },
+  "9_show_after_reload": {
+   "d_view": "counter=3 fielded=1 params=Params(1)",
+   "d_counter_cv": "0",
+   "d_fielded_cv": "1"
+  }
+ },
+ "console": [
+  "[tab1] log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "[tab1] debug: [vite] connecting...",
+  "[tab1] debug: [vite] connected.",
+  "[tab1] info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "[tab1] log: Disconnect websocket on page navigation",
+  "[tab1] log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "[tab1] debug: [vite] connecting...",
+  "[tab1] debug: [vite] connected.",
+  "[tab1] info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "[tab1] log: Disconnect websocket on page navigation",
+  "[tab1] log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "[tab1] debug: [vite] connecting...",
+  "[tab1] debug: [vite] connected.",
+  "[tab1] info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "[tab1] log: Disconnect websocket on page navigation",
+  "[tab1] log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "[tab1] debug: [vite] connecting...",
+  "[tab1] info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "[tab1] debug: [vite] connected.",
+  "[tab2] log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "[tab2] debug: [vite] connecting...",
+  "[tab2] debug: [vite] connected.",
+  "[tab2] info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "[tab2] log: Disconnect websocket on pagehide",
+  "[tab1] log: Disconnect websocket on page navigation",
+  "[tab1] log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "[tab1] debug: [vite] connecting...",
+  "[tab1] debug: [vite] connected.",
+  "[tab1] info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "[tab2] log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "[tab2] debug: [vite] connecting...",
+  "[tab2] debug: [vite] connected.",
+  "[tab2] info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "[tab2] log: Disconnect websocket on pagehide",
+  "[tab1] log: Disconnect websocket on page navigation",
+  "[tab1] log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "[tab1] debug: [vite] connecting...",
+  "[tab1] debug: [vite] connected.",
+  "[tab1] info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "[tab1] log: Disconnect websocket on page navigation",
+  "[tab1] log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "[tab1] debug: [vite] connecting...",
+  "[tab1] debug: [vite] connected.",
+  "[tab1] info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+ ],
+ "bad_responses": [],
+ "ws_frames": {
+  "sent": 43,
+  "recv": 70
+ }
+}

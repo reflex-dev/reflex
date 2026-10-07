@@ -1,0 +1,6 @@
+..                                                                       [100%]
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_min.py::test_patch
+PASSED test_min.py::test_default_is_back
+2 passed in 0.95s

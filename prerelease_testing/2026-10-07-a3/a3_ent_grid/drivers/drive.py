@@ -27,7 +27,9 @@ assert "/scratchpad/envs/driver/" in sys.executable, sys.executable
 from playwright.sync_api import sync_playwright  # noqa: E402
 
 CHROMIUM = "/opt/pw-browsers/chromium"
-GRID_WRAPPERS = ["w_state", "w_literal", "w_memo_props", "w_memo_state", "w_onload", "w_state2", "w_detail_state", "w_detail_literal", "w_renderer"]
+GRID_WRAPPERS = ["w_state", "w_literal", "w_memo_props", "w_memo_state", "w_onload", "w_state2", "w_detail_state", "w_detail_literal", "w_renderer",
+                 # a3_ent_grid regression-hunt fixture (apps/entr)
+                 "w_lit", "w_lit_group", "w_js", "w_lam", "w_cond", "w_comp", "w_group", "w_dlit", "w_dstate", "w_memo_lam"]
 
 INIT_JS = r"""
 (() => {
@@ -71,7 +73,7 @@ INIT_JS = r"""
     for (const id of ids) {
       const el = document.getElementById(id);
       if (!el) continue;
-      snap[id] = [el.querySelectorAll(".ag-header-cell").length, el.querySelectorAll(".ag-cell").length];
+      snap[id] = [el.querySelectorAll(".ag-header-cell").length, el.querySelectorAll(".ag-cell").length, el.querySelectorAll(".rt-Badge").length];
     }
     const key = JSON.stringify(snap);
     if (key !== last) { last = key; window.__trace.push({ev: "grid", t: performance.now(), counts: snap}); }
@@ -91,12 +93,24 @@ MEASURE_JS = r"""
       headers: Array.from(el.querySelectorAll(".ag-header-cell")).map((e) => e.innerText.trim()),
       cells: el.querySelectorAll(".ag-cell").length,
       rows: el.querySelectorAll(".ag-center-cols-container .ag-row").length,
+      badges: el.querySelectorAll(".rt-Badge").length,
+      memo_badges: el.querySelectorAll(".memo-badge").length,
+      tip_texts: el.querySelectorAll(".tip-text").length,
+      pinned_top_rows: el.querySelectorAll(".ag-row-pinned").length,
+      group_rows: el.querySelectorAll(".ag-row-group").length,
+      cheap_cells: el.querySelectorAll(".ag-cell.cheap").length,
+      // first rows (pinned rows have row-index t-N): "col-id=text" per cell
+      row_texts: Array.from(el.querySelectorAll(".ag-row")).filter((r) => !r.closest(".ag-details-row")).slice(0, 6).map((r) =>
+        r.getAttribute("row-index") + ": " + Array.from(r.querySelectorAll(".ag-cell")).map((c) => c.getAttribute("col-id") + "=" + c.innerText.trim()).join(" | ")),
     };
   }
   r.probes = Object.fromEntries(Array.from(document.querySelectorAll("[id^=probe-]")).map((e) => [e.id, e.textContent]));
   r.probeCounts = window.__probeCounts || {};
   r.reflexDefinedNow = typeof window.__reflex !== "undefined";
   r.reflexSetAt = window.__reflexSetAt === undefined ? null : window.__reflexSetAt;
+  const cr = (window.__trace || []).filter((e) => e.ev === "cell_render");
+  r.cellRenders = {n: cr.length, first_t: cr.length ? Math.min(...cr.map((e) => e.t)) : null,
+                   without_reflex: cr.filter((e) => !e.has).length, by_src: cr.reduce((a, e) => (a[e.src] = (a[e.src] || 0) + 1, a), {})};
   r.path = location.pathname;
   r.heading = document.getElementById("heading")?.textContent ?? null;
   return r;
@@ -232,6 +246,7 @@ class Runner:
         self.console: list[dict] = []
         self.errors: list[str] = []
         self.pw_frames: list[dict] = []
+        self.http_errors: list[dict] = []
         self.t_nav = time.time()
 
     def new_context(self):
@@ -243,6 +258,9 @@ class Runner:
         self.page.on("console", lambda m: self.console.append({"type": m.type, "text": m.text[:500], "t": round(time.time() - self.t_nav, 3)}))
         self.page.on("pageerror", lambda e: self.errors.append(str(e)[:500]))
         self.page.on("websocket", self._on_ws)
+        # a3_ent_grid: record failed requests and HTTP >= 400 responses (URL + status)
+        self.page.on("response", lambda resp: self.http_errors.append({"url": resp.url[:300], "status": resp.status}) if resp.status >= 400 else None)
+        self.page.on("requestfailed", lambda req: self.http_errors.append({"url": req.url[:300], "failure": str(req.failure)[:200]}))
 
     def _on_ws(self, ws):
         if "_event" not in ws.url:
@@ -251,7 +269,7 @@ class Runner:
         ws.on("framesent", lambda p: self.pw_frames.append({"dir": "out", "t": round(time.time() - self.t_nav, 3), "summary": parse_frame(p if isinstance(p, str) else "")}))
 
     def reset_capture(self):
-        self.console, self.errors, self.pw_frames = [], [], []
+        self.console, self.errors, self.pw_frames, self.http_errors = [], [], [], []
         self.t_nav = time.time()
 
     def wait_boot(self, timeout: float = 45.0, settle: float = 3.0):
@@ -285,18 +303,21 @@ class Runner:
             "console": self.console,
             "pageerrors": self.errors,
             "pw_frames": self.pw_frames,
+            "http_errors": self.http_errors,
             "raw_ws": [{"t": round(e["t"], 1), "dir": e["ev"], "data": e["data"][:6000]} for e in trace if e["ev"] in ("ws_in", "ws_out")],
             **(extra or {}),
         }
         (self.out / f"{name}.json").write_text(json.dumps(rec, indent=1))
-        grids = {k: (len(v["headers"]), v["cells"]) for k, v in m_late["grids"].items()}
+        grids = {k: (len(v["headers"]), v["cells"], v.get("badges")) for k, v in m_late["grids"].items()}
         probes = m_late["probes"]
-        print(f"[{name}] grids(headers,cells)={grids} probes={probes} counts={m_late['probeCounts']} reflexSetAt={m_late['reflexSetAt']}", flush=True)
+        print(f"[{name}] grids(headers,cells,badges)={grids} probes={probes} counts={m_late['probeCounts']} reflexSetAt={m_late['reflexSetAt']} cellRenders={m_late.get('cellRenders')}", flush=True)
         for f in frames:
             if f.get("delta") is not None:
                 print(f"   t={f['t']} delta substates={list(f['delta'].keys())}", flush=True)
             elif f["dir"] == "ws_out" or f.get("sio_event"):
                 print(f"   t={f['t']} {f['dir']} {json.dumps({k: v for k, v in f.items() if k not in ('t', 'dir', 'len', 'head')})[:200]}", flush=True)
+        if self.http_errors:
+            print(f"   http errors / failed requests: {self.http_errors[:6]}", flush=True)
         errs = [c for c in self.console if c["type"] in ("error", "warning")]
         if errs or self.errors:
             print(f"   console errors/warnings: {len(errs)}; pageerrors: {len(self.errors)}", flush=True)
@@ -396,6 +417,76 @@ def run_entv(r: Runner, only: set[str] | None):
         r.snapshot("s10_full_load_second_context")
 
 
+def expand_first(r: Runner, wids: list[str]) -> dict:
+    """Expand the first master row of each master/detail grid and describe its detail grid."""
+    for wid in wids:
+        r.page.locator(f"#{wid} .ag-group-contracted").first.click()
+    time.sleep(2.5)
+    return r.page.evaluate("""(ids) => Object.fromEntries(ids.map((id) => {
+        const el = document.getElementById(id);
+        const det = el.querySelector(".ag-details-row");
+        return [id, {detail_rows: el.querySelectorAll(".ag-details-row").length,
+                     detail_headers: det ? Array.from(det.querySelectorAll(".ag-header-cell")).map((e) => e.innerText.trim()) : null,
+                     detail_cells: det ? Array.from(det.querySelectorAll(".ag-cell")).map((e) => e.innerText.trim()) : null,
+                     detail_badges: det ? det.querySelectorAll(".rt-Badge").length : null}];
+    }))""", wids)
+
+
+def run_entr(r: Runner, only: set[str] | None):
+    """a3_ent_grid regression hunt for enterprise#273 (apps/entr)."""
+
+    def want(n):
+        return not only or n in only
+
+    if want("r1"):
+        r.new_context()
+        r.goto("/lit")
+        r.snapshot("r1_lit_full_load")
+        # hover the first lambda tooltip cell, then the make cell (AG Grid tooltip_field)
+        try:
+            r.page.locator("#w_lit .tip-text").first.hover()
+            time.sleep(1.2)
+            tip = r.page.evaluate("() => Array.from(document.querySelectorAll('.rt-TooltipContent, [role=tooltip]')).map((e) => e.innerText.trim())")
+        except Exception as e:  # noqa: BLE001
+            tip = f"hover failed: {e!r}"[:200]
+        print(f"[r1 tooltip] {tip}", flush=True)
+        r.reload()
+        r.snapshot("r1b_lit_reload", {"tooltip_after_hover": tip})
+    if want("r2"):
+        r.new_context()
+        r.goto("/var")
+        r.snapshot("r2_var_full_load")
+        r.reload()
+        r.snapshot("r2b_var_reload")
+        r.click("#toggle")
+        r.snapshot("r2c_var_after_toggle_off")
+        r.click("#toggle")
+        r.snapshot("r2d_var_after_toggle_on")
+        r.click("#bump")
+        r.snapshot("r2e_var_after_bump")
+    if want("r3"):
+        r.new_context()
+        r.goto("/detail2")
+        extra = expand_first(r, ["w_dlit", "w_dstate"])
+        print(f"[r3 detail] {extra}", flush=True)
+        r.snapshot("r3_detail_expand", {"detail": extra})
+        r.reload()
+        extra = expand_first(r, ["w_dlit", "w_dstate"])
+        print(f"[r3b detail after reload] {extra}", flush=True)
+        r.snapshot("r3b_detail_reload_expand", {"detail": extra})
+    if want("r4"):
+        r.new_context()
+        r.goto("/memo2")
+        r.snapshot("r4_memo_full_load")
+    if want("r5"):
+        r.new_context()
+        r.goto("/other")
+        r.client_nav("#nav-var", "entr var")
+        r.snapshot("r5_client_nav_to_var")
+        r.client_nav("#nav-lit", "entr lit")
+        r.snapshot("r5b_client_nav_to_lit")
+
+
 def run_corev(r: Runner, only: set[str] | None):
     def want(n):
         return not only or n in only
@@ -433,7 +524,7 @@ def run_corev(r: Runner, only: set[str] | None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--app", required=True, choices=["entv", "corev"])
+    ap.add_argument("--app", required=True, choices=["entv", "corev", "entr"])
     ap.add_argument("--url", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--server-venv", required=True)
@@ -452,7 +543,7 @@ def main():
         browser = p.chromium.launch(executable_path=CHROMIUM)
         r = Runner(browser, a.url, out, a.app)
         try:
-            (run_entv if a.app == "entv" else run_corev)(r, only)
+            {"entv": run_entv, "corev": run_corev, "entr": run_entr}[a.app](r, only)
         finally:
             if r.ctx:
                 r.ctx.close()
