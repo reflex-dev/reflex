@@ -1,0 +1,3 @@
+PageContext.get(): LookupError: <ContextVar name='PageContext' at 0x7f493a8b52b0>
+CompileContext.get(): LookupError: <ContextVar name='CompileContext' at 0x7f493a8b5170>
+EventContext.get(): LookupError: <ContextVar name='EventContext' at 0x7f493a81b7e0>

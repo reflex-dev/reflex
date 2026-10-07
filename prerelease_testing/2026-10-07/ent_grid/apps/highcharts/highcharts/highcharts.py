@@ -93,3 +93,41 @@ def index() -> rx.Component:
 
 app = rxe.App()
 app.add_page(index, route="/", title="Highcharts demo")
+
+
+# --- QA additions (ent_grid cluster): charts driven by State vars ---
+class QaHighchartsState(rx.State):
+    """State-driven series and options for QA."""
+
+    data: list[int] = [1, 2, 3]
+    pie: list[dict] = [{"name": "A", "y": 60}, {"name": "B", "y": 40}]
+    title: str = "QA dynamic"
+
+    @rx.event
+    def push(self):
+        self.data = [*self.data, len(self.data) + 1]
+
+    @rx.event
+    def retitle(self):
+        self.title = "QA retitled"
+        self.pie = [{"name": "A", "y": 10}, {"name": "B", "y": 30}, {"name": "C", "y": 60}]
+
+
+def qa_page() -> rx.Component:
+    """QA page: series data / options from State."""
+    return rx.vstack(
+        rx.button("push point", on_click=QaHighchartsState.push, id="qa-push"),
+        rx.button("retitle", on_click=QaHighchartsState.retitle, id="qa-retitle"),
+        rxe.highcharts(
+            rxe.highcharts.title(QaHighchartsState.title),
+            rxe.highcharts.line_series(name="dyn", data=QaHighchartsState.data),
+            container_props={"style": {"height": "300px"}, "id": "qa-line"},
+        ),
+        rxe.highcharts(
+            options={"chart": {"type": "pie"}, "title": {"text": QaHighchartsState.title}, "series": [{"name": "s", "data": QaHighchartsState.pie}]},
+            container_props={"style": {"height": "300px"}, "id": "qa-pie"},
+        ),
+    )
+
+
+app.add_page(qa_page, route="/qa", title="Highcharts QA")

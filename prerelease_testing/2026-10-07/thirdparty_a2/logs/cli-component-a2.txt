@@ -1,0 +1,106 @@
+=== thirdparty_a2-a2
+--- reflex component
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex component --help
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex component init
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex component build
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex component share
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex component install
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex --help
+lines mentioning component: 0
+=== thirdparty-alpha
+--- reflex component
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex component --help
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex component init
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex component build
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex component share
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex component install
+Usage: reflex [OPTIONS] COMMAND [ARGS]...
+Try 'reflex --help' for help.
+
+Error: No such command 'component'. Did you mean 'compile'?
+--- reflex --help
+lines mentioning component: 0
+=== thirdparty-stable
+--- reflex component
+Usage: reflex component [OPTIONS] COMMAND [ARGS]...
+
+  CLI for creating custom components.
+
+Options:
+  --help  Show this message and exit.
+--- reflex component --help
+Usage: reflex component [OPTIONS] COMMAND [ARGS]...
+
+  CLI for creating custom components.
+
+Options:
+  --help  Show this message and exit.
+--- reflex component init
+───────────────────── Initializing reflex-cli-run project ────────────────────
+Info: Populating pyproject.toml with package name: reflex-cli-run
+Info: Initializing the component directory: custom_components/reflex_cli_run
+Info: Creating app for testing: cli_run_demo
+────────────────────────── Initializing cli_run_demo ──────────────────�
+Info: Initializing the web directory.
+--- reflex component build
+Building custom component...
+Failed to import custom_components.reflex_cli_run.__init__
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_base/utils/py
+    importlib.import_module(module_import)
+  File "/usr/lib/python3.12/importlib/__init__.py", line 90, in import_module
+--- reflex component share
+───────────────────── Authentication with Reflex Services ────────────────────
+First let's log in to Reflex backend services.
+Unable to authenticate with Reflex backend services. Make sure you are logged 
+in.
+--- reflex component install
+
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/thirdparty-stable/bin/python: No module named pip
+--- reflex --help
+lines mentioning component: 1

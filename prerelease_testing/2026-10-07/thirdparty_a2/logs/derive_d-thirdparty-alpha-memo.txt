@@ -1,0 +1,3 @@
+--- scenario memo
+`@rx.memo` on `my_memo` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `x`. Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (derive_d.py:32)
+--- end

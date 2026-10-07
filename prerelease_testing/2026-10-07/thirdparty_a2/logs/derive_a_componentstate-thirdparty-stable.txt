@@ -1,0 +1,2 @@
+Counter.create() button label (f-string of cls._step): e.reflex___istate___dynamic____counter_n1.incr", ({  }), ({  })))], [_e], ({  }))))},"+5")
+rx.foreach(Counter._OPTIONS, rx.text): Array.prototype.map.call(["a", "b"] ?? [],((children_rx_state_,props_rx_state_)=>(jsx(RadixThemesText,{as:"p",key:props_rx_state_},children_rx_state_)

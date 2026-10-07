@@ -1,0 +1,2 @@
+Counter.create() button label (f-string of cls._step): EXC BackendVarFormatError: Backend var 'Counter_n1._step' exists only on the server and has no frontend value, so it cannot be used in the UI. Use a regular state var instead.
+rx.foreach(Counter._OPTIONS, rx.text): EXC TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default_factory=functools.partial(<func

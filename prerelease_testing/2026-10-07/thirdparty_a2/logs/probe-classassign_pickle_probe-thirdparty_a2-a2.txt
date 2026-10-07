@@ -1,0 +1,4 @@
+class-level      : Field(default='sk_test_123', is_var=True, annotated_type=str | None) Field(default=False, is_var=True, annotated_type=<class 'bool'>)
+instance (fresh) : 'sk_test_123' False
+instance (pickle): 'sk_test_123' False
+get_fields has _secret_key: True

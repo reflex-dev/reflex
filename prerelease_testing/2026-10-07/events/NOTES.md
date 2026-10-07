@@ -70,6 +70,7 @@ Columns: a2 dev/prod and 0.9.12 dev/prod run today (11:46–12:16 UTC for 0.9.12
 0.9.12's `nested.*` column is the 10-06 per-case run (`prev_out/stable_dev/stable_dev_nested_report.json`) —
 today's rerun reproduced the same storm (`match_list_branch` 244,718 and `deep50_nested_match` 729,087 websocket
 frames sent, then the Playwright driver died, `out/s_dev_nested/s_dev_nested_suite.txt`). a1 dev is the 10-06 run.
+The a2 dev suite was re-run at 12:18 UTC (`out/a2_dev_r2`): all 61 records have the same status as the 07:4x run.
 
 | check | a2 dev | a2 prod | 0.9.12 dev | 0.9.12 prod | a1 dev (10-06) |
 |---|---|---|---|---|---|
@@ -185,6 +186,11 @@ is a real backend var (`_PrivF__counter` in `get_fields()`, dirty, computed view
 exceptions. 0.9.12 dev **and prod** raise `SetUndefinedStateVarError: The state variable '_PrivMixin__scratch' has
 not been defined in 'PrivA'` for the mixin assignment; a1 raises it in dev only. Plain private attributes are
 pickled with the state (`pickle_roundtrip_last_seen='P'`), i.e. they persist across events, on every version.
+Extra (mini `/priv2`, case `priv2`, a2 dev vs 0.9.12 dev, `out/mini_alpha2_priv2`, `out/mini_stable_priv2`): two
+instances of a `ComponentState` whose handler does `self.count += self.__STEP; self.__last = self.count` stay
+independent on a2 (`count=4 last=4` / `count=2 last=2`); 0.9.12 raises `SetUndefinedStateVarError` and the notes
+stay empty. In a background task `self.__outside = 1` before `async with self` raises `ImmutableStateError` on both
+versions (same guard as for vars), and `self.__inside = 2` inside the lock works.
 
 ### 8. Pre-existing anomalies, classified
 - **String Vars use UTF-16 code units** (JS semantics): `"a😀b".length()` renders `4` (Python 3) and `[::-1]`

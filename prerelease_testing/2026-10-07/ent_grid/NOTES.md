@@ -184,3 +184,51 @@ TagsInput controlled by State (add with Enter, remove, duplicate rejected, survi
   so a controlled `value=` Autocomplete cannot be built; passing `on_change` raises
   `ValueError: The Autocomplete does not take in an on_change event trigger` at compile.
 - Driver notes: the MultiSelect `id` lands on the inner input covered by the wrapper (click via focus + ArrowDown, then click the visible option).
+
+## 5. highcharts demo (`apps/highcharts`) — PASS 12/12 on a2 dev and a2 prod
+
+This cluster appended a `/qa` page to `highcharts/highcharts.py` (series `data` and an `options` dict built from State vars,
+updated by buttons).
+```
+scripts/start_server.sh ent_grid-a2 $W/highcharts logs/highcharts-dev-a2.log http://localhost:3318/ -- --frontend-port 3318 --backend-port 8318 --loglevel debug
+python scripts/drive_highcharts.py http://localhost:3318 out/highcharts_dev_a2 ent_grid-a2 dev-a2
+# prod a2: --env prod port 3319 (out/highcharts_prod_a2)
+```
+Checks: 2 charts, 6 columns + 6 line markers + 3 pie slices, shared tooltip ("Mar ● 2025: 1 ● 2026: 3"), line point click →
+`events={"click": State.on_point_click}` → "Clicked Mar: 3 units", legend click hides a series, exporting menu (PNG/JPEG/SVG/
+PDF/CSV/XLS), colour-mode toggle restyles the chart (background white → rgb(20,20,20)), State survives reload; QA: State
+series grows 3 → 4 points, `title` child + options-dict title + pie data follow State, all restored after reload.
+- Anomaly (enterprise, benign): every chart logs the console warning `Highcharts warning: Consider including the
+  "accessibility.js" module ...` (4 per run). Prod: `/favicon.ico` 404 (demo has no assets/).
+- No baseline needed (nothing failed).
+
+## 6. tickets demo (`apps/tickets`, EventHandlerAPIPlugin) — UI 18/18 on a2 dev, a2 prod and 0.9.12 prod; API anomalies identical on 0.9.12
+
+```
+scripts/start_server.sh ent_grid-a2 $W/tickets logs/tickets-dev-a2.log http://localhost:3300/ -- --frontend-port 3300 --backend-port 8300 --loglevel debug
+python scripts/drive_tickets.py http://localhost:3300 out/tickets_dev_a2 ent_grid-a2 dev-a2 http://localhost:8300
+$SB/envs/driver/bin/python scripts/api_tickets.py http://localhost:8300 out/tickets_dev_a2_api.json
+# prod a2: port 3301 (single port: API on 3301); 0.9.12 prod: copy to baseline/tickets_s912 (fresh db), venv ent_grid-s912, port 3302
+```
+UI: Seed (4 rows, Open/Total badges), New Ticket form, search (form submit → `rx.redirect` with `?q=`; reload keeps it via
+`on_load` reading query params), Reset filters, sortable headers asc/desc, row Close button (badge + Open count), Radix select
+priority filter, paging buttons disabled, detail page (`/ticket?ticket_id=` on_load fills the form; save + back), unknown
+ticket_id → error callout, row ⋯ Delete, second context sees the shared DB, ticket created over the HTTP API appears in the
+browser after reload, Clear all. `tickets: list[TicketRecord]` (rx.Model rows) in State serialises fine (greenlet present).
+API (`scripts/api_tickets.py`, same results on a2 dev, a2 prod and 0.9.12 prod — `out/tickets_*_api.json`):
+token 200, api-catalog 200, retrieve_state 401 without / 200 with token, create_ticket 200, no/bad token 401,
+set_status 200, unknown handler 404 (dev) / 405 (prod single-port), private `_reload_from_db` 404/405, GET on a POST endpoint
+405 (dev) / 404 HTML page (prod).
+### 6a. pre-existing enterprise issues (identical on 0.9.12 + the same wheel)
+- `GET /_reflex/events/openapi.yaml` → **500** on a clean install: `AssertionError: pyyaml must be installed to use
+  parse_docstring.` (starlette `SchemaGenerator`); `reflex-enterprise` 0.9.7a4 does not declare PyYAML (its Requires-Dist:
+  asgiproxy, httpx, joserfc, psutil, reflex[db]; mcp extra) and neither reflex nor mcp pulls it. The api-catalog advertises
+  this URL. After `uv pip install pyyaml` into ent_grid-a2 (`logs/venv-a2-add-pyyaml.log`) it returns a valid OpenAPI 3.0.0
+  doc with 35 handler paths (`out/tickets_prod_a2_openapi.yaml`); its "Pages" section lists the index page as
+  `http://localhost:3301/index` (the page is served at `/`) and lists `/404`.
+- Malformed JSON body to an event endpoint → 500 `JSONDecodeError` (unguarded `await request.json()` in
+  `event_handler_api.py:1344`), not 400.
+- Handler errors (missing required arg, wrong type, unknown arg) answer **HTTP 200** with `{"error": "Error processing event: ..."}`
+  (message also has a doubled period: `received extra argument bogus..`); each also logs `Warning: Attempting to send delta to
+  disconnected client '<token>'` (API sessions have no websocket).
+- `Warning: Database is not initialized, run reflex db init first.` at startup (demo uses `TicketRecord.create_all()` instead of alembic; both versions).

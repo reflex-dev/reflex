@@ -1,0 +1,31 @@
+reflex 0.9.12  REFLEX_ENV_MODE=prod
+name       | S.<name> (class)                                 | cls.<name> in classmethod | inst.<name>                  | field? | frontend var?
+_u_str     | str 'label'                                      | str                    | 'label'                      | True   | False
+_u_int     | int 16                                           | int                    | 16                           | True   | False
+_u_dict    | dict {'a': 1}                                    | dict                   | MutableProxy({'a': 1})       | True   | False
+KEY        | Var:StringCastedVar Var.__init_subclass__.<local | Var:StringCastedVar    | 'public-unannotated'         | True   | True
+_cv_key    | str 'classvar-backend'                           | str                    | 'classvar-backend'           | False  | False
+CV_KEY     | str 'classvar-public'                            | str                    | 'classvar-public'            | False  | False
+_ann       | str 'annotated-backend'                          | str                    | 'annotated-backend'          | True   | False
+_fld       | NoneType None                                    | NoneType               | 'field-backend'              | True   | False
+_fld_unann | NoneType None                                    | NoneType               | 'field-unannotated-backend'  | True   | False
+pub        | Var:StringCastedVar Var.__init_subclass__.<local | Var:StringCastedVar    | 'annotated-public'           | True   | True
+_m_key     | str 'mixin-label'                                | str                    | 'mixin-label'                | True   | False
+_m_ann     | str 'mixin-ann'                                  | str                    | 'mixin-ann'                  | True   | False
+Mix._m_key | 'mixin-label'                                   
+Child._inh | 'inherited'                                      | Base._inh='inherited' | inst='inherited'
+type(self)._u_str via instance method: 'label'
+inst.__class__._u_str: 'label'
+--- Python-level use of the class attribute
+S._u_str == 'label'      : True
+f'{S._u_str}'            : 'label'
+S._u_int + 1             : 17
+S._u_dict['a']           : 1
+bool(S._fld) [default ''] : False
+--- Component use
+rx.text(S._u_str)        : 'jsx(RadixThemesText,{as:"p"},"label")'
+rx.icon('x', size=S._u_int): 'jsx(LucideX,{size:16},)'
+rx.text(S.KEY)           : 'jsx(RadixThemesText,{as:"p"},reflex___state____state____main_____s...
+rx.text(S._cv_key)       : 'jsx(RadixThemesText,{as:"p"},"classvar-backend")'
+--- frontend dict sent to client contains KEY?
+keys of S.dict(): ['KEY_rx_state_', 'pub_rx_state_']

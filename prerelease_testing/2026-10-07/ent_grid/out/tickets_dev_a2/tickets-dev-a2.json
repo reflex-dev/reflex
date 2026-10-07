@@ -1,0 +1,619 @@
+{
+ "name": "tickets-dev-a2",
+ "python": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/driver/bin/python",
+ "checks": [
+  {
+   "t": 3.6,
+   "name": "seed: 4 tickets listed, Open 4 / Total 4",
+   "ok": true,
+   "detail": {
+    "titles": [
+     "Printer offline",
+     "Email signature broken",
+     "VPN slow from home",
+     "Laptop won't boot"
+    ],
+    "open": "Open: 4",
+    "total": "Total: 4"
+   }
+  },
+  {
+   "t": 3.82,
+   "name": "create form: new ticket appears first (created_at desc), Total 5",
+   "ok": true,
+   "detail": [
+    "Monitor flickers",
+    "Printer offline",
+    "Email signature broken",
+    "VPN slow from home",
+    "Laptop won't boot"
+   ]
+  },
+  {
+   "t": 3.99,
+   "name": "search: Apply redirects with ?q=VPN and lists 1 ticket",
+   "ok": true,
+   "detail": {
+    "url": "http://localhost:3300/?page=1&page_size=20&sort_by=created_at&sort_dir=desc&q=VPN",
+    "titles": [
+     "VPN slow from home"
+    ]
+   }
+  },
+  {
+   "t": 6.23,
+   "name": "search: reload keeps the filter from the URL (on_load reads query params)",
+   "ok": true,
+   "detail": [
+    "VPN slow from home"
+   ]
+  },
+  {
+   "t": 6.37,
+   "name": "reset filters: back to 5 tickets and clean URL params",
+   "ok": true,
+   "detail": {
+    "url": "http://localhost:3300/?page=1&page_size=20&sort_by=created_at&sort_dir=desc",
+    "n": 5
+   }
+  },
+  {
+   "t": 7.46,
+   "name": "sort: Title header sorts ascending",
+   "ok": true,
+   "detail": [
+    "Email signature broken",
+    "Laptop won't boot",
+    "Monitor flickers",
+    "Printer offline",
+    "VPN slow from home"
+   ]
+  },
+  {
+   "t": 8.56,
+   "name": "sort: second click sorts descending",
+   "ok": true,
+   "detail": [
+    "VPN slow from home",
+    "Printer offline",
+    "Monitor flickers",
+    "Laptop won't boot",
+    "Email signature broken"
+   ]
+  },
+  {
+   "t": 9.81,
+   "name": "row action: close button -> status badge 'closed', Open count 4",
+   "ok": true,
+   "detail": {
+    "row": "Printer offline\n\n\tmedium\tclosed\t\n\ncarol\n\n\t\nStart\nClose\n\u22ef",
+    "open": "Open: 4"
+   }
+  },
+  {
+   "t": 11.18,
+   "name": "filter: priority=high select -> only high tickets",
+   "ok": true,
+   "detail": [
+    "Laptop won't boot"
+   ]
+  },
+  {
+   "t": 11.29,
+   "name": "paging: Prev/Next disabled on single page",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "t": 12.95,
+   "name": "detail: on_load fills the edit form from the DB",
+   "ok": true,
+   "detail": "Email signature broken"
+  },
+  {
+   "t": 14.64,
+   "name": "detail: save + back shows the edited title in the list",
+   "ok": true,
+   "detail": [
+    "Monitor flickers",
+    "Printer offline",
+    "Email signature fixed?",
+    "VPN slow from home",
+    "Laptop won't boot"
+   ]
+  },
+  {
+   "t": 16.82,
+   "name": "detail: unknown ticket_id shows the error callout",
+   "ok": true,
+   "detail": "Ticket detail\n\nReview and edit a ticket.\n\nBack to tickets\n\nTicket ID: does-not-exist\n\nTicket not found."
+  },
+  {
+   "t": 19.16,
+   "name": "row menu: Delete removes the ticket",
+   "ok": true,
+   "detail": [
+    "Printer offline",
+    "Email signature fixed?",
+    "VPN slow from home",
+    "Laptop won't boot"
+   ]
+  },
+  {
+   "t": 21.82,
+   "name": "second context: same 4 tickets from the shared DB",
+   "ok": true,
+   "detail": [
+    "Printer offline",
+    "Email signature fixed?",
+    "VPN slow from home",
+    "Laptop won't boot"
+   ]
+  },
+  {
+   "t": 21.88,
+   "name": "HTTP API: create_ticket returns 200",
+   "ok": true,
+   "detail": 200
+  },
+  {
+   "t": 22.55,
+   "name": "HTTP API: browser sees the ticket created over HTTP after reload",
+   "ok": true,
+   "detail": [
+    "Created over HTTP",
+    "Printer offline",
+    "Email signature fixed?",
+    "VPN slow from home",
+    "Laptop won't boot"
+   ]
+  },
+  {
+   "t": 22.92,
+   "name": "Clear all empties the table",
+   "ok": true,
+   "detail": []
+  }
+ ],
+ "notes": [
+  "guard: 0.10.0a2 0.9.7a4"
+ ],
+ "summary": {
+  "checks_failed": [],
+  "n_checks": 18,
+  "console_total": 30,
+  "console_benign": 24,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "page_errors": 0,
+  "failed_requests": 0,
+  "http_errors": 0
+ },
+ "anomalies": {
+  "console_errors": [],
+  "console_warnings": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_errors": []
+ },
+ "console_all": [
+  {
+   "t": 4.0,
+   "ctx": "tickets",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/?page=1&page_size=20&sort_by=created_at&sort_dir=desc&q=VPN",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 14.64,
+   "ctx": "tickets",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/?page=1&page_size=20&sort_by=created_at&sort_dir=desc",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 16.83,
+   "ctx": "tickets",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/ticket?ticket_id=does-not-exist",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 21.88,
+   "ctx": "tickets",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3300/",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 776,
+    "column": 14,
+    "lineNumber": 776,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 22.93,
+   "ctx": "tickets",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  },
+  {
+   "t": 22.96,
+   "ctx": "tickets-ctx2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3300/",
+   "location": {
+    "url": "http://localhost:3300/utils/state.js",
+    "line": 788,
+    "column": 14,
+    "lineNumber": 788,
+    "columnNumber": 14
+   },
+   "benign": false
+  }
+ ],
+ "websockets": {
+  "ws://localhost:3300/?token=Y7FILx3AAeDJ": {
+   "ctx": "tickets",
+   "sent": 0,
+   "recv": 6,
+   "sent_samples": [],
+   "recv_samples": [
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}",
+    "{\"type\":\"connected\"}"
+   ],
+   "closed": true
+  },
+  "ws://localhost:8300/_event/?token=c5dd78ca-e1e5-42be-870a-357eaaa2edb4&EIO=4&transport=websocket": {
+   "ctx": "tickets",
+   "sent": 36,
+   "recv": 79,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d495acac2e86e47c\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"38eb7eb15a4179a4\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.seed\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.toggle_new_ticket_form\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.set_draft_title\",\"payload\":{\"value\":\"Monitor flickers\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.set_draft_description\",\"payload\":{\"value\":\"Second screen flickers\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.set_draft_assignee\",\"payload\":{\"value\":\"dave\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.submit_draft\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.apply_query\",\"payload\":{\"query\":\"VPN\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc&q=VPN\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\",\"q\":\"VPN\"}}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d495acac2e86e47c\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"38eb7eb15a4179a4\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc&q=VPN\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\",\"q\":\"VPN\"}}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.reset_filters\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc&q=VPN\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\",\"q\":\"VPN\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.toggle_sort\",\"payload\":{\"value\":\"title\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=title&sort_dir=asc\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"title\",\"sort_dir\":\"asc\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.toggle_sort\",\"payload\":{\"value\":\"title\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=title&sort_dir=asc\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"title\",\"sort_dir\":\"asc\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=title&sort_dir=desc\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"title\",\"sort_dir\":\"desc\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.set_status\",\"payload\":{\"ticket_id\":\"2128241c-ef46-4ebb-a166-708bd6f11587\",\"status\":\"closed\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=title&sort_dir=desc\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"title\",\"sort_dir\":\"desc\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.set_priority_filter\",\"payload\":{\"value\":\"high\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=title&sort_dir=desc\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"title\",\"sort_dir\":\"desc\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=title&sort_dir=desc&priority=high\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"title\",\"sort_dir\":\"desc\",\"priority\":\"high\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.reset_filters\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=title&sort_dir=desc&priority=high\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"title\",\"sort_dir\":\"desc\",\"priority\":\"high\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.open_ticket_detail\",\"payload\":{\"ticket_id\":\"240ad546-1c23-42f3-9e8c-40526895bca3\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/ticket\",\"asPath\":\"/ticket?ticket_id=240ad546-1c23-42f3-9e8c-40526895bca3\",\"query\":{\"ticket_id\":\"240ad546-1c23-42f3-9e8c-40526895bca3\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.set_edit_title\",\"payload\":{\"value\":\"Email signature fixed?\"},\"router_data\":{\"pathname\":\"/ticket\",\"asPath\":\"/ticket?ticket_id=240ad546-1c23-42f3-9e8c-40526895bca3\",\"query\":{\"ticket_id\":\"240ad546-1c23-42f3-9e8c-40526895bca3\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.set_edit_assignee\",\"payload\":{\"value\":\"erin\"},\"router_data\":{\"pathname\":\"/ticket\",\"asPath\":\"/ticket?ticket_id=240ad546-1c23-42f3-9e8c-40526895bca3\",\"query\":{\"ticket_id\":\"240ad546-1c23-42f3-9e8c-40526895bca3\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.save_ticket_detail\",\"router_data\":{\"pathname\":\"/ticket\",\"asPath\":\"/ticket?ticket_id=240ad546-1c23-42f3-9e8c-40526895bca3\",\"query\":{\"ticket_id\":\"240ad546-1c23-42f3-9e8c-40526895bca3\"}}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"query\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\"}}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d495acac2e86e47c\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"38eb7eb15a4179a4\"]},\"router_data\":{\"pathname\":\"/ticket\",\"asPath\":\"/ticket?ticket_id=does-not-exist\",\"query\":{\"ticket_id\":\"does-not-exist\"}}}}",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d495acac2e86e47c\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"38eb7eb15a4179a4\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.delete_ticket\",\"payload\":{\"ticket_id\":\"b6da3509-c823-4c99-8786-7843cae60ee4\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "41/_event,",
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d495acac2e86e47c\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"38eb7eb15a4179a4\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.clear_all\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"jrWp318eSZ7QFV5GAAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Jb4tGPBi6_p3-WjGAAAP\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"M9QXu4RwOEIY7UUS9MkEvw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":4,\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"\",\"has_active_filters_rx_state_\":false,\"sort_dir_rx_state_\":\"desc\",\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"Cannot reach printer on 3rd floor.\",\"id\":4,\"priority\":\"medium\",\"assignee\":\"carol\",\"created_at\":\"2026-10-07T12:20:55.314855+00:00\",\"title\":\"Printer offline\",\"ticket_id\":\"06416ab5-051e-4c49-a9b1-50cd42",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":4,\"page_rx_state_\":1,\"page_count_rx_state_\":1,\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"Cannot reach printer on 3rd floor.\",\"id\":8,\"priority\":\"medium\",\"assignee\":\"carol\",\"created_at\":\"2026-10-07T12:21:07.014886+00:00\",\"title\":\"Printer offline\",\"ticket_id\":\"2128241c-ef46-4ebb-a166-708bd6f11587\",\"status\":\"open\",\"updated_at\":\"2026-10-07T12:21:07.014886+00:00\"},{\"description\":\"Corporate logo image is missing.\",\"id\":7,\"priority\":",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"show_new_ticket_form_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"draft_title_rx_state_\":\"Monitor flickers\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"draft_description_rx_state_\":\"Second screen flickers\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"draft_assignee_rx_state_\":\"dave\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":5,\"draft_assignee_rx_state_\":\"\",\"draft_title_rx_state_\":\"\",\"draft_description_rx_state_\":\"\",\"page_count_rx_state_\":1,\"has_next_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"Second screen flickers\",\"id\":9,\"priority\":\"medium\",\"assignee\":\"dave\",\"created_at\":\"2026-10-07T12:21:07.253396+00:00\",\"title\":\"Monitor flickers\",\"ticket_id\":\"b6da3509-c823-4c99-8786-7843cae60ee4\",\"status\":\"open\",\"updated_at\":\"2026-10-07T12:21:07.253396+00:00\"},{\"description\":\"Cannot reach printer on 3",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"page_rx_state_\":1,\"q_rx_state_\":\"VPN\",\"has_active_filters_rx_state_\":true,\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc&q=VPN\",\"external\":false,\"popup\":false,\"replace\":true}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3300\",\"origin\":\"http://localhost:3300\",\"path\":\"/\",\"query\":\"page=1&page_size=20&sort_by=created_at&sort_dir=desc&q=VPN\",\"query_parameters\":{\"page\":\"1\",\"page_size\":\"20\",\"q\":\"VPN\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\"},\"fragment\":\"\",\"href\":\"http://localhost:3300/?page=1&page_size=20&sort_by=created_at&sort_dir=desc&q=VPN\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3300\",\"path\":\"/index\",\"raw_path\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc&q=VPN\",\"full_p",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":1,\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"VPN\",\"has_active_filters_rx_state_\":true,\"sort_dir_rx_state_\":\"desc\",\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"RTT > 500ms over the corporate tunnel.\",\"id\":6,\"priority\":\"medium\",\"assignee\":\"bob\",\"created_at\":\"2026-10-07T12:21:07.014613+00:00\",\"title\":\"VPN slow from home\",\"ticket_id\":\"3606fac2-9a9b-4faf-981e",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"uiv_pxAUNBZK3EV8AAAQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"-M7wq_xDi3-6QXHEAAAR\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"NHEDY3Stj/bmmMHJKGSS1A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":1,\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"VPN\",\"has_active_filters_rx_state_\":true,\"sort_dir_rx_state_\":\"desc\",\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"RTT > 500ms over the corporate tunnel.\",\"id\":6,\"priority\":\"medium\",\"assignee\":\"bob\",\"created_at\":\"2026-10-07T12:21:07.014613+00:00\",\"title\":\"VPN slow from home\",\"ticket_id\":\"3606fac2-9a9b-4faf-981e",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"\",\"has_active_filters_rx_state_\":false,\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"status_filter_rx_state_\":\"all\",\"sort_by_rx_state_\":\"created_at\",\"sort_dir_rx_state_\":\"desc\"}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"external\":false,\"popup\":false,\"replace\":true}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3300\",\"origin\":\"http://localhost:3300\",\"path\":\"/\",\"query\":\"page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"query_parameters\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\"},\"fragment\":\"\",\"href\":\"http://localhost:3300/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3300\",\"path\":\"/index\",\"raw_path\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"full_path\":\"http://localhost:3300/",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":5,\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"\",\"has_active_filters_rx_state_\":false,\"sort_dir_rx_state_\":\"desc\",\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"Second screen flickers\",\"id\":9,\"priority\":\"medium\",\"assignee\":\"dave\",\"created_at\":\"2026-10-07T12:21:07.253396+00:00\",\"title\":\"Monitor flickers\",\"ticket_id\":\"b6da3509-c823-4c99-8786-7843cae60ee4\",\"sta",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"page_rx_state_\":1,\"has_active_filters_rx_state_\":true,\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"sort_by_rx_state_\":\"title\",\"sort_dir_rx_state_\":\"asc\"}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/?page=1&page_size=20&sort_by=title&sort_dir=asc\",\"external\":false,\"popup\":false,\"replace\":true}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3300\",\"origin\":\"http://localhost:3300\",\"path\":\"/\",\"query\":\"page=1&page_size=20&sort_by=title&sort_dir=asc\",\"query_parameters\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"title\",\"sort_dir\":\"asc\"},\"fragment\":\"\",\"href\":\"http://localhost:3300/?page=1&page_size=20&sort_by=title&sort_dir=asc\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3300\",\"path\":\"/index\",\"raw_path\":\"/?page=1&page_size=20&sort_by=title&sort_dir=asc\",\"full_path\":\"http://localhost:3300/index\",\"full_raw_path\":\"",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":5,\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"\",\"has_active_filters_rx_state_\":true,\"sort_dir_rx_state_\":\"asc\",\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"Corporate logo image is missing.\",\"id\":7,\"priority\":\"low\",\"assignee\":\"\",\"created_at\":\"2026-10-07T12:21:07.014726+00:00\",\"title\":\"Email signature broken\",\"ticket_id\":\"240ad546-1c23-42f3-9e8c-40526895bca",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"page_rx_state_\":1,\"has_active_filters_rx_state_\":true,\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"sort_dir_rx_state_\":\"desc\"}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/?page=1&page_size=20&sort_by=title&sort_dir=desc\",\"external\":false,\"popup\":false,\"replace\":true}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3300\",\"origin\":\"http://localhost:3300\",\"path\":\"/\",\"query\":\"page=1&page_size=20&sort_by=title&sort_dir=desc\",\"query_parameters\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"title\",\"sort_dir\":\"desc\"},\"fragment\":\"\",\"href\":\"http://localhost:3300/?page=1&page_size=20&sort_by=title&sort_dir=desc\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3300\",\"path\":\"/index\",\"raw_path\":\"/?page=1&page_size=20&sort_by=title&sort_dir=desc\",\"full_path\":\"http://localhost:3300/index\",\"full_raw_pat",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":5,\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"\",\"has_active_filters_rx_state_\":true,\"sort_dir_rx_state_\":\"desc\",\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"RTT > 500ms over the corporate tunnel.\",\"id\":6,\"priority\":\"medium\",\"assignee\":\"bob\",\"created_at\":\"2026-10-07T12:21:07.014613+00:00\",\"title\":\"VPN slow from home\",\"ticket_id\":\"3606fac2-9a9b-4faf-981e-11",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":4,\"page_count_rx_state_\":1,\"has_next_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"RTT > 500ms over the corporate tunnel.\",\"id\":6,\"priority\":\"medium\",\"assignee\":\"bob\",\"created_at\":\"2026-10-07T12:21:07.014613+00:00\",\"title\":\"VPN slow from home\",\"ticket_id\":\"3606fac2-9a9b-4faf-981e-114acc0943af\",\"status\":\"open\",\"updated_at\":\"2026-10-07T12:21:07.014613+00:00\"},{\"description\":\"Cannot reach printer on 3rd floor.\",\"id\":8,\"priority\":\"medium\",\"assignee\":\"carol\",\"created_at\":\"20",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"priority_filter_rx_state_\":\"high\",\"page_rx_state_\":1,\"has_active_filters_rx_state_\":true,\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/?page=1&page_size=20&sort_by=title&sort_dir=desc&priority=high\",\"external\":false,\"popup\":false,\"replace\":true}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3300\",\"origin\":\"http://localhost:3300\",\"path\":\"/\",\"query\":\"page=1&page_size=20&sort_by=title&sort_dir=desc&priority=high\",\"query_parameters\":{\"page\":\"1\",\"page_size\":\"20\",\"priority\":\"high\",\"sort_by\":\"title\",\"sort_dir\":\"desc\"},\"fragment\":\"\",\"href\":\"http://localhost:3300/?page=1&page_size=20&sort_by=title&sort_dir=desc&priority=high\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3300\",\"path\":\"/index\",\"raw_path\":\"/?page=1&page_size=20&sort_by=title&sort_dir=desc&priority=h",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":1,\"priority_filter_rx_state_\":\"high\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"\",\"has_active_filters_rx_state_\":true,\"sort_dir_rx_state_\":\"desc\",\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"Blue screen on startup.\",\"id\":5,\"priority\":\"high\",\"assignee\":\"alice\",\"created_at\":\"2026-10-07T12:21:07.014354+00:00\",\"title\":\"Laptop won't boot\",\"ticket_id\":\"80de859d-d659-415b-8a3e-90be5a8c59d3\",\"st",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"\",\"has_active_filters_rx_state_\":false,\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"status_filter_rx_state_\":\"all\",\"sort_by_rx_state_\":\"created_at\",\"sort_dir_rx_state_\":\"desc\"}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"external\":false,\"popup\":false,\"replace\":true}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3300\",\"origin\":\"http://localhost:3300\",\"path\":\"/\",\"query\":\"page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"query_parameters\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\"},\"fragment\":\"\",\"href\":\"http://localhost:3300/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3300\",\"path\":\"/index\",\"raw_path\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"full_path\":\"http://localhost:3300/",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":4,\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"\",\"has_active_filters_rx_state_\":false,\"sort_dir_rx_state_\":\"desc\",\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"Second screen flickers\",\"id\":9,\"priority\":\"medium\",\"assignee\":\"dave\",\"created_at\":\"2026-10-07T12:21:07.253396+00:00\",\"title\":\"Monitor flickers\",\"ticket_id\":\"b6da3509-c823-4c99-8786-7843cae60ee4\",\"sta",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/ticket?ticket_id=240ad546-1c23-42f3-9e8c-40526895bca3\",\"external\":false,\"popup\":false,\"replace\":false}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3300\",\"origin\":\"http://localhost:3300\",\"path\":\"/ticket\",\"query\":\"ticket_id=240ad546-1c23-42f3-9e8c-40526895bca3\",\"query_parameters\":{\"ticket_id\":\"240ad546-1c23-42f3-9e8c-40526895bca3\"},\"fragment\":\"\",\"href\":\"http://localhost:3300/ticket?ticket_id=240ad546-1c23-42f3-9e8c-40526895bca3\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3300\",\"path\":\"/ticket\",\"raw_path\":\"/ticket?ticket_id=240ad546-1c23-42f3-9e8c-40526895bca3\",\"full_path\":\"http://localhost:3300/ticket\",\"full_raw",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"edit_description_rx_state_\":\"Corporate logo image is missing.\",\"edit_priority_rx_state_\":\"low\",\"edit_title_rx_state_\":\"Email signature broken\",\"edit_assignee_rx_state_\":\"\",\"edit_status_rx_state_\":\"open\",\"detail_error_rx_state_\":\"\",\"detail_loading_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"edit_title_rx_state_\":\"Email signature fixed?\"}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"edit_assignee_rx_state_\":\"erin\"}}}]",
+    "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"external\":false,\"popup\":false,\"replace\":true}}]}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3300\",\"origin\":\"http://localhost:3300\",\"path\":\"/\",\"query\":\"page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"query_parameters\":{\"page\":\"1\",\"page_size\":\"20\",\"sort_by\":\"created_at\",\"sort_dir\":\"desc\"},\"fragment\":\"\",\"href\":\"http://localhost:3300/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3300\",\"path\":\"/index\",\"raw_path\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"full_path\":\"http://localhost:3300/",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":4,\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"\",\"has_active_filters_rx_state_\":false,\"sort_dir_rx_state_\":\"desc\",\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"Second screen flickers\",\"id\":9,\"priority\":\"medium\",\"assignee\":\"dave\",\"created_at\":\"2026-10-07T12:21:07.253396+00:00\",\"title\":\"Monitor flickers\",\"ticket_id\":\"b6da3509-c823-4c99-8786-7843cae60ee4\",\"sta",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "0{\"sid\":\"qBQLhm24Jmpt4WbZAAAS\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   ],
+   "closed": true
+  },
+  "ws://localhost:8300/_event/?token=20845872-8c9e-459a-c8d4-27d102088e4a&EIO=4&transport=websocket": {
+   "ctx": "tickets-ctx2",
+   "sent": 1,
+   "recv": 6,
+   "sent_samples": [
+    "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d495acac2e86e47c\",\"b084fc0c68f7c73a\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"38eb7eb15a4179a4\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+   ],
+   "recv_samples": [
+    "0{\"sid\":\"WSI5ISc1cUEz1eXEAAAW\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"-Fpw4t6303t4eTHvAAAX\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8300\",\"origin\":\"http://localhost:3300\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"B3dgLJkDR5iqHz2NeRiWsA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"open_count_rx_state_\":3,\"priority_filter_rx_state_\":\"all\",\"page_rx_state_\":1,\"page_size_rx_state_\":20,\"page_count_rx_state_\":1,\"q_rx_state_\":\"\",\"has_active_filters_rx_state_\":false,\"sort_dir_rx_state_\":\"desc\",\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"tickets_rx_state_\":[{\"description\":\"Cannot reach printer on 3rd floor.\",\"id\":8,\"priority\":\"medium\",\"assignee\":\"carol\",\"created_at\":\"2026-10-07T12:21:07.014886+00:00\",\"title\":\"Printer offline\",\"ticket_id\":\"2128241c-ef46-4ebb-a166-708bd6",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+   ],
+   "closed": false
+  }
+ },
+ "requests": [
+  {
+   "t": 0.83,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/",
+   "method": "GET"
+  },
+  {
+   "t": 1.06,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 1.08,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 1.08,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 1.43,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/app/routes/_index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 4.0,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/?page=1&page_size=20&sort_by=created_at&sort_dir=desc&q=VPN",
+   "method": "GET"
+  },
+  {
+   "t": 4.08,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 4.09,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 4.09,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 4.18,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/app/routes/_index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 11.33,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/app/routes/[ticket]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 14.64,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/ticket?ticket_id=does-not-exist",
+   "method": "GET"
+  },
+  {
+   "t": 14.71,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 14.72,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 14.73,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 14.77,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/app/routes/[ticket]._index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 16.83,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/",
+   "method": "GET"
+  },
+  {
+   "t": 16.92,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 16.92,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 16.93,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 16.99,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/app/routes/_index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 19.29,
+   "ctx": "tickets-ctx2",
+   "url": "http://localhost:3300/",
+   "method": "GET"
+  },
+  {
+   "t": 19.42,
+   "ctx": "tickets-ctx2",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 19.44,
+   "ctx": "tickets-ctx2",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 19.48,
+   "ctx": "tickets-ctx2",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 19.75,
+   "ctx": "tickets-ctx2",
+   "url": "http://localhost:3300/app/routes/_index.jsx?import",
+   "method": "GET"
+  },
+  {
+   "t": 21.89,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/",
+   "method": "GET"
+  },
+  {
+   "t": 21.93,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/env.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 21.94,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/styles/__reflex_global_styles.css?url",
+   "method": "GET"
+  },
+  {
+   "t": 21.94,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/reflex.json?import",
+   "method": "GET"
+  },
+  {
+   "t": 22.0,
+   "ctx": "tickets",
+   "url": "http://localhost:3300/app/routes/_index.jsx?import",
+   "method": "GET"
+  }
+ ]
+}

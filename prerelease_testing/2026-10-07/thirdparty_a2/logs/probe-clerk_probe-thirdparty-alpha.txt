@@ -1,0 +1,13 @@
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-alpha/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+ClerkState._jwt_public_keys (class): Field Field(default_factory=functools.partial(<function deepcopy at 0x7f0207ad2660>, []), is_var=True, annotated_type=typing.List[typing.Dict[str, str]])
+ClerkState._secret_key (class, before provider): Field Field(default=None, is_var=True, annotated_type=<class 'str'>)
+ClerkState.secret_key (class property, no key configured): Field Field(default=None, is_var=True, annotated_type=<class 'str'>)
+clerk_provider() WITHOUT secret key (should raise ValueError): Fragment {"name": "Fragment", "props": [], "children": [{"name": "ClerkProvider", "props": ["publishableKey:\"pk_test_x\""], "children": [{"name": "ClerkSessionSynchronizer", "props": [], "children": [{"name": "RadixThemesText", "props":
+clerk_provider(secret_key=...): str 'Fragment'
+ClerkState.secret_key after provider: str 'sk_test_123'
+ClerkState.jwt_public_keys (class property): Field Field(default_factory=functools.partial(<function deepcopy at 0x7f0207ad2660>, []), is_var=True, annotated_type=typing.List[typing.Dict[str, str]])
+WARNING:root:Auth error: Invalid input segments length: 
+set_clerk_session('not-a-jwt') on instance: NoneType None
+instance.is_signed_in / auth_error: tuple (False, <DecodeError "Invalid input segments length">)

@@ -1,0 +1,522 @@
+{
+ "token": {
+  "status": 200,
+  "body": {
+   "access_token": "AczaSf62ywYtSzg5hyCA955EL6oCneLmlTC2OIkpiIM",
+   "token_type": "Bearer",
+   "expires_in": 3600,
+   "session": "anonymous"
+  }
+ },
+ "api-catalog": {
+  "status": 200,
+  "body": {
+   "linkset": [
+    {
+     "anchor": "http://localhost:3302/",
+     "service-desc": [
+      {
+       "href": "http://localhost:3302/_reflex/events/openapi.yaml",
+       "type": "application/vnd.oai.openapi"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "openapi.yaml": {
+  "status": 500,
+  "body": "Internal Server Error"
+ },
+ "openapi mentions create_ticket": false,
+ "retrieve_state (no token)": {
+  "status": 401,
+  "body": {
+   "error": "Unauthorized: Provide an app-issued token as `Authorization: Bearer <token>`. Obtain an anonymous session token from `POST /_reflex/auth/token`, or an authenticated one through the app's OAuth flow (when available)."
+  }
+ },
+ "retrieve_state": {
+  "status": 200,
+  "body": {
+   "reflex___state____state": {
+    "is_hydrated": false,
+    "rx_router_headers": {
+     "host": "",
+     "origin": "",
+     "upgrade": "",
+     "connection": "",
+     "cookie": "",
+     "pragma": "",
+     "cache_control": "",
+     "user_agent": "",
+     "sec_websocket_version": "",
+     "sec_websocket_key": "",
+     "sec_websocket_extensions": "",
+     "accept_encoding": "",
+     "accept_language": "",
+     "raw_headers": {}
+    },
+    "rx_router_page": {
+     "host": "",
+     "path": "",
+     "raw_path": "",
+     "full_path": "",
+     "full_raw_path": "",
+     "params": {}
+    },
+    "rx_router_route_id": "",
+    "rx_router_session": {
+     "client_token": "",
+     "client_ip": "0.0.0.0",
+     "session_id": ""
+    },
+    "rx_router_url": {
+     "scheme": "",
+     "netloc": "",
+     "origin": "://",
+     "path": "",
+     "query": "",
+     "query_parameters": {},
+     "fragment": "",
+     "href": ""
+    }
+   },
+   "reflex___state____state.tickets___tickets____ticket_state": {
+    "current_ticket_id": "",
+    "detail_error": "",
+    "detail_loading": false,
+    "draft_assignee": "",
+    "draft_description": "",
+    "draft_priority": "medium",
+    "draft_title": "",
+    "edit_assignee": "",
+    "edit_description": "",
+    "edit_priority": "medium",
+    "edit_status": "open",
+    "edit_title": "",
+    "has_active_filters": false,
+    "has_next_page": false,
+    "has_prev_page": false,
+    "open_count": 0,
+    "page": 1,
+    "page_count": 1,
+    "page_size": 20,
+    "priority_filter": "all",
+    "q": "",
+    "show_new_ticket_form": false,
+    "sort_by": "created_at",
+    "sort_dir": "desc",
+    "status_filter": "all",
+    "tickets": [],
+    "total_count": 0
+   }
+  }
+ },
+ "create_ticket": {
+  "status": 200,
+  "body": {
+   "reflex___state____state": {
+    "rx_router_url": {
+     "scheme": "",
+     "netloc": "",
+     "origin": "://",
+     "path": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+     "query": "",
+     "query_parameters": {},
+     "fragment": "",
+     "href": "/_reflex/event/tickets___tickets____ticket_state/create_ticket"
+    },
+    "rx_router_route_id": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+    "rx_router_page": {
+     "host": "",
+     "path": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+     "raw_path": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+     "full_path": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+     "full_raw_path": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+     "params": {}
+    },
+    "rx_router_session": {
+     "client_token": "",
+     "client_ip": "127.0.0.1",
+     "session_id": ""
+    },
+    "rx_router_headers": {
+     "host": "localhost:3302",
+     "origin": "",
+     "upgrade": "",
+     "connection": "keep-alive",
+     "cookie": "",
+     "pragma": "",
+     "cache_control": "",
+     "user_agent": "python-httpx/0.28.1",
+     "sec_websocket_version": "",
+     "sec_websocket_key": "",
+     "sec_websocket_extensions": "",
+     "accept_encoding": "gzip, deflate",
+     "accept_language": "",
+     "raw_headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "asgi-scope-client": "127.0.0.1",
+      "connection": "keep-alive",
+      "content-length": "57",
+      "content-type": "application/json",
+      "host": "localhost:3302",
+      "user-agent": "python-httpx/0.28.1"
+     }
+    }
+   },
+   "reflex___state____state.tickets___tickets____ticket_state": {
+    "has_next_page": false,
+    "total_count": 1,
+    "page_count": 1,
+    "tickets": [
+     {
+      "description": "",
+      "updated_at": "2026-10-07T12:22:53.279166+00:00",
+      "status": "open",
+      "title": "API ticket",
+      "id": 1,
+      "ticket_id": "0ab6a31d-458d-4e1e-bd87-264303dde819",
+      "priority": "high",
+      "assignee": "api",
+      "created_at": "2026-10-07T12:22:53.279166+00:00"
+     }
+    ],
+    "current_ticket_id": "",
+    "open_count": 1
+   }
+  }
+ },
+ "create_ticket (no token)": {
+  "status": 401,
+  "body": {
+   "error": "Unauthorized: Provide an app-issued token as `Authorization: Bearer <token>`. Obtain an anonymous session token from `POST /_reflex/auth/token`, or an authenticated one through the app's OAuth flow (when available)."
+  }
+ },
+ "create_ticket (bad token)": {
+  "status": 401,
+  "body": {
+   "error": "Unauthorized: Provide an app-issued token as `Authorization: Bearer <token>`. Obtain an anonymous session token from `POST /_reflex/auth/token`, or an authenticated one through the app's OAuth flow (when available)."
+  }
+ },
+ "create_ticket (missing title)": {
+  "status": 200,
+  "body": {
+   "error": "Error processing event: TicketState.create_ticket() missing 1 required positional argument: 'title'. Check server logs for more details."
+  }
+ },
+ "create_ticket (title wrong type)": {
+  "status": 200,
+  "body": {
+   "error": "Error processing event: 'int' object has no attribute 'strip'. Check server logs for more details."
+  }
+ },
+ "create_ticket (unknown arg)": {
+  "status": 200,
+  "body": {
+   "error": "Error processing event: Event handler create_ticket received extra argument bogus.. Check server logs for more details."
+  }
+ },
+ "create_ticket (non-JSON body)": {
+  "status": 500,
+  "body": "Internal Server Error"
+ },
+ "retrieve_state after create": {
+  "status": 200,
+  "body": {
+   "reflex___state____state": {
+    "is_hydrated": false,
+    "rx_router_headers": {
+     "host": "localhost:3302",
+     "origin": "",
+     "upgrade": "",
+     "connection": "keep-alive",
+     "cookie": "",
+     "pragma": "",
+     "cache_control": "",
+     "user_agent": "python-httpx/0.28.1",
+     "sec_websocket_version": "",
+     "sec_websocket_key": "",
+     "sec_websocket_extensions": "",
+     "accept_encoding": "gzip, deflate",
+     "accept_language": "",
+     "raw_headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "asgi-scope-client": "127.0.0.1",
+      "connection": "keep-alive",
+      "content-length": "13",
+      "content-type": "application/json",
+      "host": "localhost:3302",
+      "user-agent": "python-httpx/0.28.1"
+     }
+    },
+    "rx_router_page": {
+     "host": "",
+     "path": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+     "raw_path": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+     "full_path": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+     "full_raw_path": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+     "params": {}
+    },
+    "rx_router_route_id": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+    "rx_router_session": {
+     "client_token": "",
+     "client_ip": "127.0.0.1",
+     "session_id": ""
+    },
+    "rx_router_url": {
+     "scheme": "",
+     "netloc": "",
+     "origin": "://",
+     "path": "/_reflex/event/tickets___tickets____ticket_state/create_ticket",
+     "query": "",
+     "query_parameters": {},
+     "fragment": "",
+     "href": "/_reflex/event/tickets___tickets____ticket_state/create_ticket"
+    }
+   },
+   "reflex___state____state.tickets___tickets____ticket_state": {
+    "current_ticket_id": "",
+    "detail_error": "",
+    "detail_loading": false,
+    "draft_assignee": "",
+    "draft_description": "",
+    "draft_priority": "medium",
+    "draft_title": "",
+    "edit_assignee": "",
+    "edit_description": "",
+    "edit_priority": "medium",
+    "edit_status": "open",
+    "edit_title": "",
+    "has_active_filters": false,
+    "has_next_page": false,
+    "has_prev_page": false,
+    "open_count": 1,
+    "page": 1,
+    "page_count": 1,
+    "page_size": 20,
+    "priority_filter": "all",
+    "q": "",
+    "show_new_ticket_form": false,
+    "sort_by": "created_at",
+    "sort_dir": "desc",
+    "status_filter": "all",
+    "tickets": [
+     {
+      "description": "",
+      "updated_at": "2026-10-07T12:22:53.279166+00:00",
+      "status": "open",
+      "title": "API ticket",
+      "id": 1,
+      "ticket_id": "0ab6a31d-458d-4e1e-bd87-264303dde819",
+      "priority": "high",
+      "assignee": "api",
+      "created_at": "2026-10-07T12:22:53.279166+00:00"
+     }
+    ],
+    "total_count": 1
+   }
+  }
+ },
+ "tickets in token1 state": [
+  "API ticket"
+ ],
+ "set_status closed": {
+  "status": 200,
+  "body": {
+   "reflex___state____state": {
+    "rx_router_url": {
+     "scheme": "",
+     "netloc": "",
+     "origin": "://",
+     "path": "/_reflex/event/tickets___tickets____ticket_state/set_status",
+     "query": "",
+     "query_parameters": {},
+     "fragment": "",
+     "href": "/_reflex/event/tickets___tickets____ticket_state/set_status"
+    },
+    "rx_router_route_id": "/_reflex/event/tickets___tickets____ticket_state/set_status",
+    "rx_router_page": {
+     "host": "",
+     "path": "/_reflex/event/tickets___tickets____ticket_state/set_status",
+     "raw_path": "/_reflex/event/tickets___tickets____ticket_state/set_status",
+     "full_path": "/_reflex/event/tickets___tickets____ticket_state/set_status",
+     "full_raw_path": "/_reflex/event/tickets___tickets____ticket_state/set_status",
+     "params": {}
+    },
+    "rx_router_headers": {
+     "host": "localhost:3302",
+     "origin": "",
+     "upgrade": "",
+     "connection": "keep-alive",
+     "cookie": "",
+     "pragma": "",
+     "cache_control": "",
+     "user_agent": "python-httpx/0.28.1",
+     "sec_websocket_version": "",
+     "sec_websocket_key": "",
+     "sec_websocket_extensions": "",
+     "accept_encoding": "gzip, deflate",
+     "accept_language": "",
+     "raw_headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "asgi-scope-client": "127.0.0.1",
+      "connection": "keep-alive",
+      "content-length": "70",
+      "content-type": "application/json",
+      "host": "localhost:3302",
+      "user-agent": "python-httpx/0.28.1"
+     }
+    }
+   },
+   "reflex___state____state.tickets___tickets____ticket_state": {
+    "has_next_page": false,
+    "total_count": 1,
+    "page_count": 1,
+    "tickets": [
+     {
+      "description": "",
+      "updated_at": "2026-10-07T12:22:54.009354+00:00",
+      "status": "closed",
+      "title": "API ticket",
+      "id": 1,
+      "ticket_id": "0ab6a31d-458d-4e1e-bd87-264303dde819",
+      "priority": "high",
+      "assignee": "api",
+      "created_at": "2026-10-07T12:22:53.279166+00:00"
+     }
+    ],
+    "current_ticket_id": "",
+    "open_count": 0
+   }
+  }
+ },
+ "set_status invalid": {
+  "status": 200,
+  "body": {
+   "reflex___state____state": {
+    "rx_router_headers": {
+     "host": "localhost:3302",
+     "origin": "",
+     "upgrade": "",
+     "connection": "keep-alive",
+     "cookie": "",
+     "pragma": "",
+     "cache_control": "",
+     "user_agent": "python-httpx/0.28.1",
+     "sec_websocket_version": "",
+     "sec_websocket_key": "",
+     "sec_websocket_extensions": "",
+     "accept_encoding": "gzip, deflate",
+     "accept_language": "",
+     "raw_headers": {
+      "accept": "*/*",
+      "accept-encoding": "gzip, deflate",
+      "asgi-scope-client": "127.0.0.1",
+      "connection": "keep-alive",
+      "content-length": "69",
+      "content-type": "application/json",
+      "host": "localhost:3302",
+      "user-agent": "python-httpx/0.28.1"
+     }
+    }
+   },
+   "reflex___state____state.tickets___tickets____ticket_state": {
+    "current_ticket_id": ""
+   }
+  }
+ },
+ "unknown handler": {
+  "status": 405,
+  "body": "Method Not Allowed"
+ },
+ "private helper _reload_from_db": {
+  "status": 405,
+  "body": "Method Not Allowed"
+ },
+ "GET on POST endpoint": {
+  "status": 404,
+  "body": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta content=\"width=device-width, initial-scale=1\" name=\"viewport\"/><link as=\"style\" href=\"/assets/__reflex_global_styles-NccINl-w.css\" rel=\"preload\"/><link rel=\"modulepreload\" href=\"/assets/manifest-9b689d4a.js\"/><link rel=\"modulepreload\" href=\"/assets/entry.client-dNVOKTyN.js\"/><link rel=\"modulepreload\" href=\"/assets/components-DzQT6F3y.js\"/><link rel=\"modulepreload\" href=\"/assets/errorBoundaries-C2delMrB.js\"/><link rel=\"modulepreload\" href=\"/assets/root-DRwvcyDx.js\"/><link rel=\"modulepreload\" href=\"/assets/createLucideIcon-DwZ7yIW"
+ },
+ "retrieve_state token2": {
+  "status": 200,
+  "body": {
+   "reflex___state____state": {
+    "is_hydrated": false,
+    "rx_router_headers": {
+     "host": "",
+     "origin": "",
+     "upgrade": "",
+     "connection": "",
+     "cookie": "",
+     "pragma": "",
+     "cache_control": "",
+     "user_agent": "",
+     "sec_websocket_version": "",
+     "sec_websocket_key": "",
+     "sec_websocket_extensions": "",
+     "accept_encoding": "",
+     "accept_language": "",
+     "raw_headers": {}
+    },
+    "rx_router_page": {
+     "host": "",
+     "path": "",
+     "raw_path": "",
+     "full_path": "",
+     "full_raw_path": "",
+     "params": {}
+    },
+    "rx_router_route_id": "",
+    "rx_router_session": {
+     "client_token": "",
+     "client_ip": "0.0.0.0",
+     "session_id": ""
+    },
+    "rx_router_url": {
+     "scheme": "",
+     "netloc": "",
+     "origin": "://",
+     "path": "",
+     "query": "",
+     "query_parameters": {},
+     "fragment": "",
+     "href": ""
+    }
+   },
+   "reflex___state____state.tickets___tickets____ticket_state": {
+    "current_ticket_id": "",
+    "detail_error": "",
+    "detail_loading": false,
+    "draft_assignee": "",
+    "draft_description": "",
+    "draft_priority": "medium",
+    "draft_title": "",
+    "edit_assignee": "",
+    "edit_description": "",
+    "edit_priority": "medium",
+    "edit_status": "open",
+    "edit_title": "",
+    "has_active_filters": false,
+    "has_next_page": false,
+    "has_prev_page": false,
+    "open_count": 0,
+    "page": 1,
+    "page_count": 1,
+    "page_size": 20,
+    "priority_filter": "all",
+    "q": "",
+    "show_new_ticket_form": false,
+    "sort_by": "created_at",
+    "sort_dir": "desc",
+    "status_filter": "all",
+    "tickets": [],
+    "total_count": 0
+   }
+  }
+ },
+ "token2 sees token1's q/filters?": "n/a"
+}

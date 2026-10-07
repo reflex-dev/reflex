@@ -1,0 +1,1 @@
+reset() ok -> n = 0 _key = None

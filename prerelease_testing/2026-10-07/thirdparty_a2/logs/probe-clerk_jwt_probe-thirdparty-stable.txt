@@ -1,0 +1,4 @@
+ClerkState.jwt_public_keys -> list [{'n': 'uZBQF2E_3j9vC6r_XsOgW6WAXj04p6btofCXN60chyd5dbu6E_eAkNknIc9Grt-QdB15dhrQWyMa4BtQNc
+class-level _secret_key / _fetch_user: 'sk_test_123' | False
+instance   _secret_key / _fetch_user: None | True
+RESULT set_clerk_session(valid RS256 JWT): is_signed_in=True user_id='user_123' auth_error=None exc=AttributeError: 'ClerkState' object has no attribute 'set_user'

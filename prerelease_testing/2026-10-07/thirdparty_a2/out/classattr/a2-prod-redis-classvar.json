@@ -1,0 +1,38 @@
+{
+ "fstring_label": "label=label-const",
+ "cs_btn_label": "+5",
+ "cs_count_after_click": "5",
+ "1_show": {
+  "shown": "key='sk_live'",
+  "log": "key='sk_live'"
+ },
+ "2_show_after_3.5s": {
+  "shown": "key='sk_live'",
+  "log": "key='sk_live' | key='sk_live'"
+ },
+ "3_set_instance": {
+  "shown": "key='sk_live'",
+  "log": "key='sk_live' | key='sk_live'"
+ },
+ "4_show": {
+  "shown": "key='set-on-instance'",
+  "log": "key='sk_live' | key='sk_live' | key='set-on-instance'"
+ },
+ "5_reset": {
+  "shown": "",
+  "log": "reset-done"
+ },
+ "6_show": {
+  "shown": "key='sk_live'",
+  "log": "reset-done | key='sk_live'"
+ },
+ "7_after_reload": {
+  "shown": "key='sk_live'",
+  "log": "reset-done | key='sk_live'"
+ },
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation"
+ ],
+ "bad_responses": []
+}

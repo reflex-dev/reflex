@@ -1,0 +1,39 @@
+{
+ "label": "mini_alpha2_priv2",
+ "base": "http://localhost:3470",
+ "results": [
+  {
+   "name": "priv.component_state_and_background",
+   "status": "pass",
+   "details": {
+    "pcs_A": "count=4 last=4",
+    "pcs_B": "count=2 last=2",
+    "bg_out": "outside=ImmutableStateError inside=2",
+    "error_toast": false,
+    "page_errors": []
+   },
+   "t": 4.081
+  }
+ ],
+ "console_non_benign": [
+  {
+   "t": 4.09,
+   "tag": "priv2",
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "loc": "http://localhost:3470/utils/state.js:788",
+   "url": "http://localhost:3470/priv2"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "counters": {
+  "console:priv2:log": 2,
+  "console:priv2:debug": 2,
+  "ws:priv2:recv": 9,
+  "console:priv2:info": 1,
+  "ws:priv2:sent": 5
+ },
+ "extra": {}
+}

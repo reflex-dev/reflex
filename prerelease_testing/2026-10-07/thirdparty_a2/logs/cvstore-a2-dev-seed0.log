@@ -1,0 +1,20 @@
+───────────────────────────── Initializing cvstore ─────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized cvstore. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/thirdparty_a2-a2/lib/python3.12/site-packages/reflex_components_radix/plug
+in.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 30/29 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3500/
+Backend running at: http://0.0.0.0:8500
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

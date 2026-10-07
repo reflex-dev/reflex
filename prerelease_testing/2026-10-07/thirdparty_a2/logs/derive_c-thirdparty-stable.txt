@@ -1,0 +1,3 @@
+PageContext.get(): RuntimeError: No active PageContext is attached to the current context.
+CompileContext.get(): RuntimeError: No active CompileContext is attached to the current context.
+EventContext.get(): LookupError: <ContextVar name='EventContext' at 0x7f81477bf830>

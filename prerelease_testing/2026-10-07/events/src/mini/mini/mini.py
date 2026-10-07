@@ -130,6 +130,45 @@ class SupMini(rx.State):
         self.other = "none"
 
 
+class PrivCS(rx.ComponentState):
+    """#7465 in a ComponentState: create() makes a dynamic subclass; the mangled names belong to PrivCS."""
+
+    __STEP = 2
+    count: int = 0
+    note: str = ""
+
+    @rx.event
+    def bump(self):
+        self.count += self.__STEP
+        self.__last = self.count
+        self.note = f"count={self.count} last={self.__last}"
+
+    @classmethod
+    def get_component(cls, *children, **props) -> rx.Component:
+        name = props.pop("name", "x")
+        return rx.hstack(
+            rx.button(f"pcs-{name}", on_click=cls.bump, id=f"pcs-{name}"),
+            rx.text(cls.note, id=f"pcs-note-{name}"),
+        )
+
+
+class PrivBg(rx.State):
+    """#7465 in a background task: private plain attributes outside / inside `async with self`."""
+
+    out: str = ""
+
+    @rx.event(background=True)
+    async def bg_private(self):
+        try:
+            self.__outside = 1
+            res = "outside=ok"
+        except Exception as e:  # noqa: BLE001
+            res = f"outside={type(e).__name__}"
+        async with self:
+            self.__inside = 2
+            self.out = f"{res} inside={self.__inside}"
+
+
 class EmojiState(rx.State):
     emoji: str = "a\U0001f600b"
 
@@ -186,9 +225,22 @@ def emoji_plain() -> rx.Component:
     return rx.vstack(rx.text(VERSION, id="version"), rx.text(EmojiState.emoji, id="emoji-plain"))
 
 
+def priv2() -> rx.Component:
+    return rx.vstack(
+        rx.text(VERSION, id="version"),
+        PrivCS.create(name="A"),
+        PrivCS.create(name="B"),
+        rx.button("bg private", on_click=PrivBg.bg_private, id="pbg"),
+        rx.text(PrivBg.out, id="pbg-out"),
+        rx.text(ChainState.pings, id="pings"),
+        rx.button("ping", on_click=ChainState.ping, id="ping"),
+    )
+
+
 app = rx.App()
 app.add_page(index)
 app.add_page(onload_page, route="/onload", on_load=ChainState.onload_raises)
 app.add_page(emoji_rev, route="/emoji-rev")
 app.add_page(emoji_len, route="/emoji-len")
 app.add_page(emoji_plain, route="/emoji-plain")
+app.add_page(priv2, route="/priv2")

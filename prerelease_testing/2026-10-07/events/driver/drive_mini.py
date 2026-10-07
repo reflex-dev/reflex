@@ -211,6 +211,26 @@ def emoji_case():
     h.record("prerender.emoji_hydration", "anomaly" if bad else "pass", {"routes_with_page_errors": bad, "detail": out})
 
 
+def priv2_case():
+    """#7465 in ComponentState instances and background tasks."""
+    tag = "priv2"
+    e0 = len(h.page_errors)
+    ctx, page = connect(tag, "/priv2")
+    page.click("#pcs-A"); page.wait_for_timeout(400)
+    page.click("#pcs-A"); page.wait_for_timeout(400)
+    page.click("#pcs-B")
+    a = h.wait_pred(page, "pcs-note-A", lambda v: v == "count=4 last=4", 5)
+    b = h.wait_pred(page, "pcs-note-B", lambda v: v == "count=2 last=2", 5)
+    page.click("#pbg")
+    bg = h.wait_pred(page, "pbg-out", lambda v: "inside=" in v, 6)
+    toast = toast_visible(page)
+    h.shot(page, "priv2")
+    ok = a == "count=4 last=4" and b == "count=2 last=2" and bg == "outside=ImmutableStateError inside=2" and not toast
+    h.record("priv.component_state_and_background", "pass" if ok else "fail", {
+        "pcs_A": a, "pcs_B": b, "bg_out": bg, "error_toast": toast, "page_errors": [e["error"][:200] for e in h.page_errors[e0:]]})
+    ctx.close()
+
+
 CASES = {
     "a_returns_b_raises": lambda: chain_case("a_returns_b_raises", "a-ret", {"status": "A-set", "items": "B-partial"}),
     "a_yields_b_raises": lambda: chain_case("a_yields_b_raises", "a-yield", {"status": "AY-set", "items": "B-partial"}),
@@ -224,6 +244,7 @@ CASES = {
     "sup_cancel": sup_case,
     "sup_split": split_case,
     "emoji": emoji_case,
+    "priv2": priv2_case,
 }
 try:
     for name, fn in CASES.items():

@@ -1,0 +1,3 @@
+--- scenario direct
+ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (derive_d.py:18)
+--- end

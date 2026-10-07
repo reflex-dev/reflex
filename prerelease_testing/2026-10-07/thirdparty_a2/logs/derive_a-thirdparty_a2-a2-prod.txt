@@ -1,0 +1,31 @@
+reflex 0.10.0a2  REFLEX_ENV_MODE=prod
+name       | S.<name> (class)                                 | cls.<name> in classmethod | inst.<name>                  | field? | frontend var?
+_u_str     | Field Field(default='label', is_var=True, annota | Field                  | 'label'                      | True   | False
+_u_int     | Field Field(default=16, is_var=True, annotated_t | Field                  | 16                           | True   | False
+_u_dict    | Field Field(default_factory=functools.partial(<f | Field                  | MutableProxy({'a': 1})       | True   | False
+KEY        | Var:StringCastedVar Var.__init_subclass__.<local | Var:StringCastedVar    | 'public-unannotated'         | True   | True
+_cv_key    | str 'classvar-backend'                           | str                    | 'classvar-backend'           | False  | False
+CV_KEY     | str 'classvar-public'                            | str                    | 'classvar-public'            | False  | False
+_ann       | Field Field(default='annotated-backend', is_var= | Field                  | 'annotated-backend'          | True   | False
+_fld       | Field Field(default='field-backend', is_var=True | Field                  | 'field-backend'              | True   | False
+_fld_unann | Field Field(default='field-unannotated-backend', | Field                  | 'field-unannotated-backend'  | True   | False
+pub        | Var:StringCastedVar Var.__init_subclass__.<local | Var:StringCastedVar    | 'annotated-public'           | True   | True
+_m_key     | Field Field(default='mixin-label', is_var=True,  | Field                  | 'mixin-label'                | True   | False
+_m_ann     | Field Field(default='mixin-ann', is_var=True, an | Field                  | 'mixin-ann'                  | True   | False
+Mix._m_key | Field(default='mixin-label', is_var=True, annota
+Child._inh | Field(default='inherited', is_var=True, annotate | Base._inh=Field(default='inherited', is_var=True, annotated_type=<class 'str'>) | inst='inherited'
+type(self)._u_str via instance method: Field(default='label', is_var=True, annotated_type=<class 'str'>)
+inst.__class__._u_str: Field(default='label', is_var=True, annotated_type=<class 'str'>)
+--- Python-level use of the class attribute
+S._u_str == 'label'      : False
+f'{S._u_str}'            : "EXC BackendVarFormatError: Backend var 'S._u_str' exists only on t...
+S._u_int + 1             : EXC TypeError: unsupported operand type(s) for +: 'Field' and 'int'
+S._u_dict['a']           : EXC TypeError: 'Field' object is not subscriptable
+bool(S._fld) [default ''] : True
+--- Component use
+rx.text(S._u_str)        : "EXC ChildrenTypeError: Component Text received child Field(default...
+rx.icon('x', size=S._u_int): 'EXC TypeError: Invalid var passed for prop Icon.size, expected typ...
+rx.text(S.KEY)           : 'jsx(RadixThemesText,{as:"p"},reflex___state____state____main_____s...
+rx.text(S._cv_key)       : 'jsx(RadixThemesText,{as:"p"},"classvar-backend")'
+--- frontend dict sent to client contains KEY?
+keys of S.dict(): ['KEY_rx_state_', 'pub_rx_state_']

@@ -1,0 +1,4 @@
+ClerkState.jwt_public_keys -> Field Field(default_factory=functools.partial(<function deepcopy at 0x7f55099023e0>, []), is_var
+class-level _secret_key / _fetch_user: Field(default='sk_test_123', is_var=True, annotated_type=<class 'str'> | Field(default=False, is_var=True, annotated_type=<class 'bool'>)
+instance   _secret_key / _fetch_user: 'sk_test_123' | False
+RESULT set_clerk_session(valid RS256 JWT): is_signed_in=False user_id=None auth_error=None exc=TypeError: 'Field' object is not iterable

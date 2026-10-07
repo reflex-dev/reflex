@@ -1,0 +1,183 @@
+{
+ "from reflex.constants import CustomComponents": {
+  "ok": true,
+  "value": "<class 'reflex_base.constants.custom_components.CustomComponents'>",
+  "type": "type"
+ },
+ "from reflex_base.constants import CustomComponents": {
+  "ok": true,
+  "value": "<class 'reflex_base.constants.custom_components.CustomComponents'>",
+  "type": "type"
+ },
+ "rx.constants.CustomComponents": {
+  "ok": true,
+  "value": "<class 'reflex_base.constants.custom_components.CustomComponents'>",
+  "type": "type"
+ },
+ "Child.backend_vars": {
+  "ok": true,
+  "value": "{'_reflex_internal_links': None, '_b': 2, '_e': []}",
+  "type": "dict"
+ },
+ "Child.inherited_vars": {
+  "ok": true,
+  "value": "{'rx_router_session': Var.__init_subclass__.<locals>.ObjectCastedVar(_js_expr='reflex___state____state.rx_router_session_rx_state_', _var_type=<class 'reflex.istate.data.SessionData'>, _var_data=None, _original=Var(_js_expr='reflex___state____state.rx_router_session_rx_state_', _var_type=<class 'ref",
+  "type": "dict"
+ },
+ "Child.inherited_backend_vars": {
+  "ok": true,
+  "value": "{'_reflex_internal_links': None, '_b': 2}",
+  "type": "dict"
+ },
+ "Child.get_skip_vars()": {
+  "ok": true,
+  "value": "{'_abc_impl', 'a', 'dirty_substates', '_was_touched', 'rx_router_page', 'rx_router_url', 'dirty_vars', 'rx_router_route_id', '_backend_vars', 'rx_router_session', 'rx_router_headers', '_mixin', 'is_hydrated', 'parent_state', 'substates', 'router_data', 'c', 'router'}",
+  "type": "set"
+ },
+ "Child.base_vars": {
+  "ok": true,
+  "value": "['d']",
+  "type": "list"
+ },
+ "Child.vars": {
+  "ok": true,
+  "value": "['a', 'c', 'd', 'is_hydrated', 'router', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']",
+  "type": "list"
+ },
+ "Child.computed_vars": {
+  "ok": true,
+  "value": "[]",
+  "type": "list"
+ },
+ "Child.event_handlers": {
+  "ok": true,
+  "value": "['setvar']",
+  "type": "list"
+ },
+ "Child.get_fields() keys": {
+  "ok": true,
+  "value": "['_b', '_backend_vars', '_e', '_reflex_internal_links', '_was_touched', 'a', 'd', 'dirty_substates', 'dirty_vars', 'is_hydrated', 'parent_state', 'router_data', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url', 'substates']",
+  "type": "list"
+ },
+ "Child.__fields__ keys": {
+  "ok": true,
+  "value": "['_b', '_backend_vars', '_e', '_reflex_internal_links', '_was_touched', 'a', 'd', 'dirty_substates', 'dirty_vars', 'is_hydrated', 'parent_state', 'router_data', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url', 'substates']",
+  "type": "list"
+ },
+ "Child.get_fields()['_e'] backend attr": {
+  "ok": true,
+  "value": "'<no _backend attr>'",
+  "type": "str"
+ },
+ "Child.get_fields()['a'] owner attr": {
+  "ok": true,
+  "value": "'<no _owner attr>'",
+  "type": "str"
+ },
+ "instance(Child)": {
+  "ok": true,
+  "value": "'Child'",
+  "type": "str"
+ },
+ "instance._backend_vars": {
+  "ok": true,
+  "value": "{'_e': []}",
+  "type": "dict"
+ },
+ "instance._e": {
+  "ok": true,
+  "value": "MutableProxy([])",
+  "type": "MutableProxy"
+ },
+ "instance._b (inherited backend)": {
+  "ok": true,
+  "value": "2",
+  "type": "int"
+ },
+ "instance.get_value('_e')": {
+  "ok": true,
+  "value": "[]",
+  "type": "list"
+ },
+ "instance.get_value('a')": {
+  "ok": true,
+  "value": "1",
+  "type": "int"
+ },
+ "instance.dict() keys": {
+  "ok": true,
+  "value": "['reflex___state____state.__main______parent.__main______child']",
+  "type": "list"
+ },
+ "reflex_base.utils.types.is_backend_base_variable": {
+  "ok": true,
+  "value": "<function is_backend_base_variable at 0x7f588f99fc40>",
+  "type": "function"
+ },
+ "reflex.utils.types.is_backend_base_variable": {
+  "ok": true,
+  "value": "<function is_backend_base_variable at 0x7f588f99fc40>",
+  "type": "function"
+ },
+ "reflex_base.utils.types.RESERVED_BACKEND_VAR_NAMES": {
+  "ok": true,
+  "value": "{'_abc_impl', '_mixin', '_backend_vars', '_was_touched'}",
+  "type": "set"
+ },
+ "reflex.utils.types.RESERVED_BACKEND_VAR_NAMES": {
+  "ok": true,
+  "value": "{'_abc_impl', '_mixin', '_backend_vars', '_was_touched'}",
+  "type": "set"
+ },
+ "reflex.istate.proxy.is_mutable_type": {
+  "ok": true,
+  "value": "<functools._lru_cache_wrapper object at 0x7f588edaae50>",
+  "type": "_lru_cache_wrapper"
+ },
+ "reflex_base.utils.types.is_mutable_type": {
+  "ok": false,
+  "exc": "builtins.ImportError",
+  "msg": "cannot import name 'is_mutable_type' from 'reflex_base.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_base/utils/types.py)",
+  "mentions_get_fields": false,
+  "where": "<string>:1"
+ },
+ "is_mutable_type(list)": {
+  "ok": true,
+  "value": "True",
+  "type": "bool"
+ },
+ "PageContext.get() outside": {
+  "ok": false,
+  "exc": "builtins.RuntimeError",
+  "msg": "No active PageContext is attached to the current context.",
+  "mentions_get_fields": false,
+  "where": "reflex_base/plugins/compiler.py:612"
+ },
+ "CompileContext.get() outside": {
+  "ok": false,
+  "exc": "builtins.RuntimeError",
+  "msg": "No active CompileContext is attached to the current context.",
+  "mentions_get_fields": false,
+  "where": "reflex_base/plugins/compiler.py:612"
+ },
+ "PageContext.get() outside caught as RuntimeError (old style)": {
+  "ok": true,
+  "value": "'caught RuntimeError: No active PageContext is attached to the current context.'",
+  "type": "str"
+ },
+ "Child._b class-level": {
+  "ok": true,
+  "value": "2",
+  "type": "int"
+ },
+ "Child._e class-level": {
+  "ok": true,
+  "value": "[]",
+  "type": "list"
+ },
+ "Child.a class-level": {
+  "ok": true,
+  "value": "Var.__init_subclass__.<locals>.NumberCastedVar(_js_expr='reflex___state____state____main______parent.a_rx_state_', _var_type=<class 'int'>, _var_data=None, _original=Var(_js_expr='reflex___state____state____main______parent.a_rx_state_', _var_type=<class 'int'>, _var_data=VarData(field_dependencies=",
+  "type": "NumberCastedVar"
+ }
+}
