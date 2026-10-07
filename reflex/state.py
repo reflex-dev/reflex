@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import builtins
 import contextlib
-import copy
 import dataclasses
 import functools
 import hashlib
@@ -365,12 +364,14 @@ def _has_data_descriptor(cls: type, name: str) -> bool:
 def _bind_attr(cls: type, name: str, value: Any) -> None:
     """Set a descriptor on a class, binding it to the class as class creation does.
 
+    Bypass the metaclass's default assignment handling during field registration.
+
     Args:
         cls: The class.
         name: The attribute name.
         value: The descriptor.
     """
-    setattr(cls, name, value)
+    type.__setattr__(cls, name, value)
     value.__set_name__(cls, name)
 
 
@@ -1489,11 +1490,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             cls = type(self)
             if name not in (settable := cls._settable_names):
                 if not (
-                    # Dunder names, like computed var caches, and mangled private names.
-                    name.startswith((
-                        "__",
-                        f"_{getattr(cls, '__original_name__', cls.__name__)}__",
-                    ))
+                    # Dunder names, like computed var caches, and private names
+                    # mangled by this class, a base or a mixin: plain attributes.
+                    (name.startswith("_") and "__" in name)
                     # A field, a property, or a bookkeeping slot handles the assignment.
                     or _has_data_descriptor(cls, name)
                 ):
@@ -1633,7 +1632,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for prop_name in self.base_vars:
             field = fields[prop_name]
             if self._is_client_storage(field):
-                setattr(self, prop_name, copy.deepcopy(field.default))
+                setattr(self, prop_name, field.default_value())
 
         # Recursively reset the substate client storage.
         for substate in self.substates.values():
@@ -2101,7 +2100,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
     @classmethod
     @functools.lru_cache
     def _to_schema(cls) -> str:
-        """Convert a state to a schema.
+        """Hash the field names and types that determine state compatibility.
 
         Returns:
             The hash of the schema.
@@ -2109,12 +2108,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         def _field_tuple(
             field_name: str,
-        ) -> tuple[str, Any, Any]:
+        ) -> tuple[str, str]:
             model_field = cls.__fields__[field_name]
             return (
                 field_name,
                 _serialize_type(model_field.type_),
-                (model_field.default if is_serializable(model_field.default) else None),
             )
 
         return md5(
@@ -2209,9 +2207,38 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         except Exception as err:
             msg = f"Stored state could not be unpickled: {err!r}"
             raise StateSchemaMismatchError(msg) from err
-        if substate_schema != state._to_schema():
+        if (
+            substate_schema != state._to_schema()
+            and substate_schema != _legacy_state_schema(type(state))
+        ):
             raise StateSchemaMismatchError
         return state
+
+
+def _legacy_state_schema(state_cls: type[BaseState]) -> str:
+    """Hash the previous schema format to restore compatible persisted states.
+
+    Args:
+        state_cls: The class whose previous schema to compute.
+
+    Returns:
+        The schema hash including defaults, as used by older Reflex versions.
+    """
+    fields = state_cls.__fields__
+    return md5(
+        pickle.dumps(
+            sorted(
+                (
+                    name,
+                    _serialize_type(fields[name].type_),
+                    fields[name].default
+                    if is_serializable(fields[name].default)
+                    else None,
+                )
+                for name in state_cls.base_vars
+            )
+        )
+    ).hexdigest()
 
 
 def _serialize_type(type_: Any) -> str:
@@ -2338,6 +2365,7 @@ class State(BaseState):
         self._reset_client_storage()
         if vars:
             await _apply_client_storage_vars(self, vars)
+        self._clean()
         # The snapshot must carry is_hydrated=False: the frontend skips
         # writing client storage for a delta that is not yet hydrated, and
         # the reset defaults above must not be written back to the browser.
@@ -2347,8 +2375,12 @@ class State(BaseState):
             delta = await _resolve_delta(self.dict())
             if hashes:
                 delta = await _diff_against_initial_state(type(self), delta, hashes)
+            # Include the guard and values changed while resolving the snapshot.
+            for state_name, changes in (await self._get_resolved_delta()).items():
+                delta.setdefault(state_name, {}).update(changes)
             await ctx.emit_delta(delta=delta)
-        self._clean()
+            # Follow-up corrections must be allowed to write browser storage.
+            self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
             return None

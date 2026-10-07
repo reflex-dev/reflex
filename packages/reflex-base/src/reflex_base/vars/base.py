@@ -3966,6 +3966,11 @@ class Field(Generic[FIELD_TYPE]):
     # Until then no value is a proxy: isinstance against () is always false.
     _proxy: ClassVar[Any] = ()
 
+    # The browser storage base class, installed by reflex.istate.storage: a
+    # factory producing such a value collapses to the value, which carries the
+    # storage classification and options. Until then nothing matches ().
+    _client_storage: ClassVar[Any] = ()
+
     # The class and attribute the field is bound to, set by __set_name__.
     _owner: type | None = None
     _name: str = ""
@@ -4541,11 +4546,29 @@ def _validate_state_declaration(
         seen.update(vars(base))
 
 
-def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
+def _private_prefixes(class_name: str) -> tuple[str, str]:
+    """Get the prefixes of the names Python treats as private in a class body.
+
+    A private name is a plain attribute of the class unless it is declared a
+    field explicitly, as it was before fields became descriptors.
+
+    Args:
+        class_name: The name of the class being created.
+
+    Returns:
+        The dunder prefix and the prefix ``__name`` is mangled to in the class.
+    """
+    return "__", f"_{class_name.lstrip('_')}__"
+
+
+def _unannotated_fields(
+    namespace: Mapping[str, Any], private: tuple[str, ...]
+) -> dict[str, Field]:
     """Get the fields a class namespace declares by value alone.
 
     Args:
         namespace: The class namespace.
+        private: The prefixes of names that are fields only when declared as such.
 
     Returns:
         The fields by name.
@@ -4566,7 +4589,7 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
                     else figure_out_type(value.default)
                 )
         elif (
-            not key.startswith("__")
+            not key.startswith(private)
             and not callable(value)
             and not isinstance(value, (staticmethod, classmethod, Var))
             and not _is_descriptor(value)
@@ -4576,13 +4599,16 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
 
 
 def _annotated_fields(
-    namespace: Mapping[str, Any], lookup_order: Sequence[type]
+    namespace: Mapping[str, Any],
+    lookup_order: Sequence[type],
+    private: tuple[str, ...],
 ) -> dict[str, Field]:
     """Get the fields a class namespace declares by annotation.
 
     Args:
         namespace: The class namespace.
         lookup_order: The bases of the class in method resolution order.
+        private: The prefixes of names that are fields only when declared as such.
 
     Returns:
         The fields by name.
@@ -4595,9 +4621,16 @@ def _annotated_fields(
         if types.is_classvar(annotation) or key in slots:
             continue
         value = namespace.get(key, MISSING)
-        declared = (
-            value if value is not MISSING else _inherited_value(lookup_order, key)
-        )
+        inherited = _inherited_value(lookup_order, key)
+        if (
+            key.startswith(private)
+            and not isinstance(value, Field)
+            and not isinstance(inherited, Field)
+        ):
+            # A private name is a plain attribute unless declared a field, here
+            # or on a base it shadows.
+            continue
+        declared = value if value is not MISSING else inherited
         if _is_descriptor(declared):
             # A property, computed var or other descriptor under an annotated
             # name stays as is, here or on a base; a field would shadow it.
@@ -4613,7 +4646,7 @@ def _annotated_fields(
             fields[key] = Field(annotated_type=annotation)
         elif isinstance(value, Field):
             fields[key] = value._replace(annotated_type=annotation)
-        elif isinstance(inherited := _inherited_value(lookup_order, key), Field):
+        elif isinstance(inherited, Field):
             # A new default for an inherited field keeps its kind of field.
             fields[key] = inherited._replace(
                 annotated_type=annotation, **_default_arguments(value)
@@ -4638,6 +4671,34 @@ def _default_arguments(value: Any) -> dict[str, Any]:
         "default": MISSING,
         "default_factory": functools.partial(copy.deepcopy, value),
     }
+
+
+def _accepts_default(declared: Field, value: Any) -> bool:
+    """Whether a field's annotation accepts a value as its default.
+
+    Args:
+        declared: The field.
+        value: The candidate default.
+
+    Returns:
+        Whether the value satisfies the field's annotation.
+
+    Raises:
+        TypeError: If the value is a Var or a Field, which no field defaults to.
+    """
+    if isinstance(value, Var):
+        msg = (
+            "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+            "references to vars in state."
+        )
+        raise TypeError(msg)
+    if isinstance(value, Field):
+        msg = (
+            "A Field cannot overwrite another field. Define a "
+            "computed var to read the field at runtime instead."
+        )
+        raise TypeError(msg)
+    return _isinstance(value, declared.outer_type_, nested=1, treat_var_as_type=False)
 
 
 def _is_descriptor(value: Any) -> bool:
@@ -4700,6 +4761,61 @@ class BaseStateMeta(ABCMeta):
         # from; its namespace is reserved for the whole hierarchy.
         _reflex_state_root: BaseStateMeta
 
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update a field's default while retaining its descriptor.
+
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces, unless it produces a browser
+        storage value, which becomes the default itself.
+
+        Args:
+            name: The class attribute being assigned.
+            value: Its new default value or zero-argument default factory.
+
+        Raises:
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
+        """
+        declared = cls.__fields__.get(name)
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
+        default = value
+        accepted = _accepts_default(declared, value)
+        if not accepted and callable(value):
+            # The field cannot hold the callable itself, so it is a factory:
+            # call it once to validate what it produces.
+            try:
+                default = value()
+            except Exception as err:
+                msg = f"Default factory for field '{name}' failed: {err}"
+                raise TypeError(msg) from err
+            if inspect.iscoroutine(default):
+                default.close()
+            accepted = _accepts_default(declared, default)
+            if accepted and not isinstance(default, declared._client_storage):
+                # Keep the callable to produce future defaults.
+                declared.default = MISSING
+                declared.default_factory = value
+                return
+            # Browser storage is classified and configured by the value itself,
+            # and the browser supplies later values, so the value produced once
+            # here is the default rather than the factory.
+        if not accepted:
+            msg = (
+                f"Invalid default for field '{name}': expected "
+                f"{declared.outer_type_}, got {default!r} of type {type(default)}."
+            )
+            raise TypeError(msg)
+        defaults = _default_arguments(default)
+        declared.default = defaults["default"]
+        declared.default_factory = defaults["default_factory"]
+
     def __new__(
         cls,
         name: str,
@@ -4744,12 +4860,13 @@ class BaseStateMeta(ABCMeta):
                 inherited_fields.update(
                     (key, value)
                     for key, value in _annotated_fields(
-                        vars(base), base.__mro__[1:]
+                        vars(base), base.__mro__[1:], _private_prefixes(base.__name__)
                     ).items()
-                    if key.startswith("_") and not key.startswith(f"_{base.__name__}__")
+                    if key.startswith("_")
                 )
-        own_fields = _unannotated_fields(namespace) | _annotated_fields(
-            namespace, lookup_order
+        private = _private_prefixes(name)
+        own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
+            namespace, lookup_order, private
         )
         annotations = annotations_from_namespace(namespace)
         for key, value in namespace.items():

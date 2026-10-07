@@ -5,7 +5,7 @@ import subprocess
 import sys
 import typing
 from collections.abc import Callable
-from typing import Annotated, Literal, TypeVar
+from typing import Annotated, Literal, Protocol, TypeVar, runtime_checkable
 
 import pytest
 from reflex_base.utils.types import (
@@ -158,6 +158,43 @@ def test_isinstance_resolves_type_alias(alias_cls: type) -> None:
     assert _isinstance(None, maybe, nested=1, treat_var_as_type=False)
     assert _isinstance("x", maybe, nested=1, treat_var_as_type=False)
     assert not _isinstance(1, maybe, nested=1, treat_var_as_type=False)
+
+
+def test_isinstance_checks_type_parameter_bounds() -> None:
+    """A type parameter, which a field never resolves, checks only its bound."""
+    t = TypeVar("t")
+    bounded = TypeVar("bounded", bound=str)
+    constrained = TypeVar("constrained", int, str)
+    forward = TypeVar("forward", bound="Unresolvable")  # noqa: F821  # pyright: ignore[reportUndefinedVariable]
+    assert _isinstance(1, t, nested=1, treat_var_as_type=False)
+    assert _isinstance("x", t | None, nested=1, treat_var_as_type=False)
+    assert not _isinstance("x", list[t], nested=1, treat_var_as_type=False)  # pyright: ignore[reportGeneralTypeIssues]
+    assert _isinstance("x", bounded, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1, bounded, nested=1, treat_var_as_type=False)
+    assert _isinstance(1, constrained, nested=1, treat_var_as_type=False)
+    assert _isinstance("x", constrained, nested=1, treat_var_as_type=False)
+    assert not _isinstance(1.5, constrained, nested=1, treat_var_as_type=False)
+    assert _isinstance(object(), forward, nested=1, treat_var_as_type=False)
+
+
+def test_isinstance_accepts_unchecked_protocol() -> None:
+    """A protocol without runtime_checkable cannot be checked, so it accepts any value."""
+    t_co = TypeVar("t_co", covariant=True)
+
+    class Reader(Protocol):
+        def read(self) -> str: ...
+
+    class Source(Protocol[t_co]):
+        def get(self) -> t_co: ...
+
+    @runtime_checkable
+    class CheckedReader(Protocol):
+        def read(self) -> str: ...
+
+    bounded = TypeVar("bounded", bound=Reader)
+    for annotation in (Reader, Reader | None, bounded, Source[int]):
+        assert _isinstance(object(), annotation, nested=1, treat_var_as_type=False)
+    assert not _isinstance(object(), CheckedReader, nested=1, treat_var_as_type=False)
 
 
 @pytest.mark.parametrize("alias_cls", _type_alias_types())

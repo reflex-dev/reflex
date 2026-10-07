@@ -49,7 +49,6 @@
 ### Miscellaneous
 
 - No longer set `BUN_OPTIONS` when launching the frontend dev server; bun ignores it for the process it spawns for a package script. ([#7203](https://github.com/reflex-dev/reflex/issues/7203))
-- Allow wrapt 2.4 and 2.5, and keep SQLModel below 0.0.45 to preserve existing datetime storage behavior. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))
 
 
 ## v0.9.12 (2026-09-21)
