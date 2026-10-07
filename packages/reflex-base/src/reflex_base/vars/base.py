@@ -3970,7 +3970,8 @@ class Field(Generic[FIELD_TYPE]):
 
     # The browser storage base class, installed by reflex.istate.storage: a
     # factory producing such a value collapses to the value, which carries the
-    # storage classification and options. Until then nothing matches ().
+    # storage classification and options, and a plain value assigned to such a
+    # default is wrapped like it. Until then nothing matches ().
     _client_storage: ClassVar[Any] = ()
 
     # The class and attribute the field is bound to, set by __set_name__.
@@ -4726,6 +4727,25 @@ def _accepts_default(declared: Field, value: Any) -> bool:
     return _isinstance(value, declared.outer_type_, nested=1, treat_var_as_type=False)
 
 
+def _keep_client_storage(declared: Field, value: Any) -> Any:
+    """Keep the browser storage a field's default declares for a plain value.
+
+    A browser storage var is classified and configured by its default value,
+    so a plain value replacing it must carry the same storage type and options.
+
+    Args:
+        declared: The field.
+        value: The candidate default.
+
+    Returns:
+        The value held by the declared storage, or the value unchanged.
+    """
+    storage: Any = declared.default
+    if isinstance(storage, declared._client_storage):
+        return storage._with_value(value)
+    return value
+
+
 def _assigned_field(cls: BaseStateMeta, name: str) -> Field | None:
     """Get the field a class attribute assignment or deletion configures.
 
@@ -4809,9 +4829,11 @@ class BaseStateMeta(ABCMeta):
         A value the field's annotation accepts becomes the default. A
         zero-argument callable it does not accept becomes the default factory,
         after one call validates what it produces, unless it produces a browser
-        storage value, which becomes the default itself. Assigning the field
-        itself, or the Var read through the class, undoes the most recent
-        assignment, as patching tools do to restore what they saved.
+        storage value, which becomes the default itself. A plain value for a
+        browser storage default, or produced by such a factory, keeps the
+        declared storage type and options. Assigning the field itself, or the
+        Var read through the class, undoes the most recent assignment, as
+        patching tools do to restore what they saved.
 
         Args:
             name: The class attribute being assigned.
@@ -4832,8 +4854,8 @@ class BaseStateMeta(ABCMeta):
             # A value read from a state instance is proxied for dirty tracking;
             # the default must not retain that instance through the proxy.
             value = value.__wrapped__
-        default = value
-        accepted = _accepts_default(declared, value)
+        default = _keep_client_storage(declared, value)
+        accepted = _accepts_default(declared, default)
         if not accepted and callable(value):
             # The field cannot hold the callable itself, so it is a factory:
             # call it once to validate what it produces.
@@ -4844,6 +4866,7 @@ class BaseStateMeta(ABCMeta):
                 raise TypeError(msg) from err
             if inspect.iscoroutine(default):
                 default.close()
+            default = _keep_client_storage(declared, default)
             accepted = _accepts_default(declared, default)
             if accepted and not isinstance(default, declared._client_storage):
                 # Keep the callable to produce future defaults.

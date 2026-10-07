@@ -93,6 +93,9 @@ calls it whenever an instance needs a new default or resets. If that validation
 call fails or returns an invalid default, the previous default remains in place.
 A factory that produces a browser storage value is called once at assignment,
 and its result becomes the default so the storage name and options are kept.
+Assigning a plain string to a var whose default is a browser storage value, such
+as `rx.LocalStorage("light", name="theme")`, or a factory producing one, keeps
+that storage type, name and options and changes only the value.
 Frontend vars remain usable in the UI after assigning a new default value or
 factory.
 

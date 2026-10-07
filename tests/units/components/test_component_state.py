@@ -3,10 +3,13 @@
 from unittest import mock
 
 import pytest
+from reflex_base import constants
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_components_core.base.bare import Bare
 
 import reflex as rx
+from reflex.compiler.utils import compile_client_storage
+from reflex.constants.state import FIELD_MARKER
 
 
 def test_component_state():
@@ -149,3 +152,34 @@ def test_component_state_patch_round_trip():
             assert PatchedComponentState.get_fields()[name].default_value() == 42
         assert PatchedComponentState.get_fields()[name].default_value() == 0
         assert getattr(state_cls(), name) == 5
+
+
+def test_component_state_storage_default_keeps_browser_storage():
+    """A browser storage var configured in get_component stays in browser storage."""
+
+    class PreferenceComponentState(rx.ComponentState):
+        pref: str = rx.LocalStorage("light", name="pref", sync=True)
+
+        @classmethod
+        def get_component(cls, initial: str) -> rx.Component:
+            """Configure the new state class before returning its component.
+
+            Args:
+                initial: The preference's default value.
+
+            Returns:
+                The component showing the preference.
+            """
+            cls.pref = initial
+            return rx.text(cls.pref)
+
+    state_cls = PreferenceComponentState.create(initial="dark").State
+    assert state_cls is not None
+    default = state_cls.get_fields()["pref"].default
+    assert isinstance(default, rx.LocalStorage)
+    assert default == "dark"
+    assert (default.name, default.sync) == ("pref", True)
+    assert state_cls._is_client_storage("pref")
+    compiled = compile_client_storage(state_cls)
+    key = f"{state_cls.get_full_name()}.pref{FIELD_MARKER}"
+    assert compiled[constants.LOCAL_STORAGE][key] == {"name": "pref", "sync": True}

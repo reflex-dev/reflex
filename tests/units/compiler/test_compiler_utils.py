@@ -344,6 +344,86 @@ def test_storage_factory_assignment_keeps_classification(
     assert calls == [True]
 
 
+@pytest.mark.parametrize("factory", [False, True])
+@pytest.mark.parametrize("annotated_storage", [False, True])
+@pytest.mark.parametrize(
+    ("storage_type", "settings", "storage_key"),
+    [
+        pytest.param(
+            rx.Cookie,
+            {
+                "name": "custom-key",
+                "path": "/app",
+                "max_age": 60,
+                "secure": True,
+                "same_site": "strict",
+            },
+            constants.COOKIES,
+            id="cookie",
+        ),
+        pytest.param(
+            rx.LocalStorage,
+            {"name": "custom-key", "sync": True},
+            constants.LOCAL_STORAGE,
+            id="local_storage",
+        ),
+        pytest.param(
+            rx.SessionStorage,
+            {"name": "custom-key"},
+            constants.SESSION_STORAGE,
+            id="session_storage",
+        ),
+    ],
+)
+def test_plain_default_assignment_keeps_browser_storage(
+    storage_type: type,
+    settings: dict[str, Any],
+    storage_key: str,
+    annotated_storage: bool,
+    factory: bool,
+    forked_registration_context: RegistrationContext,
+):
+    """A plain default assigned to a browser storage var keeps its storage and options.
+
+    Args:
+        storage_type: The browser storage type the declaration uses.
+        settings: The storage options of the declaration.
+        storage_key: The compiled storage section listing the var.
+        annotated_storage: Whether the var is annotated with the storage type, or str.
+        factory: Whether to assign a factory producing the plain value.
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+    declared_default = storage_type("old", **settings)
+    storage_state: Any = type(
+        "StorageState",
+        (State,),
+        {
+            "__annotations__": {"value": storage_type if annotated_storage else str},
+            "value": declared_default,
+            "__module__": __name__,
+        },
+    )
+    declared = storage_state.get_fields()["value"]
+    storage_state.value = (lambda: "new") if factory else "new"
+
+    assert type(declared.default) is storage_type
+    assert declared.default == "new"
+    assert vars(declared.default) == vars(declared_default)
+    assert storage_state._is_client_storage("value")
+    compiled = utils.compile_client_storage(storage_state)
+    key = f"{storage_state.get_full_name()}.value{FIELD_MARKER}"
+    assert compiled[storage_key][key] == declared_default.options()
+    state = storage_state(value="changed")
+    state._reset_client_storage()
+    assert state.value == "new"
+
+    with pytest.raises(TypeError, match="Invalid default"):
+        storage_state.value = 1
+    replacement = storage_type("other", name="other-key")
+    storage_state.value = replacement
+    assert declared.default is replacement
+
+
 def test_document_root_allows_static_id_on_head_script():
     """A head script's ID should remain an HTML attribute without a hook."""
     head_script = Script.create(src="/probe.js", id="head-probe")
