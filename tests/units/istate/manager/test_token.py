@@ -207,12 +207,15 @@ def test_base_state_token_state_key_matches_the_token_of_the_state(
     assert token._state_key(KeyChild) == f"client-abc_{KeyChild.get_full_name()}"
 
 
-@pytest.mark.parametrize("legacy_token", ["client-token", "client-token_", ""])
-def test_from_legacy_token_missing_state_path(legacy_token, clean_registration_context):
-    """Legacy tokens without a state path name the supported replacement.
+@pytest.mark.parametrize(
+    "legacy_token",
+    ["client-token", "client-token_", "", "my_client", "client-token_NoSuchState"],
+)
+def test_from_legacy_token_invalid_state_path(legacy_token, clean_registration_context):
+    """Legacy tokens with invalid state paths name the supported replacement.
 
     Args:
-        legacy_token: A legacy token without a state path.
+        legacy_token: A legacy token with a missing or unknown state path.
         clean_registration_context: A fresh, empty registration context.
     """
     from reflex.state import BaseState

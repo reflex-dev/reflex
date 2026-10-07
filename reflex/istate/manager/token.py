@@ -253,12 +253,13 @@ class BaseStateToken(StateToken["BaseState"]):
         )
 
         client_token, state_path = _split_substate_key(legacy_token)
-        if not state_path:
+        try:
+            state_cls = root_state.get_class_substate(tuple(state_path.split(".")))  # type: ignore[union-attr]
+        except ValueError as err:
             msg = (
-                "Invalid legacy state token: missing a state path. Expected "
+                "Invalid legacy state token: no state found for the state path. Expected "
                 "'<client_token>_<state_full_name>'. Use "
                 "rx.BaseStateToken(ident=client_token, cls=StateClass) instead."
             )
-            raise ValueError(msg)
-        state_cls = root_state.get_class_substate(tuple(state_path.split(".")))  # type: ignore[union-attr]
+            raise ValueError(msg) from err
         return cls(ident=client_token, cls=state_cls)
