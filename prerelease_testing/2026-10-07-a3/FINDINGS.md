@@ -186,7 +186,7 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
 - **Fix prototyped (10-07, at the maintainer's request)** on branch `claude/a3-11-storage-echo` (frontend only, `state.js`): do not write
   an echoed local/session storage value back (cookies still renew `max_age`); on a storage event send the value stored now, not
   `e.newValue`; resync a synced var whose echo crossed a newer stored value. Storm driver vs published a3: dev 0 storms in 11 runs
-  (a3 3/4); `on_load` stamps in 6 tabs (A3-12) 0 storms, 6/6 converge (a3 4/4 storms). 3 Playwright regression tests fail on main.
+  (a3 3/4), prod 0/7; `on_load` stamps (A3-12) 0 storms in 16 runs, all converge (a3 4/4 storms). 3 Playwright regression tests fail on main. PR [reflex-dev/reflex#7505](https://github.com/reflex-dev/reflex/pull/7505).
 
 ### A3-12: `sync=True` LocalStorage written concurrently by several tabs (an on_load that stamps a synced var, a browser session restore) loops forever between the tabs (MEDIUM, pre-existing on 0.9.12, a2 and a3; pending verification)
 - Item `a3_hydration` (inbox 2). `src/syncstamp` (`Stamp.last = rx.LocalStorage("", name="ss_last", sync=True)` set to a per-tab value in

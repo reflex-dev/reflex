@@ -1,0 +1,274 @@
+{
+"args": {
+"base": "http://localhost:3660",
+"out": "a3dev_restore7_st150_1click_2.json",
+"scenario": "restore",
+"ntabs": 7,
+"headful": false,
+"throttle": false,
+"persistent": false,
+"clicks": "pick-red@200",
+"observe": 10,
+"heal": false,
+"late_ms": 0,
+"path": "/",
+"stagger": 150
+},
+"scenario": "restore",
+"t_start": 1791411180.103,
+"clicks": [
+[
+"pick-red",
+1791411183.424,
+0.075
+]
+],
+"hyd_times": [
+1791411184.429,
+1791411184.473,
+1791411184.483,
+1791411184.472,
+1791411184.583,
+1791411184.6,
+1791411184.702
+],
+"ok_hyd": true,
+"windows_5s": [
+0,
+0
+],
+"storm": false,
+"theme_final": [
+"red",
+"red",
+"red",
+"red",
+"red",
+"red",
+"red"
+],
+"doc_final": [
+"warm",
+"warm",
+"warm",
+"warm",
+"warm",
+"warm",
+"warm"
+],
+"converged": true,
+"ls_theme": "red",
+"ls_doc": "warm",
+"visibility": [
+"visible",
+"visible",
+"visible",
+"visible",
+"visible",
+"visible",
+"visible"
+],
+"tab0_timeline": [
+"green",
+"red"
+],
+"per_tab_counts": [
+{
+"sent": 2,
+"recv": 5,
+"uvi": 0,
+"se": 0,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 1,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 1,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 0,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 0,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 0,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 0,
+"opened": 1
+}
+],
+"per_tab_head": [
+{
+"tl": [
+[
+1791411183201,
+"green"
+],
+[
+1791411183526,
+"red"
+]
+],
+"se_vals": [],
+"log": [
+[
+1791411183172,
+"in",
+"0{\"sid\":\"8fyolQj5myKr4bquAADN\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411183187,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____prefs.theme_rx_state_\":\"gre"
+],
+[
+1791411183195,
+"in",
+"40/_event,{\"sid\":\"rgBWwE9GeCYZW6rEAADO\"}"
+],
+[
+1791411183197,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8660\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411183197,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+],
+[
+1791411183494,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.vhsync___vhsync____prefs.pick\",\"payload\":{\"v\":\"red\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+],
+[
+1791411183503,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"red\"}}}]"
+]
+]
+},
+{
+"tl": [
+[
+1791411183711,
+"red"
+]
+],
+"se_vals": [
+[
+314,
+"vh_theme",
+"green",
+"red"
+]
+],
+"log": [
+[
+1791411183463,
+"in",
+"0{\"sid\":\"QCayeDpYIjt_YP36AADP\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411183562,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411183627,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____prefs.theme_rx_state_\":\"red"
+],
+[
+1791411183637,
+"in",
+"40/_event,{\"sid\":\"H_qbgfimDLtDBg8nAADQ\"}"
+],
+[
+1791411183644,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8660\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411183645,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+]
+]
+},
+{
+"tl": [
+[
+1791411184264,
+"red"
+]
+],
+"se_vals": [
+[
+108,
+"vh_theme",
+"green",
+"red"
+]
+],
+"log": [
+[
+1791411183507,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411183721,
+"in",
+"0{\"sid\":\"CCMfo2jngyujAHAUAADR\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411184084,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____prefs.theme_rx_state_\":\"red"
+],
+[
+1791411184094,
+"in",
+"40/_event,{\"sid\":\"CgR-grmR_-kZla7aAADT\"}"
+],
+[
+1791411184101,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8660\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411184102,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+]
+]
+}
+]
+}

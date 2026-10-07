@@ -1,0 +1,83 @@
+{
+"args": {
+"base": "http://localhost:3660",
+"out": "smoke.json",
+"scenario": "restore",
+"ntabs": 2,
+"headful": false,
+"throttle": false,
+"persistent": false,
+"clicks": "",
+"observe": 5,
+"heal": false,
+"late_ms": 150,
+"path": "/"
+},
+"t_start": 1791410635.141,
+"clicks": [],
+"hyd_times": [
+1791410638.999,
+1791410639.194
+],
+"ok_hyd": true,
+"windows_5s": [
+0
+],
+"storm": false,
+"theme_final": [
+"green",
+"green"
+],
+"doc_final": [
+"warm",
+"warm"
+],
+"converged": true,
+"ls_theme": "green",
+"ls_doc": "warm",
+"visibility": [
+"visible",
+"visible"
+],
+"tab0_timeline": [
+"green"
+],
+"per_tab_counts": [
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 0,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 0,
+"opened": 1
+}
+],
+"per_tab_head": [
+{
+"tl": [
+[
+1791410638896,
+"green"
+]
+],
+"se_vals": [],
+"log": []
+},
+{
+"tl": [
+[
+1791410639154,
+"green"
+]
+],
+"se_vals": [],
+"log": []
+}
+]
+}

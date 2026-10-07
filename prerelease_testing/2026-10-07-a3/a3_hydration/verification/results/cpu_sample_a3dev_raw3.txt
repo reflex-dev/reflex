@@ -1,0 +1,13 @@
+--- cpu sample at ~t+32s (storm phase)
+ 7946  1.7 61040 /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/python /tmp
+ 7961 11.8 197076 node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_hydra
+ 7968 71.8 60324 /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a3/bin/python /tmp
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+ 7968 root      20   0  624568  60324  12132 R 116.7   0.4   0:24.50 reflex
+ 8124 root      12  -8 1392.0g 239912 109364 R  58.3   1.5   0:11.98 chrome
+ 8130 root      25   5 1392.0g 161980  98472 S  33.3   1.0   0:09.34 chrome
+30835 root      20   0   31752  24576   9944 S  33.3   0.1   0:16.27 python
+ 8142 root      25   5 1392.0g 161232  98480 R  25.0   1.0   0:09.38 chrome
+ 8043 root      20   0   32.4g 121644 103436 S  16.7   0.7   0:05.10 chrome
+ 8051 root      20   0   32.4g  52428  36708 S   8.3   0.3   0:03.92 chrome
+ 8082 root      25   5 1392.0g 181552 105276 S   8.3   1.1   0:02.61 chrome

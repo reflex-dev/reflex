@@ -1,0 +1,2 @@
+PROTO2_a3dev_rtt100_docsrestart4_1.json  storm=False win5s=[0, 8] conv=False distinct_finals=['d1', 'd3'] ls=d3 clicks=0 slow_or_failed=0 heal=None heal_conv=None vis=vvvv uvi=[9, 9, 8, 8]
+PROTO2_a3dev_rtt100_docsrestart4_2.json  storm=False win5s=[0, 8] conv=True  distinct_finals=['d3'] ls=d3 clicks=0 slow_or_failed=0 heal=None heal_conv=None vis=vvvv uvi=[11, 10, 9, 10]

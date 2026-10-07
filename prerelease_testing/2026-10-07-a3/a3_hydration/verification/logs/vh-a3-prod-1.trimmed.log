@@ -1,0 +1,13 @@
+# trimmed from /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_hydration/logs/vh-a3-prod-1.log: first 6 lines, then every warning/error/info-close line (deduplicated with counts)
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:3663
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+      2 DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+      1 [INFO] Failed to close websocket with error Io(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+      1 DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+      1 Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+      1 App running at: http://0.0.0.0:3662/

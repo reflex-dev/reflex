@@ -1,0 +1,175 @@
+{
+"args": {
+"base": "http://localhost:3660",
+"out": "a3dev_restore7_1click_3.json",
+"scenario": "restore",
+"ntabs": 7,
+"headful": false,
+"throttle": false,
+"persistent": false,
+"clicks": "pick-red@300",
+"observe": 10,
+"heal": false,
+"late_ms": 0,
+"path": "/"
+},
+"scenario": "restore",
+"t_start": 1791411121.084,
+"clicks": [
+[
+"pick-red",
+1791411124.818,
+0.103
+]
+],
+"hyd_times": [
+1791411125.037,
+1791411125.192,
+1791411125.429,
+1791411125.431,
+1791411125.433,
+1791411125.435,
+1791411125.435
+],
+"ok_hyd": true,
+"windows_5s": [
+0,
+0
+],
+"storm": false,
+"theme_final": [
+"red",
+"red",
+"red",
+"red",
+"red",
+"red",
+"red"
+],
+"doc_final": [
+"warm",
+"warm",
+"warm",
+"warm",
+"warm",
+"warm",
+"warm"
+],
+"converged": true,
+"ls_theme": "red",
+"ls_doc": "warm",
+"visibility": [
+"visible",
+"visible",
+"visible",
+"visible",
+"visible",
+"visible",
+"visible"
+],
+"tab0_timeline": [
+"green",
+"red"
+],
+"per_tab_counts": [
+{
+"sent": 2,
+"recv": 5,
+"uvi": 0,
+"se": 0,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 1,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 1,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 1,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 1,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 1,
+"opened": 1
+},
+{
+"sent": 1,
+"recv": 4,
+"uvi": 0,
+"se": 1,
+"opened": 1
+}
+],
+"per_tab_head": [
+{
+"tl": [
+[
+1791411124472,
+"green"
+],
+[
+1791411124920,
+"red"
+]
+],
+"se_vals": [],
+"log": []
+},
+{
+"tl": [
+[
+1791411125164,
+"red"
+]
+],
+"se_vals": [
+[
+799,
+"vh_theme",
+"green",
+"red"
+]
+],
+"log": []
+},
+{
+"tl": [
+[
+1791411125397,
+"red"
+]
+],
+"se_vals": [
+[
+840,
+"vh_theme",
+"green",
+"red"
+]
+],
+"log": []
+}
+]
+}

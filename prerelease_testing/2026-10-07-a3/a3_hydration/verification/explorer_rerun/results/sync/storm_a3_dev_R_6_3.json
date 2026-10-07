@@ -1,0 +1,76 @@
+{
+ "R": {
+  "hold_ms": 2500,
+  "b_connect": [
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"},\"hashes\":[\"e1353ba421f88c4a\",\"b084fc0c68f7c73a\",\"cafcb14644e4403b\",\"a708a542f9d6ca1f\",\"ad47702da2383948\",\"cecedda3e5237b3f\",\"6c904da0a3db7f61\",\"6c904da0a3db7f61\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  ],
+  "n_held_msgs": 1,
+  "t_change": 1791413417.579,
+  "t_release": 1791413420.117,
+  "A_timeline": [
+   [
+    1791413417.584,
+    "v1"
+   ],
+   [
+    1791413417.635,
+    "v2"
+   ],
+   [
+    1791413420.146,
+    "v1"
+   ],
+   [
+    1791413420.169,
+    "v2"
+   ]
+  ],
+  "B_timeline": [
+   [
+    1791413417.612,
+    "light"
+   ],
+   [
+    1791413420.145,
+    "v1"
+   ],
+   [
+    1791413420.169,
+    "v2"
+   ]
+  ],
+  "A_storage_events": [
+   [
+    9743,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    9754,
+    "be_theme",
+    "v1",
+    "v2"
+   ]
+  ],
+  "B_storage_events": [
+   [
+    5723,
+    "be_theme",
+    "v1",
+    "v2"
+   ]
+  ],
+  "A_uvi": [
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}"
+  ],
+  "B_uvi": [
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}"
+  ],
+  "A_final": "v2",
+  "B_final": "v2",
+  "ls_final": "v2",
+  "A_showed_v1_after_change": true
+ }
+}

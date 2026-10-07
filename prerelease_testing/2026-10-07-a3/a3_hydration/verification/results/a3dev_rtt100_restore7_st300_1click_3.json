@@ -1,0 +1,688 @@
+{
+"args": {
+"base": "http://localhost:3660",
+"out": "a3dev_rtt100_restore7_st300_1click_3.json",
+"scenario": "restore",
+"ntabs": 7,
+"headful": false,
+"throttle": false,
+"persistent": false,
+"clicks": "pick-red@200",
+"observe": 10,
+"heal": false,
+"late_ms": 0,
+"path": "/",
+"stagger": 300
+},
+"scenario": "restore",
+"t_start": 1791411382.684,
+"clicks": [
+[
+"pick-red",
+1791411386.635,
+0.038
+]
+],
+"hyd_times": [
+1791411388.405,
+1791411388.571,
+1791411388.417,
+1791411388.564,
+1791411388.568,
+1791411388.561,
+1791411389.135
+],
+"ok_hyd": true,
+"windows_5s": [
+15422,
+12305
+],
+"storm": true,
+"theme_final": [
+"green",
+"red",
+"green",
+"green",
+"green",
+"green",
+"red"
+],
+"doc_final": [
+"warm",
+"warm",
+"warm",
+"warm",
+"warm",
+"warm",
+"warm"
+],
+"converged": false,
+"ls_theme": "red",
+"ls_doc": "warm",
+"visibility": [
+"visible",
+"visible",
+"visible",
+"visible",
+"visible",
+"visible",
+"visible"
+],
+"tab0_timeline": [
+"light",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green"
+],
+"per_tab_counts": [
+{
+"sent": 6024,
+"recv": 1782,
+"uvi": 6022,
+"se": 6022,
+"opened": 1
+},
+{
+"sent": 5970,
+"recv": 1788,
+"uvi": 5969,
+"se": 5969,
+"opened": 1
+},
+{
+"sent": 5940,
+"recv": 1782,
+"uvi": 5939,
+"se": 5943,
+"opened": 1
+},
+{
+"sent": 5974,
+"recv": 1777,
+"uvi": 5973,
+"se": 5984,
+"opened": 1
+},
+{
+"sent": 5995,
+"recv": 1749,
+"uvi": 5994,
+"se": 6033,
+"opened": 1
+},
+{
+"sent": 5886,
+"recv": 1664,
+"uvi": 5885,
+"se": 6091,
+"opened": 1
+},
+{
+"sent": 5575,
+"recv": 1578,
+"uvi": 5574,
+"se": 6088,
+"opened": 1
+}
+],
+"per_tab_head": [
+{
+"tl": [
+[
+1791411386213,
+"light"
+],
+[
+1791411386389,
+"green"
+],
+[
+1791411386788,
+"red"
+],
+[
+1791411387013,
+"green"
+],
+[
+1791411387113,
+"red"
+],
+[
+1791411387238,
+"green"
+],
+[
+1791411387338,
+"red"
+],
+[
+1791411387489,
+"green"
+],
+[
+1791411387639,
+"red"
+],
+[
+1791411387771,
+"green"
+],
+[
+1791411387815,
+"red"
+],
+[
+1791411388014,
+"green"
+]
+],
+"se_vals": [
+[
+808,
+"vh_theme",
+"red",
+"green"
+],
+[
+911,
+"vh_theme",
+"green",
+"red"
+],
+[
+1032,
+"vh_theme",
+"red",
+"green"
+],
+[
+1140,
+"vh_theme",
+"green",
+"red"
+],
+[
+1206,
+"vh_theme",
+"green",
+"red"
+],
+[
+1256,
+"vh_theme",
+"red",
+"green"
+],
+[
+1304,
+"vh_theme",
+"green",
+"red"
+],
+[
+1305,
+"vh_theme",
+"red",
+"green"
+]
+],
+"log": [
+[
+1791411386273,
+"in",
+"0{\"sid\":\"MMuDDWlx58DhgKaTAAAq\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411386273,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____recent.last_doc_rx_state_\":"
+],
+[
+1791411386382,
+"in",
+"40/_event,{\"sid\":\"Y5k6AbtOoM1-zlpWAAAr\"}"
+],
+[
+1791411386388,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8661\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411386388,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+],
+[
+1791411386669,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.vhsync___vhsync____prefs.pick\",\"payload\":{\"v\":\"red\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+],
+[
+1791411386778,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"red\"}}}]"
+],
+[
+1791411386893,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411386895,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411386995,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411386996,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411387002,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"green\"}}}]"
+],
+[
+1791411387110,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"red\"}}}]"
+],
+[
+1791411387117,
+"storage",
+"vh_theme:red->green"
+]
+]
+},
+{
+"tl": [
+[
+1791411386844,
+"light"
+],
+[
+1791411386913,
+"green"
+],
+[
+1791411387011,
+"red"
+],
+[
+1791411387137,
+"green"
+],
+[
+1791411387237,
+"red"
+],
+[
+1791411387362,
+"green"
+],
+[
+1791411387414,
+"red"
+],
+[
+1791411387588,
+"green"
+],
+[
+1791411387711,
+"red"
+],
+[
+1791411387765,
+"green"
+],
+[
+1791411387786,
+"red"
+],
+[
+1791411387812,
+"green"
+]
+],
+"se_vals": [
+[
+405,
+"vh_theme",
+"green",
+"red"
+],
+[
+624,
+"vh_theme",
+"red",
+"green"
+],
+[
+731,
+"vh_theme",
+"green",
+"red"
+],
+[
+855,
+"vh_theme",
+"red",
+"green"
+],
+[
+912,
+"vh_theme",
+"green",
+"red"
+],
+[
+1010,
+"vh_theme",
+"green",
+"red"
+],
+[
+1011,
+"vh_theme",
+"red",
+"green"
+],
+[
+1014,
+"vh_theme",
+"green",
+"red"
+]
+],
+"log": [
+[
+1791411386696,
+"in",
+"0{\"sid\":\"Hw6lXt2ZswH4uhG-AAAs\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411386768,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____recent.last_doc_rx_state_\":"
+],
+[
+1791411386785,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411386886,
+"in",
+"40/_event,{\"sid\":\"Zie5DhrFJmOEho9IAAAt\"}"
+],
+[
+1791411386888,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411386891,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8661\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411386892,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+],
+[
+1791411386995,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"red\"}}}]"
+],
+[
+1791411387004,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411387004,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411387111,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411387111,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411387115,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"green\"}}}]"
+],
+[
+1791411387220,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"red\"}}}]"
+]
+]
+},
+{
+"tl": [
+[
+1791411387216,
+"light"
+],
+[
+1791411387301,
+"red"
+],
+[
+1791411387413,
+"green"
+],
+[
+1791411387538,
+"red"
+],
+[
+1791411387589,
+"green"
+],
+[
+1791411387611,
+"red"
+],
+[
+1791411387637,
+"green"
+],
+[
+1791411387711,
+"red"
+],
+[
+1791411387836,
+"green"
+],
+[
+1791411387866,
+"red"
+],
+[
+1791411387886,
+"green"
+],
+[
+1791411387912,
+"red"
+]
+],
+"se_vals": [
+[
+108,
+"vh_theme",
+"green",
+"red"
+],
+[
+260,
+"vh_theme",
+"red",
+"green"
+],
+[
+382,
+"vh_theme",
+"green",
+"red"
+],
+[
+390,
+"vh_theme",
+"red",
+"green"
+],
+[
+486,
+"vh_theme",
+"green",
+"red"
+],
+[
+493,
+"vh_theme",
+"red",
+"green"
+],
+[
+546,
+"vh_theme",
+"green",
+"red"
+],
+[
+552,
+"vh_theme",
+"red",
+"green"
+]
+],
+"log": [
+[
+1791411386788,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411386940,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411387062,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411387062,
+"in",
+"0{\"sid\":\"ODVQakzdKC_H8ewJAAAu\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411387070,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411387163,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____recent.last_doc_rx_state_\":"
+],
+[
+1791411387166,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411387173,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411387225,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411387232,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411387275,
+"in",
+"40/_event,{\"sid\":\"4uGQEf-qmd2aQ76lAAAv\"}"
+],
+[
+1791411387276,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411387278,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411387278,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+]
+]
+}
+]
+}

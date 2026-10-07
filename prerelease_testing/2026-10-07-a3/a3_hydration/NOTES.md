@@ -194,3 +194,103 @@ reflex-google-auth: see §4 (real Google login/logout impossible in the sandbox;
 * Python versions other than 3.12; browsers other than Chromium.
 * Hydration timing at 80 ms RTT (a3 vs a2) — frame counts are equal, so not re-measured.
 * Dev hot reload (`hmr_desync.py`) not re-run on a3.
+
+## VERIFICATION
+Independent verifier `verify_hydration` (2026-10-07, 22:00-23:15). Repro'd A3-11 / A3-12 from the written repro with my
+own app and drivers first, then reran the explorer's fixtures. Published packages only (`$SB/envs/a3` 0.10.0a3,
+`$SB/envs/alpha2`, `$SB/envs/stable` 0.9.12, `$SB/envs/driver`), everything run from `$SB/apps/verify_hydration/run/<name>`;
+the app asserts `reflex.__file__` is under `/scratchpad/envs/$VH_VENV/`, drivers assert the driver venv. Ports 3660-3666 (+3664 /
+8664 for the explorer reruns) / 8660-8661, redis 8669, CDP 8670; one app server at a time; everything stopped at the end (`lsof` shows nothing in
+3660-3679/8660-8679). Sources, compact per-run JSON, traces and trimmed logs: `verification/`.
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad; V=$SB/apps/verify_hydration
+mkdir -p $V/{run,logs,out} && cp -r verification/{src,drivers,scripts} $V/       # scripts hard-code V
+$V/scripts/vlproxy.sh start 8661 8660 50                                         # 50 ms each way = 100 ms RTT
+$V/scripts/vsrv.sh start vh-a3-dev a3 dev $V/src/vhsync 3660 8660 REFLEX_API_URL=http://localhost:8661   # alpha2 / stable alike
+$V/scripts/vraw.sh a3dev_rtt100_raw3 3 3660 3 300 pick-red 200 10      # stock headful Chromium, REAL background tabs (xvfb)
+$V/scripts/vraw.sh a3dev_rtt100_rawdocs6_st0 2 3660 6 0 docs 0 10      # A3-12: 6 tabs restored on /doc/d0..d5 at once
+$V/scripts/vrun.sh a3dev_rtt100_restore7_st300_1click 3 3660 restore 7 --stagger 300 --clicks pick-red@200 --observe 10
+$V/scripts/vrun.sh a3dev_docsrestart4 2 3660 docs-restart 4 --restart-cmd "echo '# reload' >> $V/run/vh-a3-dev/vhsync/vhsync.py" --restart-wait 15
+$SB/envs/driver/bin/python $V/scripts/vtrigger.py $V/out/*.json     # which tab booted across the click, what it echoed
+$V/scripts/vsrv.sh stop vh-a3-dev; $V/scripts/vlproxy.sh stop 8661
+```
+App `src/vhsync`: `Prefs.theme = rx.LocalStorage("light", name="vh_theme", sync=True)` + buttons (`#pick-red/green/blue`,
+`#toggle`, `#bump`); `/doc/[slug]` on_load stamps `Recent.last_doc = slug` (`sync=True`, "recently viewed"). Drivers count
+websocket frames / storage events / the `#theme` timeline IN THE PAGE (no Playwright frame listeners). `vh_rawcdp.py`
+drives a stock Chromium (none of Playwright's `--disable-background-timer-throttling` / `--disable-renderer-backgrounding`
+flags) over raw CDP and creates tabs with `Target.createTarget(background=true)`: those tabs report
+`visibilityState=hidden` and their timers run at 2-3 Hz vs 100 Hz in the foreground tab, i.e. real background tabs (under
+Playwright every tab stayed `visible`, headless or headful, see `drivers/vis_probe.py`). A returning user: the profile
+holds `vh_theme=green` before every scenario. The user clicks ONCE (`pick-red`) 200 ms after the foreground tab shows H:yes
+while tab i starts loading at i x 300 ms (browser restart restoring tabs). Storm = >50 frames in the last 5 s window.
+
+### A3-11 — CONFIRMED (and broader than written), regression vs a2, not vs 0.9.12
+| setting (one user click, no held messages) | a2 | **a3** | 0.9.12 |
+|---|---|---|---|
+| raw CDP, 3 real background tabs, 100 ms RTT, dev | 0/3 (trigger present 3/3) | **3/3 + 60 s run + 30 s run: endless** | 3/3 |
+| same, 2 tabs | — | user's tab flips back to the old value 3-53x, 1/5 kept a ~20 frame/s loop for >10 s, 4/5 died out within ~1-3 s | 0/2 (trigger not hit) |
+| Playwright headless, 7 tabs staggered 300 ms, 100 ms RTT, dev | **0/7** (trigger present 7/7) | 3/6 + 1 driver crash; **storm in every run where a tab booted across the click** | 6/6 |
+| prod + Redis (9 workers), raw 3 tabs, 100 ms RTT | — | 2/3 (2/2 when triggered) | — |
+| prod + Redis, Playwright 4 tabs + a 2nd click during the storm | — | 1/3 (1/3 triggered runs); the 2nd click (blue) was swallowed, storm went on | — |
+| localhost (no latency), 7 tabs, one click | — | 0/9: the CONNECT→echo window is ~10 ms, the click never landed in it | — |
+| explorer `run_storm.sh ... S 6` (localhost, 5 fills 250 ms apart) | 0/3 | **0/7** (explorer 6/9) | 2/2 |
+| explorer `run_storm.sh ... R` (B's inbound held 2.5 s) | 0/3 | **3/3 revert** (explorer 1/2) | 1/2 |
+| my `open` scenario, localhost, 12 bumps 250 ms apart while 6 tabs open | — | 2/2 storm + 1 run where tab0 could not take a click for 8 s | — |
+
+Trace (`traces/a3dev_rtt100_raw3_1.trace.txt`, `trigger_check.txt`): tab1 sends its CONNECT with `theme=green`; tab0's
+`red` delta lands, localStorage=red, tab1 gets `storage green->red`; ~110 ms later tab1's final boot delta
+(`is_hydrated:true` + `prefs.theme:"green"`) is written → `storage red->green` in tab0/tab2 → their `update_vars_internal`
+answers write green/red back… On a2 the same tab's final boot delta carries no theme (`no-theme` in 10/10 triggered runs)
+and nothing happens. Effects confirmed: endless (60 s run: 22-27k frames per 5 s, no decay), the user's own foreground tab
+shows the OLD value again (`user_tab_revert.txt`), tabs end on mixed values, localStorage ends on the old value in 3 of 10
+a3 storms (0.9.12: 6 of 9), a later user change is swallowed, the backend process averaged 72 % CPU over its lifetime and
+sat at 117 % in a `top` sample for 3 tabs (`results/cpu_sample_a3dev_raw3.txt`). No console error, no server traceback (only `Failed to close websocket ...
+Broken pipe` when tabs close mid-storm, same on a2 / 0.9.12).
+Narrowing vs the explorer's text: NOT "≥2 values in flight and ≥4 tabs" — ONE user change (old + new value) and 3 tabs are
+enough at a realistic 100 ms RTT; 2 tabs give a visible flicker. Not a Playwright artefact: reproduced in a stock Chromium
+with real hidden/throttled background tabs and without held messages (the storm path — `storage` event → `addEvents` →
+`processEvent` → socket → message handler → `applyClientStorageDelta` — uses no timer or rAF, so background throttling
+cannot damp it). The explorer's localhost Part S rate (6/9) did not reproduce here (0/7): on localhost a3's window is ~10 ms,
+so that number depends on machine load; realistic network latency is what makes it common.
+Same mechanism as 0.9.12, different window: 0.9.12 sends `hydrate` + `update_vars_internal(vars read when the initial events
+were queued)` + `on_load_internal` after the socket connect and the `update_vars_internal` delta writes the boot values back
+(`traces/s912dev_..._1.trace.txt`); its window spans the connect plus one event round trip, a3's only CONNECT → first delta
+(1 RTT). Hence 0.9.12 storms at least as often (localhost Part S 2/2, raw 3/3, restore 6/6).
+
+### A3-12 — CONFIRMED, pre-existing on a3, a2, 0.9.12; realistic trigger without any user action
+| | a2 | a3 | 0.9.12 |
+|---|---|---|---|
+| raw CDP, 6 background tabs restored at once on `/doc/d0..d5` (on_load stamps the slug), 100 ms RTT | 2/2 | 2/2 | 2/2 |
+| same, 3 tabs loaded 300 ms apart | — | 0/3 (loads do not overlap) | — |
+| 4 tabs open and quiet on different docs, then ONE dev backend reload (append a comment to the app module = every save; a deploy/restart behaves the same): every tab reconnects and re-runs on_load | 2/2 | 2/2 | 2/2 |
+| explorer `run_stamp.sh ... /stamp 6` / control `/same 6` | 2/2 / — | 2/2 / quiet 1/1 | 2/2 / — |
+Storms run at 20k-65k frames per 5 s, tabs end on 2-3 different slugs, never converge while the tabs stay open.
+
+### Where the fixes belong (experiment on a scratch build only: `scripts/proto_patch_statejs.py` rewrites the COMPILED
+`.web/utils/state.js` of a scratch run dir; nothing in the package or checkout was touched)
+* A3-11 → the boot echo. Keep #7493's re-marking (N-032 needs `get_delta` overrides to see the values) but do not write an
+  UNCHANGED echo back: in `applyClientStorageDelta`, skip a sync key whose boot-delta value equals what this tab sent in its
+  hydrate payload (one-shot, per boot). Boot-only guard: 0/3 storms (2 triggered), no flicker, converges on the user's value
+  (`PROTOBOOT_*`), i.e. a2's behaviour, while an override that changes the value is still written. Backend equivalent: drop,
+  after `get_delta`, the storage entries whose value equals the browser-provided one. Comparing with the current
+  localStorage value (skip if it changed since the boot read) also works.
+* A3-12 → the frontend storage-sync path (`handleStorage` + `applyClientStorageDelta`): never write back the backend's answer
+  to a storage-event sync, and sync from `localStorage.getItem(key)` rather than `e.newValue`. Prototype: loop gone (0/4) but
+  3/4 runs left ONE tab showing a different value than localStorage (a sync answer reordered after the tab's own on_load
+  write), so a complete fix must re-read localStorage when a sync answer disagrees with it (or version the values).
+  Fixing A3-12 alone would not fix A3-11: the stale boot write itself is a lost update.
+
+Code (published 0.10.0a3): `reflex/state.py` `State.hydrate_and_load` 2368-2430 (2401 `applied = await
+_apply_client_storage_vars(...)`, 2420-2422 re-mark loop), `_apply_client_storage_vars` 2583, `update_vars_internal`
+2738-2750; `reflex_base/.templates/web/utils/state.js` (copied verbatim to `.web/utils/state.js`, md5 caea5520…, identical
+in a2): `bootAuth` 703-709 (payload from `.web/utils/context.jsx` `clientStorageVars`/`initialEvents` → `hydrateClientStorage`
+996-1037), delta handler 878-896 (`applyClientStorageDelta(client_storage, update.delta)` at 896), `applyClientStorageDelta`
+1045-1090 (`localStorage.setItem` 1076), `handleStorage` 1267-1277 (`e.newValue` at 1270).
+
+Not checked: Firefox/Safari (their storage-event timing differs); Chrome's tab freezing / Memory Saver discards of long-hidden
+tabs (would pause a storm, not prevent it); a2 in prod (explorer: 0/5); latency other than 0 and 100 ms RTT; cookies
+(not synced across tabs, no storage event). Three driver failures (Playwright node crash twice — `write EPIPE` once, one whose output was lost —, a 5 s
+click timeout once) happened only during storms; they are counted as unknown, not as storms.
+Procedural note: a handful of JSON-only analysis one-liners (no `import reflex`; driver venv / system python) ran with the
+shell's default cwd `/home/user/reflex`; every app server, driver and reflex import ran from `$SB/apps/verify_hydration`.

@@ -1,0 +1,25 @@
+# verify_hydration: console output of the explorer-fixture reruns (2026-10-07 22:48-22:57 UTC+0, ports 3664/8664, dev, localhost, no latency proxy)
+# setup: cp -r a3_hydration/{src/bootecho,src/syncstamp,drivers,scripts,srv.sh} $SB/apps/verify_hydration/explorer/
+#        sed: W=$SB/apps/a3_hydration -> $SB/apps/verify_hydration/explorer; srv.sh port guard 3140-3159/8140-8159 -> 3660-3679/8660-8679. Nothing else changed.
+# NOTE: run_storm.sh names its outputs storm_<venv>_<mode>_<parts>_<ntabs>_<i>.json, so the second a3 S batch overwrote _1.._3 of the first.
+
+$ scripts/run_storm.sh a3 dev 4 3664 8664 S 6      (load avg 16 at start)
+  run 1-4: S converged on s5 in every tab, ls=s5, no ping-pong (storage events per tab 5-7, uvi 1-5)          -> storm 0/4
+$ scripts/run_storm.sh a3 dev 3 3664 8664 S 6      (load avg 3)
+  run 1-3: S converged on s5, ls=s5, storage events 5/tab                                                       -> storm 0/3
+$ scripts/run_storm.sh a3 dev 3 3664 8664 R
+  run 1-3: A timeline v1 -> v2 -> v1 -> v2 (A showed the stale v1 again ~2.5 s after its own change), final v2  -> revert 3/3
+$ scripts/run_storm.sh alpha2 dev 3 3664 8664 RS 6
+  R run 1-3: A timeline v1 -> v2 only                                                                           -> revert 0/3
+  S run 1-3: converged s5                                                                                       -> storm 0/3
+$ scripts/run_storm.sh stable dev 2 3664 8664 RS 6
+  R: run 1 v1 -> v2 only; run 2 v1 -> v2 -> v1 -> v2                                                           -> revert 1/2
+  S: run 1 finals s2/s3 mixed, ~2.4k storage events per tab; run 2 s2/s3 mixed, ~2.6k per tab                  -> storm 2/2
+$ scripts/run_stamp.sh a3 dev 2 3664 8664 /stamp 6
+  run 1: storm, windows_5s [76025, 73174], finals on 3 different tab stamps; run 2: storm [98543, 73496]         -> storm 2/2
+$ scripts/run_stamp.sh a3 dev 1 3664 8664 /same 6
+  run 1: quiet [0, 0], every tab "same"                                                                         -> control quiet 1/1
+$ scripts/run_stamp.sh alpha2 dev 2 3664 8664 /stamp 6
+  run 1: storm [168980, 66189]; run 2: storm [80298, 84273]                                                     -> storm 2/2
+$ scripts/run_stamp.sh stable dev 2 3664 8664 /stamp 6
+  run 1: storm [55830, 60198]; run 2: storm [47358, 49186]                                                      -> storm 2/2

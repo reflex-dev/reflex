@@ -1,0 +1,99 @@
+{
+ "R": {
+  "hold_ms": 2500,
+  "b_connect": [
+   "40/_event,"
+  ],
+  "n_held_msgs": 1,
+  "t_change": 1791413533.987,
+  "t_release": 1791413536.517,
+  "A_timeline": [
+   [
+    1791413533.992,
+    "v1"
+   ],
+   [
+    1791413534.041,
+    "v2"
+   ]
+  ],
+  "B_timeline": [
+   [
+    1791413534.022,
+    "light"
+   ],
+   [
+    1791413536.566,
+    "v2"
+   ]
+  ],
+  "A_storage_events": [
+   [
+    10423,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    10426,
+    "be_theme",
+    "v1",
+    "v2"
+   ]
+  ],
+  "B_storage_events": [
+   [
+    5665,
+    "be_theme",
+    "v1",
+    "v2"
+   ]
+  ],
+  "A_uvi": [
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}"
+  ],
+  "B_uvi": [
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}"
+  ],
+  "A_final": "v2",
+  "B_final": "v2",
+  "ls_final": "v2",
+  "A_showed_v1_after_change": false
+ },
+ "S": {
+  "observe_windows_5s": [],
+  "finals": {
+   "t0": "s2",
+   "t1": "s3",
+   "t2": "s3",
+   "t3": "s3",
+   "t4": "s2",
+   "t5": "s2",
+   "t6": "s3"
+  },
+  "ls_final": "s3",
+  "storage_events_per_tab": {
+   "t0": 2425,
+   "t1": 2451,
+   "t2": 2434,
+   "t3": 2408,
+   "t4": 2422,
+   "t5": 2411,
+   "t6": 2427
+  },
+  "uvi_per_tab": {
+   "t0": 2429,
+   "t1": 2454,
+   "t2": 2433,
+   "t3": 2404,
+   "t4": 2421,
+   "t5": 2410,
+   "t6": 2426
+  },
+  "frames_total": 22279,
+  "frames_in_quiet_2s": 6381,
+  "converged": false
+ }
+}

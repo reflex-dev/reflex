@@ -1,0 +1,384 @@
+{
+ "verify_hydration_runs": {
+  "PROTO2_a3dev_rtt100_docsrestart4": {
+   "runs": 2,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 8,
+   "not_converged": 1,
+   "user_value_lost_in_storage": 0
+  },
+  "PROTO2_a3dev_rtt100_raw3": {
+   "runs": 2,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 2,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "PROTO2_a3dev_rtt100_rawdocs6_st0": {
+   "runs": 2,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 0
+  },
+  "PROTOBOOT_a3dev_rtt100_raw3": {
+   "runs": 3,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 2,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "PROTO_a3dev_rtt100_raw3": {
+   "runs": 3,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 2,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "PROTO_a3dev_rtt100_rawdocs6_st0": {
+   "runs": 2,
+   "storm": 2,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 45504,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 0
+  },
+  "a2dev_docsrestart4": {
+   "runs": 2,
+   "storm": 2,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 46125,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 0
+  },
+  "a2dev_rtt100_raw3": {
+   "runs": 3,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 3,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "a2dev_rtt100_rawdocs6_st0": {
+   "runs": 2,
+   "storm": 2,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 63183,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 0
+  },
+  "a2dev_rtt100_restore7_st300_1click": {
+   "runs": 7,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 7,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_docsrestart4": {
+   "runs": 2,
+   "storm": 2,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 47140,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_open7_bump12": {
+   "runs": 3,
+   "storm": 2,
+   "crash": 1,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 204462,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_restore7_1click": {
+   "runs": 3,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_restore7_st150_1click": {
+   "runs": 2,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_restore7_st300_1click": {
+   "runs": 2,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_restore7_st500_1click": {
+   "runs": 2,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_rtt100_raw2": {
+   "runs": 3,
+   "storm": 1,
+   "crash": 0,
+   "triggered": 3,
+   "storm_when_triggered": 1,
+   "max_win5s": 192,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_rtt100_raw2_long30": {
+   "runs": 2,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 2,
+   "storm_when_triggered": 0,
+   "max_win5s": 12,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_rtt100_raw3": {
+   "runs": 3,
+   "storm": 3,
+   "crash": 0,
+   "triggered": 3,
+   "storm_when_triggered": 3,
+   "max_win5s": 24203,
+   "not_converged": 3,
+   "user_value_lost_in_storage": 1
+  },
+  "a3dev_rtt100_raw3_cpu": {
+   "runs": 1,
+   "storm": 1,
+   "crash": 0,
+   "triggered": 1,
+   "storm_when_triggered": 1,
+   "max_win5s": 26084,
+   "not_converged": 1,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_rtt100_raw3_long60": {
+   "runs": 1,
+   "storm": 1,
+   "crash": 0,
+   "triggered": 1,
+   "storm_when_triggered": 1,
+   "max_win5s": 27579,
+   "not_converged": 1,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_rtt100_rawdocs3": {
+   "runs": 3,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_rtt100_rawdocs6_st0": {
+   "runs": 2,
+   "storm": 2,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 64773,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_rtt100_restore7_st300_1click": {
+   "runs": 3,
+   "storm": 2,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 146321,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 1
+  },
+  "a3dev_rtt100_restore7_st300_1click_b": {
+   "runs": 4,
+   "storm": 1,
+   "crash": 1,
+   "triggered": 1,
+   "storm_when_triggered": 1,
+   "max_win5s": 31269,
+   "not_converged": 1,
+   "user_value_lost_in_storage": 0
+  },
+  "a3dev_rtt100_restore7_st300_2toggle": {
+   "runs": 3,
+   "storm": 1,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 27291,
+   "not_converged": 1,
+   "user_value_lost_in_storage": 0
+  },
+  "a3prodredis_rtt100_raw3": {
+   "runs": 3,
+   "storm": 2,
+   "crash": 0,
+   "triggered": 2,
+   "storm_when_triggered": 2,
+   "max_win5s": 12882,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 0
+  },
+  "a3prodredis_rtt100_restore4_st300_1click_heal": {
+   "runs": 3,
+   "storm": 1,
+   "crash": 0,
+   "triggered": 3,
+   "storm_when_triggered": 1,
+   "max_win5s": 7841,
+   "not_converged": 1,
+   "user_value_lost_in_storage": 1
+  },
+  "s912dev_docsrestart4": {
+   "runs": 2,
+   "storm": 2,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 24876,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 0
+  },
+  "s912dev_rtt100_raw2": {
+   "runs": 2,
+   "storm": 0,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 0,
+   "not_converged": 0,
+   "user_value_lost_in_storage": 0
+  },
+  "s912dev_rtt100_raw3": {
+   "runs": 3,
+   "storm": 3,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 15821,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 2
+  },
+  "s912dev_rtt100_rawdocs6_st0": {
+   "runs": 2,
+   "storm": 2,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 45678,
+   "not_converged": 2,
+   "user_value_lost_in_storage": 0
+  },
+  "s912dev_rtt100_restore7_st300_1click": {
+   "runs": 6,
+   "storm": 6,
+   "crash": 0,
+   "triggered": 0,
+   "storm_when_triggered": 0,
+   "max_win5s": 54489,
+   "not_converged": 6,
+   "user_value_lost_in_storage": 4
+  }
+ },
+ "explorer_fixture_reruns": {
+  "stamp_a3_dev_same_6": {
+   "runs": 1,
+   "S_storm": 0,
+   "R_revert": 0,
+   "stamp_storm": 0
+  },
+  "stamp_a3_dev_stamp_6": {
+   "runs": 2,
+   "S_storm": 0,
+   "R_revert": 0,
+   "stamp_storm": 2
+  },
+  "stamp_alpha2_dev_stamp_6": {
+   "runs": 2,
+   "S_storm": 0,
+   "R_revert": 0,
+   "stamp_storm": 2
+  },
+  "stamp_stable_dev_stamp_6": {
+   "runs": 2,
+   "S_storm": 0,
+   "R_revert": 0,
+   "stamp_storm": 2
+  },
+  "storm_a3_dev_R_6": {
+   "runs": 3,
+   "S_storm": 0,
+   "R_revert": 3,
+   "stamp_storm": 0
+  },
+  "storm_a3_dev_S_6": {
+   "runs": 4,
+   "S_storm": 0,
+   "R_revert": 0,
+   "stamp_storm": 0
+  },
+  "storm_alpha2_dev_RS_6": {
+   "runs": 3,
+   "S_storm": 0,
+   "R_revert": 0,
+   "stamp_storm": 0
+  },
+  "storm_stable_dev_RS_6": {
+   "runs": 2,
+   "S_storm": 2,
+   "R_revert": 1,
+   "stamp_storm": 0
+  }
+ }
+}

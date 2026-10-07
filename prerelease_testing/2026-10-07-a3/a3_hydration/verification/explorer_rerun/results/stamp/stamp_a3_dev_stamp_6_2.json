@@ -1,0 +1,44 @@
+{
+ "path": "/stamp",
+ "n": 6,
+ "hydrated": [
+  true,
+  true,
+  true,
+  true,
+  true,
+  true
+ ],
+ "finals": [
+  "996bb1-1",
+  "996bb1-1",
+  "da2e9d-1",
+  "eb33e8-1",
+  "eb33e8-1",
+  "996bb1-1"
+ ],
+ "ls_final": "eb33e8-1",
+ "converged": false,
+ "storage_events": [
+  36429,
+  36383,
+  36421,
+  36518,
+  36660,
+  36814
+ ],
+ "uvi": [
+  36435,
+  36380,
+  36417,
+  36490,
+  36661,
+  36834
+ ],
+ "frames_total": 268777,
+ "windows_5s": [
+  98543,
+  73496
+ ],
+ "storm": true
+}

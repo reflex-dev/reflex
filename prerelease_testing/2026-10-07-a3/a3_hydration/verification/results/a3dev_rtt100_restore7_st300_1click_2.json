@@ -1,0 +1,688 @@
+{
+"args": {
+"base": "http://localhost:3660",
+"out": "a3dev_rtt100_restore7_st300_1click_2.json",
+"scenario": "restore",
+"ntabs": 7,
+"headful": false,
+"throttle": false,
+"persistent": false,
+"clicks": "pick-red@200",
+"observe": 10,
+"heal": false,
+"late_ms": 0,
+"path": "/",
+"stagger": 300
+},
+"scenario": "restore",
+"t_start": 1791411347.422,
+"clicks": [
+[
+"pick-red",
+1791411351.073,
+0.033
+]
+],
+"hyd_times": [
+1791411353.893,
+1791411354.31,
+1791411354.492,
+1791411354.47,
+1791411354.533,
+1791411354.472,
+1791411354.469
+],
+"ok_hyd": true,
+"windows_5s": [
+62404,
+146321
+],
+"storm": true,
+"theme_final": [
+"red",
+"red",
+"green",
+"green",
+"green",
+"red",
+"red"
+],
+"doc_final": [
+"warm",
+"warm",
+"warm",
+"warm",
+"warm",
+"warm",
+"warm"
+],
+"converged": false,
+"ls_theme": "green",
+"ls_doc": "warm",
+"visibility": [
+"visible",
+"visible",
+"visible",
+"visible",
+"visible",
+"visible",
+"visible"
+],
+"tab0_timeline": [
+"light",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green",
+"red",
+"green"
+],
+"per_tab_counts": [
+{
+"sent": 41323,
+"recv": 8323,
+"uvi": 41320,
+"se": 41320,
+"opened": 1
+},
+{
+"sent": 41013,
+"recv": 8289,
+"uvi": 41011,
+"se": 41011,
+"opened": 1
+},
+{
+"sent": 41196,
+"recv": 8328,
+"uvi": 41194,
+"se": 41198,
+"opened": 1
+},
+{
+"sent": 41085,
+"recv": 8311,
+"uvi": 41083,
+"se": 41088,
+"opened": 1
+},
+{
+"sent": 41032,
+"recv": 8257,
+"uvi": 41030,
+"se": 41036,
+"opened": 1
+},
+{
+"sent": 40036,
+"recv": 7683,
+"uvi": 40034,
+"se": 41644,
+"opened": 1
+},
+{
+"sent": 39502,
+"recv": 7620,
+"uvi": 39500,
+"se": 41718,
+"opened": 1
+}
+],
+"per_tab_head": [
+{
+"tl": [
+[
+1791411350666,
+"light"
+],
+[
+1791411350843,
+"green"
+],
+[
+1791411351218,
+"red"
+],
+[
+1791411351366,
+"green"
+],
+[
+1791411351467,
+"red"
+],
+[
+1791411351591,
+"green"
+],
+[
+1791411351691,
+"red"
+],
+[
+1791411351791,
+"green"
+],
+[
+1791411351916,
+"red"
+],
+[
+1791411352016,
+"green"
+],
+[
+1791411352116,
+"red"
+],
+[
+1791411352368,
+"green"
+]
+],
+"se_vals": [
+[
+700,
+"vh_theme",
+"red",
+"green"
+],
+[
+798,
+"vh_theme",
+"green",
+"red"
+],
+[
+920,
+"vh_theme",
+"red",
+"green"
+],
+[
+1025,
+"vh_theme",
+"green",
+"red"
+],
+[
+1117,
+"vh_theme",
+"red",
+"green"
+],
+[
+1240,
+"vh_theme",
+"green",
+"red"
+],
+[
+1344,
+"vh_theme",
+"red",
+"green"
+],
+[
+1367,
+"vh_theme",
+"red",
+"green"
+]
+],
+"log": [
+[
+1791411350735,
+"in",
+"0{\"sid\":\"Q3GsugFC3dRxc26TAAAW\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411350736,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____recent.last_doc_rx_state_\":"
+],
+[
+1791411350840,
+"in",
+"40/_event,{\"sid\":\"-f9qM5NkmescgyoRAAAX\"}"
+],
+[
+1791411350842,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8661\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411350842,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+],
+[
+1791411351103,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.vhsync___vhsync____prefs.pick\",\"payload\":{\"v\":\"red\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+],
+[
+1791411351207,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"red\"}}}]"
+],
+[
+1791411351247,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411351248,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411351345,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411351346,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411351353,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"green\"}}}]"
+],
+[
+1791411351457,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"red\"}}}]"
+],
+[
+1791411351467,
+"storage",
+"vh_theme:red->green"
+]
+]
+},
+{
+"tl": [
+[
+1791411351169,
+"light"
+],
+[
+1791411351265,
+"green"
+],
+[
+1791411351365,
+"red"
+],
+[
+1791411351470,
+"green"
+],
+[
+1791411351590,
+"red"
+],
+[
+1791411351915,
+"green"
+],
+[
+1791411352040,
+"red"
+],
+[
+1791411352167,
+"green"
+],
+[
+1791411352265,
+"red"
+],
+[
+1791411352367,
+"green"
+],
+[
+1791411352397,
+"red"
+],
+[
+1791411352465,
+"green"
+]
+],
+"se_vals": [
+[
+367,
+"vh_theme",
+"green",
+"red"
+],
+[
+511,
+"vh_theme",
+"red",
+"green"
+],
+[
+622,
+"vh_theme",
+"green",
+"red"
+],
+[
+822,
+"vh_theme",
+"red",
+"green"
+],
+[
+838,
+"vh_theme",
+"green",
+"red"
+],
+[
+927,
+"vh_theme",
+"red",
+"green"
+],
+[
+1072,
+"vh_theme",
+"red",
+"green"
+],
+[
+1072,
+"vh_theme",
+"green",
+"red"
+]
+],
+"log": [
+[
+1791411351127,
+"in",
+"0{\"sid\":\"EL6HYtJXUvzoW8-xAAAY\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411351131,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____recent.last_doc_rx_state_\":"
+],
+[
+1791411351210,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411351238,
+"in",
+"40/_event,{\"sid\":\"GL0qIA9xnIp56CzSAAAZ\"}"
+],
+[
+1791411351239,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411351242,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8661\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411351246,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+],
+[
+1791411351345,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"red\"}}}]"
+],
+[
+1791411351353,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411351354,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411351465,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"green\"}}}]"
+],
+[
+1791411351465,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411351465,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411351571,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"red\"}}}]"
+]
+]
+},
+{
+"tl": [
+[
+1791411351562,
+"green"
+],
+[
+1791411351663,
+"red"
+],
+[
+1791411351890,
+"green"
+],
+[
+1791411351911,
+"red"
+],
+[
+1791411352040,
+"green"
+],
+[
+1791411352160,
+"red"
+],
+[
+1791411352260,
+"green"
+],
+[
+1791411352367,
+"red"
+],
+[
+1791411352487,
+"green"
+],
+[
+1791411352516,
+"red"
+],
+[
+1791411352536,
+"green"
+],
+[
+1791411352592,
+"red"
+]
+],
+"se_vals": [
+[
+70,
+"vh_theme",
+"green",
+"red"
+],
+[
+116,
+"vh_theme",
+"red",
+"green"
+],
+[
+245,
+"vh_theme",
+"green",
+"red"
+],
+[
+251,
+"vh_theme",
+"red",
+"green"
+],
+[
+319,
+"vh_theme",
+"green",
+"red"
+],
+[
+326,
+"vh_theme",
+"red",
+"green"
+],
+[
+431,
+"vh_theme",
+"green",
+"red"
+],
+[
+544,
+"vh_theme",
+"green",
+"red"
+]
+],
+"log": [
+[
+1791411351210,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411351256,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411351385,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411351391,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411351408,
+"in",
+"0{\"sid\":\"YL1Kjm_Mm57THu1LAAAa\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411351433,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____recent.last_doc_rx_state_\":"
+],
+[
+1791411351459,
+"storage",
+"vh_theme:green->red"
+],
+[
+1791411351466,
+"storage",
+"vh_theme:red->green"
+],
+[
+1791411351545,
+"in",
+"40/_event,{\"sid\":\"yNVb9oolffFkeFUtAAAb\"}"
+],
+[
+1791411351546,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411351546,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411351555,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8661\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411351556,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+],
+[
+1791411351571,
+"storage",
+"vh_theme:green->red"
+]
+]
+}
+]
+}

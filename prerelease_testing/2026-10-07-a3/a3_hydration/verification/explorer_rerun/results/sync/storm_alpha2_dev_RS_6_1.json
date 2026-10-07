@@ -1,0 +1,86 @@
+{
+ "R": {
+  "hold_ms": 2500,
+  "b_connect": [
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"},\"hashes\":[\"e1353ba421f88c4a\",\"b084fc0c68f7c73a\",\"cafcb14644e4403b\",\"a708a542f9d6ca1f\",\"ad47702da2383948\",\"cecedda3e5237b3f\",\"6c904da0a3db7f61\",\"6c904da0a3db7f61\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  ],
+  "n_held_msgs": 1,
+  "t_change": 1791413450.011,
+  "t_release": 1791413452.552,
+  "A_timeline": [
+   [
+    1791413450.019,
+    "v1"
+   ],
+   [
+    1791413450.067,
+    "v2"
+   ]
+  ],
+  "B_timeline": [
+   [
+    1791413450.051,
+    "light"
+   ],
+   [
+    1791413452.571,
+    "v1"
+   ],
+   [
+    1791413452.595,
+    "v2"
+   ]
+  ],
+  "A_storage_events": [],
+  "B_storage_events": [
+   [
+    5708,
+    "be_theme",
+    "v1",
+    "v2"
+   ]
+  ],
+  "A_uvi": [],
+  "B_uvi": [
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}"
+  ],
+  "A_final": "v2",
+  "B_final": "v2",
+  "ls_final": "v2",
+  "A_showed_v1_after_change": false
+ },
+ "S": {
+  "observe_windows_5s": [],
+  "finals": {
+   "t0": "s5",
+   "t1": "s5",
+   "t2": "s5",
+   "t3": "s5",
+   "t4": "s5",
+   "t5": "s5",
+   "t6": "s5"
+  },
+  "ls_final": "s5",
+  "storage_events_per_tab": {
+   "t0": 0,
+   "t1": 5,
+   "t2": 5,
+   "t3": 5,
+   "t4": 5,
+   "t5": 5,
+   "t6": 5
+  },
+  "uvi_per_tab": {
+   "t0": 0,
+   "t1": 2,
+   "t2": 3,
+   "t3": 3,
+   "t4": 2,
+   "t5": 2,
+   "t6": 3
+  },
+  "frames_total": 77,
+  "frames_in_quiet_2s": 0,
+  "converged": true
+ }
+}

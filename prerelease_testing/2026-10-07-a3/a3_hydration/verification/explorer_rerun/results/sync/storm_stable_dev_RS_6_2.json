@@ -1,0 +1,259 @@
+{
+ "R": {
+  "hold_ms": 2500,
+  "b_connect": [
+   "40/_event,"
+  ],
+  "n_held_msgs": 1,
+  "t_change": 1791413557.431,
+  "t_release": 1791413559.964,
+  "A_timeline": [
+   [
+    1791413557.436,
+    "v1"
+   ],
+   [
+    1791413557.483,
+    "v2"
+   ],
+   [
+    1791413560.095,
+    "v1"
+   ],
+   [
+    1791413560.144,
+    "v2"
+   ]
+  ],
+  "B_timeline": [
+   [
+    1791413557.461,
+    "light"
+   ],
+   [
+    1791413560.022,
+    "v1"
+   ],
+   [
+    1791413560.07,
+    "v2"
+   ],
+   [
+    1791413560.141,
+    "v1"
+   ],
+   [
+    1791413560.193,
+    "v2"
+   ]
+  ],
+  "A_storage_events": [
+   [
+    9822,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    9834,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    9853,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    9861,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    9880,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    9884,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    9912,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    9920,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    9938,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    9948,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    9970,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    9980,
+    "be_theme",
+    "v1",
+    "v2"
+   ]
+  ],
+  "B_storage_events": [
+   [
+    5746,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    8301,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    8310,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    8326,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    8333,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    8352,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    8365,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    8389,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    8397,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    8415,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    8425,
+    "be_theme",
+    "v1",
+    "v2"
+   ]
+  ],
+  "A_uvi": [
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}"
+  ],
+  "B_uvi": [
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}"
+  ],
+  "A_final": "v2",
+  "B_final": "v2",
+  "ls_final": "v2",
+  "A_showed_v1_after_change": true
+ },
+ "S": {
+  "observe_windows_5s": [],
+  "finals": {
+   "t0": "s3",
+   "t1": "s3",
+   "t2": "s2",
+   "t3": "s3",
+   "t4": "s2",
+   "t5": "s2",
+   "t6": "s3"
+  },
+  "ls_final": "s3",
+  "storage_events_per_tab": {
+   "t0": 2577,
+   "t1": 2612,
+   "t2": 2571,
+   "t3": 2642,
+   "t4": 2593,
+   "t5": 2614,
+   "t6": 2668
+  },
+  "uvi_per_tab": {
+   "t0": 2602,
+   "t1": 2629,
+   "t2": 2592,
+   "t3": 2645,
+   "t4": 2601,
+   "t5": 2573,
+   "t6": 2667
+  },
+  "frames_total": 24252,
+  "frames_in_quiet_2s": 6829,
+  "converged": false
+ }
+}

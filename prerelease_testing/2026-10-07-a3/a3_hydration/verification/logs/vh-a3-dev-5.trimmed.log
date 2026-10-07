@@ -1,0 +1,15 @@
+# trimmed from /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_hydration/logs/vh-a3-dev-5.log: first 6 lines, then every warning/error/info-close line (deduplicated with counts)
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:8660
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+      8 [INFO] Failed to close websocket with error Io(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+      3 [INFO] Failed to close websocket with error Io(Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" })
+      3 DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+      3 DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+      3 Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+      1 [ERROR] Unexpected exit from worker-1
+      1 Backend running at: http://0.0.0.0:8660
+      1 App running at: http://localhost:3660/

@@ -1,0 +1,693 @@
+{
+"args": {
+"base": "http://localhost:3660",
+"out": "a3dev_rtt100_restore7_st300_2toggle_1.json",
+"scenario": "restore",
+"ntabs": 7,
+"headful": false,
+"throttle": false,
+"persistent": false,
+"clicks": "toggle@200,toggle@900",
+"observe": 10,
+"heal": false,
+"late_ms": 0,
+"path": "/",
+"stagger": 300
+},
+"scenario": "restore",
+"t_start": 1791411406.988,
+"clicks": [
+[
+"toggle",
+1791411412.449,
+0.076
+],
+[
+"toggle",
+1791411413.148,
+0.083
+]
+],
+"hyd_times": [
+1791411414.406,
+1791411414.587,
+1791411414.812,
+1791411414.812,
+1791411414.975,
+1791411415.328,
+1791411415.231
+],
+"ok_hyd": true,
+"windows_5s": [
+22827,
+27291
+],
+"storm": true,
+"theme_final": [
+"dark",
+"dark",
+"dark",
+"dark",
+"light",
+"dark",
+"dark"
+],
+"doc_final": [
+"warm",
+"warm",
+"warm",
+"warm",
+"warm",
+"warm",
+"warm"
+],
+"converged": false,
+"ls_theme": "dark",
+"ls_doc": "warm",
+"visibility": [
+"visible",
+"visible",
+"visible",
+"visible",
+"visible",
+"visible",
+"visible"
+],
+"tab0_timeline": [
+"light",
+"green",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light",
+"dark",
+"light"
+],
+"per_tab_counts": [
+{
+"sent": 7847,
+"recv": 2160,
+"uvi": 7844,
+"se": 7844,
+"opened": 1
+},
+{
+"sent": 7834,
+"recv": 2162,
+"uvi": 7833,
+"se": 7834,
+"opened": 1
+},
+{
+"sent": 7750,
+"recv": 2171,
+"uvi": 7749,
+"se": 7750,
+"opened": 1
+},
+{
+"sent": 7798,
+"recv": 2161,
+"uvi": 7797,
+"se": 7811,
+"opened": 1
+},
+{
+"sent": 7828,
+"recv": 2166,
+"uvi": 7827,
+"se": 7845,
+"opened": 1
+},
+{
+"sent": 7852,
+"recv": 2142,
+"uvi": 7851,
+"se": 7880,
+"opened": 1
+},
+{
+"sent": 7809,
+"recv": 2148,
+"uvi": 7808,
+"se": 7829,
+"opened": 1
+}
+],
+"per_tab_head": [
+{
+"tl": [
+[
+1791411412023,
+"light"
+],
+[
+1791411412242,
+"green"
+],
+[
+1791411412648,
+"dark"
+],
+[
+1791411413373,
+"light"
+],
+[
+1791411413574,
+"dark"
+],
+[
+1791411413686,
+"light"
+],
+[
+1791411413849,
+"dark"
+],
+[
+1791411414154,
+"light"
+],
+[
+1791411414173,
+"dark"
+],
+[
+1791411414356,
+"light"
+],
+[
+1791411414573,
+"dark"
+],
+[
+1791411414748,
+"light"
+]
+],
+"se_vals": [
+[
+1635,
+"vh_theme",
+"light",
+"dark"
+],
+[
+1754,
+"vh_theme",
+"dark",
+"light"
+],
+[
+1792,
+"vh_theme",
+"dark",
+"light"
+],
+[
+1907,
+"vh_theme",
+"light",
+"dark"
+],
+[
+1917,
+"vh_theme",
+"dark",
+"light"
+],
+[
+1967,
+"vh_theme",
+"light",
+"dark"
+],
+[
+2216,
+"vh_theme",
+"dark",
+"light"
+],
+[
+2236,
+"vh_theme",
+"light",
+"dark"
+]
+],
+"log": [
+[
+1791411412068,
+"in",
+"0{\"sid\":\"KlrBdpNwZ6Fc2WwrAAA8\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411412069,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____recent.last_doc_rx_state_\":"
+],
+[
+1791411412188,
+"in",
+"40/_event,{\"sid\":\"0v52X-ROVE854vKxAAA9\"}"
+],
+[
+1791411412201,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8661\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411412207,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+],
+[
+1791411412514,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.vhsync___vhsync____prefs.toggle\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+],
+[
+1791411412625,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"dark\"}}}]"
+],
+[
+1791411413203,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.vhsync___vhsync____prefs.toggle\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+],
+[
+1791411413355,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"light\"}}}]"
+],
+[
+1791411413431,
+"storage",
+"vh_theme:light->dark"
+],
+[
+1791411413431,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411413550,
+"storage",
+"vh_theme:dark->light"
+],
+[
+1791411413550,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411413555,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"dark\"}}}]"
+]
+]
+},
+{
+"tl": [
+[
+1791411413061,
+"light"
+],
+[
+1791411413106,
+"dark"
+],
+[
+1791411413552,
+"light"
+],
+[
+1791411413586,
+"dark"
+],
+[
+1791411413759,
+"light"
+],
+[
+1791411413924,
+"dark"
+],
+[
+1791411414625,
+"light"
+],
+[
+1791411414776,
+"dark"
+],
+[
+1791411414859,
+"light"
+],
+[
+1791411414876,
+"dark"
+],
+[
+1791411415077,
+"light"
+],
+[
+1791411415289,
+"dark"
+]
+],
+"se_vals": [
+[
+702,
+"vh_theme",
+"green",
+"dark"
+],
+[
+1332,
+"vh_theme",
+"dark",
+"light"
+],
+[
+1348,
+"vh_theme",
+"light",
+"dark"
+],
+[
+1498,
+"vh_theme",
+"light",
+"dark"
+],
+[
+1506,
+"vh_theme",
+"dark",
+"light"
+],
+[
+1676,
+"vh_theme",
+"dark",
+"light"
+],
+[
+1694,
+"vh_theme",
+"light",
+"dark"
+],
+[
+1802,
+"vh_theme",
+"dark",
+"light"
+]
+],
+"log": [
+[
+1791411412575,
+"in",
+"0{\"sid\":\"Q9Wza0A_VnDlW4jIAAA-\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411412785,
+"storage",
+"vh_theme:green->dark"
+],
+[
+1791411412901,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____recent.last_doc_rx_state_\":"
+],
+[
+1791411413060,
+"in",
+"40/_event,{\"sid\":\"yM2ZAAT8JJ9vYgwXAABA\"}"
+],
+[
+1791411413064,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8661\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411413088,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+],
+[
+1791411413415,
+"storage",
+"vh_theme:dark->light"
+],
+[
+1791411413416,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411413432,
+"storage",
+"vh_theme:light->dark"
+],
+[
+1791411413432,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411413547,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"light\"}}}]"
+],
+[
+1791411413558,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"dark\"}}}]"
+],
+[
+1791411413582,
+"storage",
+"vh_theme:light->dark"
+],
+[
+1791411413584,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+]
+]
+},
+{
+"tl": [
+[
+1791411413498,
+"light"
+],
+[
+1791411413528,
+"dark"
+],
+[
+1791411413603,
+"light"
+],
+[
+1791411413753,
+"dark"
+],
+[
+1791411414152,
+"light"
+],
+[
+1791411414200,
+"dark"
+],
+[
+1791411414810,
+"light"
+],
+[
+1791411414925,
+"dark"
+],
+[
+1791411415076,
+"light"
+],
+[
+1791411415184,
+"dark"
+],
+[
+1791411415285,
+"light"
+],
+[
+1791411415339,
+"dark"
+]
+],
+"se_vals": [
+[
+242,
+"vh_theme",
+"green",
+"dark"
+],
+[
+1064,
+"vh_theme",
+"dark",
+"light"
+],
+[
+1191,
+"vh_theme",
+"dark",
+"light"
+],
+[
+1192,
+"vh_theme",
+"light",
+"dark"
+],
+[
+1342,
+"vh_theme",
+"light",
+"dark"
+],
+[
+1501,
+"vh_theme",
+"dark",
+"light"
+],
+[
+1514,
+"vh_theme",
+"light",
+"dark"
+],
+[
+1631,
+"vh_theme",
+"dark",
+"light"
+]
+],
+"log": [
+[
+1791411412627,
+"storage",
+"vh_theme:green->dark"
+],
+[
+1791411412929,
+"in",
+"0{\"sid\":\"j5H4AyvmIBimCp0xAAA_\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+],
+[
+1791411413239,
+"out",
+"40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\"reflex___state____state.vhsync___vhsync____recent.last_doc_rx_state_\":"
+],
+[
+1791411413379,
+"in",
+"40/_event,{\"sid\":\"QF1cBzK7YB1f5milAABB\"}"
+],
+[
+1791411413395,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8661\",\"origin\":\"http://localhost:3660\",\"upgrade\":\"webso"
+],
+[
+1791411413427,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.vhsync___vhsync____recent\":{\"last_doc_rx_state_\":"
+],
+[
+1791411413449,
+"storage",
+"vh_theme:dark->light"
+],
+[
+1791411413455,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411413575,
+"storage",
+"vh_theme:dark->light"
+],
+[
+1791411413576,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411413577,
+"storage",
+"vh_theme:light->dark"
+],
+[
+1791411413578,
+"out",
+"42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____sta"
+],
+[
+1791411413586,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"light\"}}}]"
+],
+[
+1791411413704,
+"in",
+"42/_event,[\"event\",{\"delta\":{\"reflex___state____state.vhsync___vhsync____prefs\":{\"theme_rx_state_\":\"light\"}}}]"
+]
+]
+}
+]
+}
