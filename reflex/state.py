@@ -97,14 +97,6 @@ from reflex.istate.storage import ClientStorageBase
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
-# Entries in each pickle for workers of the previous release, which kept the
-# dirty tracking and backend vars in the instance dict. Remove in 1.0.
-_PREVIOUS_RELEASE_PICKLE_KEYS: dict[str, Any] = {
-    "dirty_vars": set(),
-    "dirty_substates": set(),
-    "_backend_vars": {},
-}
-
 
 @functools.cache
 def _stale_pickle_keys(cls: type[BaseState]) -> frozenset[str]:
@@ -2049,8 +2041,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for name, f in cls.__fields__.items():
             if f._owner is cls and name not in fields:
                 fields[name] = f.default_value()
-        # Empty entries that let workers of the previous release load it.
-        return {**fields, **_PREVIOUS_RELEASE_PICKLE_KEYS}
+        return fields
 
     def __setstate__(self, state: builtins.dict[str, Any]):
         """Set the state from redis deserialization.

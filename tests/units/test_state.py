@@ -6671,6 +6671,26 @@ def test_composite_var_dep_tracks_fields_in_every_state():
         state_cls._potentially_dirty_states.discard(consumer_name)
 
 
+def test_getstate_holds_only_the_fields_of_the_state():
+    """A pickle holds the state's own fields and nothing for older workers.
+
+    Workers of the previous release cannot load a state of this one, so the
+    empty entries once added for them are gone.
+    """
+
+    class OwnFieldsState(BaseState):
+        count: int = 0
+        _secret: str = ""
+
+    state = OwnFieldsState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.count = 2
+
+    pickled = state.__getstate__()
+    assert pickled["count"] == 2
+    assert pickled["_secret"] == ""
+    assert not {"dirty_vars", "dirty_substates", "_backend_vars"} & pickled.keys()
+
+
 def test_setstate_migrates_older_pickles():
     """Older pickles kept backend vars in a dict of their own and the dirty sets."""
 
