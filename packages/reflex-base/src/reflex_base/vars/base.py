@@ -4640,6 +4640,34 @@ def _default_arguments(value: Any) -> dict[str, Any]:
     }
 
 
+def _accepts_default(declared: Field, value: Any) -> bool:
+    """Whether a field's annotation accepts a value as its default.
+
+    Args:
+        declared: The field.
+        value: The candidate default.
+
+    Returns:
+        Whether the value satisfies the field's annotation.
+
+    Raises:
+        TypeError: If the value is a Var or a Field, which no field defaults to.
+    """
+    if isinstance(value, Var):
+        msg = (
+            "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+            "references to vars in state."
+        )
+        raise TypeError(msg)
+    if isinstance(value, Field):
+        msg = (
+            "A Field cannot overwrite another field. Define a "
+            "computed var to read the field at runtime instead."
+        )
+        raise TypeError(msg)
+    return _isinstance(value, declared.outer_type_, nested=1, treat_var_as_type=False)
+
+
 def _is_descriptor(value: Any) -> bool:
     """Whether a class attribute is a descriptor defining its own access, rather than a field.
 
@@ -4701,59 +4729,49 @@ class BaseStateMeta(ABCMeta):
         _reflex_state_root: BaseStateMeta
 
     def __setattr__(cls, name: str, value: Any) -> None:
-        """Update field defaults or factories while retaining their descriptors.
+        """Update a field's default while retaining its descriptor.
+
+        A value the field's annotation accepts becomes the default. A
+        zero-argument callable it does not accept becomes the default factory,
+        after one call validates what it produces.
 
         Args:
             name: The class attribute being assigned.
             value: Its new default value or zero-argument default factory.
 
         Raises:
-            TypeError: If the factory fails or a default is a Var, a Field,
-                or has an incompatible type.
+            TypeError: If the default is a Var or a Field, does not satisfy the
+                field's annotation, or its factory fails.
         """
         declared = cls.__fields__.get(name)
-        if declared is not None and _inherited_value(cls.__mro__, name) is declared:
-            factory = (
-                value
-                if callable(value) and not isinstance(value, (Var, Field))
-                else None
-            )
+        if declared is None or _inherited_value(cls.__mro__, name) is not declared:
+            super().__setattr__(name, value)
+            return
+        if _accepts_default(declared, value):
+            defaults = _default_arguments(value)
+            declared.default = defaults["default"]
+            declared.default_factory = defaults["default_factory"]
+            return
+        default = value
+        if callable(value):
+            # The field cannot hold the callable itself, so it is a factory:
+            # call it once to validate what it produces, then keep the callable.
             try:
-                default = factory() if factory is not None else value
+                default = value()
             except Exception as err:
                 msg = f"Default factory for field '{name}' failed: {err}"
                 raise TypeError(msg) from err
-            if factory is not None and inspect.iscoroutine(default):
+            if inspect.iscoroutine(default):
                 default.close()
-            if isinstance(default, Var):
-                msg = (
-                    "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
-                    "references to vars in state."
-                )
-                raise TypeError(msg)
-            if isinstance(default, Field):
-                msg = (
-                    "A Field cannot overwrite another field. Define a "
-                    "computed var to read the field at runtime instead."
-                )
-                raise TypeError(msg)
-            if not _isinstance(
-                default, declared.outer_type_, nested=1, treat_var_as_type=False
-            ):
-                msg = (
-                    f"Invalid default for field '{name}': expected "
-                    f"{declared.outer_type_}, got {default!r} of type {type(default)}."
-                )
-                raise TypeError(msg)
-            if factory is not None:
+            if _accepts_default(declared, default):
                 declared.default = MISSING
-                declared.default_factory = factory
-            else:
-                defaults = _default_arguments(default)
-                declared.default = defaults["default"]
-                declared.default_factory = defaults["default_factory"]
-            return
-        super().__setattr__(name, value)
+                declared.default_factory = value
+                return
+        msg = (
+            f"Invalid default for field '{name}': expected "
+            f"{declared.outer_type_}, got {default!r} of type {type(default)}."
+        )
+        raise TypeError(msg)
 
     def __new__(
         cls,

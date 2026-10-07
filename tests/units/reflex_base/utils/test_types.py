@@ -160,6 +160,14 @@ def test_isinstance_resolves_type_alias(alias_cls: type) -> None:
     assert not _isinstance(1, maybe, nested=1, treat_var_as_type=False)
 
 
+def test_isinstance_accepts_type_parameter() -> None:
+    """A bare type parameter, which a field never resolves, accepts any value."""
+    t = TypeVar("t")
+    assert _isinstance(1, t, nested=1, treat_var_as_type=False)
+    assert _isinstance("x", t | None, nested=1, treat_var_as_type=False)
+    assert not _isinstance("x", list[t], nested=1, treat_var_as_type=False)  # pyright: ignore[reportGeneralTypeIssues]
+
+
 @pytest.mark.parametrize("alias_cls", _type_alias_types())
 def test_typehint_issubclass_resolves_type_alias(alias_cls: type) -> None:
     """typehint_issubclass resolves TypeAliasType on either side.

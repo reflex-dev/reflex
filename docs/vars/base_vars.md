@@ -79,16 +79,19 @@ Assigning a value to a declared var on its state class updates the default for
 values that have not yet been initialized and for `reset()`. This works for both
 frontend and backend vars. Values already stored on a state instance stay the
 same, and mutable defaults are copied for each instance. Reset uses the last
-configured default, and changing defaults preserves saved state compatibility.
+configured default. Defaults are not part of the saved-state schema, so changing
+one does not invalidate state saved by this release or later.
 
 Assigned defaults must match the field's declared type. Var and Field assignments
 are rejected, including fresh `rx.field(...)` objects. Declare a `ClassVar[rx.Var]` to
 store a Var reference, or define a computed var to read another field at runtime.
-Assign a zero-argument callable to update the default factory. Reflex calls it
-once when assigned to validate its result, then calls it whenever an instance
-needs a new default or resets. If that validation call fails or returns an invalid
-default, the previous default remains in place. Frontend vars remain usable in
-the UI after assigning a new default value or factory.
+A callable the annotation accepts, such as for a `Callable` or `Any` var, is
+stored as the default. Otherwise, assigning a zero-argument callable updates the
+default factory: Reflex calls it once when assigned to validate its result, then
+calls it whenever an instance needs a new default or resets. If that validation
+call fails or returns an invalid default, the previous default remains in place.
+Frontend vars remain usable in the UI after assigning a new default value or
+factory.
 
 An inherited var belongs to the state that declared it, so assigning a default
 through a subclass also changes that declaring state's default. Each generated

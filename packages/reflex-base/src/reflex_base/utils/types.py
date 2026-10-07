@@ -999,6 +999,10 @@ def _isinstance(
                     treat_var_as_type=treat_var_as_type,
                     treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
                 )
+            if isinstance(cls, TypeVar):
+                # A field annotated with a type parameter never resolves it,
+                # so any value satisfies the annotation.
+                return True
             raise
 
     args = _get_args_cached(cls)

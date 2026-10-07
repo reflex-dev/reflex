@@ -15,9 +15,9 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Self, TypeVar
+from typing import Any, ClassVar, Generic, Literal, Self, TypeVar
 
 import pytest
 from reflex_base import constants
@@ -154,6 +154,49 @@ def test_class_assignment_sets_default_factory(name: str, inherited: bool):
     assert calls == [True] * 4
 
 
+def test_class_assignment_keeps_accepted_callables():
+    """A callable the field's annotation accepts is the default, not a factory."""
+    calls = []
+
+    def handler(value: int = 0) -> int:
+        """Record a call that assignment must never make.
+
+        Args:
+            value: The argument a factory could not supply.
+
+        Returns:
+            The argument.
+        """
+        calls.append(value)
+        return value
+
+    class ConfigState(BaseState):
+        _handler: Callable[[int], int] | None = None
+        _factory: Callable[[], int] = int
+        _anything: Any = None
+
+    for name in ("_handler", "_factory", "_anything"):
+        setattr(ConfigState, name, handler)
+        assert getattr(ConfigState(), name) is handler
+    assert calls == []
+
+
+def test_class_assignment_accepts_type_parameter_defaults():
+    """A field annotated with a type parameter takes any default."""
+    E = TypeVar("E")
+
+    class GenericState(BaseState, Generic[E]):
+        _value: E = None  # pyright: ignore[reportAssignmentType]
+
+    class IntState(GenericState[int]):
+        pass
+
+    IntState._value = 5  # pyright: ignore[reportAttributeAccessIssue]
+    assert IntState()._value == 5
+    GenericState._value = "text"  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
+    assert IntState()._value == "text"
+
+
 @pytest.mark.parametrize("name", ["_value", "value"])
 @pytest.mark.parametrize(
     "failure", ["wrong_type", "raises", "needs_argument", "var", "field"]
@@ -231,11 +274,11 @@ def test_class_assignment_closes_coroutine_probe(name: str):
     """Close a validation coroutine while retaining supported future defaults.
 
     Args:
-        name: The permissive backend or string-typed frontend field name.
+        name: The coroutine-typed backend or string-typed frontend field name.
     """
 
     class ConfigState(BaseState):
-        _value: Any = None
+        _value: typing.Coroutine[Any, Any, str] | None = None
         value: str = "old"
 
     probes = []
@@ -265,7 +308,9 @@ def test_class_assignment_closes_coroutine_probe(name: str):
         assert ConfigState().value == "old"
     else:
         setattr(ConfigState, name, factory)
-        assert asyncio.run(ConfigState()._value) == "new"
+        coroutine = ConfigState()._value
+        assert coroutine is not None
+        assert asyncio.run(coroutine) == "new"
     assert probes[0].cr_frame is None
 
 
