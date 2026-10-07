@@ -69,6 +69,7 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
 from reflex.state import (
+    _SCHEMA_PICKLE_KEY,
     BaseState,
     Delta,
     ImmutableStateError,
@@ -5573,6 +5574,59 @@ def test_state_schema_depends_on_names_and_types():
     assert DifferentName._to_schema() != schema
 
 
+def _previous_release_schema(state_cls: type[BaseState], **types: str) -> str:
+    """Hash a schema as workers before 0.10.0a2 did, defaults included.
+
+    Args:
+        state_cls: The state class whose schema to hash.
+        **types: Serialized types to hash in place of the declared ones, by field name.
+
+    Returns:
+        The hash those workers require a saved state to carry.
+    """
+    return md5(
+        pickle.dumps(
+            sorted(
+                (
+                    name,
+                    types.get(name)
+                    or f"{declared.type_.__module__}.{declared.type_.__qualname__}",
+                    declared.default if is_serializable(declared.default) else None,
+                )
+                for name, declared in state_cls.get_fields().items()
+                if name in state_cls.base_vars
+            )
+        )
+    ).hexdigest()
+
+
+class _SavedState:
+    """Pickles a state the way a given release saves it."""
+
+    def __init__(self, state: BaseState, recorded_schema: str | None):
+        """Wrap the state to pickle.
+
+        Args:
+            state: The state to pickle.
+            recorded_schema: The schema hash recorded inside the pickle, or
+                None for releases that did not record one.
+        """
+        self.state = state
+        self.recorded_schema = recorded_schema
+
+    def __reduce__(self) -> tuple[Any, ...]:
+        """Reduce to the wrapped state with the chosen schema entry.
+
+        Returns:
+            The arguments to recreate the state with, and its state dict.
+        """
+        state_dict = self.state.__getstate__()
+        del state_dict[_SCHEMA_PICKLE_KEY]
+        if self.recorded_schema is not None:
+            state_dict[_SCHEMA_PICKLE_KEY] = self.recorded_schema
+        return object.__new__, (type(self.state),), state_dict
+
+
 @pytest.mark.parametrize("type_name", ["builtins.int", "builtins.str"])
 def test_deserialize_previous_schema_format(type_name: str):
     """Accept compatible hashes from the previous schema format only.
@@ -5580,19 +5634,11 @@ def test_deserialize_previous_schema_format(type_name: str):
     Args:
         type_name: The type stored in the previous schema.
     """
-    previous_fields = [
-        (
-            name,
-            type_name
-            if name == "value"
-            else f"{declared.type_.__module__}.{declared.type_.__qualname__}",
-            declared.default if is_serializable(declared.default) else None,
-        )
-        for name, declared in DefaultSchemaState.get_fields().items()
-        if name in DefaultSchemaState.base_vars
-    ]
-    legacy_schema = md5(pickle.dumps(sorted(previous_fields))).hexdigest()
-    data = pickle.dumps((legacy_schema, DefaultSchemaState(value=99)))
+    legacy_schema = _previous_release_schema(DefaultSchemaState, value=type_name)
+    data = pickle.dumps((
+        legacy_schema,
+        _SavedState(DefaultSchemaState(value=99), None),
+    ))
     if type_name == "builtins.int":
         restored = BaseState._deserialize(data)
         assert isinstance(restored, DefaultSchemaState)
@@ -5600,6 +5646,80 @@ def test_deserialize_previous_schema_format(type_name: str):
     else:
         with pytest.raises(StateSchemaMismatchError):
             BaseState._deserialize(data)
+
+
+def test_serialized_state_passes_the_previous_release_schema_check():
+    """Workers before 0.10.0a2 load a state saved by this release.
+
+    They drop a saved state unless the hash saved with it equals their own,
+    which includes the defaults, so a rollback or a rolling deploy sharing the
+    state would otherwise reset every session.
+    """
+    saved_schema, restored = pickle.loads(DefaultSchemaState(value=99)._serialize())
+    assert saved_schema == _previous_release_schema(DefaultSchemaState)
+    assert isinstance(restored, DefaultSchemaState)
+    assert restored.value == 99
+
+
+@pytest.mark.parametrize(
+    ("saved_schema", "recorded_schema", "loads"),
+    [
+        # Saved by this release, or re-saved by an older worker that loaded it.
+        ("previous", "current", True),
+        # Saved by this release before a default changed.
+        ("other", "current", True),
+        # Saved by this release before a field was added, renamed or retyped.
+        ("other", "other", False),
+        # Saved by 0.10.0a2.
+        ("current", None, True),
+        # Saved by an older release.
+        ("previous", None, True),
+        ("other", None, False),
+    ],
+)
+def test_deserialize_checks_the_recorded_schema(
+    saved_schema: str, recorded_schema: str | None, loads: bool
+):
+    """The schema recorded in the pickle decides; older pickles fall back to the saved hash.
+
+    Args:
+        saved_schema: Which hash is saved next to the pickled state.
+        recorded_schema: Which hash is recorded inside it, if any.
+        loads: Whether the state is restored.
+    """
+    hashes = {
+        "current": DefaultSchemaState._to_schema(),
+        "previous": _previous_release_schema(DefaultSchemaState),
+        "other": md5(b"other").hexdigest(),
+    }
+    data = pickle.dumps((
+        hashes[saved_schema],
+        _SavedState(
+            DefaultSchemaState(value=99),
+            None if recorded_schema is None else hashes[recorded_schema],
+        ),
+    ))
+    if not loads:
+        with pytest.raises(StateSchemaMismatchError):
+            BaseState._deserialize(data)
+        return
+    restored = BaseState._deserialize(data)
+    assert isinstance(restored, DefaultSchemaState)
+    assert restored.value == 99
+    assert _SCHEMA_PICKLE_KEY not in vars(restored)
+
+
+def test_serialize_rehashes_the_previous_schema_after_add_var():
+    """A var added at runtime is part of the hash saved for older workers."""
+
+    class AddVarSchemaState(BaseState):
+        value: int = 1
+
+    state = AddVarSchemaState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    before, _ = pickle.loads(state._serialize())
+    AddVarSchemaState.add_var("added", int, 2)
+    after, _ = pickle.loads(state._serialize())
+    assert before != after == _previous_release_schema(AddVarSchemaState)
 
 
 def test_reset_client_storage_uses_declared_factories():

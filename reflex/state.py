@@ -97,6 +97,11 @@ from reflex.istate.storage import ClientStorageBase
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
+# Entry in each pickle holding the `_to_schema` hash, which `_deserialize`
+# checks and takes out of the restored state. The hash saved next to the pickle
+# is `_legacy_state_schema`, the only one 0.9 and 0.10.0a1 workers check.
+_SCHEMA_PICKLE_KEY = "__reflex_schema__"
+
 # Entries in each pickle for workers of the previous release, which kept the
 # dirty tracking and backend vars in the instance dict. Remove in 1.0.
 _PREVIOUS_RELEASE_PICKLE_KEYS: dict[str, Any] = {
@@ -1071,8 +1076,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     parent_state.get_parent_state(),
                 )
 
-        # Reset cached schema value
+        # Reset cached schema values
         cls._to_schema.cache_clear()
+        _legacy_state_schema.cache_clear()
 
     @classmethod
     def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
@@ -2040,7 +2046,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         are stored on it, so inherited ones are not included either.
 
         Returns:
-            The state dict for serialization.
+            The state dict for serialization, with the schema hash of the class.
         """
         cls = type(self)
         fields = vars(self)
@@ -2049,8 +2055,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for name, f in cls.__fields__.items():
             if f._owner is cls and name not in fields:
                 fields[name] = f.default_value()
-        # Empty entries that let workers of the previous release load it.
-        return {**fields, **_PREVIOUS_RELEASE_PICKLE_KEYS}
+        # The schema this release checks, and empty entries that let workers of
+        # the previous release load it.
+        return {
+            **fields,
+            _SCHEMA_PICKLE_KEY: cls._to_schema(),
+            **_PREVIOUS_RELEASE_PICKLE_KEYS,
+        }
 
     def __setstate__(self, state: builtins.dict[str, Any]):
         """Set the state from redis deserialization.
@@ -2135,7 +2146,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """
         payload = b""
         error = ""
-        self_schema = self._to_schema()
+        # Workers of 0.9 and 0.10.0a1 drop a state saved with any other hash.
+        self_schema = _legacy_state_schema(type(self))
         pickle_function = pickle.dumps
         try:
             payload = pickle.dumps((self_schema, self))
@@ -2207,16 +2219,21 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         except Exception as err:
             msg = f"Stored state could not be unpickled: {err!r}"
             raise StateSchemaMismatchError(msg) from err
-        if (
-            substate_schema != state._to_schema()
-            and substate_schema != _legacy_state_schema(type(state))
-        ):
+        # A state saved by 0.10.0a2 or an older release has no recorded schema.
+        schema = vars(state).pop(_SCHEMA_PICKLE_KEY, substate_schema)
+        if schema != state._to_schema() and schema != _legacy_state_schema(type(state)):
             raise StateSchemaMismatchError
         return state
 
 
+@functools.cache
 def _legacy_state_schema(state_cls: type[BaseState]) -> str:
-    """Hash the previous schema format to restore compatible persisted states.
+    """Hash the schema format of 0.9 and 0.10.0a1, defaults included.
+
+    It is saved next to each pickled state, so that workers of those releases
+    load it, and restores the states they saved. Like `_to_schema`, it is
+    cached until a state class is created or gets a new var, so a default
+    assigned in between, which those releases ignore, does not change it.
 
     Args:
         state_cls: The class whose previous schema to compute.
