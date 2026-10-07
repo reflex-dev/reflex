@@ -1,0 +1,1 @@
+Define `window.__reflex` before the first render, so a component that reads it while rendering, such as an AG Grid whose `column_defs` come from a State var, no longer stays empty after a full load of a prerendered page in production.

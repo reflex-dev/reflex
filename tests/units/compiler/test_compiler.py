@@ -2,6 +2,7 @@ import dataclasses
 import importlib.util
 import json
 import os
+import re
 import sys
 from pathlib import Path, PureWindowsPath
 
@@ -653,6 +654,44 @@ def test_compile_app_root_can_defer_optional_window_libraries(mocker):
     assert 'import * as React from "react"' in code
     assert 'import * as utils_context from "$/utils/context"' in code
     assert "window.__reflex_load" in code
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+def test_compile_app_root_exposes_window_libraries_before_first_render(
+    lazy: bool, mocker: MockerFixture
+):
+    """Assign window.__reflex when the root module loads, not in an effect.
+
+    Components may read window.__reflex while rendering, and a prerendered page
+    that only hydrates unchanged substates never renders them again, so an
+    assignment in a ReflexProviders effect would come too late.
+
+    Args:
+        lazy: Whether application libraries should be loaded lazily.
+        mocker: Fixture for configuring the bundle loading mode.
+    """
+    with RegistrationContext():
+        mocker.patch(
+            "reflex_base.config._get_config",
+            return_value=rx.Config(
+                app_name="testing", frontend_lazy_bundled_libraries=lazy
+            ),
+        )
+        bundle_library("foo.bar")
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    module_scope, providers = code.split("function ReflexProviders(", 1)
+    setup = re.search(
+        r'^if \(typeof window !== "undefined"\) \{\n  window\.__reflex = \{(.*?)^\}',
+        module_scope,
+        re.DOTALL | re.MULTILINE,
+    )
+    assert setup is not None
+    assert '"react": React,' in setup.group(1)
+    assert '"$/utils/state": utils_state,' in setup.group(1)
+    assert ('"foo.bar": foo_bar,' in setup.group(1)) is not lazy
+    assert ("window.__reflex_load" in setup.group(1)) is lazy
+    assert "window.__reflex" not in providers
 
 
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:

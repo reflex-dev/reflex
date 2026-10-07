@@ -211,26 +211,14 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
-    window_imports_effect = f"""useEffect(() => {{
-    // Make contexts and state objects available globally for dynamic eval'd components
-    window.__reflex = {{
-      {window_imports_str}
-    }};
-  }}, []);"""
     lazy_imports_setup = ""
     if lazy_window_libraries:
+        # Optional namespaces stay out of the initial graph.
         loaders = "\n".join(
             f"    {json.dumps(lib_path)}: () => import({json.dumps(lib_path)}),"
             for _, lib_path in lazy_window_libraries
         )
-        # Register before child effects run, including an initially mounted
-        # dynamic component. Optional namespaces stay out of the initial graph.
-        window_imports_effect = ""
         lazy_imports_setup = f"""
-if (typeof window !== "undefined") {{
-  window.__reflex = {{ ...window.__reflex,
-    {window_imports_str}
-  }};
   const loaders = {{
 {loaders}
   }};
@@ -245,7 +233,16 @@ if (typeof window !== "undefined") {{
       }});
     }}
     return pending;
-  }};
+  }};"""
+
+    # Register when the module loads, before anything renders: components may
+    # read window.__reflex while rendering, and child effects (such as an
+    # initially mounted dynamic component) run before any provider effect.
+    window_imports_setup = f"""
+if (typeof window !== "undefined") {{
+  window.__reflex = {{ ...window.__reflex,
+{window_imports_str}
+  }};{lazy_imports_setup}
 }}
 """
 
@@ -257,13 +254,11 @@ import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
 {import_window_libraries}
-{lazy_imports_setup}
+{window_imports_setup}
 
 {custom_code_str}
 
 function ReflexProviders({{children}}) {{
-  {window_imports_effect}
-
   return jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
     jsx(AppWrap, {{}}, children)
   );
