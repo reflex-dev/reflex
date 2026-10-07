@@ -6776,3 +6776,30 @@ def test_cached_computed_var_timestamp_is_only_stored_with_an_interval():
     # The cache and the interval timestamp survive a trip through redis.
     restored = BaseState._deserialize(state._serialize())
     assert restored.__dict__ == state.__dict__
+
+
+def test_private_attribute_is_assignable(clean_registration_context):
+    """A name-mangled private attribute is a plain attribute, not a backend var.
+
+    Assigning it from a handler neither raises nor marks the state dirty.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class PrivateState(BaseState):
+        __counter: int = 0  # pyright: ignore[reportGeneralTypeIssues]
+        __declared: rx.Field[int] = rx.field(0)  # pyright: ignore[reportGeneralTypeIssues]
+
+        def bump(self):
+            self.__counter += 1
+            self.__declared += 1
+
+    counter, declared = "_PrivateState__counter", "_PrivateState__declared"
+    assert counter not in PrivateState.get_fields()
+    assert PrivateState.get_fields()[declared]._backend
+    state = PrivateState()  # pyright: ignore[reportCallIssue]
+    state.bump()
+    assert getattr(state, counter) == 1
+    assert getattr(state, declared) == 1
+    assert state.dirty_vars == {declared}

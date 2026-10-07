@@ -1,0 +1,1 @@
+Double-underscore state attributes (name-mangled `__private` names and dunders) are plain class attributes again, as in 0.9.12, instead of being turned into backend vars; declare one with `rx.field()` to make it a backend var.

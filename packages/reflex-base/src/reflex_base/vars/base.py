@@ -4541,11 +4541,29 @@ def _validate_state_declaration(
         seen.update(vars(base))
 
 
-def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
+def _private_prefixes(class_name: str) -> tuple[str, str]:
+    """Get the prefixes of the names Python treats as private in a class body.
+
+    A private name is a plain attribute of the class unless it is declared a
+    field explicitly, as it was before fields became descriptors.
+
+    Args:
+        class_name: The name of the class being created.
+
+    Returns:
+        The dunder prefix and the prefix ``__name`` is mangled to in the class.
+    """
+    return "__", f"_{class_name.lstrip('_')}__"
+
+
+def _unannotated_fields(
+    namespace: Mapping[str, Any], private: tuple[str, ...]
+) -> dict[str, Field]:
     """Get the fields a class namespace declares by value alone.
 
     Args:
         namespace: The class namespace.
+        private: The prefixes of names that are fields only when declared as such.
 
     Returns:
         The fields by name.
@@ -4566,7 +4584,7 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
                     else figure_out_type(value.default)
                 )
         elif (
-            not key.startswith("__")
+            not key.startswith(private)
             and not callable(value)
             and not isinstance(value, (staticmethod, classmethod, Var))
             and not _is_descriptor(value)
@@ -4576,13 +4594,16 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
 
 
 def _annotated_fields(
-    namespace: Mapping[str, Any], lookup_order: Sequence[type]
+    namespace: Mapping[str, Any],
+    lookup_order: Sequence[type],
+    private: tuple[str, ...],
 ) -> dict[str, Field]:
     """Get the fields a class namespace declares by annotation.
 
     Args:
         namespace: The class namespace.
         lookup_order: The bases of the class in method resolution order.
+        private: The prefixes of names that are fields only when declared as such.
 
     Returns:
         The fields by name.
@@ -4595,6 +4616,8 @@ def _annotated_fields(
         if types.is_classvar(annotation) or key in slots:
             continue
         value = namespace.get(key, MISSING)
+        if key.startswith(private) and not isinstance(value, Field):
+            continue
         declared = (
             value if value is not MISSING else _inherited_value(lookup_order, key)
         )
@@ -4744,12 +4767,13 @@ class BaseStateMeta(ABCMeta):
                 inherited_fields.update(
                     (key, value)
                     for key, value in _annotated_fields(
-                        vars(base), base.__mro__[1:]
+                        vars(base), base.__mro__[1:], _private_prefixes(base.__name__)
                     ).items()
-                    if key.startswith("_") and not key.startswith(f"_{base.__name__}__")
+                    if key.startswith("_")
                 )
-        own_fields = _unannotated_fields(namespace) | _annotated_fields(
-            namespace, lookup_order
+        private = _private_prefixes(name)
+        own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
+            namespace, lookup_order, private
         )
         annotations = annotations_from_namespace(namespace)
         for key, value in namespace.items():
