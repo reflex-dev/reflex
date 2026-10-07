@@ -81,16 +81,11 @@ frontend and backend vars. Values already stored on a state instance stay the
 same, and mutable defaults are copied for each instance. Reset uses the last
 configured default, and changing defaults preserves saved state compatibility.
 
-Assigning an `rx.field(...)` replaces the field configuration, including its
-default factory. The replacement retains the declared type, frontend or backend
-visibility, attribute name, and owning state class. Frontend vars remain usable
-in the UI after either kind of assignment.
-
-Assigned defaults must match the field's declared type. A Var or a field already
-bound to a state cannot be used as a default: declare a `ClassVar[rx.Var]` to
+Assigned defaults must match the field's declared type. Var and Field assignments
+are rejected, including fresh `rx.field(...)` objects. Declare a `ClassVar[rx.Var]` to
 store a Var reference, or define a computed var to read another field at runtime.
-Fresh `rx.field(...)` configurations remain supported, and their default factories
-are evaluated when a default value is needed, rather than during assignment.
+Declare default factories in the class body. Frontend vars remain usable in the
+UI after assigning a new default value.
 
 An inherited var belongs to the state that declared it, so assigning a default
 through a subclass also changes that declaring state's default. Each generated

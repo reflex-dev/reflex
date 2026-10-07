@@ -82,8 +82,7 @@ def test_component_state_defaults_from_props():
                 The component using the configured state vars.
             """
             cls.count = initial_count
-            # Pyright applies the instance descriptor setter to this class assignment.
-            cls.labels = rx.field(default_factory=lambda: [label])  # pyright: ignore[reportAttributeAccessIssue]
+            cls.labels = [label]
             return rx.text(cls.count, cls.labels)
 
     first = ConfiguredComponentState.create(initial_count=5, label="first")

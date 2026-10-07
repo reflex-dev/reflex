@@ -68,9 +68,7 @@ def ComponentStateApp():
             """
             eid = props.get("id", "default")
             cls.count = props.pop("initial_count", 0)
-            initial_label = props.pop("initial_label", "")
-            # Pyright applies the instance descriptor setter to this class assignment.
-            cls.label = rx.field(default_factory=lambda: initial_label)  # pyright: ignore[reportAttributeAccessIssue]
+            cls.label = props.pop("initial_label", "")
             return rx.vstack(
                 *children,
                 rx.heading(cls.count, id=f"count-{eid}"),

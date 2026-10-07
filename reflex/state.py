@@ -1381,16 +1381,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             object.__setattr__(prop, "_var_type", prop._var_type | None)
 
     @classmethod
-    def _on_field_changed(cls, name: str) -> None:
-        """Refresh frontend metadata after changing a field's default.
-
-        Args:
-            name: The field that changed.
-        """
-        if (prop := cls.__fields__[name]._var) is not None:
-            cls._set_default_value(name, prop)
-
-    @classmethod
     def _update_substate_vars(cls, vars_to_add: builtins.dict[str, Var]):
         """Update the inherited vars of substates recursively when new vars are added.
 

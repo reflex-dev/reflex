@@ -103,73 +103,14 @@ def test_class_assignment_preserves_field(mutable: bool, name: str):
         assert getattr(second, name) == replacement == ["configured"]
 
 
-@pytest.mark.parametrize("name", ["_value", "value", "server_value"])
-def test_class_assignment_replaces_field(name: str):
-    """A replacement field keeps the declared type, binding, and frontend Var.
-
-    Args:
-        name: The backend or frontend field name.
-    """
-
-    class ConfigState(BaseState):
-        _value: list[str] = []
-        value: list[str] = []
-        server_value: list[str] = field(default_factory=list, is_var=False)
-
-    declared = ConfigState.get_fields()[name]
-    original = ConfigState()
-    assert getattr(original, name) == []
-    calls = []
-
-    def factory() -> list[str]:
-        """Count factory calls and return an independent default.
-
-        Returns:
-            The new default value.
-        """
-        calls.append(True)
-        return ["configured"]
-
-    replacement = field(default_factory=factory)
-    marker = object()
-    setattr(replacement, _MARKER_ATTR, marker)
-    setattr(ConfigState, name, replacement)
-    installed = ConfigState.get_fields()[name]
-    assert installed is not declared
-    assert ConfigState.__dict__[name] is installed
-    assert installed._owner is ConfigState
-    assert installed._name == name
-    assert installed.annotated_type == list[str]
-    assert installed._backend is declared._backend
-    assert installed._var is declared._var
-    assert getattr(installed, _MARKER_ATTR) is marker
-    assert calls == []
-    assert getattr(original, name) == []
-
-    first, second = ConfigState(), ConfigState()
-    assert getattr(first, name) == getattr(second, name) == ["configured"]
-    assert calls == [True, True]
-    getattr(first, name).append("session-only")
-    assert getattr(second, name) == ["configured"]
-    first.reset()
-    assert getattr(first, name) == ["configured"]
-    restored = ConfigState()
-    restored.__setstate__(pickle.loads(pickle.dumps(first.__getstate__())))
-    assert getattr(restored, name) == ["configured"]
-
-
 @pytest.mark.parametrize("name", ["_value", "value"])
 @pytest.mark.parametrize("replacement", ["wrong", ["wrong"], None])
-@pytest.mark.parametrize("configuration", ["value", "field", "raw_field"])
-def test_class_assignment_rejects_invalid_default(
-    name: str, replacement: Any, configuration: str
-):
+def test_class_assignment_rejects_invalid_default(name: str, replacement: Any):
     """Invalid defaults cannot change the declared field or its configuration.
 
     Args:
         name: The backend or frontend field name.
         replacement: A value incompatible with the field's type.
-        configuration: Whether to assign a value or a fresh field configuration.
     """
 
     class ConfigState(BaseState):
@@ -178,10 +119,6 @@ def test_class_assignment_rejects_invalid_default(
 
     declared = ConfigState.get_fields()[name]
     original_factory = declared.default_factory
-    if configuration == "field":
-        replacement = field(default=replacement)
-    elif configuration == "raw_field":
-        replacement = Field(default=replacement)
     with pytest.raises(TypeError, match=r"Invalid default.*list\[int\]"):
         setattr(ConfigState, name, replacement)
     assert ConfigState.get_fields()[name] is declared
@@ -189,25 +126,28 @@ def test_class_assignment_rejects_invalid_default(
     assert getattr(ConfigState(), name) == []
 
 
-@pytest.mark.parametrize("name", ["_value", "value"])
+@pytest.mark.parametrize("name", ["_value", "value", "server_value"])
+@pytest.mark.parametrize("inherited", [False, True])
 @pytest.mark.parametrize(
     "kind",
     [
         "var",
         "literal",
         "bound_field",
-        "wrapped_var",
-        "wrapped_field",
-        "configured_var",
-        "configured_field",
+        "field",
+        "factory_field",
+        "raw_field",
     ],
 )
-def test_class_assignment_rejects_state_references(name: str, kind: str):
-    """State references cannot become defaults, even on an Any-typed field.
+def test_class_assignment_rejects_vars_and_fields(
+    name: str, kind: str, inherited: bool
+):
+    """Reject every Var and Field assignment without changing field bindings.
 
     Args:
         name: The backend or frontend field name.
-        kind: The reference or configuration containing it.
+        kind: The Var or Field to assign.
+        inherited: Whether to assign through an inheriting state.
     """
 
     class SourceState(BaseState):
@@ -217,24 +157,42 @@ def test_class_assignment_rejects_state_references(name: str, kind: str):
     class ConfigState(BaseState):
         _value: Any = "old"
         value: str = "old"
+        server_value: str = field(default="old", is_var=False)
 
-    reference = (
-        SourceState.get_fields()["_source"]
-        if "field" in kind
-        else Var.create("literal")
-        if kind == "literal"
-        else SourceState.source
-    )
-    replacement = Field(default=reference) if kind.startswith("wrapped") else reference
-    if kind.startswith("configured"):
-        replacement = field(default=reference)
+    class Child(ConfigState):
+        pass
+
+    calls = []
+
+    def factory() -> str:
+        """Record an unexpected evaluation of a rejected factory.
+
+        Returns:
+            A valid default that must never be requested.
+        """
+        calls.append(True)
+        return "new"
+
+    replacement = {
+        "var": SourceState.source,
+        "literal": Var.create("literal"),
+        "bound_field": SourceState.get_fields()["_source"],
+        "field": field("new"),
+        "factory_field": field(default_factory=factory),
+        "raw_field": Field(default="new"),
+    }[kind]
     declared = ConfigState.get_fields()[name]
     advice = "computed var" if "field" in kind else "ClassVar\\[rx.Var\\]"
     with pytest.raises(TypeError, match=advice):
-        setattr(ConfigState, name, replacement)
+        setattr(Child if inherited else ConfigState, name, replacement)
     assert ConfigState.get_fields()[name] is declared
+    assert Child.get_fields()[name] is declared
+    assert ConfigState.__dict__[name] is declared
+    assert name not in Child.__dict__
+    assert declared._owner is ConfigState
     assert getattr(ConfigState(), name) == "old"
     assert SourceState()._source == "source"
+    assert calls == []
 
 
 def test_class_assignment_allows_optional_defaults_and_var_classvars():
@@ -250,51 +208,6 @@ def test_class_assignment_allows_optional_defaults_and_var_classvars():
     assert ConfigState.reference is ConfigState.value
 
 
-@pytest.mark.parametrize("name", ["_value", "value"])
-def test_class_assignment_replaces_inherited_field(name: str):
-    """Replacing an inherited field updates its owner and existing descendants.
-
-    Args:
-        name: The backend or frontend field name.
-    """
-
-    class Parent(BaseState):
-        _value: str = "old"
-        value: str = "old"
-
-    class Child(Parent):
-        pass
-
-    class Grandchild(Child):
-        pass
-
-    class Override(Parent):
-        _value: str = "own"
-        value: str = "own"
-
-    declared = Parent.get_fields()[name]
-    setattr(Child, name, field(default="new"))
-    installed = Parent.get_fields()[name]
-    assert installed is not declared
-    assert installed._owner is Parent
-    assert installed._name == name
-    assert name not in Child.__dict__
-    assert Parent.__dict__[name] is installed
-    assert Parent.__own_fields__[name] is installed
-    for state_cls in (Child, Grandchild, Override):
-        assert state_cls.__inherited_fields__[name] is installed
-    for state_cls in (Parent, Child, Grandchild):
-        assert state_cls.get_fields()[name] is installed
-        assert getattr(state_cls(), name) == "new"
-    assert getattr(Override(), name) == "own"
-
-    class Later(Child):
-        pass
-
-    assert Later.get_fields()[name] is installed
-    assert getattr(Later(), name) == "new"
-
-
 def test_class_assignment_preserves_shadowing_classvar():
     """A ClassVar shadowing an inherited field remains ordinary configuration."""
 
@@ -307,28 +220,6 @@ def test_class_assignment_preserves_shadowing_classvar():
     Child._value = "new"
     assert Child._value == "new"
     assert Parent()._value == "old"
-
-
-def test_class_assignment_binds_installed_field():
-    """A replacement descriptor sees itself installed while its binding hook runs."""
-
-    class BindingField(Field[str]):
-        def __set_name__(self, owner: type, name: str) -> None:
-            """Bind the field after it is installed on its owner.
-
-            Args:
-                owner: The class owning the descriptor.
-                name: Its attribute name.
-            """
-            super().__set_name__(owner, name)
-            assert owner.__dict__[name] is self
-            assert owner.__dict__["__fields__"][name] is self
-
-    class ConfigState(BaseState):
-        value: str = "old"
-
-    ConfigState.value = BindingField(default="new")  # pyright: ignore[reportAttributeAccessIssue]
-    assert ConfigState().value == "new"
 
 
 def test_backend_class_assignment_replaces_default_factory():

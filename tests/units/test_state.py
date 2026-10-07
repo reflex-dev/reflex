@@ -5526,33 +5526,27 @@ class DefaultSchemaState(BaseState):
     value: Field[int] = field(default=1)
 
 
-@pytest.mark.parametrize(
-    "configuration", [2, field(default=3), field(default_factory=lambda: 4)]
-)
-def test_default_assignment_preserves_serialized_state(configuration: Any):
+@pytest.mark.parametrize("default", [2, 3, 4])
+def test_default_assignment_preserves_serialized_state(default: int):
     """Changing defaults preserves the schema and previously serialized values.
 
     Args:
-        configuration: A replacement value or fresh field configuration.
+        default: The new default value.
     """
-    original = DefaultSchemaState.get_fields()["value"]._replace()
+    original = DefaultSchemaState().value
     state = DefaultSchemaState(value=99)
     data = state._serialize()
     schema = DefaultSchemaState._to_schema()
     try:
-        DefaultSchemaState.value = configuration
+        DefaultSchemaState.value = default
         DefaultSchemaState._to_schema.cache_clear()
         assert DefaultSchemaState._to_schema() == schema
         restored = BaseState._deserialize(data)
         assert isinstance(restored, DefaultSchemaState)
         assert restored.value == 99
-        assert DefaultSchemaState().value == (
-            configuration.default_value()
-            if isinstance(configuration, Field)
-            else configuration
-        )
+        assert DefaultSchemaState().value == default
     finally:
-        DefaultSchemaState.value = original  # pyright: ignore[reportAttributeAccessIssue]
+        DefaultSchemaState.value = original
         DefaultSchemaState._to_schema.cache_clear()
 
 
@@ -5606,40 +5600,45 @@ def test_deserialize_previous_schema_format(type_name: str):
             BaseState._deserialize(data)
 
 
-@pytest.mark.parametrize("name", ["cookie", "local", "session"])
-def test_reset_client_storage_uses_replacement_factory(name: str):
-    """Hydration resets client storage through its latest default factory.
-
-    Args:
-        name: The browser storage field to configure.
-    """
-
-    class StorageState(BaseState):
-        cookie: rx.Cookie = rx.Cookie("old")
-        local: rx.LocalStorage = rx.LocalStorage("old")
-        session: rx.SessionStorage = rx.SessionStorage("old")
-
+def test_reset_client_storage_uses_declared_factories():
+    """Hydration evaluates declared factories for all browser storage types."""
     calls = []
-    storage_type = StorageState.get_fields()[name].type_
 
-    def factory() -> str:
+    def factory(storage_type: type) -> Any:
         """Record calls and return the configured browser default.
+
+        Args:
+            storage_type: The browser storage value type.
 
         Returns:
             The new storage value.
         """
-        calls.append(True)
+        calls.append(storage_type)
         return storage_type("new")
 
-    setattr(StorageState, name, field(default_factory=factory))
+    class StorageState(BaseState):
+        cookie: rx.Field[rx.Cookie] = rx.field(
+            default_factory=lambda: factory(rx.Cookie)
+        )
+        local: rx.Field[rx.LocalStorage] = rx.field(
+            default_factory=lambda: factory(rx.LocalStorage)
+        )
+        session: rx.Field[rx.SessionStorage] = rx.field(
+            default_factory=lambda: factory(rx.SessionStorage)
+        )
+
     assert calls == []
-    state = StorageState(**{name: storage_type("saved")})
+    state = StorageState(
+        cookie=rx.Cookie("saved"),
+        local=rx.LocalStorage("saved"),
+        session=rx.SessionStorage("saved"),
+    )
     state._reset_client_storage()
-    assert getattr(state, name) == "new"
-    assert calls == [True]
+    assert state.cookie == state.local == state.session == "new"
+    assert calls == [rx.Cookie, rx.LocalStorage, rx.SessionStorage]
     state._reset_client_storage()
-    assert getattr(state, name) == "new"
-    assert calls == [True, True]
+    assert state.cookie == state.local == state.session == "new"
+    assert calls == [rx.Cookie, rx.LocalStorage, rx.SessionStorage] * 2
 
 
 @pytest.mark.parametrize(

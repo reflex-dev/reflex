@@ -4684,74 +4684,12 @@ def _is_tree_state(cls: Any) -> bool:
     )
 
 
-def _validate_field_default(declared: Field, value: Any) -> None:
-    """Reject state references and values incompatible with a field's type.
-
-    Args:
-        declared: The field whose default is being changed.
-        value: The proposed default value.
-
-    Raises:
-        TypeError: If the value is a state reference or has an incompatible type.
-    """
-    if isinstance(value, Var):
-        msg = (
-            "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
-            "references to vars in state."
-        )
-        raise TypeError(msg)
-    if isinstance(value, Field):
-        msg = (
-            "A field reference cannot overwrite another field. Define a "
-            "computed var to read the field at runtime instead."
-        )
-        raise TypeError(msg)
-    if not _isinstance(value, declared.outer_type_, nested=1, treat_var_as_type=False):
-        msg = (
-            f"Invalid default for field '{declared._name}': expected "
-            f"{declared.outer_type_}, got {value!r} of type {type(value)}."
-        )
-        raise TypeError(msg)
-
-
-def _replace_bound_field(declared: Field, replacement: Field) -> None:
-    """Replace a field's configuration while retaining its declaration and binding.
-
-    Args:
-        declared: The existing bound field.
-        replacement: The new field configuration.
-    """
-    owner = cast("BaseStateMeta", declared._owner)
-    name = declared._name
-    replacement = replacement._replace(
-        annotated_type=declared.annotated_type, is_var=declared.is_var
-    )
-    type.__setattr__(owner, name, replacement)
-    pending = [owner]
-    seen = set()
-    while pending:
-        state_cls = pending.pop()
-        if state_cls in seen:
-            continue
-        seen.add(state_cls)
-        for fields in (
-            state_cls.__fields__,
-            state_cls.__own_fields__,
-            state_cls.__inherited_fields__,
-        ):
-            if fields.get(name) is declared:
-                fields[name] = replacement
-        pending.extend(cast("list[BaseStateMeta]", state_cls.__subclasses__()))
-    replacement.__set_name__(owner, name)
-    replacement._var = declared._var
-
-
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseStateMeta(ABCMeta):
     """Meta class for BaseState."""
 
     if TYPE_CHECKING:
-        __inherited_fields__: dict[str, Field]
+        __inherited_fields__: Mapping[str, Field]
         __own_fields__: dict[str, Field]
         __fields__: dict[str, Field]
 
@@ -4770,34 +4708,34 @@ class BaseStateMeta(ABCMeta):
             value: Its new value.
 
         Raises:
-            TypeError: If a field default is a state reference or has an
+            TypeError: If a field default is a Var, a Field, or has an
                 incompatible type.
         """
         declared = cls.__fields__.get(name)
         if declared is not None and _inherited_value(cls.__mro__, name) is declared:
-            if isinstance(value, Field) and value._owner is None:
-                default = value.default
-                factory = value.default_factory
-                if (
-                    default is MISSING
-                    and isinstance(factory, functools.partial)
-                    and factory.func is copy.deepcopy
-                    and factory.args
-                ):
-                    # Mutable defaults are stored as copy factories; check
-                    # their source value without evaluating the factory.
-                    default = factory.args[0]
-                if default is not MISSING:
-                    _validate_field_default(declared, default)
-                _replace_bound_field(declared, value)
-            else:
-                _validate_field_default(declared, value)
-                defaults = _default_arguments(value)
-                declared.default = defaults["default"]
-                declared.default_factory = defaults["default_factory"]
-            cast("type[EvenMoreBasicBaseState]", declared._owner)._on_field_changed(
-                name
-            )
+            if isinstance(value, Var):
+                msg = (
+                    "A Var cannot be a field default. Use ClassVar[rx.Var] to save "
+                    "references to vars in state."
+                )
+                raise TypeError(msg)
+            if isinstance(value, Field):
+                msg = (
+                    "A Field cannot overwrite another field. Define a "
+                    "computed var to read the field at runtime instead."
+                )
+                raise TypeError(msg)
+            if not _isinstance(
+                value, declared.outer_type_, nested=1, treat_var_as_type=False
+            ):
+                msg = (
+                    f"Invalid default for field '{name}': expected "
+                    f"{declared.outer_type_}, got {value!r} of type {type(value)}."
+                )
+                raise TypeError(msg)
+            defaults = _default_arguments(value)
+            declared.default = defaults["default"]
+            declared.default_factory = defaults["default_factory"]
             return
         super().__setattr__(name, value)
 
@@ -4920,14 +4858,6 @@ class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
             The fields of the component.
         """
         return cls.__fields__
-
-    @classmethod
-    def _on_field_changed(cls, name: str) -> None:
-        """Refresh metadata after a field's default or configuration changes.
-
-        Args:
-            name: The field that changed.
-        """
 
     @classmethod
     def add_field(cls, name: str, var: Var, default_value: Any):
