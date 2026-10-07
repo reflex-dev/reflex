@@ -312,6 +312,7 @@ def demo_form(
             id=email_id,
             on_blur=DemoFormStateUI.validate_email(rx.Var(get_element_value(email_id))),
         ),
+        input_field("Phone number", "+1234567890", "phone_number", "tel"),
         rx.el.div(
             input_field("Job title", "CTO", "job_title", "text", True),
             input_field("Company name", "Pynecone, Inc.", "company_name", "text", True),

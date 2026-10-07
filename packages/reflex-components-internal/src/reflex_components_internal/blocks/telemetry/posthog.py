@@ -99,7 +99,9 @@ def track_demo_form_posthog_submission(form_data: dict[str, Any]) -> rx.event.Ev
     Returns:
         Event that runs PostHog identify and capture in the browser.
     """
-    return _track_form_posthog("demo_request", form_data, _COMMON_KEYS)
+    return _track_form_posthog(
+        "demo_request", form_data, _COMMON_KEYS | {"phone_number"}
+    )
 
 
 def track_intro_form_posthog_submission(

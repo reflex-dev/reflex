@@ -2,7 +2,10 @@
 
 import re
 
-from reflex_components_internal.blocks.demo_form import demo_form_dialog
+from reflex_components_internal.blocks.demo_form import demo_form, demo_form_dialog
+from reflex_components_internal.blocks.telemetry.posthog import (
+    track_demo_form_posthog_submission,
+)
 
 import reflex as rx
 
@@ -30,3 +33,20 @@ def test_demo_form_dialog_renders_given_trigger() -> None:
 
     assert "Dialog.Trigger" in rendered
     assert TRIGGER_LABEL in rendered
+
+
+def test_demo_form_asks_for_an_optional_phone_number() -> None:
+    """The phone number is a tel input that the form can be submitted without."""
+    rendered = str(demo_form())
+    field = re.search(r'name:"phone_number"[^}]*', rendered)
+
+    assert field is not None
+    assert 'type:"tel"' in field.group()
+    assert "required:false" in field.group()
+
+
+def test_demo_request_tracking_includes_the_phone_number() -> None:
+    """PostHog receives the phone number with the rest of the demo request."""
+    event = str(track_demo_form_posthog_submission({"phone_number": "+15551234567"}))
+
+    assert "+15551234567" in event
