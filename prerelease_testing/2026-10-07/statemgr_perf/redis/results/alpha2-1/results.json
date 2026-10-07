@@ -1,0 +1,2548 @@
+{
+  "name": "alpha2-1",
+  "sessions": [
+    {
+      "identity": "chromium-0",
+      "browser_version": "153.0.8010.12",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"l9rrzE7y1pOePkGcAAAC\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"kdE9cbJn6IU_3r8YAAAG\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"dxLsSJI5SBkNhjeBHmzAgw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"dxLsSJI5SBkNhjeBHmzAgw==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/inde"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"chromium-0\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"chromium-0\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.update_all\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"batch_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf19\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf06\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf11\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf09\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf18\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf05\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf10\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf12\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf02\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf17\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf15\":{\"value_rx_state_\":1},\"reflex___state____stat"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"XJXZ51kdC2Rif1FNAAAM\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"0SaLdEFZcmVvk7f0AAAP\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ViPI7UXns1xKlrF3vuuttA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"ViPI7UXns1xKlrF3vuuttA==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/inde"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nchromium-0\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n1\n\nIncrement\nBackground\nUpdate twenty\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "l9rrzE7y1pOePkGcAAAC",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "XJXZ51kdC2Rif1FNAAAM",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    },
+    {
+      "identity": "chromium-1",
+      "browser_version": "153.0.8010.12",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"dLHERuzv06lompaZAAAB\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"7iCqzS7VoC_xZxcFAAAH\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"4DDNJOgma8uvba2FQkN/qg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"4DDNJOgma8uvba2FQkN/qg==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/inde"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"chromium-1\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"chromium-1\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"_DxgtBvtUFjs-rR2AAAN\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"ku9nBys2WWDmQtJ4AAAQ\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"6n8/OweYcGyC55Z+tC6l0Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"6n8/OweYcGyC55Z+tC6l0Q==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/inde"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nchromium-1\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n0\n\nIncrement\nBackground\nUpdate twenty\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "dLHERuzv06lompaZAAAB",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "_DxgtBvtUFjs-rR2AAAN",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    },
+    {
+      "identity": "chromium-2",
+      "browser_version": "153.0.8010.12",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"agtO-953fo6MDIU0AAAA\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"1H5hAU81klbdmHL8AAAI\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"YPx9Aq9EXDOUaIhVoyrpRA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"YPx9Aq9EXDOUaIhVoyrpRA==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/inde"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"chromium-2\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"chromium-2\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"n-gOq9Bcdda4VjaoAAAO\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"Q_Cb9WFnM6gjMJ-XAAAR\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CgLqUziIJpz6WacAY+vSfw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"CgLqUziIJpz6WacAY+vSfw==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/inde"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nchromium-2\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n0\n\nIncrement\nBackground\nUpdate twenty\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "agtO-953fo6MDIU0AAAA",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "n-gOq9Bcdda4VjaoAAAO",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    },
+    {
+      "identity": "webkit-0",
+      "browser_version": "26.6",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        }
+      ],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"OLU-y15CEV_SSinZAAAE\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"2ZzxULCAQF0WUJgQAAAL\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"BVB2DLd4sVoyjjJIeTqUNA==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"BVB2DLd4sVoyjjJIeTqUNA==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_pa"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"webkit-0\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"webkit-0\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"vs1KUzd8UxV_WqeuAAAS\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"yM318rSYAkmpM9o3AAAW\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"7DNURTZu8vcDdQxXF5267w==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"7DNURTZu8vcDdQxXF5267w==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_pa"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nwebkit-0\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n0\n\nIncrement\nBackground\nUpdate twenty\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "OLU-y15CEV_SSinZAAAE",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "vs1KUzd8UxV_WqeuAAAS",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    },
+    {
+      "identity": "webkit-1",
+      "browser_version": "26.6",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        }
+      ],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"-3n4yzFIGIUJB2K4AAAF\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"6RnzMcVK1Jk7bEz5AAAJ\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"kzZ4CaIDkzoYKH5HbHG11Q==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"kzZ4CaIDkzoYKH5HbHG11Q==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_pa"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"webkit-1\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"webkit-1\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"ZBkpumdkgCJlWR0FAAAU\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"mZ3qCxvzXlpHqiQqAAAX\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"bvmiggel4cXn4SmVSeBzhQ==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"bvmiggel4cXn4SmVSeBzhQ==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_pa"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nwebkit-1\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n0\n\nIncrement\nBackground\nUpdate twenty\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "-3n4yzFIGIUJB2K4AAAF",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "ZBkpumdkgCJlWR0FAAAU",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    },
+    {
+      "identity": "webkit-2",
+      "browser_version": "26.6",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        }
+      ],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"YE56PokcERI4WfjmAAAD\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"1ikrKM_Zwew6ZAzzAAAK\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"peVw1BzA2vM/IUzFTcQ2zg==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"peVw1BzA2vM/IUzFTcQ2zg==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_pa"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"webkit-2\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"webkit-2\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"6O--q8thZUNEOk5ZAAAT\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"d716a98d62c83114\",\"b084fc0c68f7c73a\",\"e42a5d01b31e5c43\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"8602de92df369c10\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"sds_sdSiq_KE2pHDAAAV\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"HeVamMMOBpHXvC/5+S/h3Q==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"HeVamMMOBpHXvC/5+S/h3Q==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_pa"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nwebkit-2\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n0\n\nIncrement\nBackground\nUpdate twenty\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "YE56PokcERI4WfjmAAAD",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "6O--q8thZUNEOk5ZAAAT",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "REFLEX_TELEMETRY_ENABLED": "false",
+    "REFLEX_USE_NPM": "0",
+    "REFLEX_STATE_MANAGER_MODE": "redis",
+    "REFLEX_REDIS_URL": "redis://127.0.0.1:8269",
+    "REFLEX_REDIS_MAX_CONNECTIONS": "3",
+    "REFLEX_REDIS_POOL_TIMEOUT": "500ms",
+    "REFLEX_SOCKET_INTERVAL": "2m",
+    "REFLEX_SOCKET_TIMEOUT": "10s"
+  },
+  "processes": [
+    {
+      "tag": "app",
+      "pid": 33389,
+      "after_cleanup": []
+    },
+    {
+      "tag": "redis",
+      "pid": 33382,
+      "after_cleanup": []
+    }
+  ],
+  "metadata": {
+    "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+    "version": "0.10.0a2",
+    "pool_class": "BlockingConnectionPool",
+    "max_connections": 3,
+    "timeout": 0.5
+  },
+  "server_command": [
+    "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/reflex",
+    "run",
+    "--frontend-port",
+    "3268",
+    "--backend-port",
+    "8268",
+    "--loglevel",
+    "debug"
+  ],
+  "monitor_cleanup": [],
+  "batch_commands": {
+    "client_commands": {
+      "SET": 1,
+      "MGET": 1,
+      "EVAL": 1,
+      "GETDEL": 1
+    },
+    "lua_commands": {
+      "GET": 1,
+      "SET": 21,
+      "PTTL": 1
+    },
+    "commands": [
+      {
+        "line": 3,
+        "origin": "127.0.0.1:54076",
+        "command": "SET"
+      },
+      {
+        "line": 4,
+        "origin": "127.0.0.1:54076",
+        "command": "MGET"
+      },
+      {
+        "line": 5,
+        "origin": "127.0.0.1:54076",
+        "command": "EVAL"
+      },
+      {
+        "line": 6,
+        "origin": "lua",
+        "command": "GET"
+      },
+      {
+        "line": 7,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 8,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 9,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 10,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 11,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 12,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 13,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 14,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 15,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 16,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 17,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 18,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 19,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 20,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 21,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 22,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 23,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 24,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 25,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 26,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 27,
+        "origin": "lua",
+        "command": "SET"
+      },
+      {
+        "line": 28,
+        "origin": "lua",
+        "command": "PTTL"
+      },
+      {
+        "line": 29,
+        "origin": "127.0.0.1:54076",
+        "command": "GETDEL"
+      }
+    ]
+  },
+  "redis_clients_after_load": "id=7 addr=127.0.0.1:54073 laddr=127.0.0.1:8269 fd=11 name= age=5 idle=5 flags=P db=0 sub=0 psub=1 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=331 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2360 events=r cmd=psubscribe user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=248 tot-net-out=1746 tot-cmds=4 read-events=3 avg-pipeline-len-sum=4 avg-pipeline-len-cnt=3\nid=8 addr=127.0.0.1:54074 laddr=127.0.0.1:8269 fd=12 name= age=5 idle=1 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=8192 rbp=5080 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=9472 events=r cmd=getdel user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=462829 tot-net-out=300671 tot-cmds=860 read-events=495 avg-pipeline-len-sum=495 avg-pipeline-len-cnt=495\nid=9 addr=127.0.0.1:54075 laddr=127.0.0.1:8269 fd=13 name= age=5 idle=1 flags=P db=0 sub=0 psub=2 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=4096 rbp=2093 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=5456 events=r cmd=psubscribe user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=57188 tot-net-out=103769 tot-cmds=105 read-events=61 avg-pipeline-len-sum=62 avg-pipeline-len-cnt=61\nid=10 addr=127.0.0.1:54076 laddr=127.0.0.1:8269 fd=14 name= age=5 idle=1 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=8192 rbp=5080 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=9472 events=r cmd=getdel user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=502443 tot-net-out=352131 tot-cmds=931 read-events=529 avg-pipeline-len-sum=530 avg-pipeline-len-cnt=529\nid=5 addr=127.0.0.1:54071 laddr=127.0.0.1:8269 fd=9 name= age=5 idle=5 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=156 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=get user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=2600 tot-net-out=844 tot-cmds=19 read-events=19 avg-pipeline-len-sum=19 avg-pipeline-len-cnt=19\nid=6 addr=127.0.0.1:54072 laddr=127.0.0.1:8269 fd=10 name= age=5 idle=5 flags=P db=0 sub=0 psub=1 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2360 events=r cmd=psubscribe user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=211 tot-net-out=115 tot-cmds=3 read-events=2 avg-pipeline-len-sum=3 avg-pipeline-len-cnt=2\nid=14 addr=127.0.0.1:54081 laddr=127.0.0.1:8269 fd=15 name= age=0 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=26 qbuf-free=20448 argv-mem=10 multi-mem=0 rbs=16384 rbp=16384 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=38170 events=r cmd=client|list user=default redir=-1 resp=2 lib-name= lib-ver= io-thread=0 tot-net-in=26 tot-net-out=0 tot-cmds=0 read-events=1 avg-pipeline-len-sum=1 avg-pipeline-len-cnt=1\n",
+  "invalid": {
+    "cap2": {
+      "returncode": 0,
+      "expected_error_found": true,
+      "after_cleanup": []
+    },
+    "timeout-longer-than-lock": {
+      "returncode": 0,
+      "expected_error_found": true,
+      "after_cleanup": []
+    }
+  },
+  "listeners_after_cleanup": ""
+}

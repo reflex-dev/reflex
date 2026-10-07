@@ -1,0 +1,2950 @@
+{
+  "name": "stable-1",
+  "sessions": [
+    {
+      "identity": "chromium-0",
+      "browser_version": "153.0.8010.12",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"tJIYCUG6QzEDZcCnAAAB\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"oZi6PWJDX0Kv9Z3lAAAF\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"kMFkmENC/AI3exJdo5L1eQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"kMFkmENC/AI3exJdo5L1eQ==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_route"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"chromium-0\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"chromium-0\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.update_all\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"batch_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf09\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf11\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf10\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf06\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf14\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf03\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf07\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf00\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf08\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf02\":{\"value_rx_state_\":1},\"reflex___state____state.redis_app___redis_app____dashboard.redis_app___redis_app____leaf15\":{\"value_rx_state_\":1},\"reflex___state____stat"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"27fjonr1YAHsGA6zAAAM\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"BhL09A-cw3q7JSUuAAAP\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"XkA92SdwfHLTZrBSktVHaA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"XkA92SdwfHLTZrBSktVHaA==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_route"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nchromium-0\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n1\n\nIncrement\nBackground\nUpdate twenty\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1\n\n1",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "tJIYCUG6QzEDZcCnAAAB",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "27fjonr1YAHsGA6zAAAM",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    },
+    {
+      "identity": "chromium-1",
+      "browser_version": "153.0.8010.12",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"2nl6viThxm428B2NAAAA\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"6BxAeqcq433OsDKZAAAD\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"dHKVVdDawBjOSx23ZPhPqg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"dHKVVdDawBjOSx23ZPhPqg==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_route"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"chromium-1\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"chromium-1\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"HSZ2PTKTKbp2VaN4AAAN\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"ccJhyJ8J8VWipz3FAAAQ\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"7Lc9X4mpaRH7Ta/gMSiNaA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"7Lc9X4mpaRH7Ta/gMSiNaA==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_route"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nchromium-1\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n0\n\nIncrement\nBackground\nUpdate twenty\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "2nl6viThxm428B2NAAAA",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "HSZ2PTKTKbp2VaN4AAAN",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    },
+    {
+      "identity": "chromium-2",
+      "browser_version": "153.0.8010.12",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"vEL0xrgEFZ5nDg6qAAAC\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"NTdROsjiNIk9XIlFAAAE\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"6VIMa3wDa6qxOxI/l91uEw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"6VIMa3wDa6qxOxI/l91uEw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_route"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"chromium-2\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"chromium-2\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"Cn3TGzKdajuRDIXNAAAO\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"Ypg-jxgv7RNyo3-MAAAR\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"AWnLfdHS/0RGjsE7HRWO8w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"AWnLfdHS/0RGjsE7HRWO8w==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3268/index\",\"full_raw_path\":\"http://localhost:3268/\",\"params\":{}},\"rx_route"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nchromium-2\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n0\n\nIncrement\nBackground\nUpdate twenty\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "vEL0xrgEFZ5nDg6qAAAC",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "Cn3TGzKdajuRDIXNAAAO",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    },
+    {
+      "identity": "webkit-0",
+      "browser_version": "26.6",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        }
+      ],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"Mp67mhFL1dzhcfkSAAAH\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"Eu5ypcWdLQEfwWCcAAAJ\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Q0ydDZ2Za5VwiY3n2ft7pQ==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"Q0ydDZ2Za5VwiY3n2ft7pQ==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localh"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"webkit-0\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"webkit-0\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"PcJxx8U9cUakfCdLAAAS\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"u1-HDX3-02JOjcytAAAT\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"jGksS8sp5qaakMLqLL4GTQ==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"jGksS8sp5qaakMLqLL4GTQ==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localh"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nwebkit-0\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n0\n\nIncrement\nBackground\nUpdate twenty\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "Mp67mhFL1dzhcfkSAAAH",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "PcJxx8U9cUakfCdLAAAS",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    },
+    {
+      "identity": "webkit-1",
+      "browser_version": "26.6",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        }
+      ],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"Ck2SjKbPhUERcsp5AAAI\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"3fFXDDXmeDSX-O_tAAAL\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CkCkdwPaZbfrCNr7sUMzUQ==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"CkCkdwPaZbfrCNr7sUMzUQ==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localh"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"webkit-1\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"webkit-1\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"nqyckK-wzwazuyj4AAAV\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"-yZ9PLYS7oWxFZ1HAAAW\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"14JOICO6VUXBGOalq0I6aw==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"14JOICO6VUXBGOalq0I6aw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localh"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nwebkit-1\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n0\n\nIncrement\nBackground\nUpdate twenty\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "Ck2SjKbPhUERcsp5AAAI",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "nqyckK-wzwazuyj4AAAV",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    },
+    {
+      "identity": "webkit-2",
+      "browser_version": "26.6",
+      "console": [
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "warning",
+          "text": "The resource http://localhost:3268/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "type": "log",
+          "text": "Disconnect websocket on page navigation"
+        },
+        {
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/@id/__x00__virtual:react-router/browser-manifest",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/entry.client.js",
+          "failure": "cancelled"
+        },
+        {
+          "url": "http://localhost:3268/app/root.jsx",
+          "failure": "cancelled"
+        }
+      ],
+      "http_errors": [],
+      "websocket": [
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"GaPrZumkhmbSX9DxAAAG\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"17opsy1ULGkOtYfYAAAK\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"KO1I2YfTMsPOzHLu5iQXJg==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"KO1I2YfTMsPOzHLu5iQXJg==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localh"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.rename\",\"payload\":{\"identity\":\"webkit-2\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"identity_rx_state_\":\"webkit-2\"}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.run_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":1}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":2}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":3}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":4}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":5}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":6}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":7}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":8}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":9}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":10}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":11}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":12}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":13}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":14}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":15}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":16}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"background_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"finished_rx_state_\":true}}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":17}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":18}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":19}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.redis_app___redis_app____dashboard.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.redis_app___redis_app____dashboard\":{\"foreground_rx_state_\":20}}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "41/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"RjjKFBZ-aFvuWA04AAAU\",\"upgrades\":[],\"pingTimeout\":10000,\"pingInterval\":120000,\"maxPayload\":1000000}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"c3sl-ymBvUaJhS6MAAAX\"}"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"+p2cqaO58jJQEDbAozFSGw==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8268\",\"origin\":\"http://localhost:3268\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"+p2cqaO58jJQEDbAozFSGw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3268\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localh"
+        },
+        {
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        }
+      ],
+      "after_load": "Redis session work\n\nwebkit-2\n\nForeground:\n\n20\n\nBackground:\n\n20\n\ntrue\n\n0\n\nIncrement\nBackground\nUpdate twenty\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0\n\n0",
+      "load_pass": true,
+      "reload_pass": true,
+      "engine_handshakes": [
+        {
+          "sid": "GaPrZumkhmbSX9DxAAAG",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        },
+        {
+          "sid": "RjjKFBZ-aFvuWA04AAAU",
+          "upgrades": [],
+          "pingTimeout": 10000,
+          "pingInterval": 120000,
+          "maxPayload": 1000000
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "REFLEX_TELEMETRY_ENABLED": "false",
+    "REFLEX_USE_NPM": "0",
+    "REFLEX_STATE_MANAGER_MODE": "redis",
+    "REFLEX_REDIS_URL": "redis://127.0.0.1:8269",
+    "REFLEX_REDIS_MAX_CONNECTIONS": "3",
+    "REFLEX_REDIS_POOL_TIMEOUT": "500ms",
+    "REFLEX_SOCKET_INTERVAL": "120",
+    "REFLEX_SOCKET_TIMEOUT": "10"
+  },
+  "processes": [
+    {
+      "tag": "app",
+      "pid": 34256,
+      "after_cleanup": []
+    },
+    {
+      "tag": "redis",
+      "pid": 34251,
+      "after_cleanup": []
+    }
+  ],
+  "metadata": {
+    "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py",
+    "version": "0.9.12",
+    "pool_class": "ConnectionPool",
+    "max_connections": 2147483648,
+    "timeout": null
+  },
+  "server_command": [
+    "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex",
+    "run",
+    "--frontend-port",
+    "3268",
+    "--backend-port",
+    "8268",
+    "--loglevel",
+    "debug"
+  ],
+  "monitor_cleanup": [],
+  "batch_commands": {
+    "client_commands": {
+      "SET": 22,
+      "MULTI": 1,
+      "GET": 44,
+      "EXEC": 1,
+      "PTTL": 22,
+      "GETDEL": 1
+    },
+    "lua_commands": {},
+    "commands": [
+      {
+        "line": 3,
+        "origin": "127.0.0.1:54284",
+        "command": "SET"
+      },
+      {
+        "line": 4,
+        "origin": "127.0.0.1:54284",
+        "command": "MULTI"
+      },
+      {
+        "line": 5,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 6,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 7,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 8,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 9,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 10,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 11,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 12,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 13,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 14,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 15,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 16,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 17,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 18,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 19,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 20,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 21,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 22,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 23,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 24,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 25,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 26,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 27,
+        "origin": "127.0.0.1:54284",
+        "command": "EXEC"
+      },
+      {
+        "line": 28,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 29,
+        "origin": "127.0.0.1:54284",
+        "command": "PTTL"
+      },
+      {
+        "line": 30,
+        "origin": "127.0.0.1:54284",
+        "command": "GET"
+      },
+      {
+        "line": 31,
+        "origin": "127.0.0.1:54284",
+        "command": "PTTL"
+      },
+      {
+        "line": 32,
+        "origin": "127.0.0.1:54284",
+        "command": "SET"
+      },
+      {
+        "line": 33,
+        "origin": "127.0.0.1:54355",
+        "command": "GET"
+      },
+      {
+        "line": 34,
+        "origin": "127.0.0.1:54354",
+        "command": "GET"
+      },
+      {
+        "line": 35,
+        "origin": "127.0.0.1:54353",
+        "command": "GET"
+      },
+      {
+        "line": 36,
+        "origin": "127.0.0.1:54352",
+        "command": "GET"
+      },
+      {
+        "line": 37,
+        "origin": "127.0.0.1:54351",
+        "command": "GET"
+      },
+      {
+        "line": 38,
+        "origin": "127.0.0.1:54350",
+        "command": "GET"
+      },
+      {
+        "line": 39,
+        "origin": "127.0.0.1:54349",
+        "command": "GET"
+      },
+      {
+        "line": 40,
+        "origin": "127.0.0.1:54348",
+        "command": "GET"
+      },
+      {
+        "line": 41,
+        "origin": "127.0.0.1:54347",
+        "command": "GET"
+      },
+      {
+        "line": 42,
+        "origin": "127.0.0.1:54346",
+        "command": "GET"
+      },
+      {
+        "line": 43,
+        "origin": "127.0.0.1:54345",
+        "command": "GET"
+      },
+      {
+        "line": 44,
+        "origin": "127.0.0.1:54344",
+        "command": "GET"
+      },
+      {
+        "line": 45,
+        "origin": "127.0.0.1:54342",
+        "command": "GET"
+      },
+      {
+        "line": 46,
+        "origin": "127.0.0.1:54343",
+        "command": "GET"
+      },
+      {
+        "line": 47,
+        "origin": "127.0.0.1:54341",
+        "command": "GET"
+      },
+      {
+        "line": 48,
+        "origin": "127.0.0.1:54340",
+        "command": "GET"
+      },
+      {
+        "line": 49,
+        "origin": "127.0.0.1:54339",
+        "command": "GET"
+      },
+      {
+        "line": 50,
+        "origin": "127.0.0.1:54338",
+        "command": "GET"
+      },
+      {
+        "line": 51,
+        "origin": "127.0.0.1:54337",
+        "command": "GET"
+      },
+      {
+        "line": 52,
+        "origin": "127.0.0.1:54336",
+        "command": "GET"
+      },
+      {
+        "line": 53,
+        "origin": "127.0.0.1:54355",
+        "command": "PTTL"
+      },
+      {
+        "line": 54,
+        "origin": "127.0.0.1:54354",
+        "command": "PTTL"
+      },
+      {
+        "line": 55,
+        "origin": "127.0.0.1:54353",
+        "command": "PTTL"
+      },
+      {
+        "line": 56,
+        "origin": "127.0.0.1:54352",
+        "command": "PTTL"
+      },
+      {
+        "line": 57,
+        "origin": "127.0.0.1:54351",
+        "command": "PTTL"
+      },
+      {
+        "line": 58,
+        "origin": "127.0.0.1:54350",
+        "command": "PTTL"
+      },
+      {
+        "line": 59,
+        "origin": "127.0.0.1:54349",
+        "command": "PTTL"
+      },
+      {
+        "line": 60,
+        "origin": "127.0.0.1:54348",
+        "command": "PTTL"
+      },
+      {
+        "line": 61,
+        "origin": "127.0.0.1:54347",
+        "command": "PTTL"
+      },
+      {
+        "line": 62,
+        "origin": "127.0.0.1:54346",
+        "command": "PTTL"
+      },
+      {
+        "line": 63,
+        "origin": "127.0.0.1:54345",
+        "command": "PTTL"
+      },
+      {
+        "line": 64,
+        "origin": "127.0.0.1:54344",
+        "command": "PTTL"
+      },
+      {
+        "line": 65,
+        "origin": "127.0.0.1:54343",
+        "command": "PTTL"
+      },
+      {
+        "line": 66,
+        "origin": "127.0.0.1:54342",
+        "command": "PTTL"
+      },
+      {
+        "line": 67,
+        "origin": "127.0.0.1:54341",
+        "command": "PTTL"
+      },
+      {
+        "line": 68,
+        "origin": "127.0.0.1:54340",
+        "command": "PTTL"
+      },
+      {
+        "line": 69,
+        "origin": "127.0.0.1:54339",
+        "command": "PTTL"
+      },
+      {
+        "line": 70,
+        "origin": "127.0.0.1:54338",
+        "command": "PTTL"
+      },
+      {
+        "line": 71,
+        "origin": "127.0.0.1:54337",
+        "command": "PTTL"
+      },
+      {
+        "line": 72,
+        "origin": "127.0.0.1:54336",
+        "command": "PTTL"
+      },
+      {
+        "line": 73,
+        "origin": "127.0.0.1:54355",
+        "command": "SET"
+      },
+      {
+        "line": 74,
+        "origin": "127.0.0.1:54354",
+        "command": "SET"
+      },
+      {
+        "line": 75,
+        "origin": "127.0.0.1:54353",
+        "command": "SET"
+      },
+      {
+        "line": 76,
+        "origin": "127.0.0.1:54352",
+        "command": "SET"
+      },
+      {
+        "line": 77,
+        "origin": "127.0.0.1:54351",
+        "command": "SET"
+      },
+      {
+        "line": 78,
+        "origin": "127.0.0.1:54350",
+        "command": "SET"
+      },
+      {
+        "line": 79,
+        "origin": "127.0.0.1:54349",
+        "command": "SET"
+      },
+      {
+        "line": 80,
+        "origin": "127.0.0.1:54348",
+        "command": "SET"
+      },
+      {
+        "line": 81,
+        "origin": "127.0.0.1:54347",
+        "command": "SET"
+      },
+      {
+        "line": 82,
+        "origin": "127.0.0.1:54346",
+        "command": "SET"
+      },
+      {
+        "line": 83,
+        "origin": "127.0.0.1:54345",
+        "command": "SET"
+      },
+      {
+        "line": 84,
+        "origin": "127.0.0.1:54344",
+        "command": "SET"
+      },
+      {
+        "line": 85,
+        "origin": "127.0.0.1:54343",
+        "command": "SET"
+      },
+      {
+        "line": 86,
+        "origin": "127.0.0.1:54342",
+        "command": "SET"
+      },
+      {
+        "line": 87,
+        "origin": "127.0.0.1:54340",
+        "command": "SET"
+      },
+      {
+        "line": 88,
+        "origin": "127.0.0.1:54341",
+        "command": "SET"
+      },
+      {
+        "line": 89,
+        "origin": "127.0.0.1:54338",
+        "command": "SET"
+      },
+      {
+        "line": 90,
+        "origin": "127.0.0.1:54339",
+        "command": "SET"
+      },
+      {
+        "line": 91,
+        "origin": "127.0.0.1:54337",
+        "command": "SET"
+      },
+      {
+        "line": 92,
+        "origin": "127.0.0.1:54336",
+        "command": "SET"
+      },
+      {
+        "line": 93,
+        "origin": "127.0.0.1:54336",
+        "command": "GETDEL"
+      }
+    ]
+  },
+  "redis_clients_after_load": "id=37 addr=127.0.0.1:54279 laddr=127.0.0.1:8269 fd=41 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=47155 tot-net-out=33656 tot-cmds=466 read-events=259 avg-pipeline-len-sum=466 avg-pipeline-len-cnt=268\nid=38 addr=127.0.0.1:54280 laddr=127.0.0.1:8269 fd=42 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=9896 tot-net-out=6565 tot-cmds=161 read-events=160 avg-pipeline-len-sum=161 avg-pipeline-len-cnt=160\nid=39 addr=127.0.0.1:54281 laddr=127.0.0.1:8269 fd=43 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=23399 tot-net-out=15428 tot-cmds=281 read-events=211 avg-pipeline-len-sum=281 avg-pipeline-len-cnt=214\nid=40 addr=127.0.0.1:54282 laddr=127.0.0.1:8269 fd=44 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=34544 tot-net-out=22312 tot-cmds=363 read-events=225 avg-pipeline-len-sum=363 avg-pipeline-len-cnt=231\nid=41 addr=127.0.0.1:54283 laddr=127.0.0.1:8269 fd=45 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=50975 tot-net-out=40660 tot-cmds=505 read-events=274 avg-pipeline-len-sum=505 avg-pipeline-len-cnt=284\nid=42 addr=127.0.0.1:54284 laddr=127.0.0.1:8269 fd=46 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=5120 rbp=5120 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=6400 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=66152 tot-net-out=52389 tot-cmds=597 read-events=267 avg-pipeline-len-sum=597 avg-pipeline-len-cnt=281\nid=43 addr=127.0.0.1:54285 laddr=127.0.0.1:8269 fd=47 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=15106 tot-net-out=13671 tot-cmds=188 read-events=141 avg-pipeline-len-sum=188 avg-pipeline-len-cnt=143\nid=44 addr=127.0.0.1:54286 laddr=127.0.0.1:8269 fd=48 name= age=4 idle=4 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=get user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=539 tot-net-out=175 tot-cmds=5 read-events=4 avg-pipeline-len-sum=5 avg-pipeline-len-cnt=4\nid=45 addr=127.0.0.1:54287 laddr=127.0.0.1:8269 fd=49 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=14190 tot-net-out=7775 tot-cmds=166 read-events=142 avg-pipeline-len-sum=166 avg-pipeline-len-cnt=143\nid=46 addr=127.0.0.1:54288 laddr=127.0.0.1:8269 fd=50 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=32122 tot-net-out=20606 tot-cmds=327 read-events=188 avg-pipeline-len-sum=327 avg-pipeline-len-cnt=194\nid=47 addr=127.0.0.1:54289 laddr=127.0.0.1:8269 fd=51 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=105 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=1094 tot-net-out=572 tot-cmds=18 read-events=17 avg-pipeline-len-sum=18 avg-pipeline-len-cnt=17\nid=48 addr=127.0.0.1:54290 laddr=127.0.0.1:8269 fd=52 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=12935 tot-net-out=7299 tot-cmds=116 read-events=89 avg-pipeline-len-sum=116 avg-pipeline-len-cnt=90\nid=49 addr=127.0.0.1:54291 laddr=127.0.0.1:8269 fd=53 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=16548 tot-net-out=10738 tot-cmds=236 read-events=212 avg-pipeline-len-sum=236 avg-pipeline-len-cnt=213\nid=50 addr=127.0.0.1:54292 laddr=127.0.0.1:8269 fd=54 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=14742 tot-net-out=9317 tot-cmds=166 read-events=119 avg-pipeline-len-sum=166 avg-pipeline-len-cnt=121\nid=51 addr=127.0.0.1:54293 laddr=127.0.0.1:8269 fd=55 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=105 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=1094 tot-net-out=572 tot-cmds=18 read-events=17 avg-pipeline-len-sum=18 avg-pipeline-len-cnt=17\nid=52 addr=127.0.0.1:54294 laddr=127.0.0.1:8269 fd=56 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=105 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=4828 tot-net-out=1754 tot-cmds=45 read-events=18 avg-pipeline-len-sum=45 avg-pipeline-len-cnt=19\nid=53 addr=127.0.0.1:54295 laddr=127.0.0.1:8269 fd=57 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=105 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=1094 tot-net-out=572 tot-cmds=18 read-events=18 avg-pipeline-len-sum=18 avg-pipeline-len-cnt=18\nid=77 addr=127.0.0.1:54319 laddr=127.0.0.1:8269 fd=81 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=14511 tot-net-out=9511 tot-cmds=173 read-events=127 avg-pipeline-len-sum=173 avg-pipeline-len-cnt=129\nid=78 addr=127.0.0.1:54320 laddr=127.0.0.1:8269 fd=82 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=11816 tot-net-out=11098 tot-cmds=157 read-events=133 avg-pipeline-len-sum=157 avg-pipeline-len-cnt=134\nid=79 addr=127.0.0.1:54321 laddr=127.0.0.1:8269 fd=83 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=10052 tot-net-out=5981 tot-cmds=122 read-events=98 avg-pipeline-len-sum=122 avg-pipeline-len-cnt=99\nid=80 addr=127.0.0.1:54322 laddr=127.0.0.1:8269 fd=84 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=44996 tot-net-out=28291 tot-cmds=441 read-events=257 avg-pipeline-len-sum=441 avg-pipeline-len-cnt=265\nid=81 addr=127.0.0.1:54323 laddr=127.0.0.1:8269 fd=85 name= age=3 idle=0 flags=P db=0 sub=0 psub=2 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3408 events=r cmd=psubscribe user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=5334 tot-net-out=88261 tot-cmds=50 read-events=26 avg-pipeline-len-sum=50 avg-pipeline-len-cnt=27\nid=82 addr=127.0.0.1:54324 laddr=127.0.0.1:8269 fd=86 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=12056 tot-net-out=7797 tot-cmds=162 read-events=138 avg-pipeline-len-sum=162 avg-pipeline-len-cnt=139\nid=83 addr=127.0.0.1:54325 laddr=127.0.0.1:8269 fd=87 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=49917 tot-net-out=39097 tot-cmds=474 read-events=244 avg-pipeline-len-sum=474 avg-pipeline-len-cnt=254\nid=84 addr=127.0.0.1:54326 laddr=127.0.0.1:8269 fd=88 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=16024 tot-net-out=13927 tot-cmds=190 read-events=143 avg-pipeline-len-sum=190 avg-pipeline-len-cnt=145\nid=85 addr=127.0.0.1:54327 laddr=127.0.0.1:8269 fd=89 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=23780 tot-net-out=14451 tot-cmds=267 read-events=197 avg-pipeline-len-sum=267 avg-pipeline-len-cnt=200\nid=86 addr=127.0.0.1:54328 laddr=127.0.0.1:8269 fd=90 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=17654 tot-net-out=11150 tot-cmds=221 read-events=174 avg-pipeline-len-sum=221 avg-pipeline-len-cnt=176\nid=87 addr=127.0.0.1:54329 laddr=127.0.0.1:8269 fd=91 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=35640 tot-net-out=20720 tot-cmds=322 read-events=183 avg-pipeline-len-sum=322 avg-pipeline-len-cnt=189\nid=88 addr=127.0.0.1:54330 laddr=127.0.0.1:8269 fd=92 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=114 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=8449 tot-net-out=5080 tot-cmds=128 read-events=127 avg-pipeline-len-sum=128 avg-pipeline-len-cnt=127\nid=89 addr=127.0.0.1:54331 laddr=127.0.0.1:8269 fd=93 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=44386 tot-net-out=35278 tot-cmds=413 read-events=205 avg-pipeline-len-sum=413 avg-pipeline-len-cnt=214\nid=90 addr=127.0.0.1:54332 laddr=127.0.0.1:8269 fd=94 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=12401 tot-net-out=7287 tot-cmds=157 read-events=133 avg-pipeline-len-sum=157 avg-pipeline-len-cnt=134\nid=91 addr=127.0.0.1:54333 laddr=127.0.0.1:8269 fd=95 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=114 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=12187 tot-net-out=7993 tot-cmds=193 read-events=193 avg-pipeline-len-sum=193 avg-pipeline-len-cnt=193\nid=92 addr=127.0.0.1:54334 laddr=127.0.0.1:8269 fd=96 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=31574 tot-net-out=22593 tot-cmds=319 read-events=203 avg-pipeline-len-sum=319 avg-pipeline-len-cnt=208\nid=93 addr=127.0.0.1:54335 laddr=127.0.0.1:8269 fd=97 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=29854 tot-net-out=26260 tot-cmds=319 read-events=203 avg-pipeline-len-sum=319 avg-pipeline-len-cnt=208\nid=94 addr=127.0.0.1:54336 laddr=127.0.0.1:8269 fd=98 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=20703 tot-net-out=13840 tot-cmds=239 read-events=169 avg-pipeline-len-sum=239 avg-pipeline-len-cnt=172\nid=95 addr=127.0.0.1:54337 laddr=127.0.0.1:8269 fd=99 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=27383 tot-net-out=21374 tot-cmds=310 read-events=217 avg-pipeline-len-sum=310 avg-pipeline-len-cnt=221\nid=96 addr=127.0.0.1:54338 laddr=127.0.0.1:8269 fd=100 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=21147 tot-net-out=13400 tot-cmds=228 read-events=159 avg-pipeline-len-sum=228 avg-pipeline-len-cnt=162\nid=97 addr=127.0.0.1:54339 laddr=127.0.0.1:8269 fd=101 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=17378 tot-net-out=10555 tot-cmds=201 read-events=154 avg-pipeline-len-sum=201 avg-pipeline-len-cnt=156\nid=98 addr=127.0.0.1:54340 laddr=127.0.0.1:8269 fd=102 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=10458 tot-net-out=6708 tot-cmds=128 read-events=104 avg-pipeline-len-sum=128 avg-pipeline-len-cnt=105\nid=99 addr=127.0.0.1:54341 laddr=127.0.0.1:8269 fd=103 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=14432 tot-net-out=8831 tot-cmds=155 read-events=108 avg-pipeline-len-sum=155 avg-pipeline-len-cnt=110\nid=100 addr=127.0.0.1:54342 laddr=127.0.0.1:8269 fd=104 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=11430 tot-net-out=9990 tot-cmds=131 read-events=107 avg-pipeline-len-sum=131 avg-pipeline-len-cnt=108\nid=101 addr=127.0.0.1:54343 laddr=127.0.0.1:8269 fd=105 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=35453 tot-net-out=29617 tot-cmds=328 read-events=166 avg-pipeline-len-sum=328 avg-pipeline-len-cnt=173\nid=102 addr=127.0.0.1:54344 laddr=127.0.0.1:8269 fd=106 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=18556 tot-net-out=14806 tot-cmds=216 read-events=169 avg-pipeline-len-sum=216 avg-pipeline-len-cnt=171\nid=103 addr=127.0.0.1:54345 laddr=127.0.0.1:8269 fd=107 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=114 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=9098 tot-net-out=5574 tot-cmds=139 read-events=138 avg-pipeline-len-sum=139 avg-pipeline-len-cnt=138\nid=104 addr=127.0.0.1:54346 laddr=127.0.0.1:8269 fd=108 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=19689 tot-net-out=11559 tot-cmds=259 read-events=236 avg-pipeline-len-sum=259 avg-pipeline-len-cnt=237\nid=105 addr=127.0.0.1:54347 laddr=127.0.0.1:8269 fd=109 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=18003 tot-net-out=14521 tot-cmds=208 read-events=161 avg-pipeline-len-sum=208 avg-pipeline-len-cnt=163\nid=106 addr=127.0.0.1:54348 laddr=127.0.0.1:8269 fd=110 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=114 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=6759 tot-net-out=4097 tot-cmds=100 read-events=99 avg-pipeline-len-sum=100 avg-pipeline-len-cnt=99\nid=107 addr=127.0.0.1:54349 laddr=127.0.0.1:8269 fd=111 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=37672 tot-net-out=27255 tot-cmds=364 read-events=202 avg-pipeline-len-sum=364 avg-pipeline-len-cnt=209\nid=108 addr=127.0.0.1:54350 laddr=127.0.0.1:8269 fd=112 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=25170 tot-net-out=16340 tot-cmds=271 read-events=178 avg-pipeline-len-sum=271 avg-pipeline-len-cnt=182\nid=109 addr=127.0.0.1:54351 laddr=127.0.0.1:8269 fd=113 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=39767 tot-net-out=32081 tot-cmds=380 read-events=196 avg-pipeline-len-sum=380 avg-pipeline-len-cnt=204\nid=110 addr=127.0.0.1:54352 laddr=127.0.0.1:8269 fd=114 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=13588 tot-net-out=7536 tot-cmds=166 read-events=142 avg-pipeline-len-sum=166 avg-pipeline-len-cnt=143\nid=111 addr=127.0.0.1:54353 laddr=127.0.0.1:8269 fd=115 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=23524 tot-net-out=19012 tot-cmds=256 read-events=163 avg-pipeline-len-sum=256 avg-pipeline-len-cnt=167\nid=112 addr=127.0.0.1:54354 laddr=127.0.0.1:8269 fd=116 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=15800 tot-net-out=9788 tot-cmds=184 read-events=137 avg-pipeline-len-sum=184 avg-pipeline-len-cnt=139\nid=113 addr=127.0.0.1:54355 laddr=127.0.0.1:8269 fd=117 name= age=3 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=12698 tot-net-out=7454 tot-cmds=157 read-events=133 avg-pipeline-len-sum=157 avg-pipeline-len-cnt=134\nid=54 addr=127.0.0.1:54296 laddr=127.0.0.1:8269 fd=58 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=114 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=8105 tot-net-out=5198 tot-cmds=132 read-events=131 avg-pipeline-len-sum=132 avg-pipeline-len-cnt=131\nid=55 addr=127.0.0.1:54297 laddr=127.0.0.1:8269 fd=59 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=1094 tot-net-out=572 tot-cmds=18 read-events=18 avg-pipeline-len-sum=18 avg-pipeline-len-cnt=18\nid=56 addr=127.0.0.1:54298 laddr=127.0.0.1:8269 fd=60 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=29389 tot-net-out=18000 tot-cmds=260 read-events=121 avg-pipeline-len-sum=260 avg-pipeline-len-cnt=127\nid=57 addr=127.0.0.1:54299 laddr=127.0.0.1:8269 fd=61 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=13501 tot-net-out=8026 tot-cmds=210 read-events=209 avg-pipeline-len-sum=210 avg-pipeline-len-cnt=209\nid=58 addr=127.0.0.1:54300 laddr=127.0.0.1:8269 fd=62 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=21103 tot-net-out=16412 tot-cmds=226 read-events=157 avg-pipeline-len-sum=226 avg-pipeline-len-cnt=160\nid=59 addr=127.0.0.1:54301 laddr=127.0.0.1:8269 fd=63 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=42826 tot-net-out=29172 tot-cmds=396 read-events=211 avg-pipeline-len-sum=396 avg-pipeline-len-cnt=219\nid=60 addr=127.0.0.1:54302 laddr=127.0.0.1:8269 fd=64 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=40152 tot-net-out=29037 tot-cmds=399 read-events=210 avg-pipeline-len-sum=399 avg-pipeline-len-cnt=218\nid=61 addr=127.0.0.1:54303 laddr=127.0.0.1:8269 fd=65 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=25826 tot-net-out=15453 tot-cmds=300 read-events=230 avg-pipeline-len-sum=300 avg-pipeline-len-cnt=233\nid=62 addr=127.0.0.1:54304 laddr=127.0.0.1:8269 fd=66 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=23148 tot-net-out=17620 tot-cmds=227 read-events=134 avg-pipeline-len-sum=227 avg-pipeline-len-cnt=138\nid=63 addr=127.0.0.1:54305 laddr=127.0.0.1:8269 fd=67 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=getdel user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=23632 tot-net-out=18905 tot-cmds=284 read-events=214 avg-pipeline-len-sum=284 avg-pipeline-len-cnt=217\nid=64 addr=127.0.0.1:54306 laddr=127.0.0.1:8269 fd=68 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=7818 tot-net-out=4998 tot-cmds=122 read-events=122 avg-pipeline-len-sum=122 avg-pipeline-len-cnt=122\nid=65 addr=127.0.0.1:54307 laddr=127.0.0.1:8269 fd=69 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=6795 tot-net-out=2886 tot-cmds=48 read-events=24 avg-pipeline-len-sum=48 avg-pipeline-len-cnt=25\nid=66 addr=127.0.0.1:54308 laddr=127.0.0.1:8269 fd=70 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=971 tot-net-out=494 tot-cmds=16 read-events=15 avg-pipeline-len-sum=16 avg-pipeline-len-cnt=15\nid=67 addr=127.0.0.1:54309 laddr=127.0.0.1:8269 fd=71 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=8929 tot-net-out=3348 tot-cmds=53 read-events=29 avg-pipeline-len-sum=53 avg-pipeline-len-cnt=30\nid=68 addr=127.0.0.1:54310 laddr=127.0.0.1:8269 fd=72 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=24142 tot-net-out=22073 tot-cmds=259 read-events=160 avg-pipeline-len-sum=259 avg-pipeline-len-cnt=164\nid=69 addr=127.0.0.1:54311 laddr=127.0.0.1:8269 fd=73 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=971 tot-net-out=494 tot-cmds=16 read-events=15 avg-pipeline-len-sum=16 avg-pipeline-len-cnt=15\nid=70 addr=127.0.0.1:54312 laddr=127.0.0.1:8269 fd=74 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=971 tot-net-out=494 tot-cmds=16 read-events=16 avg-pipeline-len-sum=16 avg-pipeline-len-cnt=16\nid=71 addr=127.0.0.1:54313 laddr=127.0.0.1:8269 fd=75 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=971 tot-net-out=494 tot-cmds=16 read-events=15 avg-pipeline-len-sum=16 avg-pipeline-len-cnt=15\nid=72 addr=127.0.0.1:54314 laddr=127.0.0.1:8269 fd=76 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=11739 tot-net-out=6595 tot-cmds=126 read-events=102 avg-pipeline-len-sum=126 avg-pipeline-len-cnt=103\nid=73 addr=127.0.0.1:54315 laddr=127.0.0.1:8269 fd=77 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=12308 tot-net-out=7821 tot-cmds=127 read-events=100 avg-pipeline-len-sum=127 avg-pipeline-len-cnt=101\nid=74 addr=127.0.0.1:54316 laddr=127.0.0.1:8269 fd=78 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=848 tot-net-out=448 tot-cmds=14 read-events=13 avg-pipeline-len-sum=14 avg-pipeline-len-cnt=13\nid=75 addr=127.0.0.1:54317 laddr=127.0.0.1:8269 fd=79 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=15411 tot-net-out=13297 tot-cmds=176 read-events=129 avg-pipeline-len-sum=176 avg-pipeline-len-cnt=131\nid=76 addr=127.0.0.1:54318 laddr=127.0.0.1:8269 fd=80 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=848 tot-net-out=448 tot-cmds=14 read-events=13 avg-pipeline-len-sum=14 avg-pipeline-len-cnt=13\nid=5 addr=127.0.0.1:54241 laddr=127.0.0.1:8269 fd=9 name= age=4 idle=4 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=get user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=1397 tot-net-out=505 tot-cmds=11 read-events=10 avg-pipeline-len-sum=11 avg-pipeline-len-cnt=10\nid=6 addr=127.0.0.1:54242 laddr=127.0.0.1:8269 fd=10 name= age=4 idle=4 flags=P db=0 sub=0 psub=1 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2360 events=r cmd=psubscribe user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=211 tot-net-out=115 tot-cmds=3 read-events=2 avg-pipeline-len-sum=3 avg-pipeline-len-cnt=2\nid=7 addr=127.0.0.1:54243 laddr=127.0.0.1:8269 fd=11 name= age=4 idle=4 flags=P db=0 sub=0 psub=1 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2360 events=r cmd=psubscribe user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=248 tot-net-out=1746 tot-cmds=4 read-events=3 avg-pipeline-len-sum=4 avg-pipeline-len-cnt=3\nid=8 addr=127.0.0.1:54244 laddr=127.0.0.1:8269 fd=12 name= age=4 idle=4 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=0 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=884 tot-net-out=184 tot-cmds=7 read-events=7 avg-pipeline-len-sum=7 avg-pipeline-len-cnt=7\nid=9 addr=127.0.0.1:54245 laddr=127.0.0.1:8269 fd=13 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=25043 tot-net-out=16352 tot-cmds=221 read-events=101 avg-pipeline-len-sum=221 avg-pipeline-len-cnt=106\nid=10 addr=127.0.0.1:54248 laddr=127.0.0.1:8269 fd=14 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=9470 tot-net-out=3282 tot-cmds=106 read-events=78 avg-pipeline-len-sum=106 avg-pipeline-len-cnt=79\nid=11 addr=127.0.0.1:54250 laddr=127.0.0.1:8269 fd=15 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=9347 tot-net-out=3236 tot-cmds=104 read-events=76 avg-pipeline-len-sum=104 avg-pipeline-len-cnt=77\nid=12 addr=127.0.0.1:54254 laddr=127.0.0.1:8269 fd=16 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=14716 tot-net-out=8491 tot-cmds=154 read-events=108 avg-pipeline-len-sum=154 avg-pipeline-len-cnt=110\nid=13 addr=127.0.0.1:54255 laddr=127.0.0.1:8269 fd=17 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=4538 tot-net-out=2852 tot-cmds=74 read-events=73 avg-pipeline-len-sum=74 avg-pipeline-len-cnt=73\nid=14 addr=127.0.0.1:54256 laddr=127.0.0.1:8269 fd=18 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=19009 tot-net-out=15366 tot-cmds=199 read-events=129 avg-pipeline-len-sum=199 avg-pipeline-len-cnt=132\nid=15 addr=127.0.0.1:54257 laddr=127.0.0.1:8269 fd=19 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=4096 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=5376 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=34700 tot-net-out=25999 tot-cmds=328 read-events=167 avg-pipeline-len-sum=328 avg-pipeline-len-cnt=174\nid=16 addr=127.0.0.1:54258 laddr=127.0.0.1:8269 fd=20 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=105 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=5967 tot-net-out=963 tot-cmds=49 read-events=21 avg-pipeline-len-sum=49 avg-pipeline-len-cnt=22\nid=17 addr=127.0.0.1:54259 laddr=127.0.0.1:8269 fd=21 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=20201 tot-net-out=15638 tot-cmds=245 read-events=199 avg-pipeline-len-sum=245 avg-pipeline-len-cnt=201\nid=18 addr=127.0.0.1:54260 laddr=127.0.0.1:8269 fd=22 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=4096 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=5376 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=14209 tot-net-out=8626 tot-cmds=153 read-events=106 avg-pipeline-len-sum=153 avg-pipeline-len-cnt=108\nid=19 addr=127.0.0.1:54261 laddr=127.0.0.1:8269 fd=23 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=4096 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=5376 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=33615 tot-net-out=20506 tot-cmds=302 read-events=140 avg-pipeline-len-sum=302 avg-pipeline-len-cnt=147\nid=20 addr=127.0.0.1:54262 laddr=127.0.0.1:8269 fd=24 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=getdel user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=16428 tot-net-out=6631 tot-cmds=150 read-events=72 avg-pipeline-len-sum=150 avg-pipeline-len-cnt=75\nid=21 addr=127.0.0.1:54263 laddr=127.0.0.1:8269 fd=25 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=4415 tot-net-out=2806 tot-cmds=72 read-events=71 avg-pipeline-len-sum=72 avg-pipeline-len-cnt=71\nid=22 addr=127.0.0.1:54264 laddr=127.0.0.1:8269 fd=26 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=4415 tot-net-out=2806 tot-cmds=72 read-events=71 avg-pipeline-len-sum=72 avg-pipeline-len-cnt=71\nid=23 addr=127.0.0.1:54265 laddr=127.0.0.1:8269 fd=27 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=4415 tot-net-out=2806 tot-cmds=72 read-events=71 avg-pipeline-len-sum=72 avg-pipeline-len-cnt=71\nid=24 addr=127.0.0.1:54266 laddr=127.0.0.1:8269 fd=28 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=18480 tot-net-out=11947 tot-cmds=168 read-events=75 avg-pipeline-len-sum=168 avg-pipeline-len-cnt=79\nid=25 addr=127.0.0.1:54267 laddr=127.0.0.1:8269 fd=29 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=4415 tot-net-out=2806 tot-cmds=72 read-events=71 avg-pipeline-len-sum=72 avg-pipeline-len-cnt=71\nid=26 addr=127.0.0.1:54268 laddr=127.0.0.1:8269 fd=30 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=7726 tot-net-out=5158 tot-cmds=97 read-events=73 avg-pipeline-len-sum=97 avg-pipeline-len-cnt=74\nid=27 addr=127.0.0.1:54269 laddr=127.0.0.1:8269 fd=31 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=11712 tot-net-out=11107 tot-cmds=120 read-events=74 avg-pipeline-len-sum=120 avg-pipeline-len-cnt=76\nid=28 addr=127.0.0.1:54270 laddr=127.0.0.1:8269 fd=32 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=3800 tot-net-out=2506 tot-cmds=62 read-events=61 avg-pipeline-len-sum=62 avg-pipeline-len-cnt=61\nid=29 addr=127.0.0.1:54271 laddr=127.0.0.1:8269 fd=33 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=4096 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=5376 events=r cmd=set user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=44030 tot-net-out=37575 tot-cmds=444 read-events=255 avg-pipeline-len-sum=444 avg-pipeline-len-cnt=263\nid=30 addr=127.0.0.1:54272 laddr=127.0.0.1:8269 fd=34 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=4096 rbp=2048 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=5376 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=29126 tot-net-out=17577 tot-cmds=332 read-events=235 avg-pipeline-len-sum=332 avg-pipeline-len-cnt=239\nid=31 addr=127.0.0.1:54273 laddr=127.0.0.1:8269 fd=35 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=105 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=6576 tot-net-out=1791 tot-cmds=46 read-events=18 avg-pipeline-len-sum=46 avg-pipeline-len-cnt=19\nid=32 addr=127.0.0.1:54274 laddr=127.0.0.1:8269 fd=36 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=105 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=2783 tot-net-out=570 tot-cmds=18 read-events=17 avg-pipeline-len-sum=18 avg-pipeline-len-cnt=17\nid=33 addr=127.0.0.1:54275 laddr=127.0.0.1:8269 fd=37 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=105 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=2783 tot-net-out=570 tot-cmds=18 read-events=18 avg-pipeline-len-sum=18 avg-pipeline-len-cnt=18\nid=34 addr=127.0.0.1:54276 laddr=127.0.0.1:8269 fd=38 name= age=4 idle=3 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=105 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=1217 tot-net-out=701 tot-cmds=20 read-events=19 avg-pipeline-len-sum=20 avg-pipeline-len-cnt=19\nid=35 addr=127.0.0.1:54277 laddr=127.0.0.1:8269 fd=39 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=1024 rbp=109 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=2304 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=9161 tot-net-out=7207 tot-cmds=147 read-events=143 avg-pipeline-len-sum=147 avg-pipeline-len-cnt=143\nid=36 addr=127.0.0.1:54278 laddr=127.0.0.1:8269 fd=40 name= age=4 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 rbs=2048 rbp=1024 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=3328 events=r cmd=pttl user=default redir=-1 resp=2 lib-name=redis-py lib-ver=7.4.1 io-thread=0 tot-net-in=25547 tot-net-out=19525 tot-cmds=269 read-events=176 avg-pipeline-len-sum=269 avg-pipeline-len-cnt=180\nid=117 addr=127.0.0.1:54359 laddr=127.0.0.1:8269 fd=118 name= age=0 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 watch=0 qbuf=26 qbuf-free=20448 argv-mem=10 multi-mem=0 rbs=16384 rbp=16384 obl=0 oll=0 omem=0 omem-shared=0 omem-unshared=0 tot-mem=38170 events=r cmd=client|list user=default redir=-1 resp=2 lib-name= lib-ver= io-thread=0 tot-net-in=26 tot-net-out=0 tot-cmds=0 read-events=1 avg-pipeline-len-sum=1 avg-pipeline-len-cnt=1\n",
+  "listeners_after_cleanup": ""
+}

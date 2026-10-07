@@ -1,0 +1,54 @@
+{
+  "name": "alpha2-validation",
+  "validation_only": true,
+  "sessions": [],
+  "settings": {
+    "REFLEX_TELEMETRY_ENABLED": "false",
+    "REFLEX_USE_NPM": "0",
+    "REFLEX_STATE_MANAGER_MODE": "redis",
+    "REFLEX_REDIS_URL": "redis://127.0.0.1:8269",
+    "REFLEX_REDIS_MAX_CONNECTIONS": "3",
+    "REFLEX_REDIS_POOL_TIMEOUT": "500ms",
+    "REFLEX_SOCKET_INTERVAL": "2m",
+    "REFLEX_SOCKET_TIMEOUT": "10s"
+  },
+  "processes": [
+    {
+      "tag": "redis",
+      "pid": 35126,
+      "after_cleanup": []
+    }
+  ],
+  "metadata": {
+    "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py",
+    "version": "0.10.0a2",
+    "pool_class": "BlockingConnectionPool",
+    "max_connections": 3,
+    "timeout": 0.5
+  },
+  "invalid": {
+    "cap2": {
+      "returncode": 0,
+      "wait_seconds": 15,
+      "timed_out": true,
+      "expected_error_found": true,
+      "before_cleanup": [
+        "35133 35123 35133 Ss   /opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/reflex run --backend-only --backend-port 8268 --loglevel debug",
+        "35139 35133 35133 S    /opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -c from multiprocessing.resource_tracker import main;main(11)"
+      ],
+      "after_cleanup": []
+    },
+    "timeout-longer-than-lock": {
+      "returncode": 0,
+      "wait_seconds": 15,
+      "timed_out": true,
+      "expected_error_found": true,
+      "before_cleanup": [
+        "35207 35123 35207 Ss   /opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /private/tmp/reflex-prerelease-macos-pass2/envs/alpha2/bin/reflex run --backend-only --backend-port 8268 --loglevel debug",
+        "35210 35207 35207 S    /opt/homebrew/Cellar/python@3.12/3.12.14/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python -c from multiprocessing.resource_tracker import main;main(7)"
+      ],
+      "after_cleanup": []
+    }
+  },
+  "listeners_after_cleanup": ""
+}
