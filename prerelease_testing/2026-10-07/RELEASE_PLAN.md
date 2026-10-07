@@ -152,7 +152,7 @@ Fix-before-release items, assigned to @masenf, each with a fix branch in progres
 | N-008 | [reflex#7473](https://github.com/reflex-dev/reflex/issues/7473) | `claude/class-assignment` |
 | docs (N-002, N-007, N-009, N-024, N-040) | [reflex#7474](https://github.com/reflex-dev/reflex/issues/7474) | `claude/docs-0.10-migration` |
 | N-006 | [reflex#7475](https://github.com/reflex-dev/reflex/issues/7475) | `claude/docs-0.10-migration` |
-| N-001 | PR [reflex#7466](https://github.com/reflex-dev/reflex/pull/7466) | `claude/db-extra-greenlet` — green, approved 17:58 UTC, waiting on merge |
+| N-001 | PR [reflex#7466](https://github.com/reflex-dev/reflex/pull/7466) | `claude/db-extra-greenlet` — **merged** 2026-10-07 18:01 UTC |
 
 All five fix branches are pushed and have pull requests (label `on deck`, milestone v0.10.x): [#7492](https://github.com/reflex-dev/reflex/pull/7492) N-025, [#7493](https://github.com/reflex-dev/reflex/pull/7493) N-032, [#7494](https://github.com/reflex-dev/reflex/pull/7494) N-004, [#7495](https://github.com/reflex-dev/reflex/pull/7495) class assignment, [#7496](https://github.com/reflex-dev/reflex/pull/7496) docs: `claude/n025-reflex-before-render` 655b22259 (window.__reflex at
 module scope; compiler unit test + Playwright test; verifier fixtures: probe NO_REFLEX→HAS_REFLEX, enterprise grid 0→2 headers),
