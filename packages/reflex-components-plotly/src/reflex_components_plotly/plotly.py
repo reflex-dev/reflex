@@ -581,7 +581,15 @@ class PlotlyMapbox(Plotly):
         @classmethod
         @deprecated("Use rx.plotly.map with MapLibre traces and layout.map instead.")
         def create(cls, *children, **props) -> Component:
-            """Create a deprecated Plotly Mapbox component."""
+            """Create a deprecated Plotly Mapbox component.
+
+            Args:
+                *children: The children of the component.
+                **props: The properties of the component.
+
+            Returns:
+                The Plotly Mapbox component.
+            """
             ...
 
     else:
