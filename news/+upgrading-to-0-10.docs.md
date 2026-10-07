@@ -1,0 +1,1 @@
+Add an [Upgrading to Reflex 0.10](https://reflex.dev/docs/getting-started/upgrading-to-0-10/) guide. It covers reading a backend var's default on a state class (`State._x.default_value()` is new in 0.10; on 0.9 use `State.get_fields()["_x"].default_value()`), the scope of class-level default assignment, and inherited handlers called from background tasks.

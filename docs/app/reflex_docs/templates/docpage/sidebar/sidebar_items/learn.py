@@ -1,22 +1,33 @@
 from reflex_docs.pages.docs import cloud_cliref
 
+from ..state import SideBarItem
 from .item import create_item
 
 
 def get_sidebar_items_learn():
     from reflex_docs.pages.docs import advanced_onboarding, getting_started, guides
 
+    getting_started_group = create_item(
+        "Getting Started",
+        children=[
+            getting_started.installation,
+            getting_started.introduction,
+            getting_started.what_you_can_build,
+            getting_started.basics,
+            getting_started.project_structure,
+        ],
+    )
+    # The upgrade guide is for existing apps, so it stays out of the prev/next
+    # chain that walks new readers from one Getting Started page to the next.
+    getting_started_group.children.append(
+        SideBarItem(
+            names="Upgrading to 0.10",
+            link=getting_started.upgrading_to_0_10.path,
+            exclude_from_prev_next=True,
+        )
+    )
     items = [
-        create_item(
-            "Getting Started",
-            children=[
-                getting_started.installation,
-                getting_started.introduction,
-                getting_started.what_you_can_build,
-                getting_started.basics,
-                getting_started.project_structure,
-            ],
-        ),
+        getting_started_group,
         create_item(
             "Tutorials",
             children=[

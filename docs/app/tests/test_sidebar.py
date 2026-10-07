@@ -44,6 +44,20 @@ def test_cross_reference_excluded_from_prev_next_chain():
     assert next_ is not None and next_.link == "/enterprise/auth/secure-by-default/"
 
 
+def test_upgrade_guide_is_listed_outside_the_getting_started_pager():
+    """The 0.10 upgrade guide is in the sidebar but not in the new-reader prev/next chain."""
+    from reflex_docs.templates.docpage.sidebar.sidebar import get_prev_next
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import learn
+
+    group = next(item for item in learn if item.names == "Getting Started")
+    guide = next(item for item in group.children if item.names == "Upgrading to 0.10")
+    assert guide.link == "/getting-started/upgrading-to-0-10/"
+    assert guide.exclude_from_prev_next
+
+    _, next_ = get_prev_next("/getting-started/project-structure/")
+    assert next_ is not None and next_.link == "/getting-started/dashboard-tutorial/"
+
+
 @pytest.mark.parametrize("active", [False, True])
 def test_single_page_group_is_a_direct_link(active):
     """Single-page groups navigate directly and announce the selected page."""
