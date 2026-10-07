@@ -8,7 +8,7 @@ finding, venvs, paths); [AGENT_BRIEF.md](./AGENT_BRIEF.md) the rules every agent
 [briefs/](./briefs/) the per-cluster assignments. Enterprise is tested with the user-supplied OFFLINE
 `reflex-enterprise 0.9.7a4` wheel (bypasses the login gate), never the checkout.
 
-Status and results: [FINDINGS.md](./FINDINGS.md) (written incrementally as clusters report).
+Status and results: [FINDINGS.md](./FINDINGS.md) (executive summary, re-verification table, N-001..N-043, cluster summaries) and [RELEASE_PLAN.md](./RELEASE_PLAN.md) (what blocks 0.10.0 vs what gets filed). All 14 clusters are done; each cluster dir has a NOTES.md with rerun commands and a `verification/` subdir where an independent verifier re-tested its medium/high claims.
 
 **Working on this from another session?** Read [COORDINATION.md](./COORDINATION.md): claim an item from
 [board/items/](./board/items/) with `scripts/claim.sh <item>`, build envs with `scripts/bootstrap_envs.sh`,
@@ -27,3 +27,8 @@ drop findings in `board/findings-inbox/`, release with `scripts/release.sh`.
 | `dataeditor/` | data editor / forms / recharts leads with 0.9.12 baselines |
 | `events/` | event-loop and Var leads with 0.9.12 baselines |
 | `statemgr_perf/` | memory/disk expiry, durations, Redis pool, perf claims |
+| `thirdparty_a2/` | 22 third-party packages, local-auth/magic-link/google-auth demos, F-007..F-014/F-018 re-verification; `verification/` for N-039/N-040 |
+| `browser_cache_bundle/` | (other session, macOS) prod bundle/network payloads, cache invalidation, nested state, deployments, history |
+| `macos_lifecycle/` | (other session, macOS) startup/shutdown, Unicode paths, HMR, npm/bun; F-007 on macOS |
+| `pymatrix_a2/`, `tooling_a2/` | (other session) Python-version matrix and local tooling/telemetry coverage — see `board/` |
+| `board/` | git-native coordination board: items, claims, results, findings-inbox |

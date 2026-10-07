@@ -5,6 +5,57 @@
 spend limit interrupted, and sweep for regressions the fixes may have introduced. Enterprise is tested with
 the user-supplied offline `reflex-enterprise 0.9.7a4` wheel.
 
+## Executive summary
+
+**What the new train fixed.** Of the 20 findings from 10-06, six are fixed on 0.10.0a2 and confirmed end to end
+by at least two clusters each: F-002 (first-load client-storage write-back, #7460), F-003 (computed-var storage
+rewrite at hydration, #7460 — also fixes reflex-google-auth's token cleanup), F-004 (class-level assignment,
+#7461), F-005 (sqlmodel cap, #7462), F-006 (component floors, #7464) and the enterprise half of F-001 (dunder
+names are plain attributes, #7465; the AG Grid ModelWrapper serves data again in dev and prod). F-001's core half
+(class-level backend-var read returns `Field`) is kept and now documented, with `BackendVarFormatError` making
+the f-string misuse loud; its downstream casualties are reflex-clerk (`set_clerk_session` raises) and the
+`default_value()` guidance not being portable to 0.9.x (N-007). F-017 did not reproduce. The other eleven 10-06
+findings are unchanged (all pre-existing or low), see the table below. The 0.9.12 → 0.10.0a2 in-place upgrade of
+form-designer, github-stats, clock and twitter (disk and Redis prod) has no regression, and the performance
+and state-manager claims (disk-lock cleanup, handler CPU 33 → 21 ms, scalar reads 4–5× faster) hold.
+
+**What blocks 0.10.0.** Two HIGH regressions, both introduced by 0.10.0a1's combined boot event (#7064) and
+still present in a2, both absent on 0.9.12 with the same enterprise wheel:
+- **N-025** — in prod, an enterprise AG Grid whose `column_defs` (or `detail_cell_renderer_params`) come from a
+  State var renders no columns on a full load of a prerendered route. Independently CONFIRMED with its own
+  fixtures: the boot delta now carries only changed substates, so a component that reads `window.__reflex` at
+  render time (assigned in a `useEffect` after the first render — unchanged since 0.9.12) never re-renders.
+  Fix in reflex: expose `window.__reflex` before the first render, as the lazy-libraries path already does.
+- **N-032** — with enterprise OIDC, logging out in one tab often leaves other tabs signed in; a tab that boots
+  with a stale token hash is never corrected (0/3 on a2 and a1, 2/2 on 0.9.12) because the single
+  `hydrate_and_load` skips the `OIDCAuthState.get_delta` reconciliation that 0.9.12's separate boot events ran.
+  Verification in progress.
+Plus **N-001** (HIGH, environment drift, hits fresh 0.9.12 installs too): `reflex[db]` resolves SQLAlchemy 2.1.3
+without greenlet, so `rx.Model` and every `reflex db` command crash on a fresh install; fix PR
+[reflex-dev/reflex#7466](https://github.com/reflex-dev/reflex/pull/7466) is green and waiting on review.
+
+**Regressions below blocker level, from the 10-06 fixes themselves.** N-004 (MEDIUM: state pickled by a2 is
+discarded by 0.9.12/a1 workers, so a rolling deploy or rollback silently resets sessions), N-005 (MEDIUM: a plain
+default assigned to a LocalStorage/Cookie var — including the documented ComponentState pattern — silently drops
+browser persistence), N-039 (MEDIUM, CONFIRMED: pytest monkeypatching of a State var default cannot be undone and
+leaks into later tests), N-008 (LOW: the dev undefined-var guard accepts any `_x__y` name), N-024 (LOW,
+undocumented: calling a handler method from a background task outside the lock now raises), N-040 (LOW after
+verification: unannotated placeholders reject non-matching class assignments and run callables).
+
+**Pre-existing problems worth filing** (identical on 0.9.12; the highest-impact ones): N-033 (HIGH, enterprise:
+prod + Redis + default workers → cookie sync 405 on most workers, token cookies lost in ~3/4 logins; verification
+pending), N-020 (MEDIUM, CONFIRMED since 0.9.0: a raising foreground handler's state changes reach the page only
+with the next unrelated event, unbounded), N-021 (MEDIUM, NARROWED: default-config Redis rolls back a failed or
+superseded event's already-delivered changes — client/server divergence), N-017 (MEDIUM: `dict.values()`/`items()`
+mutations bypass dirty tracking), the DataEditor defects N-010..N-012, and the enterprise auth gaps N-034..N-036.
+F-007 (npm SIGTERM hang) remains Linux-only; F-008 (>1 MB storage reconnect storm) and F-010 (pre-connect
+navigation on_load) are unchanged.
+
+**Coverage.** 14 clusters, 43 new findings (4 HIGH, 15 MEDIUM, 24 LOW), 6 independent verifications (N-004,
+N-005, N-020, N-021, N-025, N-039/N-040; N-032/N-033 running), every claim baselined on 0.9.12 and 0.10.0a1,
+Linux x86_64 (this session) and macOS arm64 Chromium + WebKit (other session). Not covered: Windows, real
+OAuth providers, Redis cluster, hosting deploys, Python 3.11/3.13 beyond import sweeps.
+
 ## Versions under test
 reflex / reflex-base 0.10.0a2; components code/core/gridjs/markdown/moment/plotly/radix/recharts 0.10.0a2;
 dataeditor 0.10.0a1; react-player 0.10.0a1; sonner 0.10.0a1; lucide 1.1.0a1; docgen 0.10.0a2; hosting-cli
