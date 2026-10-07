@@ -344,6 +344,43 @@ def test_storage_factory_assignment_keeps_classification(
     assert calls == [True]
 
 
+def test_storage_assignment_replaces_declared_factory_without_calling_it(
+    forked_registration_context: RegistrationContext,
+):
+    """A storage value assigned to a factory-declared var brings its own options.
+
+    Args:
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+    calls = []
+
+    def declared_storage() -> str:
+        """Produce the declared storage value, recording each call.
+
+        Returns:
+            The storage value.
+        """
+        calls.append(True)
+        return rx.LocalStorage("old", name="old-key")
+
+    class StorageState(State):
+        value: rx.Field[str] = rx.field(default_factory=declared_storage)
+
+    StorageState.value = rx.LocalStorage("new", name="new-key", sync=True)
+    assert calls == []
+    declared = StorageState.get_fields()["value"]
+    assert type(declared.default) is rx.LocalStorage
+    assert declared.default == "new"
+    field_type, options = utils._compile_client_storage_field(declared)
+    assert field_type is rx.LocalStorage
+    assert options is not None
+    assert {"name": "new-key", "sync": True}.items() <= options.items()
+    state = StorageState(value="changed")
+    state._reset_client_storage()
+    assert state.value == "new"
+    assert calls == []
+
+
 @pytest.mark.parametrize("factory", [False, True])
 @pytest.mark.parametrize("declared_factory", [False, True])
 @pytest.mark.parametrize("annotated_storage", [False, True])

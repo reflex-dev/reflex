@@ -4745,7 +4745,8 @@ def _keep_client_storage(declared: Field, value: Any) -> Any:
     so a plain value replacing it must carry the same storage type and options.
     A default factory only reveals the storage it produces when called, so it
     is called once for a plain string assigned to a frontend var, the only kind
-    the browser stores.
+    the browser stores. A storage value assigned brings its own options, so it
+    replaces the factory without calling it.
 
     Args:
         declared: The field.
@@ -4760,6 +4761,7 @@ def _keep_client_storage(declared: Field, value: Any) -> Any:
         and declared.default_factory is not None
         and not declared._backend
         and isinstance(value, str)
+        and not isinstance(value, declared._client_storage)
     ):
         storage = declared.default_factory()
     if isinstance(storage, declared._client_storage):
