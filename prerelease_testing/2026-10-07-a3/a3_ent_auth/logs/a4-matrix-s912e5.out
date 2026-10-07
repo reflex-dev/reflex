@@ -1,0 +1,18 @@
+oidc restarted max_age=3600 pid 4525
+ready after 5s
+{"case": "test_logout_ends_session_and_reprotects", "passed": true}
+{"case": "test_logout_resets_state_so_next_user_sees_no_leak", "passed": true}
+{"attempt": 2, "passed": true, "final_values": {"secret": "initial-secret", "secret-view": "computed:initial-secret", "admin-view": "admin-data", "async-admin-view": "async-admin-data"}}
+{"attempt": 3, "passed": true, "final_values": {"secret": "initial-secret", "secret-view": "computed:initial-secret", "admin-view": "admin-data", "async-admin-view": "async-admin-data"}}
+ready after 4s
+{"case": "iframe_popup", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": [], "frame_observations": [{"url": "http://localhost:3343/", "text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile", "pending_event": null}]}
+{"case": "iframe_pending_event_replay", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": [], "frame_observations": [{"url": "http://localhost:3343/", "text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile", "pending_event": ""}]}
+{"attempt": 2, "passed": true, "frame_url": "http://localhost:3343/"}
+{"attempt": 3, "passed": true, "frame_url": "http://localhost:3343/"}
+MCP OAuth discovery, registration, browser consent, PKCE, protected event, code replay and refresh rotation passed
+ready after 3s
+{"case": "iframe_popup", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": [], "frame_observations": [{"url": "http://localhost:3343/", "text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile", "pending_event": null}]}
+{"case": "iframe_pending_event_replay", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8343/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}], "http_errors": [], "frame_observations": [{"url": "http://localhost:3343/", "text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile", "pending_event": ""}]}
+Anonymous MCP token rejection, events, computed reads, redaction and session isolation passed
+A4_MATRIX_DONE
+BOTH_DONE
