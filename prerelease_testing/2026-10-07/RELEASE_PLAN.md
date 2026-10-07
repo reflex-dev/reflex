@@ -140,7 +140,7 @@ Fix-before-release items, assigned to @masenf, each with a fix branch in progres
 
 | finding | issue | fix branch |
 |---|---|---|
-| N-025 | [reflex#7468](https://github.com/reflex-dev/reflex/issues/7468) | `claude/n025-reflex-before-render` |
+| N-025 | [reflex#7468](https://github.com/reflex-dev/reflex/issues/7468) | `claude/n025-reflex-before-render` — PR #7492 **closed by the maintainer** (16:40 UTC): fixed on the enterprise side instead, [reflex-enterprise#273](https://github.com/reflex-dev/reflex-enterprise/pull/273), because moving `window.__reflex` out of the useEffect would negate that change's benefits |
 | N-032 | [reflex#7469](https://github.com/reflex-dev/reflex/issues/7469) | `claude/n032-boot-reconcile` |
 | N-004 | [reflex#7470](https://github.com/reflex-dev/reflex/issues/7470) | `claude/n004-pickle-compat` |
 | N-005 | [reflex#7471](https://github.com/reflex-dev/reflex/issues/7471) | `claude/class-assignment` |
