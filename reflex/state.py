@@ -2338,6 +2338,7 @@ class State(BaseState):
         self._reset_client_storage()
         if vars:
             await _apply_client_storage_vars(self, vars)
+        self._clean()
         # The snapshot must carry is_hydrated=False: the frontend skips
         # writing client storage for a delta that is not yet hydrated, and
         # the reset defaults above must not be written back to the browser.
@@ -2347,8 +2348,12 @@ class State(BaseState):
             delta = await _resolve_delta(self.dict())
             if hashes:
                 delta = await _diff_against_initial_state(type(self), delta, hashes)
+            # Include the guard and values changed while resolving the snapshot.
+            for state_name, changes in (await self._get_resolved_delta()).items():
+                delta.setdefault(state_name, {}).update(changes)
             await ctx.emit_delta(delta=delta)
-        self._clean()
+            # Follow-up corrections must be allowed to write browser storage.
+            self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
             return None
