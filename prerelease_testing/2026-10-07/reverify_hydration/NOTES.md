@@ -14,21 +14,39 @@ Ports used (reserved 3220-3239 / 8220-8239): see each section. One server at a t
 ## Layout of this folder
 * `src/` — apps (copied from the 10-06 campaign, only the venv guard changed): `hydapp` (16-page probe app),
   `mini_writeback` (+ a `choose blue` button I added: a user choice must still be persisted), `f1plain`, `f1combo`,
-  `v2/f1combo` (same app, every default changed), `cvstore` (computed-var-writes-storage variants a–g),
-  `google_auth_demo` (reflex-google-auth 0.2.0 upstream demo).
+  `v2/f1combo` (same app, every default changed), `cvstore` (computed-var-writes-storage variants a–g, plus my new
+  (i) on_load page and (j) state sent in full), `google_auth_demo` (reflex-google-auth 0.2.0 upstream demo),
+  `csbox` (new: ComponentState + LocalStorage + #7461 per-instance default).
 * `scripts/srv.sh` — `srv.sh start <name> <venv> <dev|prod> <src> <FP> <BP> [ENV=VAL...]` / `srv.sh stop <name>`:
   copies sources to `$W/run/<name>`, runs `$SB/envs/<venv>/bin/reflex run --env <mode> --loglevel debug` in its
   own process group with `REFLEX_TELEMETRY_ENABLED=false REFLEX_API_URL=...`, refuses ports outside the range.
 * `drivers/` — hydration drivers from 10-06 (hyd_driver, f1_check, f1_sync_tabs, prenav_test, f6_natural, reconnect,
-  redis loop, ab_timing, latency/upgrade-delay proxies) + new `mini_choose.py`.
+  redis loop, ab_timing, latency/upgrade-delay proxies) + new `mini_choose.py`, `csbox_check.py`, `s10_react_check.py`.
+* `scripts/` — also `cmp_hyd.py` (field diff of hyd_driver results across runs), `lproxy.sh`/`proxy.sh` (latency /
+  upgrade-delay proxies), `trim_log.sh`, `sync_dest.sh`.
 * `cv/drivers/` — cvstore/google-auth drivers from the 10-06 verifier + new `drive_cvnav.py` (client-nav path).
-* `results/` — JSON/text results per section. `logs/` — trimmed server logs. `shots/` — screenshots.
+* `results/` — JSON/text results per section (hydapp screenshots under `results/hyd/<mode>/shots/`; `*.raw.json`
+  websocket captures were not copied, they are 1–7 MB each). `trimmed/` — trimmed server logs (head, deduped
+  warnings/errors with counts, HYDTRACE lines, tail). `probes/` — offline python probes. `srv.sh` — compat wrapper
+  for the 10-06 reconnect drivers.
 
 Common prefix for every driver command below:
 ```bash
 SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad; W=$SB/apps/reverify_hydration
 NP="env NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1"; DRV=$SB/envs/driver/bin/python
 ```
+
+## Verdicts
+
+| finding | verdict on 0.10.0a2 | key evidence |
+|---|---|---|
+| F-002 first load persists client-storage defaults (HIGH) | **FIXED** (dev + prod) | boot delta root now carries `is_hydrated_rx_state_: false`; fresh profile: nothing written (f1combo ×4, mini, hydapp s1b); returning visitor sees changed defaults (f1combo v2, mini dark, reconnect `sub-ls-NEWDEFAULT`); user choices still persisted; `sync=True` race no longer reverts |
+| F-003 computed-var storage rewrite during hydration dropped (MED) | **FIXED on full load/reconnect** (all variants a–g incl. (g) plain var, cookie, session, substate, on_load page, full-sent state; seeds 0+4; dev, prod, prod+redis); reflex-google-auth bogus token cleared on all seeds | client-side navigation path (`update_vars_internal`) keeps the pre-existing hash-seed coin flip (unchanged vs 0.10.0a1/0.9.12); uncached computed var's own display stays stale until next reload (side note, still present; PR #7436 open) |
+| F-008 >1 MB client-storage value → reconnect storm (MED) | **STILL BROKEN** (unchanged) | 602–654 websocket opens / 22 s, 0.72–0.78 GB uploaded, never hydrates |
+| F-010 pre-CONNECT client nav runs the left page's on_load (LOW) | **STILL PRESENT** (unchanged) | prenav_test 8/8; redirect hijack at D=800 2/2 (final `/other`) |
+| F-017 redis restart token loss after granian panic (LOW) | **NOT REPRODUCED** (0/9 multi-worker stops; was 1/9) | restart loop 6/6 token+state kept, no `panicked` in 7+2 logs; still granian 2.8.4 — flaky, can't call it fixed |
+| hydapp s1–s13 sweep | **no new regression** (dev + prod) | every scenario identical to 0.10.0a1 except s1b (now pass) |
+| timing (80 ms RTT) | alpha2 ≈ 0.10.0a1; ~170–180 ms faster than 0.9.12 | §7 |
 
 ## 1. F-002 (first load persists client-storage defaults) — **FIXED** in 0.10.0a2 (dev + prod)
 
@@ -206,7 +224,7 @@ s5 with `localStorage.hyd_big = 'x'.repeat(1200000)` then reload (`results/hyd/s
 
 Mechanism unchanged: the 1.2 MB value rides in the socket.io CONNECT (`40/_event,{"event":{"name":"...hydrate_and_load","payload":{"vars":...` len 1200808),
 Engine.IO `maxPayload` 1000000 closes it, the client reconnects immediately. No banner, no console error, no server log line.
-300k chars still hydrates in 0.2–0.3 s. (Rates are lower than 10-06 only because this machine is shared/loaded.)
+300k chars still hydrates in 0.2–0.3 s. (The lower connect rate vs 10-06 is not a fix: the loop is the same; the machine was shared with other agents.)
 
 ## 5. F-010 (client-side navigation before the websocket CONNECT runs the left page's on_load) — **UNCHANGED**
 
@@ -254,3 +272,79 @@ $NP $DRV $W/drivers/redis_restart_loop.py alpha2 3230 6
 $NP $DRV $W/drivers/reconnect_driver.py --venv alpha2 --port 3231 --manager memory --out $W/results/reconnect-a2-memory --default-change
 ```
 (`$W/srv.sh` is a compat wrapper giving these 10-06 drivers the old `srv.sh start <name> <venv> <mode> <FP> <BP>` signature.)
+
+## 7. Hydration timing, 80 ms RTT (alpha2 vs 0.10.0a1 vs 0.9.12)
+
+`drivers/latency_proxy.py` (40 ms each way) in front of each prod server, app built with `REFLEX_API_URL` = the proxy
+port; `drivers/ab_timing.py` interleaves fresh-context loads between TWO servers (warm-up excluded, n=12 each).
+Pairwise to keep at most two servers up: alpha2 (3232, proxy 3233) vs 0.10.0a1 (3234/3235), then alpha2 vs 0.9.12
+(3236/3237). Medians in ms since navigation start (`results/timing/*.json`):
+
+| pair, path | alpha2 hydrated | other hydrated | Δ | alpha2 CONNECT→hydrated | other CONNECT→hydrated |
+|---|---|---|---|---|---|
+| a2 vs 0.10.0a1, `/` | 625.5 | 626.0 | 0 | 102 | 98 |
+| a2 vs 0.10.0a1, `/other` | 673.0 | 650.5 | +22.5 | 96 | 98 |
+| a2 vs 0.10.0a1, `/other` (repeat) | 683.5 | 701.0 | −17.5 | 101 | 98 |
+| a2 vs 0.9.12, `/` | 791.5 | 969.5 | **−178** | 108 | 204.5 |
+| a2 vs 0.9.12, `/other` | 752.0 | 921.5 | **−169.5** | 94.5 | 192 |
+
+alpha2 = 0.10.0a1 within noise (the ±20 ms swings are in `connect_sent`, i.e. bundle load, and flip sign on repeat);
+the #7064 win over 0.9.12 is intact: one RTT saved between CONNECT and hydrated, ~170–180 ms sooner end-to-end
+(10-06: 158–180 ms). The machine was shared (load average 2.3 → 10 during the stable pair), which inflates absolute
+numbers in the second pair; the comparison is interleaved, so the delta stands. Boot bytes: +30 B inbound vs a1 (s13).
+
+Rerun:
+```bash
+$W/scripts/srv.sh start ab-a2 alpha2 prod $W/src/hydapp 3232 3232 REFLEX_API_URL=http://localhost:3233
+$W/scripts/srv.sh start ab-a1 alpha  prod $W/src/hydapp 3234 3234 REFLEX_API_URL=http://localhost:3235
+$W/scripts/lproxy.sh start 3233 3232 40; $W/scripts/lproxy.sh start 3235 3234 40
+$NP $DRV $W/drivers/ab_timing.py http://localhost:3233 alpha2 http://localhost:3235 alpha 12 /other out.json
+# then stop ab-a1 + proxy 3235; ab-st stable prod 3236 (REFLEX_API_URL=http://localhost:3237) + lproxy 3237->3236
+```
+
+## 8. Extra regression hunting around #7460 / #7461
+
+| check | result |
+|---|---|
+| cvstore a–g on **alpha2 prod + redis (9 workers)**, seed 0 (`results/f003/a2-prod-redis-seed0.summary.txt`) | identical to disk-manager runs: all storage corrections reach the browser; (d)'s `fix` event and (g)'s probe see the browser value applied by the hydrate (`backend ls='bad'`) → the new `_clean()` before the snapshot does not stop the hydrated client-storage values from being persisted (`_was_touched` still set) |
+| new variant **(i)**: cached cv clears LocalStorage on a page **with an on_load** (`hydrate_and_load` returns `on_load_internal`) | alpha2 dev s4 + prod/redis s0: PASS (storage `''`, on_load ran, loads=2); 0.10.0a1 dev s4: FAIL (`bad` kept) |
+| new variant **(j)**: cached cv resets LocalStorage in a state the diffed boot sends **in full** (`default_factory` uuid in the same state) | alpha2: fresh load writes nothing (`v_j` absent), reload with `bad` → storage reset to `j-default`, PASS; 0.10.0a1: fresh load WRITES `v_j=j-default` (F-002) and reload keeps `bad` (F-003) |
+| dev hot reload with a tab open (`drivers/hmr_desync.py`, memory manager, 3229/8229) | same as 0.10.0a1/0.9.12: reconnect boot `hydrate_and_load`, counter 3→0 matches backend, no desync. The reconnect now carries no `vars` because nothing was persisted by the first load (0.10.0a1 sent the leaked `hyd_sub_*` defaults back) |
+| s8 first paint of non-deterministic defaults | unchanged: compiled build-time values (uuid, list without the lifespan mutation) for ~1 frame, then backend values; displayed == backend after hydration |
+| ComponentState + browser storage + #7461 per-instance default (`src/csbox`, `drivers/csbox_check.py`, `probes/cs_storage_default_probe.py`) | **anomaly (new-feature trap, not a regression):** in `get_component`, `cls.pref = "dark"` on a var declared `rx.LocalStorage("light", name=...)` silently turns it into a plain state var on 0.10.0a2 (`_is_client_storage('pref')` False, `default='dark'` plain `str`): the user's choice is kept only in the server-side session and is lost in a new tab (`new_tab_same_browser.shown.plain = 'dark'`), nothing in localStorage, no warning. Assigning `rx.LocalStorage("dark", name=...)` (or a factory returning one) keeps storage and persists (`user-storage` survives a new tab). On 0.9.12/0.10.0a1 the assignment never reached the field at all (rendered a static `dark`, all instances shared the `box_pref` key). See ISSUE "plain default assignment drops browser storage". |
+
+Rerun (csbox): `$W/scripts/srv.sh start csbox-a2 alpha2 dev $W/src/csbox 3238 8238; $NP $DRV $W/drivers/csbox_check.py http://localhost:3238 out.json`;
+probe: `cd $W/probes && $SB/envs/alpha2/bin/python cs_storage_default_probe.py alpha2` (also `alpha`, `stable`).
+
+## Issues / anomalies raised by this cluster
+
+1. **F-008 still open** (MEDIUM, pre-existing, not a regression): see §4. Repro: hydapp prod,
+   `localStorage.setItem('hyd_big','x'.repeat(1200000))`, reload → endless reconnect loop (`hyd_driver.py --only s5`).
+2. **F-010 still open** (LOW, pre-existing race, alpha-only redirect-hijack symptom): see §5.
+3. **Uncached computed var shows the value it returned during hydration until the next full reload** (LOW, side
+   note of F-003, still present): cvstore variant (b); PR #7436 (open) is the related fix. Only reachable when a
+   value changes during the hydrate event itself (a computed var that writes state).
+4. **Client-side-navigation path still drops computed-var writes depending on PYTHONHASHSEED** (LOW, pre-existing on
+   0.9.12/0.10.0a1; #7460 only fixed `hydrate_and_load`): `cv/drivers/drive_cvnav.py`, seed 0 FAIL / seed 4 PASS,
+   (g) always FAIL. Any ordinary event whose computed var writes a var that wasn't already dirty has the same gap.
+5. **New-feature trap (#7461): plain default assignment drops browser storage** (LOW, not a regression):
+   `cls.pref = "dark"` in `ComponentState.get_component` on an `rx.LocalStorage` var makes it a non-persisted
+   state var silently (§8). Suggest: keep the storage settings (wrap the value in the declared storage type) or
+   raise/warn; at least document "assign `rx.LocalStorage(...)` to keep storage".
+6. s10 pre-hydration click lost once in 32 prod runs (anomaly, browser/prerender timing, §3) — not attributed to Reflex.
+7. Residual from 0.10.0a1 (expected, not testable from here without a deployed a1 history): browsers that visited a
+   0.10.0a1 deployment keep the leaked defaults in localStorage/cookies; 0.10.0a2 cannot distinguish them from user
+   choices, so those users keep the old defaults after upgrading.
+
+## Not covered
+* Build-env ≠ runtime-env default mismatch via `reflex export` + separately started backend (whole-list hash mismatch path).
+* F-017 frequency beyond 9 stops; bfcache; other browsers; real mobile network shaping.
+* 0.9.12/0.10.0a1 were not re-run for every table cell — baselines for the cvstore variant table and hydapp sweep are
+  the saved 10-06 results; I re-ran 0.10.0a1 (cvstore a/b/g/i/j + client-nav, timing) and 0.9.12 (client-nav, csbox,
+  timing) where the comparison mattered.
+
+## Environment notes
+* `$SB/envs/reverify_hydration-galpha2`: `uv --no-config venv --python 3.12` then
+  `uv --no-config pip install --prerelease=allow 'reflex==0.10.0a2' 'reflex-google-auth==0.2.0' 'google-api-python-client>=2.184.0' 'pydantic<2.14'`
+  (cwd `$SB`). No `[db]` extra, so the greenlet issue (N-001) does not apply.
+* All servers, proxies and redis were stopped at the end (`lsof` shows no listeners in 3220-3239/8220-8239).

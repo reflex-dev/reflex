@@ -19,7 +19,7 @@ assert "/scratchpad/envs/driver/" in sys.executable, sys.executable
 BASE = sys.argv[1].rstrip("/")
 OUT = Path(sys.argv[2])
 LABEL = sys.argv[3]
-VARIANTS = sys.argv[4:] or ["a", "b", "c", "d", "e_cookie", "e_session", "f", "g"]
+VARIANTS = sys.argv[4:] or ["a", "b", "c", "d", "e_cookie", "e_session", "f", "g", "i", "j"]
 OUT.mkdir(parents=True, exist_ok=True)
 
 # variant -> list of (kind, key) storage slots it uses
@@ -32,6 +32,8 @@ SLOTS = {
     "e_session": [("session", "v_e_ss")],
     "f": [("local", "v_f")],
     "g": [("local", "v_g")],
+    "i": [("local", "v_i")],
+    "j": [("local", "v_j")],
 }
 UI_IDS = {
     "c": ["ls", "ck", "ss", "loads", "seen"],

@@ -1,0 +1,151 @@
+{
+ "before": {
+  "counter": "3",
+  "bg": "done"
+ },
+ "same_document": true,
+ "full_reload": false,
+ "after_edit": {
+  "counter": "0",
+  "bg": "done",
+  "hyd": "H:yes"
+ },
+ "boot_events_after_edit": [
+  {
+   "t": 6.0,
+   "dir": "out",
+   "kind": "connect",
+   "len": 127,
+   "boot": "reflex___state____state.hydrate_and_load",
+   "boot_payload_keys": []
+  }
+ ],
+ "frames_after_edit": [
+  {
+   "t": 6.0,
+   "dir": "out",
+   "kind": "connect",
+   "len": 127,
+   "boot": "reflex___state____state.hydrate_and_load",
+   "boot_payload_keys": []
+  },
+  {
+   "t": 6.022,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 6.022,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 4245
+  },
+  {
+   "t": 6.022,
+   "dir": "in",
+   "kind": "event",
+   "len": 89,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 6.023,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 6.023,
+   "dir": "in",
+   "kind": "event",
+   "len": 154,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "bg_status_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 6.35,
+   "dir": "out",
+   "kind": "event",
+   "len": 168,
+   "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+   "payload_keys": []
+  },
+  {
+   "t": 6.357,
+   "dir": "in",
+   "kind": "event",
+   "len": 89,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 6.362,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 6.363,
+   "dir": "in",
+   "kind": "event",
+   "len": 172,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "bg_status_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 7.859,
+   "dir": "in",
+   "kind": "event",
+   "len": 184,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "bg_status_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  }
+ ],
+ "after_click": {
+  "counter": "1"
+ },
+ "after_reload": {
+  "counter": "1",
+  "bg": "started"
+ },
+ "console": [],
+ "elapsed": 27.7
+}

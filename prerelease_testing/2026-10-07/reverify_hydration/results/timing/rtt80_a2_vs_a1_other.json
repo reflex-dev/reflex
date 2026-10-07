@@ -1,0 +1,195 @@
+{
+ "path": "/other",
+ "summary": {
+  "alpha2": {
+   "dcl": 366.5,
+   "connect_sent": 577.0,
+   "first_delta": 671.5,
+   "hydrated": 673.0,
+   "connect_to_hydrated": 96.0,
+   "n": 12
+  },
+  "alpha": {
+   "dcl": 360.0,
+   "connect_sent": 550.0,
+   "first_delta": 649.5,
+   "hydrated": 650.5,
+   "connect_to_hydrated": 98.0,
+   "n": 12
+  }
+ },
+ "runs": {
+  "alpha2": [
+   {
+    "dcl": 356,
+    "connect_sent": 598,
+    "first_delta": 687,
+    "hydrated": 688,
+    "connect_to_hydrated": 90
+   },
+   {
+    "dcl": 351,
+    "connect_sent": 530,
+    "first_delta": 624,
+    "hydrated": 629,
+    "connect_to_hydrated": 99
+   },
+   {
+    "dcl": 356,
+    "connect_sent": 593,
+    "first_delta": 683,
+    "hydrated": 684,
+    "connect_to_hydrated": 91
+   },
+   {
+    "dcl": 330,
+    "connect_sent": 526,
+    "first_delta": 617,
+    "hydrated": 619,
+    "connect_to_hydrated": 93
+   },
+   {
+    "dcl": 346,
+    "connect_sent": 529,
+    "first_delta": 623,
+    "hydrated": 623,
+    "connect_to_hydrated": 94
+   },
+   {
+    "dcl": 374,
+    "connect_sent": 545,
+    "first_delta": 637,
+    "hydrated": 638,
+    "connect_to_hydrated": 93
+   },
+   {
+    "dcl": 359,
+    "connect_sent": 541,
+    "first_delta": 632,
+    "hydrated": 634,
+    "connect_to_hydrated": 92
+   },
+   {
+    "dcl": 390,
+    "connect_sent": 561,
+    "first_delta": 660,
+    "hydrated": 662,
+    "connect_to_hydrated": 102
+   },
+   {
+    "dcl": 457,
+    "connect_sent": 683,
+    "first_delta": 797,
+    "hydrated": 781,
+    "connect_to_hydrated": 98
+   },
+   {
+    "dcl": 443,
+    "connect_sent": 669,
+    "first_delta": 766,
+    "hydrated": 767,
+    "connect_to_hydrated": 98
+   },
+   {
+    "dcl": 396,
+    "connect_sent": 610,
+    "first_delta": 714,
+    "hydrated": 717,
+    "connect_to_hydrated": 107
+   },
+   {
+    "dcl": 419,
+    "connect_sent": 713,
+    "first_delta": 842,
+    "hydrated": 838,
+    "connect_to_hydrated": 125
+   }
+  ],
+  "alpha": [
+   {
+    "dcl": 389,
+    "connect_sent": 576,
+    "first_delta": 676,
+    "hydrated": 675,
+    "connect_to_hydrated": 99
+   },
+   {
+    "dcl": 354,
+    "connect_sent": 542,
+    "first_delta": 636,
+    "hydrated": 639,
+    "connect_to_hydrated": 96
+   },
+   {
+    "dcl": 365,
+    "connect_sent": 570,
+    "first_delta": 666,
+    "hydrated": 669,
+    "connect_to_hydrated": 99
+   },
+   {
+    "dcl": 345,
+    "connect_sent": 506,
+    "first_delta": 616,
+    "hydrated": 615,
+    "connect_to_hydrated": 109
+   },
+   {
+    "dcl": 371,
+    "connect_sent": 542,
+    "first_delta": 645,
+    "hydrated": 646,
+    "connect_to_hydrated": 103
+   },
+   {
+    "dcl": 356,
+    "connect_sent": 564,
+    "first_delta": 656,
+    "hydrated": 660,
+    "connect_to_hydrated": 95
+   },
+   {
+    "dcl": 355,
+    "connect_sent": 564,
+    "first_delta": 654,
+    "hydrated": 655,
+    "connect_to_hydrated": 91
+   },
+   {
+    "dcl": 337,
+    "connect_sent": 542,
+    "first_delta": 634,
+    "hydrated": 637,
+    "connect_to_hydrated": 94
+   },
+   {
+    "dcl": 471,
+    "connect_sent": 741,
+    "first_delta": 883,
+    "hydrated": 873,
+    "connect_to_hydrated": 132
+   },
+   {
+    "dcl": 359,
+    "connect_sent": 556,
+    "first_delta": 661,
+    "hydrated": 660,
+    "connect_to_hydrated": 104
+   },
+   {
+    "dcl": 361,
+    "connect_sent": 541,
+    "first_delta": 632,
+    "hydrated": 634,
+    "connect_to_hydrated": 93
+   },
+   {
+    "dcl": 371,
+    "connect_sent": 544,
+    "first_delta": 639,
+    "hydrated": 641,
+    "connect_to_hydrated": 97
+   }
+  ]
+ }
+}

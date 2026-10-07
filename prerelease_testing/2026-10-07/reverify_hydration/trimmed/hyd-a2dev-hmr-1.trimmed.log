@@ -1,0 +1,70 @@
+### head
+API_URL=http://localhost:8229
+STATE_MANAGER_MODE=memory
+───────────────────────────────── System Info ──────────────────────────────────
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha2/lib/python3.12/site-packages/reflex_base/config.py'
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8229', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.MEMORY: 'memory'>, 
+redis_lock_expiration=10000, redis_lock_warning_threshold=1000, 
+redis_token_expiration=3600, _non_default_attributes={'loglevel', 'plugins', 
+'telemetry_enabled', 'state_manager_mode', 'app_name', 'api_url', 
+'disable_plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[<class 
+'reflex_base.plugins.sitemap.SitemapPlugin'>], transport='websocket')
+### warnings/errors (deduped, with counts)
+      1 [ERROR] Unexpected exit from worker-1
+      1 /utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.j
+### HYDTRACE (first 400)
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE 1791358230.333 5fdec0a6 bg_load started
+HYDTRACE 1791358231.836 5fdec0a6 bg_load done
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE 1791358233.038 5fdec0a6 bg_load started
+HYDTRACE 1791358233.384 5fdec0a6 bg_load started
+HYDTRACE 1791358234.887 5fdec0a6 bg_load done
+HYDTRACE 1791358259.285 5fdec0a6 bg_load started
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+### tail
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/reverify_hydration/run/hyd-a2dev-hmr/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/reverify_hydration/run/hyd-a2dev-hmr/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.01s
+Debug: [timing] Write to Disk: 0.01s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: mutate_in_lifespan as coroutine
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+[INFO] Started worker-1
+Debug: 7:31:01 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 7:31:01 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 7:31:01 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 7:31:01 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 7:31:01 AM [vite] (ssr) program reload
+[INFO] Stopping worker-1
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

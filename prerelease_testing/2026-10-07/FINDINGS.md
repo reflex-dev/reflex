@@ -31,21 +31,21 @@ train) and 0.9.12.
 | finding (10-06) | a1 status | a2 result | cluster |
 |---|---|---|---|
 | F-001 class-level backend var → Field; enterprise AG Grid model wrapper 500 | HIGH regression | **changed / enterprise half fixed**: class reads still return `Field` (documented as breaking in the a2 CHANGELOG); `f"{S._x}"` now raises `BackendVarFormatError` (#7456) so the 10-06 e2e app fails loudly at compile instead of rendering `Field(...)`; enterprise AG Grid `/model`, `/model-auth`, SSRM and infinite pages return 200 with rows in dev and prod, 0 `from_request` errors (#7465). Gaps: N-006/N-007 | reverify_core |
-| F-002 first-load client-storage default write-back | HIGH regression | pending | reverify_hydration |
-| F-003 computed-var client-storage rewrite dropped at hydration | MED partial regression | pending | reverify_hydration |
+| F-002 first-load client-storage default write-back | HIGH regression | **fixed** (#7460, backend-only: the boot delta root now carries `is_hydrated_rx_state_: false`; fresh profile writes nothing; returning visitor sees changed defaults; user choices still persist; `sync=True` two-tab race clean; `reflex/state.py:2368-2383`) | reverify_hydration |
+| F-003 computed-var client-storage rewrite dropped at hydration | MED partial regression | **fixed for page loads and reconnects** (#7460: all variants a–g + two new ones pass on every seed, dev, prod and prod+redis; a follow-up delta carries the corrected value; reflex-google-auth bogus token cleared on the first reload). Still open, pre-existing: the same write during an ordinary event or client-side navigation stays seed-dependent (N-015) and an uncached computed var's display stays stale (N-016) | reverify_hydration |
 | F-004 class-level assignment replaces descriptor | MED regression | **fixed** (#7461: descriptor kept, fresh/pickled instances read the assigned default, dev writes and `reset()` work, e2e dev and prod+redis) — new gaps N-004/N-005 | reverify_core |
 | F-005 sqlmodel<0.0.45 cap | MED regression | **fixed** (sqlmodel 0.0.48 resolves; `UTCDateTime()` migrations apply on a fresh db; aware round trip identical to 0.9.12+0.0.47) — with caveats: N-001 below, and a1→a2 `uv -U` upgraders of a naive-datetime app silently change semantics with no release note for #7462 (N-002) | reverify_db_install |
 | F-006 component floors unchanged | MED release-eng | **fixed** (every pip/uv upgrade variant from 0.9.12 moves all 13 component packages; fresh `pip install reflex==0.10.0a2` without `--pre` resolves the full train; formapp submits the fixed #7227 payload) | reverify_db_install |
 | F-007 npm SIGTERM hang | MED pre-existing | **still broken on Linux** (3/3 on a2; a1 and 0.9.12 identical; bun clean). On macOS arm64 (other session, `macos_lifecycle`): a1 and a2 exit cleanly in <0.3 s, 0.9.12 still hangs — platform-scoped; the Linux finding stands | reverify_db_install, macos_lifecycle |
-| F-008 >1 MB storage reconnect storm | MED pre-existing | pending | reverify_hydration |
-| F-010 pre-connect nav on_load | LOW pre-existing | pending | reverify_hydration |
+| F-008 >1 MB storage reconnect storm | MED pre-existing | **still broken** (602–654 websocket opens / ~22 s, 720–780 MB uploaded, no UI error, no server log) | reverify_hydration |
+| F-010 pre-connect nav on_load | LOW pre-existing | **still broken** (8/8; redirect hijack case 2/2) | reverify_hydration |
 | F-011 forward-ref TypeError | LOW regression | **still broken** | reverify_core |
 | F-012 PageContext LookupError message | LOW | **still broken** | reverify_core |
 | F-013 rx.Model deprecation location | LOW | **still broken** | reverify_core |
 | F-014 `reflex component` message | LOW | **still broken** | reverify_core |
 | F-015 duplicate npm notice | LOW | **still broken** (unchanged) | reverify_db_install |
 | F-016 ty 0-arg / 5-arg | LOW | **still broken** (ty 0.0.84/0.0.85 and pyright 1.1.414 identical to a1) | reverify_core |
-| F-017 redis restart token loss | LOW unknown | pending | reverify_hydration |
+| F-017 redis restart token loss | LOW unknown | **not reproduced** (0/9 clean stops on a2, no pyo3 panic; 1/9 on 10-06 — flaky/unknown, not closable) | reverify_hydration |
 | F-018 React 19.3 console error | LOW | **still broken** (2/2) | reverify_core |
 
 ## New findings on 0.10.0a2
@@ -162,7 +162,23 @@ train) and 0.9.12.
 
 Also from `dataeditor` (other session): named `rx.select` payloads submit correctly on all three trains and both engines (the 10-06 `f_select` lead was an id-only select: stable submits `null`, the alphas omit the key — usage context, not a release bug); nested-dialog form event propagation predates the train and `stop_propagation` prevents it; exact wheel diffs of dataeditor 0.10.0a1, react-player 0.10.0a1, sonner 0.10.0a1 and lucide 1.1.0a1 show only Python/sibling floor changes.
 
+### N-015: A computed var's write to state during an ordinary event or client-side navigation is dropped depending on PYTHONHASHSEED; a write to a var that was not already dirty is always dropped (LOW, pre-existing)
+- Cluster: `reverify_hydration` | Regression: no (identical on 0.9.12 and 0.10.0a1; #7460 fixed only the `hydrate_and_load` path).
+- Repro: `reverify_hydration/cv/drivers/drive_cvnav.py` against cvstore with `PYTHONHASHSEED=0` (variants a/b/e1/e2/f fail; seed 4 passes; (g) always fails). Evidence: `results/f003/cvnav.txt`.
+- Mechanism: per-event deltas iterate a `set` and are cleaned afterwards (see FINDING-003 of 10-06); the pattern (computed vars writing state) is undocumented.
+
+### N-016: An uncached computed var keeps showing the value it computed during hydration until the next full reload (LOW, regression unknown)
+- Cluster: `reverify_hydration`. cvstore variant (b): after reload, probe, no-op event and client nav, `check` still shows `cleared-by-uncached-cv` while the backend computes `value=''`; the per-client dedup record is not updated by the boot snapshot. 0.9.12 showed the correct value on the seeds where its write worked. Related open PR #7436 (not in this train). Evidence: `results/f003/a2-dev-seed0.summary.txt`, `frames/a2-dev-seed0-b.json`.
+
+Also confirmed by `reverify_hydration` independently: N-005's ComponentState form (`cls.pref = "dark"` on an `rx.LocalStorage` var in `get_component` silently drops persistence; `probes/cs_storage_default_probe.py`, `src/csbox`).
+
 ## Cluster summaries
+
+### `reverify_hydration` (pass: 14, anomaly: 5, fail: 0 new) — done
+F-002 and F-003 fixed (backend-only #7460; `state.js` byte-identical to a1); hydapp s1–s13 sweep matches a1 field by
+field except s1b which now passes; reconnect with redis and memory, HMR, timing (a2 = a1; ~170–180 ms faster than
+0.9.12 at 80 ms RTT) all good. F-008/F-010 unchanged, F-017 not reproduced. New lows N-015, N-016; N-005 confirmed
+again. One prod s10 anomaly (a pre-hydration click lost 1/32, browser timing, not reproducible with a React-ready check).
 
 ### `dataeditor` (other session, macOS arm64, Chromium + WebKit) — done
 170 editor assertions (139 pass / 31 fail) and 438 forms/misc assertions (392 / 46) on 0.10.0a2 with 0.10.0a1 and 0.9.12

@@ -1,0 +1,99 @@
+### head
+API_URL=http://localhost:3235
+───────────────────────────────── System Info ──────────────────────────────────
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/alpha/lib/python3.12/site-packages/reflex_base/config.py'
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3235', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'api_url', 'disable_plugins', 'plugins', 
+'telemetry_enabled', 'app_name', 'loglevel'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[RadixThemesPlugin(theme={"name": 
+"RadixThemesTheme", "props": ["accentColor:\"blue\"", 
+"css:{...theme.styles.global[':root'], ...theme.styles.global.body}"], 
+"children": []})], disable_plugins=[<class 
+'reflex_base.plugins.sitemap.SitemapPlugin'>], transport='websocket')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+### warnings/errors (deduped, with counts)
+### HYDTRACE (first 400)
+HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+HYDTRACE 1791357587.537 152be82d index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357589.724 49c59f52 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357591.063 736f2420 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357594.587 67e6c655 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357595.543 5bbacc89 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357598.630 b1b8c4ef index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357599.605 445a2bf7 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357602.725 40eaec64 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357603.814 ed331564 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357606.914 e560a17c index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357608.127 b916b866 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357611.285 7599d874 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357612.323 30e1302f index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+HYDTRACE 1791357616.995 7a619065 other_load#1 path=/other/
+HYDTRACE 1791357619.165 0813aed1 other_load#1 path=/other/
+HYDTRACE 1791357620.296 e2f85194 other_load#1 path=/other/
+HYDTRACE 1791357623.401 01d84d6a other_load#1 path=/other/
+HYDTRACE 1791357624.399 d5ec08b5 other_load#1 path=/other/
+HYDTRACE 1791357627.486 69e065f5 other_load#1 path=/other/
+HYDTRACE 1791357628.548 d7c5ff55 other_load#1 path=/other/
+HYDTRACE 1791357631.640 12b4d911 other_load#1 path=/other/
+HYDTRACE 1791357632.670 afd655b2 other_load#1 path=/other/
+HYDTRACE 1791357636.470 8dfad306 other_load#1 path=/other/
+HYDTRACE 1791357637.647 0ab794ca other_load#1 path=/other/
+HYDTRACE 1791357641.029 02221704 other_load#1 path=/other/
+HYDTRACE 1791357642.050 0a030137 other_load#1 path=/other/
+HYDTRACE 1791357654.218 afc62860 other_load#1 path=/other/
+HYDTRACE 1791357656.295 d5e5ef4c other_load#1 path=/other/
+HYDTRACE 1791357657.308 982c49ed other_load#1 path=/other/
+HYDTRACE 1791357660.639 e5f47566 other_load#1 path=/other/
+HYDTRACE 1791357661.687 e6b1e7de other_load#1 path=/other/
+HYDTRACE 1791357665.006 261192e1 other_load#1 path=/other/
+HYDTRACE 1791357666.023 bbd55ed3 other_load#1 path=/other/
+HYDTRACE 1791357669.444 9cdbe756 other_load#1 path=/other/
+HYDTRACE 1791357670.633 c6862902 other_load#1 path=/other/
+HYDTRACE 1791357674.628 65b8b967 other_load#1 path=/other/
+HYDTRACE 1791357675.819 efc117af other_load#1 path=/other/
+HYDTRACE 1791357679.276 b4f062ef other_load#1 path=/other/
+HYDTRACE 1791357680.324 b26799d9 other_load#1 path=/other/
+### tail
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791357665.006 261192e1 other_load#1 path=/other/
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791357666.023 bbd55ed3 other_load#1 path=/other/
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791357669.444 9cdbe756 other_load#1 path=/other/
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791357670.633 c6862902 other_load#1 path=/other/
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791357674.628 65b8b967 other_load#1 path=/other/
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791357675.819 efc117af other_load#1 path=/other/
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791357679.276 b4f062ef other_load#1 path=/other/
+Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+type '<class 'reflex.istate.storage.Cookie'>'.
+HYDTRACE 1791357680.324 b26799d9 other_load#1 path=/other/
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

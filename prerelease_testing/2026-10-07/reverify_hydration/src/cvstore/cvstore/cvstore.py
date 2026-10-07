@@ -279,7 +279,68 @@ def page_g() -> rx.Component:
     return _cv_page(GOtherVar, "ls", "(g) cached cv sets a plain var")
 
 
-PAGES = ["a", "b", "c", "d", "e_cookie", "e_session", "f", "g"]
+PAGES = ["a", "b", "c", "d", "e_cookie", "e_session", "f", "g", "i", "j"]
+
+
+# --- reverify_hydration additions (2026-10-07) ---
+# (i) cached cv clears LocalStorage on a page that ALSO has an on_load (hydrate_and_load returns on_load_internal)
+class IOnLoadCv(rx.State):
+    ls: str = rx.LocalStorage(name="v_i")
+    seen: str = ""
+    noop_count: int = 0
+    loads: int = 0
+
+    @rx.var(cache=True)
+    def check(self) -> str:
+        if self.ls == "bad":
+            self.ls = ""
+            return "cleared-by-cached-cv"
+        return f"value={self.ls!r}"
+
+    @rx.event
+    def on_load(self):
+        self.loads += 1
+
+    @rx.event
+    def probe(self):
+        self.seen = f"backend ls={self.ls!r} loads={self.loads}"
+
+    @rx.event
+    def noop(self):
+        self.noop_count += 1
+
+
+# (j) cached cv clears LocalStorage in a state that the diffed boot snapshot sends IN FULL (default_factory uuid)
+class JFullCv(rx.State):
+    ls: str = rx.LocalStorage("j-default", name="v_j")
+    jid: str = rx.field(default_factory=lambda: __import__("uuid").uuid4().hex)
+    seen: str = ""
+    noop_count: int = 0
+
+    @rx.var(cache=True)
+    def check(self) -> str:
+        if self.ls == "bad":
+            self.ls = "j-default"
+            return "reset-by-cached-cv"
+        return f"value={self.ls!r}"
+
+    @rx.event
+    def probe(self):
+        self.seen = f"backend ls={self.ls!r}"
+
+    @rx.event
+    def noop(self):
+        self.noop_count += 1
+
+
+@rx.page(route="/i", on_load=IOnLoadCv.on_load)
+def page_i() -> rx.Component:
+    return _cv_page(IOnLoadCv, "ls", "(i) cached cv clears LocalStorage on an on_load page")
+
+
+@rx.page(route="/j")
+def page_j() -> rx.Component:
+    return _cv_page(JFullCv, "ls", "(j) cached cv resets LocalStorage in a state sent in full")
 
 
 class Diag(rx.State):

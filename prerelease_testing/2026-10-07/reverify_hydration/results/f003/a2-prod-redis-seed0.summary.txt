@@ -1,0 +1,56 @@
+SUMMARY a2-prod-redis-seed0 a:
+   reload            [l=''] var='var=' check="check=value=''" seen='seen=' noop_count='noop=0'
+   probe             [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=0'
+   noop-event        [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   after-client-nav  [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2           [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2-probe     [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   console errors: [{'phase': 'initial', 'type': 'error', 'text': 'Failed to load resource: the server responded with a status of 404 (Not Found)'}]
+SUMMARY a2-prod-redis-seed0 b:
+   reload            [l=''] var='var=' check='check=cleared-by-uncached-cv' seen='seen=' noop_count='noop=0'
+   probe             [l=''] var='var=' check='check=cleared-by-uncached-cv' seen="seen=backend ls=''" noop_count='noop=0'
+   noop-event        [l=''] var='var=' check='check=cleared-by-uncached-cv' seen="seen=backend ls=''" noop_count='noop=1'
+   after-client-nav  [l=''] var='var=' check='check=cleared-by-uncached-cv' seen="seen=backend ls=''" noop_count='noop=1'
+   reload2           [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2-probe     [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+SUMMARY a2-prod-redis-seed0 c:
+   reload            [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' loads='loads=2' seen='seen='
+   probe             [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' loads='loads=2' seen="seen=backend ls='' ck='' ss=''"
+   after-client-nav  [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' loads='loads=3' seen="seen=backend ls='' ck='' ss=''"
+   reload2           [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' loads='loads=4' seen="seen=backend ls='' ck='' ss=''"
+   reload2-probe     [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' loads='loads=4' seen="seen=backend ls='' ck='' ss=''"
+SUMMARY a2-prod-redis-seed0 d:
+   reload            [l='bad',c='bad',s='bad'] ls='ls=bad' ck='ck=bad' ss='ss=bad' seen='seen='
+   fix-event         [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' seen='seen='
+   probe             [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' seen="seen=backend ls='' ck='' ss=''"
+   after-client-nav  [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' seen="seen=backend ls='' ck='' ss=''"
+   reload2           [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' seen="seen=backend ls='' ck='' ss=''"
+   reload2-probe     [l='',c='',s=''] ls='ls=' ck='ck=' ss='ss=' seen="seen=backend ls='' ck='' ss=''"
+SUMMARY a2-prod-redis-seed0 e_cookie:
+   reload            [c=''] var='var=' check="check=value=''" seen='seen=' noop_count='noop=0'
+   probe             [c=''] var='var=' check="check=value=''" seen="seen=backend ck=''" noop_count='noop=0'
+   noop-event        [c=''] var='var=' check="check=value=''" seen="seen=backend ck=''" noop_count='noop=1'
+   after-client-nav  [c=''] var='var=' check="check=value=''" seen="seen=backend ck=''" noop_count='noop=1'
+   reload2           [c=''] var='var=' check="check=value=''" seen="seen=backend ck=''" noop_count='noop=1'
+   reload2-probe     [c=''] var='var=' check="check=value=''" seen="seen=backend ck=''" noop_count='noop=1'
+SUMMARY a2-prod-redis-seed0 e_session:
+   reload            [s=''] var='var=' check="check=value=''" seen='seen=' noop_count='noop=0'
+   probe             [s=''] var='var=' check="check=value=''" seen="seen=backend ss=''" noop_count='noop=0'
+   noop-event        [s=''] var='var=' check="check=value=''" seen="seen=backend ss=''" noop_count='noop=1'
+   after-client-nav  [s=''] var='var=' check="check=value=''" seen="seen=backend ss=''" noop_count='noop=1'
+   reload2           [s=''] var='var=' check="check=value=''" seen="seen=backend ss=''" noop_count='noop=1'
+   reload2-probe     [s=''] var='var=' check="check=value=''" seen="seen=backend ss=''" noop_count='noop=1'
+SUMMARY a2-prod-redis-seed0 f:
+   reload            [l=''] var='var=' check="check=value=''" seen='seen=' noop_count='noop=0'
+   probe             [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=0'
+   noop-event        [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   after-client-nav  [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2           [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2-probe     [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+SUMMARY a2-prod-redis-seed0 g:
+   reload            [l='bad'] var='var=bad' check='check=saw-bad' seen='seen=' noop_count='noop=0' plain='plain=set-by-cv'
+   probe             [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=0' plain='plain=set-by-cv'
+   noop-event        [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=set-by-cv'
+   after-client-nav  [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=set-by-cv'
+   reload2           [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=set-by-cv'
+   reload2-probe     [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=set-by-cv'

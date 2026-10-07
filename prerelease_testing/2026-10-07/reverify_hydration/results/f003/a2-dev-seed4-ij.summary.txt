@@ -1,0 +1,14 @@
+SUMMARY a2-dev-seed4 i:
+   reload            [l=''] var='var=' check="check=value=''" seen='seen=' noop_count='noop=0'
+   probe             [l=''] var='var=' check="check=value=''" seen="seen=backend ls='' loads=2" noop_count='noop=0'
+   noop-event        [l=''] var='var=' check="check=value=''" seen="seen=backend ls='' loads=2" noop_count='noop=1'
+   after-client-nav  [l=''] var='var=' check="check=value=''" seen="seen=backend ls='' loads=3" noop_count='noop=1'
+   reload2           [l=''] var='var=' check="check=value=''" seen="seen=backend ls='' loads=3" noop_count='noop=1'
+   reload2-probe     [l=''] var='var=' check="check=value=''" seen="seen=backend ls='' loads=4" noop_count='noop=1'
+SUMMARY a2-dev-seed4 j:
+   reload            [l='j-default'] var='var=j-default' check="check=value='j-default'" seen='seen=' noop_count='noop=0'
+   probe             [l='j-default'] var='var=j-default' check="check=value='j-default'" seen="seen=backend ls='j-default'" noop_count='noop=0'
+   noop-event        [l='j-default'] var='var=j-default' check="check=value='j-default'" seen="seen=backend ls='j-default'" noop_count='noop=1'
+   after-client-nav  [l='j-default'] var='var=j-default' check="check=value='j-default'" seen="seen=backend ls='j-default'" noop_count='noop=1'
+   reload2           [l='j-default'] var='var=j-default' check="check=value='j-default'" seen="seen=backend ls='j-default'" noop_count='noop=1'
+   reload2-probe     [l='j-default'] var='var=j-default' check="check=value='j-default'" seen="seen=backend ls='j-default'" noop_count='noop=1'
