@@ -158,9 +158,12 @@ All five fix branches are pushed and have pull requests (label `on deck`, milest
 module scope; compiler unit test + Playwright test; verifier fixtures: probe NO_REFLEX→HAS_REFLEX, enterprise grid 0→2 headers),
 `claude/n032-boot-reconcile` 33568493e (client-storage vars applied at boot are re-marked dirty after the guarded snapshot so the
 event delta goes through `get_delta`; verifier fixtures: `away` 0/3→3/3 dev and prod, stale-hash probes 3/3), `claude/n004-pickle-compat`
-c6e7cd9cc (re-scoped 10-07: the 378d403b7 pickle-compat change is reverted, `reflex/state.py` matches main; a `breaking` fragment and a
-Self Hosting note declare that 0.9 and 0.10 instances cannot share a state store; new issue #7491 for the Python-version hash dependence), `claude/class-assignment` 5cfb3d20f + 347d0456c + b57fd27fc (patch/restore
-round trip, storage wrapper kept on plain-default assignment, mangled-name guard), `claude/docs-0.10-migration` 8c725dcde + 12f54a690 +
+2f241fa4e (re-scoped 10-07: the 378d403b7 pickle-compat change is reverted; a `breaking` fragment and a Self Hosting note declare that
+0.9 and 0.10 instances cannot share a state store; `__getstate__` no longer writes the `_PREVIOUS_RELEASE_PICKLE_KEYS` entries for 0.9
+workers, the `__setstate__` upgrade path stays; new issue #7491 for the Python-version hash dependence), `claude/class-assignment`
+5cfb3d20f + 347d0456c + b57fd27fc + c7e62437d + 2e1b0ea79 + b05799207 (patch/restore round trip, storage wrapper kept on plain-default
+assignment including a declared `default_factory` producing storage, mangled-name guard reusing `_private_prefixes`; review follow-ups
+filed as #7498 (str-annotated factory field never detected as storage) and #7499 (storage-annotated var logs a type error on hydration)), `claude/docs-0.10-migration` 8c725dcde + 12f54a690 +
 e46344d84 (`BackendVarFormatError` hint, #7462 fragment, "Upgrading to Reflex 0.10" guide). Each worktree ran ruff, pyright, the unit
 suite (the only failures are the 232 reflex_cli version-check tests that fail on unmodified main in a shallow checkout) and the relevant
 Playwright tests; the Selenium `test_client_storage.py` could not run here (no matching Chrome) and should be watched in CI for N-032.
