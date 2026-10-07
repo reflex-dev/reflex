@@ -195,5 +195,5 @@ Background tasks mostly work like normal `EventHandler` methods, with certain ex
 - Background tasks must be `async` functions.
 - Background tasks cannot modify the state outside of an `async with self` context block.
 - Background tasks may read the state outside of an `async with self` context block, but the value may be stale.
-- Calling another event handler as a method of `self`, including one inherited from a parent state, runs it through the same proxy, so do it inside `async with self`. In the called handler `type(self)` is `StateProxy`; use `self.__class__` for the state class. See [Upgrading to Reflex 0.10](/docs/getting-started/upgrading-to-0-10/#calling-inherited-handlers-from-background-tasks).
+- Calling another event handler as a method of `self`, including one inherited from a parent state, runs it through the same proxy, so do it inside `async with self`. In the called handler `type(self)` is `StateProxy`; use `self.__class__` for the state class. See [Upgrading to Reflex 0.10](/docs/changelog/upgrading/upgrading-to-0-10/#calling-inherited-handlers-from-background-tasks).
 - Background tasks may not be directly called from other event handlers or background tasks. Instead use `yield` or `return` to trigger the background task.

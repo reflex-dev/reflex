@@ -113,7 +113,7 @@ Assigning on a mixin only affects states created afterwards. An assignment made
 while the app runs, such as in an event handler, only affects the worker process
 that ran it, so configure defaults while the app is being defined. On 0.9 an
 assignment did not change the default of new instances
-([upgrading from 0.9](/docs/getting-started/upgrading-to-0-10/#assigning-a-default-through-a-state-class)).
+([upgrading from 0.9](/docs/changelog/upgrading/upgrading-to-0-10/#assigning-a-default-through-a-state-class)).
 
 ## Backend-only Vars
 
@@ -150,7 +150,7 @@ it to build the UI from a constant, such as
 `rx.foreach(MyState._options.default_value(), rx.text)` for a backend var
 `_options`. `default_value()` is new in 0.10; code that must also run on 0.9 can
 call `MyState.get_fields()["_options"].default_value()`
-([upgrading from 0.9](/docs/getting-started/upgrading-to-0-10/#reading-a-backend-var-on-a-state-class)).
+([upgrading from 0.9](/docs/changelog/upgrading/upgrading-to-0-10/#reading-a-backend-var-on-a-state-class)).
 Assigning to `MyState._token` updates its default as described above.
 
 For configuration shared by all sessions, declare a `ClassVar` instead:

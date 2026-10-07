@@ -3,11 +3,22 @@ from .item import create_item
 
 
 def get_sidebar_items_changelog():
-    from reflex_docs.pages.docs import changelog_packages
+    from reflex_docs.pages.docs import changelog, changelog_packages
 
+    upgrading = SideBarItem(
+        names="Upgrading",
+        children=[
+            SideBarItem(
+                names="Upgrading to 0.10", link=changelog.upgrading.upgrading_to_0_10.path
+            ),
+        ],
+    )
     return [
-        SideBarItem(names=package, link=route)
-        for package, route in changelog_packages.items()
+        upgrading,
+        *(
+            SideBarItem(names=package, link=route)
+            for package, route in changelog_packages.items()
+        ),
     ]
 
 
