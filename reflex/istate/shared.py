@@ -118,6 +118,33 @@ async def _patch_state(
         # it forces router-dependent computed vars to resolve for the patched
         # tree, but should not leak into the event's final delta.
         root_state = original_state._get_root_state()
+        if (
+            not full_delta
+            and not any(
+                root_state._var_dependencies.get(name)
+                for name in (*ROUTER_VARS, ROUTER_DATA)
+            )
+            and all(
+                name in ROUTER_VARS or name == ROUTER_DATA
+                for name in root_state.dirty_vars
+            )
+            and not root_state._potentially_dirty_states
+        ):
+            states_to_check = [root_state]
+            while states_to_check:
+                state = states_to_check.pop()
+                if state.computed_vars:
+                    break
+                states_to_check.extend(
+                    state.substates[name]
+                    for name in state.dirty_substates | state._always_dirty_substates
+                    if name in state.substates
+                )
+            else:
+                # There is no router-dependent or otherwise pending computed
+                # work, so resolving this discarded delta cannot change state.
+                yield
+                return
         dirty_state_snapshots: list[
             tuple[
                 BaseState,

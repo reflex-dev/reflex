@@ -247,6 +247,16 @@ class _LinkedStatePatchRouterShared(_LinkedStatePatchRouterRoot):
     counter: int = 0
 
 
+class _LinkedStatePatchNoComputedRoot(BaseState):
+    """Root state with no computed vars for the discarded-delta fast path."""
+
+
+class _LinkedStatePatchNoComputedShared(_LinkedStatePatchNoComputedRoot):
+    """Substate with no computed vars for the discarded-delta fast path."""
+
+    counter: int = 0
+
+
 @pytest.mark.asyncio
 async def test_linked_state_event_does_not_dirty_root_state():
     """Linked-state events should not leak temporary router dirtiness."""
@@ -268,6 +278,26 @@ async def test_linked_state_event_does_not_dirty_root_state():
     assert set(constants.ROUTER_VARS).isdisjoint(private_tree.dirty_vars)
     assert constants.ROUTER_DATA not in private_tree.dirty_vars
     assert private_tree.get_full_name() not in private_tree.get_delta()
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_skips_discarded_delta_without_computed_vars():
+    """Skip router refresh when no computed var or pending substate needs it."""
+    private_tree = _LinkedStatePatchNoComputedRoot()
+    linked_tree = _LinkedStatePatchNoComputedRoot()
+    shared_state_name = _LinkedStatePatchNoComputedShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+    resolve_delta = AsyncMock()
+
+    object.__setattr__(private_tree, "_get_resolved_delta", resolve_delta)
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        assert private_tree.substates[shared_state_name] is linked_state
+
+    resolve_delta.assert_not_awaited()
+    assert not private_tree.dirty_vars
+    assert not private_tree.dirty_substates
 
 
 @pytest.mark.asyncio
