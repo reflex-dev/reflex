@@ -1,0 +1,31 @@
+WARN `--no-project` was provided, but no project was found
+START alpha2-lazy1 PID 20722
+READY alpha2-lazy1
+WARN `--no-project` was provided, but no project was found
+{".js": {"files": 318, "raw_bytes": 6546430, "gzip_estimate_bytes": 2039422}, ".css": {"files": 2, "raw_bytes": 709730, "gzip_estimate_bytes": 85164}}
+DONE alpha2-lazy1
+STOPPED alpha2-lazy1
+START alpha-lazy0 PID 21415
+READY alpha-lazy0
+WARN `--no-project` was provided, but no project was found
+{".js": {"files": 321, "raw_bytes": 6475647, "gzip_estimate_bytes": 2033111}, ".css": {"files": 2, "raw_bytes": 709730, "gzip_estimate_bytes": 85164}}
+DONE alpha-lazy0
+STOPPED alpha-lazy0
+START alpha-lazy1 PID 21942
+READY alpha-lazy1
+WARN `--no-project` was provided, but no project was found
+{".js": {"files": 318, "raw_bytes": 6546428, "gzip_estimate_bytes": 2039416}, ".css": {"files": 2, "raw_bytes": 709730, "gzip_estimate_bytes": 85164}}
+DONE alpha-lazy1
+STOPPED alpha-lazy1
+START stable-lazy0 PID 22310
+READY stable-lazy0
+WARN `--no-project` was provided, but no project was found
+{".js": {"files": 321, "raw_bytes": 6444630, "gzip_estimate_bytes": 2023817}, ".css": {"files": 2, "raw_bytes": 709730, "gzip_estimate_bytes": 85164}}
+DONE stable-lazy0
+STOPPED stable-lazy0
+START stable-lazy1 PID 22711
+READY stable-lazy1
+WARN `--no-project` was provided, but no project was found
+{".js": {"files": 318, "raw_bytes": 6515416, "gzip_estimate_bytes": 2030113}, ".css": {"files": 2, "raw_bytes": 709730, "gzip_estimate_bytes": 85164}}
+DONE stable-lazy1
+STOPPED stable-lazy1

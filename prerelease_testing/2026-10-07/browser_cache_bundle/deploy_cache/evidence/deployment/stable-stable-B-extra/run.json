@@ -1,0 +1,49 @@
+{
+  "frontend": "stable",
+  "backend": "stable",
+  "revision": "B",
+  "extra_state": true,
+  "command": [
+    "uv",
+    "--no-config",
+    "run",
+    "--no-project",
+    "--python",
+    "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/python",
+    "reflex",
+    "run",
+    "--env",
+    "prod",
+    "--backend-only",
+    "--backend-port",
+    "8730",
+    "--loglevel",
+    "debug"
+  ],
+  "browsers": {
+    "chromium": {
+      "failed": true
+    },
+    "webkit": {
+      "failed": true
+    }
+  },
+  "build": {
+    "command": [
+      "uv",
+      "--no-config",
+      "run",
+      "--no-project",
+      "--python",
+      "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/python",
+      "reflex",
+      "export",
+      "--no-zip",
+      "--frontend-only",
+      "--loglevel",
+      "debug"
+    ],
+    "source_hash": "0d70eb225e63c7405cb8b4c0a0e915f8a90b65cf6e8a3da8fc7ef86f4b334ed5"
+  },
+  "cleanup_survivors": []
+}

@@ -4,7 +4,7 @@ Status: complete. Tests used only published packages in the parent's prebuilt re
 
 Plan: adapt the previous Linux F-007 repro's non-TTY isolated process group to macOS using `subprocess.Popen(start_new_session=True)`, compare npm single-PID SIGTERM across 0.10.0a2, 0.10.0a1 and 0.9.12, then bun control. Exercise browser events, Unicode input, page reload, hot reload, production, and app directories containing spaces and non-ASCII text. Every case records server logs, process trees, reserved-port listeners, console/network/websocket evidence, and screenshots. Cleanup targets only that case's process group, with bounded TERM then KILL.
 
-Host: macOS 26.6.2 (25G83), arm64. PATH Node v26.8.1, npm 11.19.0, bun 1.3.14. Exact resolved Python/package metadata is included in each JSON report. Reserved frontend ports 3660–3679 and backend ports 8660–8679.
+Host: macOS 26.6.2 (25G83), arm64. PATH Node v26.8.1, npm 11.19.0, bun 1.3.14. Reflex actually selects its managed Bun 1.4.0 at `/Users/masen/Library/Application Support/reflex/bun/bin/bun`, as the server system-info logs record. Exact resolved Python/package metadata is included in each JSON report. Reserved frontend ports 3660–3679 and backend ports 8660–8679.
 
 The handwritten fixture is an initialized Python package (`__init__.py` included). `REFLEX_TEST_ENV` is passed by the harness and used only by import guards. Runtime source edits for HMR are restored at the end of the case. No framework fixes are made.
 
@@ -69,7 +69,7 @@ run_case --env alpha2 --manager bun --port 3664 --backend-port 3664 --unicode-pa
 run_case --env alpha2 --manager npm --port 3665 --backend-port 8665 --attempt 2
 ```
 
-The tested host resolves `node`, `npm`, and `bun` from `/opt/homebrew/bin`. Match Node v26.8.1, npm 11.19.0, bun 1.3.14, and Python 3.12.14 for a close replication. Browser runtime downloads come from Playwright. The harness uses direct venv executables for subprocesses after the outer `uv run`; every import probe and app module asserts the selected published-package environment. It uses a proxy-free localhost HTTP opener, strips client-only `NO_PROXY` settings from the server environment, and sets `REFLEX_TELEMETRY_ENABLED=false` on every Reflex invocation. In sandboxed Codex, localhost/process/browser operations required authorized escalated execution; sandbox-only probes cannot be used to infer server failure.
+The tested host resolves PATH `node`, `npm`, and `bun` from `/opt/homebrew/bin`, but Reflex's selected Bun is the managed 1.4.0 above. Match Node v26.8.1, npm 11.19.0, managed Bun 1.4.0, and Python 3.12.14 for a close replication. Browser runtime downloads come from Playwright. The harness uses direct venv executables for subprocesses after the outer `uv run`; every import probe and app module asserts the selected published-package environment. It uses a proxy-free localhost HTTP opener, strips client-only `NO_PROXY` settings from the server environment, and sets `REFLEX_TELEMETRY_ENABLED=false` on every Reflex invocation. In sandboxed Codex, localhost/process/browser operations required authorized escalated execution; sandbox-only probes cannot be used to infer server failure.
 
 ## Evidence and cleanup
 

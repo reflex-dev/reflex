@@ -1,0 +1,716 @@
+{
+  "deployment": [
+    {
+      "path": "bfcache-attempt/alpha2-alpha2-A/chromium/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359718623
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "bfcache-attempt/stable-stable-A/chromium/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359731551
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/alpha-alpha-A/chromium/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359238047
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/alpha-alpha-A/webkit/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359241616
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/alpha-alpha-B-extra/chromium/result.json",
+      "passed": 0,
+      "failed": 0,
+      "exception": "TimeoutError('Page.wait_for_function: Timeout 30000ms exceeded.')",
+      "console_errors": [
+        {
+          "type": "error",
+          "text": "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.deploy_app___deploy_app____billing\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct."
+        }
+      ],
+      "history_state": null,
+      "navigation": []
+    },
+    {
+      "path": "deployment/alpha-alpha-B-extra/webkit/result.json",
+      "passed": 0,
+      "failed": 0,
+      "exception": "TimeoutError('Page.wait_for_function: Timeout 30000ms exceeded.')",
+      "console_errors": [
+        {
+          "type": "error",
+          "text": "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.deploy_app___deploy_app____billing\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct."
+        }
+      ],
+      "history_state": null,
+      "navigation": []
+    },
+    {
+      "path": "deployment/alpha-alpha2-A/chromium/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359259496
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/alpha-alpha2-A/webkit/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359263119
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/alpha2-alpha2-A/chromium/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359129121
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/alpha2-alpha2-A/webkit/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359132745
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/alpha2-alpha2-B/chromium/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359140795
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/alpha2-alpha2-B/webkit/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359144375
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/alpha2-alpha2-B-extra/chromium/result.json",
+      "passed": 0,
+      "failed": 0,
+      "exception": "TimeoutError('Page.wait_for_function: Timeout 30000ms exceeded.')",
+      "console_errors": [
+        {
+          "type": "error",
+          "text": "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.deploy_app___deploy_app____billing\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct."
+        }
+      ],
+      "history_state": null,
+      "navigation": []
+    },
+    {
+      "path": "deployment/alpha2-alpha2-B-extra/webkit/result.json",
+      "passed": 0,
+      "failed": 0,
+      "exception": "TimeoutError('Page.wait_for_function: Timeout 30000ms exceeded.')",
+      "console_errors": [
+        {
+          "type": "error",
+          "text": "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.deploy_app___deploy_app____billing\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct."
+        }
+      ],
+      "history_state": null,
+      "navigation": []
+    },
+    {
+      "path": "deployment/stable-alpha2-A/chromium/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359247726
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/stable-alpha2-A/webkit/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359251373
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/stable-stable-A/chromium/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359224119
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/stable-stable-A/webkit/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359227766
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "deployment/stable-stable-B-extra/chromium/result.json",
+      "passed": 0,
+      "failed": 0,
+      "exception": "TimeoutError('Page.wait_for_function: Timeout 30000ms exceeded.')",
+      "console_errors": [
+        {
+          "type": "error",
+          "text": "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.deploy_app___deploy_app____billing\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct."
+        }
+      ],
+      "history_state": null,
+      "navigation": []
+    },
+    {
+      "path": "deployment/stable-stable-B-extra/webkit/result.json",
+      "passed": 0,
+      "failed": 0,
+      "exception": "TimeoutError('Page.wait_for_function: Timeout 30000ms exceeded.')",
+      "console_errors": [
+        {
+          "type": "error",
+          "text": "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.deploy_app___deploy_app____billing\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct."
+        }
+      ],
+      "history_state": null,
+      "navigation": []
+    },
+    {
+      "path": "history-reason/alpha2-alpha2-A/chromium/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359814500
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/",
+            "notRestoredReasons": {
+              "src": null,
+              "id": null,
+              "url": "http://localhost:3730/",
+              "name": null,
+              "reasons": [
+                {
+                  "reason": "masked"
+                }
+              ],
+              "children": []
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "path": "matching-build/alpha2-alpha2-B-extra/chromium/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359643357
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    },
+    {
+      "path": "matching-build/alpha2-alpha2-B-extra/webkit/result.json",
+      "passed": 19,
+      "failed": 0,
+      "exception": null,
+      "console_errors": [],
+      "history_state": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 1791359646915
+        }
+      ],
+      "navigation": [
+        [
+          {
+            "type": "back_forward",
+            "name": "http://localhost:3730/"
+          }
+        ]
+      ]
+    }
+  ],
+  "uncached": [
+    {
+      "path": "uncached-stock/alpha-dev/result.json",
+      "browser": "chromium",
+      "passed": 4,
+      "failed": 0,
+      "exception": null
+    },
+    {
+      "path": "uncached-stock/alpha-dev/result.json",
+      "browser": "webkit",
+      "passed": 4,
+      "failed": 0,
+      "exception": null
+    },
+    {
+      "path": "uncached-stock/alpha2-dev/result.json",
+      "browser": "chromium",
+      "passed": 4,
+      "failed": 0,
+      "exception": null
+    },
+    {
+      "path": "uncached-stock/alpha2-dev/result.json",
+      "browser": "webkit",
+      "passed": 4,
+      "failed": 0,
+      "exception": null
+    },
+    {
+      "path": "uncached-stock/alpha2-prod/result.json",
+      "browser": "chromium",
+      "passed": 4,
+      "failed": 0,
+      "exception": null
+    },
+    {
+      "path": "uncached-stock/alpha2-prod/result.json",
+      "browser": "webkit",
+      "passed": 4,
+      "failed": 0,
+      "exception": null
+    },
+    {
+      "path": "uncached-stock/stable-dev/result.json",
+      "browser": "chromium",
+      "passed": 4,
+      "failed": 0,
+      "exception": null
+    },
+    {
+      "path": "uncached-stock/stable-dev/result.json",
+      "browser": "webkit",
+      "passed": 4,
+      "failed": 0,
+      "exception": null
+    },
+    {
+      "path": "uncached-stock/stable-prod/result.json",
+      "browser": "chromium",
+      "passed": 4,
+      "failed": 0,
+      "exception": null
+    },
+    {
+      "path": "uncached-stock/stable-prod/result.json",
+      "browser": "webkit",
+      "passed": 4,
+      "failed": 0,
+      "exception": null
+    }
+  ],
+  "initial_frames": {
+    "alpha2-alpha2-A": [
+      {
+        "time": 1791359127.84586,
+        "direction": "received",
+        "payload": "0{\"sid\":\"YUTmeMogUEvs-AdgAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+      },
+      {
+        "time": 1791359127.8598652,
+        "direction": "sent",
+        "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"dd169b16f2e5d2e4\",\"b084fc0c68f7c73a\",\"55a1ac872a57dc3a\",\"6dcff7b7e098ae21\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+      },
+      {
+        "time": 1791359127.861811,
+        "direction": "received",
+        "payload": "40/_event,{\"sid\":\"h2VqNPQCFs2W4hjKAAAB\"}"
+      },
+      {
+        "time": 1791359127.862709,
+        "direction": "received",
+        "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8730\",\"origin\":\"http://localhost:3730\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"FW1d73o6MyE9o0h9817/Kw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8730\",\"origin\":\"http://localhost:3730\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"FW1d73o6MyE9o0h9817/Kw==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3730\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3730/index\",\"full_raw_path\":\"http://localhost:3730/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"a49c1601-7125-41e0-dc30-cdfc565be48c\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"h2VqNPQCFs2W4hjKAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3730\",\"origin\":\"http://localhost:3730\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3730/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.deploy_app___deploy_app____session\":{\"identity_rx_state_\":\"5cc1969deb0141a98c48c8d4a7c2895f\"}}}]"
+      },
+      {
+        "time": 1791359127.8628612,
+        "direction": "received",
+        "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+      },
+      {
+        "time": 1791359128.384861,
+        "direction": "sent",
+        "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.deploy_app___deploy_app____account.use_report\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+      },
+      {
+        "time": 1791359128.421792,
+        "direction": "received",
+        "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.deploy_app___deploy_app____account\":{\"observed_rx_state_\":\"A:Starter:100:1\",\"used_rx_state_\":1,\"remaining_rx_state_\":99}}}]"
+      },
+      {
+        "time": 1791359128.4623811,
+        "direction": "sent",
+        "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.deploy_app___deploy_app____account.roomy\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+      }
+    ],
+    "alpha2-alpha2-B": [
+      {
+        "time": 1791359139.507963,
+        "direction": "received",
+        "payload": "0{\"sid\":\"XbSdHpZIel5FnU7sAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+      },
+      {
+        "time": 1791359139.516875,
+        "direction": "sent",
+        "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"dd169b16f2e5d2e4\",\"b084fc0c68f7c73a\",\"55a1ac872a57dc3a\",\"6dcff7b7e098ae21\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+      },
+      {
+        "time": 1791359139.5191748,
+        "direction": "received",
+        "payload": "40/_event,{\"sid\":\"nC9XYxdFAKyFDBGfAAAB\"}"
+      },
+      {
+        "time": 1791359139.519991,
+        "direction": "received",
+        "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8730\",\"origin\":\"http://localhost:3730\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CkkZKbITSX9xOxaNtGyKBQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8730\",\"origin\":\"http://localhost:3730\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"CkkZKbITSX9xOxaNtGyKBQ==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3730\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3730/index\",\"full_raw_path\":\"http://localhost:3730/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"25b9ad70-c11b-4bd7-d685-0ecea5f2f13b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"nC9XYxdFAKyFDBGfAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3730\",\"origin\":\"http://localhost:3730\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3730/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.deploy_app___deploy_app____account\":{\"density_rx_state_\":\"compact\",\"observed_rx_state_\":\"\",\"ordered_features_rx_state_\":{\"exports\":\"enabled\",\"reports\":\"enabled\"},\"quota_rx_state_\":250,\"remaining_rx_state_\":250,\"tier_rx_state_\":\"Professional\",\"used_rx_state_\":0},\"reflex___state____state.deploy_app___deploy_app____session\":{\"identity_rx_state_\":\"96cbe72d5f72468ca74a135a66274d0e\"}}}]"
+      },
+      {
+        "time": 1791359139.520104,
+        "direction": "received",
+        "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+      },
+      {
+        "time": 1791359140.0643468,
+        "direction": "sent",
+        "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.deploy_app___deploy_app____account.use_report\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+      },
+      {
+        "time": 1791359140.102371,
+        "direction": "received",
+        "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.deploy_app___deploy_app____account\":{\"used_rx_state_\":1,\"remaining_rx_state_\":249,\"observed_rx_state_\":\"B:Professional:250:1\"}}}]"
+      },
+      {
+        "time": 1791359140.1540322,
+        "direction": "sent",
+        "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.deploy_app___deploy_app____account.roomy\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+      }
+    ],
+    "alpha2-alpha2-B-extra": [
+      {
+        "time": 1791359151.16417,
+        "direction": "received",
+        "payload": "0{\"sid\":\"KpZYbyaBY91agiulAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+      },
+      {
+        "time": 1791359151.177869,
+        "direction": "sent",
+        "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"dd169b16f2e5d2e4\",\"b084fc0c68f7c73a\",\"55a1ac872a57dc3a\",\"6dcff7b7e098ae21\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+      },
+      {
+        "time": 1791359151.179501,
+        "direction": "received",
+        "payload": "40/_event,{\"sid\":\"PEREvddrnG9YTxQ0AAAB\"}"
+      },
+      {
+        "time": 1791359151.180435,
+        "direction": "received",
+        "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8730\",\"origin\":\"http://localhost:3730\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ism3V0pACkS/g6lHxNg1pA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8730\",\"origin\":\"http://localhost:3730\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"ism3V0pACkS/g6lHxNg1pA==\",\"sec-websocket-protocol\":\"0.10.0a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3730\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3730/index\",\"full_raw_path\":\"http://localhost:3730/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"b241adb4-e9c4-401f-f9df-abfd9b9e9269\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"PEREvddrnG9YTxQ0AAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3730\",\"origin\":\"http://localhost:3730\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3730/\"}},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.deploy_app___deploy_app____account\":{\"density_rx_state_\":\"compact\",\"observed_rx_state_\":\"\",\"ordered_features_rx_state_\":{\"exports\":\"enabled\",\"reports\":\"enabled\"},\"quota_rx_state_\":250,\"remaining_rx_state_\":250,\"tier_rx_state_\":\"Professional\",\"used_rx_state_\":0},\"reflex___state____state.deploy_app___deploy_app____session\":{\"identity_rx_state_\":\"c043c4ec12b54b8ebcf16aa59052e96d\"},\"reflex___state____state.deploy_app___deploy_app____billing\":{\"currency_rx_state_\":\"USD\"},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{}}}]"
+      },
+      {
+        "time": 1791359151.180725,
+        "direction": "sent",
+        "payload": "42/_event,[\"client_error\",{\"message\":\"Cannot process state update: no dispatch function for substate(s) \\\"reflex___state____state.deploy_app___deploy_app____billing\\\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.\",\"substate\":\"reflex___state____state.deploy_app___deploy_app____billing\",\"error_type\":\"dispatch_function_missing\"}]"
+      },
+      {
+        "time": 1791359151.180777,
+        "direction": "received",
+        "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+      },
+      {
+        "time": 1791359176.156812,
+        "direction": "received",
+        "payload": "2"
+      },
+      {
+        "time": 1791359176.156957,
+        "direction": "sent",
+        "payload": "3"
+      }
+    ],
+    "stable-alpha2-A": [
+      {
+        "time": 1791359246.4174678,
+        "direction": "received",
+        "payload": "0{\"sid\":\"fnkbclfPxKceSZWUAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+      },
+      {
+        "time": 1791359246.4175382,
+        "direction": "sent",
+        "payload": "40/_event,"
+      },
+      {
+        "time": 1791359246.4193752,
+        "direction": "received",
+        "payload": "40/_event,{\"sid\":\"owoLmVzRRZFJ3TzVAAAB\"}"
+      },
+      {
+        "time": 1791359246.4194639,
+        "direction": "sent",
+        "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+      },
+      {
+        "time": 1791359246.419518,
+        "direction": "sent",
+        "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+      },
+      {
+        "time": 1791359246.4211662,
+        "direction": "received",
+        "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8730\",\"origin\":\"http://localhost:3730\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"N+LMRYNgaWGN8dqD0IBPKg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8730\",\"origin\":\"http://localhost:3730\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"N+LMRYNgaWGN8dqD0IBPKg==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3730\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3730/index\",\"full_raw_path\":\"http://localhost:3730/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"8b22e418-210a-40a9-fa80-2ace4796735f\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"owoLmVzRRZFJ3TzVAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3730\",\"origin\":\"http://localhost:3730\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3730/\"}},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.deploy_app___deploy_app____account\":{\"density_rx_state_\":\"compact\",\"observed_rx_state_\":\"\",\"ordered_features_rx_state_\":{\"reports\":\"enabled\",\"exports\":\"enabled\"},\"quota_rx_state_\":100,\"remaining_rx_state_\":100,\"tier_rx_state_\":\"Starter\",\"used_rx_state_\":0},\"reflex___state____state.deploy_app___deploy_app____session\":{\"identity_rx_state_\":\"4f7f3f2ae9f842da93768cd806a68d4e\"},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{}}}]"
+      },
+      {
+        "time": 1791359246.421451,
+        "direction": "received",
+        "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+      },
+      {
+        "time": 1791359246.963618,
+        "direction": "sent",
+        "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.deploy_app___deploy_app____account.use_report\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+      }
+    ]
+  }
+}

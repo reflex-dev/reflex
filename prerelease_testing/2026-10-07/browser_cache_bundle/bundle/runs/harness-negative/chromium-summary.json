@@ -1,0 +1,35 @@
+{
+ "label": "harness-negative",
+ "base": "http://localhost:8709",
+ "browser": "chromium",
+ "browser_version": "153.0.8010.12",
+ "playwright_version": "1.63.0",
+ "phases": {
+  "cold_home": {
+   "checks": [
+    {
+     "name": "driver_exception",
+     "ok": false,
+     "detail": "Error('Page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8709/\\nCall log:\\n  - navigating to \"http://localhost:8709/\", waiting until \"domcontentloaded\"\\n')"
+    }
+   ],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8709/",
+     "failure": "net::ERR_CONNECTION_REFUSED"
+    }
+   ],
+   "cdp_requests": [
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8709/",
+     "type": "Document",
+     "finished_encoded_bytes": 0
+    }
+   ],
+   "websocket_frame_count": 0
+  }
+ },
+ "exception": "Error('Page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8709/\\nCall log:\\n  - navigating to \"http://localhost:8709/\", waiting until \"domcontentloaded\"\\n')",
+ "full_evidence": "chromium-full.json.gz"
+}

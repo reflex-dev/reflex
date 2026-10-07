@@ -1,0 +1,415 @@
+{
+  "name": "stable-bun-1",
+  "metadata": {
+    "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/lib/python3.12/site-packages/reflex/__init__.py",
+    "packages": {
+      "reflex-components-gridjs": "0.9.2.post1",
+      "reflex-components-recharts": "0.9.4.post1",
+      "reflex-components-code": "0.9.6",
+      "reflex-components-sonner": "0.9.4",
+      "reflex-components-lucide": "1.0.4",
+      "reflex-components-plotly": "0.9.7",
+      "reflex-components-moment": "0.9.4",
+      "reflex-components-radix": "0.9.10.post1",
+      "reflex-components-core": "0.9.10.post1",
+      "reflex-components-markdown": "0.9.4.post1",
+      "reflex-hosting-cli": "0.1.72",
+      "reflex-components-react-player": "0.9.2",
+      "reflex": "0.9.12",
+      "reflex-base": "0.9.12",
+      "reflex-components-dataeditor": "0.9.3.post1"
+    }
+  },
+  "servers": [
+    {
+      "tag": "dev",
+      "pid": 22440,
+      "command": [
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex",
+        "run",
+        "--frontend-port",
+        "3710",
+        "--backend-port",
+        "8710",
+        "--loglevel",
+        "debug"
+      ],
+      "after_cleanup": [],
+      "listeners_after_cleanup": ""
+    },
+    {
+      "tag": "warm-dev",
+      "pid": 22791,
+      "command": [
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex",
+        "run",
+        "--frontend-port",
+        "3710",
+        "--backend-port",
+        "8710",
+        "--loglevel",
+        "debug"
+      ],
+      "after_cleanup": [],
+      "listeners_after_cleanup": ""
+    },
+    {
+      "tag": "prod-initial",
+      "pid": 22890,
+      "command": [
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex",
+        "run",
+        "--frontend-port",
+        "3710",
+        "--backend-port",
+        "3710",
+        "--loglevel",
+        "debug",
+        "--env",
+        "prod"
+      ],
+      "after_cleanup": [],
+      "listeners_after_cleanup": ""
+    },
+    {
+      "tag": "prod-rebuild",
+      "pid": 22993,
+      "command": [
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex",
+        "run",
+        "--frontend-port",
+        "3710",
+        "--backend-port",
+        "3710",
+        "--loglevel",
+        "debug",
+        "--env",
+        "prod"
+      ],
+      "after_cleanup": [],
+      "listeners_after_cleanup": ""
+    }
+  ],
+  "full_evidence": "results.json.gz",
+  "checks": [
+    {
+      "phase": "base",
+      "browser": "chromium",
+      "pass": true,
+      "fresh_default": "Original customer"
+    },
+    {
+      "phase": "base",
+      "browser": "webkit",
+      "pass": true,
+      "fresh_default": "Original customer"
+    },
+    {
+      "phase": "memo-edit",
+      "browser": "chromium",
+      "pass": true,
+      "fresh_default": "New customer"
+    },
+    {
+      "phase": "memo-edit",
+      "browser": "webkit",
+      "pass": true,
+      "fresh_default": "New customer"
+    },
+    {
+      "phase": "dependency-add",
+      "browser": "chromium",
+      "pass": true,
+      "fresh_default": "New customer"
+    },
+    {
+      "phase": "dependency-add",
+      "browser": "webkit",
+      "pass": true,
+      "fresh_default": "New customer"
+    },
+    {
+      "phase": "dependency-remove",
+      "browser": "chromium",
+      "pass": true,
+      "fresh_default": "New customer"
+    },
+    {
+      "phase": "dependency-remove",
+      "browser": "webkit",
+      "pass": true,
+      "fresh_default": "New customer"
+    },
+    {
+      "phase": "json-format",
+      "browser": "chromium",
+      "pass": true,
+      "fresh_default": "New customer"
+    },
+    {
+      "phase": "json-format",
+      "browser": "webkit",
+      "pass": true,
+      "fresh_default": "New customer"
+    },
+    {
+      "phase": "warm-restart",
+      "browser": "chromium",
+      "pass": true
+    },
+    {
+      "phase": "warm-restart",
+      "browser": "webkit",
+      "pass": true
+    },
+    {
+      "phase": "prod-initial",
+      "browser": "chromium",
+      "pass": true
+    },
+    {
+      "phase": "prod-initial",
+      "browser": "webkit",
+      "pass": true
+    },
+    {
+      "phase": "prod-rebuild",
+      "browser": "chromium",
+      "pass": true
+    },
+    {
+      "phase": "prod-rebuild",
+      "browser": "webkit",
+      "pass": true
+    }
+  ],
+  "install_counts": {
+    "base": {
+      "install_count_before": 1,
+      "install_count_after": 1
+    },
+    "memo-edit": {
+      "install_count_before": 1,
+      "install_count_after": 2
+    },
+    "dependency-add": {
+      "install_count_before": 2,
+      "install_count_after": 3
+    },
+    "dependency-remove": {
+      "install_count_before": 3,
+      "install_count_after": 4
+    },
+    "json-format": {
+      "install_count_before": 4,
+      "install_count_after": 5
+    },
+    "prod-initial": {},
+    "prod-rebuild": {}
+  },
+  "browsers": {
+    "chromium": {
+      "version": "153.0.8010.12",
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "reload_protocol_transients": [
+        "Page.reload: Protocol error (Page.reload): Not attached to an active page\nCall log:\n  - waiting for navigation until \"domcontentloaded\"\n"
+      ],
+      "console_grouped": [
+        {
+          "phase": "dependency-add",
+          "type": "error",
+          "text": "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.",
+          "count": 2
+        },
+        {
+          "phase": "dependency-add",
+          "type": "error",
+          "text": "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'useContext')\n    at exports.useContext (http://localhost:3710/node_modules/.vite/deps/react.js?v=e6ef3f07:706:22)\n    at x (http://localhost:3710/node_modules/.vite/deps/react-moment.js?v=8cdaef37:3190:37)\n    at xt (http://localhost:3710/node_modules/.vite/deps/react-moment.js?v=8cdaef37:3525:24)\n    at Object.react_stack_bottom_frame (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=e7b238d3:12866:12)\n    at renderWithHooks (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=e7b238d3:4213:19)\n    at updateFunctionComponent (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=e7b238d3:5569:16)\n    at beginWork (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=e7b238d3:6140:20)\n    at runWithFiberInDEV (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=e7b238d3:851:66)\n    at performUnitOfWork (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=e7b238d3:8429:92)\n    at workLoopSync (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=e7b238d3:8325:37) The above error occurred in the <xt> component. React will try to recreate this component tree from scratch using the error boundary you provided, m.",
+          "count": 1
+        },
+        {
+          "phase": "warm-restart",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=d074c869-24aa-4e01-8ee1-d5426d626d62&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "count": 92
+        },
+        {
+          "phase": "prod-initial",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=d074c869-24aa-4e01-8ee1-d5426d626d62&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "count": 7
+        },
+        {
+          "phase": "prod-rebuild",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:3710/_event/?token=d074c869-24aa-4e01-8ee1-d5426d626d62&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET",
+          "count": 2
+        },
+        {
+          "phase": "prod-rebuild",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:3710/_event/?token=d074c869-24aa-4e01-8ee1-d5426d626d62&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "count": 10
+        }
+      ],
+      "console_count": 167,
+      "websocket_count": 150
+    },
+    "webkit": {
+      "version": "26.6",
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "console_grouped": [
+        {
+          "phase": "memo-edit",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "memo-edit",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "memo-edit",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "memo-edit",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-add",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-add",
+          "type": "error",
+          "text": "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.",
+          "count": 2
+        },
+        {
+          "phase": "dependency-add",
+          "type": "error",
+          "text": "%o\n\n%s\n\n%s\n TypeError: null is not an object (evaluating 'dispatcher.useContext') The above error occurred in the <xt> component. React will try to recreate this component tree from scratch using the error boundary you provided, m.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-add",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-add",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-add",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-remove",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "json-format",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 2
+        },
+        {
+          "phase": "json-format",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:3710/?token=wgiNzQLLRTR4' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "json-format",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: Could not connect to the server.",
+          "count": 30
+        },
+        {
+          "phase": "warm-restart",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "warm-restart",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:3710/?token=ITdAv_y9fN5j' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "warm-restart",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: Could not connect to the server.",
+          "count": 8
+        },
+        {
+          "phase": "warm-restart",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "warm-restart",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "warm-restart",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "prod-initial",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:3710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 2
+        },
+        {
+          "phase": "prod-initial",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:3710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: Could not connect to the server.",
+          "count": 50
+        },
+        {
+          "phase": "prod-rebuild",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:3710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "prod-rebuild",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:3710/_event/?token=f9e9be4a-8d10-4346-c005-0964ce693198&EIO=4&transport=websocket' failed: Could not connect to the server.",
+          "count": 3
+        }
+      ],
+      "console_count": 166,
+      "websocket_count": 150
+    }
+  }
+}

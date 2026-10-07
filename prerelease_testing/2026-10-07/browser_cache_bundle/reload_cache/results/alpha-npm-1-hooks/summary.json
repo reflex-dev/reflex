@@ -1,0 +1,289 @@
+{
+  "name": "alpha-npm-1-hooks",
+  "metadata": {
+    "reflex_file": "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha/lib/python3.12/site-packages/reflex/__init__.py",
+    "packages": {
+      "reflex-components-recharts": "0.10.0a1",
+      "reflex-components-moment": "0.10.0a1",
+      "reflex-components-markdown": "0.10.0a1",
+      "reflex-build-sdk": "0.0.5",
+      "reflex-base": "0.10.0a1",
+      "reflex": "0.10.0a1",
+      "reflex-components-plotly": "0.10.0a1",
+      "reflex-components-sonner": "0.9.4",
+      "reflex-components-lucide": "1.0.4",
+      "reflex-components-radix": "0.10.0a1",
+      "reflex-hosting-cli": "0.1.73a1",
+      "reflex-components-gridjs": "0.10.0a1",
+      "reflex-components-code": "0.10.0a1",
+      "reflex-components-react-player": "0.9.2",
+      "reflex-components-core": "0.10.0a1",
+      "reflex-components-dataeditor": "0.9.3.post1"
+    }
+  },
+  "servers": [
+    {
+      "tag": "dev",
+      "pid": 27496,
+      "command": [
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha/bin/reflex",
+        "run",
+        "--frontend-port",
+        "3710",
+        "--backend-port",
+        "8710",
+        "--loglevel",
+        "debug"
+      ],
+      "after_cleanup": [],
+      "listeners_after_cleanup": ""
+    },
+    {
+      "tag": "warm-dev",
+      "pid": 28823,
+      "command": [
+        "/private/tmp/reflex-prerelease-macos-pass2/envs/alpha/bin/reflex",
+        "run",
+        "--frontend-port",
+        "3710",
+        "--backend-port",
+        "8710",
+        "--loglevel",
+        "debug"
+      ],
+      "after_cleanup": [],
+      "listeners_after_cleanup": ""
+    }
+  ],
+  "full_evidence": "results.json.gz",
+  "checks": [
+    {
+      "phase": "base",
+      "browser": "chromium",
+      "pass": true,
+      "fresh_default": "Original customer",
+      "fresh_mounts": "[\"base:left\",\"base:right\"]"
+    },
+    {
+      "phase": "base",
+      "browser": "webkit",
+      "pass": true,
+      "fresh_default": "Original customer",
+      "fresh_mounts": "[\"base:left\",\"base:right\"]"
+    },
+    {
+      "phase": "memo-edit",
+      "browser": "chromium",
+      "pass": true,
+      "fresh_default": "New customer",
+      "fresh_mounts": "[\"memo-edit:left\",\"memo-edit:right\"]"
+    },
+    {
+      "phase": "memo-edit",
+      "browser": "webkit",
+      "pass": true,
+      "fresh_default": "New customer",
+      "fresh_mounts": "[\"memo-edit:left\",\"memo-edit:right\"]"
+    },
+    {
+      "phase": "dependency-add",
+      "browser": "chromium",
+      "pass": true,
+      "fresh_default": "New customer",
+      "fresh_mounts": "[\"dependency-add:left\",\"dependency-add:right\"]"
+    },
+    {
+      "phase": "dependency-add",
+      "browser": "webkit",
+      "pass": true,
+      "fresh_default": "New customer",
+      "fresh_mounts": "[\"dependency-add:left\",\"dependency-add:right\"]"
+    },
+    {
+      "phase": "dependency-remove",
+      "browser": "chromium",
+      "pass": true,
+      "fresh_default": "New customer",
+      "fresh_mounts": "[\"dependency-remove:left\",\"dependency-remove:right\"]"
+    },
+    {
+      "phase": "dependency-remove",
+      "browser": "webkit",
+      "pass": true,
+      "fresh_default": "New customer",
+      "fresh_mounts": "[\"dependency-remove:left\",\"dependency-remove:right\"]"
+    },
+    {
+      "phase": "json-format",
+      "browser": "chromium",
+      "pass": true,
+      "fresh_default": "New customer",
+      "fresh_mounts": "[\"json-format:left\",\"json-format:right\"]"
+    },
+    {
+      "phase": "json-format",
+      "browser": "webkit",
+      "pass": true,
+      "fresh_default": "New customer",
+      "fresh_mounts": "[\"json-format:left\",\"json-format:right\"]"
+    },
+    {
+      "phase": "warm-restart",
+      "browser": "chromium",
+      "pass": true
+    },
+    {
+      "phase": "warm-restart",
+      "browser": "webkit",
+      "pass": true
+    }
+  ],
+  "install_counts": {
+    "base": {
+      "install_count_before": 1,
+      "install_count_after": 1
+    },
+    "memo-edit": {
+      "install_count_before": 1,
+      "install_count_after": 2
+    },
+    "dependency-add": {
+      "install_count_before": 2,
+      "install_count_after": 3
+    },
+    "dependency-remove": {
+      "install_count_before": 3,
+      "install_count_after": 4
+    },
+    "json-format": {
+      "install_count_before": 4,
+      "install_count_after": 5
+    }
+  },
+  "browsers": {
+    "chromium": {
+      "version": "153.0.8010.12",
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "console_grouped": [
+        {
+          "phase": "dependency-add",
+          "type": "error",
+          "text": "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.",
+          "count": 2
+        },
+        {
+          "phase": "dependency-add",
+          "type": "error",
+          "text": "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'useContext')\n    at exports.useContext (http://localhost:3710/node_modules/.vite/deps/react.js?v=deb40c7c:727:22)\n    at x (http://localhost:3710/node_modules/.vite/deps/react-moment.js?v=07153847:3295:37)\n    at xt (http://localhost:3710/node_modules/.vite/deps/react-moment.js?v=07153847:3630:24)\n    at Object.react_stack_bottom_frame (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=436a7574:14142:12)\n    at renderWithHooks (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=436a7574:4400:19)\n    at updateFunctionComponent (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=436a7574:5775:16)\n    at beginWork (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=436a7574:6391:20)\n    at runWithFiberInDEV (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=436a7574:944:66)\n    at performUnitOfWork (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=436a7574:9148:92)\n    at workLoopSync (http://localhost:3710/node_modules/.vite/deps/react-dom_client.js?v=436a7574:9044:37) The above error occurred in the <xt> component. React will try to recreate this component tree from scratch using the error boundary you provided, C.",
+          "count": 1
+        },
+        {
+          "phase": "warm-restart",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=7e724394-a5c4-4053-d76d-fa120174f98a&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "count": 106
+        }
+      ],
+      "console_count": 177,
+      "websocket_count": 150
+    },
+    "webkit": {
+      "version": "26.6",
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "console_grouped": [
+        {
+          "phase": "memo-edit",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "memo-edit",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "memo-edit",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "memo-edit",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=c4ac1dc4-d206-44fc-d3ca-86ff382ca363&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-add",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=c4ac1dc4-d206-44fc-d3ca-86ff382ca363&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-add",
+          "type": "error",
+          "text": "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.",
+          "count": 2
+        },
+        {
+          "phase": "dependency-add",
+          "type": "error",
+          "text": "%o\n\n%s\n\n%s\n TypeError: null is not an object (evaluating 'dispatcher.useContext') The above error occurred in the <xt> component. React will try to recreate this component tree from scratch using the error boundary you provided, C.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-add",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-add",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-add",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing.",
+          "count": 1
+        },
+        {
+          "phase": "dependency-remove",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=c4ac1dc4-d206-44fc-d3ca-86ff382ca363&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "json-format",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=c4ac1dc4-d206-44fc-d3ca-86ff382ca363&EIO=4&transport=websocket' failed: The network connection was lost.",
+          "count": 2
+        },
+        {
+          "phase": "json-format",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:3710/?token=U3ab15mwQTIH' failed: The network connection was lost.",
+          "count": 1
+        },
+        {
+          "phase": "json-format",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=c4ac1dc4-d206-44fc-d3ca-86ff382ca363&EIO=4&transport=websocket' failed: Could not connect to the server.",
+          "count": 88
+        }
+      ],
+      "console_count": 173,
+      "websocket_count": 150
+    }
+  },
+  "driver_sha256": "5a7d1076aaf43dff57c9764a522bc6717923f7c2b55c36a85f80d9969698e75f",
+  "format_target": "web"
+}

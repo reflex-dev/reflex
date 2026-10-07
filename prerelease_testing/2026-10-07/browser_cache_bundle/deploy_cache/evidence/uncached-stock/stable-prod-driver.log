@@ -1,0 +1,98 @@
+WARN `--no-project` was provided, but no project was found
+{
+  "version": "stable",
+  "mode": "prod",
+  "command": [
+    "uv",
+    "--no-config",
+    "run",
+    "--no-project",
+    "--python",
+    "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/python",
+    "reflex",
+    "run",
+    "--env",
+    "prod",
+    "--frontend-port",
+    "3732",
+    "--backend-port",
+    "3732",
+    "--loglevel",
+    "debug"
+  ],
+  "browsers": {
+    "chromium": {
+      "checks": [
+        {
+          "name": "first_refresh",
+          "actual": "Available:10",
+          "expected": "Available:10",
+          "ok": true,
+          "time": 1791359552.2565062
+        },
+        {
+          "name": "reload_after_external_sale",
+          "actual": "Available:0",
+          "expected": "Available:0",
+          "ok": true,
+          "time": 1791359552.8183181
+        },
+        {
+          "name": "refresh_after_external_restock",
+          "actual": "Available:10",
+          "expected": "Available:10",
+          "ok": true,
+          "time": 1791359553.147271
+        },
+        {
+          "name": "full_reload_recovers",
+          "actual": "Available:10",
+          "expected": "Available:10",
+          "ok": true,
+          "time": 1791359553.739236
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "browser_version": "153.0.8010.12"
+    },
+    "webkit": {
+      "checks": [
+        {
+          "name": "first_refresh",
+          "actual": "Available:10",
+          "expected": "Available:10",
+          "ok": true,
+          "time": 1791359554.877473
+        },
+        {
+          "name": "reload_after_external_sale",
+          "actual": "Available:0",
+          "expected": "Available:0",
+          "ok": true,
+          "time": 1791359555.4316878
+        },
+        {
+          "name": "refresh_after_external_restock",
+          "actual": "Available:10",
+          "expected": "Available:10",
+          "ok": true,
+          "time": 1791359555.736334
+        },
+        {
+          "name": "full_reload_recovers",
+          "actual": "Available:10",
+          "expected": "Available:10",
+          "ok": true,
+          "time": 1791359556.313186
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "browser_version": "26.6"
+    }
+  },
+  "cleanup_survivors": []
+}

@@ -1,0 +1,9 @@
+WARN `--no-project` was provided, but no project was found
+{"step": "initial", "tea": "Tea: 10", "coffee": "Coffee: 20", "total": "Total: 30", "audit": {}}
+{"step": "values", "tea": "Tea: 10", "coffee": "Coffee: 20", "total": "Total: 30", "audit": {"backend": {"coffee": 19, "tea": 9}, "cached_total": 30, "operation": "values"}}
+{"step": "values-reload", "tea": "Tea: 9", "coffee": "Coffee: 19", "total": "Total: 30", "audit": {"backend": {"coffee": 19, "tea": 9}, "cached_total": 30, "operation": "values"}}
+{"step": "values-reassign", "tea": "Tea: 9", "coffee": "Coffee: 19", "total": "Total: 28", "audit": {"backend": {"coffee": 19, "tea": 9}, "cached_total": 28, "operation": "reassign"}}
+{"step": "items", "tea": "Tea: 10", "coffee": "Coffee: 20", "total": "Total: 30", "audit": {"backend": {"coffee": 19, "tea": 9}, "cached_total": 30, "operation": "items"}}
+{"step": "items-reload", "tea": "Tea: 9", "coffee": "Coffee: 19", "total": "Total: 30", "audit": {"backend": {"coffee": 19, "tea": 9}, "cached_total": 30, "operation": "items"}}
+{"step": "items-reassign", "tea": "Tea: 9", "coffee": "Coffee: 19", "total": "Total: 28", "audit": {"backend": {"coffee": 19, "tea": 9}, "cached_total": 28, "operation": "reassign"}}
+{"step": "keys", "tea": "Tea: 9", "coffee": "Coffee: 19", "total": "Total: 28", "audit": {"backend": {"coffee": 19, "tea": 9}, "cached_total": 28, "operation": "keys"}}

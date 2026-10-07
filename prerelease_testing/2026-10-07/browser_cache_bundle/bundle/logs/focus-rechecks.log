@@ -1,0 +1,13 @@
+WARN `--no-project` was provided, but no project was found
+START alpha2-lazy1-focus-recheck PID 23384
+READY alpha2-lazy1-focus-recheck
+WARN `--no-project` was provided, but no project was found
+{".js": {"files": 318, "raw_bytes": 6546430, "gzip_estimate_bytes": 2039423}, ".css": {"files": 2, "raw_bytes": 709730, "gzip_estimate_bytes": 85164}}
+DONE alpha2-lazy1-focus-recheck
+STOPPED alpha2-lazy1-focus-recheck
+START alpha-lazy0-focus-recheck PID 23570
+READY alpha-lazy0-focus-recheck
+WARN `--no-project` was provided, but no project was found
+{".js": {"files": 321, "raw_bytes": 6475647, "gzip_estimate_bytes": 2033108}, ".css": {"files": 2, "raw_bytes": 709730, "gzip_estimate_bytes": 85164}}
+DONE alpha-lazy0-focus-recheck
+STOPPED alpha-lazy0-focus-recheck

@@ -1,0 +1,1 @@
+"""Minimal package-cache experiment."""

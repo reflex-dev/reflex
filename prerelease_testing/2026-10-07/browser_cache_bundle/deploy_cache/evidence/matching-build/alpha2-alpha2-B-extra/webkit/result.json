@@ -1,0 +1,172 @@
+{
+  "browser": "webkit",
+  "checks": [
+    {
+      "name": "static_build",
+      "actual": "Frontend build B",
+      "expected": "Frontend build B",
+      "ok": true
+    },
+    {
+      "name": "live_quota_before_event",
+      "actual": "250",
+      "expected": "250",
+      "ok": true
+    },
+    {
+      "name": "live_tier_before_event",
+      "actual": "Professional",
+      "expected": "Professional",
+      "ok": true
+    },
+    {
+      "name": "computed_remaining_before_event",
+      "actual": "250",
+      "expected": "250",
+      "ok": true
+    },
+    {
+      "name": "dict_insertion_order",
+      "actual": [
+        "exports",
+        "reports"
+      ],
+      "expected": [
+        "exports",
+        "reports"
+      ],
+      "ok": true
+    },
+    {
+      "name": "factory_identity_length",
+      "actual": 32,
+      "expected": 32,
+      "ok": true
+    },
+    {
+      "name": "default_not_persisted",
+      "actual": null,
+      "expected": null,
+      "ok": true
+    },
+    {
+      "name": "backend_echo",
+      "actual": "B:Professional:250:1",
+      "expected": "B:Professional:250:1",
+      "ok": true
+    },
+    {
+      "name": "remaining_after_event",
+      "actual": "249",
+      "expected": "249",
+      "ok": true
+    },
+    {
+      "name": "reload_keeps_used",
+      "actual": "1",
+      "expected": "1",
+      "ok": true
+    },
+    {
+      "name": "reload_keeps_identity",
+      "actual": "f72cfe2a1eb4419298a5d7bc7fb32eca",
+      "expected": "f72cfe2a1eb4419298a5d7bc7fb32eca",
+      "ok": true
+    },
+    {
+      "name": "reload_restores_storage",
+      "actual": "roomy",
+      "expected": "roomy",
+      "ok": true
+    },
+    {
+      "name": "external_document_loaded",
+      "actual": "Dashboard help",
+      "expected": "Dashboard help",
+      "ok": true
+    },
+    {
+      "name": "history_keeps_used",
+      "actual": "1",
+      "expected": "1",
+      "ok": true
+    },
+    {
+      "name": "history_keeps_identity",
+      "actual": "f72cfe2a1eb4419298a5d7bc7fb32eca",
+      "expected": "f72cfe2a1eb4419298a5d7bc7fb32eca",
+      "ok": true
+    },
+    {
+      "name": "history_event_works",
+      "actual": "B:Professional:250:2",
+      "expected": "B:Professional:250:2",
+      "ok": true
+    },
+    {
+      "name": "independent_session_used",
+      "actual": "0",
+      "expected": "0",
+      "ok": true
+    },
+    {
+      "name": "independent_factory_identity",
+      "actual": true,
+      "expected": true,
+      "ok": true
+    },
+    {
+      "name": "independent_storage",
+      "actual": "compact",
+      "expected": "compact",
+      "ok": true
+    }
+  ],
+  "pageerrors": [],
+  "failed_requests": [],
+  "http_errors": [],
+  "navigation": [
+    [
+      {
+        "type": "back_forward",
+        "name": "http://localhost:3730/"
+      }
+    ]
+  ],
+  "bfcache_requested": false,
+  "browser_version": "26.6",
+  "history_state": [
+    {
+      "type": "pageshow",
+      "persisted": false,
+      "time": 1791359646915
+    }
+  ],
+  "console_errors": [],
+  "history_events": [
+    {
+      "type": "log",
+      "text": "HISTORY_pagehide:false"
+    },
+    {
+      "type": "log",
+      "text": "HISTORY_pageshow:false"
+    },
+    {
+      "type": "log",
+      "text": "HISTORY_pagehide:false"
+    },
+    {
+      "type": "log",
+      "text": "HISTORY_pageshow:false"
+    },
+    {
+      "type": "log",
+      "text": "HISTORY_pageshow:false"
+    },
+    {
+      "type": "log",
+      "text": "HISTORY_pageshow:false"
+    }
+  ]
+}

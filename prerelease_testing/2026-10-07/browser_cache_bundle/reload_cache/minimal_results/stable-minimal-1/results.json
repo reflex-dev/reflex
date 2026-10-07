@@ -1,0 +1,1350 @@
+{
+  "name": "stable-minimal-1",
+  "checks": [
+    {
+      "phase": "revision-A",
+      "browser": "chromium",
+      "pass": true,
+      "count_after": 1
+    },
+    {
+      "phase": "revision-A",
+      "browser": "webkit",
+      "pass": true,
+      "count_after": 1
+    },
+    {
+      "phase": "revision-B",
+      "browser": "chromium",
+      "pass": true,
+      "count_after": 2
+    },
+    {
+      "phase": "revision-B",
+      "browser": "webkit",
+      "pass": true,
+      "count_after": 2
+    },
+    {
+      "phase": "revision-C",
+      "browser": "chromium",
+      "pass": true,
+      "count_after": 3
+    },
+    {
+      "phase": "revision-C",
+      "browser": "webkit",
+      "pass": true,
+      "count_after": 3
+    }
+  ],
+  "snapshots": {
+    "revision-A": {
+      "installs_before": 1,
+      "installs_after": 1,
+      "reflex.lock/package.json": {
+        "sha256": "b91d561eeb6c910bbdbe967374a3f53af4bbd1b83e082f42d1c1448e60d88f18",
+        "semantic_sha256": "61af03ffe1f20ddcad7ab1c7b556d1cd002d65d0ec607711958d5e8ee5aa6f48",
+        "content": {
+          "name": "reflex",
+          "type": "module",
+          "scripts": {
+            "dev": "react-router dev --host",
+            "export": "react-router build"
+          },
+          "dependencies": {
+            "@emotion/react": "^11.14.0",
+            "@radix-ui/themes": "^3.3.0",
+            "@react-router/dev": "^8.4.0",
+            "@react-router/fs-routes": "^8.4.0",
+            "@react-router/node": "^8.4.0",
+            "autoprefixer": "^10.5.4",
+            "isbot": "^5.2.2",
+            "lucide-react": "^1.26.0",
+            "mergician": "^2.0.2",
+            "postcss": "^8.5.26",
+            "postcss-import": "^17.0.0",
+            "react": "^19.2.8",
+            "react-dom": "^19.2.8",
+            "react-error-boundary": "^6.1.2",
+            "react-helmet": "^6.1.0",
+            "react-router": "^8.4.0",
+            "socket.io-client": "^4.8.3",
+            "sonner": "^2.0.8",
+            "universal-cookie": "^8.1.2",
+            "vite": "^8.2.2"
+          },
+          "overrides": {}
+        }
+      },
+      "reflex.lock/package-lock.json": {
+        "sha256": "552c3841b1770292092d9fed2d5a098407083e2083a13fa49d1ee7115e2525a9",
+        "semantic_sha256": "de4cc2654b6c038b438a41ed20d077e7aefc8c255d554a4be1b7ae6e77fb1c2b",
+        "content": {
+          "root_package": {
+            "name": "reflex",
+            "dependencies": {
+              "@emotion/react": "^11.14.0",
+              "@radix-ui/themes": "^3.3.0",
+              "@react-router/dev": "^8.4.0",
+              "@react-router/fs-routes": "^8.4.0",
+              "@react-router/node": "^8.4.0",
+              "autoprefixer": "^10.5.4",
+              "isbot": "^5.2.2",
+              "lucide-react": "^1.26.0",
+              "mergician": "^2.0.2",
+              "postcss": "^8.5.26",
+              "postcss-import": "^17.0.0",
+              "react": "^19.2.8",
+              "react-dom": "^19.2.8",
+              "react-error-boundary": "^6.1.2",
+              "react-helmet": "^6.1.0",
+              "react-router": "^8.4.0",
+              "socket.io-client": "^4.8.3",
+              "sonner": "^2.0.8",
+              "universal-cookie": "^8.1.2",
+              "vite": "^8.2.2"
+            }
+          }
+        }
+      },
+      ".web/package.json": {
+        "sha256": "b91d561eeb6c910bbdbe967374a3f53af4bbd1b83e082f42d1c1448e60d88f18",
+        "semantic_sha256": "61af03ffe1f20ddcad7ab1c7b556d1cd002d65d0ec607711958d5e8ee5aa6f48",
+        "content": {
+          "name": "reflex",
+          "type": "module",
+          "scripts": {
+            "dev": "react-router dev --host",
+            "export": "react-router build"
+          },
+          "dependencies": {
+            "@emotion/react": "^11.14.0",
+            "@radix-ui/themes": "^3.3.0",
+            "@react-router/dev": "^8.4.0",
+            "@react-router/fs-routes": "^8.4.0",
+            "@react-router/node": "^8.4.0",
+            "autoprefixer": "^10.5.4",
+            "isbot": "^5.2.2",
+            "lucide-react": "^1.26.0",
+            "mergician": "^2.0.2",
+            "postcss": "^8.5.26",
+            "postcss-import": "^17.0.0",
+            "react": "^19.2.8",
+            "react-dom": "^19.2.8",
+            "react-error-boundary": "^6.1.2",
+            "react-helmet": "^6.1.0",
+            "react-router": "^8.4.0",
+            "socket.io-client": "^4.8.3",
+            "sonner": "^2.0.8",
+            "universal-cookie": "^8.1.2",
+            "vite": "^8.2.2"
+          },
+          "overrides": {}
+        }
+      },
+      ".web/package-lock.json": {
+        "sha256": "552c3841b1770292092d9fed2d5a098407083e2083a13fa49d1ee7115e2525a9",
+        "semantic_sha256": "de4cc2654b6c038b438a41ed20d077e7aefc8c255d554a4be1b7ae6e77fb1c2b",
+        "content": {
+          "root_package": {
+            "name": "reflex",
+            "dependencies": {
+              "@emotion/react": "^11.14.0",
+              "@radix-ui/themes": "^3.3.0",
+              "@react-router/dev": "^8.4.0",
+              "@react-router/fs-routes": "^8.4.0",
+              "@react-router/node": "^8.4.0",
+              "autoprefixer": "^10.5.4",
+              "isbot": "^5.2.2",
+              "lucide-react": "^1.26.0",
+              "mergician": "^2.0.2",
+              "postcss": "^8.5.26",
+              "postcss-import": "^17.0.0",
+              "react": "^19.2.8",
+              "react-dom": "^19.2.8",
+              "react-error-boundary": "^6.1.2",
+              "react-helmet": "^6.1.0",
+              "react-router": "^8.4.0",
+              "socket.io-client": "^4.8.3",
+              "sonner": "^2.0.8",
+              "universal-cookie": "^8.1.2",
+              "vite": "^8.2.2"
+            }
+          }
+        }
+      },
+      "next_rendered_manifest": {
+        "name": "reflex",
+        "type": "module",
+        "scripts": {
+          "dev": "react-router dev --host",
+          "export": "react-router build"
+        },
+        "dependencies": {
+          "@emotion/react": "^11.14.0",
+          "@radix-ui/themes": "^3.3.0",
+          "@react-router/dev": "^8.4.0",
+          "@react-router/fs-routes": "^8.4.0",
+          "@react-router/node": "^8.4.0",
+          "autoprefixer": "^10.5.4",
+          "isbot": "^5.2.2",
+          "lucide-react": "^1.26.0",
+          "mergician": "^2.0.2",
+          "postcss": "^8.5.26",
+          "postcss-import": "^17.0.0",
+          "react": "^19.2.8",
+          "react-dom": "^19.2.8",
+          "react-error-boundary": "^6.1.2",
+          "react-helmet": "^6.1.0",
+          "react-router": "^8.4.0",
+          "socket.io-client": "^4.8.3",
+          "sonner": "^2.0.8",
+          "universal-cookie": "^8.1.2",
+          "vite": "^8.2.2"
+        },
+        "devDependencies": {},
+        "overrides": {}
+      },
+      "semantic_differences": {
+        "devDependencies": {
+          "current": null,
+          "rendered": {}
+        }
+      }
+    },
+    "revision-B": {
+      "installs_before": 1,
+      "installs_after": 2,
+      "reflex.lock/package.json": {
+        "sha256": "b91d561eeb6c910bbdbe967374a3f53af4bbd1b83e082f42d1c1448e60d88f18",
+        "semantic_sha256": "61af03ffe1f20ddcad7ab1c7b556d1cd002d65d0ec607711958d5e8ee5aa6f48",
+        "content": {
+          "name": "reflex",
+          "type": "module",
+          "scripts": {
+            "dev": "react-router dev --host",
+            "export": "react-router build"
+          },
+          "dependencies": {
+            "@emotion/react": "^11.14.0",
+            "@radix-ui/themes": "^3.3.0",
+            "@react-router/dev": "^8.4.0",
+            "@react-router/fs-routes": "^8.4.0",
+            "@react-router/node": "^8.4.0",
+            "autoprefixer": "^10.5.4",
+            "isbot": "^5.2.2",
+            "lucide-react": "^1.26.0",
+            "mergician": "^2.0.2",
+            "postcss": "^8.5.26",
+            "postcss-import": "^17.0.0",
+            "react": "^19.2.8",
+            "react-dom": "^19.2.8",
+            "react-error-boundary": "^6.1.2",
+            "react-helmet": "^6.1.0",
+            "react-router": "^8.4.0",
+            "socket.io-client": "^4.8.3",
+            "sonner": "^2.0.8",
+            "universal-cookie": "^8.1.2",
+            "vite": "^8.2.2"
+          },
+          "overrides": {}
+        }
+      },
+      "reflex.lock/package-lock.json": {
+        "sha256": "552c3841b1770292092d9fed2d5a098407083e2083a13fa49d1ee7115e2525a9",
+        "semantic_sha256": "de4cc2654b6c038b438a41ed20d077e7aefc8c255d554a4be1b7ae6e77fb1c2b",
+        "content": {
+          "root_package": {
+            "name": "reflex",
+            "dependencies": {
+              "@emotion/react": "^11.14.0",
+              "@radix-ui/themes": "^3.3.0",
+              "@react-router/dev": "^8.4.0",
+              "@react-router/fs-routes": "^8.4.0",
+              "@react-router/node": "^8.4.0",
+              "autoprefixer": "^10.5.4",
+              "isbot": "^5.2.2",
+              "lucide-react": "^1.26.0",
+              "mergician": "^2.0.2",
+              "postcss": "^8.5.26",
+              "postcss-import": "^17.0.0",
+              "react": "^19.2.8",
+              "react-dom": "^19.2.8",
+              "react-error-boundary": "^6.1.2",
+              "react-helmet": "^6.1.0",
+              "react-router": "^8.4.0",
+              "socket.io-client": "^4.8.3",
+              "sonner": "^2.0.8",
+              "universal-cookie": "^8.1.2",
+              "vite": "^8.2.2"
+            }
+          }
+        }
+      },
+      ".web/package.json": {
+        "sha256": "b91d561eeb6c910bbdbe967374a3f53af4bbd1b83e082f42d1c1448e60d88f18",
+        "semantic_sha256": "61af03ffe1f20ddcad7ab1c7b556d1cd002d65d0ec607711958d5e8ee5aa6f48",
+        "content": {
+          "name": "reflex",
+          "type": "module",
+          "scripts": {
+            "dev": "react-router dev --host",
+            "export": "react-router build"
+          },
+          "dependencies": {
+            "@emotion/react": "^11.14.0",
+            "@radix-ui/themes": "^3.3.0",
+            "@react-router/dev": "^8.4.0",
+            "@react-router/fs-routes": "^8.4.0",
+            "@react-router/node": "^8.4.0",
+            "autoprefixer": "^10.5.4",
+            "isbot": "^5.2.2",
+            "lucide-react": "^1.26.0",
+            "mergician": "^2.0.2",
+            "postcss": "^8.5.26",
+            "postcss-import": "^17.0.0",
+            "react": "^19.2.8",
+            "react-dom": "^19.2.8",
+            "react-error-boundary": "^6.1.2",
+            "react-helmet": "^6.1.0",
+            "react-router": "^8.4.0",
+            "socket.io-client": "^4.8.3",
+            "sonner": "^2.0.8",
+            "universal-cookie": "^8.1.2",
+            "vite": "^8.2.2"
+          },
+          "overrides": {}
+        }
+      },
+      ".web/package-lock.json": {
+        "sha256": "552c3841b1770292092d9fed2d5a098407083e2083a13fa49d1ee7115e2525a9",
+        "semantic_sha256": "de4cc2654b6c038b438a41ed20d077e7aefc8c255d554a4be1b7ae6e77fb1c2b",
+        "content": {
+          "root_package": {
+            "name": "reflex",
+            "dependencies": {
+              "@emotion/react": "^11.14.0",
+              "@radix-ui/themes": "^3.3.0",
+              "@react-router/dev": "^8.4.0",
+              "@react-router/fs-routes": "^8.4.0",
+              "@react-router/node": "^8.4.0",
+              "autoprefixer": "^10.5.4",
+              "isbot": "^5.2.2",
+              "lucide-react": "^1.26.0",
+              "mergician": "^2.0.2",
+              "postcss": "^8.5.26",
+              "postcss-import": "^17.0.0",
+              "react": "^19.2.8",
+              "react-dom": "^19.2.8",
+              "react-error-boundary": "^6.1.2",
+              "react-helmet": "^6.1.0",
+              "react-router": "^8.4.0",
+              "socket.io-client": "^4.8.3",
+              "sonner": "^2.0.8",
+              "universal-cookie": "^8.1.2",
+              "vite": "^8.2.2"
+            }
+          }
+        }
+      },
+      "next_rendered_manifest": {
+        "name": "reflex",
+        "type": "module",
+        "scripts": {
+          "dev": "react-router dev --host",
+          "export": "react-router build"
+        },
+        "dependencies": {
+          "@emotion/react": "^11.14.0",
+          "@radix-ui/themes": "^3.3.0",
+          "@react-router/dev": "^8.4.0",
+          "@react-router/fs-routes": "^8.4.0",
+          "@react-router/node": "^8.4.0",
+          "autoprefixer": "^10.5.4",
+          "isbot": "^5.2.2",
+          "lucide-react": "^1.26.0",
+          "mergician": "^2.0.2",
+          "postcss": "^8.5.26",
+          "postcss-import": "^17.0.0",
+          "react": "^19.2.8",
+          "react-dom": "^19.2.8",
+          "react-error-boundary": "^6.1.2",
+          "react-helmet": "^6.1.0",
+          "react-router": "^8.4.0",
+          "socket.io-client": "^4.8.3",
+          "sonner": "^2.0.8",
+          "universal-cookie": "^8.1.2",
+          "vite": "^8.2.2"
+        },
+        "devDependencies": {},
+        "overrides": {}
+      },
+      "semantic_differences": {
+        "devDependencies": {
+          "current": null,
+          "rendered": {}
+        }
+      }
+    },
+    "control-before-edit": {
+      "reflex.lock/package.json": {
+        "sha256": "b91d561eeb6c910bbdbe967374a3f53af4bbd1b83e082f42d1c1448e60d88f18",
+        "semantic_sha256": "61af03ffe1f20ddcad7ab1c7b556d1cd002d65d0ec607711958d5e8ee5aa6f48",
+        "content": {
+          "name": "reflex",
+          "type": "module",
+          "scripts": {
+            "dev": "react-router dev --host",
+            "export": "react-router build"
+          },
+          "dependencies": {
+            "@emotion/react": "^11.14.0",
+            "@radix-ui/themes": "^3.3.0",
+            "@react-router/dev": "^8.4.0",
+            "@react-router/fs-routes": "^8.4.0",
+            "@react-router/node": "^8.4.0",
+            "autoprefixer": "^10.5.4",
+            "isbot": "^5.2.2",
+            "lucide-react": "^1.26.0",
+            "mergician": "^2.0.2",
+            "postcss": "^8.5.26",
+            "postcss-import": "^17.0.0",
+            "react": "^19.2.8",
+            "react-dom": "^19.2.8",
+            "react-error-boundary": "^6.1.2",
+            "react-helmet": "^6.1.0",
+            "react-router": "^8.4.0",
+            "socket.io-client": "^4.8.3",
+            "sonner": "^2.0.8",
+            "universal-cookie": "^8.1.2",
+            "vite": "^8.2.2"
+          },
+          "overrides": {}
+        }
+      },
+      "reflex.lock/package-lock.json": {
+        "sha256": "552c3841b1770292092d9fed2d5a098407083e2083a13fa49d1ee7115e2525a9",
+        "semantic_sha256": "de4cc2654b6c038b438a41ed20d077e7aefc8c255d554a4be1b7ae6e77fb1c2b",
+        "content": {
+          "root_package": {
+            "name": "reflex",
+            "dependencies": {
+              "@emotion/react": "^11.14.0",
+              "@radix-ui/themes": "^3.3.0",
+              "@react-router/dev": "^8.4.0",
+              "@react-router/fs-routes": "^8.4.0",
+              "@react-router/node": "^8.4.0",
+              "autoprefixer": "^10.5.4",
+              "isbot": "^5.2.2",
+              "lucide-react": "^1.26.0",
+              "mergician": "^2.0.2",
+              "postcss": "^8.5.26",
+              "postcss-import": "^17.0.0",
+              "react": "^19.2.8",
+              "react-dom": "^19.2.8",
+              "react-error-boundary": "^6.1.2",
+              "react-helmet": "^6.1.0",
+              "react-router": "^8.4.0",
+              "socket.io-client": "^4.8.3",
+              "sonner": "^2.0.8",
+              "universal-cookie": "^8.1.2",
+              "vite": "^8.2.2"
+            }
+          }
+        }
+      },
+      ".web/package.json": {
+        "sha256": "970f7e7d1dc480c7e74f141d66dddaa7c2dccb87e240df059f6380ec0e40a84b",
+        "semantic_sha256": "75a92611fa8a327a5f3f9c0167bb2f1d0e90efb8b9e3898740ee8a70d9e269b1",
+        "content": {
+          "name": "reflex",
+          "type": "module",
+          "scripts": {
+            "dev": "react-router dev --host",
+            "export": "react-router build"
+          },
+          "dependencies": {
+            "@emotion/react": "^11.14.0",
+            "@radix-ui/themes": "^3.3.0",
+            "@react-router/dev": "^8.4.0",
+            "@react-router/fs-routes": "^8.4.0",
+            "@react-router/node": "^8.4.0",
+            "autoprefixer": "^10.5.4",
+            "isbot": "^5.2.2",
+            "lucide-react": "^1.26.0",
+            "mergician": "^2.0.2",
+            "postcss": "^8.5.26",
+            "postcss-import": "^17.0.0",
+            "react": "^19.2.8",
+            "react-dom": "^19.2.8",
+            "react-error-boundary": "^6.1.2",
+            "react-helmet": "^6.1.0",
+            "react-router": "^8.4.0",
+            "socket.io-client": "^4.8.3",
+            "sonner": "^2.0.8",
+            "universal-cookie": "^8.1.2",
+            "vite": "^8.2.2"
+          },
+          "overrides": {},
+          "devDependencies": {}
+        }
+      },
+      ".web/package-lock.json": {
+        "sha256": "552c3841b1770292092d9fed2d5a098407083e2083a13fa49d1ee7115e2525a9",
+        "semantic_sha256": "de4cc2654b6c038b438a41ed20d077e7aefc8c255d554a4be1b7ae6e77fb1c2b",
+        "content": {
+          "root_package": {
+            "name": "reflex",
+            "dependencies": {
+              "@emotion/react": "^11.14.0",
+              "@radix-ui/themes": "^3.3.0",
+              "@react-router/dev": "^8.4.0",
+              "@react-router/fs-routes": "^8.4.0",
+              "@react-router/node": "^8.4.0",
+              "autoprefixer": "^10.5.4",
+              "isbot": "^5.2.2",
+              "lucide-react": "^1.26.0",
+              "mergician": "^2.0.2",
+              "postcss": "^8.5.26",
+              "postcss-import": "^17.0.0",
+              "react": "^19.2.8",
+              "react-dom": "^19.2.8",
+              "react-error-boundary": "^6.1.2",
+              "react-helmet": "^6.1.0",
+              "react-router": "^8.4.0",
+              "socket.io-client": "^4.8.3",
+              "sonner": "^2.0.8",
+              "universal-cookie": "^8.1.2",
+              "vite": "^8.2.2"
+            }
+          }
+        }
+      },
+      "next_rendered_manifest": {
+        "name": "reflex",
+        "type": "module",
+        "scripts": {
+          "dev": "react-router dev --host",
+          "export": "react-router build"
+        },
+        "dependencies": {
+          "@emotion/react": "^11.14.0",
+          "@radix-ui/themes": "^3.3.0",
+          "@react-router/dev": "^8.4.0",
+          "@react-router/fs-routes": "^8.4.0",
+          "@react-router/node": "^8.4.0",
+          "autoprefixer": "^10.5.4",
+          "isbot": "^5.2.2",
+          "lucide-react": "^1.26.0",
+          "mergician": "^2.0.2",
+          "postcss": "^8.5.26",
+          "postcss-import": "^17.0.0",
+          "react": "^19.2.8",
+          "react-dom": "^19.2.8",
+          "react-error-boundary": "^6.1.2",
+          "react-helmet": "^6.1.0",
+          "react-router": "^8.4.0",
+          "socket.io-client": "^4.8.3",
+          "sonner": "^2.0.8",
+          "universal-cookie": "^8.1.2",
+          "vite": "^8.2.2"
+        },
+        "devDependencies": {},
+        "overrides": {}
+      },
+      "semantic_differences": {}
+    },
+    "revision-C": {
+      "installs_before": 2,
+      "installs_after": 3,
+      "reflex.lock/package.json": {
+        "sha256": "b91d561eeb6c910bbdbe967374a3f53af4bbd1b83e082f42d1c1448e60d88f18",
+        "semantic_sha256": "61af03ffe1f20ddcad7ab1c7b556d1cd002d65d0ec607711958d5e8ee5aa6f48",
+        "content": {
+          "name": "reflex",
+          "type": "module",
+          "scripts": {
+            "dev": "react-router dev --host",
+            "export": "react-router build"
+          },
+          "dependencies": {
+            "@emotion/react": "^11.14.0",
+            "@radix-ui/themes": "^3.3.0",
+            "@react-router/dev": "^8.4.0",
+            "@react-router/fs-routes": "^8.4.0",
+            "@react-router/node": "^8.4.0",
+            "autoprefixer": "^10.5.4",
+            "isbot": "^5.2.2",
+            "lucide-react": "^1.26.0",
+            "mergician": "^2.0.2",
+            "postcss": "^8.5.26",
+            "postcss-import": "^17.0.0",
+            "react": "^19.2.8",
+            "react-dom": "^19.2.8",
+            "react-error-boundary": "^6.1.2",
+            "react-helmet": "^6.1.0",
+            "react-router": "^8.4.0",
+            "socket.io-client": "^4.8.3",
+            "sonner": "^2.0.8",
+            "universal-cookie": "^8.1.2",
+            "vite": "^8.2.2"
+          },
+          "overrides": {}
+        }
+      },
+      "reflex.lock/package-lock.json": {
+        "sha256": "552c3841b1770292092d9fed2d5a098407083e2083a13fa49d1ee7115e2525a9",
+        "semantic_sha256": "de4cc2654b6c038b438a41ed20d077e7aefc8c255d554a4be1b7ae6e77fb1c2b",
+        "content": {
+          "root_package": {
+            "name": "reflex",
+            "dependencies": {
+              "@emotion/react": "^11.14.0",
+              "@radix-ui/themes": "^3.3.0",
+              "@react-router/dev": "^8.4.0",
+              "@react-router/fs-routes": "^8.4.0",
+              "@react-router/node": "^8.4.0",
+              "autoprefixer": "^10.5.4",
+              "isbot": "^5.2.2",
+              "lucide-react": "^1.26.0",
+              "mergician": "^2.0.2",
+              "postcss": "^8.5.26",
+              "postcss-import": "^17.0.0",
+              "react": "^19.2.8",
+              "react-dom": "^19.2.8",
+              "react-error-boundary": "^6.1.2",
+              "react-helmet": "^6.1.0",
+              "react-router": "^8.4.0",
+              "socket.io-client": "^4.8.3",
+              "sonner": "^2.0.8",
+              "universal-cookie": "^8.1.2",
+              "vite": "^8.2.2"
+            }
+          }
+        }
+      },
+      ".web/package.json": {
+        "sha256": "b91d561eeb6c910bbdbe967374a3f53af4bbd1b83e082f42d1c1448e60d88f18",
+        "semantic_sha256": "61af03ffe1f20ddcad7ab1c7b556d1cd002d65d0ec607711958d5e8ee5aa6f48",
+        "content": {
+          "name": "reflex",
+          "type": "module",
+          "scripts": {
+            "dev": "react-router dev --host",
+            "export": "react-router build"
+          },
+          "dependencies": {
+            "@emotion/react": "^11.14.0",
+            "@radix-ui/themes": "^3.3.0",
+            "@react-router/dev": "^8.4.0",
+            "@react-router/fs-routes": "^8.4.0",
+            "@react-router/node": "^8.4.0",
+            "autoprefixer": "^10.5.4",
+            "isbot": "^5.2.2",
+            "lucide-react": "^1.26.0",
+            "mergician": "^2.0.2",
+            "postcss": "^8.5.26",
+            "postcss-import": "^17.0.0",
+            "react": "^19.2.8",
+            "react-dom": "^19.2.8",
+            "react-error-boundary": "^6.1.2",
+            "react-helmet": "^6.1.0",
+            "react-router": "^8.4.0",
+            "socket.io-client": "^4.8.3",
+            "sonner": "^2.0.8",
+            "universal-cookie": "^8.1.2",
+            "vite": "^8.2.2"
+          },
+          "overrides": {}
+        }
+      },
+      ".web/package-lock.json": {
+        "sha256": "552c3841b1770292092d9fed2d5a098407083e2083a13fa49d1ee7115e2525a9",
+        "semantic_sha256": "de4cc2654b6c038b438a41ed20d077e7aefc8c255d554a4be1b7ae6e77fb1c2b",
+        "content": {
+          "root_package": {
+            "name": "reflex",
+            "dependencies": {
+              "@emotion/react": "^11.14.0",
+              "@radix-ui/themes": "^3.3.0",
+              "@react-router/dev": "^8.4.0",
+              "@react-router/fs-routes": "^8.4.0",
+              "@react-router/node": "^8.4.0",
+              "autoprefixer": "^10.5.4",
+              "isbot": "^5.2.2",
+              "lucide-react": "^1.26.0",
+              "mergician": "^2.0.2",
+              "postcss": "^8.5.26",
+              "postcss-import": "^17.0.0",
+              "react": "^19.2.8",
+              "react-dom": "^19.2.8",
+              "react-error-boundary": "^6.1.2",
+              "react-helmet": "^6.1.0",
+              "react-router": "^8.4.0",
+              "socket.io-client": "^4.8.3",
+              "sonner": "^2.0.8",
+              "universal-cookie": "^8.1.2",
+              "vite": "^8.2.2"
+            }
+          }
+        }
+      },
+      "next_rendered_manifest": {
+        "name": "reflex",
+        "type": "module",
+        "scripts": {
+          "dev": "react-router dev --host",
+          "export": "react-router build"
+        },
+        "dependencies": {
+          "@emotion/react": "^11.14.0",
+          "@radix-ui/themes": "^3.3.0",
+          "@react-router/dev": "^8.4.0",
+          "@react-router/fs-routes": "^8.4.0",
+          "@react-router/node": "^8.4.0",
+          "autoprefixer": "^10.5.4",
+          "isbot": "^5.2.2",
+          "lucide-react": "^1.26.0",
+          "mergician": "^2.0.2",
+          "postcss": "^8.5.26",
+          "postcss-import": "^17.0.0",
+          "react": "^19.2.8",
+          "react-dom": "^19.2.8",
+          "react-error-boundary": "^6.1.2",
+          "react-helmet": "^6.1.0",
+          "react-router": "^8.4.0",
+          "socket.io-client": "^4.8.3",
+          "sonner": "^2.0.8",
+          "universal-cookie": "^8.1.2",
+          "vite": "^8.2.2"
+        },
+        "devDependencies": {},
+        "overrides": {}
+      },
+      "semantic_differences": {
+        "devDependencies": {
+          "current": null,
+          "rendered": {}
+        }
+      }
+    }
+  },
+  "browsers": {
+    "chromium": {
+      "version": "153.0.8010.12",
+      "phase": "revision-C",
+      "console": [
+        {
+          "phase": "revision-A",
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "phase": "revision-A",
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "phase": "revision-A",
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "phase": "revision-A",
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+        },
+        {
+          "phase": "revision-B",
+          "type": "debug",
+          "text": "[vite] hot updated: /app/routes/_index.jsx"
+        },
+        {
+          "phase": "revision-B",
+          "type": "debug",
+          "text": "[vite] hot updated: /app/routes/_index.jsx"
+        },
+        {
+          "phase": "revision-C",
+          "type": "debug",
+          "text": "[vite] hot updated: /app/routes/_index.jsx"
+        },
+        {
+          "phase": "revision-C",
+          "type": "debug",
+          "text": "[vite] hot updated: /app/routes/_index.jsx"
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "websocket": [
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"TYvgk6oH1Bt67VQYAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"5kGLVwEBlRADZz8kAAAB\"}"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"oTJEym3gap1GmtQGYUgqcg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"oTJEym3gap1GmtQGYUgqcg==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.3"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.minimal_app___minimal_app____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.minimal_app___minimal_app____state\":{\"count_rx_state_\":1}}}]"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"_CuRdkFBDsPIumaiAAAB\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"aTVVWpoSc3V79t21AAAC\"}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"jPrgLLO0K5C5D+2Lgz81ew==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"jPrgLLO0K5C5D+2Lgz81ew==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.3"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":{\"id\":\"routes/_index\",\"parentId\":\"root\",\"index\":true,\"url\":\"/app/routes/_index.jsx\",\"module\":\"/app/routes/_index.jsx?import\",\"hasAction\":false,\"hasClientAction\":false,\"hasLoader\":false,\"hasClientLoader\":false,\"hasClientMiddleware\":false,\"hasDefaultExport\":true,\"hasErrorBoundary\":false,\"imports\":[]}}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1791359845662,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1791359845661,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.minimal_app___minimal_app____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.minimal_app___minimal_app____state\":{\"count_rx_state_\":2}}}]"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"htbTSW7CKb1__2YxAAAB\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"1O90l4ChFpNrhQQZAAAC\"}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"AySY6aXEEevIbqLm1CcXNw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"AySY6aXEEevIbqLm1CcXNw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.3"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":{\"id\":\"routes/_index\",\"parentId\":\"root\",\"index\":true,\"url\":\"/app/routes/_index.jsx\",\"module\":\"/app/routes/_index.jsx?import\",\"hasAction\":false,\"hasClientAction\":false,\"hasLoader\":false,\"hasClientLoader\":false,\"hasClientMiddleware\":false,\"hasDefaultExport\":true,\"hasErrorBoundary\":false,\"imports\":[]}}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1791359851076,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1791359851075,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.minimal_app___minimal_app____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.minimal_app___minimal_app____state\":{\"count_rx_state_\":3}}}]"
+        }
+      ]
+    },
+    "webkit": {
+      "version": "26.6",
+      "phase": "revision-C",
+      "console": [
+        {
+          "phase": "revision-A",
+          "type": "log",
+          "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+        },
+        {
+          "phase": "revision-A",
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "phase": "revision-A",
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "phase": "revision-B",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=a6087bd8-9812-4ddd-e037-d4ef03d6bf00&EIO=4&transport=websocket' failed: The network connection was lost."
+        },
+        {
+          "phase": "revision-B",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/@id/__x00__virtual:react-router/browser-manifest was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "phase": "revision-B",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/entry.client.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "phase": "revision-B",
+          "type": "warning",
+          "text": "The resource http://localhost:3710/app/root.jsx was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+        },
+        {
+          "phase": "revision-B",
+          "type": "debug",
+          "text": "[vite] hot updated: /app/routes/_index.jsx"
+        },
+        {
+          "phase": "revision-B",
+          "type": "debug",
+          "text": "[vite] hot updated: /app/routes/_index.jsx"
+        },
+        {
+          "phase": "revision-C",
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:8710/_event/?token=a6087bd8-9812-4ddd-e037-d4ef03d6bf00&EIO=4&transport=websocket' failed: The network connection was lost."
+        },
+        {
+          "phase": "revision-C",
+          "type": "debug",
+          "text": "[vite] hot updated: /app/routes/_index.jsx"
+        },
+        {
+          "phase": "revision-C",
+          "type": "debug",
+          "text": "[vite] hot updated: /app/routes/_index.jsx"
+        }
+      ],
+      "pageerrors": [],
+      "failed_requests": [],
+      "http_errors": [],
+      "websocket": [
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"connected\"}"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"JqSn7ULLa1MHY7DWAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"rF_TB3tdFQuv9y6vAAAD\"}"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"3ausy37YG8AhV4pqVAG9Nw==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"3ausy37YG8AhV4pqVAG9Nw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS "
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.minimal_app___minimal_app____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-A",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.minimal_app___minimal_app____state\":{\"count_rx_state_\":1}}}]"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"JfqvM14BwLNvXMzuAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"sTEoVsi2cMERZCkLAAAD\"}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"AW/C3voA7vHig3MXQwpYjw==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"AW/C3voA7vHig3MXQwpYjw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS "
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":{\"id\":\"routes/_index\",\"parentId\":\"root\",\"index\":true,\"url\":\"/app/routes/_index.jsx\",\"module\":\"/app/routes/_index.jsx?import\",\"hasAction\":false,\"hasClientAction\":false,\"hasLoader\":false,\"hasClientLoader\":false,\"hasClientMiddleware\":false,\"hasDefaultExport\":true,\"hasErrorBoundary\":false,\"imports\":[]}}}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1791359845662,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1791359845661,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.minimal_app___minimal_app____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-B",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.minimal_app___minimal_app____state\":{\"count_rx_state_\":2}}}]"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":null}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "0{\"sid\":\"HVGMga1h8kEUPYvPAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framesent",
+          "frame": "40/_event,"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "40/_event,{\"sid\":\"Zf7iz3NpYuQCBj1FAAAD\"}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"06c4+6F0WCFCgzR+cMcqqw==\",\"sec_websocket_extensions\":\"permessage-deflate\",\"accept_encoding\":\"gzip, deflate\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept\":\"*/*\",\"accept-encoding\":\"gzip, deflate\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8710\",\"origin\":\"http://localhost:3710\",\"pragma\":\"no-cache\",\"priority\":\"u=3, i\",\"sec-fetch-dest\":\"websocket\",\"sec-fetch-mode\":\"websocket\",\"sec-fetch-site\":\"same-site\",\"sec-websocket-extensions\":\"permessage-deflate\",\"sec-websocket-key\":\"06c4+6F0WCFCgzR+cMcqqw==\",\"sec-websocket-protocol\":\"0.9.12\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS "
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"custom\",\"event\":\"react-router:hmr\",\"data\":{\"route\":{\"id\":\"routes/_index\",\"parentId\":\"root\",\"index\":true,\"url\":\"/app/routes/_index.jsx\",\"module\":\"/app/routes/_index.jsx?import\",\"hasAction\":false,\"hasClientAction\":false,\"hasLoader\":false,\"hasClientLoader\":false,\"hasClientMiddleware\":false,\"hasDefaultExport\":true,\"hasErrorBoundary\":false,\"imports\":[]}}}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1791359851076,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "{\"type\":\"update\",\"updates\":[{\"type\":\"js-update\",\"timestamp\":1791359851075,\"path\":\"/app/routes/_index.jsx\",\"acceptedPath\":\"/app/routes/_index.jsx\",\"explicitImportRequired\":false,\"isWithinCircularImport\":false}]}"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framesent",
+          "frame": "42/_event,[\"event\",{\"name\":\"reflex___state____state.minimal_app___minimal_app____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+        },
+        {
+          "phase": "revision-C",
+          "kind": "framereceived",
+          "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.minimal_app___minimal_app____state\":{\"count_rx_state_\":3}}}]"
+        }
+      ]
+    }
+  },
+  "command": [
+    "/private/tmp/reflex-prerelease-macos-pass2/envs/stable/bin/reflex",
+    "run",
+    "--frontend-port",
+    "3710",
+    "--backend-port",
+    "8710",
+    "--loglevel",
+    "debug"
+  ],
+  "pid": 30548,
+  "after_cleanup": [],
+  "listeners_after_cleanup": ""
+}

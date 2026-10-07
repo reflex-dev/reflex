@@ -1,0 +1,7 @@
+Host: macOS26.6.2 arm64 (local user machine)
+Python:3.12.14
+Playwright:1.63.0
+Chromium:153.0.8010.12
+WebKit:26.6 (Playwright WebKit engine, not a Safari application run)
+Node:26.8.1
+Bun:1.4.0

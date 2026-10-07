@@ -1,0 +1,350 @@
+{
+ "label": "stable",
+ "checks": [
+  {
+   "name": "values_backend_mutated",
+   "ok": true,
+   "detail": {
+    "step": "values",
+    "tea": "Tea: 10",
+    "coffee": "Coffee: 20",
+    "total": "Total: 30",
+    "audit": {
+     "backend": {
+      "coffee": 19,
+      "tea": 9
+     },
+     "cached_total": 30,
+     "operation": "values"
+    }
+   }
+  },
+  {
+   "name": "values_ui_reflects_mutation",
+   "ok": false,
+   "detail": {
+    "step": "values",
+    "tea": "Tea: 10",
+    "coffee": "Coffee: 20",
+    "total": "Total: 30",
+    "audit": {
+     "backend": {
+      "coffee": 19,
+      "tea": 9
+     },
+     "cached_total": 30,
+     "operation": "values"
+    }
+   }
+  },
+  {
+   "name": "values_reload_total_consistent",
+   "ok": false,
+   "detail": {
+    "step": "values-reload",
+    "tea": "Tea: 9",
+    "coffee": "Coffee: 19",
+    "total": "Total: 30",
+    "audit": {
+     "backend": {
+      "coffee": 19,
+      "tea": 9
+     },
+     "cached_total": 30,
+     "operation": "values"
+    }
+   }
+  },
+  {
+   "name": "values_reassign_heals",
+   "ok": true,
+   "detail": {
+    "step": "values-reassign",
+    "tea": "Tea: 9",
+    "coffee": "Coffee: 19",
+    "total": "Total: 28",
+    "audit": {
+     "backend": {
+      "coffee": 19,
+      "tea": 9
+     },
+     "cached_total": 28,
+     "operation": "reassign"
+    }
+   }
+  },
+  {
+   "name": "items_backend_mutated",
+   "ok": true,
+   "detail": {
+    "step": "items",
+    "tea": "Tea: 10",
+    "coffee": "Coffee: 20",
+    "total": "Total: 30",
+    "audit": {
+     "backend": {
+      "coffee": 19,
+      "tea": 9
+     },
+     "cached_total": 30,
+     "operation": "items"
+    }
+   }
+  },
+  {
+   "name": "items_ui_reflects_mutation",
+   "ok": false,
+   "detail": {
+    "step": "items",
+    "tea": "Tea: 10",
+    "coffee": "Coffee: 20",
+    "total": "Total: 30",
+    "audit": {
+     "backend": {
+      "coffee": 19,
+      "tea": 9
+     },
+     "cached_total": 30,
+     "operation": "items"
+    }
+   }
+  },
+  {
+   "name": "items_reload_total_consistent",
+   "ok": false,
+   "detail": {
+    "step": "items-reload",
+    "tea": "Tea: 9",
+    "coffee": "Coffee: 19",
+    "total": "Total: 30",
+    "audit": {
+     "backend": {
+      "coffee": 19,
+      "tea": 9
+     },
+     "cached_total": 30,
+     "operation": "items"
+    }
+   }
+  },
+  {
+   "name": "items_reassign_heals",
+   "ok": true,
+   "detail": {
+    "step": "items-reassign",
+    "tea": "Tea: 9",
+    "coffee": "Coffee: 19",
+    "total": "Total: 28",
+    "audit": {
+     "backend": {
+      "coffee": 19,
+      "tea": 9
+     },
+     "cached_total": 28,
+     "operation": "reassign"
+    }
+   }
+  },
+  {
+   "name": "indexed_mutation_control",
+   "ok": true,
+   "detail": {
+    "step": "keys",
+    "tea": "Tea: 9",
+    "coffee": "Coffee: 19",
+    "total": "Total: 28",
+    "audit": {
+     "backend": {
+      "coffee": 19,
+      "tea": 9
+     },
+     "cached_total": 28,
+     "operation": "keys"
+    }
+   }
+  }
+ ],
+ "steps": [
+  {
+   "step": "initial",
+   "tea": "Tea: 10",
+   "coffee": "Coffee: 20",
+   "total": "Total: 30",
+   "audit": {}
+  },
+  {
+   "step": "values",
+   "tea": "Tea: 10",
+   "coffee": "Coffee: 20",
+   "total": "Total: 30",
+   "audit": {
+    "backend": {
+     "coffee": 19,
+     "tea": 9
+    },
+    "cached_total": 30,
+    "operation": "values"
+   }
+  },
+  {
+   "step": "values-reload",
+   "tea": "Tea: 9",
+   "coffee": "Coffee: 19",
+   "total": "Total: 30",
+   "audit": {
+    "backend": {
+     "coffee": 19,
+     "tea": 9
+    },
+    "cached_total": 30,
+    "operation": "values"
+   }
+  },
+  {
+   "step": "values-reassign",
+   "tea": "Tea: 9",
+   "coffee": "Coffee: 19",
+   "total": "Total: 28",
+   "audit": {
+    "backend": {
+     "coffee": 19,
+     "tea": 9
+    },
+    "cached_total": 28,
+    "operation": "reassign"
+   }
+  },
+  {
+   "step": "items",
+   "tea": "Tea: 10",
+   "coffee": "Coffee: 20",
+   "total": "Total: 30",
+   "audit": {
+    "backend": {
+     "coffee": 19,
+     "tea": 9
+    },
+    "cached_total": 30,
+    "operation": "items"
+   }
+  },
+  {
+   "step": "items-reload",
+   "tea": "Tea: 9",
+   "coffee": "Coffee: 19",
+   "total": "Total: 30",
+   "audit": {
+    "backend": {
+     "coffee": 19,
+     "tea": 9
+    },
+    "cached_total": 30,
+    "operation": "items"
+   }
+  },
+  {
+   "step": "items-reassign",
+   "tea": "Tea: 9",
+   "coffee": "Coffee: 19",
+   "total": "Total: 28",
+   "audit": {
+    "backend": {
+     "coffee": 19,
+     "tea": 9
+    },
+    "cached_total": 28,
+    "operation": "reassign"
+   }
+  },
+  {
+   "step": "keys",
+   "tea": "Tea: 9",
+   "coffee": "Coffee: 19",
+   "total": "Total: 28",
+   "audit": {
+    "backend": {
+     "coffee": 19,
+     "tea": 9
+    },
+    "cached_total": 28,
+    "operation": "keys"
+   }
+  }
+ ],
+ "console": [
+  {
+   "step": "initial",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "step": "initial",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "step": "initial",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "step": "initial",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "step": "values-reload",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "step": "values-reload",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "step": "values-reload",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "step": "values-reload",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "step": "values-reload",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "step": "items-reload",
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "step": "items-reload",
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "step": "items-reload",
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "step": "items-reload",
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "step": "items-reload",
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "failed_requests": [],
+ "http_errors": [],
+ "websocket_frames": 40
+}

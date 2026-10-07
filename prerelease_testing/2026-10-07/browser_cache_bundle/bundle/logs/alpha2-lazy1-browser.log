@@ -1,0 +1,19 @@
+WARN `--no-project` was provided, but no project was found
+chromium cold_home home_renders True None
+chromium warm_reload home_renders_after_reload True None
+chromium dashboard_nav dashboard_initial_state True None
+chromium dashboard_event task_event True None
+chromium reports_nav plotly_six_points True None
+chromium reports_event plotly_update True None
+chromium editor_nav editor_and_code_render True None
+chromium editor_event catalog_edit True None
+chromium home_return home_return True None
+chromium warm_reports chart_state_survives_navigation True None
+webkit cold_home home_renders True None
+webkit warm_reload home_renders_after_reload True None
+webkit dashboard_nav dashboard_initial_state True None
+webkit dashboard_event task_event True None
+webkit reports_nav plotly_six_points True None
+webkit reports_event plotly_update True None
+webkit editor_nav editor_and_code_render True None
+webkit editor_event driver_exception False TimeoutError('Locator.wait_for: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator("#portal textarea") to be visible\n')

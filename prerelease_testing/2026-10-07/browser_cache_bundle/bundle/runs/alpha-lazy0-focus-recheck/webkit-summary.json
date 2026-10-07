@@ -1,0 +1,1386 @@
+{
+ "label": "alpha-lazy0-focus-recheck",
+ "base": "http://localhost:8707",
+ "browser": "webkit",
+ "browser_version": "26.6",
+ "playwright_version": "1.63.0",
+ "phases": {
+  "cold_home": {
+   "checks": [
+    {
+     "name": "home_renders",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8707/",
+     "type": "document",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "3334",
+      "content-type": "text/html; charset=utf-8",
+      "etag": "\"89f3c68c086e50b814c4a642e97fad2b\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 453,
+      "responseBodySize": 3334,
+      "responseHeadersSize": 308
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/__reflex_global_styles-NccINl-w.css",
+     "type": "stylesheet",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "82431",
+      "content-type": "text/css; charset=utf-8",
+      "etag": "\"a9e3eee9d5d5272f4d73077d1c87b8b9\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 456,
+      "responseBodySize": 82431,
+      "responseHeadersSize": 308
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/manifest-afe8c948.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "686",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"91088b8753bb2855c5e36f953e45f2f4\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 455,
+      "responseBodySize": 686,
+      "responseHeadersSize": 405
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/entry.client-CwMxjBZA.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "65414",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"82ddf98942ea2ee0f04e24fab5407736\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 459,
+      "responseBodySize": 65414,
+      "responseHeadersSize": 407
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/errorBoundaries-lqtsnSi3.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "11707",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"d23038f0e504fd92489c33dacd57031b\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 462,
+      "responseBodySize": 11707,
+      "responseHeadersSize": 407
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/root-CWBgUNn0.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "85525",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"490bc90748d6a0506124b4dad597196d\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 451,
+      "responseBodySize": 85525,
+      "responseHeadersSize": 407
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/rolldown-runtime-hePW80VL.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "430",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"ce728661eeb935fe13c0f557aa4541be\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 463,
+      "responseBodySize": 430,
+      "responseHeadersSize": 405
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/components-C76bqG6N.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "28171",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"6b1814b7d14e54ccb2da59311b74c77a\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 457,
+      "responseBodySize": 28171,
+      "responseHeadersSize": 407
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/react-dom-EOggdWm0.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1411",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"241323f30235837ec784d904513dded5\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 456,
+      "responseBodySize": 1411,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/reflex-env-Cn_XH6Cz.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "198",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"2f6d135d3ab8368c8981d72b6a4f7090\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 457,
+      "responseBodySize": 198,
+      "responseHeadersSize": 405
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/link-CKWOs5H2.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "32824",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"b68bb0e419a0ff95d4880077819b6943\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 451,
+      "responseBodySize": 32824,
+      "responseHeadersSize": 407
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/context-pqjJ_qpP.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "3119",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"c843599e46983ecaaebb9119f102eade\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 454,
+      "responseBodySize": 3119,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/emotion-react.browser.esm-D7pGo01F.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "8039",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"f9d687b1ca67ba8f42955e1bb52d0fd8\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 472,
+      "responseBodySize": 8039,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/button-CI-fpeAA.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1675",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"5e8616e02531f68b153b503973c5a9cf\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 453,
+      "responseBodySize": 1675,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/box-Pg98BRv3.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "378",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"1b3592bf40a8270c1f46c370cc852de8\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 450,
+      "responseBodySize": 378,
+      "responseHeadersSize": 405
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/_index-BUGZo2FS.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "767",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"ccc2f4cd5f28f1a2646a0996a84ee934\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 453,
+      "responseBodySize": 767,
+      "responseHeadersSize": 405
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8707/assets/__reflex_global_styles-NccINl-w.css",
+     "initiatorType": "link",
+     "transferSize": 82731,
+     "encodedBodySize": 82431,
+     "decodedBodySize": 698265,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/manifest-afe8c948.js",
+     "initiatorType": "link",
+     "transferSize": 986,
+     "encodedBodySize": 686,
+     "decodedBodySize": 3846,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/entry.client-CwMxjBZA.js",
+     "initiatorType": "link",
+     "transferSize": 65714,
+     "encodedBodySize": 65414,
+     "decodedBodySize": 211034,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/errorBoundaries-lqtsnSi3.js",
+     "initiatorType": "link",
+     "transferSize": 12007,
+     "encodedBodySize": 11707,
+     "decodedBodySize": 33568,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/rolldown-runtime-hePW80VL.js",
+     "initiatorType": "link",
+     "transferSize": 730,
+     "encodedBodySize": 430,
+     "decodedBodySize": 716,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/components-C76bqG6N.js",
+     "initiatorType": "link",
+     "transferSize": 28471,
+     "encodedBodySize": 28171,
+     "decodedBodySize": 86149,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/react-dom-EOggdWm0.js",
+     "initiatorType": "link",
+     "transferSize": 1711,
+     "encodedBodySize": 1411,
+     "decodedBodySize": 3907,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/root-CWBgUNn0.js",
+     "initiatorType": "link",
+     "transferSize": 85825,
+     "encodedBodySize": 85525,
+     "decodedBodySize": 307569,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/reflex-env-Cn_XH6Cz.js",
+     "initiatorType": "link",
+     "transferSize": 498,
+     "encodedBodySize": 198,
+     "decodedBodySize": 306,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/link-CKWOs5H2.js",
+     "initiatorType": "link",
+     "transferSize": 33124,
+     "encodedBodySize": 32824,
+     "decodedBodySize": 109521,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/context-pqjJ_qpP.js",
+     "initiatorType": "link",
+     "transferSize": 3419,
+     "encodedBodySize": 3119,
+     "decodedBodySize": 12633,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/emotion-react.browser.esm-D7pGo01F.js",
+     "initiatorType": "link",
+     "transferSize": 8339,
+     "encodedBodySize": 8039,
+     "decodedBodySize": 20774,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/button-CI-fpeAA.js",
+     "initiatorType": "link",
+     "transferSize": 1975,
+     "encodedBodySize": 1675,
+     "decodedBodySize": 4182,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/box-Pg98BRv3.js",
+     "initiatorType": "link",
+     "transferSize": 678,
+     "encodedBodySize": 378,
+     "decodedBodySize": 570,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/_index-BUGZo2FS.js",
+     "initiatorType": "link",
+     "transferSize": 1067,
+     "encodedBodySize": 767,
+     "decodedBodySize": 1751,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/",
+     "initiatorType": "navigation",
+     "transferSize": 3634,
+     "encodedBodySize": 3334,
+     "decodedBodySize": 8903,
+     "deliveryType": "",
+     "responseStatus": null
+    }
+   ],
+   "reported_transfer_bytes": 330909,
+   "reported_encoded_body_bytes": 326109,
+   "websocket_bytes": {
+    "sent": 309,
+    "received": 2062
+   },
+   "websocket_frame_count": 5
+  },
+  "warm_reload": {
+   "checks": [
+    {
+     "name": "home_renders_after_reload",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on page navigation"
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8707/assets/__reflex_global_styles-NccINl-w.css",
+     "type": "stylesheet",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "82431",
+      "content-type": "text/css; charset=utf-8",
+      "etag": "\"a9e3eee9d5d5272f4d73077d1c87b8b9\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 456,
+      "responseBodySize": 82431,
+      "responseHeadersSize": 341
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/manifest-afe8c948.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "686",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"91088b8753bb2855c5e36f953e45f2f4\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 455,
+      "responseBodySize": 686,
+      "responseHeadersSize": 438
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/entry.client-CwMxjBZA.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "65414",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"82ddf98942ea2ee0f04e24fab5407736\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 459,
+      "responseBodySize": 65414,
+      "responseHeadersSize": 440
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/rolldown-runtime-hePW80VL.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "430",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"ce728661eeb935fe13c0f557aa4541be\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 463,
+      "responseBodySize": 430,
+      "responseHeadersSize": 438
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/components-C76bqG6N.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "28171",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"6b1814b7d14e54ccb2da59311b74c77a\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 457,
+      "responseBodySize": 28171,
+      "responseHeadersSize": 440
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/react-dom-EOggdWm0.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1411",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"241323f30235837ec784d904513dded5\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 456,
+      "responseBodySize": 1411,
+      "responseHeadersSize": 439
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/errorBoundaries-lqtsnSi3.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "11707",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"d23038f0e504fd92489c33dacd57031b\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 462,
+      "responseBodySize": 11707,
+      "responseHeadersSize": 440
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/root-CWBgUNn0.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "85525",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"490bc90748d6a0506124b4dad597196d\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 451,
+      "responseBodySize": 85525,
+      "responseHeadersSize": 440
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/link-CKWOs5H2.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "32824",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"b68bb0e419a0ff95d4880077819b6943\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 451,
+      "responseBodySize": 32824,
+      "responseHeadersSize": 440
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/reflex-env-Cn_XH6Cz.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "198",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"2f6d135d3ab8368c8981d72b6a4f7090\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 457,
+      "responseBodySize": 198,
+      "responseHeadersSize": 438
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/emotion-react.browser.esm-D7pGo01F.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "8039",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"f9d687b1ca67ba8f42955e1bb52d0fd8\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 472,
+      "responseBodySize": 8039,
+      "responseHeadersSize": 439
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/context-pqjJ_qpP.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "3119",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"c843599e46983ecaaebb9119f102eade\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 454,
+      "responseBodySize": 3119,
+      "responseHeadersSize": 439
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/button-CI-fpeAA.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1675",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"5e8616e02531f68b153b503973c5a9cf\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 453,
+      "responseBodySize": 1675,
+      "responseHeadersSize": 439
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/box-Pg98BRv3.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "378",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"1b3592bf40a8270c1f46c370cc852de8\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 450,
+      "responseBodySize": 378,
+      "responseHeadersSize": 438
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/_index-BUGZo2FS.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "767",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"ccc2f4cd5f28f1a2646a0996a84ee934\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 453,
+      "responseBodySize": 767,
+      "responseHeadersSize": 438
+     }
+    },
+    {
+     "url": "http://localhost:8707/",
+     "type": "document",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "3334",
+      "content-type": "text/html; charset=utf-8",
+      "etag": "\"89f3c68c086e50b814c4a642e97fad2b\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 453,
+      "responseBodySize": 3334,
+      "responseHeadersSize": 308
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8707/assets/__reflex_global_styles-NccINl-w.css",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/manifest-afe8c948.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/entry.client-CwMxjBZA.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/rolldown-runtime-hePW80VL.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/components-C76bqG6N.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/react-dom-EOggdWm0.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/errorBoundaries-lqtsnSi3.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/root-CWBgUNn0.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/link-CKWOs5H2.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/reflex-env-Cn_XH6Cz.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/emotion-react.browser.esm-D7pGo01F.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/context-pqjJ_qpP.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/button-CI-fpeAA.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/box-Pg98BRv3.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/_index-BUGZo2FS.js",
+     "initiatorType": "link",
+     "transferSize": 0,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/",
+     "initiatorType": "navigation",
+     "transferSize": 3634,
+     "encodedBodySize": 3334,
+     "decodedBodySize": 8903,
+     "deliveryType": "",
+     "responseStatus": null
+    }
+   ],
+   "reported_transfer_bytes": 3634,
+   "reported_encoded_body_bytes": 3334,
+   "websocket_bytes": {
+    "sent": 319,
+    "received": 2062
+   },
+   "websocket_frame_count": 6
+  },
+  "dashboard_nav": {
+   "checks": [
+    {
+     "name": "dashboard_initial_state",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8707/assets/_dashboard_._index-DuDCNmYm.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1092",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"72598a84e91ba3aed90716f98d4735db\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 499,
+      "responseBodySize": 1092,
+      "responseHeadersSize": 406
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8707/assets/_dashboard_._index-DuDCNmYm.js",
+     "initiatorType": "script",
+     "transferSize": 1392,
+     "encodedBodySize": 1092,
+     "decodedBodySize": 2768,
+     "deliveryType": "",
+     "responseStatus": null
+    }
+   ],
+   "reported_transfer_bytes": 1392,
+   "reported_encoded_body_bytes": 1092,
+   "websocket_bytes": {
+    "sent": 174,
+    "received": 555
+   },
+   "websocket_frame_count": 2
+  },
+  "dashboard_event": {
+   "checks": [
+    {
+     "name": "task_event",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "resource_timing": [],
+   "reported_transfer_bytes": 0,
+   "reported_encoded_body_bytes": 0,
+   "websocket_bytes": {
+    "sent": 172,
+    "received": 121
+   },
+   "websocket_frame_count": 2
+  },
+  "reports_nav": {
+   "checks": [
+    {
+     "name": "plotly_six_points",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8707/assets/_reports_._index-BNRAtBCE.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "2654",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"06a8a7a298571d6b6eee37bb108113e3\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 497,
+      "responseBodySize": 2654,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/dist-BXcMqv2z.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1370908",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"5b454144ab65a15029df1640322708fa\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 458,
+      "responseBodySize": 1370908,
+      "responseHeadersSize": 409
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8707/assets/_reports_._index-BNRAtBCE.js",
+     "initiatorType": "script",
+     "transferSize": 2954,
+     "encodedBodySize": 2654,
+     "decodedBodySize": 14956,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/dist-BXcMqv2z.js",
+     "initiatorType": "link",
+     "transferSize": 1371208,
+     "encodedBodySize": 1370908,
+     "decodedBodySize": 4652049,
+     "deliveryType": "",
+     "responseStatus": null
+    }
+   ],
+   "reported_transfer_bytes": 1374162,
+   "reported_encoded_body_bytes": 1373562,
+   "websocket_bytes": {
+    "sent": 170,
+    "received": 541
+   },
+   "websocket_frame_count": 2
+  },
+  "reports_event": {
+   "checks": [
+    {
+     "name": "plotly_update",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "resource_timing": [],
+   "reported_transfer_bytes": 0,
+   "reported_encoded_body_bytes": 0,
+   "websocket_bytes": {
+    "sent": 159,
+    "received": 6824
+   },
+   "websocket_frame_count": 2
+  },
+  "editor_nav": {
+   "checks": [
+    {
+     "name": "editor_and_code_render",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8707/assets/_editor_-1OAq1u6B.css",
+     "type": "stylesheet",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "2733",
+      "content-type": "text/css; charset=utf-8",
+      "etag": "\"7198a190316e98376b4a6d056e07dc58\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 449,
+      "responseBodySize": 2733,
+      "responseHeadersSize": 307
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/_editor_._index-DiN-daw8.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "102631",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"9d5adfc72ee564e6c31bee01b187252a\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 496,
+      "responseBodySize": 102631,
+      "responseHeadersSize": 408
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/click-outside-container-DQqbRE-3.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "6090",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"0b0dd99711b4bc0b75fc1df0a0785435\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 504,
+      "responseBodySize": 6090,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/dist-DT8fAXFV.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "2892",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"abad4013a763a7110938c05b85fc89c9\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 485,
+      "responseBodySize": 2892,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/core-ClEKCOV3.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "11050",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"a40875810191887026d0435c67d336ba\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 457,
+      "responseBodySize": 11050,
+      "responseHeadersSize": 407
+     }
+    },
+    {
+     "url": "http://localhost:8707/assets/sql-DL4klaVE.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1871",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"e6e9a88d2378c6525a84dbb21cd3fe45\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 484,
+      "responseBodySize": 1871,
+      "responseHeadersSize": 406
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8707/assets/_editor_-1OAq1u6B.css",
+     "initiatorType": "link",
+     "transferSize": 3033,
+     "encodedBodySize": 2733,
+     "decodedBodySize": 11465,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/_editor_._index-DiN-daw8.js",
+     "initiatorType": "script",
+     "transferSize": 102931,
+     "encodedBodySize": 102631,
+     "decodedBodySize": 343964,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/click-outside-container-DQqbRE-3.js",
+     "initiatorType": "script",
+     "transferSize": 6390,
+     "encodedBodySize": 6090,
+     "decodedBodySize": 17612,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/dist-DT8fAXFV.js",
+     "initiatorType": "script",
+     "transferSize": 3192,
+     "encodedBodySize": 2892,
+     "decodedBodySize": 5738,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/core-ClEKCOV3.js",
+     "initiatorType": "link",
+     "transferSize": 11350,
+     "encodedBodySize": 11050,
+     "decodedBodySize": 30076,
+     "deliveryType": "",
+     "responseStatus": null
+    },
+    {
+     "name": "http://localhost:8707/assets/sql-DL4klaVE.js",
+     "initiatorType": "script",
+     "transferSize": 2171,
+     "encodedBodySize": 1871,
+     "decodedBodySize": 3325,
+     "deliveryType": "",
+     "responseStatus": null
+    }
+   ],
+   "reported_transfer_bytes": 129067,
+   "reported_encoded_body_bytes": 127267,
+   "websocket_bytes": {
+    "sent": 168,
+    "received": 534
+   },
+   "websocket_frame_count": 2
+  },
+  "editor_event": {
+   "checks": [
+    {
+     "name": "catalog_edit",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "editor_focus": [
+    {
+     "tag": "TD",
+     "role": "gridcell"
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8707/assets/data-grid-overlay-editor-DeCh05kq.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1789",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"504a814247b9be6ee68eef0066c7a608\"",
+      "last-modified": "Wed, 07 Oct 2026 07:46:38 GMT",
+      "vary": "Accept-Encoding, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 477,
+      "responseBodySize": 1789,
+      "responseHeadersSize": 406
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8707/assets/data-grid-overlay-editor-DeCh05kq.js",
+     "initiatorType": "link",
+     "transferSize": 2089,
+     "encodedBodySize": 1789,
+     "decodedBodySize": 3619,
+     "deliveryType": "",
+     "responseStatus": null
+    }
+   ],
+   "reported_transfer_bytes": 2089,
+   "reported_encoded_body_bytes": 1789,
+   "websocket_bytes": {
+    "sent": 282,
+    "received": 223
+   },
+   "websocket_frame_count": 2
+  },
+  "home_return": {
+   "checks": [
+    {
+     "name": "home_return",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "resource_timing": [],
+   "reported_transfer_bytes": 0,
+   "reported_encoded_body_bytes": 0,
+   "websocket_bytes": {
+    "sent": 156,
+    "received": 507
+   },
+   "websocket_frame_count": 2
+  },
+  "warm_reports": {
+   "checks": [
+    {
+     "name": "chart_state_survives_navigation",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "resource_timing": [],
+   "reported_transfer_bytes": 0,
+   "reported_encoded_body_bytes": 0,
+   "websocket_bytes": {
+    "sent": 170,
+    "received": 541
+   },
+   "websocket_frame_count": 2
+  }
+ },
+ "full_evidence": "webkit-full.json.gz"
+}

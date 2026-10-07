@@ -1,0 +1,1801 @@
+{
+ "label": "alpha-lazy0",
+ "base": "http://localhost:8702",
+ "browser": "chromium",
+ "browser_version": "153.0.8010.12",
+ "playwright_version": "1.63.0",
+ "phases": {
+  "cold_home": {
+   "checks": [
+    {
+     "name": "home_renders",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "cdp_requests": [
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/",
+     "type": "Document",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 308,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 3642
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/__reflex_global_styles-NccINl-w.css",
+     "type": "Stylesheet",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 308,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 82739
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/manifest-b4acd118.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 405,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 1094
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/react-dom-EOggdWm0.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 406,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 1817
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/components-C76bqG6N.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 407,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 28578
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/rolldown-runtime-hePW80VL.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 405,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 835
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/errorBoundaries-lqtsnSi3.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 407,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 12114
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/entry.client-CwMxjBZA.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 407,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 65821
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/reflex-env-B9dz7BIj.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 405,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 604
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/emotion-react.browser.esm-D7pGo01F.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 406,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 8445
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/link-DVRDiyB_.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 407,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 33229
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/button-CHeM2AKO.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 406,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 2081
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/context-CMjT_ENq.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 406,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 3524
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/_index-LhCSyaWH.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 405,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 1171
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/box-BcaCTSac.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 405,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 781
+    },
+    {
+     "phase": "cold_home",
+     "url": "http://localhost:8702/assets/root-Drv_tzZZ.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 407,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 85932
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8702/",
+     "type": "document",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "3334",
+      "content-type": "text/html; charset=utf-8",
+      "etag": "\"8c35b33121d02cbc1a41ee8e5d83e013\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 645,
+      "responseBodySize": 3334,
+      "responseHeadersSize": 308
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/__reflex_global_styles-NccINl-w.css",
+     "type": "stylesheet",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "82431",
+      "content-type": "text/css; charset=utf-8",
+      "etag": "\"031798d00d02e29892276843efaa91a0\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 556,
+      "responseBodySize": 82431,
+      "responseHeadersSize": 308
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/manifest-b4acd118.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "689",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"b960b31b4273ebc804272e2649dfea55\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 555,
+      "responseBodySize": 689,
+      "responseHeadersSize": 405
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/react-dom-EOggdWm0.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1411",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"1f9e5827f6ef861b3f588f83178a8d9c\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 556,
+      "responseBodySize": 1411,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/components-C76bqG6N.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "28171",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"aa74327c2cb83e96f037da629cd62958\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 557,
+      "responseBodySize": 28171,
+      "responseHeadersSize": 407
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/rolldown-runtime-hePW80VL.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "430",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"bfe1959f92ab146ff55e6251385f61f0\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 563,
+      "responseBodySize": 430,
+      "responseHeadersSize": 405
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/errorBoundaries-lqtsnSi3.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "11707",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"f9c48da3af19e14b602a765dcb19d8b6\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 562,
+      "responseBodySize": 11707,
+      "responseHeadersSize": 407
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/entry.client-CwMxjBZA.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "65414",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"be361c65aae180c869a3ac98d15846a7\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 559,
+      "responseBodySize": 65414,
+      "responseHeadersSize": 407
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/reflex-env-B9dz7BIj.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "199",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"5806b70567cebff9dffa8b83bbf87677\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 557,
+      "responseBodySize": 199,
+      "responseHeadersSize": 405
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/emotion-react.browser.esm-D7pGo01F.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "8039",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"8e64f139ba89514464aab9ad3648673f\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 572,
+      "responseBodySize": 8039,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/link-DVRDiyB_.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "32822",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"b5f982487de09920eea83ae075e94bd9\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 551,
+      "responseBodySize": 32822,
+      "responseHeadersSize": 407
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/button-CHeM2AKO.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1675",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"89b9182165d681ef33939e52c311f43a\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 553,
+      "responseBodySize": 1675,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/context-CMjT_ENq.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "3118",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"617610ad6d993719980151d5a17dad53\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 554,
+      "responseBodySize": 3118,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/_index-LhCSyaWH.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "766",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"c3ffa0682d8a13c5f96b50ec3528e971\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 553,
+      "responseBodySize": 766,
+      "responseHeadersSize": 405
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/box-BcaCTSac.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "376",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"9efc03adc52e2c83d669ee834b3be273\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 550,
+      "responseBodySize": 376,
+      "responseHeadersSize": 405
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/root-Drv_tzZZ.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "85525",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"2c124bede32ce29a39d6a80c8508c218\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 551,
+      "responseBodySize": 85525,
+      "responseHeadersSize": 407
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8702/assets/__reflex_global_styles-NccINl-w.css",
+     "initiatorType": "link",
+     "transferSize": 82731,
+     "encodedBodySize": 82431,
+     "decodedBodySize": 698265,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/manifest-b4acd118.js",
+     "initiatorType": "other",
+     "transferSize": 989,
+     "encodedBodySize": 689,
+     "decodedBodySize": 3846,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/react-dom-EOggdWm0.js",
+     "initiatorType": "other",
+     "transferSize": 1711,
+     "encodedBodySize": 1411,
+     "decodedBodySize": 3907,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/components-C76bqG6N.js",
+     "initiatorType": "other",
+     "transferSize": 28471,
+     "encodedBodySize": 28171,
+     "decodedBodySize": 86149,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/rolldown-runtime-hePW80VL.js",
+     "initiatorType": "other",
+     "transferSize": 730,
+     "encodedBodySize": 430,
+     "decodedBodySize": 716,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/entry.client-CwMxjBZA.js",
+     "initiatorType": "other",
+     "transferSize": 65714,
+     "encodedBodySize": 65414,
+     "decodedBodySize": 211034,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/errorBoundaries-lqtsnSi3.js",
+     "initiatorType": "other",
+     "transferSize": 12007,
+     "encodedBodySize": 11707,
+     "decodedBodySize": 33568,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/root-Drv_tzZZ.js",
+     "initiatorType": "other",
+     "transferSize": 85825,
+     "encodedBodySize": 85525,
+     "decodedBodySize": 307569,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/reflex-env-B9dz7BIj.js",
+     "initiatorType": "other",
+     "transferSize": 499,
+     "encodedBodySize": 199,
+     "decodedBodySize": 306,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/link-DVRDiyB_.js",
+     "initiatorType": "other",
+     "transferSize": 33122,
+     "encodedBodySize": 32822,
+     "decodedBodySize": 109521,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/emotion-react.browser.esm-D7pGo01F.js",
+     "initiatorType": "other",
+     "transferSize": 8339,
+     "encodedBodySize": 8039,
+     "decodedBodySize": 20774,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/context-CMjT_ENq.js",
+     "initiatorType": "other",
+     "transferSize": 3418,
+     "encodedBodySize": 3118,
+     "decodedBodySize": 12633,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/button-CHeM2AKO.js",
+     "initiatorType": "other",
+     "transferSize": 1975,
+     "encodedBodySize": 1675,
+     "decodedBodySize": 4182,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/_index-LhCSyaWH.js",
+     "initiatorType": "other",
+     "transferSize": 1066,
+     "encodedBodySize": 766,
+     "decodedBodySize": 1751,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/box-BcaCTSac.js",
+     "initiatorType": "other",
+     "transferSize": 676,
+     "encodedBodySize": 376,
+     "decodedBodySize": 570,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/",
+     "initiatorType": "navigation",
+     "transferSize": 3634,
+     "encodedBodySize": 3334,
+     "decodedBodySize": 8903,
+     "deliveryType": "",
+     "responseStatus": 200
+    }
+   ],
+   "reported_transfer_bytes": 330907,
+   "reported_encoded_body_bytes": 326107,
+   "websocket_bytes": {
+    "sent": 309,
+    "received": 1981
+   },
+   "websocket_frame_count": 5
+  },
+  "warm_reload": {
+   "checks": [
+    {
+     "name": "home_renders_after_reload",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on page navigation"
+    }
+   ],
+   "cdp_requests": [
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/",
+     "type": "Document",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 164,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 164
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/__reflex_global_styles-NccINl-w.css",
+     "type": "Stylesheet",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 164,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 164
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/manifest-b4acd118.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/components-C76bqG6N.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/entry.client-CwMxjBZA.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/react-dom-EOggdWm0.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/errorBoundaries-lqtsnSi3.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/root-Drv_tzZZ.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/emotion-react.browser.esm-D7pGo01F.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/rolldown-runtime-hePW80VL.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/link-DVRDiyB_.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/reflex-env-B9dz7BIj.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/context-CMjT_ENq.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/button-CHeM2AKO.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/_index-LhCSyaWH.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    },
+    {
+     "phase": "warm_reload",
+     "url": "http://localhost:8702/assets/box-BcaCTSac.js",
+     "type": "Script",
+     "status": 304,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 256,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 256
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8702/",
+     "type": "document",
+     "status": 200,
+     "headers": {
+      "etag": "\"8c35b33121d02cbc1a41ee8e5d83e013\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 779,
+      "responseBodySize": 0,
+      "responseHeadersSize": 164
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/__reflex_global_styles-NccINl-w.css",
+     "type": "stylesheet",
+     "status": 304,
+     "headers": {
+      "etag": "\"031798d00d02e29892276843efaa91a0\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 657,
+      "responseBodySize": 0,
+      "responseHeadersSize": 164
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/manifest-b4acd118.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"b960b31b4273ebc804272e2649dfea55\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 656,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/components-C76bqG6N.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"aa74327c2cb83e96f037da629cd62958\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 658,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/entry.client-CwMxjBZA.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"be361c65aae180c869a3ac98d15846a7\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 660,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/react-dom-EOggdWm0.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"1f9e5827f6ef861b3f588f83178a8d9c\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 657,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/errorBoundaries-lqtsnSi3.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"f9c48da3af19e14b602a765dcb19d8b6\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 663,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/root-Drv_tzZZ.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"2c124bede32ce29a39d6a80c8508c218\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 652,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/emotion-react.browser.esm-D7pGo01F.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"8e64f139ba89514464aab9ad3648673f\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 673,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/rolldown-runtime-hePW80VL.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"bfe1959f92ab146ff55e6251385f61f0\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 664,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/link-DVRDiyB_.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"b5f982487de09920eea83ae075e94bd9\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 652,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/reflex-env-B9dz7BIj.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"5806b70567cebff9dffa8b83bbf87677\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 658,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/context-CMjT_ENq.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"617610ad6d993719980151d5a17dad53\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 655,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/button-CHeM2AKO.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"89b9182165d681ef33939e52c311f43a\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 654,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/_index-LhCSyaWH.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"c3ffa0682d8a13c5f96b50ec3528e971\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 654,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/box-BcaCTSac.js",
+     "type": "script",
+     "status": 304,
+     "headers": {
+      "etag": "\"9efc03adc52e2c83d669ee834b3be273\"",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 651,
+      "responseBodySize": 0,
+      "responseHeadersSize": 256
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8702/assets/__reflex_global_styles-NccINl-w.css",
+     "initiatorType": "link",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/manifest-b4acd118.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/entry.client-CwMxjBZA.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/components-C76bqG6N.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/react-dom-EOggdWm0.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/rolldown-runtime-hePW80VL.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/errorBoundaries-lqtsnSi3.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/root-Drv_tzZZ.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/link-DVRDiyB_.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/emotion-react.browser.esm-D7pGo01F.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/reflex-env-B9dz7BIj.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/context-CMjT_ENq.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/button-CHeM2AKO.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/_index-LhCSyaWH.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/box-BcaCTSac.js",
+     "initiatorType": "other",
+     "transferSize": 300,
+     "encodedBodySize": 0,
+     "decodedBodySize": 0,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/",
+     "initiatorType": "navigation",
+     "transferSize": 300,
+     "encodedBodySize": 3334,
+     "decodedBodySize": 8903,
+     "deliveryType": "cache",
+     "responseStatus": 200
+    }
+   ],
+   "reported_transfer_bytes": 4800,
+   "reported_encoded_body_bytes": 3334,
+   "websocket_bytes": {
+    "sent": 319,
+    "received": 1981
+   },
+   "websocket_frame_count": 6
+  },
+  "dashboard_nav": {
+   "checks": [
+    {
+     "name": "dashboard_initial_state",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "cdp_requests": [
+    {
+     "phase": "dashboard_nav",
+     "url": "http://localhost:8702/assets/_dashboard_._index-C9lrkQzE.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 406,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 1501
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8702/assets/_dashboard_._index-C9lrkQzE.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1095",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"1fe3f6c9c6ff4d4b80ef01ebcdd16516\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 599,
+      "responseBodySize": 1095,
+      "responseHeadersSize": 406
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8702/assets/_dashboard_._index-C9lrkQzE.js",
+     "initiatorType": "script",
+     "transferSize": 1395,
+     "encodedBodySize": 1095,
+     "decodedBodySize": 2768,
+     "deliveryType": "",
+     "responseStatus": 200
+    }
+   ],
+   "reported_transfer_bytes": 1395,
+   "reported_encoded_body_bytes": 1095,
+   "websocket_bytes": {
+    "sent": 174,
+    "received": 555
+   },
+   "websocket_frame_count": 2
+  },
+  "dashboard_event": {
+   "checks": [
+    {
+     "name": "task_event",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "resource_timing": [],
+   "reported_transfer_bytes": 0,
+   "reported_encoded_body_bytes": 0,
+   "websocket_bytes": {
+    "sent": 172,
+    "received": 121
+   },
+   "websocket_frame_count": 2
+  },
+  "reports_nav": {
+   "checks": [
+    {
+     "name": "plotly_six_points",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "cdp_requests": [
+    {
+     "phase": "reports_nav",
+     "url": "http://localhost:8702/assets/_reports_._index-Br-gBDbp.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 406,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 3062
+    },
+    {
+     "phase": "reports_nav",
+     "url": "http://localhost:8702/assets/dist-BXcMqv2z.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 409,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 1371317
+    },
+    {
+     "phase": "reports_nav",
+     "url": "data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAQAAAAfQ//73v/+BiOh/AAA=",
+     "type": "Image",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 0,
+     "protocol": "data",
+     "finished_encoded_bytes": 0
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8702/assets/_reports_._index-Br-gBDbp.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "2656",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"3e284604a097197db44e1703013be510\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 597,
+      "responseBodySize": 2656,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/dist-BXcMqv2z.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1370908",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"fca5e6f63cf8a1ec33037ea4d24df1ce\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 558,
+      "responseBodySize": 1370908,
+      "responseHeadersSize": 409
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8702/assets/_reports_._index-Br-gBDbp.js",
+     "initiatorType": "script",
+     "transferSize": 2956,
+     "encodedBodySize": 2656,
+     "decodedBodySize": 14956,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/dist-BXcMqv2z.js",
+     "initiatorType": "script",
+     "transferSize": 1371208,
+     "encodedBodySize": 1370908,
+     "decodedBodySize": 4652049,
+     "deliveryType": "",
+     "responseStatus": 200
+    }
+   ],
+   "reported_transfer_bytes": 1374164,
+   "reported_encoded_body_bytes": 1373564,
+   "websocket_bytes": {
+    "sent": 170,
+    "received": 541
+   },
+   "websocket_frame_count": 2
+  },
+  "reports_event": {
+   "checks": [
+    {
+     "name": "plotly_update",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "resource_timing": [],
+   "reported_transfer_bytes": 0,
+   "reported_encoded_body_bytes": 0,
+   "websocket_bytes": {
+    "sent": 159,
+    "received": 6824
+   },
+   "websocket_frame_count": 2
+  },
+  "editor_nav": {
+   "checks": [
+    {
+     "name": "editor_and_code_render",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "cdp_requests": [
+    {
+     "phase": "editor_nav",
+     "url": "http://localhost:8702/assets/_editor_-1OAq1u6B.css",
+     "type": "Stylesheet",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 307,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 3040
+    },
+    {
+     "phase": "editor_nav",
+     "url": "http://localhost:8702/assets/_editor_._index-D1LDgHtc.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 408,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 103039
+    },
+    {
+     "phase": "editor_nav",
+     "url": "http://localhost:8702/assets/dist-DT8fAXFV.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 406,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 3298
+    },
+    {
+     "phase": "editor_nav",
+     "url": "http://localhost:8702/assets/click-outside-container-DQqbRE-3.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 406,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 6496
+    },
+    {
+     "phase": "editor_nav",
+     "url": "http://localhost:8702/assets/sql-DL4klaVE.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 406,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 2277
+    },
+    {
+     "phase": "editor_nav",
+     "url": "http://localhost:8702/assets/core-ClEKCOV3.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 407,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 11457
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8702/assets/_editor_-1OAq1u6B.css",
+     "type": "stylesheet",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "2733",
+      "content-type": "text/css; charset=utf-8",
+      "etag": "\"dcbe9a79bed91330a291bccb479ed88f\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 549,
+      "responseBodySize": 2733,
+      "responseHeadersSize": 307
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/_editor_._index-D1LDgHtc.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "102631",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"a8623a70f72820641bcd2f3af18b0dd1\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 596,
+      "responseBodySize": 102631,
+      "responseHeadersSize": 408
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/dist-DT8fAXFV.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "2892",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"b195649681adad4bad39613b59befeed\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 585,
+      "responseBodySize": 2892,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/click-outside-container-DQqbRE-3.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "6090",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"6ff91997aafd26800820fd7cadc4f179\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 604,
+      "responseBodySize": 6090,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/sql-DL4klaVE.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1871",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"f06152cbbcd8ae1bf16ef0e9799ec001\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 584,
+      "responseBodySize": 1871,
+      "responseHeadersSize": 406
+     }
+    },
+    {
+     "url": "http://localhost:8702/assets/core-ClEKCOV3.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "11050",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"5d6a0241463545c686f796fd661aa8ee\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 557,
+      "responseBodySize": 11050,
+      "responseHeadersSize": 407
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8702/assets/_editor_-1OAq1u6B.css",
+     "initiatorType": "link",
+     "transferSize": 3033,
+     "encodedBodySize": 2733,
+     "decodedBodySize": 11465,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/_editor_._index-D1LDgHtc.js",
+     "initiatorType": "script",
+     "transferSize": 102931,
+     "encodedBodySize": 102631,
+     "decodedBodySize": 343964,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/click-outside-container-DQqbRE-3.js",
+     "initiatorType": "script",
+     "transferSize": 6390,
+     "encodedBodySize": 6090,
+     "decodedBodySize": 17612,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/dist-DT8fAXFV.js",
+     "initiatorType": "script",
+     "transferSize": 3192,
+     "encodedBodySize": 2892,
+     "decodedBodySize": 5738,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/core-ClEKCOV3.js",
+     "initiatorType": "script",
+     "transferSize": 11350,
+     "encodedBodySize": 11050,
+     "decodedBodySize": 30076,
+     "deliveryType": "",
+     "responseStatus": 200
+    },
+    {
+     "name": "http://localhost:8702/assets/sql-DL4klaVE.js",
+     "initiatorType": "script",
+     "transferSize": 2171,
+     "encodedBodySize": 1871,
+     "decodedBodySize": 3325,
+     "deliveryType": "",
+     "responseStatus": 200
+    }
+   ],
+   "reported_transfer_bytes": 129067,
+   "reported_encoded_body_bytes": 127267,
+   "websocket_bytes": {
+    "sent": 168,
+    "received": 534
+   },
+   "websocket_frame_count": 2
+  },
+  "editor_event": {
+   "checks": [
+    {
+     "name": "catalog_edit",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "cdp_requests": [
+    {
+     "phase": "editor_event",
+     "url": "http://localhost:8702/assets/data-grid-overlay-editor-DeCh05kq.js",
+     "type": "Script",
+     "status": 200,
+     "fromDiskCache": false,
+     "fromServiceWorker": false,
+     "encodedDataLength": 406,
+     "protocol": "http/1.1",
+     "finished_encoded_bytes": 2195
+    }
+   ],
+   "responses": [
+    {
+     "url": "http://localhost:8702/assets/data-grid-overlay-editor-DeCh05kq.js",
+     "type": "script",
+     "status": 200,
+     "headers": {
+      "content-encoding": "gzip",
+      "content-length": "1789",
+      "content-type": "text/javascript; charset=utf-8",
+      "etag": "\"a7c239f15f6644a96256caae4e21b859\"",
+      "last-modified": "Wed, 07 Oct 2026 07:42:53 GMT",
+      "vary": "Accept-Encoding, Origin, Origin"
+     },
+     "playwright_sizes": {
+      "requestBodySize": 0,
+      "requestHeadersSize": 577,
+      "responseBodySize": 1789,
+      "responseHeadersSize": 406
+     }
+    }
+   ],
+   "resource_timing": [
+    {
+     "name": "http://localhost:8702/assets/data-grid-overlay-editor-DeCh05kq.js",
+     "initiatorType": "script",
+     "transferSize": 2089,
+     "encodedBodySize": 1789,
+     "decodedBodySize": 3619,
+     "deliveryType": "",
+     "responseStatus": 200
+    }
+   ],
+   "reported_transfer_bytes": 2089,
+   "reported_encoded_body_bytes": 1789,
+   "websocket_bytes": {
+    "sent": 282,
+    "received": 223
+   },
+   "websocket_frame_count": 2
+  },
+  "home_return": {
+   "checks": [
+    {
+     "name": "home_return",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "resource_timing": [],
+   "reported_transfer_bytes": 0,
+   "reported_encoded_body_bytes": 0,
+   "websocket_bytes": {
+    "sent": 156,
+    "received": 507
+   },
+   "websocket_frame_count": 2
+  },
+  "warm_reports": {
+   "checks": [
+    {
+     "name": "chart_state_survives_navigation",
+     "ok": true,
+     "detail": null
+    }
+   ],
+   "resource_timing": [],
+   "reported_transfer_bytes": 0,
+   "reported_encoded_body_bytes": 0,
+   "websocket_bytes": {
+    "sent": 170,
+    "received": 541
+   },
+   "websocket_frame_count": 2
+  }
+ },
+ "full_evidence": "chromium-full.json.gz"
+}

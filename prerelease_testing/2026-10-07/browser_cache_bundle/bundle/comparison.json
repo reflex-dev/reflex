@@ -1,0 +1,2412 @@
+[
+ {
+  "label": "alpha-lazy0",
+  "browser": "chromium",
+  "browser_version": "153.0.8010.12",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6475647,
+  "js_gzip_estimate_bytes": 2033111,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 330907,
+    "reported_encoded_body_bytes": 326107,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 1981
+    },
+    "cdp_finished_encoded_bytes": 332407,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 4800,
+    "reported_encoded_body_bytes": 3334,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 1981
+    },
+    "cdp_finished_encoded_bytes": 3912,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1395,
+    "reported_encoded_body_bytes": 1095,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": 1501,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374164,
+    "reported_encoded_body_bytes": 1373564,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 1374379,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129067,
+    "reported_encoded_body_bytes": 127267,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": 129607,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2089,
+    "reported_encoded_body_bytes": 1789,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": 2195,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha-lazy0",
+  "browser": "webkit",
+  "browser_version": "26.6",
+  "checks_passed": 7,
+  "checks_failed": 1,
+  "driver_exception": "TimeoutError('Locator.wait_for: Timeout 30000ms exceeded.\\nCall log:\\n  - waiting for locator(\"#portal textarea\") to be visible\\n')",
+  "js_raw_bytes": 6475647,
+  "js_gzip_estimate_bytes": 2033111,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 330907,
+    "reported_encoded_body_bytes": 326107,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 2062
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3634,
+    "reported_encoded_body_bytes": 3334,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 2062
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1395,
+    "reported_encoded_body_bytes": 1095,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374164,
+    "reported_encoded_body_bytes": 1373564,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129067,
+    "reported_encoded_body_bytes": 127267,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": null,
+    "reported_encoded_body_bytes": null,
+    "websocket_bytes": null,
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha-lazy0-focus-recheck",
+  "browser": "chromium",
+  "browser_version": "153.0.8010.12",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6475647,
+  "js_gzip_estimate_bytes": 2033108,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 330909,
+    "reported_encoded_body_bytes": 326109,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 1981
+    },
+    "cdp_finished_encoded_bytes": 332409,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 4800,
+    "reported_encoded_body_bytes": 3334,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 1981
+    },
+    "cdp_finished_encoded_bytes": 3912,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1392,
+    "reported_encoded_body_bytes": 1092,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": 1498,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374162,
+    "reported_encoded_body_bytes": 1373562,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 1374377,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129367,
+    "reported_encoded_body_bytes": 127267,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": 129771,
+    "response_count": 7,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2089,
+    "reported_encoded_body_bytes": 1789,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": 2195,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha-lazy0-focus-recheck",
+  "browser": "webkit",
+  "browser_version": "26.6",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6475647,
+  "js_gzip_estimate_bytes": 2033108,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 330909,
+    "reported_encoded_body_bytes": 326109,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 2062
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3634,
+    "reported_encoded_body_bytes": 3334,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 2062
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1392,
+    "reported_encoded_body_bytes": 1092,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374162,
+    "reported_encoded_body_bytes": 1373562,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129067,
+    "reported_encoded_body_bytes": 127267,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2089,
+    "reported_encoded_body_bytes": 1789,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha-lazy1",
+  "browser": "chromium",
+  "browser_version": "153.0.8010.12",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6546428,
+  "js_gzip_estimate_bytes": 2039416,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 336328,
+    "reported_encoded_body_bytes": 332428,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 1981
+    },
+    "cdp_finished_encoded_bytes": 337512,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3900,
+    "reported_encoded_body_bytes": 3288,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 1981
+    },
+    "cdp_finished_encoded_bytes": 3144,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1374,
+    "reported_encoded_body_bytes": 1074,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": 1480,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374142,
+    "reported_encoded_body_bytes": 1373542,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 1374357,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129044,
+    "reported_encoded_body_bytes": 127244,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": 129584,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2093,
+    "reported_encoded_body_bytes": 1793,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": 2199,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha-lazy1",
+  "browser": "webkit",
+  "browser_version": "26.6",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6546428,
+  "js_gzip_estimate_bytes": 2039416,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 336328,
+    "reported_encoded_body_bytes": 332428,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 2062
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3588,
+    "reported_encoded_body_bytes": 3288,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 2062
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1374,
+    "reported_encoded_body_bytes": 1074,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374142,
+    "reported_encoded_body_bytes": 1373542,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129044,
+    "reported_encoded_body_bytes": 127244,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2093,
+    "reported_encoded_body_bytes": 1793,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha2-lazy0",
+  "browser": "chromium",
+  "browser_version": "153.0.8010.12",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6475648,
+  "js_gzip_estimate_bytes": 2033109,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 330909,
+    "reported_encoded_body_bytes": 326109,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 2011
+    },
+    "cdp_finished_encoded_bytes": 332409,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 300,
+    "reported_encoded_body_bytes": 326109,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 2011
+    },
+    "cdp_finished_encoded_bytes": 164,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1394,
+    "reported_encoded_body_bytes": 1094,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": 1500,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374162,
+    "reported_encoded_body_bytes": 1373562,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 1374377,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129068,
+    "reported_encoded_body_bytes": 127268,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": 129608,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2089,
+    "reported_encoded_body_bytes": 1789,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": 2195,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha2-lazy0",
+  "browser": "webkit",
+  "browser_version": "26.6",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6475648,
+  "js_gzip_estimate_bytes": 2033109,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 330909,
+    "reported_encoded_body_bytes": 326109,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 2092
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3636,
+    "reported_encoded_body_bytes": 3336,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 2092
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1394,
+    "reported_encoded_body_bytes": 1094,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374162,
+    "reported_encoded_body_bytes": 1373562,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129068,
+    "reported_encoded_body_bytes": 127268,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2089,
+    "reported_encoded_body_bytes": 1789,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha2-lazy1",
+  "browser": "chromium",
+  "browser_version": "153.0.8010.12",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6546430,
+  "js_gzip_estimate_bytes": 2039422,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 336331,
+    "reported_encoded_body_bytes": 332431,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 2011
+    },
+    "cdp_finished_encoded_bytes": 337515,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3900,
+    "reported_encoded_body_bytes": 3287,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 2011
+    },
+    "cdp_finished_encoded_bytes": 3144,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1374,
+    "reported_encoded_body_bytes": 1074,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": 1480,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374144,
+    "reported_encoded_body_bytes": 1373544,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 1374359,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129044,
+    "reported_encoded_body_bytes": 127244,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": 129584,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2093,
+    "reported_encoded_body_bytes": 1793,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": 2199,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha2-lazy1",
+  "browser": "webkit",
+  "browser_version": "26.6",
+  "checks_passed": 7,
+  "checks_failed": 1,
+  "driver_exception": "TimeoutError('Locator.wait_for: Timeout 30000ms exceeded.\\nCall log:\\n  - waiting for locator(\"#portal textarea\") to be visible\\n')",
+  "js_raw_bytes": 6546430,
+  "js_gzip_estimate_bytes": 2039422,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 336331,
+    "reported_encoded_body_bytes": 332431,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 2092
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3587,
+    "reported_encoded_body_bytes": 3287,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 2092
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1374,
+    "reported_encoded_body_bytes": 1074,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374144,
+    "reported_encoded_body_bytes": 1373544,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129044,
+    "reported_encoded_body_bytes": 127244,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": null,
+    "reported_encoded_body_bytes": null,
+    "websocket_bytes": null,
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha2-lazy1-focus-recheck",
+  "browser": "chromium",
+  "browser_version": "153.0.8010.12",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6546430,
+  "js_gzip_estimate_bytes": 2039423,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 336334,
+    "reported_encoded_body_bytes": 332434,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 2011
+    },
+    "cdp_finished_encoded_bytes": 337518,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3900,
+    "reported_encoded_body_bytes": 3290,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 2011
+    },
+    "cdp_finished_encoded_bytes": 3144,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1375,
+    "reported_encoded_body_bytes": 1075,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": 1481,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374144,
+    "reported_encoded_body_bytes": 1373544,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 1374359,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129044,
+    "reported_encoded_body_bytes": 127244,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": 129584,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2093,
+    "reported_encoded_body_bytes": 1793,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": 2199,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "alpha2-lazy1-focus-recheck",
+  "browser": "webkit",
+  "browser_version": "26.6",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6546430,
+  "js_gzip_estimate_bytes": 2039423,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.3.0",
+   "react-dom": "19.3.0",
+   "react-error-boundary": "6.1.6",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.4",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 336334,
+    "reported_encoded_body_bytes": 332434,
+    "websocket_bytes": {
+     "sent": 309,
+     "received": 2092
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3590,
+    "reported_encoded_body_bytes": 3290,
+    "websocket_bytes": {
+     "sent": 319,
+     "received": 2092
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1375,
+    "reported_encoded_body_bytes": 1075,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374144,
+    "reported_encoded_body_bytes": 1373544,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129044,
+    "reported_encoded_body_bytes": 127244,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2693,
+    "reported_encoded_body_bytes": 1793,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 3,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "stable-lazy0",
+  "browser": "chromium",
+  "browser_version": "153.0.8010.12",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6444630,
+  "js_gzip_estimate_bytes": 2023817,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.2.8",
+   "react-dom": "19.2.8",
+   "react-error-boundary": "6.1.2",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.3",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 321627,
+    "reported_encoded_body_bytes": 316827,
+    "websocket_bytes": {
+     "sent": 272,
+     "received": 9446
+    },
+    "cdp_finished_encoded_bytes": 323127,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 4800,
+    "reported_encoded_body_bytes": 3335,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 9446
+    },
+    "cdp_finished_encoded_bytes": 3912,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1391,
+    "reported_encoded_body_bytes": 1091,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": 1497,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374160,
+    "reported_encoded_body_bytes": 1373560,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 1374375,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129064,
+    "reported_encoded_body_bytes": 127264,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": 129604,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2088,
+    "reported_encoded_body_bytes": 1788,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": 2194,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "stable-lazy0",
+  "browser": "webkit",
+  "browser_version": "26.6",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6444630,
+  "js_gzip_estimate_bytes": 2023817,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.2.8",
+   "react-dom": "19.2.8",
+   "react-error-boundary": "6.1.2",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.3",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 321627,
+    "reported_encoded_body_bytes": 316827,
+    "websocket_bytes": {
+     "sent": 272,
+     "received": 9527
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3635,
+    "reported_encoded_body_bytes": 3335,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 9527
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 16,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1391,
+    "reported_encoded_body_bytes": 1091,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374160,
+    "reported_encoded_body_bytes": 1373560,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129064,
+    "reported_encoded_body_bytes": 127264,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2688,
+    "reported_encoded_body_bytes": 1788,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 3,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "stable-lazy1",
+  "browser": "chromium",
+  "browser_version": "153.0.8010.12",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6515416,
+  "js_gzip_estimate_bytes": 2030113,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.2.8",
+   "react-dom": "19.2.8",
+   "react-error-boundary": "6.1.2",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.3",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 327039,
+    "reported_encoded_body_bytes": 323139,
+    "websocket_bytes": {
+     "sent": 272,
+     "received": 9446
+    },
+    "cdp_finished_encoded_bytes": 328223,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3900,
+    "reported_encoded_body_bytes": 3287,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 9446
+    },
+    "cdp_finished_encoded_bytes": 3144,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1372,
+    "reported_encoded_body_bytes": 1072,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": 1478,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374141,
+    "reported_encoded_body_bytes": 1373541,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 1374356,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129035,
+    "reported_encoded_body_bytes": 127235,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": 129575,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2091,
+    "reported_encoded_body_bytes": 1791,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": 2197,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": 0,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ },
+ {
+  "label": "stable-lazy1",
+  "browser": "webkit",
+  "browser_version": "26.6",
+  "checks_passed": 10,
+  "checks_failed": 0,
+  "driver_exception": null,
+  "js_raw_bytes": 6515416,
+  "js_gzip_estimate_bytes": 2030113,
+  "css_raw_bytes": 709730,
+  "actual_frontend_versions": {
+   "@glideapps/glide-data-grid": "6.0.3",
+   "@radix-ui/themes": "3.3.0",
+   "@react-router/node": "8.4.0",
+   "isbot": "5.2.2",
+   "lodash": "4.18.1",
+   "lucide-react": "1.26.0",
+   "mergician": "2.0.2",
+   "plotly.js": "3.7.0",
+   "react": "19.2.8",
+   "react-dom": "19.2.8",
+   "react-error-boundary": "6.1.2",
+   "react-helmet": "6.1.0",
+   "react-plotly.js": "4.1.0",
+   "react-responsive-carousel": "3.2.23",
+   "react-router": "8.4.0",
+   "react-syntax-highlighter": "16.1.1",
+   "socket.io-client": "4.8.3",
+   "sonner": "2.0.8",
+   "universal-cookie": "8.1.2"
+  },
+  "phases": {
+   "cold_home": {
+    "reported_transfer_bytes": 327039,
+    "reported_encoded_body_bytes": 323139,
+    "websocket_bytes": {
+     "sent": 272,
+     "received": 9527
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reload": {
+    "reported_transfer_bytes": 3587,
+    "reported_encoded_body_bytes": 3287,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 9527
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 13,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_nav": {
+    "reported_transfer_bytes": 1372,
+    "reported_encoded_body_bytes": 1072,
+    "websocket_bytes": {
+     "sent": 174,
+     "received": 555
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "dashboard_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 172,
+     "received": 121
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_nav": {
+    "reported_transfer_bytes": 1374141,
+    "reported_encoded_body_bytes": 1373541,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 2,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "reports_event": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 159,
+     "received": 6824
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_nav": {
+    "reported_transfer_bytes": 129035,
+    "reported_encoded_body_bytes": 127235,
+    "websocket_bytes": {
+     "sent": 168,
+     "received": 534
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 6,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "editor_event": {
+    "reported_transfer_bytes": 2091,
+    "reported_encoded_body_bytes": 1791,
+    "websocket_bytes": {
+     "sent": 282,
+     "received": 223
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 1,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "home_return": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 156,
+     "received": 507
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   },
+   "warm_reports": {
+    "reported_transfer_bytes": 0,
+    "reported_encoded_body_bytes": 0,
+    "websocket_bytes": {
+     "sent": 170,
+     "received": 541
+    },
+    "cdp_finished_encoded_bytes": null,
+    "response_count": 0,
+    "pageerror_count": 0,
+    "failed_request_count": 0
+   }
+  }
+ }
+]

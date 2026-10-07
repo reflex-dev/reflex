@@ -1,0 +1,33 @@
+{
+ "label": "harness-negative",
+ "base": "http://localhost:8709",
+ "browser": "webkit",
+ "browser_version": "26.6",
+ "playwright_version": "1.63.0",
+ "phases": {
+  "cold_home": {
+   "checks": [
+    {
+     "name": "driver_exception",
+     "ok": false,
+     "detail": "Error('Page.goto: Could not connect to the server.\\nCall log:\\n  - navigating to \"http://localhost:8709/\", waiting until \"domcontentloaded\"\\n')"
+    }
+   ],
+   "failed_requests": [
+    {
+     "url": "http://localhost:8709/",
+     "failure": "Could not connect to the server."
+    }
+   ],
+   "console": [
+    {
+     "type": "error",
+     "text": "Failed to load resource: Could not connect to the server."
+    }
+   ],
+   "websocket_frame_count": 0
+  }
+ },
+ "exception": "Error('Page.goto: Could not connect to the server.\\nCall log:\\n  - navigating to \"http://localhost:8709/\", waiting until \"domcontentloaded\"\\n')",
+ "full_evidence": "webkit-full.json.gz"
+}
