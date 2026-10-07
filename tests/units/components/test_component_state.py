@@ -1,10 +1,15 @@
 """Ensure that Components returned by ComponentState.create have independent State classes."""
 
+from unittest import mock
+
 import pytest
+from reflex_base import constants
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_components_core.base.bare import Bare
 
 import reflex as rx
+from reflex.compiler.utils import compile_client_storage
+from reflex.constants.state import FIELD_MARKER
 
 
 def test_component_state():
@@ -107,3 +112,106 @@ def test_component_state_defaults_from_props():
     assert first_state.labels == ["first"]
     assert second_state.count == 10
     assert second_state.labels == ["second"]
+
+
+def test_component_state_patch_round_trip():
+    """Undoing a patched default restores the default get_component configured."""
+
+    class PatchedComponentState(rx.ComponentState):
+        count: int = 0
+        _secret: int = 0
+
+        @classmethod
+        def get_component(cls, initial: int) -> rx.Component:
+            """Configure the new state class before returning its component.
+
+            Args:
+                initial: The default of both vars.
+
+            Returns:
+                The component using the configured state var.
+            """
+            cls.count = initial
+            cls._secret = initial
+            return rx.text(cls.count)
+
+    for name in ("count", "_secret"):
+        state_cls = PatchedComponentState.create(initial=5).State
+        assert state_cls is not None
+        assert issubclass(state_cls, PatchedComponentState)
+        with pytest.MonkeyPatch.context() as patcher:
+            patcher.setattr(state_cls, name, 99)
+            assert getattr(state_cls(), name) == 99
+        assert getattr(state_cls(), name) == 5
+        assert state_cls.count is state_cls.base_vars["count"]
+
+        with mock.patch.object(PatchedComponentState, name, 42):
+            patched = PatchedComponentState.create(initial=6).State
+            assert patched is not None
+            assert getattr(patched(), name) == 6
+            assert PatchedComponentState.get_fields()[name].default_value() == 42
+        assert PatchedComponentState.get_fields()[name].default_value() == 0
+        assert getattr(state_cls(), name) == 5
+
+
+def test_component_state_storage_default_keeps_browser_storage():
+    """A browser storage var configured in get_component stays in browser storage."""
+
+    class PreferenceComponentState(rx.ComponentState):
+        pref: str = rx.LocalStorage("light", name="pref", sync=True)
+
+        @classmethod
+        def get_component(cls, initial: str) -> rx.Component:
+            """Configure the new state class before returning its component.
+
+            Args:
+                initial: The preference's default value.
+
+            Returns:
+                The component showing the preference.
+            """
+            cls.pref = initial
+            return rx.text(cls.pref)
+
+    state_cls = PreferenceComponentState.create(initial="dark").State
+    assert state_cls is not None
+    default = state_cls.get_fields()["pref"].default
+    assert isinstance(default, rx.LocalStorage)
+    assert default == "dark"
+    assert (default.name, default.sync) == ("pref", True)
+    assert state_cls._is_client_storage("pref")
+    compiled = compile_client_storage(state_cls)
+    key = f"{state_cls.get_full_name()}.pref{FIELD_MARKER}"
+    assert compiled[constants.LOCAL_STORAGE][key] == {"name": "pref", "sync": True}
+
+
+def test_component_state_class_has_own_assignment_history():
+    """Each generated class undoes only its own assignments, not the mixin's."""
+
+    class HistoryComponentState(rx.ComponentState):
+        count: int = 0
+
+        @classmethod
+        def get_component(cls, initial: int) -> rx.Component:
+            """Configure the new state class before returning its component.
+
+            Args:
+                initial: The count's default value.
+
+            Returns:
+                The component showing the count.
+            """
+            cls.count = initial
+            return rx.text(cls.count)
+
+    HistoryComponentState.count = 3
+    for initial in range(5):
+        state_cls = HistoryComponentState.create(initial=initial).State
+        assert state_cls is not None
+        assert state_cls().count == initial  # pyright: ignore[reportAttributeAccessIssue]
+        # Undoing stops at the mixin default the copy started from.
+        del state_cls.count
+        del state_cls.count
+        assert state_cls().count == 3  # pyright: ignore[reportAttributeAccessIssue]
+    del HistoryComponentState.count
+    assert HistoryComponentState.get_fields()["count"].default_value() == 0

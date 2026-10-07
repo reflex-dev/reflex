@@ -1,0 +1,1 @@
+A plain value assigned through a state class, or produced by an assigned factory, to a field whose default is a browser storage value, or whose default factory produces one, keeps that storage type and options.

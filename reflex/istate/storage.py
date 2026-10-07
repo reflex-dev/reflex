@@ -21,6 +21,21 @@ class ClientStorageBase:
             format.to_camel_case(k): v for k, v in vars(self).items() if v is not None
         }
 
+    def _with_value(self, value: Any) -> Any:
+        """Hold a plain string under the same storage type and options.
+
+        Args:
+            value: The value to hold.
+
+        Returns:
+            A storage value of this type and options holding a plain string, or
+            any other value, including another storage value, unchanged.
+        """
+        if isinstance(value, str) and not isinstance(value, ClientStorageBase):
+            # Every storage type takes its options as keyword arguments.
+            return type(self)(value, **vars(self))  # pyright: ignore[reportCallIssue]
+        return value
+
 
 class Cookie(ClientStorageBase, str):
     """Represents a state Var that is stored as a cookie in the browser."""

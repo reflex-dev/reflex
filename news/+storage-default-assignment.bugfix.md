@@ -1,0 +1,1 @@
+Assigning a plain default to a browser storage var through its state class, such as `cls.theme = initial` in `ComponentState.get_component` for `theme: str = rx.LocalStorage("light", name="theme")` or a `default_factory` producing one, keeps the var in browser storage with its name and options instead of silently turning it into an ordinary var or raising `TypeError`.

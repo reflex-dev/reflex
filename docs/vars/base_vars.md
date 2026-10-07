@@ -83,7 +83,8 @@ configured default. Defaults are not part of the saved-state schema, so changing
 one does not invalidate state saved by this release or later.
 
 Assigned defaults must match the field's declared type. Var and Field assignments
-are rejected, including fresh `rx.field(...)` objects. Declare a `ClassVar[rx.Var]` to
+are rejected, including fresh `rx.field(...)` objects, unless they restore a
+default as described below. Declare a `ClassVar[rx.Var]` to
 store a Var reference, or define a computed var to read another field at runtime.
 A callable the annotation accepts, such as for a `Callable` or `Any` var, is
 stored as the default. Otherwise, assigning a zero-argument callable updates the
@@ -92,6 +93,9 @@ calls it whenever an instance needs a new default or resets. If that validation
 call fails or returns an invalid default, the previous default remains in place.
 A factory that produces a browser storage value is called once at assignment,
 and its result becomes the default so the storage name and options are kept.
+Assigning a plain string to a var whose default is a browser storage value, such
+as `rx.LocalStorage("light", name="theme")`, or whose `default_factory` produces
+one, keeps that storage type, name and options and changes only the value.
 Frontend vars remain usable in the UI after assigning a new default value or
 factory.
 
@@ -100,6 +104,32 @@ through a subclass also changes that declaring state's default. Each generated
 `ComponentState` class owns its copied fields, allowing
 [`get_component` to configure defaults](/docs/state-structure/component-state/#passing-props)
 independently for each component.
+
+Assigning a var's own field or Var back to its state class, as read through the
+class before a change, or deleting the class attribute undoes the most recent
+default assignment. Testing tools such as pytest's `monkeypatch.setattr` and
+`unittest.mock.patch.object` restore a patched default this way, including a
+patch made through a subclass.
+
+```md alert warning
+# Annotate the var, and keep shared objects out of defaults.
+
+An unannotated var is typed from its default, so `_client = None` only accepts
+`None` later: annotate the var with the type you will assign. Defaults are copied
+for every instance, so a live client, lock, or connection cannot be shared this
+way. Assigning one to an `Any` or `Optional[...]` var is accepted, but reading the
+var on a new instance then raises `TypeError: cannot pickle '_thread.lock' object`.
+Declare an object that all sessions share as a `ClassVar`.
+```
+
+```md alert warning
+# Assign defaults before the app starts running.
+
+Assigning on a mixin only affects states created afterwards. Do not assign
+defaults in event handlers, lifespan tasks, or at any other time after the app
+has started running: such an assignment only affects the worker process that ran
+it.
+```
 
 ## Backend-only Vars
 
@@ -130,8 +160,11 @@ For example, a backend-only var is used to store a large data structure which is
 then paged to the frontend using cached vars.
 
 Read and write a backend var through a state instance, such as `self._token`.
-Reading `MyState._token` through the class returns its field descriptor. Assigning
-to `MyState._token` updates its default as described above.
+Reading `MyState._token` through the class returns its field descriptor, whose
+`default_value()` method returns the default (a fresh copy if it is mutable). Use
+it to build the UI from a constant, such as
+`rx.foreach(MyState._options.default_value(), rx.text)` for a backend var
+`_options`. Assigning to `MyState._token` updates its default as described above.
 
 For configuration shared by all sessions, declare a `ClassVar` instead:
 
@@ -148,6 +181,8 @@ MyState._endpoint = "https://example.com/v2"
 ```
 
 `ClassVar` values are ordinary class attributes and are not part of session state.
+Reading one on the class returns the plain value, and an object that cannot be
+copied, such as a client or lock, is shared rather than copied for each instance.
 
 ```python demo exec
 import numpy as np
