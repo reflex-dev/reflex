@@ -1,0 +1,80 @@
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/stable/bin/python)]
+['/opt/node22/bin/npm']]
+───────────────────────────────── System Info ──────────────────────────────────
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_base/config.py'
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'disable_plugins', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/stable/bin/python)]
+['/opt/node22/bin/npm']]
+────────────────────────────── Initializing csbox ──────────────────────────────
+Info: Initializing the web directory.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/stable/lib/python3.12/site-packages/reflex_base/.templates/web to .web
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/csbox-stable/reflex.lock/package.json
+Success: Initialized csbox. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+supported by protocol
+[<AddressFamily.AF_INET: 2>].
+supported by protocol
+[<AddressFamily.AF_INET: 2>].
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/stable/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 12/11 0:00:00
+'-d', 'postcss-import@17.0.0', '@emotion/react@11.14.0', 'vite@8.2.2', 
+'@react-router/dev@8.4.0', 'postcss@8.5.26', '@react-router/fs-routes@8.4.0', 
+'autoprefixer@10.5.4']
+'react@19.2.8', '@radix-ui/themes@3.3.0', '@react-router/node@8.4.0', 
+'react-helmet@6.1.0', 'react-error-boundary@6.1.2', 'react-dom@19.2.8', 
+'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 'sonner@2.0.8', 
+'react-router@8.4.0', 'lucide-react@1.26.0', 'mergician@v2.0.2', 'isbot@5.2.2']
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/csbox-stable/reflex.lock/bun.lock
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/csbox-stable/reflex.lock/package.json
+───────────────────────────────── App Running ──────────────────────────────────
+['/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpa
+d/apps/a3_class_state/run/csbox-stable/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_class_state/run/csbox-stable/csbox', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_class_state/run/csbox-stable/rxconfig.py']
+[INFO] Starting granian (main PID: 14144)
+[INFO] Listening at: http://0.0.0.0:8103
+[INFO] Spawning worker-1 with PID: 14180
+[INFO] Started worker-1
+App running at: http://localhost:3103/
+Backend running at: http://0.0.0.0:8103
+[INFO] Stopping worker-1
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

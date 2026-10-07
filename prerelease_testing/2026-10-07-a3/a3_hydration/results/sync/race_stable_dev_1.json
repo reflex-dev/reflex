@@ -1,0 +1,138 @@
+{
+ "R": {
+  "hold_ms": 2500,
+  "b_connect": [
+   "40/_event,"
+  ],
+  "n_held_msgs": 1,
+  "t_change": 1791403917.73,
+  "t_release": 1791403920.255,
+  "A_timeline": [
+   [
+    1791403917.735,
+    "v1"
+   ],
+   [
+    1791403917.781,
+    "v2"
+   ],
+   [
+    1791403920.307,
+    "v1"
+   ],
+   [
+    1791403920.331,
+    "v2"
+   ]
+  ],
+  "B_timeline": [
+   [
+    1791403917.758,
+    "light"
+   ],
+   [
+    1791403920.286,
+    "v1"
+   ],
+   [
+    1791403920.309,
+    "v2"
+   ]
+  ],
+  "A_storage_events": [
+   [
+    10814,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    10819,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    10830,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    10834,
+    "be_theme",
+    "v1",
+    "v2"
+   ]
+  ],
+  "B_storage_events": [
+   [
+    5733,
+    "be_theme",
+    "v1",
+    "v2"
+   ],
+   [
+    8261,
+    "be_theme",
+    "v2",
+    "v1"
+   ],
+   [
+    8262,
+    "be_theme",
+    "v1",
+    "v2"
+   ]
+  ],
+  "A_uvi": [
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}"
+  ],
+  "B_uvi": [
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v1\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_\":\"v2\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}"
+  ],
+  "A_final": "v2",
+  "B_final": "v2",
+  "ls_final": "v2",
+  "A_showed_v1_after_change": true
+ },
+ "S": {
+  "finals": {
+   "t0": "s2",
+   "t1": "s2",
+   "t2": "s2",
+   "t3": "s2",
+   "t4": "s3",
+   "t5": "s3",
+   "t6": "s3"
+  },
+  "ls_final": "s2",
+  "storage_events_per_tab": {
+   "t0": 2533,
+   "t1": 2514,
+   "t2": 2519,
+   "t3": 2531,
+   "t4": 2550,
+   "t5": 2543,
+   "t6": 2543
+  },
+  "uvi_per_tab": {
+   "t0": 2551,
+   "t1": 2532,
+   "t2": 2529,
+   "t3": 2532,
+   "t4": 2549,
+   "t5": 2514,
+   "t6": 2542
+  },
+  "frames_total": 23355,
+  "frames_in_quiet_2s": 6447,
+  "converged": false
+ }
+}

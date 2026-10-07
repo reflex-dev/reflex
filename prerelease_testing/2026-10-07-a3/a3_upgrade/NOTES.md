@@ -62,3 +62,30 @@ Statement-by-statement (a3 = 0.10.0a3 dev unless noted; 0.9 claims checked on 0.
 | changelog: `uv pip install -U` moves sqlmodel, `pip install -U` / uv without `-U` keep it | see item 2 C (pip -U leaves the installed graph alone) | - | consistent |
 
 N-002 (missing changelog entry for #7462): the a3 CHANGELOG has it under Breaking Changes, linking the tables.md section -> FIXED.
+
+Guide links: the anchors it uses exist in the a3 tree (`docs/vars/base_vars.md` "## Changing Defaults", `docs/hosting/self-hosting.md` "## Production Mode",
+`docs/database/tables.md` "### Datetimes and SQLModel upgrades", `docs/state_structure/component_state.md` "## Passing Props"); the guide is routed
+under `docs/changelog/upgrading/` with a sidebar entry; `docs/events/background_events.md` links to it. reflex.dev itself is blocked by the sandbox proxy.
+
+## Item 4a: `reflex component` (F-014) — `logs/cli-component-{a3,alpha2,stable}.txt`
+Rerun: `cd $W/cli_neutral && for a in "component" "component init" "component build --loglevel debug" "component share" "component install" "component publish --token x" "component --help" "component init --help"; do $SB/envs/a3/bin/reflex $a; echo rc=$?; done`
+* a3: every form prints the pointer ("`reflex component` was removed in Reflex 0.10. Wrap React components directly in your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable component packages from the component template: https://github.com/reflex-dev/component-template") to STDERR, rc 1; `--help` prints it as help, rc 0; hidden from `reflex --help`. Links resolve (docs page in tree; `git ls-remote` of the template repo answers). **F-014 FIXED.**
+* a2: "No such command 'component'", rc 2. 0.9.12: the real command group.
+
+## Item 4b: `reflex run --json` stopped while a slow consumer reads the pipe (#7428) — `scripts/json_drain.py`, `shots/jsondrain/*.json`, `logs/jsondrain-*.txt`
+App: `apps/jsondrain` (`reflex init --template blank` by a3) + an env-gated lifespan task (QA_CHATTY=1) whose thread prints numbered
+`QA-SEQ nnnnnnn xxx…` lines (~265 bytes, <=400/s) and records the last fully printed number in `chatty.seq`. The driver reads stdout
+fast until `/ping` answers, stops reading 4 s (both pipes fill), sends the signal, then reads `<rate>` lines/s until EOF; it checks every
+line parses as JSON, QA-SEQ continuity, the tail lost against `chatty.seq`, signal->exit time, exit code and leftover processes/ports.
+Rerun: `$W/bin/json_matrix.sh <label> <a3|alpha2|stable> INT-group:40 TERM-pid:40 TERM-pid:6 INT-pid:40` (ports 3210/8210; env `QA_NOJSON=1`
+drops `--json`, `QA_CHATTY_OFF=1` disables the printer, `QA_EOF_CAP`/`QA_WAIT_CAP` shorten the hang cases).
+
+| run (signal, consumer) | a3 | a2 | 0.9.12 (no supervisor) |
+|---|---|---|---|
+| Ctrl-C (SIGINT to the process group), 40 lines/s | exit 6.5 s rc 0, **0 lost, 0 invalid** (two runs) | exit 5.6 s rc 0, **63 lines lost + a truncated last record** (`{"timestamp": ..., "message": "QA-SEQ 0001` cut) | exit 0.25 s; QA-SEQ lines are not JSON on 0.9.12 (pre-#7350) |
+| SIGTERM to the pid, 40 lines/s | exit 6.7 s rc 0, **0 lost, 0 invalid** | exit 5.2 s rc 0, **49 lost + truncated record** | did not exit within 60 s (killed) — chatty back-pressure suspected, rerun with a fast consumer queued |
+| SIGTERM to the pid, 6 lines/s (backlog > 30 s) | exit **30.4 s** (wall cap) rc 0, 82 lost, **truncated last record** `{"timestamp": "...", "level"` with no newline | exit 5.5 s, 249 lost + truncated record | - |
+| SIGINT to the pid only, 40 lines/s | **never exits** (killed after 210 s; child `reflex run` + server keep running) | **never exits** (same) | did not exit within 60 s (see above) |
+| SIGINT to the pid only, plain `reflex run` (no --json) | exit 0.25 s rc 0 | exit 0.2 s rc 0 | (queued) |
+
+`Unexpected exit from worker-1` (`_granian`, level error) on stderr whenever the whole group gets SIGINT: known-benign, same on 0.9.12/a2 (a2-pass events/ent_auth reports).

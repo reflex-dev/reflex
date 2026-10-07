@@ -1,0 +1,3351 @@
+{
+ "fresh_index": {
+  "label": "fresh_index",
+  "tab": "fresh_index",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {},
+   "token": "185f55e1-7bec-40ca-c845-593ea5bc9171",
+   "cookies": {}
+  },
+  "deltas": [
+   {
+    "t": 1.352,
+    "len": 3139,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 0,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 1.352,
+    "len": 129,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 1.352,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 3,
+  "frames_in": 5,
+  "bytes_in": 3504,
+  "frames_out": 3,
+  "bytes_out": 272,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.note_len": 2,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"185f55e1\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"185f55e1\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 2,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "fresh_onload": {
+  "label": "fresh_onload",
+  "tab": "fresh_onload",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_srv": "srv-onload-1",
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {},
+   "token": "cf832032-83cd-4b8e-8c65-535ac7db2d87",
+   "cookies": {
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 0.575,
+    "len": 3166,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 0,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 0.589,
+    "len": 129,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 1.089,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 1.09,
+    "len": 176,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "bootecho___bootecho____srv.loads": 1,
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1"
+    }
+   },
+   {
+    "t": 1.091,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 5,
+  "frames_in": 7,
+  "bytes_in": 3796,
+  "frames_out": 3,
+  "bytes_out": 296,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "bootecho___bootecho____srv.loads": 2,
+   "bootecho___bootecho____srv.srv_ck": 2,
+   "bootecho___bootecho____srv.srv_ls": 2,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.note_len": 2,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"cf832032\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"cf832032\"}",
+   "ONLOAD {\"before_ck\": \"srvck-default\", \"before_ls\": \"srv-default\", \"tok\": \"cf832032\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"cf832032\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"cf832032\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 4,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "fresh_plainload": {
+  "label": "fresh_plainload",
+  "tab": "fresh_plainload",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {},
+   "token": "cc71356c-41cc-4564-a77d-52cbb329037c",
+   "cookies": {}
+  },
+  "deltas": [
+   {
+    "t": 0.809,
+    "len": 3187,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 0,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 0.81,
+    "len": 129,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 0.81,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 0.812,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 4,
+  "frames_in": 6,
+  "bytes_in": 3641,
+  "frames_out": 3,
+  "bytes_out": 308,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.note_len": 2,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"cc71356c\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"cc71356c\"}",
+   "ONLOAD_NOOP {\"srv_ls\": \"srv-default\", \"tok\": \"cc71356c\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"cc71356c\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"cc71356c\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 4,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "user_first": {
+  "label": "user_first",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {},
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {}
+  },
+  "deltas": [
+   {
+    "t": 0.647,
+    "len": 3139,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 0,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 0.653,
+    "len": 129,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 0.653,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 3,
+  "frames_in": 5,
+  "bytes_in": 3504,
+  "frames_out": 3,
+  "bytes_out": 272,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.note_len": 2,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 2,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "click#set-user": {
+  "label": "click#set-user",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+user-dark",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_theme": "user-dark",
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407251.0,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 2.35,
+    "len": 506,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.clicks": 1,
+     "bootecho___bootecho____prefs.note_len": "N:9:user-note",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+user-dark"
+    }
+   }
+  ],
+  "n_deltas": 1,
+  "frames_in": 1,
+  "bytes_in": 506,
+  "frames_out": 1,
+  "bytes_out": 136,
+  "out_events": [
+   {
+    "event": "set_user",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"sub_combo\": \"sub-default+user-dark\"}, \"st\": \"SubPrefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"note_len\": \"N:9:user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 2,
+   "SubPrefs": 1,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "click#set-user-sub": {
+  "label": "click#set-user-sub",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407251.0,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410851.9,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 3.247,
+    "len": 226,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck"
+    }
+   }
+  ],
+  "n_deltas": 1,
+  "frames_in": 1,
+  "bytes_in": 226,
+  "frames_out": 1,
+  "bytes_out": 173,
+  "out_events": [
+   {
+    "event": "set_user_sub",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 2,
+   "SubPrefs": 1,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "click#box-a-choose": {
+  "label": "click#box-a-choose",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407251.0,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410851.9,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404252.8,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 4.147,
+    "len": 152,
+    "root_is_h": "-",
+    "vars": {
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user"
+    }
+   }
+  ],
+  "n_deltas": 1,
+  "frames_in": 1,
+  "bytes_in": 152,
+  "frames_out": 1,
+  "bytes_out": 141,
+  "out_events": [
+   {
+    "event": "choose",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 1,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "click#box-b-choose": {
+  "label": "click#box-b-choose",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407251.0,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410851.9,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404252.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404253.7,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 5.03,
+    "len": 152,
+    "root_is_h": "-",
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user"
+    }
+   }
+  ],
+  "n_deltas": 1,
+  "frames_in": 1,
+  "bytes_in": 152,
+  "frames_out": 1,
+  "bytes_out": 141,
+  "out_events": [
+   {
+    "event": "choose",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 1,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "click#good-tok": {
+  "label": "click#good-tok",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407251.0,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410851.9,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404252.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404253.7,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 5.914,
+    "len": 139,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   }
+  ],
+  "n_deltas": 1,
+  "frames_in": 1,
+  "bytes_in": 139,
+  "frames_out": 1,
+  "bytes_out": 136,
+  "out_events": [
+   {
+    "event": "set_good",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "bootecho___bootecho____guard.tok": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 1,
+   "SubPrefs": 0,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "user_after_clicks": {
+  "label": "user_after_clicks",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407251.0,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410851.9,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404252.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404253.7,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [],
+  "n_deltas": 0,
+  "frames_in": 0,
+  "bytes_in": 0,
+  "frames_out": 0,
+  "bytes_out": 0,
+  "out_events": [],
+  "var_counts": {},
+  "gd_traces": [],
+  "gd_calls": {
+   "Prefs": 0,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "user_reload1": {
+  "label": "user_reload1",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"default\":200}"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407258.8,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410858.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404258.8,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404258.8,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 10.159,
+    "len": 3607,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 1,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 10.159,
+    "len": 129,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 10.163,
+    "len": 894,
+    "root_is_h": "-",
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.note_len": "N:9:user-note",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   },
+   {
+    "t": 10.165,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 4,
+  "frames_in": 6,
+  "bytes_in": 4866,
+  "frames_out": 5,
+  "bytes_out": 1544,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+      "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+      "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+      "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123",
+      "reflex___state____state.bootecho___bootecho____prefs.sess_rx_state_": "user-sess"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 2,
+   "bootecho___bootecho____guard.tok_ok": 2,
+   "reflex___istate___dynamic____box_n1.bck": 2,
+   "reflex___istate___dynamic____box_n1.pref": 2,
+   "reflex___istate___dynamic____box_n2.bck": 2,
+   "reflex___istate___dynamic____box_n2.pref": 2,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____prefs.ck": 2,
+   "bootecho___bootecho____prefs.ck_combo": 2,
+   "bootecho___bootecho____prefs.ckopt": 2,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 2,
+   "bootecho___bootecho____prefs.note_len": 3,
+   "bootecho___bootecho____prefs.sess": 2,
+   "bootecho___bootecho____prefs.theme": 2,
+   "bootecho___bootecho____prefs.theme_upper": 2,
+   "bootecho___bootecho____sub_prefs.sub_ck": 2,
+   "bootecho___bootecho____sub_prefs.sub_combo": 2,
+   "bootecho___bootecho____sub_prefs.sub_ls": 2
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"note_len\": \"N:9:user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 4,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "cookie_slide": {
+  "before": {
+   "be_ckopt": 1791407251.0,
+   "be_ck": -1,
+   "be_sub_ck": 1791410851.9,
+   "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": 1791404252.8,
+   "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": 1791404253.7
+  },
+  "after": {
+   "be_ckopt": 1791407258.8,
+   "be_ck": -1,
+   "be_sub_ck": 1791410858.8,
+   "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": 1791404258.8,
+   "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": 1791404258.8
+  },
+  "delta_s": {
+   "be_ckopt": 7.8,
+   "be_ck": 0,
+   "be_sub_ck": 6.9,
+   "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": 6.0,
+   "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": 5.1
+  }
+ },
+ "user_reload2": {
+  "label": "user_reload2",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407260.7,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410860.7,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404260.7,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404260.7,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 12.059,
+    "len": 3607,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 1,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 12.06,
+    "len": 129,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 12.062,
+    "len": 894,
+    "root_is_h": "-",
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.note_len": "N:9:user-note",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   },
+   {
+    "t": 12.064,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 4,
+  "frames_in": 6,
+  "bytes_in": 4866,
+  "frames_out": 5,
+  "bytes_out": 1544,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+      "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+      "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+      "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123",
+      "reflex___state____state.bootecho___bootecho____prefs.sess_rx_state_": "user-sess"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 2,
+   "bootecho___bootecho____guard.tok_ok": 2,
+   "reflex___istate___dynamic____box_n1.bck": 2,
+   "reflex___istate___dynamic____box_n1.pref": 2,
+   "reflex___istate___dynamic____box_n2.bck": 2,
+   "reflex___istate___dynamic____box_n2.pref": 2,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____prefs.ck": 2,
+   "bootecho___bootecho____prefs.ck_combo": 2,
+   "bootecho___bootecho____prefs.ckopt": 2,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 2,
+   "bootecho___bootecho____prefs.note_len": 3,
+   "bootecho___bootecho____prefs.sess": 2,
+   "bootecho___bootecho____prefs.theme": 2,
+   "bootecho___bootecho____prefs.theme_upper": 2,
+   "bootecho___bootecho____sub_prefs.sub_ck": 2,
+   "bootecho___bootecho____sub_prefs.sub_combo": 2,
+   "bootecho___bootecho____sub_prefs.sub_ls": 2
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"note_len\": \"N:9:user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 4,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "user_probe": {
+  "label": "user_probe",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407260.7,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410860.7,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404260.7,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404260.7,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [],
+  "n_deltas": 0,
+  "frames_in": 0,
+  "bytes_in": 0,
+  "frames_out": 1,
+  "bytes_out": 133,
+  "out_events": [
+   {
+    "event": "probe",
+    "payload": null
+   }
+  ],
+  "var_counts": {},
+  "gd_traces": [
+   "PROBE {\"ck\": \"user-ck\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"note_len\": \"N:9:user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 1,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "nav_onload": {
+  "label": "nav_onload",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_srv": "srv-onload-1",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407263.3,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410863.3,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404263.3,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404263.3,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 14.692,
+    "len": 1331,
+    "root_is_h": "-",
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   },
+   {
+    "t": 14.694,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 14.697,
+    "len": 176,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "bootecho___bootecho____srv.loads": 1,
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1"
+    }
+   },
+   {
+    "t": 14.698,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 4,
+  "frames_in": 4,
+  "bytes_in": 1684,
+  "frames_out": 2,
+  "bytes_out": 1442,
+  "out_events": [
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+      "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+      "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+      "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123",
+      "reflex___state____state.bootecho___bootecho____prefs.sess_rx_state_": "user-sess"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "bootecho___bootecho____guard.tok": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "ONLOAD {\"before_ck\": \"srvck-default\", \"before_ls\": \"srv-default\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 5,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "nav_plainload": {
+  "label": "nav_plainload",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_srv": "srv-onload-1",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407265.0,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410865.0,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404265.0,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404265.0,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 16.308,
+    "len": 1477,
+    "root_is_h": "-",
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   },
+   {
+    "t": 16.316,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 16.317,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 3,
+  "frames_in": 3,
+  "bytes_in": 1654,
+  "frames_out": 2,
+  "bytes_out": 1626,
+  "out_events": [
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ck_rx_state_": "srvck-onload-1",
+      "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+      "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ls_rx_state_": "srv-onload-1",
+      "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+      "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123",
+      "reflex___state____state.bootecho___bootecho____prefs.sess_rx_state_": "user-sess"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "bootecho___bootecho____guard.tok": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "ONLOAD_NOOP {\"srv_ls\": \"srv-onload-1\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/plainload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 5,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "nav_home": {
+  "label": "nav_home",
+  "tab": "user",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "user-sess",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "1",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_srv": "srv-onload-1",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {
+    "be_sess": "user-sess",
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "token": "a7ab9c46-a56e-4e62-8eb5-75eef7171ec0",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407266.5,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410866.5,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404266.5,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404266.5,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 17.859,
+    "len": 1429,
+    "root_is_h": "-",
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.sess": "user-sess",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   },
+   {
+    "t": 17.86,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 2,
+  "frames_in": 2,
+  "bytes_in": 1517,
+  "frames_out": 2,
+  "bytes_out": 1590,
+  "out_events": [
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ck_rx_state_": "srvck-onload-1",
+      "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+      "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ls_rx_state_": "srv-onload-1",
+      "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+      "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123",
+      "reflex___state____state.bootecho___bootecho____prefs.sess_rx_state_": "user-sess"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "bootecho___bootecho____guard.tok": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"sess\": \"user-sess\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"a7ab9c46\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"a7ab9c46\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 3,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": []
+ },
+ "user_tab2": {
+  "label": "user_tab2",
+  "tab": "user_tab2",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "user-dark",
+   "note": "user-note",
+   "sess": "sess-default",
+   "ck": "user-ck",
+   "ckopt": "user-ckopt",
+   "theme-upper": "T:USER-DARK",
+   "note-len": "N:9:user-note",
+   "ck-combo": "user-ck|user-ckopt",
+   "sub-ls": "user-sub",
+   "sub-ck": "user-subck",
+   "sub-combo": "user-sub+user-dark",
+   "tok": "good-123",
+   "tok-ok": "TOK:ok",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "0",
+   "box-a-pref": "box-user",
+   "box-a-bck": "boxck-user",
+   "box-b-pref": "box-user",
+   "box-b-bck": "boxck-user"
+  },
+  "storage": {
+   "local": {
+    "be_note": "user-note",
+    "be_srv": "srv-onload-1",
+    "be_sub_ls": "user-sub",
+    "be_theme": "user-dark",
+    "be_tok": "good-123",
+    "last_compiled_theme": "system",
+    "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+    "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+    "theme": "system"
+   },
+   "session": {},
+   "token": "b50d6453-0970-43e1-87ea-5ae962ff6448",
+   "cookies": {
+    "be_ckopt": {
+     "value": "user-ckopt",
+     "expires": 1791407268.5,
+     "sameSite": "Strict",
+     "path": "/"
+    },
+    "be_ck": {
+     "value": "user-ck",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_sub_ck": {
+     "value": "user-subck",
+     "expires": 1791410868.5,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404268.5,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": {
+     "value": "boxck-user",
+     "expires": 1791404268.5,
+     "sameSite": "Lax",
+     "path": "/"
+    },
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 0.392,
+    "len": 3659,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 0,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 0.393,
+    "len": 129,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default"
+    }
+   },
+   {
+    "t": 0.396,
+    "len": 990,
+    "root_is_h": "-",
+    "vars": {
+     "reflex___istate___dynamic____box_n2.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n2.pref": "box-user",
+     "reflex___istate___dynamic____box_n1.bck": "boxck-user",
+     "reflex___istate___dynamic____box_n1.pref": "box-user",
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1",
+     "bootecho___bootecho____prefs.ckopt": "user-ckopt",
+     "bootecho___bootecho____prefs.theme_upper": "T:USER-DARK",
+     "bootecho___bootecho____prefs.note_len": "N:9:user-note",
+     "bootecho___bootecho____prefs.ck": "user-ck",
+     "bootecho___bootecho____prefs.note": "user-note",
+     "bootecho___bootecho____prefs.ck_combo": "user-ck|user-ckopt",
+     "bootecho___bootecho____prefs.theme": "user-dark",
+     "bootecho___bootecho____sub_prefs.sub_combo": "user-sub+user-dark",
+     "bootecho___bootecho____sub_prefs.sub_ls": "user-sub",
+     "bootecho___bootecho____sub_prefs.sub_ck": "user-subck",
+     "bootecho___bootecho____guard.tok_ok": true,
+     "bootecho___bootecho____guard.tok": "good-123"
+    }
+   },
+   {
+    "t": 0.404,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 4,
+  "frames_in": 6,
+  "bytes_in": 5014,
+  "frames_out": 4,
+  "bytes_out": 1624,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.reflex___istate___dynamic____box_n1.bck_rx_state_": "boxck-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.bck_rx_state_": "boxck-user",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ck_rx_state_": "srvck-onload-1",
+      "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "user-ck",
+      "reflex___state____state.bootecho___bootecho____prefs.ckopt_rx_state_": "user-ckopt",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ck_rx_state_": "user-subck",
+      "reflex___state____state.reflex___istate___dynamic____box_n1.pref_rx_state_": "box-user",
+      "reflex___state____state.reflex___istate___dynamic____box_n2.pref_rx_state_": "box-user",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ls_rx_state_": "srv-onload-1",
+      "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "user-dark",
+      "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "user-note",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "user-sub",
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "good-123"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 2,
+   "bootecho___bootecho____guard.tok_ok": 2,
+   "reflex___istate___dynamic____box_n1.bck": 2,
+   "reflex___istate___dynamic____box_n1.pref": 2,
+   "reflex___istate___dynamic____box_n2.bck": 2,
+   "reflex___istate___dynamic____box_n2.pref": 2,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 2,
+   "bootecho___bootecho____srv.srv_ls": 2,
+   "bootecho___bootecho____prefs.ck": 2,
+   "bootecho___bootecho____prefs.ck_combo": 2,
+   "bootecho___bootecho____prefs.ckopt": 2,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 2,
+   "bootecho___bootecho____prefs.note_len": 3,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.theme": 2,
+   "bootecho___bootecho____prefs.theme_upper": 2,
+   "bootecho___bootecho____sub_prefs.sub_ck": 2,
+   "bootecho___bootecho____sub_prefs.sub_combo": 2,
+   "bootecho___bootecho____sub_prefs.sub_ls": 2
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"note_len\": \"N:12:note-default\"}, \"st\": \"Prefs\", \"tok\": \"b50d6453\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"b50d6453\"}",
+   "GD {\"seen\": {\"sub_ck\": \"user-subck\", \"sub_combo\": \"user-sub+user-dark\", \"sub_ls\": \"user-sub\"}, \"st\": \"SubPrefs\", \"tok\": \"b50d6453\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"user-ck\", \"ck_combo\": \"user-ck|user-ckopt\", \"ckopt\": \"user-ckopt\", \"note\": \"user-note\", \"note_len\": \"N:9:user-note\", \"theme\": \"user-dark\", \"theme_upper\": \"T:USER-DARK\"}, \"st\": \"Prefs\", \"tok\": \"b50d6453\"}",
+   "GD {\"seen\": {\"tok\": \"good-123\", \"tok_ok\": true}, \"st\": \"Guard\", \"tok\": \"b50d6453\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"b50d6453\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 4,
+   "SubPrefs": 1,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "bad_tok_reload": {
+  "label": "bad_tok_reload",
+  "tab": "badtok",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_tok": "",
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "token": "255c00ae-5dbc-4cb2-b6e1-38f681ca7853",
+   "cookies": {}
+  },
+  "deltas": [
+   {
+    "t": 2.516,
+    "len": 3139,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 0,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 2.518,
+    "len": 132,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____guard.tok_ok": false,
+     "bootecho___bootecho____guard.tok": ""
+    }
+   },
+   {
+    "t": 2.518,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 3,
+  "frames_in": 5,
+  "bytes_in": 3507,
+  "frames_out": 5,
+  "bytes_out": 546,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": "bad-xyz"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 2,
+   "bootecho___bootecho____guard.tok_ok": 2,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"255c00ae\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"255c00ae\"}",
+   "GD {\"seen\": {\"SANITISED\": true, \"tok\": \"bad-xyz\", \"tok_ok\": false}, \"st\": \"Guard\", \"tok\": \"255c00ae\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"255c00ae\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 3,
+   "SubPrefs": 0,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "bad_tok_reload2": {
+  "label": "bad_tok_reload2",
+  "tab": "badtok",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_tok": "",
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "token": "255c00ae-5dbc-4cb2-b6e1-38f681ca7853",
+   "cookies": {}
+  },
+  "deltas": [
+   {
+    "t": 4.507,
+    "len": 3139,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 0,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 4.511,
+    "len": 132,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____guard.tok_ok": false,
+     "bootecho___bootecho____guard.tok": ""
+    }
+   },
+   {
+    "t": 4.514,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 3,
+  "frames_in": 5,
+  "bytes_in": 3507,
+  "frames_out": 5,
+  "bytes_out": 539,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.bootecho___bootecho____guard.tok_rx_state_": ""
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 2,
+   "bootecho___bootecho____guard.tok_ok": 2,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"255c00ae\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"255c00ae\"}",
+   "GD {\"seen\": {\"tok\": \"\", \"tok_ok\": false}, \"st\": \"Guard\", \"tok\": \"255c00ae\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"255c00ae\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 3,
+   "SubPrefs": 0,
+   "Guard": 1
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "server_wins": {
+  "label": "server_wins",
+  "tab": "srv",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-onload-1",
+   "srv-ck": "srvck-onload-1",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_srv": "srv-onload-1",
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "token": "c375ebf2-8770-4462-f14c-e7cd9984208b",
+   "cookies": {
+    "be_srv_ck": {
+     "value": "srvck-onload-1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 2.418,
+    "len": 3220,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 0,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 2.419,
+    "len": 152,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.srv_ls": "browser-old",
+     "bootecho___bootecho____srv.srv_ck": "browser-old"
+    }
+   },
+   {
+    "t": 2.419,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 2.419,
+    "len": 176,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "bootecho___bootecho____srv.loads": 1,
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1"
+    }
+   },
+   {
+    "t": 2.419,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 5,
+  "frames_in": 7,
+  "bytes_in": 3873,
+  "frames_out": 5,
+  "bytes_out": 671,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.bootecho___bootecho____srv.srv_ck_rx_state_": "browser-old",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ls_rx_state_": "browser-old"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "bootecho___bootecho____srv.loads": 2,
+   "bootecho___bootecho____srv.srv_ck": 3,
+   "bootecho___bootecho____srv.srv_ls": 3,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"c375ebf2\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"c375ebf2\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"c375ebf2\"}",
+   "ONLOAD {\"before_ck\": \"browser-old\", \"before_ls\": \"browser-old\", \"tok\": \"c375ebf2\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"c375ebf2\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"c375ebf2\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 5,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "server_wins_reload": {
+  "label": "server_wins_reload",
+  "tab": "srv",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "light",
+   "note": "note-default",
+   "sess": "sess-default",
+   "ck": "ck-default",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:LIGHT",
+   "note-len": "N:12:note-default",
+   "ck-combo": "ck-default|ckopt-default",
+   "sub-ls": "sub-default",
+   "sub-ck": "subck-default",
+   "sub-combo": "sub-default+light",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-onload-2",
+   "srv-ck": "srvck-onload-2",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_srv": "srv-onload-2",
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "token": "c375ebf2-8770-4462-f14c-e7cd9984208b",
+   "cookies": {
+    "be_srv_ck": {
+     "value": "srvck-onload-2",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 4.169,
+    "len": 3226,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 1,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 0,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 4.17,
+    "len": 156,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-1",
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-1"
+    }
+   },
+   {
+    "t": 4.171,
+    "len": 89,
+    "root_is_h": false,
+    "vars": {}
+   },
+   {
+    "t": 4.171,
+    "len": 176,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____srv.srv_ls": "srv-onload-2",
+     "bootecho___bootecho____srv.loads": 2,
+     "bootecho___bootecho____srv.srv_ck": "srvck-onload-2"
+    }
+   },
+   {
+    "t": 4.171,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 5,
+  "frames_in": 7,
+  "bytes_in": 3883,
+  "frames_out": 5,
+  "bytes_out": 675,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.bootecho___bootecho____srv.srv_ck_rx_state_": "srvck-onload-1",
+      "reflex___state____state.bootecho___bootecho____srv.srv_ls_rx_state_": "srv-onload-1"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "bootecho___bootecho____srv.loads": 2,
+   "bootecho___bootecho____srv.srv_ck": 3,
+   "bootecho___bootecho____srv.srv_ls": 3,
+   "bootecho___bootecho____prefs.ck": 1,
+   "bootecho___bootecho____prefs.ck_combo": 1,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 1,
+   "bootecho___bootecho____prefs.note_len": 1,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.theme": 1,
+   "bootecho___bootecho____prefs.theme_upper": 1,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 1,
+   "bootecho___bootecho____sub_prefs.sub_ls": 1
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"c375ebf2\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"c375ebf2\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"c375ebf2\"}",
+   "ONLOAD {\"before_ck\": \"srvck-onload-1\", \"before_ls\": \"srv-onload-1\", \"tok\": \"c375ebf2\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"c375ebf2\"}",
+   "GD {\"path\": \"/onload\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"c375ebf2\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 5,
+   "SubPrefs": 0,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "hydrated": true
+ },
+ "cv_boot": {
+  "label": "cv_boot",
+  "tab": "cv",
+  "ui": {
+   "hyd-flag": "H:yes",
+   "theme": "blue",
+   "note": "hello",
+   "sess": "sess-default",
+   "ck": "c1",
+   "ckopt": "ckopt-default",
+   "theme-upper": "T:BLUE",
+   "note-len": "N:5:hello",
+   "ck-combo": "c1|ckopt-default",
+   "sub-ls": "subval",
+   "sub-ck": "subck-default",
+   "sub-combo": "subval+blue",
+   "tok": "",
+   "tok-ok": "TOK:no",
+   "srv-ls": "srv-default",
+   "srv-ck": "srvck-default",
+   "clicks": "0",
+   "box-a-pref": "box-default",
+   "box-a-bck": "boxck-default",
+   "box-b-pref": "box-default",
+   "box-b-bck": "boxck-default"
+  },
+  "storage": {
+   "local": {
+    "be_note": "hello",
+    "be_sub_ls": "subval",
+    "be_theme": "blue",
+    "last_compiled_theme": "system",
+    "theme": "system"
+   },
+   "session": {
+    "react-router-scroll-positions": "{\"default\":0}"
+   },
+   "token": "46dfa6d2-39f0-4927-b49c-165899ae4b0c",
+   "cookies": {
+    "be_ck": {
+     "value": "c1",
+     "expires": -1,
+     "sameSite": "Lax",
+     "path": "/"
+    }
+   }
+  },
+  "deltas": [
+   {
+    "t": 2.479,
+    "len": 3167,
+    "root_is_h": false,
+    "vars": {
+     "bootecho___bootecho____guard.tok": "",
+     "bootecho___bootecho____guard.tok_ok": false,
+     "reflex___istate___dynamic____box_n1.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n1.pref": "box-default",
+     "reflex___istate___dynamic____box_n2.bck": "boxck-default",
+     "reflex___istate___dynamic____box_n2.pref": "box-default",
+     "bootecho___bootecho____srv.loads": 0,
+     "bootecho___bootecho____srv.srv_ck": "srvck-default",
+     "bootecho___bootecho____srv.srv_ls": "srv-default",
+     "bootecho___bootecho____prefs.ck": "ck-default",
+     "bootecho___bootecho____prefs.ck_combo": "ck-default|ckopt-default",
+     "bootecho___bootecho____prefs.ckopt": "ckopt-default",
+     "bootecho___bootecho____prefs.clicks": 0,
+     "bootecho___bootecho____prefs.note": "note-default",
+     "bootecho___bootecho____prefs.note_len": "N:12:note-default",
+     "bootecho___bootecho____prefs.sess": "sess-default",
+     "bootecho___bootecho____prefs.theme": "light",
+     "bootecho___bootecho____prefs.theme_upper": "T:LIGHT",
+     "bootecho___bootecho____sub_prefs.sub_ck": "subck-default",
+     "bootecho___bootecho____sub_prefs.sub_combo": "sub-default+light",
+     "bootecho___bootecho____sub_prefs.sub_ls": "sub-default"
+    }
+   },
+   {
+    "t": 2.479,
+    "len": 418,
+    "root_is_h": "-",
+    "vars": {
+     "bootecho___bootecho____prefs.theme_upper": "T:BLUE",
+     "bootecho___bootecho____prefs.note_len": "N:5:hello",
+     "bootecho___bootecho____prefs.ck": "c1",
+     "bootecho___bootecho____prefs.note": "hello",
+     "bootecho___bootecho____prefs.ck_combo": "c1|ckopt-default",
+     "bootecho___bootecho____prefs.theme": "blue",
+     "bootecho___bootecho____sub_prefs.sub_combo": "subval+blue",
+     "bootecho___bootecho____sub_prefs.sub_ls": "subval"
+    }
+   },
+   {
+    "t": 2.479,
+    "len": 88,
+    "root_is_h": true,
+    "vars": {}
+   }
+  ],
+  "n_deltas": 3,
+  "frames_in": 5,
+  "bytes_in": 3821,
+  "frames_out": 5,
+  "bytes_out": 810,
+  "out_events": [
+   {
+    "event": "hydrate",
+    "payload": null
+   },
+   {
+    "event": "update_vars_internal",
+    "payload": {
+     "vars": {
+      "reflex___state____state.bootecho___bootecho____prefs.ck_rx_state_": "c1",
+      "reflex___state____state.bootecho___bootecho____prefs.theme_rx_state_": "blue",
+      "reflex___state____state.bootecho___bootecho____prefs.note_rx_state_": "hello",
+      "reflex___state____state.bootecho___bootecho____prefs.bootecho___bootecho____sub_prefs.sub_ls_rx_state_": "subval"
+     }
+    }
+   },
+   {
+    "event": "on_load_internal",
+    "payload": null
+   }
+  ],
+  "var_counts": {
+   "bootecho___bootecho____guard.tok": 1,
+   "bootecho___bootecho____guard.tok_ok": 1,
+   "reflex___istate___dynamic____box_n1.bck": 1,
+   "reflex___istate___dynamic____box_n1.pref": 1,
+   "reflex___istate___dynamic____box_n2.bck": 1,
+   "reflex___istate___dynamic____box_n2.pref": 1,
+   "bootecho___bootecho____srv.loads": 1,
+   "bootecho___bootecho____srv.srv_ck": 1,
+   "bootecho___bootecho____srv.srv_ls": 1,
+   "bootecho___bootecho____prefs.ck": 2,
+   "bootecho___bootecho____prefs.ck_combo": 2,
+   "bootecho___bootecho____prefs.ckopt": 1,
+   "bootecho___bootecho____prefs.clicks": 1,
+   "bootecho___bootecho____prefs.note": 2,
+   "bootecho___bootecho____prefs.note_len": 2,
+   "bootecho___bootecho____prefs.sess": 1,
+   "bootecho___bootecho____prefs.theme": 2,
+   "bootecho___bootecho____prefs.theme_upper": 2,
+   "bootecho___bootecho____sub_prefs.sub_ck": 1,
+   "bootecho___bootecho____sub_prefs.sub_combo": 2,
+   "bootecho___bootecho____sub_prefs.sub_ls": 2
+  },
+  "gd_traces": [
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"46dfa6d2\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"46dfa6d2\"}",
+   "GD {\"seen\": {\"sub_combo\": \"subval+blue\", \"sub_ls\": \"subval\"}, \"st\": \"SubPrefs\", \"tok\": \"46dfa6d2\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {\"ck\": \"c1\", \"ck_combo\": \"c1|ckopt-default\", \"note\": \"hello\", \"note_len\": \"N:5:hello\", \"theme\": \"blue\", \"theme_upper\": \"T:BLUE\"}, \"st\": \"Prefs\", \"tok\": \"46dfa6d2\"}",
+   "GD {\"path\": \"/\", \"root_is_h\": \"-\", \"seen\": {}, \"st\": \"Prefs\", \"tok\": \"46dfa6d2\"}"
+  ],
+  "gd_calls": {
+   "Prefs": 4,
+   "SubPrefs": 1,
+   "Guard": 0
+  },
+  "console": [],
+  "failed": [],
+  "pageerrors": [],
+  "ui_at_first_hydrated": {
+   "theme": "blue",
+   "theme-upper": "T:BLUE",
+   "note-len": "N:5:hello",
+   "ck-combo": "c1|ckopt-default",
+   "sub-combo": "subval+blue"
+  }
+ }
+}

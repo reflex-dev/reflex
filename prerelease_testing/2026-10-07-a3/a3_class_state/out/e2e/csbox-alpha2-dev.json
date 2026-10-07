@@ -1,0 +1,44 @@
+{
+ "first_load": {
+  "shown": {
+   "none": "light",
+   "plain": "dark",
+   "storage": "dark"
+  },
+  "localStorage": {}
+ },
+ "after_choose": {
+  "shown": {
+   "none": "user-none",
+   "plain": "user-plain",
+   "storage": "user-storage"
+  },
+  "localStorage": {
+   "box_pref_storage": "user-storage",
+   "box_pref": "user-none"
+  }
+ },
+ "after_reload": {
+  "shown": {
+   "none": "user-none",
+   "plain": "user-plain",
+   "storage": "user-storage"
+  },
+  "localStorage": {
+   "box_pref_storage": "user-storage",
+   "box_pref": "user-none"
+  }
+ },
+ "new_tab_same_browser": {
+  "shown": {
+   "none": "user-none",
+   "plain": "dark",
+   "storage": "user-storage"
+  },
+  "localStorage": {
+   "box_pref_storage": "user-storage",
+   "box_pref": "user-none"
+  }
+ },
+ "console": []
+}

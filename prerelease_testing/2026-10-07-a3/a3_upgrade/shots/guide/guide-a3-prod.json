@@ -1,0 +1,300 @@
+{
+ "tag": "guide-a3-prod",
+ "results": [
+  {
+   "name": "/portable: get_fields()['_items'].default_value() + ClassVar render",
+   "status": "pass",
+   "detail": "a\n\nb\n\nhttps://example.com/api\n\nreflex 0.10.0a3\n\nBuilt with Reflex",
+   "t": 2.289
+  },
+  {
+   "name": "/sample: guide sample 1 verbatim renders a, b and the ClassVar",
+   "status": "pass",
+   "detail": "a\n\nb\n\nhttps://example.com/api\n\nBuilt with Reflex",
+   "t": 4.292
+  },
+  {
+   "name": "guide verbatim Child.work (self.bump() outside the lock)",
+   "status": "pass",
+   "detail": "{'result': '', 'c2': '0', 'c1': '0', 'c3': '0', 'p': '0', 'before': '', 'count_before': '0'}",
+   "t": 10.613
+  },
+  {
+   "name": "guide verbatim fix Child3.work (async with self: self.bump()) increments Parent.count by 1",
+   "status": "pass",
+   "detail": "{'result': '', 'c2': '1', 'c1': '1', 'c3': '1', 'p': '1', 'before': '', 'count_before': '0'}",
+   "t": 14.571
+  },
+  {
+   "name": "bg outside",
+   "status": "pass",
+   "detail": "{'result': 'outside: ImmutableStateError', 'c2': '1', 'c1': '1', 'c3': '1', 'p': '1', 'before': '', 'count_before': '1'}",
+   "t": 18.569
+  },
+  {
+   "name": "bg inside",
+   "status": "pass",
+   "detail": "{'result': 'inside: ok', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'before': 'outside: ImmutableStateError', 'count_before': '1'}",
+   "t": 22.468
+  },
+  {
+   "name": "bg readonly",
+   "status": "pass",
+   "detail": "{'result': 'readonly outside: ran, returned 2', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'before': 'inside: ok', 'count_before': '2'}",
+   "t": 26.369
+  },
+  {
+   "name": "bg type",
+   "status": "pass",
+   "detail": "{'result': 'type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'before': 'readonly outside: ran, returned 2', 'count_before': '2'}",
+   "t": 30.291
+  },
+  {
+   "name": "bg own_outside",
+   "status": "pass",
+   "detail": "{'result': 'own outside: ImmutableStateError', 'c2': '2', 'c1': '2', 'c3': '2', 'p': '2', 'before': 'type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True', 'count_before': '2'}",
+   "t": 34.224
+  },
+  {
+   "name": "runtime type(self).level = 77: new sessions (level, worker pid)",
+   "status": "pass",
+   "detail": "{'tabA': ('20', '646'), 'new_tabs': [('20', '640'), ('20', '642'), ('20', '638'), ('20', '632'), ('20', '636'), ('20', '636'), ('20', '644'), ('20', '636')]}",
+   "t": 59.824
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "anomaly",
+   "detail": "[{\"page\": \"main\", \"t\": 2.278, \"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}]",
+   "t": 60.12
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 60.12
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 2.278,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "main",
+   "t": 4.465,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 34.267,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "tab0",
+   "t": 40.389,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "tab1",
+   "t": 43.026,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "tab2",
+   "t": 45.703,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "tab3",
+   "t": 48.656,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "tab4",
+   "t": 51.368,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "tab5",
+   "t": 54.122,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "tab6",
+   "t": 56.747,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "page": "tab7",
+   "t": 59.815,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 2.006,
+   "dir": "open",
+   "payload": "ws://localhost:3214/_event/?token=3d9c42a0-70b4-4ac1-bdca-6ce459a757aa&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 2.277,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"qaQUBX-CokG2elK1AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 2.287,
+   "dir": "out",
+   "len": 384,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"29a6b9e1d820bb7d\",\"b084fc0c68f7c73a\",\"d6b790cc50e55fbe\",\"ee0a50c258153c28\",\"bf21a9e8fbc5a384\",\"ba8b4f314850f806\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/portable/\",\"asPath\":\"/portable/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 2.32,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 4.166,
+   "dir": "open",
+   "payload": "ws://localhost:3214/_event/?token=3d9c42a0-70b4-4ac1-bdca-6ce459a757aa&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 4.166,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"UVbU-lkSx9aysYRCAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 4.166,
+   "dir": "out",
+   "len": 380,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"29a6b9e1d820bb7d\",\"b084fc0c68f7c73a\",\"d6b790cc50e55fbe\",\"ee0a50c258153c28\",\"bf21a9e8fbc5a384\",\"ba8b4f314850f806\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/sample/\",\"asPath\":\"/sample/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 4.166,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"YYaWagwO8AAVDZzwAAAD\"}"
+  },
+  "... 109 more frames trimmed"
+ ],
+ "notes": {
+  "version": "reflex 0.10.0a3",
+  "verbatim": {
+   "result": "",
+   "c2": "0",
+   "c1": "0",
+   "c3": "0",
+   "p": "0",
+   "before": "",
+   "count_before": "0"
+  },
+  "outside": {
+   "result": "outside: ImmutableStateError",
+   "c2": "1",
+   "c1": "1",
+   "c3": "1",
+   "p": "1",
+   "before": "",
+   "count_before": "1"
+  },
+  "inside": {
+   "result": "inside: ok",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "before": "outside: ImmutableStateError",
+   "count_before": "1"
+  },
+  "readonly": {
+   "result": "readonly outside: ran, returned 2",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "before": "inside: ok",
+   "count_before": "2"
+  },
+  "type": {
+   "result": "type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "before": "readonly outside: ran, returned 2",
+   "count_before": "2"
+  },
+  "own_outside": {
+   "result": "own outside: ImmutableStateError",
+   "c2": "2",
+   "c1": "2",
+   "c3": "2",
+   "p": "2",
+   "before": "type: type(self)=StateProxy self.__class__=Child2 isinstance(self, Parent)=True",
+   "count_before": "2"
+  },
+  "defaults": {
+   "tabA": [
+    "20",
+    "646"
+   ],
+   "new_tabs": [
+    [
+     "20",
+     "640"
+    ],
+    [
+     "20",
+     "642"
+    ],
+    [
+     "20",
+     "638"
+    ],
+    [
+     "20",
+     "632"
+    ],
+    [
+     "20",
+     "636"
+    ],
+    [
+     "20",
+     "636"
+    ],
+    [
+     "20",
+     "644"
+    ],
+    [
+     "20",
+     "636"
+    ]
+   ]
+  }
+ }
+}

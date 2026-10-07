@@ -1,6 +1,6 @@
 # Item `a3_class_state` — N-005, N-039, N-008, N-006, N-040, N-004 on reflex 0.10.0a3 + regressions from #7495 / #7494
 
-Status: **Phase A (positive controls + baselines on 0.10.0a2 / 0.9.12) in progress; a3 not yet published.**
+Status: **done** (Phase A positive controls on 0.10.0a2 + 0.9.12 baselines; Phase B on 0.10.0a3, Python 3.11-3.14, dev and prod+redis e2e).
 Everything installs from PyPI; nothing runs from the checkouts; every probe asserts the venv it imported reflex from.
 
 ```bash
@@ -92,3 +92,66 @@ cd orig/rc_scripts/schema && SCHEMA_DEFAULT=0 $SB/envs/a3/bin/python -I $W/probe
   dirty_substates/_backend_vars, no `_replaced_defaults`); a3 loading 0.9.12/a2 pickles drops their stale keys, dirty sets clean,
   re-serializes in the new format (`logs/upgrade_pickle.a3.txt`). Disk store (`logs/disk_matrix.txt`): a3→a3, a3→a2, a2→a3,
   0.9.12→a3 keep the session; a3→0.9.12 and a2→0.9.12 start fresh and the 0.9.12 write then replaces the 0.10 session.
+
+### Adversarial #7495 probes on a3 (`logs/adv/adv7495.a3.txt` vs `.a2.txt` / `.s0912.txt`; also `-py311`, `-py314`)
+| case | a3 | a2 | 0.9.12 |
+|---|---|---|---|
+| `del S.x` with nothing assigned | no-op, descriptor kept, instances fine | descriptor DELETED, instances `AttributeError` | attribute deleted, instances read default |
+| assign 10, `del` twice | 10 → 0 → 0 | AttributeError | assignment ignored |
+| `S.count = 10; S.count = S.count` | silently **undoes** to 0 (documented "assigning the Var back undoes") | TypeError | ignored |
+| 20 assignments then 21 restores / 20 nested monkeypatches | stops at 4 (16-entry limit, documented) | TypeError | ignored |
+| config 10 + 17 sequential patch round trips | 10, depth 1 | TypeError, leaks 116 | ignored |
+| config 10 + rejected monkeypatch (wrong type / Var / Field / raising factory) | 10 (pytest 9 records the undo only after a successful setattr) | 10 | ignored |
+| config 10 + rejected `mock.patch.object(..., Other.y)` (Var) | **0 — config lost** | 10 | ignored |
+| config 10 + rejected `mock.patch.object(..., 'bad')` | 10 | 10 | ignored |
+| patch 99, code assigns 77, undo | **99 leaks** | 77 + TypeError | 0 |
+| config 10 + `monkeypatch.delattr` | during 0, after **0 (config lost)** | AttributeError during, 10 after | 0 |
+| non-LIFO `mock.patch` start/stop | ends at original 0 (better than plain Python's 1) | TypeError | ignored |
+| parent via child / grandchild / mixin / shadowing child / ComponentState instance | all restore; mixin patch reaches only states created during it (documented) | TypeError / AttributeError at undo, leaks | ignored |
+| `reset()` after assignment / after restore | 10,[7] / 0,[1] | 10,[7] / AttributeError | ignored |
+| storage factory calls at assignment (declared, assigned, both) | exactly 1 each, then the value is the default | n/a | ignored |
+| storage options after plain assignment (Cookie max_age/path/same_site/secure, LocalStorage sync, SessionStorage) | kept, type preserved | dropped (plain str) | ignored |
+| `Optional[str]` storage `= None` / `Union[str,int]` `= 5` | **storage dropped silently** (compiled entry None) | same | kept |
+| pickle after assignment | `__getstate__` = field values only; no `_replaced_defaults`; schema unchanged | carries dirty_vars/_backend_vars | — |
+| 8 threads assign/restore | no error, but final default corrupted (stale patched value/factory) | 12000 TypeErrors + corrupted | ignored |
+| app module reloaded 20× (each assigns 10) | 10, bounded depth, patch/undo fine | TypeError on undo | ignored |
+| declared non-storage `default_factory`, assign plain str | factory **called** at assignment; raising factory → raw RuntimeError | accepted, not called | ignored |
+Pytest form of the leaks: `probes/undo_edge/test_undo_edge.py` (a3: 4 failed/4 passed; a2: 1 failed + 1 error; `logs/adv/test_undo_edge.txt`).
+
+### E2E on a3 (Chromium via Playwright, $SB/envs/driver; one server at a time; redis on 8109)
+```bash
+cp -r $W/orig/core/core_a2 $W/run/core-a3 && PIDTAG=srv bin/start_app.sh a3 $W/run/core-a3 3101 8101 $W/run/logs/core-a3-dev.raw.log --loglevel debug
+NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/python orig/core/drivers/drive_core.py http://localhost:3101 out/e2e core-a3-dev home,cs,storage,dunder
+setsid redis-server --port 8109 --save '' --appendonly no &
+CORE_API_URL=http://localhost:3104 REFLEX_REDIS_URL=redis://localhost:8109 PIDTAG=srv bin/start_app.sh a3 $W/run/core-a3-prod 3104 3104 <log> --env prod --loglevel debug
+#   (wait on http://localhost:3104/ — /storage answers 307 in prod; then the same drive_core.py with label core-a3-prod-redis)
+# n005 app: cp -r orig/n005/app run/stor-a3; dev 3102/8102; prod STOR_API_URL=http://localhost:3105 ... 3105 3105; driver orig/n005/drivers/drive_stor.py <base> out/e2e/stor-a3-*.json
+# csbox: cp -r orig/hyd/csbox run/csbox-<v>; RVH_VENV=<v> ... 3103/8103 (dev) or REFLEX_API_URL=http://localhost:3106 ... 3106 3106 (prod+redis); driver orig/hyd/csbox_check.py
+# extra app: cp -r apps/clse2e run/clse2e-<v>; dev 3108/8108; driver bin/drive_clse2e.py <base> out/e2e/clse2e-<v>-dev.json
+# fleet (N-004): for v in stable alpha2 a3; cp -r orig/n004/fleet_app run/fleet/fleet_$v; redis-cli -p 8109 flushall;
+#   MODE=new bin/fleet_phase.sh stable "1:stable(new)"; bin/fleet_phase.sh a3 "2:stable->a3(forward)"; ... (see logs/fleet/chain_summary.txt)
+```
+| check | a3 dev | a3 prod+redis (9 granian workers) | a2 dev (control) |
+|---|---|---|---|
+| core_a2 `/storage`: `ls_plain_key`, `lscs_key`, cookie `ck_key` written, new tab restores | **pass** | **pass** | fail (none written) |
+| core_a2 `/storage` reset writes assigned defaults back; fresh browser writes nothing on first load | pass | pass | — |
+| core_a2 `/` F-004, `/cs` per-instance defaults + `type(self).count=77; reset()`, EditableText, `/dunder` | pass (identical to a2) | pass; tab2 count_b 20 in prod (runtime assignment is per worker, now documented) | — |
+| n005 app: 8/8 persisted in a new tab | **pass** | **pass** | 4/8 |
+| csbox: `plain` instance persists | pass; **anomaly**: `none` and `plain` share `box_pref`, reload shows the other's value (a3_class_state-9) | same | plain not persisted; 0.9.12 all three share the key |
+| clse2e: LocalStorage(sync=True) syncs across tabs after plain assignment; cookie keeps SameSite=Strict/max_age; storage-annotated var accepts a plain value and persists; SessionStorage kept | pass | — | sync/cookie/session NOT stored; annotated var TypeError at import |
+| clse2e: `Optional[str]` storage assigned None | **fail** (k_opt never written) — a3_class_state-8 | — | same |
+| N-004 fleet chain (prod, one Redis) | 0.9.12→a3 kept; a3→a3 kept; **a3→0.9.12 fresh** (no traceback, nothing logged); 0.9.12→a3 kept; a3→a2 kept; a2→a3 kept; a3 d5→d7 kept; fleet-state schema hash identical on a2 and a3 (`1d9811b8...`) | | |
+Console: only benign lines (vite, React DevTools, HydrateFallback, "Disconnect websocket on page navigation/pagehide" — same on a2) and the
+prod `/favicon.ico` 404. Server logs: the known #7499 `Expected field 'St.ls_declared_fac' / 'St.ann' to receive type LocalStorage` lines
+(same count on a2), no tracebacks. `[ERROR] Unexpected exit from worker-1` appears only when my stop script SIGTERMs the process group.
+
+## Findings written (board/findings-inbox/)
+a3_class_state-1 N-005 fixed · -2 N-039 fixed · -3 N-008 fixed · -4 N-006 changed (message fixed, silent paths remain) ·
+-5 N-004 behaves as documented · -6 N-040 unchanged (documented) · -7 NEW low: undo-stack restore loses/leaks defaults in 4 patch
+patterns (regression vs a2) · -8 NEW low: None/non-str storage assignment still drops storage · -9 NEW low (docs): ComponentState
+named storage shares one browser key · -10 NEW low: concurrent assign/restore not thread-safe.
+
+## Not covered
+- A real AppHarness run reusing one state module across two apps (covered only by the Python-level module-reload case).
+- Disk store across real server restarts (`reflex run` wipes `.states` at start; covered at Python level with StateManagerDisk).
+- clse2e in prod (storage options are compiled the same way; core_a2/n005/csbox ran in prod+redis).

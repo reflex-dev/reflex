@@ -1,0 +1,623 @@
+[
+ {
+  "rep": 0,
+  "loads": {
+   "/pid": {
+    "final": "/login?redirect_to=%2Fpid%2F",
+    "pid_text": null,
+    "console_error": 1,
+    "sent:check_if_iframed": 1,
+    "sent:check_if_iframed_cb": 1,
+    "sent:hydrate_and_load": 1,
+    "sent:on_load_internal": 1,
+    "chained": [
+     "_redirect",
+     "_call_function"
+    ]
+   },
+   "/pid/": {
+    "final": "/login?redirect_to=%2Fpid%2F",
+    "pid_text": null,
+    "sent:hydrate_and_load": 1,
+    "sent:on_load_internal": 1,
+    "chained": [
+     "_redirect"
+    ]
+   },
+   "/": {
+    "final": "/",
+    "pid_text": null,
+    "sent:hydrate_and_load": 1,
+    "chained": []
+   },
+   "/vault": {
+    "final": "/login?redirect_to=%2Fvault%2F",
+    "pid_text": null,
+    "sent:hydrate_and_load": 1,
+    "sent:on_load_internal": 1,
+    "chained": [
+     "_redirect"
+    ]
+   }
+  },
+  "_full_log": [
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404031823.1313,
+    "to": "http://localhost:8341/pid/"
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404031944.9475,
+    "to": "http://localhost:8341/pid/"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791404032359.291,
+    "url": "ws://localhost:8341/_event/?token=6a51ae77-4144-4e13-aed2-061e7cbcb407&EIO=4&tra"
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404032359.522,
+    "to": "http://localhost:8341/pid/"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032359.678,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"ynctXEU7phcOw6KWAADB\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791404032360.2068,
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032360.3574,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032360.4365,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"XY9vd5j77KisHnJwAADC\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032360.543,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032369.7517,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032369.885,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032370.009,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404032407.5486,
+    "to": "http://localhost:8341/login?redirect_to=%2Fpid%2F"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032407.7673,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032407.87,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032408.1252,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032408.2385,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032408.329,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404032409.025,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791404037871.7349,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037872.043,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_close",
+    "t": 1791404037872.1174
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404037879.7869,
+    "to": "http://localhost:8341/pid/"
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404037907.2097,
+    "to": "http://localhost:8341/pid/"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791404037916.6616,
+    "url": "ws://localhost:8341/_event/?token=6a51ae77-4144-4e13-aed2-061e7cbcb407&EIO=4&tra"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037921.4382,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"khVPlB0S17Lgb-QZAADD\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404037944.52,
+    "to": "http://localhost:8341/pid/"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037944.9111,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037945.0403,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"sPfUOppX2hAVDpTMAADE\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037945.3213,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037945.4258,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037949.5154,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037954.6643,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404037961.2415,
+    "to": "http://localhost:8341/login?redirect_to=%2Fpid%2F"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037962.0637,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037962.5593,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404037962.6516,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791404043421.394,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404043422.6943,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_close",
+    "t": 1791404043422.796
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404043429.7432,
+    "to": "http://localhost:8341/"
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404043449.9338,
+    "to": "http://localhost:8341/"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791404043468.7876,
+    "url": "ws://localhost:8341/_event/?token=6a51ae77-4144-4e13-aed2-061e7cbcb407&EIO=4&tra"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404043474.0166,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"WTcm_a29n4BT8ukcAADF\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404043475.0537,
+    "to": "http://localhost:8341/"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404043480.3809,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404043481.0457,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"FPPN1kyBLs6xZCXRAADG\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404043484.009,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404043485.5837,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404043491.9492,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791404049187.614,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404049187.9722,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_close",
+    "t": 1791404049188.5808
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404049199.6904,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404049324.3813,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws_open",
+    "t": 1791404049325.0063,
+    "url": "ws://localhost:8341/_event/?token=6a51ae77-4144-4e13-aed2-061e7cbcb407&EIO=4&tra"
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404049325.3367,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404049333.353,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"CVlnSpE0X5LIWTZTAADH\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404049333.5562,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404049333.6492,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"zouxB5zrAMhHihoTAADI\"}"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404049333.8123,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404049333.9055,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404049333.9822,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "nav",
+    "t": 1791404049334.6765,
+    "to": "http://localhost:8341/login?redirect_to=%2Fvault%2F"
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404049334.7527,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404049334.837,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "ws",
+    "t": 1791404049334.9165,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "pub",
+    "kind": "console",
+    "t": 1791404054890.811,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   }
+  ]
+ }
+]

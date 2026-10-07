@@ -25,7 +25,9 @@ seq_file = os.path.join(appdir, "chatty.seq")
 if os.path.exists(seq_file):
     os.remove(seq_file)
 env = {k: v for k, v in os.environ.items() if k.lower() not in ("no_proxy",)}
-env.update(REFLEX_TELEMETRY_ENABLED="false", QA_CHATTY="1", QA_CHATTY_SEQ_FILE=seq_file)
+CHATTY = os.environ.get("QA_CHATTY_OFF") != "1"
+env.update(REFLEX_TELEMETRY_ENABLED="false", QA_CHATTY="1" if CHATTY else "0", QA_CHATTY_SEQ_FILE=seq_file)
+env.pop("QA_CHATTY_OFF", None)
 err = open(out + ".stderr", "wb")
 t0 = time.monotonic()
 cmd = [f"{venv}/bin/reflex", "run", "--json", "--frontend-port", fp, "--backend-port", bp]
@@ -77,7 +79,7 @@ while time.monotonic() < deadline:
     read_some()
     if "up" not in marks and ping():
         marks["up"] = time.monotonic() - t0
-    if "up" in marks and os.path.exists(seq_file) and time.monotonic() - t0 - marks["up"] > warm:
+    if "up" in marks and (os.path.exists(seq_file) or not CHATTY) and time.monotonic() - t0 - marks["up"] > warm:
         break
     if proc.poll() is not None:
         break
@@ -133,7 +135,7 @@ last_txt = lines[-1][1].decode("utf-8", "replace")[:300] if lines else None
 non_seq_tail = [l.decode("utf-8", "replace")[:220] for _, l in lines[-12:] if b"QA-SEQ" not in l]
 res = {
     "cmd": " ".join(cmd[1:]),
-    "venv": venv, "signal": sig, "slow_rate": rate, "pause": pause, "marks": {k: (round(v, 2) if k != "signal_wall" else time.strftime("%H:%M:%S", time.gmtime(v)) + f".{int(v % 1 * 1000):03d}Z") for k, v in marks.items()},
+    "venv": venv, "chatty": CHATTY, "signal": sig, "slow_rate": rate, "pause": pause, "marks": {k: (round(v, 2) if k != "signal_wall" else time.strftime("%H:%M:%S", time.gmtime(v)) + f".{int(v % 1 * 1000):03d}Z") for k, v in marks.items()},
     "signal_to_eof_s": round(marks.get("eof", float("nan")) - marks["signal"], 2),
     "signal_to_exit_s": round(marks["exit"] - marks["signal"], 2), "returncode": rc,
     "lines_total": len(lines), "lines_after_signal": after_sig, "invalid_json": len(bad), "invalid_samples": bad[-3:],

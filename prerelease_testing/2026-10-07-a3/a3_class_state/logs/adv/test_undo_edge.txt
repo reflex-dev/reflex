@@ -1,0 +1,54 @@
+== a3_class_state-a3
+E   AssertionError: assert 0 == 10
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/probes/undo_edge/test_undo_edge.py:38: AssertionError: assert 0 == 10
+E   AssertionError: assert 0 == 10
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/probes/undo_edge/test_undo_edge.py:47: AssertionError: assert 0 == 10
+E   AssertionError: assert 99 == 10
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/probes/undo_edge/test_undo_edge.py:57: AssertionError: assert 99 == 10
+E   AssertionError: assert 0 == 10
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/probes/undo_edge/test_undo_edge.py:65: AssertionError: assert 0 == 10
+PASSED test_undo_edge.py::test_a1_mock_patch_with_a_var_is_rejected
+PASSED test_undo_edge.py::test_b1_mocker_patch_with_a_field_is_rejected
+PASSED test_undo_edge.py::test_c1_patch_then_code_under_test_reconfigures
+PASSED test_undo_edge.py::test_d1_monkeypatch_delattr
+FAILED test_undo_edge.py::test_a2_sentinel_limit_still_configured - Assertion...
+FAILED test_undo_edge.py::test_b2_sentinel_quota_still_configured - Assertion...
+FAILED test_undo_edge.py::test_c2_sentinel_limit_back_to_configured - Asserti...
+FAILED test_undo_edge.py::test_d2_sentinel_quota_back_to_configured - Asserti...
+4 failed, 4 passed in 0.35s
+== a3_class_state-a2
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+E   AssertionError: assert 50 == 10
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/probes/undo_edge/test_undo_edge.py:57: AssertionError: assert 50 == 10
+PASSED test_undo_edge.py::test_a1_mock_patch_with_a_var_is_rejected
+PASSED test_undo_edge.py::test_a2_sentinel_limit_still_configured
+PASSED test_undo_edge.py::test_b1_mocker_patch_with_a_field_is_rejected
+PASSED test_undo_edge.py::test_b2_sentinel_quota_still_configured
+PASSED test_undo_edge.py::test_c1_patch_then_code_under_test_reconfigures
+PASSED test_undo_edge.py::test_d1_monkeypatch_delattr
+PASSED test_undo_edge.py::test_d2_sentinel_quota_back_to_configured
+ERROR test_undo_edge.py::test_c1_patch_then_code_under_test_reconfigures - Ty...
+FAILED test_undo_edge.py::test_c2_sentinel_limit_back_to_configured - Asserti...
+1 failed, 7 passed, 1 error in 0.29s
+== a3_class_state-s0912
+E   Failed: DID NOT RAISE TypeError
+E   AssertionError: assert 0 == 10
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/probes/undo_edge/test_undo_edge.py:38: AssertionError: assert 0 == 10
+E   Failed: DID NOT RAISE TypeError
+E   AssertionError: assert 0 == 10
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/probes/undo_edge/test_undo_edge.py:47: AssertionError: assert 0 == 10
+E   AssertionError: assert 0 == 50
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/probes/undo_edge/test_undo_edge.py:53: AssertionError: assert 0 == 50
+E   AssertionError: assert 0 == 10
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/probes/undo_edge/test_undo_edge.py:57: AssertionError: assert 0 == 10
+E   AssertionError: assert 0 == 10
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_class_state/probes/undo_edge/test_undo_edge.py:65: AssertionError: assert 0 == 10
+PASSED test_undo_edge.py::test_d1_monkeypatch_delattr
+FAILED test_undo_edge.py::test_a1_mock_patch_with_a_var_is_rejected - Failed:...
+FAILED test_undo_edge.py::test_a2_sentinel_limit_still_configured - Assertion...
+FAILED test_undo_edge.py::test_b1_mocker_patch_with_a_field_is_rejected - Fai...
+FAILED test_undo_edge.py::test_b2_sentinel_quota_still_configured - Assertion...
+FAILED test_undo_edge.py::test_c1_patch_then_code_under_test_reconfigures - A...
+FAILED test_undo_edge.py::test_c2_sentinel_limit_back_to_configured - Asserti...
+FAILED test_undo_edge.py::test_d2_sentinel_quota_back_to_configured - Asserti...
+7 failed, 1 passed in 0.28s

@@ -1,0 +1,37 @@
+{
+ "cmd": "run --json --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2",
+ "signal": "INT-pid",
+ "slow_rate": 40.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 1.27,
+  "pause_start": 4.28,
+  "signal": 8.28,
+  "signal_wall": "20:15:01.381Z",
+  "exit": 218.3
+ },
+ "signal_to_eof_s": NaN,
+ "signal_to_exit_s": 210.02,
+ "returncode": "TIMEOUT",
+ "lines_total": 6766,
+ "lines_after_signal": 5823,
+ "invalid_json": 1,
+ "invalid_samples": [
+  {
+   "t": 158.3,
+   "err": "Extra data: line 2 column 1 (char 357)",
+   "line": "{\"timestamp\": \"2026-10-07T20:17:26.162272+00:00\", \"level\": \"info\", \"logger\": \"stdout\", \"message\": \"QA-SEQ 0006763 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 2333]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": 0,
+ "seq_max_received": 6762,
+ "seq_written_at_signal": "1373",
+ "seq_written_final": "7261",
+ "lost_tail": 499,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T20:17:26.162272+00:00\", \"level\": \"info\", \"logger\": \"stdout\", \"message\": \"QA-SEQ 0006763 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+ "last_non_seq_lines": [],
+ "leftover_after_exit": "12977 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/reflex run --json --frontend-port 3210 --backend-port 8210\n12980 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/python -m reflex run --json --frontend-port 3210 --backend-port 8210\n12997 S    /root/.bun/bin/bun run dev\n12998 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/jsondrain/.web/node_modules/.bin/react-router dev --host\n13006 Sl   /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/python -m reflex run --json --frontend-port 3210 --backend-port 8210\n12998\n12980\n13006"
+}

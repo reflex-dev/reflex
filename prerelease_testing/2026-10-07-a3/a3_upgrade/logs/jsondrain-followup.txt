@@ -1,0 +1,16 @@
+### s912 INT-pid rate=40 20:18:34
+{"signal": "INT-pid", "slow_rate": 40.0, "signal_to_eof_s": NaN, "signal_to_exit_s": 60.0, "returncode": "TIMEOUT", "lines_total": 1216, "lines_after_signal": 260, "invalid_json": 1212, "seq_max_received": null, "seq_written_final": "1211", "lost_tail": null, "seq_gaps": [], "leftover_after_exit": "22795 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/bin/reflex run --json --frontend-port 3210 --backend-port 8210\n22827 S    /root/.bun/bin/bun run dev\n22828 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/jsondrain/.web/node_modules/.bin/react-router dev --host\n22828"}
+no listeners on: 2 ports checked
+### s912 INT-group rate=40 20:19:45
+{"signal": "INT-group", "slow_rate": 40.0, "signal_to_eof_s": 6.58, "signal_to_exit_s": 0.25, "returncode": 0, "lines_total": 1158, "lines_after_signal": 258, "invalid_json": 1155, "seq_max_received": null, "seq_written_final": "", "lost_tail": null, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### s912 TERM-pid rate=40 20:20:01
+{"signal": "TERM-pid", "slow_rate": 40.0, "signal_to_eof_s": NaN, "signal_to_exit_s": 60.02, "returncode": "TIMEOUT", "lines_total": 1095, "lines_after_signal": 272, "invalid_json": 1093, "seq_max_received": null, "seq_written_final": "1092", "lost_tail": null, "seq_gaps": [], "leftover_after_exit": "24689 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/bin/reflex run --json --frontend-port 3210 --backend-port 8210\n24713 S    /root/.bun/bin/bun run dev\n24714 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/jsondrain/.web/node_modules/.bin/react-router dev --host\n24714"}
+no listeners on: 2 ports checked
+### a3plain INT-pid rate=40 20:21:10
+{"signal": "INT-pid", "slow_rate": 40.0, "signal_to_eof_s": 6.71, "signal_to_exit_s": 0.25, "returncode": 0, "lines_total": 1116, "lines_after_signal": 265, "invalid_json": 1116, "seq_max_received": null, "seq_written_final": "", "lost_tail": null, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### a2plain INT-pid rate=40 20:21:30
+{"signal": "INT-pid", "slow_rate": 40.0, "signal_to_eof_s": 6.67, "signal_to_exit_s": 0.2, "returncode": 0, "lines_total": 1113, "lines_after_signal": 264, "invalid_json": 1113, "seq_max_received": null, "seq_written_final": "", "lost_tail": null, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### followup done 20:21:47

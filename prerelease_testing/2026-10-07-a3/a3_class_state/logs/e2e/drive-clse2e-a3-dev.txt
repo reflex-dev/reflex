@@ -1,0 +1,88 @@
+{
+ "outcomes": "{'sync': 'ok', 'ck': 'ok', 'ann': 'ok', 'ss': 'ok', 'opt': 'ok', 'client_storage': 'sync,ck,ann,ss'}",
+ "0_initial": {
+  "sync": "assigned",
+  "ck": "assigned",
+  "ann": "assigned",
+  "ss": "assigned",
+  "opt": ""
+ },
+ "0_store": {
+  "local": {},
+  "session": {},
+  "cookies": []
+ },
+ "1_after_change": {
+  "sync": "A-sync",
+  "ck": "A-ck",
+  "ann": "A-ann",
+  "ss": "A-ss",
+  "opt": "A-opt"
+ },
+ "1_store": {
+  "local": {
+   "k_ann": "A-ann",
+   "k_sync": "A-sync"
+  },
+  "session": {
+   "k_ss": "A-ss"
+  },
+  "cookies": [
+   {
+    "name": "k_ck_opt",
+    "value": "A-ck",
+    "path": "/",
+    "sameSite": "Strict",
+    "expires_in_s": 3598
+   }
+  ]
+ },
+ "2_new_tab": {
+  "sync": "A-sync",
+  "ck": "A-ck",
+  "ann": "A-ann",
+  "ss": "assigned",
+  "opt": ""
+ },
+ "3_tab1_after_tab2_set_sync": {
+  "sync": "from-tab2",
+  "ck": "A-ck",
+  "ann": "A-ann",
+  "ss": "A-ss",
+  "opt": "A-opt"
+ },
+ "3_tab2": {
+  "sync": "from-tab2",
+  "ck": "A-ck",
+  "ann": "A-ann",
+  "ss": "assigned",
+  "opt": ""
+ },
+ "4_tab1_reload": {
+  "sync": "from-tab2",
+  "ck": "A-ck",
+  "ann": "A-ann",
+  "ss": "A-ss",
+  "opt": "A-opt"
+ },
+ "4_store": {
+  "local": {
+   "k_ann": "A-ann",
+   "k_sync": "from-tab2"
+  },
+  "session": {
+   "k_ss": "A-ss"
+  },
+  "cookies": [
+   {
+    "name": "k_ck_opt",
+    "value": "A-ck",
+    "path": "/",
+    "sameSite": "Strict",
+    "expires_in_s": 3598
+   }
+  ]
+ },
+ "console": [],
+ "bad": []
+}

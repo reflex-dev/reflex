@@ -43,17 +43,18 @@ with sync_playwright() as p:
 
     def click_and_read(btn, expect_change_of=None, wait=3.0):
         before = txt(page, "#result")
+        cnt_before = txt(page, "#pcount")
         page.click(btn)
         time.sleep(wait)
         page.click("#b_refresh")
         time.sleep(0.8)
-        return {"result": txt(page, "#result"), "c2": txt(page, "#c2count"), "c1": txt(page, "#c1count"), "c3": txt(page, "#c3count"), "p": txt(page, "#pcount"), "before": before}
+        return {"result": txt(page, "#result"), "c2": txt(page, "#c2count"), "c1": txt(page, "#c1count"), "c3": txt(page, "#c3count"), "p": txt(page, "#pcount"), "before": before, "count_before": cnt_before}
 
     r = click_and_read("#b_verbatim")
     run.check("guide verbatim Child.work (self.bump() outside the lock)", "pass", r)
     run.notes["verbatim"] = r
     r = click_and_read("#b_fix")
-    run.check("guide verbatim fix Child3.work (async with self: self.bump()) increments", r["c3"] == "1", r)
+    run.check("guide verbatim fix Child3.work (async with self: self.bump()) increments Parent.count by 1", (r["p"] or "").isdigit() and (r["count_before"] or "").isdigit() and int(r["p"]) - int(r["count_before"]) == 1, r)
     for name, btn in [("outside", "#b_outside"), ("inside", "#b_inside"), ("readonly", "#b_readonly"), ("type", "#b_type"), ("own_outside", "#b_own")]:
         r = click_and_read(btn)
         run.notes[name] = r

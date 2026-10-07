@@ -1,0 +1,50 @@
+{
+ "cmd": "run --json --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable",
+ "signal": "INT-group",
+ "slow_rate": 40.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 1.14,
+  "pause_start": 4.16,
+  "signal": 8.16,
+  "signal_wall": "20:19:53.467Z",
+  "exit": 8.41,
+  "eof": 14.74
+ },
+ "signal_to_eof_s": 6.58,
+ "signal_to_exit_s": 0.25,
+ "returncode": 0,
+ "lines_total": 1158,
+ "lines_after_signal": 258,
+ "invalid_json": 1155,
+ "invalid_samples": [
+  {
+   "t": 14.64,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "QA-SEQ 0001152 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 255]"
+  },
+  {
+   "t": 14.67,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "QA-SEQ 0001153 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 255]"
+  },
+  {
+   "t": 14.69,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "QA-SEQ 0001154 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 255]"
+  }
+ ],
+ "last_line_valid_json": true,
+ "seq_first": null,
+ "seq_max_received": null,
+ "seq_written_at_signal": "1153",
+ "seq_written_final": "",
+ "lost_tail": null,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-07T20:19:53.579988+00:00\", \"level\": \"info\", \"logger\": \"reflex.utils.processes\", \"message\": \"Reflex app stopped.\", \"location\": \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/utils/processes.py:567",
+ "last_non_seq_lines": [
+  "{\"timestamp\": \"2026-10-07T20:19:53.579988+00:00\", \"level\": \"info\", \"logger\": \"reflex.utils.processes\", \"message\": \"Reflex app stopped.\", \"location\": \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/s"
+ ],
+ "leftover_after_exit": ""
+}

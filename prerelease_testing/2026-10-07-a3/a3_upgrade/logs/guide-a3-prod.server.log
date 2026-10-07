@@ -1,0 +1,429 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:3214
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='guideapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3214', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url='redis://localhost:8209', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'api_url', 'plugins', 'loglevel', 
+'redis_url', 'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a3 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/a3/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='guideapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3214', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url='redis://localhost:8209', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'api_url', 'plugins', 'loglevel', 
+'redis_url', 'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a3 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/a3/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+──────────────────────────── Initializing guideapp ─────────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/a3/lib/python3.12/site-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_upgrade/guide/app/reflex.lock/bun.lock to .web/bun.lock
+Debug: Initializing the web directory.
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_upgrade/guide/app/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_upgrade/guide/app/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Project hash is already set to 307629719193867609841210065395993858141.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.044 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized guideapp. Install dependencies from `requirements.txt` with
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3214
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3214
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3214 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 3214 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 3214 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.07s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 23/22 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.2 (744846f84)
+Debug: 
+Debug: + @emotion/react@11.14.0
+Debug: + @react-router/dev@8.4.0
+Debug: + @react-router/fs-routes@8.4.0
+Debug: + autoprefixer@10.6.1
+Debug: + postcss@8.5.29
+Debug: + postcss-import@17.0.0
+Debug: + vite@8.3.2
+Debug: + @radix-ui/themes@3.3.0
+Debug: + @react-router/node@8.4.0
+Debug: + isbot@5.2.2
+Debug: + lucide-react@1.26.0
+Debug: + mergician@2.0.2
+Debug: + react@19.3.0
+Debug: + react-dom@19.3.0
+Debug: + react-error-boundary@6.1.6
+Debug: + react-helmet@6.1.0
+Debug: + react-router@8.4.0
+Debug: + socket.io-client@4.8.4
+Debug: + sonner@2.0.8
+Debug: + universal-cookie@8.1.2
+Debug: 
+Debug: 226 packages installed [490.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'postcss-import@17.0.0', '@emotion/react@11.14.0', 'autoprefixer@10.6.1', 
+'postcss@8.5.29', '@react-router/dev@8.4.0', 'vite@8.3.2', 
+'@react-router/fs-routes@8.4.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: 
+Debug: installed postcss-import@17.0.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.29
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: 
+Debug: [9.00ms] done
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'@radix-ui/themes@3.3.0', 'react-error-boundary@6.1.6', 'react@19.3.0', 
+'lucide-react@1.26.0', 'universal-cookie@8.1.2', 'isbot@5.2.2', 'sonner@2.0.8', 
+'mergician@v2.0.2', 'react-router@8.4.0', 'react-dom@19.3.0', 
+'react-helmet@6.1.0', 'socket.io-client@4.8.4', '@react-router/node@8.4.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: 
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-error-boundary@6.1.6
+Debug: installed react@19.3.0
+Debug: installed lucide-react@1.26.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed isbot@5.2.2
+Debug: installed sonner@2.0.8
+Debug: installed mergician@2.0.2
+Debug: installed react-router@8.4.0
+Debug: installed react-dom@19.3.0
+Debug: installed react-helmet@6.1.0
+Debug: installed socket.io-client@4.8.4
+Debug: installed @react-router/node@8.4.0
+Debug: 
+Debug: [75.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_upgrade/guide/app/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_upgrade/guide/app/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.66s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 439 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             5.55 kB │ 
+gzip:  0.85 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-BMKmfuA4.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-BExYjPqV.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_sample_._index-DUbjKJq6.js              0.54 kB │ 
+gzip:  0.38 kB
+Debug: build/client/assets/_index-ESOCiSlW.js                       0.66 kB │ 
+gzip:  0.45 kB
+Debug: build/client/assets/_portable_._index-By84AsTJ.js            0.67 kB │ 
+gzip:  0.45 kB
+Debug: build/client/assets/heading-D5YzLbkm.js                      0.68 kB │ 
+gzip:  0.43 kB
+Debug: build/client/assets/_defaults_._index-DdwxcVnt.js            0.78 kB │ 
+gzip:  0.46 kB
+Debug: build/client/assets/_bg_._index-g_us98kD.js                  1.34 kB │ 
+gzip:  0.63 kB
+Debug: build/client/assets/react-dom-CraYhmig.js                    3.86 kB │ 
+gzip:  1.39 kB
+Debug: build/client/assets/guideapp-EBsdB0Hv.js                     4.34 kB │ 
+gzip:  0.68 kB
+Debug: build/client/assets/button-BDVmtsWl.js                      11.78 kB │ 
+gzip:  3.42 kB
+Debug: build/client/assets/flex-IuQRSfJa.js                        13.34 kB │ 
+gzip:  4.15 kB
+Debug: build/client/assets/emotion-react.browser.esm-BrReIlya.js   20.70 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-CFf5efiI.js             33.50 kB │ 
+gzip: 11.74 kB
+Debug: build/client/assets/components-HNXWQJj3.js                  86.79 kB │ 
+gzip: 28.72 kB
+Debug: build/client/assets/state-Dnn91f3d.js                       93.54 kB │ 
+gzip: 28.80 kB
+Debug: build/client/assets/entry.client-H-Leh00q.js               210.92 kB │ 
+gzip: 66.26 kB
+Debug: build/client/assets/root-CQ6k83Ex.js                       308.46 kB │ 
+gzip: 86.79 kB
+Debug: 
+Debug: ✓ built in 4.25s
+Debug: [33m[PLUGIN_TIMINGS] [0mJavaScript callbacks ran for 3.4s of this 4.2s 
+build (82%).
+Debug: The slowest callbacks, timed inside each callback (the wait before a 
+callback starts is excluded, the time it awaits is included):
+Debug:   - plugin vite:css transform (43%, 1.8s, 1 call)
+Debug: Additional callback time came from the callbacks below and from callbacks
+under 1s.
+Debug: 2 callbacks are listed without a time. Their calls overlapped, so the 
+time inside one call includes work from other calls. To find their cost, profile
+the build with `node --cpu-prof`:
+Debug:   - plugin react-router:dot-server resolveId (1623 calls)
+Debug:   - plugin react-router:build-client-route transform (439 calls)
+Debug: See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for 
+more details.
+Debug: 
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 30 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.77 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-BMKmfuA4.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     60.41 kB │ 
+gzip: 16.25 kB
+Debug: 
+Debug: ✓ built in 1.90s
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /defaults -> build/client/defaults/index.html
+Debug: Prerender (html): /portable -> build/client/portable/index.html
+Debug: Prerender (html): /sample -> build/client/sample/index.html
+Debug: Prerender (html): /bg -> build/client/bg/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:08
+Debug: Copying .web/build/client/portable/index.html to 
+.web/build/client/portable.html
+Debug: Copying .web/build/client/sample/index.html to 
+.web/build/client/sample.html
+Debug: Copying .web/build/client/bg/index.html to .web/build/client/bg.html
+Debug: Copying .web/build/client/defaults/index.html to 
+.web/build/client/defaults.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/a3_upgrade/guide/app/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/a3_upgrade/guide/app/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3214/
+Debug: Using Granian for backend
+[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+[INFO] Starting granian (main PID: 499)
+[INFO] Listening at: http://0.0.0.0:3214
+[INFO] Spawning worker-1 with PID: 630
+[INFO] Spawning worker-2 with PID: 632
+[INFO] Spawning worker-3 with PID: 634
+[INFO] Spawning worker-4 with PID: 636
+[INFO] Spawning worker-5 with PID: 638
+[INFO] Spawning worker-6 with PID: 640
+[INFO] Spawning worker-7 with PID: 642
+[INFO] Spawning worker-8 with PID: 644
+[INFO] Spawning worker-9 with PID: 646
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-5
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-6
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-4
+[INFO] Started worker-7
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-9
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-8
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-2
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-3
+[INFO] Failed to close websocket with error Io(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 951, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 940, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/event_processo
+r.py", line 739, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 528, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_base/event/processor/base_state_pro
+cessor.py", line 322, in process_event
+    events = await fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_upgrade/guide/app/guideapp/guideapp.py", line 53, in work
+    self.bump()  # Raises ImmutableStateError on 0.10.
+    ^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex/istate/proxy.py", line 150, in 
+_call_on_ancestor
+    return func(type(proxy)(ancestor, parent_state_proxy=proxy), *args, 
+**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_upgrade/guide/app/guideapp/guideapp.py", line 47, in bump
+    self.count += 1
+    ^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex/istate/proxy.py", line 415, in 
+__setattr__
+    raise ImmutableStateError(msg)
+reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is 
+immutable outside of a context manager. Use `async with self` to modify state.
+
+
+[INFO] Shutting down granian
+[INFO] Stopping worker-4
+[INFO] Stopping worker-3
+[INFO] Stopping worker-1
+[INFO] Stopping worker-7
+[INFO] Stopping worker-2
+[INFO] Stopping worker-5
+[INFO] Stopping worker-8
+[INFO] Stopped worker-1
+[INFO] Stopping worker-6
+[INFO] Stopping worker-9
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Stopped worker-9
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

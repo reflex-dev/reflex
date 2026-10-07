@@ -1,0 +1,21 @@
+{
+ "label": "8:a3(d5)->a3(d7)",
+ "mode": "resume",
+ "token": "c8e0b228-e107-41b4-8710-b0d932c83f85",
+ "on_arrival": {
+  "server": "server=0.10.0a3",
+  "user": "alice",
+  "count": "9",
+  "history": "0.9.12:6:v1 | 0.10.0a3:7:v2 | 0.10.0a2:8:v3 | 0.10.0a3:9:v4"
+ },
+ "after_login_incr": {
+  "server": "server=0.10.0a3",
+  "user": "alice",
+  "count": "10",
+  "history": "0.9.12:6:v1 | 0.10.0a3:7:v2 | 0.10.0a2:8:v3 | 0.10.0a3:9:v4 | 0.10.0a3:10:v5"
+ },
+ "console_non_benign": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "bad_responses": []
+}

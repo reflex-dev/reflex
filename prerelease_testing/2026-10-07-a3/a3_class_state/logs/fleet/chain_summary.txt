@@ -1,0 +1,8 @@
+1:stable(new)                    arrival: server=0.9.12     user=''       count=5   history=''
+2:stable->a3(forward)            arrival: server=0.10.0a3   user='alice'  count=6   history='0.9.12:6:v1'
+3:a3->a3(restart-control)        arrival: server=0.10.0a3   user='alice'  count=7   history='0.9.12:6:v1 | 0.10.0a3:7:v2'
+4:a3->stable(rollback)           arrival: server=0.9.12     user=''       count=5   history=''
+5:stable->a3(forward-again)      arrival: server=0.10.0a3   user='alice'  count=6   history='0.9.12:6:v1'
+6:a3->a2                         arrival: server=0.10.0a2   user='alice'  count=7   history='0.9.12:6:v1 | 0.10.0a3:7:v2'
+7:a2->a3                         arrival: server=0.10.0a3   user='alice'  count=8   history='0.9.12:6:v1 | 0.10.0a3:7:v2 | 0.10.0a2:8:v3'
+8:a3(d5)->a3(d7)                 arrival: server=0.10.0a3   user='alice'  count=9   history='0.9.12:6:v1 | 0.10.0a3:7:v2 | 0.10.0a2:8:v3 | 0.10.0a3:9:v4'

@@ -1,0 +1,80 @@
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a3/lib/python3.12/site-packages/reflex_components_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 12/11 0:00:00
+'-d', '@react-router/dev@8.4.0', 'postcss-import@17.0.0', 'postcss@8.5.29', 
+'@react-router/fs-routes@8.4.0', 'autoprefixer@10.6.1', 'vite@8.3.2', 
+'@emotion/react@11.14.0']
+'react-error-boundary@6.1.6', 'isbot@5.2.2', 'mergician@v2.0.2', 
+'socket.io-client@4.8.4', '@react-router/node@8.4.0', 'react-helmet@6.1.0', 
+'universal-cookie@8.1.2', 'lucide-react@1.26.0', '@radix-ui/themes@3.3.0', 
+'react-dom@19.3.0', 'react-router@8.4.0', 'sonner@2.0.8', 'react@19.3.0']
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/csbox-a3-prod/reflex.lock/bun.lock
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/csbox-a3-prod/reflex.lock/package.json
+gzip:  0.58 kB
+gzip: 84.10 kB
+gzip:  0.20 kB
+gzip:  0.29 kB
+gzip:  0.80 kB
+gzip:  8.12 kB
+gzip: 12.91 kB
+gzip: 28.72 kB
+gzip: 35.87 kB
+gzip: 66.25 kB
+gzip: 86.92 kB
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+gzip:  0.31 kB
+gzip: 84.10 kB
+gzip:  0.20 kB
+gzip: 15.16 kB
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/a3_class_state/run/csbox-a3-prod/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/a3_class_state/run/csbox-a3-prod/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3106/
+[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+[INFO] Starting granian (main PID: 13027)
+[INFO] Listening at: http://0.0.0.0:3106
+[INFO] Spawning worker-1 with PID: 13251
+[INFO] Spawning worker-2 with PID: 13253
+[INFO] Spawning worker-3 with PID: 13255
+[INFO] Spawning worker-4 with PID: 13257
+[INFO] Spawning worker-5 with PID: 13259
+[INFO] Started worker-1
+[INFO] Spawning worker-6 with PID: 13264
+[INFO] Spawning worker-7 with PID: 13266
+[INFO] Started worker-2
+[INFO] Spawning worker-8 with PID: 13268
+[INFO] Started worker-4
+[INFO] Started worker-5
+[INFO] Started worker-6
+[INFO] Spawning worker-9 with PID: 13273
+[INFO] Started worker-3
+[INFO] Started worker-7
+[INFO] Started worker-8
+[INFO] Started worker-9
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[INFO] Stopping worker-3
+[INFO] Stopping worker-6
+[INFO] Stopping worker-8
+[INFO] Stopping worker-4
+[INFO] Stopping worker-5
+[INFO] Stopping worker-2
+[INFO] Stopping worker-9
+[INFO] Stopped worker-1
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopping worker-7
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Stopped worker-9
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

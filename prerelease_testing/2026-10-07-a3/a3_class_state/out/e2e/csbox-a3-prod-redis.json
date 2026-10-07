@@ -1,0 +1,46 @@
+{
+ "first_load": {
+  "shown": {
+   "none": "light",
+   "plain": "dark",
+   "storage": "dark"
+  },
+  "localStorage": {}
+ },
+ "after_choose": {
+  "shown": {
+   "none": "user-none",
+   "plain": "user-plain",
+   "storage": "user-storage"
+  },
+  "localStorage": {
+   "box_pref": "user-plain",
+   "box_pref_storage": "user-storage"
+  }
+ },
+ "after_reload": {
+  "shown": {
+   "none": "user-plain",
+   "plain": "user-plain",
+   "storage": "user-storage"
+  },
+  "localStorage": {
+   "box_pref": "user-plain",
+   "box_pref_storage": "user-storage"
+  }
+ },
+ "new_tab_same_browser": {
+  "shown": {
+   "none": "user-plain",
+   "plain": "user-plain",
+   "storage": "user-storage"
+  },
+  "localStorage": {
+   "box_pref": "user-plain",
+   "box_pref_storage": "user-storage"
+  }
+ },
+ "console": [
+  "Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}

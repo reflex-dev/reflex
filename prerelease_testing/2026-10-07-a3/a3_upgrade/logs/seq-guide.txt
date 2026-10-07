@@ -1,0 +1,96 @@
+### guide a3 dev 20:21:49
+started reflex pid=28173 (20:21:49) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/guide-a3-dev.server.log
+UP after 7s (frontend 200, backend /ping 200)
+
+b
+
+https://example.com/api
+
+reflex 0.10.0a3
+
+b
+
+https://example.com/api
+
+== guide-a3-dev: {'pass': 12, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=29 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=71
+SHUTDOWN: main pid 28173 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### guide stable dev 20:22:45
+started reflex pid=30037 (20:22:46) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/guide-stable-dev.server.log
+UP after 6s (frontend 200, backend /ping 200)
+
+b
+
+https://example.com/api
+
+reflex 0.9.12
+[SKIPPED] /sample: not registered on 0.9 (default_value() missing): status 200
+
+== guide-stable-dev: {'pass': 11, 'fail': 0, 'anomaly': 0, 'skipped': 1}  console_total=28 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=73
+SHUTDOWN: main pid 30037 still alive 15s after SIGTERM
+ORPHAN after SIGTERM: port=3214 pid=30203 cmd=node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/guide/app/.web/node_modules/.bin/react-
+### guide alpha2 dev 20:23:56
+started reflex pid=31802 (20:23:57) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/guide-alpha2-dev.server.log
+UP after 8s (frontend 200, backend /ping 200)
+
+b
+
+https://example.com/api
+
+reflex 0.10.0a2
+
+b
+
+https://example.com/api
+
+== guide-alpha2-dev: {'pass': 12, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=29 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=71
+SHUTDOWN: main pid 31802 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### guide a3 prod+redis 20:25:01
+started reflex pid=499 (20:25:02) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/logs/guide-a3-prod.server.log
+UP after 15s (frontend 200, backend /ping 200)
+granian workers (python children of the server process): 0 total python procs in tree
+
+b
+
+https://example.com/api
+
+reflex 0.10.0a3
+
+Built with Reflex
+
+b
+
+https://example.com/api
+
+Built with Reflex
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 2.278, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}]
+
+== guide-a3-prod: {'pass': 11, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=11 unexpected_console=1 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=117
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+SHUTDOWN: main pid 499 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- guide-a3-dev server-log warnings:
+      1 reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is 
+      1 [Reflex Backend Exception]
+      1 Debug: error: script "dev" exited with code 143
+      1  Traceback (most recent call last):
+      1     self.bump()  # Raises ImmutableStateError on 0.10.
+      1     raise ImmutableStateError(msg)
+--- guide-stable-dev server-log warnings:
+--- guide-alpha2-dev server-log warnings:
+      1 reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is 
+      1 [Reflex Backend Exception]
+      1 Debug: error: script "dev" exited with code 143
+      1  Traceback (most recent call last):
+      1     self.bump()  # Raises ImmutableStateError on 0.10.
+      1     raise ImmutableStateError(msg)
+--- guide-a3-prod server-log warnings:
+      1 reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is 
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+      1 [Reflex Backend Exception]
+      1 [INFO] Failed to close websocket with error Io(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+      1  Traceback (most recent call last):
+      1     self.bump()  # Raises ImmutableStateError on 0.10.
+      1     raise ImmutableStateError(msg)
+### guide done 20:26:22

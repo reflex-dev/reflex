@@ -1,0 +1,50 @@
+{
+ "cmd": "run --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2",
+ "signal": "INT-pid",
+ "slow_rate": 40.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 2.15,
+  "pause_start": 5.15,
+  "signal": 9.15,
+  "signal_wall": "20:21:40.114Z",
+  "exit": 9.36,
+  "eof": 15.83
+ },
+ "signal_to_eof_s": 6.67,
+ "signal_to_exit_s": 0.2,
+ "returncode": 0,
+ "lines_total": 1113,
+ "lines_after_signal": 264,
+ "invalid_json": 1113,
+ "invalid_samples": [
+  {
+   "t": 15.75,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "QA-SEQ 0001100 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 255]"
+  },
+  {
+   "t": 15.78,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "QA-SEQ 0001101 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 255]"
+  },
+  {
+   "t": 15.8,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "Info: Reflex app stopped. [len 25]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": null,
+ "seq_max_received": null,
+ "seq_written_at_signal": "1094",
+ "seq_written_final": "",
+ "lost_tail": null,
+ "seq_gaps": [],
+ "last_line": "Info: Reflex app stopped.\n",
+ "last_non_seq_lines": [
+  "Info: Reflex app stopped.\n"
+ ],
+ "leftover_after_exit": ""
+}

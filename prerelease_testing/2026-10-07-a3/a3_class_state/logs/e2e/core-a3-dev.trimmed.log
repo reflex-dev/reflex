@@ -1,0 +1,80 @@
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'telemetry_enabled', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/a3/bin/python)]
+['/opt/node22/bin/npm']]
+───────────────────────────── Initializing core_a2 ─────────────────────────────
+Info: Initializing the web directory.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/a3/lib/python3.12/site-packages/reflex_base/.templates/web to .web
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/core-a3/reflex.lock/package.json
+Success: Initialized core_a2. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+supported by protocol
+[<AddressFamily.AF_INET: 2>].
+supported by protocol
+[<AddressFamily.AF_INET: 2>].
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 23/22 0:00:00
+'-d', 'postcss@8.5.29', '@react-router/dev@8.4.0', 
+'@react-router/fs-routes@8.4.0', '@emotion/react@11.14.0', 'vite@8.3.2', 
+'postcss-import@17.0.0', 'autoprefixer@10.6.1']
+'@radix-ui/themes@3.3.0', 'react-helmet@6.1.0', 'react-dom@19.3.0', 
+'react-router@8.4.0', 'react-error-boundary@6.1.6', 'universal-cookie@8.1.2', 
+'react-debounce-input@3.3.0', '@react-router/node@8.4.0', 'mergician@v2.0.2', 
+'react@19.3.0', 'socket.io-client@4.8.4', 'lucide-react@1.26.0', 'sonner@2.0.8',
+'@radix-ui/react-form@0.1.16', 'isbot@5.2.2']
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/core-a3/reflex.lock/bun.lock
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/core-a3/reflex.lock/package.json
+───────────────────────────────── App Running ──────────────────────────────────
+['/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpa
+d/apps/a3_class_state/run/core-a3/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_class_state/run/core-a3/rxconfig.py', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a3_class_state/run/core-a3/core_a2']
+[INFO] Starting granian (main PID: 21092)
+[INFO] Listening at: http://0.0.0.0:8101
+[INFO] Spawning worker-1 with PID: 21130
+[INFO] Started worker-1
+App running at: http://localhost:3101/
+Backend running at: http://0.0.0.0:8101
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'changed-decl' of type '<class 
+'str'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'changed-decl' of type '<class 
+'str'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'decl-fac' of type '<class 
+'str'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'decl-fac' of type '<class 
+'str'>'.
+[INFO] Stopping worker-1
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

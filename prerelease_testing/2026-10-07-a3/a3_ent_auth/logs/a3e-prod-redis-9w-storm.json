@@ -1,0 +1,42 @@
+[
+ {
+  "rep": 0,
+  "attempts": 1,
+  "login_syncs": [
+   [
+    405,
+    "17179"
+   ]
+  ],
+  "per_5s_[syncs,ws_events]": {
+   "0-5s": [
+    40,
+    56
+   ]
+  },
+  "newtab_path": "/login",
+  "login_tab_who": ""
+ },
+ {
+  "rep": 1,
+  "attempts": 3,
+  "login_syncs": [
+   [
+    405,
+    "17187"
+   ]
+  ],
+  "per_5s_[syncs,ws_events]": {
+   "0-5s": [
+    16,
+    24
+   ]
+  },
+  "newtab_path": "/login",
+  "login_tab_who": ""
+ },
+ {
+  "rep": 2,
+  "attempts": 6
+ }
+]

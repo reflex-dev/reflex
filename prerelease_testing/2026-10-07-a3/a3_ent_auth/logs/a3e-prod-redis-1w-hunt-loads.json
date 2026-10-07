@@ -1,0 +1,1470 @@
+[
+ {
+  "rep": 0,
+  "steps": {
+   "tab1 reload 0": {
+    "hash_write": 1,
+    "sent:hydrate_and_load": 1,
+    "tab1_who": "alice",
+    "tab1_path": "/vault"
+   },
+   "tab1 reload 1": {
+    "hash_write": 1,
+    "sent:hydrate_and_load": 1,
+    "tab1_who": "alice",
+    "tab1_path": "/vault"
+   },
+   "tab1 reload 2": {
+    "hash_write": 1,
+    "sent:hydrate_and_load": 1,
+    "tab1_who": "alice",
+    "tab1_path": "/vault"
+   },
+   "tab2 open /vault": {
+    "hash_write": 1,
+    "sent:hydrate_and_load": 1,
+    "tab1_who": "alice",
+    "tab2_who": "alice",
+    "tab1_path": "/vault",
+    "tab2_path": "/vault"
+   },
+   "tab3 open /": {
+    "hash_write": 1,
+    "sent:hydrate_and_load": 1,
+    "tab1_who": "alice",
+    "tab2_who": "alice",
+    "tab3_who": "alice",
+    "tab1_path": "/vault",
+    "tab2_path": "/vault",
+    "tab3_path": "/"
+   },
+   "tab3 client nav to /vault": {
+    "hash_write": 1,
+    "sent:on_load_internal": 1,
+    "sent:update_vars_internal": 1,
+    "tab1_who": "alice",
+    "tab2_who": "alice",
+    "tab3_who": "alice",
+    "tab1_path": "/vault",
+    "tab2_path": "/vault",
+    "tab3_path": "/vault"
+   },
+   "idle 10 s (3 tabs)": {
+    "tab1_who": "alice",
+    "tab2_who": "alice",
+    "tab3_who": "alice",
+    "tab1_path": "/vault",
+    "tab2_path": "/vault",
+    "tab3_path": "/vault"
+   },
+   "tab1 add": {
+    "sent:add_entry": 1,
+    "tab1_who": "alice",
+    "tab2_who": "alice",
+    "tab3_who": "alice",
+    "tab1_path": "/vault",
+    "tab2_path": "/vault",
+    "tab3_path": "/vault"
+   }
+  },
+  "login": true,
+  "hash": "203dc44f5d51d3c0...",
+  "cookies": [
+   "_oidc_generic_access_token_data_partitioned",
+   "_oidc_generic_granted_scopes_partitioned",
+   "_oidc_generic_id_token_partitioned",
+   "_oidc_generic_refresh_token_partitioned"
+  ],
+  "entries": [
+   "click1:alice"
+  ],
+  "hash_end": "203dc44f5d51d3c0...",
+  "totals": {
+   "console_error": 2,
+   "cookie_sync_200": 1,
+   "hash_write": 8,
+   "sent:add_entry": 1,
+   "sent:check_if_iframed": 1,
+   "sent:check_if_iframed_cb": 1,
+   "sent:hydrate_and_load": 7,
+   "sent:on_load_internal": 3,
+   "sent:redirect_to_login": 1,
+   "sent:update_access_token_hash_in_browser": 1,
+   "sent:update_vars_internal": 2
+  },
+  "console_errors": [
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1791404118150.8442,
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1791404118750.8318,
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+   }
+  ],
+  "_full_log": [
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404118035.3657,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404118069.0615,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1791404118139.8533,
+    "url": "ws://localhost:8341/_event/?token=3aee5b10-44ad-474e-df43-07f2b3018b8e&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404118149.5215,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118150.3015,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"-_tDNGIH-r6jT5kEAADp\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1791404118150.8442,
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118175.3928,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118181.146,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"236CRa9wuONsJmAJAADq\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118186.6938,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118196.318,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118203.5894,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118205.939,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404118216.8118,
+    "to": "http://localhost:8341/login?redirect_to=%2Fvault%2F"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118226.921,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118227.0356,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118228.8147,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118228.9407,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118229.9612,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118232.9783,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118428.7693,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "redirect_to_login"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118435.9485,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1791404118438.7104,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118442.5737,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1791404118442.7288
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404118450.9348,
+    "to": "http://localhost:8358/oauth2/authorize?client_id=vauth-client&redirect_uri=http%3A%2F%2Flocalhost%3A8341%2Fcallback&scope=openid+email+profile&state=2wCTDC98tAJqj3-odxGFZlzz9yr_NQP3275Ymq1FSod6mbl6Tts2jiTI-vgCJq3j8WTldAIzlW4BzBYstcZopw&code_challenge=GbOZLeji-TQL7xlVg0d9YdVzebWrj_vbCdGy0Hhxmqs&code_challenge_method=S256&response_type=code&response_mode=query"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1791404118742.129,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1791404118742.2815,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1791404118750.8318,
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404118859.9104,
+    "to": "http://localhost:8341/callback/?code=F8oGoV9OTxtE0x45xS8K30KDqHz6nriHuog3PheL5sw5Xpas&state=2wCTDC98tAJqj3-odxGFZlzz9yr_NQP3275Ymq1FSod6mbl6Tts2jiTI-vgCJq3j8WTldAIzlW4BzBYstcZopw"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404118868.9563,
+    "to": "http://localhost:8341/callback/?code=F8oGoV9OTxtE0x45xS8K30KDqHz6nriHuog3PheL5sw5Xpas&state=2wCTDC98tAJqj3-odxGFZlzz9yr_NQP3275Ymq1FSod6mbl6Tts2jiTI-vgCJq3j8WTldAIzlW4BzBYstcZopw"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1791404118894.3237,
+    "url": "ws://localhost:8341/_event/?token=3aee5b10-44ad-474e-df43-07f2b3018b8e&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118900.6199,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"JkDdl3qQqeqTSiulAADr\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404118904.5454,
+    "to": "http://localhost:8341/callback/?code=F8oGoV9OTxtE0x45xS8K30KDqHz6nriHuog3PheL5sw5Xpas&state=2wCTDC98tAJqj3-odxGFZlzz9yr_NQP3275Ymq1FSod6mbl6Tts2jiTI-vgCJq3j8WTldAIzlW4BzBYstcZopw"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118909.8313,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "redirect_to_url_rx_state_": "/vault/",
+     "app_state_rx_state_": "2wCTDC98tAJqj3-o...",
+     "code_verifier_rx_state_": "4HzZA3fHao5z3oWP..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118911.97,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"Pps6C39Xnc6YW_bIAADs\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118914.8328,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118916.8694,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118920.5898,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118950.0718,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118951.5469,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118953.8347,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1791404118956.948,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118957.1099,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_access_token_hash_in_browser"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1791404118957.2961,
+    "url": "http://localhost:8341/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118961.9626,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "203dc44f5d51d3c0..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ls_set",
+    "t": 1791404118958,
+    "url": "/callback/",
+    "key": "hash",
+    "value": "203dc44f5d51d3c0a20a3d4b61cea8bac6a53142eedc19347908f6a8ebeb7060"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118962.4814,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118966.2886,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404118969.748,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118973.0017,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "203dc44f5d51d3c0...",
+     "redirect_to_url_rx_state_": "/vault/",
+     "app_state_rx_state_": "2wCTDC98tAJqj3-o...",
+     "code_verifier_rx_state_": "4HzZA3fHao5z3oWP..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118973.1174,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118975.6387,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "203dc44f5d51d3c0..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ls_set",
+    "t": 1791404118974,
+    "url": "/vault/",
+    "key": "hash",
+    "value": "203dc44f5d51d3c0a20a3d4b61cea8bac6a53142eedc19347908f6a8ebeb7060"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118977.3486,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118979.903,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404118981.242,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1791404122163.6223,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404122164.9272,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1791404122173.8992
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404122190.4702,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1791404122226.4424,
+    "url": "ws://localhost:8341/_event/?token=3aee5b10-44ad-474e-df43-07f2b3018b8e&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404122226.5864,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"kbO8V7SQ4WZTxS3dAADt\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404122226.6868,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "203dc44f5d51d3c0...",
+     "redirect_to_url_rx_state_": "/vault/",
+     "app_state_rx_state_": "2wCTDC98tAJqj3-o...",
+     "code_verifier_rx_state_": "4HzZA3fHao5z3oWP..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404122231.3352,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"srMvQLctlzcn-kbGAADu\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404122232.9114,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "has_any_token": true,
+     "hash": "203dc44f5d51d3c0...",
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404122243.0176,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "203dc44f5d51d3c0..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ls_set",
+    "t": 1791404122241,
+    "url": "/vault/",
+    "key": "hash",
+    "value": "203dc44f5d51d3c0a20a3d4b61cea8bac6a53142eedc19347908f6a8ebeb7060"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404122245.5925,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404122245.7498,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404122245.846,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404122245.9333,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1791404126245.7039,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404126246.6636,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1791404126246.7754
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404126254.2307,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1791404126279.6392,
+    "url": "ws://localhost:8341/_event/?token=3aee5b10-44ad-474e-df43-07f2b3018b8e&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404126280.707,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"-qXBelUDPTpGhsnOAADv\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404126287.825,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "203dc44f5d51d3c0...",
+     "redirect_to_url_rx_state_": "/vault/",
+     "app_state_rx_state_": "2wCTDC98tAJqj3-o...",
+     "code_verifier_rx_state_": "4HzZA3fHao5z3oWP..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404126291.3857,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"Wb9kdP-QuelDIKdDAADw\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404126294.5051,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "has_any_token": true,
+     "hash": "203dc44f5d51d3c0...",
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404126294.6587,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "203dc44f5d51d3c0..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ls_set",
+    "t": 1791404126292,
+    "url": "/vault/",
+    "key": "hash",
+    "value": "203dc44f5d51d3c0a20a3d4b61cea8bac6a53142eedc19347908f6a8ebeb7060"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404126296.8923,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404126297.5303,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404126300.7644,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404126304.0781,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1791404130310.2693,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404130311.508,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1791404130311.644
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1791404130317.4636,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1791404130350.635,
+    "url": "ws://localhost:8341/_event/?token=3aee5b10-44ad-474e-df43-07f2b3018b8e&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404130369.0374,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"JvtMBlM2qJSxVsb0AADx\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404130369.254,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "203dc44f5d51d3c0...",
+     "redirect_to_url_rx_state_": "/vault/",
+     "app_state_rx_state_": "2wCTDC98tAJqj3-o...",
+     "code_verifier_rx_state_": "4HzZA3fHao5z3oWP..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404130369.397,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"SEQWtspZTMOnGKW0AADy\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404130369.612,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "has_any_token": true,
+     "hash": "203dc44f5d51d3c0...",
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404130369.7876,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "203dc44f5d51d3c0..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ls_set",
+    "t": 1791404130361,
+    "url": "/vault/",
+    "key": "hash",
+    "value": "203dc44f5d51d3c0a20a3d4b61cea8bac6a53142eedc19347908f6a8ebeb7060"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404130370.1628,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404130377.3252,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404130380.2292,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404130383.12,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1791404134472.319,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1791404134692.1091,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1791404134692.5576,
+    "url": "ws://localhost:8341/_event/?token=f9643376-2a7d-4216-cf46-9d46ce005390&EIO=4&tra"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404134692.8557,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"96DMHZKf53Dp2zC3AADz\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1791404134706.0537,
+    "to": "http://localhost:8341/vault/"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404134706.52,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "203dc44f5d51d3c0..."
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404134722.8545,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"jPpOTfItSW7ZlSb-AAD0\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404134755.4685,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "has_any_token": true,
+     "hash": "203dc44f5d51d3c0...",
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404134761.3037,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "203dc44f5d51d3c0..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1791404134759,
+    "url": "/vault/",
+    "key": "hash",
+    "value": "203dc44f5d51d3c0a20a3d4b61cea8bac6a53142eedc19347908f6a8ebeb7060"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404134765.5364,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404134781.4163,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404134784.9817,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404134790.9019,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404134794.4146,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1791404138781.1216,
+    "to": "http://localhost:8341/"
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1791404138842.3699,
+    "to": "http://localhost:8341/"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws_open",
+    "t": 1791404138866.7275,
+    "url": "ws://localhost:8341/_event/?token=cb2e841f-56f2-4e3b-b7a7-1cef8487fa95&EIO=4&tra"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404138888.3718,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"bHx2bnPrNN9UYmNxAAD1\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1791404138894.088,
+    "to": "http://localhost:8341/"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404138912.0884,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "203dc44f5d51d3c0..."
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404138914.351,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"okeNy5H2Z1DNX9UjAAD2\"}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404138930.5781,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "has_any_token": true,
+     "hash": "203dc44f5d51d3c0...",
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404138931.7156,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "203dc44f5d51d3c0..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ls_set",
+    "t": 1791404138930,
+    "url": "/",
+    "key": "hash",
+    "value": "203dc44f5d51d3c0a20a3d4b61cea8bac6a53142eedc19347908f6a8ebeb7060"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404138933.941,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404138936.5293,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404138938.5776,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404138940.0322,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404138940.9094,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1791404142948.3352,
+    "to": "http://localhost:8341/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404142963.6042,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "203dc44f5d51d3c0..."
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404142963.7083,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404142968.985,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "203dc44f5d51d3c0..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ls_set",
+    "t": 1791404142967,
+    "url": "/vault",
+    "key": "hash",
+    "value": "203dc44f5d51d3c0a20a3d4b61cea8bac6a53142eedc19347908f6a8ebeb7060"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404142973.1414,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1791404142977.294,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404157008.4421,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "add_entry"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404157018.5442,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [
+      "click1:alice"
+     ],
+     "clicks": 1
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1791404160057.302,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1791404160057.463,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1791404160059.3428
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1791404160059.6072,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1791404160060.4275,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1791404160064.8906,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   }
+  ]
+ }
+]

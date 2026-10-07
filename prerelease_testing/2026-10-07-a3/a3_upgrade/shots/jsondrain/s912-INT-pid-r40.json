@@ -1,0 +1,47 @@
+{
+ "cmd": "run --json --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable",
+ "signal": "INT-pid",
+ "slow_rate": 40.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 2.36,
+  "pause_start": 5.38,
+  "signal": 9.38,
+  "signal_wall": "20:18:44.044Z",
+  "exit": 69.38
+ },
+ "signal_to_eof_s": NaN,
+ "signal_to_exit_s": 60.0,
+ "returncode": "TIMEOUT",
+ "lines_total": 1216,
+ "lines_after_signal": 260,
+ "invalid_json": 1212,
+ "invalid_samples": [
+  {
+   "t": 15.88,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "QA-SEQ 0001209 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 255]"
+  },
+  {
+   "t": 15.91,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "QA-SEQ 0001210 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 255]"
+  },
+  {
+   "t": 15.93,
+   "err": "Expecting value: line 1 column 1 (char 0)",
+   "line": "QA-SEQ 0001211 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... [len 255]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": null,
+ "seq_max_received": null,
+ "seq_written_at_signal": "1207",
+ "seq_written_final": "1211",
+ "lost_tail": null,
+ "seq_gaps": [],
+ "last_line": "QA-SEQ 0001211 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+ "last_non_seq_lines": [],
+ "leftover_after_exit": "22795 Ssl  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/bin/python /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/bin/reflex run --json --frontend-port 3210 --backend-port 8210\n22827 S    /root/.bun/bin/bun run dev\n22828 Sl   node /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a3_upgrade/jsondrain/.web/node_modules/.bin/react-router dev --host\n22828"
+}

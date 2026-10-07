@@ -1,0 +1,80 @@
+gzip:  0.78 kB
+gzip:  0.77 kB
+gzip:  1.11 kB
+gzip:  8.12 kB
+gzip:  6.63 kB
+gzip: 12.91 kB
+gzip: 28.72 kB
+gzip: 38.14 kB
+gzip: 66.25 kB
+gzip: 94.06 kB
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+gzip:  0.31 kB
+gzip: 84.10 kB
+gzip:  0.20 kB
+gzip: 19.80 kB
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+.web/build/client/schema.html
+.web/build/client/storage.html
+.web/build/client/dunder.html
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/a3_class_state/run/core-a3-prod/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/a3_class_state/run/core-a3-prod/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3104/
+[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+[INFO] Starting granian (main PID: 26683)
+[INFO] Listening at: http://0.0.0.0:3104
+[INFO] Spawning worker-1 with PID: 26825
+[INFO] Spawning worker-2 with PID: 26827
+[INFO] Spawning worker-3 with PID: 26829
+[INFO] Started worker-2
+[INFO] Spawning worker-4 with PID: 26834
+[INFO] Started worker-3
+[INFO] Spawning worker-5 with PID: 26839
+[INFO] Spawning worker-6 with PID: 26841
+[INFO] Started worker-1
+[INFO] Spawning worker-7 with PID: 26846
+[INFO] Started worker-4
+[INFO] Spawning worker-8 with PID: 26851
+[INFO] Spawning worker-9 with PID: 26853
+[INFO] Started worker-5
+[INFO] Started worker-6
+[INFO] Started worker-9
+[INFO] Started worker-7
+[INFO] Started worker-8
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'changed-decl' of type '<class 
+'str'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'changed-decl' of type '<class 
+'str'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'decl-fac' of type '<class 
+'str'>'.
+Expected field 'St.ls_declared_fac' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'decl-fac' of type '<class 
+'str'>'.
+[INFO] Shutting down granian
+[INFO] Stopping worker-7
+[INFO] Stopping worker-9
+[INFO] Stopping worker-4
+[INFO] Stopping worker-2
+[INFO] Stopping worker-1
+[INFO] Stopping worker-8
+[INFO] Stopping worker-5
+[INFO] Stopping worker-3
+[INFO] Stopping worker-6
+[INFO] Stopped worker-1
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Stopped worker-9
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

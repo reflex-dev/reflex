@@ -1,0 +1,80 @@
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/fleet/fleet_a3/reflex.lock/bun.lock
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+apps/a3_class_state/run/fleet/fleet_a3/reflex.lock/package.json
+gzip:  0.58 kB
+gzip: 84.10 kB
+gzip:  0.20 kB
+gzip:  0.29 kB
+gzip:  0.70 kB
+gzip:  8.12 kB
+gzip: 12.91 kB
+gzip: 28.72 kB
+gzip: 35.78 kB
+gzip: 66.25 kB
+gzip: 86.92 kB
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+gzip:  0.31 kB
+gzip: 84.10 kB
+gzip:  0.20 kB
+gzip: 14.89 kB
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:04
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/a3_class_state/run/fleet/fleet_a3/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/
+scratchpad/apps/a3_class_state/run/fleet/fleet_a3/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3107/
+[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+[INFO] Starting granian (main PID: 20549)
+[INFO] Listening at: http://0.0.0.0:3107
+[INFO] Spawning worker-1 with PID: 20661
+[INFO] Spawning worker-2 with PID: 20663
+[INFO] Spawning worker-3 with PID: 20665
+[INFO] Spawning worker-4 with PID: 20667
+[INFO] Spawning worker-5 with PID: 20669
+[INFO] Spawning worker-6 with PID: 20671
+[INFO] Spawning worker-7 with PID: 20673
+[INFO] Started worker-2
+[INFO] Spawning worker-8 with PID: 20678
+[INFO] Started worker-1
+[INFO] Started worker-5
+[INFO] Started worker-3
+[INFO] Spawning worker-9 with PID: 20680
+[INFO] Started worker-6
+[INFO] Started worker-4
+[INFO] Started worker-9
+[INFO] Started worker-7
+[INFO] Started worker-8
+[INFO] Shutting down granian
+[INFO] Stopping worker-3
+[INFO] Stopping worker-5
+[INFO] Stopping worker-7
+[INFO] Stopping worker-4
+[INFO] Stopping worker-8
+[INFO] Stopping worker-6
+[INFO] Stopping worker-1
+[INFO] Stopping worker-2
+[INFO] Stopping worker-9
+[INFO] Stopped worker-1
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Stopped worker-9
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

@@ -1,0 +1,21 @@
+{
+ "label": "1:stable(new)",
+ "mode": "new",
+ "token": "c8e0b228-e107-41b4-8710-b0d932c83f85",
+ "on_arrival": {
+  "server": "server=0.9.12",
+  "user": "",
+  "count": "5",
+  "history": ""
+ },
+ "after_login_incr": {
+  "server": "server=0.9.12",
+  "user": "alice",
+  "count": "6",
+  "history": "0.9.12:6:v1"
+ },
+ "console_non_benign": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "bad_responses": []
+}
