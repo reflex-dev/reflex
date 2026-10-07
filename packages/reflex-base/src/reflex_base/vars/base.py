@@ -4747,6 +4747,10 @@ class BaseStateMeta(ABCMeta):
         if declared is None or _inherited_value(cls.__mro__, name) is not declared:
             super().__setattr__(name, value)
             return
+        if isinstance(value, declared._proxy):
+            # A value read from a state instance is proxied for dirty tracking;
+            # the default must not retain that instance through the proxy.
+            value = value.__wrapped__
         if _accepts_default(declared, value):
             defaults = _default_arguments(value)
             declared.default = defaults["default"]

@@ -154,6 +154,30 @@ def test_class_assignment_sets_default_factory(name: str, inherited: bool):
     assert calls == [True] * 4
 
 
+def test_class_assignment_unwraps_mutable_proxy():
+    """A proxied value read from a state instance becomes a plain default."""
+
+    class ConfigState(BaseState):
+        items: list[str] = []
+
+    source = ConfigState()
+    source.items.append("a")
+    assert isinstance(source.items, MutableProxy)
+    ConfigState.items = source.items
+    declared = ConfigState.get_fields()["items"]
+    held = declared.default_factory.args[0]  # pyright: ignore[reportFunctionMemberAccess, reportOptionalMemberAccess]
+    assert type(held) is list
+    assert held == ["a"]
+    fresh = ConfigState()
+    assert fresh.items == ["a"]
+    fresh.items.append("b")
+    assert source.items == ["a"]
+    ref = weakref.ref(source)
+    del source
+    gc.collect()
+    assert ref() is None
+
+
 def test_class_assignment_keeps_accepted_callables():
     """A callable the field's annotation accepts is the default, not a factory."""
     calls = []
