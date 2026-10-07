@@ -1,0 +1,27 @@
+F.FFF.                                                                   [100%]
+=================================== FAILURES ===================================
+E   AssertionError: assert 5 == 99
+     +  where 5 = Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}})._limit
+     +    where Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}}) = inst()
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/explorer_copy/pytest_probe/test_monkeypatch_backend_var.py:27: AssertionError: assert 5 == 99
+E   AssertionError: assert None is not None
+     +  where None = Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}})._client
+     +    where Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}}) = inst()
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/explorer_copy/pytest_probe/test_monkeypatch_backend_var.py:36: AssertionError: assert None is not None
+E   AssertionError: assert 5 == 7
+     +  where 5 = Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}})._limit
+     +    where Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}}) = inst()
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/explorer_copy/pytest_probe/test_monkeypatch_backend_var.py:41: AssertionError: assert 5 == 7
+E   AssertionError: assert 5 == 8
+     +  where 5 = Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}})._limit
+     +    where Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}}) = inst()
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/explorer_copy/pytest_probe/test_monkeypatch_backend_var.py:47: AssertionError: assert 5 == 8
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_monkeypatch_backend_var.py::test_after_monkeypatch_default_is_restored
+PASSED test_monkeypatch_backend_var.py::test_after_all_default_is_restored
+FAILED test_monkeypatch_backend_var.py::test_monkeypatch_setattr_value_of_declared_type
+FAILED test_monkeypatch_backend_var.py::test_monkeypatch_setattr_mock - Asser...
+FAILED test_monkeypatch_backend_var.py::test_mock_patch_object_context_manager
+FAILED test_monkeypatch_backend_var.py::test_mock_patch_object_decorator - As...
+4 failed, 2 passed in 0.28s

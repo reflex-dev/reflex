@@ -1,0 +1,290 @@
+reflex 0.10.0a2  (venv verify_tp_0-a2)
+
+== _slot = None            (unannotated)
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got <__main__.Client object at 0x7f
+   Client class (callable, 0-arg ctor)          RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got <__main__.Client object at 0x7f SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 'a-string' of type <class 'str'
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 42 of type <class 'int'>.
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 'five' of type <class 'str'>.
+   None                                         ok     inst reads None                   class reads Field
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 1 of type <class 'int'>.
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got [1] of type <class 'list'>.
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 'from-callable' of type <class  SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 'from-fn' of type <class 'str'> SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got 1 of type <class 'int'>.
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got <MagicMock name='mock()' id='14
+   MagicMock(spec=Client)                       RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got <MagicMock name='mock()' id='14
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected <class 'NoneType'>, got <httpx.Client object at 0x7fe16
+
+== _slot = 0               (unannotated)
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got <__main__.Client object at 0x7fe167a
+   Client class (callable, 0-arg ctor)          RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got <__main__.Client object at 0x7fe166f SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'a-string' of type <class 'str'>.
+   42                                           ok     inst reads 42                     class reads Field
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'five' of type <class 'str'>.
+   None                                         RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got None of type <class 'NoneType'>.
+   1 (int for bool/str slot)                    ok     inst reads 1                      class reads Field
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got [1] of type <class 'list'>.
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'from-callable' of type <class 'str' SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'from-fn' of type <class 'str'>. SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            ok     inst reads 1                      class reads Field
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got <MagicMock name='mock()' id='1406060
+   MagicMock(spec=Client)                       RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got <MagicMock name='mock()' id='1406060
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got <httpx.Client object at 0x7fe166eac5
+
+== _slot = ''              (unannotated)
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got <__main__.Client object at 0x7fe166e
+   Client class (callable, 0-arg ctor)          RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got <__main__.Client object at 0x7fe166e SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   ok     inst reads 'a-string'             class reads Field
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got 42 of type <class 'int'>.
+   'five' (for int-ish slots)                   ok     inst reads 'five'                 class reads Field
+   None                                         RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got None of type <class 'NoneType'>.
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got 1 of type <class 'int'>.
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got [1] of type <class 'list'>.
+   CallableThing() (callable instance)          ok     inst reads 'from-callable'        class reads Field SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads 'from-fn'              class reads Field SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got 1 of type <class 'int'>.
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got <MagicMock name='mock()' id='1406060
+   MagicMock(spec=Client)                       RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got <MagicMock name='mock()' id='1406060
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got <httpx.Client object at 0x7fe166ead2
+
+== _slot = False           (unannotated)
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got <__main__.Client object at 0x7fe167
+   Client class (callable, 0-arg ctor)          RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got <__main__.Client object at 0x7fe167 SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 'a-string' of type <class 'str'>.
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 42 of type <class 'int'>.
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 'five' of type <class 'str'>.
+   None                                         RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got None of type <class 'NoneType'>.
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 1 of type <class 'int'>.
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got [1] of type <class 'list'>.
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 'from-callable' of type <class 'str SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 'from-fn' of type <class 'str'>. SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got 1 of type <class 'int'>.
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got <MagicMock name='mock()' id='140606
+   MagicMock(spec=Client)                       RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got <MagicMock name='mock()' id='140606
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected <class 'bool'>, got <httpx.Client object at 0x7fe166eaf
+
+== _slot = []              (unannotated)
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got <__main_
+   Client class (callable, 0-arg ctor)          RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got <__main_ SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   ok     inst reads 'a-string'             class reads Field
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got 42 of ty
+   'five' (for int-ish slots)                   ok     inst reads 'five'                 class reads Field
+   None                                         RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got None of 
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got 1 of typ
+   [1] (list)                                   ok     inst reads [1]                    class reads Field
+   CallableThing() (callable instance)          ok     inst reads 'from-callable'        class reads Field SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads 'from-fn'              class reads Field SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got 1 of typ
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got <MagicMo
+   MagicMock(spec=Client)                       RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got <MagicMo
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Sequence[typing.NoReturn], got <httpx.C
+
+== _slot = {}              (unannotated)
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+   Client class (callable, 0-arg ctor)          RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+   None                                         RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+   MagicMock(spec=Client)                       RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected collections.abc.Mapping[typing.NoReturn, typing.NoRetur
+
+== slot = None             (unannotated, PUBLIC)
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got <__main__.Client object at 0x7fe
+   Client class (callable, 0-arg ctor)          RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got <__main__.Client object at 0x7fe SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 'a-string' of type <class 'str'>
+   42                                           RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 42 of type <class 'int'>.
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 'five' of type <class 'str'>.
+   None                                         ok     inst reads None                   class reads NoneCastedVar
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 1 of type <class 'int'>.
+   [1] (list)                                   RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got [1] of type <class 'list'>.
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 'from-callable' of type <class ' SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 'from-fn' of type <class 'str'>. SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got 1 of type <class 'int'>.
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field 'slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positional
+   MagicMock()                                  RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got <MagicMock name='mock()' id='140
+   MagicMock(spec=Client)                       RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got <MagicMock name='mock()' id='140
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field 'slot': expected <class 'NoneType'>, got <httpx.Client object at 0x7fe166
+
+== _slot: str = ''
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got <__main__.Client object at 0x7fe166e
+   Client class (callable, 0-arg ctor)          RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got <__main__.Client object at 0x7fe166e SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   ok     inst reads 'a-string'             class reads Field
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got 42 of type <class 'int'>.
+   'five' (for int-ish slots)                   ok     inst reads 'five'                 class reads Field
+   None                                         RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got None of type <class 'NoneType'>.
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got 1 of type <class 'int'>.
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got [1] of type <class 'list'>.
+   CallableThing() (callable instance)          ok     inst reads 'from-callable'        class reads Field SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads 'from-fn'              class reads Field SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got 1 of type <class 'int'>.
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got <MagicMock name='mock()' id='1406060
+   MagicMock(spec=Client)                       RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got <MagicMock name='mock()' id='1406060
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected <class 'str'>, got <httpx.Client object at 0x7fe166eda3
+
+== _slot: int = 0
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got <__main__.Client object at 0x7fe166d
+   Client class (callable, 0-arg ctor)          RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got <__main__.Client object at 0x7fe166d SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'a-string' of type <class 'str'>.
+   42                                           ok     inst reads 42                     class reads Field
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'five' of type <class 'str'>.
+   None                                         RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got None of type <class 'NoneType'>.
+   1 (int for bool/str slot)                    ok     inst reads 1                      class reads Field
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got [1] of type <class 'list'>.
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'from-callable' of type <class 'str' SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got 'from-fn' of type <class 'str'>. SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            ok     inst reads 1                      class reads Field
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got <MagicMock name='mock()' id='1406060
+   MagicMock(spec=Client)                       RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got <MagicMock name='mock()' id='1406060
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected <class 'int'>, got <httpx.Client object at 0x7fe166d95b
+
+== _slot: Optional[Client] = None
+   Client() instance (not callable)             ok     inst reads '<Client>'             class reads Field
+   Client class (callable, 0-arg ctor)          ok     inst reads '<Client>'             class reads Field SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 'a-string' of typ
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 42 of type <class
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 'five' of type <c
+   None                                         ok     inst reads None                   class reads Field
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 1 of type <class 
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got [1] of type <clas
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 'from-callable' o SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 'from-fn' of type SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got 1 of type <class 
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got <MagicMock name='
+   MagicMock(spec=Client)                       ok     inst reads '<MagicMock>'          class reads Field
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[__main__.Client], got <httpx.Client obj
+
+== _slot: Client | None = None
+   Client() instance (not callable)             ok     inst reads '<Client>'             class reads Field
+   Client class (callable, 0-arg ctor)          ok     inst reads '<Client>'             class reads Field SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'a-string' of type <class '
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 42 of type <class 'int'>.
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'five' of type <class 'str'
+   None                                         ok     inst reads None                   class reads Field
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 1 of type <class 'int'>.
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got [1] of type <class 'list'>.
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'from-callable' of type <cl SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'from-fn' of type <class 's SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 1 of type <class 'int'>.
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got <MagicMock name='mock()' id
+   MagicMock(spec=Client)                       ok     inst reads '<MagicMock>'          class reads Field
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got <httpx.Client object at 0x7
+
+== _slot: 'Client | None' = None   (string annotation)
+   Client() instance (not callable)             ok     inst reads '<Client>'             class reads Field
+   Client class (callable, 0-arg ctor)          ok     inst reads '<Client>'             class reads Field SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'a-string' of type <class '
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 42 of type <class 'int'>.
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'five' of type <class 'str'
+   None                                         ok     inst reads None                   class reads Field
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 1 of type <class 'int'>.
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got [1] of type <class 'list'>.
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'from-callable' of type <cl SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 'from-fn' of type <class 's SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got 1 of type <class 'int'>.
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got <MagicMock name='mock()' id
+   MagicMock(spec=Client)                       ok     inst reads '<MagicMock>'          class reads Field
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected __main__.Client | None, got <httpx.Client object at 0x7
+
+== _slot: Any = None
+   Client() instance (not callable)             ok     inst reads '<Client>'             class reads Field
+   Client class (callable, 0-arg ctor)          ok     inst reads '<type>'               class reads Field
+   'a-string'                                   ok     inst reads 'a-string'             class reads Field
+   42                                           ok     inst reads 42                     class reads Field
+   'five' (for int-ish slots)                   ok     inst reads 'five'                 class reads Field
+   None                                         ok     inst reads None                   class reads Field
+   1 (int for bool/str slot)                    ok     inst reads 1                      class reads Field
+   [1] (list)                                   ok     inst reads [1]                    class reads Field
+   CallableThing() (callable instance)          ok     inst reads '<CallableThing>'      class reads Field
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads '<function>'           class reads Field
+   lambda: 1 (0-arg function -> int)            ok     inst reads '<function>'           class reads Field
+   lambda x: x (needs an argument)              ok     inst reads '<function>'           class reads Field
+   MagicMock()                                  ok     inst reads '<MagicMock>'          class reads Field
+   MagicMock(spec=Client)                       ok     inst reads '<MagicMock>'          class reads Field
+   httpx.Client() (not callable)                ok     inst reads "<TypeError: cannot pickle '_thread.RLock' object>" class reads Field
+
+== _slot: Callable[..., Any] | None = None
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 
+   Client class (callable, 0-arg ctor)          ok     inst reads '<type>'               class reads Field
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 
+   None                                         ok     inst reads None                   class reads Field
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 
+   CallableThing() (callable instance)          ok     inst reads '<CallableThing>'      class reads Field
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads '<function>'           class reads Field
+   lambda: 1 (0-arg function -> int)            ok     inst reads '<function>'           class reads Field
+   lambda x: x (needs an argument)              ok     inst reads '<function>'           class reads Field
+   MagicMock()                                  ok     inst reads '<MagicMock>'          class reads Field
+   MagicMock(spec=Client)                       ok     inst reads '<MagicMock>'          class reads Field
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected typing.Optional[typing.Callable[..., typing.Any]], got 
+
+== _slot: object = None
+   Client() instance (not callable)             ok     inst reads '<Client>'             class reads Field
+   Client class (callable, 0-arg ctor)          ok     inst reads '<type>'               class reads Field
+   'a-string'                                   ok     inst reads 'a-string'             class reads Field
+   42                                           ok     inst reads 42                     class reads Field
+   'five' (for int-ish slots)                   ok     inst reads 'five'                 class reads Field
+   None                                         ok     inst reads None                   class reads Field
+   1 (int for bool/str slot)                    ok     inst reads 1                      class reads Field
+   [1] (list)                                   ok     inst reads [1]                    class reads Field
+   CallableThing() (callable instance)          ok     inst reads '<CallableThing>'      class reads Field
+   counting_fn (0-arg function -> 'from-fn')    ok     inst reads '<function>'           class reads Field
+   lambda: 1 (0-arg function -> int)            ok     inst reads '<function>'           class reads Field
+   lambda x: x (needs an argument)              ok     inst reads '<function>'           class reads Field
+   MagicMock()                                  ok     inst reads '<MagicMock>'          class reads Field
+   MagicMock(spec=Client)                       ok     inst reads '<MagicMock>'          class reads Field
+   httpx.Client() (not callable)                ok     inst reads "<TypeError: cannot pickle '_thread.RLock' object>" class reads Field
+
+== _slot: Client = None    (annotation excludes None)
+   Client() instance (not callable)             ok     inst reads '<Client>'             class reads Field
+   Client class (callable, 0-arg ctor)          ok     inst reads '<Client>'             class reads Field SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 'a-string' of type <clas
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 42 of type <class 'int'>
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 'five' of type <class 's
+   None                                         RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got None of type <class 'Non
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 1 of type <class 'int'>.
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got [1] of type <class 'list
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 'from-callable' of type  SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 'from-fn' of type <class SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got 1 of type <class 'int'>.
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got <MagicMock name='mock()'
+   MagicMock(spec=Client)                       ok     inst reads '<MagicMock>'          class reads Field
+   httpx.Client() (not callable)                RAISES TypeError: Invalid default for field '_slot': expected <class '__main__.Client'>, got <httpx.Client object at 
+
+== _slot: httpx.Client | None = None
+   Client() instance (not callable)             RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got <__main__.Client object at 0x7
+   Client class (callable, 0-arg ctor)          RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got <__main__.Client object at 0x7 SIDE-EFFECTS={'Client.made': 1}
+   'a-string'                                   RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 'a-string' of type <class 'str
+   42                                           RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 42 of type <class 'int'>.
+   'five' (for int-ish slots)                   RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 'five' of type <class 'str'>.
+   None                                         ok     inst reads None                   class reads Field
+   1 (int for bool/str slot)                    RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 1 of type <class 'int'>.
+   [1] (list)                                   RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got [1] of type <class 'list'>.
+   CallableThing() (callable instance)          RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 'from-callable' of type <class SIDE-EFFECTS={'CallableThing.calls': 1}
+   counting_fn (0-arg function -> 'from-fn')    RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 'from-fn' of type <class 'str' SIDE-EFFECTS={'fn.calls': 1}
+   lambda: 1 (0-arg function -> int)            RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got 1 of type <class 'int'>.
+   lambda x: x (needs an argument)              RAISES TypeError: Default factory for field '_slot' failed: <lambda>.<locals>.<lambda>() missing 1 required positiona
+   MagicMock()                                  RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got <MagicMock name='mock()' id='1
+   MagicMock(spec=Client)                       RAISES TypeError: Invalid default for field '_slot': expected httpx.Client | None, got <MagicMock name='mock()' id='1
+   httpx.Client() (not callable)                ok     inst reads "<TypeError: cannot pickle '_thread.RLock' object>" class reads Field

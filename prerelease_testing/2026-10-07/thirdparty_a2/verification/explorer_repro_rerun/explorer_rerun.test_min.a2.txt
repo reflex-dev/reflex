@@ -1,0 +1,14 @@
+.EF                                                                      [100%]
+==================================== ERRORS ====================================
+_______________________ ERROR at teardown of test_patch ________________________
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+=================================== FAILURES ===================================
+E   AssertionError: assert 99 == 5
+     +  where 99 = Field(default=99, is_var=True, annotated_type=<class 'int'>).default
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/explorer_copy/pytest_probe/min/test_min.py:13: AssertionError: assert 99 == 5
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_min.py::test_patch
+ERROR test_min.py::test_patch - TypeError: A Field cannot overwrite another f...
+FAILED test_min.py::test_default_is_back - AssertionError: assert 99 == 5
+1 failed, 1 passed, 1 error in 0.31s

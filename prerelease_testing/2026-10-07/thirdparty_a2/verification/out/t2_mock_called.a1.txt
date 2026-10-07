@@ -1,0 +1,14 @@
+reflex 0.10.0a1
+  setattr(Svc,'_client', MagicMock())  [typed Optional[Client] slot]             -> None
+     plain MagicMock .called after the assignment attempt: False call_count: 0
+  setattr(Svc,'_untyped', MagicMock())  [unannotated None placeholder]           -> None
+     MagicMock .called: False call_count: 0
+  setattr(Svc,'_client', MagicMock(spec=Client))                                 -> None
+     spec'd MagicMock .called: False
+  setattr(Svc,'_client', FakeClient())  [duck-typed double]                      -> None
+  setattr(Svc,'_n', MagicMock(return_value=7))  [int slot; mock acts as factory] -> None
+     int-returning mock .called: False call_count: 0
+  fresh Svc()._n  (each new instance calls the mock again?)                      -> <MagicMock name='int_returning' id='140246144031232'>
+     mock call_count after one more instance: 0
+  mock.patch.object(Svc,'_n', MagicMock(return_value=8)).start()                 -> <MagicMock id='140246125572080'>
+    ... then .stop()                                                             -> False

@@ -1,0 +1,5 @@
+[r090_dev_redis] direct          err=None status: before='idle' t1='idle' t2='idle' t3='idle' | log t1='' t2='' t3='' | spinner t1='off' t3='off' | other t1='none' t3='none' | load_note t1='none' t3='none'
+[r090_dev_redis] gen             err=None status: before='idle' t1='gen-flushed' t2='gen-flushed' t3='idle' | log t1='' t2='' t3='' | spinner t1='off' t3='off' | other t1='none' t3='none' | load_note t1='none' t3='none'
+[r090_dev_redis] spinner         err=None status: before='idle' t1='idle' t2='idle' t3='idle' | log t1='' t2='' t3='' | spinner t1='on' t3='off' | other t1='none' t3='none' | load_note t1='none' t3='none'
+[r090_dev_redis] bg_inside       err=None status: before='idle' t1='bg-inside-partial' t2='bg-inside-partial' t3='idle' | log t1='' t2='' t3='' | spinner t1='off' t3='off' | other t1='none' t3='none' | load_note t1='none' t3='none'
+[r090_dev_redis] sup_split       err=None status: before='idle' t1='idle' t2='idle' t3='idle' | log t1='a:start,a:after-yield,a:end' t2='a:start,a:after-yield,a:end' t3='a:start,a:after-yield,a:end' | spinner t1='off' t3='off' | other t1='b-ran' t3='b-ran' | load_note t1='none' t3='none'

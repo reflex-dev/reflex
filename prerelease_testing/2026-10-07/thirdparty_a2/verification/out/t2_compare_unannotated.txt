@@ -1,0 +1,51 @@
+totals over 255 (declaration, value) pairs:
+  0.10.0a2  raises=179  ok=76   assignments that ran user code=42
+  0.10.0a1  raises=0    ok=255  assignments that ran user code=0
+  0.9.12    raises=0    ok=255  assignments that ran user code=0
+
+declaration                                      assigned value                               0.10.0a2                   | 0.10.0a1                   | 0.9.12                    
+_slot = None            (unannotated)            Client() instance (not callable)             RAISES                     | ok-><Client>               | ok->None                  
+_slot = None            (unannotated)            Client class (callable, 0-arg ctor)          RAISES [Clientx1]          | ok-><type>                 | ok->None                  
+_slot = None            (unannotated)            'a-string'                                   RAISES                     | ok->a-string               | ok->None                  
+_slot = None            (unannotated)            42                                           RAISES                     | ok->42                     | ok->None                  
+_slot = None            (unannotated)            'five' (for int-ish slots)                   RAISES                     | ok->five                   | ok->None                  
+_slot = None            (unannotated)            None                                         ok->None                   | ok->None                   | ok->None                  
+_slot = None            (unannotated)            1 (int for bool/str slot)                    RAISES                     | ok->1                      | ok->None                  
+_slot = None            (unannotated)            [1] (list)                                   RAISES                     | ok->[1]                    | ok->None                  
+_slot = None            (unannotated)            CallableThing() (callable instance)          RAISES [CallableThingx1]   | ok-><CallableThing         | ok->None                  
+_slot = None            (unannotated)            counting_fn (0-arg function -> 'from-fn')    RAISES [fnx1]              | ok-><method>               | ok->None                  
+_slot = None            (unannotated)            lambda: 1 (0-arg function -> int)            RAISES                     | ok-><method>               | ok->None                  
+_slot = None            (unannotated)            lambda x: x (needs an argument)              RAISES                     | ok-><method>               | ok->None                  
+_slot = None            (unannotated)            MagicMock()                                  RAISES                     | ok-><MagicMock>            | ok->None                  
+_slot = None            (unannotated)            MagicMock(spec=Client)                       RAISES                     | ok-><MagicMock>            | ok->None                  
+_slot = None            (unannotated)            httpx.Client() (not callable)                RAISES                     | ok-><Client>               | ok->None                  
+_slot = 0               (unannotated)            Client() instance (not callable)             RAISES                     | ok-><Client>               | ok->0                     
+_slot = 0               (unannotated)            Client class (callable, 0-arg ctor)          RAISES [Clientx1]          | ok-><type>                 | ok->0                     
+_slot = 0               (unannotated)            'a-string'                                   RAISES                     | ok->a-string               | ok->0                     
+_slot = 0               (unannotated)            42                                           ok->42                     | ok->42                     | ok->0                     
+_slot = 0               (unannotated)            'five' (for int-ish slots)                   RAISES                     | ok->five                   | ok->0                     
+_slot = 0               (unannotated)            None                                         RAISES                     | ok->None                   | ok->0                     
+_slot = 0               (unannotated)            1 (int for bool/str slot)                    ok->1                      | ok->1                      | ok->0                     
+_slot = 0               (unannotated)            [1] (list)                                   RAISES                     | ok->[1]                    | ok->0                     
+_slot = 0               (unannotated)            CallableThing() (callable instance)          RAISES [CallableThingx1]   | ok-><CallableThing         | ok->0                     
+_slot = 0               (unannotated)            counting_fn (0-arg function -> 'from-fn')    RAISES [fnx1]              | ok-><method>               | ok->0                     
+_slot = 0               (unannotated)            lambda: 1 (0-arg function -> int)            ok->1                      | ok-><method>               | ok->0                     
+_slot = 0               (unannotated)            lambda x: x (needs an argument)              RAISES                     | ok-><method>               | ok->0                     
+_slot = 0               (unannotated)            MagicMock()                                  RAISES                     | ok-><MagicMock>            | ok->0                     
+_slot = 0               (unannotated)            MagicMock(spec=Client)                       RAISES                     | ok-><MagicMock>            | ok->0                     
+_slot = 0               (unannotated)            httpx.Client() (not callable)                RAISES                     | ok-><Client>               | ok->0                     
+_slot = ''              (unannotated)            Client() instance (not callable)             RAISES                     | ok-><Client>               | ok->                      
+_slot = ''              (unannotated)            Client class (callable, 0-arg ctor)          RAISES [Clientx1]          | ok-><type>                 | ok->                      
+_slot = ''              (unannotated)            'a-string'                                   ok->a-string               | ok->a-string               | ok->                      
+_slot = ''              (unannotated)            42                                           RAISES                     | ok->42                     | ok->                      
+_slot = ''              (unannotated)            'five' (for int-ish slots)                   ok->five                   | ok->five                   | ok->                      
+_slot = ''              (unannotated)            None                                         RAISES                     | ok->None                   | ok->                      
+_slot = ''              (unannotated)            1 (int for bool/str slot)                    RAISES                     | ok->1                      | ok->                      
+_slot = ''              (unannotated)            [1] (list)                                   RAISES                     | ok->[1]                    | ok->                      
+_slot = ''              (unannotated)            CallableThing() (callable instance)          ok->from-callable [CallableThingx1] | ok-><CallableThing         | ok->                      
+_slot = ''              (unannotated)            counting_fn (0-arg function -> 'from-fn')    ok->from-fn [fnx1]         | ok-><method>               | ok->                      
+_slot = ''              (unannotated)            lambda: 1 (0-arg function -> int)            RAISES                     | ok-><method>               | ok->                      
+_slot = ''              (unannotated)            lambda x: x (needs an argument)              RAISES                     | ok-><method>               | ok->                      
+_slot = ''              (unannotated)            MagicMock()                                  RAISES                     | ok-><MagicMock>            | ok->                      
+_slot = ''              (unannotated)            MagicMock(spec=Client)                       RAISES                     | ok-><MagicMock>            | ok->                      
+_slot = ''              (unannotated)            httpx.Client() (not callable)                RAISES                     | ok-><Client>               | ok->                      

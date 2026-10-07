@@ -1,0 +1,130 @@
+{
+ "venv": "alpha2",
+ "mode": "dev",
+ "sm": "disk",
+ "variants": [
+  {
+   "variant": "gap",
+   "gap_s": 3.0,
+   "stop_delay_s": 3.0,
+   "signal": "TERM",
+   "before": {
+    "hyd": "yes",
+    "v-status": "idle",
+    "v-spinner": "off",
+    "v-pings": "0",
+    "v-log": "",
+    "v-other": "none",
+    "v-load_note": "none",
+    "v-echo_backend": "",
+    "v-mode": "default"
+   },
+   "browser_after_fail": {
+    "hyd": "yes",
+    "v-status": "idle",
+    "v-spinner": "off",
+    "v-pings": "0",
+    "v-log": "",
+    "v-other": "b-ran",
+    "v-load_note": "none",
+    "v-echo_backend": "",
+    "v-mode": "default"
+   },
+   "stop": "stopped alpha2_dev_disk (pid 20889)\n--- listeners in my ranges (3640-3659, 8640-8659):\n--- end",
+   "start": "[start.sh] 13:07:29 label=alpha2_dev_disk cwd=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_events_0/run/alpha2_dev cmd=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/reflex run --env dev --frontend-port 3640 --backend-port 8640 --loglevel debug redis= sm= workers=default\n[start.sh] pid=21656 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_events_0/logs/alpha2_dev_disk.log\nUP after 0s fe=200 be=200\n{\"status\":true}",
+   "after_restart_reload": {
+    "hyd": "yes",
+    "v-status": "idle",
+    "v-spinner": "off",
+    "v-pings": "0",
+    "v-log": "",
+    "v-other": "none",
+    "v-load_note": "none",
+    "v-echo_backend": "",
+    "v-mode": "default"
+   }
+  },
+  {
+   "variant": "fast",
+   "gap_s": 0.3,
+   "stop_delay_s": 0.4,
+   "signal": "TERM",
+   "before": {
+    "hyd": "yes",
+    "v-status": "idle",
+    "v-spinner": "off",
+    "v-pings": "0",
+    "v-log": "",
+    "v-other": "none",
+    "v-load_note": "none",
+    "v-echo_backend": "",
+    "v-mode": "default"
+   },
+   "browser_after_fail": {
+    "hyd": "yes",
+    "v-status": "idle",
+    "v-spinner": "off",
+    "v-pings": "0",
+    "v-log": "",
+    "v-other": "b-ran",
+    "v-load_note": "none",
+    "v-echo_backend": "",
+    "v-mode": "default"
+   },
+   "stop": "stopped alpha2_dev_disk (pid 21656)\n--- listeners in my ranges (3640-3659, 8640-8659):\n--- end",
+   "start": "[start.sh] 13:07:47 label=alpha2_dev_disk cwd=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_events_0/run/alpha2_dev cmd=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/reflex run --env dev --frontend-port 3640 --backend-port 8640 --loglevel debug redis= sm= workers=default\n[start.sh] pid=22148 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_events_0/logs/alpha2_dev_disk.log\nUP after 0s fe=200 be=200\n{\"status\":true}",
+   "after_restart_reload": {
+    "hyd": "yes",
+    "v-status": "idle",
+    "v-spinner": "off",
+    "v-pings": "0",
+    "v-log": "",
+    "v-other": "none",
+    "v-load_note": "none",
+    "v-echo_backend": "",
+    "v-mode": "default"
+   }
+  },
+  {
+   "variant": "fast_kill9",
+   "gap_s": 0.3,
+   "stop_delay_s": 0.4,
+   "signal": "KILL",
+   "before": {
+    "hyd": "yes",
+    "v-status": "idle",
+    "v-spinner": "off",
+    "v-pings": "0",
+    "v-log": "",
+    "v-other": "none",
+    "v-load_note": "none",
+    "v-echo_backend": "",
+    "v-mode": "default"
+   },
+   "browser_after_fail": {
+    "hyd": "yes",
+    "v-status": "idle",
+    "v-spinner": "off",
+    "v-pings": "0",
+    "v-log": "",
+    "v-other": "b-ran",
+    "v-load_note": "none",
+    "v-echo_backend": "",
+    "v-mode": "default"
+   },
+   "stop": "stopped alpha2_dev_disk (pid 22148)\n--- listeners in my ranges (3640-3659, 8640-8659):\n--- end",
+   "start": "[start.sh] 13:08:04 label=alpha2_dev_disk cwd=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_events_0/run/alpha2_dev cmd=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/bin/reflex run --env dev --frontend-port 3640 --backend-port 8640 --loglevel debug redis= sm= workers=default\n[start.sh] pid=22371 log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_events_0/logs/alpha2_dev_disk.log\nUP after 0s fe=200 be=200\n{\"status\":true}",
+   "after_restart_reload": {
+    "hyd": "yes",
+    "v-status": "idle",
+    "v-spinner": "off",
+    "v-pings": "0",
+    "v-log": "",
+    "v-other": "none",
+    "v-load_note": "none",
+    "v-echo_backend": "",
+    "v-mode": "default"
+   }
+  }
+ ]
+}

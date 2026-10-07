@@ -1,0 +1,4 @@
+snapshot object is the live Field: True | snapshot.default before patch: 5
+snapshot.default AFTER the patch (aliasing proof; same object mutated in place): 99
+stock a2 BaseStateMeta.__setattr__                             undo_error=TypeError: A Field cannot overwrite another field. Define a computed var to read   field.default=99  new instance reads 99
+hypothetical fix A (identity no-op), in-place mutation kept    undo_error=None                                                                               field.default=99  new instance reads 99

@@ -278,3 +278,17 @@ inside the lock the called handler sees `type(self) is StateProxy`. evapp `/bind
   case; the 10-06 per-case 0.9.12 results are used instead and today's partial rerun matches them).
 - a1 prod of the evapp suite (a1 dev from 10-06 and a1 prod of the mini repros only).
 - Redis in prod mode (the state-manager findings were run in dev with Redis; the disk-manager ones in dev and prod).
+
+## VERIFICATION
+
+Independent verification of E-1 and E-2 on 0.10.0a2 (dev + prod; disk/memory + Redis; baselines 0.9.12 and 0.10.0a1, history 0.9.0 and 0.8.26): see
+`verification/NOTES.md` (own fixture and driver, written before reading `src/mini`; the explorer's mini app + `drive_mini.py` were then re-run unmodified on other ports with
+identical results).
+
+* **E-1: CONFIRMED.** Corrections: "persisted" = retained in the running server's state object only (never on disk until the next successful event; `reflex run` wipes `.states`
+  on every start); the delay is unbounded (no flush in 40 s idle), not "~3 s"; `on_load` is delivered only because the chained `set_is_hydrated(True)` flushes.
+  Identical on 0.9.12 and a1 (no a2 regression); 0.8.26 sent the delta in the same frame as the error toast, so it dates from the 0.9.0 event-processor rewrite.
+* **E-2: NARROWED.** (a) generator yield-then-raise and (c) raise inside `async with self` confirmed on dev and prod (1 and 9 workers) and on 0.9.12/a1; (b) is a permanent
+  divergence only if the superseding call leaves the var untouched (`sup_same` converges). Default Redis config only: with `REFLEX_OPLOCK_ENABLED=true` Redis behaves like disk.
+  Failures that never flushed are atomic and consistent (dropped on client and server). Known upstream: #6122, #7248 (+ open PR #7412, which keeps discarding on non-cancellation exceptions).
+* Severity: E-1 medium; E-2 medium as UI/server divergence, low as durable data loss; neither blocks the train.

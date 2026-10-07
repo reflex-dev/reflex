@@ -1,0 +1,2335 @@
+{
+ "reflex": "0.10.0a1",
+ "venv": "verify_tp_0-a1",
+ "rows": [
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = None            (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "'a-string'",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "42",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "None",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = 0               (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "'a-string'",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "42",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "None",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = ''              (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "'a-string'",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "42",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "None",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = False           (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": false,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "'a-string'",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "42",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "None",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = []              (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": [],
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "Client() instance (not callable)",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "'a-string'",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "42",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "None",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "[1] (list)",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "MagicMock()",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot = {}              (unannotated)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": {},
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "slot = None             (unannotated, PUBLIC)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "Client() instance (not callable)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "'a-string'",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "42",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "None",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "[1] (list)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "MagicMock()",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: str = ''",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": "",
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "Client() instance (not callable)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "'a-string'",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "42",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "None",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "[1] (list)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "MagicMock()",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: int = 0",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": 0,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: Optional[Client] = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: Client | None = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: 'Client | None' = None   (string annotation)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: Any = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: Callable[..., Any] | None = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: object = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: Client = None    (annotation excludes None)",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "Client() instance (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "Client class (callable, 0-arg ctor)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<type>",
+   "class_read": "type"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "'a-string'",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "a-string",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "42",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 42,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "'five' (for int-ish slots)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "five",
+   "class_read": "str"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "None",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": null,
+   "class_read": "NoneType"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "1 (int for bool/str slot)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": 1,
+   "class_read": "int"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "[1] (list)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": [
+    1
+   ],
+   "class_read": "list"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "CallableThing() (callable instance)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<CallableThing>",
+   "class_read": "CallableThing"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "counting_fn (0-arg function -> 'from-fn')",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "lambda: 1 (0-arg function -> int)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "lambda x: x (needs an argument)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<method>",
+   "class_read": "function"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "MagicMock()",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "MagicMock(spec=Client)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<MagicMock>",
+   "class_read": "MagicMock"
+  },
+  {
+   "decl": "_slot: httpx.Client | None = None",
+   "value": "httpx.Client() (not callable)",
+   "before_inst": null,
+   "error": null,
+   "side_effects": {},
+   "after_inst": "<Client>",
+   "class_read": "Client"
+  }
+ ]
+}

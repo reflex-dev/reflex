@@ -1,0 +1,26 @@
+F.F.F.....                                                               [100%]
+=================================== FAILURES ===================================
+E   AssertionError: assert 1 == 41
+     +  where 1 = Svc2({'reflex___state____state.test_monkeypatch_other_attrs____svc2': {'count_rx_state_': 1, 'doubled_rx_state_': 2}}).count
+     +    where Svc2({'reflex___state____state.test_monkeypatch_other_attrs____svc2': {'count_rx_state_': 1, 'doubled_rx_state_': 2}}) = inst()
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/explorer_copy/pytest_probe/test_monkeypatch_other_attrs.py:34: AssertionError: assert 1 == 41
+E   AssertionError: assert 'real-helper' == 'fake'
+      
+      - fake
+      + real-helper
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/explorer_copy/pytest_probe/test_monkeypatch_other_attrs.py:43: AssertionError: assert 'real-helper' == 'fake'
+E   assert []
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/explorer_copy/pytest_probe/test_monkeypatch_other_attrs.py:54: assert []
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_monkeypatch_other_attrs.py::test_public_var_restored
+PASSED test_monkeypatch_other_attrs.py::test_plain_method_restored
+PASSED test_monkeypatch_other_attrs.py::test_event_handler_restored
+PASSED test_monkeypatch_other_attrs.py::test_patch_computed_var
+PASSED test_monkeypatch_other_attrs.py::test_computed_var_restored
+PASSED test_monkeypatch_other_attrs.py::test_patch_classvar
+PASSED test_monkeypatch_other_attrs.py::test_classvar_restored
+FAILED test_monkeypatch_other_attrs.py::test_patch_public_var_default - Asser...
+FAILED test_monkeypatch_other_attrs.py::test_patch_plain_method - AssertionEr...
+FAILED test_monkeypatch_other_attrs.py::test_patch_event_handler_fn - assert []
+3 failed, 7 passed in 0.29s

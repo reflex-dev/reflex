@@ -1,0 +1,2 @@
+reflex 0.10.0a1
+  assignment ok; instance reads [{'label': 'A', 'value': 'a', 'keywords': ''}, {'label': 'B', 'value': 'b', 'keywords': ''}]

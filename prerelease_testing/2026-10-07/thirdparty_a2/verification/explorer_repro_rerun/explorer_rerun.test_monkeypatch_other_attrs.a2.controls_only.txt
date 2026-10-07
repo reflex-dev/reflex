@@ -1,0 +1,12 @@
+........                                                                 [100%]
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_monkeypatch_other_attrs.py::test_patch_plain_method
+PASSED test_monkeypatch_other_attrs.py::test_plain_method_restored
+PASSED test_monkeypatch_other_attrs.py::test_patch_event_handler_fn
+PASSED test_monkeypatch_other_attrs.py::test_event_handler_restored
+PASSED test_monkeypatch_other_attrs.py::test_patch_computed_var
+PASSED test_monkeypatch_other_attrs.py::test_computed_var_restored
+PASSED test_monkeypatch_other_attrs.py::test_patch_classvar
+PASSED test_monkeypatch_other_attrs.py::test_classvar_restored
+8 passed, 2 deselected in 0.28s

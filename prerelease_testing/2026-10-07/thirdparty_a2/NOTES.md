@@ -212,3 +212,15 @@ REFLEX_API_URL=http://localhost:3510 bin/start_app.sh thirdparty_a2-a2 $W/run/a2
 
 ## 10. Layout
 `apps/` (tp_patterns, tp_components, local_auth_demo, local_auth_min, magic_link_auth_demo, google_auth_demo, cfgprobe), `drivers/`, `harness/`, `probes/`, `pytest_probe/`, `verification_src/` (10-06 classattr scripts re-run), `cvstore/`, `e2e/`, `hyd/`, `f007/`, `f011/`, `bin/`, `logs/` (server logs, probe outputs, import sweeps, freezes, install logs), `out/` (driver reports and a trimmed set of screenshots; baseline screenshots and raw websocket dumps were dropped to keep the directory small), `a2-freeze.txt`, `packages.txt`.
+
+## VERIFICATION (T-1 = section 5.1, T-2 = section 5.2; independent verifier, appended)
+Full write-up, probes, per-version outputs and rerun commands: `verification/NOTES.md` (own venvs `verify_tp_0-*`, PyPI pins in `verification/reqs/`).
+* **T-1 CONFIRMED** (regression vs a1 and 0.9.12): 15 var kinds (private/public/`rx.field`/unannotated/mutable/factory/mixin/substate/ComponentState/`x: int = None`) x
+  `monkeypatch.setattr` / `mock.patch.object` / `pytest-mock` / manual restore all fail on a2 (teardown `TypeError`, default leaks; through a substate `AttributeError` and the leak reaches the declaring parent
+  and its other substates); identical on Python 3.11-3.14. Cause is two-part: in-place mutation of the shared `Field` (`reflex_base/vars/base.py:4803-4804, 4815-4817`) so the saved snapshot is the mutated object, plus the
+  `Field` rejection (`_accepts_default` is `:4676-4701`, Field branch `:4695-4700`, not 4684-4703); relaxing only the rejection hides the error and keeps the leak. Re-assigning the original value works except when the annotation
+  rejects the original default (`x: int = None`). The controls (methods incl. `AsyncMock` private methods, handlers, computed vars, ClassVars) are fine; note that `test_monkeypatch_other_attrs.py` as written shows 3 FAILED + 1 ERROR
+  for those controls on a2 only because its own leaking `count` test pollutes them (they pass in isolation). Severity: medium, low prevalence (declared-var-default patching is not seen in public suites; Reflex's own tests patch ClassVars and methods).
+* **T-2 NARROWED**: all facts reproduce (179/255 class assignments raise on a2 vs 0 on a1 and 0.9.12; user code ran in 42; `MagicMock()` is called) but this is the documented/review-requested #7461 design, limited to unannotated or too-narrow
+  slots; none of the 22 packages trips it (reflex-clerk assigns class-level into annotated slots and is broken by the read side F-001; dynoselect works; ag-grid uses `ClassVar`). Extra: a permissive slot accepts a live client/lock and then every first read
+  raises `cannot pickle '_thread.RLock' object`; `ClassVar` is the faithful migration (the "annotate the slot" workaround makes per-instance copies). Severity: low.

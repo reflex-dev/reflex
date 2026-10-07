@@ -1,0 +1,26 @@
+Event handler on_submit expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> () as annotated in Chat_n1.submit_message instead. This may lead to unexpected behavior but is intentionally ignored for on_submit.
+Event handler on_submit expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> () as annotated in Chat_n2.submit_message instead. This may lead to unexpected behavior but is intentionally ignored for on_submit.
+Event handler on_submit expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> () as annotated in Chat_n3.submit_message instead. This may lead to unexpected behavior but is intentionally ignored for on_submit.
+Event handler on_submit expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> () as annotated in Chat_n4.submit_message instead. This may lead to unexpected behavior but is intentionally ignored for on_submit.
+reflex 0.9.12 venv thirdparty-stable
+reflex-dynoselect: component.State._raw_options = options  (annotated list[dict[str,str]])
+  dynotimezone('en') builds                                                  -> EXC FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+  instance._raw_options length (>0 means class assignment took effect)       -> EXC AttributeError: 'NoneType' object has no attribute 'State'
+  dynolanguage('en') builds                                                  -> EXC FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scr
+  dynoselect(options=[...]) builds                                           -> EXC AttributeError: type object 'Dynoselect_n1' has no attribute 'set_search_phrase'
+reflex-chat: cls.__fields__['messages'].default = ...; cls.process = fn  (undeclared name)
+  Chat.create(initial_messages=[...]) builds                                 -> 'VStack'
+  Chat.create() builds                                                       -> 'VStack'
+  generated state fresh instance.messages                                    -> [{'role': 'user', 'content': 'hello'}]
+  generated state class has 'process' attr (plain function set via cls.process = ...) -> True
+reflex-ag-grid: comp.State._grid_component = comp / comp.State._model_class = ModelCls  (both ClassVar)
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/probes/tp_patterns_probe.py", line 47, in <module>
+    from reflex_ag_grid import wrapper as agw
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_ag_grid/__init__.py", line 1, in <module>
+    from .ag_grid import ag_grid
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_ag_grid/ag_grid.py", line 15, in <module>
+    from .datasource import Datasource, SSRMDatasource
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_ag_grid/datasource.py", line 2, in <module>
+    from reflex.base import Base
+ModuleNotFoundError: No module named 'reflex.base'

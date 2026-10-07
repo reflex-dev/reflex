@@ -1,0 +1,76 @@
+### stable_prod_disk  (141.0.7390.37, started 2026-10-07T13:39:19Z)
+- case `direct`
+    before  status='idle' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=0
+    t1      status='idle' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=0
+    t2      status='direct-partial' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=1
+    t3      status='direct-partial' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=1
+    first click @0; toast frame @[19.5] ms; toast DOM @[28.5] ms; ping click @3040.3 ms
+    delta frame @  3052.1 ms: {"v.status": "direct-partial", "v.pings": 1}
+    DOM v-status     @  3052.9 ms: 'idle' -> 'direct-partial'
+    DOM v-pings      @  3052.9 ms: '0' -> '1'
+    console errors/warnings: [('error', 'Failed to load resource: the server responded with a status of 404 (Not Found)')]
+- case `chain`
+    before  status='idle' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=0
+    t1      status='a-ran' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=0
+    t2      status='a-ran' spinner='off' log='B-partial' other='none' load_note='none' echo_backend='' pings=1
+    t3      status='a-ran' spinner='off' log='B-partial' other='none' load_note='none' echo_backend='' pings=1
+    first click @0; toast frame @[7.8] ms; toast DOM @[13.9] ms; ping click @3029.2 ms
+    delta frame @     6.9 ms: {"v.status": "a-ran"}
+    delta frame @  3040.5 ms: {"v.log": ["B-partial"], "v.pings": 1}
+    DOM v-status     @     7.6 ms: 'idle' -> 'a-ran'
+    DOM v-pings      @  3041.4 ms: '0' -> '1'
+    DOM v-log        @  3041.4 ms: '' -> 'B-partial'
+- case `gen`
+    before  status='idle' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=0
+    t1      status='gen-flushed' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=0
+    t2      status='gen-after' spinner='off' log='gen-after-log' other='none' load_note='none' echo_backend='' pings=1
+    t3      status='gen-after' spinner='off' log='gen-after-log' other='none' load_note='none' echo_backend='' pings=1
+    first click @0; toast frame @[7.3] ms; toast DOM @[13.9] ms; ping click @3041.0 ms
+    delta frame @     6.5 ms: {"v.status": "gen-flushed"}
+    delta frame @  3044.3 ms: {"v.log": ["gen-after-log"], "v.status": "gen-after", "v.pings": 1}
+    DOM v-status     @     7.2 ms: 'idle' -> 'gen-flushed'
+    DOM v-status     @  3045.5 ms: 'gen-flushed' -> 'gen-after'
+    DOM v-pings      @  3045.5 ms: '0' -> '1'
+    DOM v-log        @  3045.5 ms: '' -> 'gen-after-log'
+- case `spinner`
+    before  status='idle' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=0
+    t1      status='idle' spinner='on' log='' other='none' load_note='none' echo_backend='' pings=0
+    t2      status='idle' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=1
+    t3      status='idle' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=1
+    first click @0; toast frame @[305.8] ms; toast DOM @[314.6] ms; ping click @3036.2 ms
+    delta frame @     8.9 ms: {"v.spinner": "on"}
+    delta frame @  3042.1 ms: {"v.spinner": "off", "v.pings": 1}
+    DOM v-spinner    @     9.8 ms: 'off' -> 'on'
+    DOM v-spinner    @  3042.9 ms: 'on' -> 'off'
+    DOM v-pings      @  3042.9 ms: '0' -> '1'
+- case `bg_inside`
+    before  status='idle' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=0
+    t1      status='bg-inside-partial' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=0
+    t2      status='bg-inside-partial' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=1
+    t3      status='bg-inside-partial' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=1
+    first click @0; toast frame @[7.7] ms; toast DOM @[13.3] ms; ping click @3047.9 ms
+    delta frame @     6.7 ms: {"v.status": "bg-inside-partial"}
+    delta frame @  3057.6 ms: {"v.pings": 1}
+    DOM v-status     @     7.7 ms: 'idle' -> 'bg-inside-partial'
+    DOM v-pings      @  3059.5 ms: '0' -> '1'
+- case `sup_split`
+    before  status='idle' spinner='off' log='' other='none' load_note='none' echo_backend='' pings=0
+    t1      status='idle' spinner='off' log='a:start,a:after-yield' other='b-ran' load_note='none' echo_backend='' pings=0
+    t2      status='idle' spinner='off' log='a:start,a:after-yield' other='b-ran' load_note='none' echo_backend='' pings=1
+    t3      status='idle' spinner='off' log='a:start,a:after-yield' other='b-ran' load_note='none' echo_backend='' pings=1
+    first click @0; toast frame @[] ms; toast DOM @[] ms; ping click @4081.7 ms
+    delta frame @   479.7 ms: {"v.log": ["a:start"]}
+    delta frame @   559.2 ms: {"v.log": ["a:start", "a:after-yield"], "v.other": "b-ran"}
+    delta frame @  4091.5 ms: {"v.pings": 1}
+    DOM v-log        @   481.3 ms: '' -> 'a:start'
+    DOM v-log        @   561.7 ms: 'a:start' -> 'a:start,a:after-yield'
+    DOM v-other      @   561.7 ms: 'none' -> 'b-ran'
+    DOM v-pings      @  4092.1 ms: '0' -> '1'
+- case `onload_initial`
+    before  status='idle' spinner='off' log='' other='none' load_note='load-partial' echo_backend='' pings=0
+    t1      status='idle' spinner='off' log='' other='none' load_note='load-partial' echo_backend='' pings=0
+    t2      status='idle' spinner='off' log='' other='none' load_note='load-partial' echo_backend='' pings=1
+    t3      status='idle' spinner='off' log='' other='none' load_note='load-partial' echo_backend='' pings=1
+    first click @0; toast frame @[23.2] ms; toast DOM @[29.6] ms; ping click @3493.0 ms
+    delta frame @  3501.9 ms: {"v.pings": 1}
+    DOM v-pings      @  3502.6 ms: '0' -> '1'

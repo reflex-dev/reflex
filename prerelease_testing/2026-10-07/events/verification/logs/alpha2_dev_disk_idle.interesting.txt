@@ -1,0 +1,10 @@
+61:EVV boot reflex==0.10.0a2 file=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py redis_url=None sm_mode=None
+113:EVV boot reflex==0.10.0a2 file=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py redis_url=None sm_mode=None
+126:EVV 1791380028.271 set_exc_mode default
+127:EVV 1791380029.097 direct_raise: status=direct-partial then raise
+128:EVV 1791380029.098 backend_exception_handler mode=default exc=RuntimeError('boom direct')
+129:[Reflex Backend Exception]
+161:    raise RuntimeError("boom direct")
+162:RuntimeError: boom direct
+165:EVV 1791380069.146 ping
+169:[ERROR] Unexpected exit from worker-1

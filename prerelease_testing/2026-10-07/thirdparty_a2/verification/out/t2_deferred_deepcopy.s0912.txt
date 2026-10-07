@@ -1,0 +1,7 @@
+reflex 0.9.12
+  Cfg._http = httpx.Client()   (assignment)                              -> None
+  inst = Cfg()  (construct instance)                                     -> 'Cfg'
+  inst()._http  (first read)                                             -> 'NoneType'
+  inst()._http is client (shared object?)                                -> False
+  Cfg._lock = threading.Lock()  (Any slot)                               -> None
+  inst()._lock  (first read)                                             -> 'NoneType'

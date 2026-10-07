@@ -22,6 +22,13 @@ print(
     flush=True,
 )
 
+# `supersedes=` does not exist on old reflex versions (used only for the historical 0.8.x baseline)
+try:
+    rx.event(supersedes=True)
+    _SUP = {"supersedes": True}
+except TypeError:
+    _SUP = {}
+
 # process-global switch so the driver can change the backend exception handler's behaviour
 # at runtime (the handler is bound once at app construction)
 EXC = {"mode": "default"}
@@ -171,7 +178,7 @@ class V(rx.State):
 
     # superseding handlers
 
-    @rx.event(supersedes=True)
+    @rx.event(**_SUP)
     async def sup_same(self, label: str):
         mark(f"sup_same[{label}]: start")
         self.log.append(f"{label}:start")
@@ -182,7 +189,7 @@ class V(rx.State):
         mark(f"sup_same[{label}]: end")
         self.log.append(f"{label}:end")
 
-    @rx.event(supersedes=True)
+    @rx.event(**_SUP)
     async def sup_split(self, label: str):
         if label == "a":
             mark("sup_split[a]: start")

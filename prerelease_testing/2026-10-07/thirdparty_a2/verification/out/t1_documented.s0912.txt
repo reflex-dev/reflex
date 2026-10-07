@@ -1,0 +1,27 @@
+reflex 0.9.12 ( verify_tp_0-s0912 )
+D1/D2/D3 plain assignment
+  D1 fresh S().count == 10                                                       False
+  D1 S.count still a Var (UI usable)                                             object / int
+  D1 rx.text(S.count) renders                                                    ok:jsx(RadixThemesText,{as:"p"},10)
+  D2 fresh S()._token == 'abc'                                                   False
+  D2 S._token (class read) is                                                    str
+  D3 already-initialized instance keeps old value (count==0)                     True
+  D3 never-initialized instance picks up new default (count==10) [documented]    False
+  D3 instance write then reset(): count back to configured 10                    False
+D4 mutable defaults independent
+  D4 b.items unaffected (['x','y'])                                              False
+D5 callable factory
+  D5 one validation call at assignment                                           False
+  D5 instances get factory results (['f']) and separate objects                  (False, True, 0)
+D6 Var/Field rejected
+  D6 S.count = Var ->                                                            NO ERROR
+  D6 S._token = rx.field(default='z') ->                                         NO ERROR
+D7 ClassVar
+  D7 S.CV == 'cv1'                                                               True
+D9/D10 round trip
+  D9 S._token = <Field object read from class> ->                                NO ERROR
+  D10 S._token = 'original'  -> fresh instance sees 'original'                   
+D8 ComponentState
+  D8 generated states have distinct defaults one/two/default                     ('default', 'default', 'default')
+  D8 UI references frontend var (no literal default baked in)                    (True, True)
+  D8 reset restores last configured default 'one'                                default

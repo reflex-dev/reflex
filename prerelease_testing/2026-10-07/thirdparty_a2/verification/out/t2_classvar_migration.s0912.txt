@@ -1,0 +1,7 @@
+reflex 0.9.12
+  Cfg._client = httpx.Client()   (class-level config)                      -> None
+  Cfg._client is c  (class read returns the object)                        -> True
+  fresh instance._client is c  (shared, not copied)                        -> True
+  Cfg._plain = 'b'; fresh instance._plain                                  -> 'b'
+  '_client' registered as a state Field?                                   -> False
+  monkeypatch round trip on ClassVar restores cleanly                      -> 'b'

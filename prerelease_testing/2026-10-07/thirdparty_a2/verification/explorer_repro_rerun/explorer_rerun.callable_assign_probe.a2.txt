@@ -1,0 +1,9 @@
+unannotated `_untyped = None`  <- zero-arg function        -> EXC TypeError: Invalid default for field '_untyped': expected <class 'NoneType'>, got 'hook-result' of type <class 'str'>. | called-during-assign=['hook'] | instance reads None
+unannotated `_untyped = None`  <- 1-arg function           -> EXC TypeError: Default factory for field '_untyped' failed: needs_arg() missing 1 required positional argument: 'x' | called-during-assign=[] | instance reads None
+unannotated `_untyped = None`  <- lambda x: x              -> EXC TypeError: Default factory for field '_untyped' failed: <lambda>() missing 1 required positional argument: 'x' | called-during-assign=[] | instance reads None
+unannotated `_untyped = None`  <- class (type)             -> EXC TypeError: Invalid default for field '_untyped': expected <class 'NoneType'>, got {} of type <class 'dict'>. | called-during-assign=[] | instance reads None
+`_any: Any = None`             <- zero-arg function        -> assigned | called-during-assign=[] | instance reads <function hook at 0x7f464fa18ea0>
+`_typed: Callable|None = None` <- zero-arg function        -> assigned | called-during-assign=[] | instance reads <function hook at 0x7f464fa18ea0>
+`_typed: Callable|None = None` <- 1-arg function           -> assigned | called-during-assign=[] | instance reads <function needs_arg at 0x7f464f915620>
+`_typed: Callable|None = None` <- functools.partial        -> assigned | called-during-assign=[] | instance reads functools.partial(<function needs_arg at 0x7f464f915620>, 1)
+`_str: str = ''`               <- zero-arg function        -> assigned | called-during-assign=['hook', 'hook'] | instance reads 'hook-result'

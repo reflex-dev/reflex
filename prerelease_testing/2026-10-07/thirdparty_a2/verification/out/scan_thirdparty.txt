@@ -1,0 +1,53 @@
+scanned 22 distributions, 156 .py files under /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty_a2-a2/lib/python3.12/site-packages
+
+## reflex-ag-grid  (5 .py files)  hits=0
+
+## reflex-audio-capture  (2 .py files)  hits=0
+
+## reflex-calendar  (2 .py files)  hits=0
+
+## reflex-chakra  (77 .py files)  hits=0
+
+## reflex-chat  (4 .py files)  hits=2
+   [fields-default] reflex_chat/chat.py:58: cls.__fields__["messages"].default = initial_messages
+   [cls.attr= in state class] reflex_chat/chat.py:69: cls.process = props.pop("process", default_process)
+
+## reflex-clerk  (14 .py files)  hits=6
+   [cls.attr= in state class] reflex_clerk/lib/clerk_provider.py:168: cls._fetch_user = fetch_user
+   [cls.attr= in state class] reflex_clerk/lib/clerk_provider.py:144: cls._clerk_api_client = clerk_client.get_client(cls.secret_key)
+   [StateClass.attr=] reflex_clerk/lib/clerk_provider.py:396: ClerkState._secret_key = props['secret_key']
+   [cls.attr= in state class] reflex_clerk/lib/clerk_provider.py:124: cls._secret_key = os.environ['CLERK_SECRET_KEY']
+   [cls.attr= in state class] reflex_clerk/lib/clerk_provider.py:134: cls._jwt_public_keys = list(map(json.loads, os.environ['CLERK_JWT_PUBLIC_KEYS'].split(',')))
+   [cls.attr= in state class] reflex_clerk/lib/clerk_provider.py:136: cls._jwt_public_keys = cls._clerk_api_client.get_jwks().dict()['keys']
+
+## reflex-color-picker  (1 .py files)  hits=0
+
+## reflex-dynoselect  (4 .py files)  hits=0
+
+## reflex-global-hotkey  (1 .py files)  hits=0
+
+## reflex-google-auth  (4 .py files)  hits=0
+
+## reflex-google-recaptcha-v2  (2 .py files)  hits=0
+
+## reflex-image-zoom  (2 .py files)  hits=0
+
+## reflex-intersection-observer  (2 .py files)  hits=0
+
+## reflex-local-auth  (11 .py files)  hits=0
+
+## reflex-magic-link-auth  (9 .py files)  hits=0
+
+## reflex-monaco  (2 .py files)  hits=0
+
+## reflex-motion  (2 .py files)  hits=0
+
+## reflex-pyplot  (2 .py files)  hits=0
+
+## reflex-qrcode  (2 .py files)  hits=0
+
+## reflex-simpleicons  (4 .py files)  hits=0
+
+## reflex-type-animation  (2 .py files)  hits=0
+
+## reflex-webcam  (2 .py files)  hits=0

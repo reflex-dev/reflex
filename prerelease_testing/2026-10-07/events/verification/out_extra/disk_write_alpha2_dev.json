@@ -1,0 +1,61 @@
+{
+ "venv": "alpha2",
+ "mode": "dev",
+ "steps": [
+  {
+   "step": "hydrated",
+   "t": 3.5,
+   "pkl_files": 2,
+   "b_ran": false,
+   "direct_partial": false
+  },
+  {
+   "step": "control event +0.5s (inside 2 s debounce)",
+   "t": 4.1,
+   "b_ran": false
+  },
+  {
+   "step": "control event +3.5s",
+   "t": 7.1,
+   "b_ran": true
+  },
+  {
+   "step": "failing event +0.5s",
+   "t": 7.7,
+   "browser_status": "idle",
+   "direct_partial": false
+  },
+  {
+   "step": "failing event +4s (debounce long past)",
+   "t": 11.2,
+   "browser_status": "idle",
+   "direct_partial": false
+  },
+  {
+   "step": "failing event +12s",
+   "t": 19.2,
+   "direct_partial": false
+  },
+  {
+   "step": "after reload (in-memory truth)",
+   "t": 19.9,
+   "browser_status": "direct-partial",
+   "direct_partial": false
+  },
+  {
+   "step": "reload +3.5s (hydrate wrote?)",
+   "t": 22.9,
+   "direct_partial": true
+  },
+  {
+   "step": "ping +0.5s",
+   "t": 23.4,
+   "direct_partial": true
+  },
+  {
+   "step": "ping +3.5s",
+   "t": 26.4,
+   "direct_partial": true
+  }
+ ]
+}

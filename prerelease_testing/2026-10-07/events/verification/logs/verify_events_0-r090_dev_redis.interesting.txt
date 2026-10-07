@@ -1,0 +1,37 @@
+64:EVV boot reflex==0.9.0 file=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_events_0-r090/lib/python3.12/site-packages/reflex/__init__.py redis_url='redis://localhost:8659' sm_mode=None
+116:EVV boot reflex==0.9.0 file=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_events_0-r090/lib/python3.12/site-packages/reflex/__init__.py redis_url='redis://localhost:8659' sm_mode=None
+130:EVV 1791379197.985 direct_raise: status=direct-partial then raise
+131:EVV 1791379197.986 backend_exception_handler mode=default exc=RuntimeError('boom direct')
+132:[Reflex Backend Exception]
+166:    raise RuntimeError("boom direct")
+167:RuntimeError: boom direct
+170:EVV 1791379201.014 ping
+171:EVV 1791379204.634 gen_raise: status=gen-flushed, yield
+172:EVV 1791379204.635 gen_raise: status=gen-after, log+=gen-after-log, raise
+173:EVV 1791379204.637 backend_exception_handler mode=default exc=RuntimeError('boom gen')
+174:[Reflex Backend Exception]
+208:    raise RuntimeError("boom gen")
+209:RuntimeError: boom gen
+212:EVV 1791379207.664 ping
+213:EVV 1791379211.289 spinner_finally: spinner=on, yield
+214:EVV 1791379211.590 spinner_finally: raising
+215:EVV 1791379211.590 spinner_finally: finally -> spinner=off
+216:EVV 1791379211.591 backend_exception_handler mode=default exc=RuntimeError('boom spinner')
+217:[Reflex Backend Exception]
+250:    raise RuntimeError("boom spinner")
+251:RuntimeError: boom spinner
+254:EVV 1791379214.321 ping
+255:EVV 1791379218.055 bg_raise_inside: in `async with self`: status=bg-inside-partial then raise
+256:EVV 1791379218.057 backend_exception_handler mode=default exc=RuntimeError('boom bg inside')
+257:[Reflex Backend Exception]
+291:    raise RuntimeError("boom bg inside")
+292:RuntimeError: boom bg inside
+295:EVV 1791379221.080 ping
+296:EVV 1791379224.768 sup_split[a]: start
+297:EVV 1791379224.768 sup_split[a]: after-yield
+298:EVV 1791379226.771 sup_split[a]: end
+299:Warning: Lock for token 
+304:Warning: Lock for token 
+309:EVV 1791379226.777 sup_split[b]: other=b-ran
+310:EVV 1791379228.834 ping
+312:[ERROR] Unexpected exit from worker-1

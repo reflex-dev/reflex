@@ -1,0 +1,35 @@
+declaration                                          accepted by a2 (assignment does not raise)
+_slot = None            (unannotated)                ok: None
+                                                     raises: 14/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot = 0               (unannotated)                ok: 42, 1, lambda:1
+                                                     raises: 12/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot = ''              (unannotated)                ok: 'str', 'five', CallableObj(), fn()->str
+                                                     raises: 11/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot = False           (unannotated)                ok: -
+                                                     raises: 15/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot = []              (unannotated)                ok: 'str', 'five', [1], CallableObj(), fn()->str
+                                                     raises: 10/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot = {}              (unannotated)                ok: -
+                                                     raises: 15/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+slot = None             (unannotated, PUBLIC)        ok: None
+                                                     raises: 14/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot: str = ''                                      ok: 'str', 'five', CallableObj(), fn()->str
+                                                     raises: 11/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot: int = 0                                       ok: 42, 1, lambda:1
+                                                     raises: 12/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot: Optional[Client] = None                       ok: Client(), Client(class), None, MagicMock(spec)
+                                                     raises: 11/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot: Client | None = None                          ok: Client(), Client(class), None, MagicMock(spec)
+                                                     raises: 11/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot: 'Client | None' = None   (string annotation)  ok: Client(), Client(class), None, MagicMock(spec)
+                                                     raises: 11/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot: Any = None                                    ok: Client(), Client(class), 'str', 42, 'five', None, 1, [1], CallableObj(), fn()->str, lambda:1, lambda x, MagicMock(), MagicMock(spec), httpx.Client()
+                                                     raises: 0/15
+_slot: Callable[..., Any] | None = None              ok: Client(class), None, CallableObj(), fn()->str, lambda:1, lambda x, MagicMock(), MagicMock(spec)
+                                                     raises: 7/15
+_slot: object = None                                 ok: Client(), Client(class), 'str', 42, 'five', None, 1, [1], CallableObj(), fn()->str, lambda:1, lambda x, MagicMock(), MagicMock(spec), httpx.Client()
+                                                     raises: 0/15
+_slot: Client = None    (annotation excludes None)   ok: Client(), Client(class), MagicMock(spec)
+                                                     raises: 12/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str
+_slot: httpx.Client | None = None                    ok: None, httpx.Client()
+                                                     raises: 13/15 | user code RAN during assignment for: Client(class), CallableObj(), fn()->str

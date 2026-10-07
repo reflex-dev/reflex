@@ -1,0 +1,29 @@
+.EFFFFF                                                                  [100%]
+==================================== ERRORS ====================================
+_____ ERROR at teardown of test_monkeypatch_setattr_value_of_declared_type _____
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+=================================== FAILURES ===================================
+E   AssertionError: assert 99 == 5
+     +  where 99 = Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}})._limit
+     +    where Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}}) = inst()
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/explorer_copy/pytest_probe/test_monkeypatch_backend_var.py:31: AssertionError: assert 99 == 5
+E   TypeError: Invalid default for field '_client': expected test_monkeypatch_backend_var.Client | None, got <Mock name='fake()' id='140087959566528'> of type <class 'unittest.mock.Mock'>.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_tp_0-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4814: TypeError: Invalid default for field '_client': expected test_monkeypatch_backend_var.Client | None, got <Mock name='fake()' id='140087959566528'> of type <class 'unittest.mock.Mock'>.
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_tp_0-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_tp_0-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+E   AssertionError: assert 8 == 5
+     +  where 8 = Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}})._limit
+     +    where Svc({'reflex___state____state.test_monkeypatch_backend_var____svc': {}}) = inst()
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/explorer_copy/pytest_probe/test_monkeypatch_backend_var.py:51: AssertionError: assert 8 == 5
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_monkeypatch_backend_var.py::test_monkeypatch_setattr_value_of_declared_type
+ERROR test_monkeypatch_backend_var.py::test_monkeypatch_setattr_value_of_declared_type
+FAILED test_monkeypatch_backend_var.py::test_after_monkeypatch_default_is_restored
+FAILED test_monkeypatch_backend_var.py::test_monkeypatch_setattr_mock - TypeE...
+FAILED test_monkeypatch_backend_var.py::test_mock_patch_object_context_manager
+FAILED test_monkeypatch_backend_var.py::test_mock_patch_object_decorator - Ty...
+FAILED test_monkeypatch_backend_var.py::test_after_all_default_is_restored - ...
+5 failed, 1 passed, 1 error in 0.30s

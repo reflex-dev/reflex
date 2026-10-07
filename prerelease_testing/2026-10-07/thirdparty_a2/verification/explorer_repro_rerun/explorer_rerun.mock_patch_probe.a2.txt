@@ -1,0 +1,12 @@
+baseline instance _client/_limit: (None, 5)
+1 class assign Client('real') -> instance: 'real'
+2 patch.object(Svc, '_client', new=Client('patched')) (declared type): EXC TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+2b after: instance _client / type in __dict__: ('patched', 'Field')
+3 patch.object(Svc, '_client', new=Mock()): EXC TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+3b after: instance _client / type in __dict__: ('patched', 'Field')
+4 patch.object(Svc, '_limit', new=99): EXC TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+4b after: instance _limit / type in __dict__: (99, 'Field')
+5 class assign 'not-an-int' to an int var -> instance: EXC TypeError: Invalid default for field '_limit': expected <class 'int'>, got 'not-an-int' of type <class 'str'>.
+5b instance _limit afterwards: 99
+6 Svc._items.append('x') at class level -> instance: EXC AttributeError: 'Field' object has no attribute 'append'
+7 pickle round trip of instance: 'patched'

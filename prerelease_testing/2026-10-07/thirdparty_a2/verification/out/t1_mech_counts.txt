@@ -1,0 +1,9 @@
+15 var kinds x 7 mechanisms. cell = (#kinds with teardown/restore error)/(#kinds leaking the patched default)/(#kinds where patch visible to fresh instances) of 15
+mechanism                                                           0.10.0a2          0.10.0a1            0.9.12
+monkeypatch.setattr(cls,name,v)                                     15/15/15            0/0/15             0/0/0
+mock.patch.object(cls,name,v)                                       15/15/15            0/0/15             0/0/0
+manual: old=cls.__dict__[n]; set; set(old)                          15/14/14            1/0/14             3/0/0
+manual: old=getattr(cls,n); set; set(old)                           15/15/15            0/5/15             0/0/0
+manual: old=<original value>; set; set(old)                           1/1/15            0/0/15             0/0/0
+monkeypatch.setattr(Field,'default',v)  [workaround?]                 0/0/15            0/0/15             0/0/6
+monkeypatch.delattr(cls,name)                                          1/0/0             1/0/0             3/0/0

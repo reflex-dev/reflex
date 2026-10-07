@@ -250,8 +250,10 @@ async def run_case(browser, args, case: str, spec: dict, out: Path):
             await wait_hydrated(page)
         await asyncio.sleep(0.4)
         await checkpoint(page, rec, snaps, "before", shots, out, case, shot)
-        mode = spec.get("exc_mode")
-        if mode and mode != "default":
+        # the exception-handler mode is a process-global switch on the server (per-token `mode` var only
+        # mirrors the last click), so ALWAYS set it explicitly at the start of a case
+        mode = spec.get("exc_mode", "default")
+        if args.set_mode:
             await click(page, rec, f"btn-mode_{mode}")
             await asyncio.sleep(0.8)
             await checkpoint(page, rec, snaps, "after_mode", shots, out, case, False)
@@ -396,6 +398,7 @@ async def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--cases", default=",".join(DEFAULT_ORDER))
     ap.add_argument("--settle", type=float, default=3.0)
+    ap.add_argument("--set-mode", action="store_true", help="always click the exception-mode button at case start (default off to keep the protocol of the earlier runs)")
     ap.add_argument("--shots", default="direct,gen,spinner,sup_split,bg_inside", help="comma list or 'all' or ''")
     args = ap.parse_args()
     out = Path(args.out)

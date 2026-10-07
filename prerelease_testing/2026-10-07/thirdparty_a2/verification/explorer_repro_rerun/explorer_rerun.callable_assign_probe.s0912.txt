@@ -1,0 +1,9 @@
+unannotated `_untyped = None`  <- zero-arg function        -> assigned | called-during-assign=[] | instance reads None
+unannotated `_untyped = None`  <- 1-arg function           -> assigned | called-during-assign=[] | instance reads None
+unannotated `_untyped = None`  <- lambda x: x              -> assigned | called-during-assign=[] | instance reads None
+unannotated `_untyped = None`  <- class (type)             -> assigned | called-during-assign=[] | instance reads None
+`_any: Any = None`             <- zero-arg function        -> assigned | called-during-assign=[] | instance reads None
+`_typed: Callable|None = None` <- zero-arg function        -> assigned | called-during-assign=[] | instance reads None
+`_typed: Callable|None = None` <- 1-arg function           -> assigned | called-during-assign=[] | instance reads None
+`_typed: Callable|None = None` <- functools.partial        -> assigned | called-during-assign=[] | instance reads None
+`_str: str = ''`               <- zero-arg function        -> assigned | called-during-assign=[] | instance reads ''

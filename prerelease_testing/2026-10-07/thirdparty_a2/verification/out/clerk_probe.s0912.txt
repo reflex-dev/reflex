@@ -1,0 +1,21 @@
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+reflex 0.9.12 reflex-clerk 1.0.3 venv thirdparty-stable
+1) class-level READ of declared backend vars (reflex-clerk does `if cls._secret_key is None`)
+  type(ClerkState._secret_key).__name__                                  -> 'NoneType'
+  ClerkState._secret_key is None                                         -> True
+  ClerkState.secret_key  (classmethod-property w/o env)                  -> 'NoneType'
+2) class-level ASSIGNMENT done by ClerkProvider.create / set_fetch_user_on_auth
+  ClerkState.set_fetch_user_on_auth(False)                               -> None
+  fresh instance._fetch_user (expect False if class assignment took effect) -> True
+  ClerkState._secret_key = 'sk_test_abc' (what ClerkProvider.create does) -> None
+  fresh instance._secret_key                                             -> None
+  ClerkState._jwt_public_keys = [{'kid':'x'}]                            -> None
+  fresh instance._jwt_public_keys                                        -> MutableProxy([])
+  ClerkState._secret_key = None   (reset to unset)                       -> None
+  ClerkState._secret_key = 12345  (wrong type)                           -> None
+3) ClerkProvider.create(secret_key=..., publishable_key=...)
+  ClerkProvider.create(secret_key='sk_test_abc', publishable_key='pk_test_x') -> 'Fragment'
+  after: fresh instance._secret_key                                      -> None
+  env var path: CLERK_SECRET_KEY=sk_env -> ClerkState.secret_key         -> 'str:sk_test_abc'

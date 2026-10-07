@@ -1,0 +1,71 @@
+.EFFF.EF.EF.EF.EF.EF........                                             [100%]
+==================================== ERRORS ====================================
+_____________ ERROR at teardown of test_01_monkeypatch_private_var _____________
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+_____________ ERROR at teardown of test_05_monkeypatch_public_var ______________
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+____________ ERROR at teardown of test_07_monkeypatch_rx_field_var _____________
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+____________ ERROR at teardown of test_09_pytest_mock_patch_object _____________
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+______________ ERROR at teardown of test_11_monkeypatch_mixin_var ______________
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+______ ERROR at teardown of test_13_monkeypatch_child_of_declaring_parent ______
+E   AttributeError: type object 'Child' has no attribute '_plimit'
+=================================== FAILURES ===================================
+E   AssertionError: assert 99 == 5
+     +  where 99 = default_of(Svc, '_limit')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/probes/test_t1_pytest.py:65: AssertionError: assert 99 == 5
+E   TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_tp_0-a2/lib/python3.12/site-packages/reflex_base/vars/base.py:4700: TypeError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+E   AssertionError: assert 77 == 5
+     +  where 77 = default_of(Svc, '_limit')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/probes/test_t1_pytest.py:76: AssertionError: assert 77 == 5
+E   AssertionError: assert 99 == 5
+     +  where 99 = default_of(Svc, 'limit')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/probes/test_t1_pytest.py:86: AssertionError: assert 99 == 5
+E   AssertionError: assert 99 == 5
+     +  where 99 = default_of(Svc, 'rxf')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/probes/test_t1_pytest.py:96: AssertionError: assert 99 == 5
+E   AssertionError: assert 'patched' == 'orig'
+      
+      - orig
+      + patched
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/probes/test_t1_pytest.py:106: AssertionError: assert 'patched' == 'orig'
+E   AssertionError: assert 99 == 5
+     +  where 99 = default_of(UsesMixin, '_mlimit')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/probes/test_t1_pytest.py:116: AssertionError: assert 99 == 5
+E   AssertionError: assert 99 == 5
+     +  where 99 = default_of(Parent, '_plimit')
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_tp_0/probes/test_t1_pytest.py:126: AssertionError: assert 99 == 5
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_t1_pytest.py::test_01_monkeypatch_private_var
+PASSED test_t1_pytest.py::test_05_monkeypatch_public_var
+PASSED test_t1_pytest.py::test_07_monkeypatch_rx_field_var
+PASSED test_t1_pytest.py::test_09_pytest_mock_patch_object
+PASSED test_t1_pytest.py::test_11_monkeypatch_mixin_var
+PASSED test_t1_pytest.py::test_13_monkeypatch_child_of_declaring_parent
+PASSED test_t1_pytest.py::test_20_monkeypatch_method
+PASSED test_t1_pytest.py::test_21_method_restored
+PASSED test_t1_pytest.py::test_22_monkeypatch_classvar
+PASSED test_t1_pytest.py::test_23_classvar_restored
+PASSED test_t1_pytest.py::test_30_workaround_patch_field_default
+PASSED test_t1_pytest.py::test_31_sentinel_after_workaround
+PASSED test_t1_pytest.py::test_32_workaround_reassign_original_value
+PASSED test_t1_pytest.py::test_33_sentinel_after_original_value_restore
+ERROR test_t1_pytest.py::test_01_monkeypatch_private_var - TypeError: A Field...
+ERROR test_t1_pytest.py::test_05_monkeypatch_public_var - TypeError: A Field ...
+ERROR test_t1_pytest.py::test_07_monkeypatch_rx_field_var - TypeError: A Fiel...
+ERROR test_t1_pytest.py::test_09_pytest_mock_patch_object - TypeError: A Fiel...
+ERROR test_t1_pytest.py::test_11_monkeypatch_mixin_var - TypeError: A Field c...
+ERROR test_t1_pytest.py::test_13_monkeypatch_child_of_declaring_parent - Attr...
+FAILED test_t1_pytest.py::test_02_sentinel_private_default_restored - Asserti...
+FAILED test_t1_pytest.py::test_03_mock_patch_object_private_var - TypeError: ...
+FAILED test_t1_pytest.py::test_04_sentinel_private_after_mock - AssertionErro...
+FAILED test_t1_pytest.py::test_06_sentinel_public_default_restored - Assertio...
+FAILED test_t1_pytest.py::test_08_sentinel_rx_field_default_restored - Assert...
+FAILED test_t1_pytest.py::test_10_sentinel_after_pytest_mock - AssertionError...
+FAILED test_t1_pytest.py::test_12_sentinel_mixin_default_restored - Assertion...
+FAILED test_t1_pytest.py::test_14_sentinel_parent_default_restored - Assertio...
+8 failed, 14 passed, 6 errors in 0.39s

@@ -1,0 +1,53 @@
+scanned 14 distributions, 347 .py files under /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_tp_0-a2/lib/python3.12/site-packages
+
+## reflex  (120 .py files)  hits=24
+   [cls.attr= in state class] reflex/istate/shared.py:547: cls._mixin = False
+   [cls.attr= in state class] reflex/state.py:704: cls._settable_names = set()
+   [cls.attr= in state class] reflex/state.py:706: cls._reflex_internal_class_cache = {}
+   [cls.attr= in state class] reflex/state.py:719: cls._always_dirty_substates = set()
+   [cls.attr= in state class] reflex/state.py:720: cls._potentially_dirty_states = set()
+   [cls.attr= in state class] reflex/state.py:738: cls.base_vars = {
+   [cls.attr= in state class] reflex/state.py:743: cls.computed_vars = {
+   [cls.attr= in state class] reflex/state.py:748: cls.vars = {
+   [cls.attr= in state class] reflex/state.py:758: cls.event_handlers = {}
+   [cls.attr= in state class] reflex/state.py:777: cls._var_dependencies = {}
+   [cls.attr= in state class] reflex/state.py:973: cls.__original_name__ = cls.__name__
+   [cls.attr= in state class] reflex/state.py:974: cls.__original_module__ = cls.__module__
+   [cls.attr= in state class] reflex/state.py:975: cls.__name__ = cls.__qualname__ = proposed_name
+   [cls.attr= in state class] reflex/state.py:975: cls.__name__ = cls.__qualname__ = proposed_name
+   [cls.attr= in state class] reflex/state.py:976: cls.__module__ = reflex.istate.dynamic.__name__
+   [cls.attr= in state class] reflex/state.py:1007: cls._frontend_var_names = frozenset(cls.base_vars).union(
+   [cls.attr= in state class] reflex/state.py:1010: cls._interval_computed_var_names = frozenset(
+   [cls.attr= in state class] reflex/state.py:1056: cls._always_dirty_computed_vars = {
+   [cls.attr= in state class] reflex/state.py:1348: cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
+   [cls.attr= in state class] reflex/state.py:2834: cls._per_component_state_instance_count += 1
+   [setattr(cls,..) in state class] reflex/state.py:850: setattr(cls, name, handler)
+   [setattr(cls,..) in state class] reflex/state.py:1366: setattr(cls, setter_name, event_handler)
+   [setattr(cls,..) in state class] reflex/state.py:772: setattr(cls, name, handler)
+   [setattr(cls,..) in state class] reflex/state.py:833: setattr(cls, name, fn)
+
+## reflex-base  (84 .py files)  hits=0
+
+## reflex-components-core  (48 .py files)  hits=0
+
+## reflex-components-radix  (68 .py files)  hits=0
+
+## reflex-components-lucide  (2 .py files)  hits=0
+
+## reflex-components-markdown  (2 .py files)  hits=0
+
+## reflex-components-code  (3 .py files)  hits=0
+
+## reflex-components-dataeditor  (2 .py files)  hits=0
+
+## reflex-components-gridjs  (2 .py files)  hits=0
+
+## reflex-components-moment  (2 .py files)  hits=0
+
+## reflex-components-plotly  (2 .py files)  hits=0
+
+## reflex-components-react-player  (4 .py files)  hits=0
+
+## reflex-components-recharts  (6 .py files)  hits=0
+
+## reflex-components-sonner  (2 .py files)  hits=0

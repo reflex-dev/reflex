@@ -1,0 +1,65 @@
+63:EVV boot reflex==0.10.0a2 file=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py redis_url='redis://localhost:8659' sm_mode=None
+115:EVV boot reflex==0.10.0a2 file=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha2/lib/python3.12/site-packages/reflex/__init__.py redis_url='redis://localhost:8659' sm_mode=None
+128:EVV 1791378630.080 direct_raise: status=direct-partial then raise
+129:EVV 1791378630.080 backend_exception_handler mode=default exc=RuntimeError('boom direct')
+130:[Reflex Backend Exception]
+162:    raise RuntimeError("boom direct")
+163:RuntimeError: boom direct
+166:EVV 1791378633.101 ping
+167:EVV 1791378636.872 chain_a: status=a-ran, return chain_b
+168:EVV 1791378636.873 chain_b: log+=B-partial then raise
+169:EVV 1791378636.873 backend_exception_handler mode=default exc=RuntimeError('boom chain_b')
+170:[Reflex Backend Exception]
+202:    raise RuntimeError("boom chain_b")
+203:RuntimeError: boom chain_b
+206:EVV 1791378639.903 ping
+207:EVV 1791378643.755 gen_raise: status=gen-flushed, yield
+208:EVV 1791378643.756 gen_raise: status=gen-after, log+=gen-after-log, raise
+209:EVV 1791378643.756 backend_exception_handler mode=default exc=RuntimeError('boom gen')
+210:[Reflex Backend Exception]
+242:    raise RuntimeError("boom gen")
+243:RuntimeError: boom gen
+246:EVV 1791378646.785 ping
+247:EVV 1791378650.889 spinner_finally: spinner=on, yield
+248:EVV 1791378651.191 spinner_finally: raising
+249:EVV 1791378651.191 spinner_finally: finally -> spinner=off
+250:EVV 1791378651.191 backend_exception_handler mode=default exc=RuntimeError('boom spinner')
+251:[Reflex Backend Exception]
+282:    raise RuntimeError("boom spinner")
+283:RuntimeError: boom spinner
+286:EVV 1791378653.920 ping
+287:EVV 1791378657.621 bg_raise_inside: in `async with self`: status=bg-inside-partial then raise
+288:EVV 1791378657.622 backend_exception_handler mode=default exc=RuntimeError('boom bg inside')
+289:[Reflex Backend Exception]
+321:    raise RuntimeError("boom bg inside")
+322:RuntimeError: boom bg inside
+325:EVV 1791378660.654 ping
+326:EVV 1791378664.435 bg_two_blocks: block1 status=bg-block1-committed
+327:EVV 1791378664.536 bg_two_blocks: block2 status=bg-block2-partial then raise
+328:EVV 1791378664.538 backend_exception_handler mode=default exc=RuntimeError('boom bg block2')
+329:[Reflex Backend Exception]
+361:    raise RuntimeError("boom bg block2")
+362:RuntimeError: boom bg block2
+365:EVV 1791378667.468 ping
+366:EVV 1791378671.322 sup_same[a]: start
+367:EVV 1791378671.323 sup_same[a]: after-yield
+371:EVV 1791378671.851 sup_same[b]: start
+372:EVV 1791378671.851 sup_same[b]: after-yield
+373:EVV 1791378673.855 sup_same[b]: end
+374:EVV 1791378675.384 ping
+375:EVV 1791378679.153 sup_split[a]: start
+376:EVV 1791378679.153 sup_split[a]: after-yield
+380:EVV 1791378679.684 sup_split[b]: other=b-ran
+381:EVV 1791378683.218 ping
+382:EVV 1791378686.478 on_load_raises: load_note=load-partial then raise
+383:EVV 1791378686.478 backend_exception_handler mode=default exc=RuntimeError('boom on_load')
+384:[Reflex Backend Exception]
+416:    raise RuntimeError("boom on_load")
+417:RuntimeError: boom on_load
+420:EVV 1791378689.988 ping
+421:EVV 1791378691.713 on_load_raises: load_note=load-partial then raise
+422:EVV 1791378691.713 backend_exception_handler mode=default exc=RuntimeError('boom on_load')
+423:[Reflex Backend Exception]
+455:    raise RuntimeError("boom on_load")
+456:RuntimeError: boom on_load
+460:[ERROR] Unexpected exit from worker-1
