@@ -1,0 +1,415 @@
+{
+  "schema": "reflex-bench/1",
+  "tool": {
+    "name": "reflex-bench",
+    "version": "0.0.1.dev3633+82392594f"
+  },
+  "invocation": {
+    "id": "06f23b91-4c66-4933-a450-4343ac9c42a2",
+    "argv": [
+      "run",
+      "--suite",
+      "daily",
+      "events.*",
+      "--kind",
+      "daily",
+      "--json",
+      "events.json",
+      "--no-save",
+      "--fail-on",
+      "never"
+    ],
+    "started_at": "2026-10-07T04:53:42Z",
+    "duration_s": 9.64,
+    "mode": "ci",
+    "kind": "daily",
+    "ci": {
+      "provider": "github",
+      "run_id": "37573562919",
+      "url": "https://github.com/reflex-dev/reflex/actions/runs/37573562919",
+      "runner": "GitHub Actions 1001149434"
+    },
+    "rng_seed": 709201163
+  },
+  "subjects": {
+    "A": {
+      "spec": "workspace",
+      "source": "workspace",
+      "python": "/home/runner/work/reflex/reflex/.venv/bin/python",
+      "python_version": "3.12.3",
+      "reflex_version": "0.9.13.dev102+82392594f",
+      "commit": "82392594f85d349f757f6b39a1b1e9f9b87c03f2",
+      "dirty": false,
+      "extra": {
+        "granian": "2.8.3"
+      }
+    }
+  },
+  "machine": {
+    "profile_id": "linux-arm64-neoverse-n2-py3.12",
+    "os": "Linux",
+    "kernel": "6.17.0-1022-azure",
+    "arch": "arm64",
+    "cpu_model": "Neoverse-N2",
+    "cpu_count": 4,
+    "ram_bytes": 16722010112,
+    "governor": null,
+    "turbo": null,
+    "load_avg_1m": 1.09,
+    "ac_power": null,
+    "cgroup_v2": true,
+    "container": false,
+    "virtualized": true,
+    "tools": {
+      "bun": false,
+      "node": true,
+      "chromium": true
+    }
+  },
+  "fixture": null,
+  "policy": {
+    "runs": null,
+    "min_runs": 10,
+    "max_runs": 30,
+    "min_time_s": 30.0,
+    "warmup": null,
+    "timeout_s": null,
+    "smoke": false,
+    "alpha": 0.01,
+    "correction": "holm",
+    "threshold_rel": 0.03,
+    "confidence": 0.95,
+    "bootstrap_resamples": 10000,
+    "fail_on": "never",
+    "fail_on_inconclusive": false
+  },
+  "benchmarks": [
+    {
+      "id": "events.shared_contention.capacity",
+      "params": {
+        "manager": "disk",
+        "sessions": 10
+      },
+      "kind": "rate",
+      "version": "sha256:2c9045a4a86f3e62152f4257d49cb191c622ad310f9cbcf83b5dcd7fc2cad0a8",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/events.shared_contention.capacity/736ad26cd586/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 852, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/events.shared_contention.capacity/736ad26cd586/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "throughput": {
+          "unit": "ev/s",
+          "direction": "higher",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "service_p50": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu_per_event": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "events.shared_contention.latency",
+      "params": {
+        "manager": "disk",
+        "sessions": 10,
+        "rate": "auto"
+      },
+      "kind": "latency",
+      "version": "sha256:702bb9c7d728bc622c3c8bc51a9837531dafc12562c0e34cfb83f8dab1e31f2e",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/events.shared_contention.latency/374abea802a4/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 852, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/events.shared_contention.latency/374abea802a4/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "response_p50": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_p90": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_p99": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_max": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "throughput": {
+          "unit": "ev/s",
+          "direction": "higher",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "unanswered": {
+          "unit": "1",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu_per_event": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "events.shared_fanout.broadcast",
+      "params": {
+        "manager": "disk",
+        "linked": 25
+      },
+      "kind": "latency",
+      "version": "sha256:e5f1e0dd2208890075d53026275ad67f68d6886f960d9832da49ae89715bbbb2",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/events.shared_fanout.broadcast/30e40b83c03c/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 852, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/events.shared_fanout.broadcast/30e40b83c03c/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "throughput": {
+          "unit": "ev/s",
+          "direction": "higher",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "broadcast_p50": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "broadcast_p99": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "fanout_spread_p50": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu_per_event": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "events.simple.capacity",
+      "params": {
+        "manager": "disk",
+        "sessions": 10
+      },
+      "kind": "rate",
+      "version": "sha256:2c9045a4a86f3e62152f4257d49cb191c622ad310f9cbcf83b5dcd7fc2cad0a8",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/events.simple.capacity/736ad26cd586/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 852, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/events.simple.capacity/736ad26cd586/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "throughput": {
+          "unit": "ev/s",
+          "direction": "higher",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "service_p50": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu_per_event": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "events.simple.latency",
+      "params": {
+        "manager": "disk",
+        "sessions": 10,
+        "rate": 500
+      },
+      "kind": "latency",
+      "version": "sha256:702bb9c7d728bc622c3c8bc51a9837531dafc12562c0e34cfb83f8dab1e31f2e",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/events.simple.latency/6b43b84360c1/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 852, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/events.simple.latency/6b43b84360c1/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "response_p50": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_p90": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_p99": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_max": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "throughput": {
+          "unit": "ev/s",
+          "direction": "higher",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "unanswered": {
+          "unit": "1",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "cpu_per_event": {
+          "unit": "s",
+          "direction": "lower",
+          "assume": "nothing",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,934 @@
+{
+  "schema": "reflex-bench/1",
+  "tool": {
+    "name": "reflex-bench",
+    "version": "0.0.1.dev3633+82392594f"
+  },
+  "invocation": {
+    "id": "a95decce-d343-4de4-be60-2f9ba7cc8247",
+    "argv": [
+      "run",
+      "--suite",
+      "daily",
+      "wire.*",
+      "size.*",
+      "--kind",
+      "daily",
+      "--json",
+      "exact.json",
+      "--no-save",
+      "--fail-on",
+      "never"
+    ],
+    "started_at": "2026-10-07T04:53:44Z",
+    "duration_s": 22.136,
+    "mode": "ci",
+    "kind": "daily",
+    "ci": {
+      "provider": "github",
+      "run_id": "37573562919",
+      "url": "https://github.com/reflex-dev/reflex/actions/runs/37573562919",
+      "runner": "GitHub Actions 1001149435"
+    },
+    "rng_seed": 2950737669
+  },
+  "subjects": {
+    "A": {
+      "spec": "workspace",
+      "source": "workspace",
+      "python": "/home/runner/work/reflex/reflex/.venv/bin/python",
+      "python_version": "3.12.3",
+      "reflex_version": "0.9.13.dev102+82392594f",
+      "commit": "82392594f85d349f757f6b39a1b1e9f9b87c03f2",
+      "dirty": false,
+      "extra": {
+        "granian": "2.8.3"
+      }
+    }
+  },
+  "machine": {
+    "profile_id": "linux-arm64-neoverse-n2-py3.12",
+    "os": "Linux",
+    "kernel": "6.17.0-1022-azure",
+    "arch": "arm64",
+    "cpu_model": "Neoverse-N2",
+    "cpu_count": 4,
+    "ram_bytes": 16722046976,
+    "governor": null,
+    "turbo": null,
+    "load_avg_1m": 0.81,
+    "ac_power": null,
+    "cgroup_v2": true,
+    "container": false,
+    "virtualized": true,
+    "tools": {
+      "bun": false,
+      "node": true,
+      "chromium": true
+    }
+  },
+  "fixture": null,
+  "policy": {
+    "runs": null,
+    "min_runs": 10,
+    "max_runs": 30,
+    "min_time_s": 30.0,
+    "warmup": null,
+    "timeout_s": null,
+    "smoke": false,
+    "alpha": 0.01,
+    "correction": "holm",
+    "threshold_rel": 0.03,
+    "confidence": 0.95,
+    "bootstrap_resamples": 10000,
+    "fail_on": "never",
+    "fail_on_inconclusive": false
+  },
+  "benchmarks": [
+    {
+      "id": "size.export",
+      "params": {
+        "app": "playground"
+      },
+      "kind": "track",
+      "version": "sha256:6dc09488fcb6d205611156208affd0f98865d950100b91df374c151e5d7bd358",
+      "status": "failed",
+      "error": "RuntimeError: reflex export --frontend-only --no-zip --env prod exited with code 1:\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 936, in export\n    export_utils.export(\n  File \"/home/runner/work/reflex/reflex/reflex/utils/export.py\", line 86, in export\n    prerequisites.get_compiled_app(\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/tmp/reflex-bench-size.export-app=playground-lz9ot_25/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 544, in setup\n    self._call(\"setup\")\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/size.py\", line 340, in setup\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex export --frontend-only --no-zip --env prod exited with code 1:\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 936, in export\n    export_utils.export(\n  File \"/home/runner/work/reflex/reflex/reflex/utils/export.py\", line 86, in export\n    prerequisites.get_compiled_app(\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/tmp/reflex-bench-size.export-app=playground-lz9ot_25/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "initial_raw": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "initial_gzip": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "initial_brotli": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "total_raw": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "total_gzip": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "total_brotli": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "chunks": {
+          "unit": "1",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "web_dir": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "node_modules": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "wire.delta",
+      "params": {
+        "change": "set_scalar"
+      },
+      "kind": "track",
+      "version": "sha256:2ecc7a040c854d195a8e2c4400c7c29784e37fed82c7db5035e06bc66d4d2946",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "fixture": "wire_delta"
+      },
+      "metrics": {
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {
+            "A": [
+              136.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 1,
+              "median": 136.0,
+              "ci": null,
+              "mean": 136.0,
+              "stddev": null,
+              "min": 136.0,
+              "max": 136.0,
+              "q1": 136.0,
+              "q3": 136.0,
+              "mad": 0.0,
+              "cv": null,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-07T04:53:52.910Z",
+          "warmup": false,
+          "duration_s": 0.479632503
+        }
+      ],
+      "sample_extra": [
+        {
+          "request_bytes": 220,
+          "response_bytes": 136,
+          "response_frames": 1,
+          "largest_frame_bytes": 136,
+          "delta_bytes": {
+            "reflex___state____state.wire_delta___state____wire_state": 45
+          },
+          "reply": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.wire_delta___state____wire_state\":{\"last_seq_rx_state_\":1,\"scalar_rx_state_\":1}}}]",
+          "hydration": {
+            "sent_bytes": 414,
+            "received_bytes": 26247,
+            "sent_frames": 3,
+            "received_frames": 4,
+            "largest_frame_bytes": 26011,
+            "delta_bytes": {
+              "reflex___state____state": 1391,
+              "reflex___state____state.reflex___istate___shared____shared_state_base_internal": 2,
+              "reflex___state____state.reflex___state____frontend_event_exception_state": 2,
+              "reflex___state____state.wire_delta___state____wire_state": 24226,
+              "reflex___state____state.reflex___state____on_load_internal_state": 2,
+              "reflex___state____state.reflex___state____update_vars_internal_state": 2
+            }
+          }
+        }
+      ],
+      "fixture_hash": "sha256:e27163f0e3d8cb949beea2789bf4f51d676668882252f8461a14fbe6d4d3e5e1"
+    },
+    {
+      "id": "wire.delta",
+      "params": {
+        "change": "append_item"
+      },
+      "kind": "track",
+      "version": "sha256:2ecc7a040c854d195a8e2c4400c7c29784e37fed82c7db5035e06bc66d4d2946",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "fixture": "wire_delta"
+      },
+      "metrics": {
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {
+            "A": [
+              4027.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 1,
+              "median": 4027.0,
+              "ci": null,
+              "mean": 4027.0,
+              "stddev": null,
+              "min": 4027.0,
+              "max": 4027.0,
+              "q1": 4027.0,
+              "q3": 4027.0,
+              "mad": 0.0,
+              "cv": null,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-07T04:53:54.186Z",
+          "warmup": false,
+          "duration_s": 0.453831254
+        }
+      ],
+      "sample_extra": [
+        {
+          "request_bytes": 221,
+          "response_bytes": 4027,
+          "response_frames": 1,
+          "largest_frame_bytes": 4027,
+          "delta_bytes": {
+            "reflex___state____state.wire_delta___state____wire_state": 3936
+          },
+          "reply": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.wire_delta___state____wire_state\":{\"last_seq_rx_state_\":1,\"items_rx_state_\":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278,279,280,281,282,283,284,285,286,287,288,289,290,291,292,293,294,295,296,297,298,299,300,301,302,303,304,305,306,307,308,309,310,311,312,313,314,315,316,317,318,319,320,321,322,323,324,325,326,327,328,329,330,331,332,333,334,335,336,337,338,339,340,341,342,343,344,345,346,347,348,349,350,351,352,353,354,355,356,357,358,359,360,361,362,363,364,365,366,367,368,369,370,371,372,373,374,375,376,377,378,379,380,381,382,383,384,385,386,387,388,389,390,391,392,393,394,395,396,397,398,399,400,401,402,403,404,405,406,407,408,409,410,411,412,413,414,415,416,417,418,419,420,421,422,423,424,425,426,427,428,429,430,431,432,433,434,435,436,437,438,439,440,441,442,443,444,445,446,447,448,449,450,451,452,453,454,455,456,457,458,459,460,461,462,463,464,465,466,467,468,469,470,471,472,473,474,475,476,477,478,479,480,481,482,483,484,485,486,487,488,489,490,491,492,493,494,495,496,497,498,499,500,501,502,503,504,505,506,507,508,509,510,511,512,513,514,515,516,517,518,519,520,521,522,523,524,525,526,527,528,529,530,531,532,533,534,535,536,537,538,539,540,541,542,543,544,545,546,547,548,549,550,551,552,553,554,555,556,557,558,559,560,561,562,563,564,565,566,567,568,569,570,571,572,573,574,575,576,577,578,579,580,581,582,583,584,585,586,587,588,589,590,591,592,593,594,595,596,597,598,599,600,601,602,603,604,605,606,607,608,609,610,611,612,613,614,615,616,617,618,619,620,621,622,623,624,625,626,627,628,629,630,631,632,633,634,635,636,637,638,639,640,641,642,643,644,645,646,647,648,649,650,651,652,653,654,655,656,657,658,659,660,661,662,663,664,665,666,667,668,669,670,671,672,673,674,675,676,677,678,679,680,681,682,683,684,685,686,687,688,689,690,691,692,693,694,695,696,697,698,699,700,701,702,703,704,705,706,707,708,709,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,730,731,732,733,734,735,736,737,738,739,740,741,742,743,744,745,746,747,748,749,750,751,752,753,754,755,756,757,758,759,760,761,762,763,764,765,766,767,768,769,770,771,772,773,774,775,776,777,778,779,780,781,782,783,784,785,786,787,788,789,790,791,792,793,794,795,796,797,798,799,800,801,802,803,804,805,806,807,808,809,810,811,812,813,814,815,816,817,818,819,820,821,822,823,824,825,826,827,828,829,830,831,832,833,834,835,836,837,838,839,840,841,842,843,844,845,846,847,848,849,850,851,852,853,854,855,856,857,858,859,860,861,862,863,864,865,866,867,868,869,870,871,872,873,874,875,876,877,878,879,880,881,882,883,884,885,886,887,888,889,890,891,892,893,894,895,896,897,898,899,900,901,902,903,904,905,906,907,908,909,910,911,912,913,914,915,916,917,918,919,920,921,922,923,924,925,926,927,928,929,930,931,932,933,934,935,936,937,938,939,940,941,942,943,944,945,946,947,948,949,950,951,952,953,954,955,956,957,958,959,960,961,962,963,964,965,966,967,968,969,970,971,972,973,974,975,976,977,978,979,980,981,982,983,984,985,986,987,988,989,990,991,992,993,994,995,996,997,998,999,1]}}}]",
+          "hydration": {
+            "sent_bytes": 414,
+            "received_bytes": 26247,
+            "sent_frames": 3,
+            "received_frames": 4,
+            "largest_frame_bytes": 26011,
+            "delta_bytes": {
+              "reflex___state____state": 1391,
+              "reflex___state____state.reflex___state____update_vars_internal_state": 2,
+              "reflex___state____state.reflex___state____frontend_event_exception_state": 2,
+              "reflex___state____state.reflex___state____on_load_internal_state": 2,
+              "reflex___state____state.wire_delta___state____wire_state": 24226,
+              "reflex___state____state.reflex___istate___shared____shared_state_base_internal": 2
+            }
+          }
+        }
+      ],
+      "fixture_hash": "sha256:e27163f0e3d8cb949beea2789bf4f51d676668882252f8461a14fbe6d4d3e5e1"
+    },
+    {
+      "id": "wire.delta",
+      "params": {
+        "change": "set_one_item"
+      },
+      "kind": "track",
+      "version": "sha256:2ecc7a040c854d195a8e2c4400c7c29784e37fed82c7db5035e06bc66d4d2946",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "fixture": "wire_delta"
+      },
+      "metrics": {
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {
+            "A": [
+              4023.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 1,
+              "median": 4023.0,
+              "ci": null,
+              "mean": 4023.0,
+              "stddev": null,
+              "min": 4023.0,
+              "max": 4023.0,
+              "q1": 4023.0,
+              "q3": 4023.0,
+              "mad": 0.0,
+              "cv": null,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-07T04:53:55.433Z",
+          "warmup": false,
+          "duration_s": 0.460163857
+        }
+      ],
+      "sample_extra": [
+        {
+          "request_bytes": 222,
+          "response_bytes": 4023,
+          "response_frames": 1,
+          "largest_frame_bytes": 4023,
+          "delta_bytes": {
+            "reflex___state____state.wire_delta___state____wire_state": 3932
+          },
+          "reply": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.wire_delta___state____wire_state\":{\"last_seq_rx_state_\":1,\"items_rx_state_\":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278,279,280,281,282,283,284,285,286,287,288,289,290,291,292,293,294,295,296,297,298,299,300,301,302,303,304,305,306,307,308,309,310,311,312,313,314,315,316,317,318,319,320,321,322,323,324,325,326,327,328,329,330,331,332,333,334,335,336,337,338,339,340,341,342,343,344,345,346,347,348,349,350,351,352,353,354,355,356,357,358,359,360,361,362,363,364,365,366,367,368,369,370,371,372,373,374,375,376,377,378,379,380,381,382,383,384,385,386,387,388,389,390,391,392,393,394,395,396,397,398,399,400,401,402,403,404,405,406,407,408,409,410,411,412,413,414,415,416,417,418,419,420,421,422,423,424,425,426,427,428,429,430,431,432,433,434,435,436,437,438,439,440,441,442,443,444,445,446,447,448,449,450,451,452,453,454,455,456,457,458,459,460,461,462,463,464,465,466,467,468,469,470,471,472,473,474,475,476,477,478,479,480,481,482,483,484,485,486,487,488,489,490,491,492,493,494,495,496,497,498,499,1,501,502,503,504,505,506,507,508,509,510,511,512,513,514,515,516,517,518,519,520,521,522,523,524,525,526,527,528,529,530,531,532,533,534,535,536,537,538,539,540,541,542,543,544,545,546,547,548,549,550,551,552,553,554,555,556,557,558,559,560,561,562,563,564,565,566,567,568,569,570,571,572,573,574,575,576,577,578,579,580,581,582,583,584,585,586,587,588,589,590,591,592,593,594,595,596,597,598,599,600,601,602,603,604,605,606,607,608,609,610,611,612,613,614,615,616,617,618,619,620,621,622,623,624,625,626,627,628,629,630,631,632,633,634,635,636,637,638,639,640,641,642,643,644,645,646,647,648,649,650,651,652,653,654,655,656,657,658,659,660,661,662,663,664,665,666,667,668,669,670,671,672,673,674,675,676,677,678,679,680,681,682,683,684,685,686,687,688,689,690,691,692,693,694,695,696,697,698,699,700,701,702,703,704,705,706,707,708,709,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,730,731,732,733,734,735,736,737,738,739,740,741,742,743,744,745,746,747,748,749,750,751,752,753,754,755,756,757,758,759,760,761,762,763,764,765,766,767,768,769,770,771,772,773,774,775,776,777,778,779,780,781,782,783,784,785,786,787,788,789,790,791,792,793,794,795,796,797,798,799,800,801,802,803,804,805,806,807,808,809,810,811,812,813,814,815,816,817,818,819,820,821,822,823,824,825,826,827,828,829,830,831,832,833,834,835,836,837,838,839,840,841,842,843,844,845,846,847,848,849,850,851,852,853,854,855,856,857,858,859,860,861,862,863,864,865,866,867,868,869,870,871,872,873,874,875,876,877,878,879,880,881,882,883,884,885,886,887,888,889,890,891,892,893,894,895,896,897,898,899,900,901,902,903,904,905,906,907,908,909,910,911,912,913,914,915,916,917,918,919,920,921,922,923,924,925,926,927,928,929,930,931,932,933,934,935,936,937,938,939,940,941,942,943,944,945,946,947,948,949,950,951,952,953,954,955,956,957,958,959,960,961,962,963,964,965,966,967,968,969,970,971,972,973,974,975,976,977,978,979,980,981,982,983,984,985,986,987,988,989,990,991,992,993,994,995,996,997,998,999]}}}]",
+          "hydration": {
+            "sent_bytes": 414,
+            "received_bytes": 26247,
+            "sent_frames": 3,
+            "received_frames": 4,
+            "largest_frame_bytes": 26011,
+            "delta_bytes": {
+              "reflex___state____state": 1391,
+              "reflex___state____state.reflex___state____on_load_internal_state": 2,
+              "reflex___state____state.reflex___state____update_vars_internal_state": 2,
+              "reflex___state____state.wire_delta___state____wire_state": 24226,
+              "reflex___state____state.reflex___istate___shared____shared_state_base_internal": 2,
+              "reflex___state____state.reflex___state____frontend_event_exception_state": 2
+            }
+          }
+        }
+      ],
+      "fixture_hash": "sha256:e27163f0e3d8cb949beea2789bf4f51d676668882252f8461a14fbe6d4d3e5e1"
+    },
+    {
+      "id": "wire.delta",
+      "params": {
+        "change": "set_dict_key"
+      },
+      "kind": "track",
+      "version": "sha256:2ecc7a040c854d195a8e2c4400c7c29784e37fed82c7db5035e06bc66d4d2946",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "fixture": "wire_delta"
+      },
+      "metrics": {
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {
+            "A": [
+              13913.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 1,
+              "median": 13913.0,
+              "ci": null,
+              "mean": 13913.0,
+              "stddev": null,
+              "min": 13913.0,
+              "max": 13913.0,
+              "q1": 13913.0,
+              "q3": 13913.0,
+              "mad": 0.0,
+              "cv": null,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-07T04:53:56.754Z",
+          "warmup": false,
+          "duration_s": 0.457894278
+        }
+      ],
+      "sample_extra": [
+        {
+          "request_bytes": 222,
+          "response_bytes": 13913,
+          "response_frames": 1,
+          "largest_frame_bytes": 13913,
+          "delta_bytes": {
+            "reflex___state____state.wire_delta___state____wire_state": 13822
+          },
+          "reply": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.wire_delta___state____wire_state\":{\"table_rx_state_\":{\"key_0\":0,\"key_1\":1,\"key_2\":2,\"key_3\":3,\"key_4\":4,\"key_5\":5,\"key_6\":6,\"key_7\":7,\"key_8\":8,\"key_9\":9,\"key_10\":10,\"key_11\":11,\"key_12\":12,\"key_13\":13,\"key_14\":14,\"key_15\":15,\"key_16\":16,\"key_17\":17,\"key_18\":18,\"key_19\":19,\"key_20\":20,\"key_21\":21,\"key_22\":22,\"key_23\":23,\"key_24\":24,\"key_25\":25,\"key_26\":26,\"key_27\":27,\"key_28\":28,\"key_29\":29,\"key_30\":30,\"key_31\":31,\"key_32\":32,\"key_33\":33,\"key_34\":34,\"key_35\":35,\"key_36\":36,\"key_37\":37,\"key_38\":38,\"key_39\":39,\"key_40\":40,\"key_41\":41,\"key_42\":42,\"key_43\":43,\"key_44\":44,\"key_45\":45,\"key_46\":46,\"key_47\":47,\"key_48\":48,\"key_49\":49,\"key_50\":50,\"key_51\":51,\"key_52\":52,\"key_53\":53,\"key_54\":54,\"key_55\":55,\"key_56\":56,\"key_57\":57,\"key_58\":58,\"key_59\":59,\"key_60\":60,\"key_61\":61,\"key_62\":62,\"key_63\":63,\"key_64\":64,\"key_65\":65,\"key_66\":66,\"key_67\":67,\"key_68\":68,\"key_69\":69,\"key_70\":70,\"key_71\":71,\"key_72\":72,\"key_73\":73,\"key_74\":74,\"key_75\":75,\"key_76\":76,\"key_77\":77,\"key_78\":78,\"key_79\":79,\"key_80\":80,\"key_81\":81,\"key_82\":82,\"key_83\":83,\"key_84\":84,\"key_85\":85,\"key_86\":86,\"key_87\":87,\"key_88\":88,\"key_89\":89,\"key_90\":90,\"key_91\":91,\"key_92\":92,\"key_93\":93,\"key_94\":94,\"key_95\":95,\"key_96\":96,\"key_97\":97,\"key_98\":98,\"key_99\":99,\"key_100\":100,\"key_101\":101,\"key_102\":102,\"key_103\":103,\"key_104\":104,\"key_105\":105,\"key_106\":106,\"key_107\":107,\"key_108\":108,\"key_109\":109,\"key_110\":110,\"key_111\":111,\"key_112\":112,\"key_113\":113,\"key_114\":114,\"key_115\":115,\"key_116\":116,\"key_117\":117,\"key_118\":118,\"key_119\":119,\"key_120\":120,\"key_121\":121,\"key_122\":122,\"key_123\":123,\"key_124\":124,\"key_125\":125,\"key_126\":126,\"key_127\":127,\"key_128\":128,\"key_129\":129,\"key_130\":130,\"key_131\":131,\"key_132\":132,\"key_133\":133,\"key_134\":134,\"key_135\":135,\"key_136\":136,\"key_137\":137,\"key_138\":138,\"key_139\":139,\"key_140\":140,\"key_141\":141,\"key_142\":142,\"key_143\":143,\"key_144\":144,\"key_145\":145,\"key_146\":146,\"key_147\":147,\"key_148\":148,\"key_149\":149,\"key_150\":150,\"key_151\":151,\"key_152\":152,\"key_153\":153,\"key_154\":154,\"key_155\":155,\"key_156\":156,\"key_157\":157,\"key_158\":158,\"key_159\":159,\"key_160\":160,\"key_161\":161,\"key_162\":162,\"key_163\":163,\"key_164\":164,\"key_165\":165,\"key_166\":166,\"key_167\":167,\"key_168\":168,\"key_169\":169,\"key_170\":170,\"key_171\":171,\"key_172\":172,\"key_173\":173,\"key_174\":174,\"key_175\":175,\"key_176\":176,\"key_177\":177,\"key_178\":178,\"key_179\":179,\"key_180\":180,\"key_181\":181,\"key_182\":182,\"key_183\":183,\"key_184\":184,\"key_185\":185,\"key_186\":186,\"key_187\":187,\"key_188\":188,\"key_189\":189,\"key_190\":190,\"key_191\":191,\"key_192\":192,\"key_193\":193,\"key_194\":194,\"key_195\":195,\"key_196\":196,\"key_197\":197,\"key_198\":198,\"key_199\":199,\"key_200\":200,\"key_201\":201,\"key_202\":202,\"key_203\":203,\"key_204\":204,\"key_205\":205,\"key_206\":206,\"key_207\":207,\"key_208\":208,\"key_209\":209,\"key_210\":210,\"key_211\":211,\"key_212\":212,\"key_213\":213,\"key_214\":214,\"key_215\":215,\"key_216\":216,\"key_217\":217,\"key_218\":218,\"key_219\":219,\"key_220\":220,\"key_221\":221,\"key_222\":222,\"key_223\":223,\"key_224\":224,\"key_225\":225,\"key_226\":226,\"key_227\":227,\"key_228\":228,\"key_229\":229,\"key_230\":230,\"key_231\":231,\"key_232\":232,\"key_233\":233,\"key_234\":234,\"key_235\":235,\"key_236\":236,\"key_237\":237,\"key_238\":238,\"key_239\":239,\"key_240\":240,\"key_241\":241,\"key_242\":242,\"key_243\":243,\"key_244\":244,\"key_245\":245,\"key_246\":246,\"key_247\":247,\"key_248\":248,\"key_249\":249,\"key_250\":250,\"key_251\":251,\"key_252\":252,\"key_253\":253,\"key_254\":254,\"key_255\":255,\"key_256\":256,\"key_257\":257,\"key_258\":258,\"key_259\":259,\"key_260\":260,\"key_261\":261,\"key_262\":262,\"key_263\":263,\"key_264\":264,\"key_265\":265,\"key_266\":266,\"key_267\":267,\"key_268\":268,\"key_269\":269,\"key_270\":270,\"key_271\":271,\"key_272\":272,\"key_273\":273,\"key_274\":274,\"key_275\":275,\"key_276\":276,\"key_277\":277,\"key_278\":278,\"key_279\":279,\"key_280\":280,\"key_281\":281,\"key_282\":282,\"key_283\":283,\"key_284\":284,\"key_285\":285,\"key_286\":286,\"key_287\":287,\"key_288\":288,\"key_289\":289,\"key_290\":290,\"key_291\":291,\"key_292\":292,\"key_293\":293,\"key_294\":294,\"key_295\":295,\"key_296\":296,\"key_297\":297,\"key_298\":298,\"key_299\":299,\"key_300\":300,\"key_301\":301,\"key_302\":302,\"key_303\":303,\"key_304\":304,\"key_305\":305,\"key_306\":306,\"key_307\":307,\"key_308\":308,\"key_309\":309,\"key_310\":310,\"key_311\":311,\"key_312\":312,\"key_313\":313,\"key_314\":314,\"key_315\":315,\"key_316\":316,\"key_317\":317,\"key_318\":318,\"key_319\":319,\"key_320\":320,\"key_321\":321,\"key_322\":322,\"key_323\":323,\"key_324\":324,\"key_325\":325,\"key_326\":326,\"key_327\":327,\"key_328\":328,\"key_329\":329,\"key_330\":330,\"key_331\":331,\"key_332\":332,\"key_333\":333,\"key_334\":334,\"key_335\":335,\"key_336\":336,\"key_337\":337,\"key_338\":338,\"key_339\":339,\"key_340\":340,\"key_341\":341,\"key_342\":342,\"key_343\":343,\"key_344\":344,\"key_345\":345,\"key_346\":346,\"key_347\":347,\"key_348\":348,\"key_349\":349,\"key_350\":350,\"key_351\":351,\"key_352\":352,\"key_353\":353,\"key_354\":354,\"key_355\":355,\"key_356\":356,\"key_357\":357,\"key_358\":358,\"key_359\":359,\"key_360\":360,\"key_361\":361,\"key_362\":362,\"key_363\":363,\"key_364\":364,\"key_365\":365,\"key_366\":366,\"key_367\":367,\"key_368\":368,\"key_369\":369,\"key_370\":370,\"key_371\":371,\"key_372\":372,\"key_373\":373,\"key_374\":374,\"key_375\":375,\"key_376\":376,\"key_377\":377,\"key_378\":378,\"key_379\":379,\"key_380\":380,\"key_381\":381,\"key_382\":382,\"key_383\":383,\"key_384\":384,\"key_385\":385,\"key_386\":386,\"key_387\":387,\"key_388\":388,\"key_389\":389,\"key_390\":390,\"key_391\":391,\"key_392\":392,\"key_393\":393,\"key_394\":394,\"key_395\":395,\"key_396\":396,\"key_397\":397,\"key_398\":398,\"key_399\":399,\"key_400\":400,\"key_401\":401,\"key_402\":402,\"key_403\":403,\"key_404\":404,\"key_405\":405,\"key_406\":406,\"key_407\":407,\"key_408\":408,\"key_409\":409,\"key_410\":410,\"key_411\":411,\"key_412\":412,\"key_413\":413,\"key_414\":414,\"key_415\":415,\"key_416\":416,\"key_417\":417,\"key_418\":418,\"key_419\":419,\"key_420\":420,\"key_421\":421,\"key_422\":422,\"key_423\":423,\"key_424\":424,\"key_425\":425,\"key_426\":426,\"key_427\":427,\"key_428\":428,\"key_429\":429,\"key_430\":430,\"key_431\":431,\"key_432\":432,\"key_433\":433,\"key_434\":434,\"key_435\":435,\"key_436\":436,\"key_437\":437,\"key_438\":438,\"key_439\":439,\"key_440\":440,\"key_441\":441,\"key_442\":442,\"key_443\":443,\"key_444\":444,\"key_445\":445,\"key_446\":446,\"key_447\":447,\"key_448\":448,\"key_449\":449,\"key_450\":450,\"key_451\":451,\"key_452\":452,\"key_453\":453,\"key_454\":454,\"key_455\":455,\"key_456\":456,\"key_457\":457,\"key_458\":458,\"key_459\":459,\"key_460\":460,\"key_461\":461,\"key_462\":462,\"key_463\":463,\"key_464\":464,\"key_465\":465,\"key_466\":466,\"key_467\":467,\"key_468\":468,\"key_469\":469,\"key_470\":470,\"key_471\":471,\"key_472\":472,\"key_473\":473,\"key_474\":474,\"key_475\":475,\"key_476\":476,\"key_477\":477,\"key_478\":478,\"key_479\":479,\"key_480\":480,\"key_481\":481,\"key_482\":482,\"key_483\":483,\"key_484\":484,\"key_485\":485,\"key_486\":486,\"key_487\":487,\"key_488\":488,\"key_489\":489,\"key_490\":490,\"key_491\":491,\"key_492\":492,\"key_493\":493,\"key_494\":494,\"key_495\":495,\"key_496\":496,\"key_497\":497,\"key_498\":498,\"key_499\":499,\"key_500\":1,\"key_501\":501,\"key_502\":502,\"key_503\":503,\"key_504\":504,\"key_505\":505,\"key_506\":506,\"key_507\":507,\"key_508\":508,\"key_509\":509,\"key_510\":510,\"key_511\":511,\"key_512\":512,\"key_513\":513,\"key_514\":514,\"key_515\":515,\"key_516\":516,\"key_517\":517,\"key_518\":518,\"key_519\":519,\"key_520\":520,\"key_521\":521,\"key_522\":522,\"key_523\":523,\"key_524\":524,\"key_525\":525,\"key_526\":526,\"key_527\":527,\"key_528\":528,\"key_529\":529,\"key_530\":530,\"key_531\":531,\"key_532\":532,\"key_533\":533,\"key_534\":534,\"key_535\":535,\"key_536\":536,\"key_537\":537,\"key_538\":538,\"key_539\":539,\"key_540\":540,\"key_541\":541,\"key_542\":542,\"key_543\":543,\"key_544\":544,\"key_545\":545,\"key_546\":546,\"key_547\":547,\"key_548\":548,\"key_549\":549,\"key_550\":550,\"key_551\":551,\"key_552\":552,\"key_553\":553,\"key_554\":554,\"key_555\":555,\"key_556\":556,\"key_557\":557,\"key_558\":558,\"key_559\":559,\"key_560\":560,\"key_561\":561,\"key_562\":562,\"key_563\":563,\"key_564\":564,\"key_565\":565,\"key_566\":566,\"key_567\":567,\"key_568\":568,\"key_569\":569,\"key_570\":570,\"key_571\":571,\"key_572\":572,\"key_573\":573,\"key_574\":574,\"key_575\":575,\"key_576\":576,\"key_577\":577,\"key_578\":578,\"key_579\":579,\"key_580\":580,\"key_581\":581,\"key_582\":582,\"key_583\":583,\"key_584\":584,\"key_585\":585,\"key_586\":586,\"key_587\":587,\"key_588\":588,\"key_589\":589,\"key_590\":590,\"key_591\":591,\"key_592\":592,\"key_593\":593,\"key_594\":594,\"key_595\":595,\"key_596\":596,\"key_597\":597,\"key_598\":598,\"key_599\":599,\"key_600\":600,\"key_601\":601,\"key_602\":602,\"key_603\":603,\"key_604\":604,\"key_605\":605,\"key_606\":606,\"key_607\":607,\"key_608\":608,\"key_609\":609,\"key_610\":610,\"key_611\":611,\"key_612\":612,\"key_613\":613,\"key_614\":614,\"key_615\":615,\"key_616\":616,\"key_617\":617,\"key_618\":618,\"key_619\":619,\"key_620\":620,\"key_621\":621,\"key_622\":622,\"key_623\":623,\"key_624\":624,\"key_625\":625,\"key_626\":626,\"key_627\":627,\"key_628\":628,\"key_629\":629,\"key_630\":630,\"key_631\":631,\"key_632\":632,\"key_633\":633,\"key_634\":634,\"key_635\":635,\"key_636\":636,\"key_637\":637,\"key_638\":638,\"key_639\":639,\"key_640\":640,\"key_641\":641,\"key_642\":642,\"key_643\":643,\"key_644\":644,\"key_645\":645,\"key_646\":646,\"key_647\":647,\"key_648\":648,\"key_649\":649,\"key_650\":650,\"key_651\":651,\"key_652\":652,\"key_653\":653,\"key_654\":654,\"key_655\":655,\"key_656\":656,\"key_657\":657,\"key_658\":658,\"key_659\":659,\"key_660\":660,\"key_661\":661,\"key_662\":662,\"key_663\":663,\"key_664\":664,\"key_665\":665,\"key_666\":666,\"key_667\":667,\"key_668\":668,\"key_669\":669,\"key_670\":670,\"key_671\":671,\"key_672\":672,\"key_673\":673,\"key_674\":674,\"key_675\":675,\"key_676\":676,\"key_677\":677,\"key_678\":678,\"key_679\":679,\"key_680\":680,\"key_681\":681,\"key_682\":682,\"key_683\":683,\"key_684\":684,\"key_685\":685,\"key_686\":686,\"key_687\":687,\"key_688\":688,\"key_689\":689,\"key_690\":690,\"key_691\":691,\"key_692\":692,\"key_693\":693,\"key_694\":694,\"key_695\":695,\"key_696\":696,\"key_697\":697,\"key_698\":698,\"key_699\":699,\"key_700\":700,\"key_701\":701,\"key_702\":702,\"key_703\":703,\"key_704\":704,\"key_705\":705,\"key_706\":706,\"key_707\":707,\"key_708\":708,\"key_709\":709,\"key_710\":710,\"key_711\":711,\"key_712\":712,\"key_713\":713,\"key_714\":714,\"key_715\":715,\"key_716\":716,\"key_717\":717,\"key_718\":718,\"key_719\":719,\"key_720\":720,\"key_721\":721,\"key_722\":722,\"key_723\":723,\"key_724\":724,\"key_725\":725,\"key_726\":726,\"key_727\":727,\"key_728\":728,\"key_729\":729,\"key_730\":730,\"key_731\":731,\"key_732\":732,\"key_733\":733,\"key_734\":734,\"key_735\":735,\"key_736\":736,\"key_737\":737,\"key_738\":738,\"key_739\":739,\"key_740\":740,\"key_741\":741,\"key_742\":742,\"key_743\":743,\"key_744\":744,\"key_745\":745,\"key_746\":746,\"key_747\":747,\"key_748\":748,\"key_749\":749,\"key_750\":750,\"key_751\":751,\"key_752\":752,\"key_753\":753,\"key_754\":754,\"key_755\":755,\"key_756\":756,\"key_757\":757,\"key_758\":758,\"key_759\":759,\"key_760\":760,\"key_761\":761,\"key_762\":762,\"key_763\":763,\"key_764\":764,\"key_765\":765,\"key_766\":766,\"key_767\":767,\"key_768\":768,\"key_769\":769,\"key_770\":770,\"key_771\":771,\"key_772\":772,\"key_773\":773,\"key_774\":774,\"key_775\":775,\"key_776\":776,\"key_777\":777,\"key_778\":778,\"key_779\":779,\"key_780\":780,\"key_781\":781,\"key_782\":782,\"key_783\":783,\"key_784\":784,\"key_785\":785,\"key_786\":786,\"key_787\":787,\"key_788\":788,\"key_789\":789,\"key_790\":790,\"key_791\":791,\"key_792\":792,\"key_793\":793,\"key_794\":794,\"key_795\":795,\"key_796\":796,\"key_797\":797,\"key_798\":798,\"key_799\":799,\"key_800\":800,\"key_801\":801,\"key_802\":802,\"key_803\":803,\"key_804\":804,\"key_805\":805,\"key_806\":806,\"key_807\":807,\"key_808\":808,\"key_809\":809,\"key_810\":810,\"key_811\":811,\"key_812\":812,\"key_813\":813,\"key_814\":814,\"key_815\":815,\"key_816\":816,\"key_817\":817,\"key_818\":818,\"key_819\":819,\"key_820\":820,\"key_821\":821,\"key_822\":822,\"key_823\":823,\"key_824\":824,\"key_825\":825,\"key_826\":826,\"key_827\":827,\"key_828\":828,\"key_829\":829,\"key_830\":830,\"key_831\":831,\"key_832\":832,\"key_833\":833,\"key_834\":834,\"key_835\":835,\"key_836\":836,\"key_837\":837,\"key_838\":838,\"key_839\":839,\"key_840\":840,\"key_841\":841,\"key_842\":842,\"key_843\":843,\"key_844\":844,\"key_845\":845,\"key_846\":846,\"key_847\":847,\"key_848\":848,\"key_849\":849,\"key_850\":850,\"key_851\":851,\"key_852\":852,\"key_853\":853,\"key_854\":854,\"key_855\":855,\"key_856\":856,\"key_857\":857,\"key_858\":858,\"key_859\":859,\"key_860\":860,\"key_861\":861,\"key_862\":862,\"key_863\":863,\"key_864\":864,\"key_865\":865,\"key_866\":866,\"key_867\":867,\"key_868\":868,\"key_869\":869,\"key_870\":870,\"key_871\":871,\"key_872\":872,\"key_873\":873,\"key_874\":874,\"key_875\":875,\"key_876\":876,\"key_877\":877,\"key_878\":878,\"key_879\":879,\"key_880\":880,\"key_881\":881,\"key_882\":882,\"key_883\":883,\"key_884\":884,\"key_885\":885,\"key_886\":886,\"key_887\":887,\"key_888\":888,\"key_889\":889,\"key_890\":890,\"key_891\":891,\"key_892\":892,\"key_893\":893,\"key_894\":894,\"key_895\":895,\"key_896\":896,\"key_897\":897,\"key_898\":898,\"key_899\":899,\"key_900\":900,\"key_901\":901,\"key_902\":902,\"key_903\":903,\"key_904\":904,\"key_905\":905,\"key_906\":906,\"key_907\":907,\"key_908\":908,\"key_909\":909,\"key_910\":910,\"key_911\":911,\"key_912\":912,\"key_913\":913,\"key_914\":914,\"key_915\":915,\"key_916\":916,\"key_917\":917,\"key_918\":918,\"key_919\":919,\"key_920\":920,\"key_921\":921,\"key_922\":922,\"key_923\":923,\"key_924\":924,\"key_925\":925,\"key_926\":926,\"key_927\":927,\"key_928\":928,\"key_929\":929,\"key_930\":930,\"key_931\":931,\"key_932\":932,\"key_933\":933,\"key_934\":934,\"key_935\":935,\"key_936\":936,\"key_937\":937,\"key_938\":938,\"key_939\":939,\"key_940\":940,\"key_941\":941,\"key_942\":942,\"key_943\":943,\"key_944\":944,\"key_945\":945,\"key_946\":946,\"key_947\":947,\"key_948\":948,\"key_949\":949,\"key_950\":950,\"key_951\":951,\"key_952\":952,\"key_953\":953,\"key_954\":954,\"key_955\":955,\"key_956\":956,\"key_957\":957,\"key_958\":958,\"key_959\":959,\"key_960\":960,\"key_961\":961,\"key_962\":962,\"key_963\":963,\"key_964\":964,\"key_965\":965,\"key_966\":966,\"key_967\":967,\"key_968\":968,\"key_969\":969,\"key_970\":970,\"key_971\":971,\"key_972\":972,\"key_973\":973,\"key_974\":974,\"key_975\":975,\"key_976\":976,\"key_977\":977,\"key_978\":978,\"key_979\":979,\"key_980\":980,\"key_981\":981,\"key_982\":982,\"key_983\":983,\"key_984\":984,\"key_985\":985,\"key_986\":986,\"key_987\":987,\"key_988\":988,\"key_989\":989,\"key_990\":990,\"key_991\":991,\"key_992\":992,\"key_993\":993,\"key_994\":994,\"key_995\":995,\"key_996\":996,\"key_997\":997,\"key_998\":998,\"key_999\":999},\"last_seq_rx_state_\":1}}}]",
+          "hydration": {
+            "sent_bytes": 414,
+            "received_bytes": 26247,
+            "sent_frames": 3,
+            "received_frames": 4,
+            "largest_frame_bytes": 26011,
+            "delta_bytes": {
+              "reflex___state____state": 1391,
+              "reflex___state____state.reflex___istate___shared____shared_state_base_internal": 2,
+              "reflex___state____state.reflex___state____on_load_internal_state": 2,
+              "reflex___state____state.reflex___state____frontend_event_exception_state": 2,
+              "reflex___state____state.wire_delta___state____wire_state": 24226,
+              "reflex___state____state.reflex___state____update_vars_internal_state": 2
+            }
+          }
+        }
+      ],
+      "fixture_hash": "sha256:e27163f0e3d8cb949beea2789bf4f51d676668882252f8461a14fbe6d4d3e5e1"
+    },
+    {
+      "id": "wire.delta",
+      "params": {
+        "change": "update_row_field"
+      },
+      "kind": "track",
+      "version": "sha256:2ecc7a040c854d195a8e2c4400c7c29784e37fed82c7db5035e06bc66d4d2946",
+      "status": "ok",
+      "error": null,
+      "traceback_tail": null,
+      "dims": {
+        "fixture": "wire_delta"
+      },
+      "metrics": {
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {
+            "A": [
+              6584.0
+            ]
+          },
+          "summary": {
+            "A": {
+              "n": 1,
+              "median": 6584.0,
+              "ci": null,
+              "mean": 6584.0,
+              "stddev": null,
+              "min": 6584.0,
+              "max": 6584.0,
+              "q1": 6584.0,
+              "q3": 6584.0,
+              "mad": 0.0,
+              "cv": null,
+              "outliers": {
+                "mild": 0,
+                "severe": 0
+              }
+            }
+          },
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [
+        {
+          "arm": "A",
+          "round": 0,
+          "order": 0,
+          "started_at": "2026-10-07T04:53:58.023Z",
+          "warmup": false,
+          "duration_s": 0.460147042
+        }
+      ],
+      "sample_extra": [
+        {
+          "request_bytes": 226,
+          "response_bytes": 6584,
+          "response_frames": 1,
+          "largest_frame_bytes": 6584,
+          "delta_bytes": {
+            "reflex___state____state.wire_delta___state____wire_state": 6493
+          },
+          "reply": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.wire_delta___state____wire_state\":{\"rows_rx_state_\":[{\"id\":0,\"value\":0,\"score\":0},{\"id\":1,\"value\":3,\"score\":1},{\"id\":2,\"value\":6,\"score\":2},{\"id\":3,\"value\":9,\"score\":3},{\"id\":4,\"value\":12,\"score\":4},{\"id\":5,\"value\":15,\"score\":5},{\"id\":6,\"value\":18,\"score\":6},{\"id\":7,\"value\":21,\"score\":0},{\"id\":8,\"value\":24,\"score\":1},{\"id\":9,\"value\":27,\"score\":2},{\"id\":10,\"value\":30,\"score\":3},{\"id\":11,\"value\":33,\"score\":4},{\"id\":12,\"value\":36,\"score\":5},{\"id\":13,\"value\":39,\"score\":6},{\"id\":14,\"value\":42,\"score\":0},{\"id\":15,\"value\":45,\"score\":1},{\"id\":16,\"value\":48,\"score\":2},{\"id\":17,\"value\":51,\"score\":3},{\"id\":18,\"value\":54,\"score\":4},{\"id\":19,\"value\":57,\"score\":5},{\"id\":20,\"value\":60,\"score\":6},{\"id\":21,\"value\":63,\"score\":0},{\"id\":22,\"value\":66,\"score\":1},{\"id\":23,\"value\":69,\"score\":2},{\"id\":24,\"value\":72,\"score\":3},{\"id\":25,\"value\":75,\"score\":4},{\"id\":26,\"value\":78,\"score\":5},{\"id\":27,\"value\":81,\"score\":6},{\"id\":28,\"value\":84,\"score\":0},{\"id\":29,\"value\":87,\"score\":1},{\"id\":30,\"value\":90,\"score\":2},{\"id\":31,\"value\":93,\"score\":3},{\"id\":32,\"value\":96,\"score\":4},{\"id\":33,\"value\":99,\"score\":5},{\"id\":34,\"value\":102,\"score\":6},{\"id\":35,\"value\":105,\"score\":0},{\"id\":36,\"value\":108,\"score\":1},{\"id\":37,\"value\":111,\"score\":2},{\"id\":38,\"value\":114,\"score\":3},{\"id\":39,\"value\":117,\"score\":4},{\"id\":40,\"value\":120,\"score\":5},{\"id\":41,\"value\":123,\"score\":6},{\"id\":42,\"value\":126,\"score\":0},{\"id\":43,\"value\":129,\"score\":1},{\"id\":44,\"value\":132,\"score\":2},{\"id\":45,\"value\":135,\"score\":3},{\"id\":46,\"value\":138,\"score\":4},{\"id\":47,\"value\":141,\"score\":5},{\"id\":48,\"value\":144,\"score\":6},{\"id\":49,\"value\":147,\"score\":0},{\"id\":50,\"value\":150,\"score\":1},{\"id\":51,\"value\":153,\"score\":2},{\"id\":52,\"value\":156,\"score\":3},{\"id\":53,\"value\":159,\"score\":4},{\"id\":54,\"value\":162,\"score\":5},{\"id\":55,\"value\":165,\"score\":6},{\"id\":56,\"value\":168,\"score\":0},{\"id\":57,\"value\":171,\"score\":1},{\"id\":58,\"value\":174,\"score\":2},{\"id\":59,\"value\":177,\"score\":3},{\"id\":60,\"value\":180,\"score\":4},{\"id\":61,\"value\":183,\"score\":5},{\"id\":62,\"value\":186,\"score\":6},{\"id\":63,\"value\":189,\"score\":0},{\"id\":64,\"value\":192,\"score\":1},{\"id\":65,\"value\":195,\"score\":2},{\"id\":66,\"value\":198,\"score\":3},{\"id\":67,\"value\":201,\"score\":4},{\"id\":68,\"value\":204,\"score\":5},{\"id\":69,\"value\":207,\"score\":6},{\"id\":70,\"value\":210,\"score\":0},{\"id\":71,\"value\":213,\"score\":1},{\"id\":72,\"value\":216,\"score\":2},{\"id\":73,\"value\":219,\"score\":3},{\"id\":74,\"value\":222,\"score\":4},{\"id\":75,\"value\":225,\"score\":5},{\"id\":76,\"value\":228,\"score\":6},{\"id\":77,\"value\":231,\"score\":0},{\"id\":78,\"value\":234,\"score\":1},{\"id\":79,\"value\":237,\"score\":2},{\"id\":80,\"value\":240,\"score\":3},{\"id\":81,\"value\":243,\"score\":4},{\"id\":82,\"value\":246,\"score\":5},{\"id\":83,\"value\":249,\"score\":6},{\"id\":84,\"value\":252,\"score\":0},{\"id\":85,\"value\":255,\"score\":1},{\"id\":86,\"value\":258,\"score\":2},{\"id\":87,\"value\":261,\"score\":3},{\"id\":88,\"value\":264,\"score\":4},{\"id\":89,\"value\":267,\"score\":5},{\"id\":90,\"value\":270,\"score\":6},{\"id\":91,\"value\":273,\"score\":0},{\"id\":92,\"value\":276,\"score\":1},{\"id\":93,\"value\":279,\"score\":2},{\"id\":94,\"value\":282,\"score\":3},{\"id\":95,\"value\":285,\"score\":4},{\"id\":96,\"value\":288,\"score\":5},{\"id\":97,\"value\":291,\"score\":6},{\"id\":98,\"value\":294,\"score\":0},{\"id\":99,\"value\":297,\"score\":1},{\"id\":100,\"value\":1,\"score\":2},{\"id\":101,\"value\":303,\"score\":3},{\"id\":102,\"value\":306,\"score\":4},{\"id\":103,\"value\":309,\"score\":5},{\"id\":104,\"value\":312,\"score\":6},{\"id\":105,\"value\":315,\"score\":0},{\"id\":106,\"value\":318,\"score\":1},{\"id\":107,\"value\":321,\"score\":2},{\"id\":108,\"value\":324,\"score\":3},{\"id\":109,\"value\":327,\"score\":4},{\"id\":110,\"value\":330,\"score\":5},{\"id\":111,\"value\":333,\"score\":6},{\"id\":112,\"value\":336,\"score\":0},{\"id\":113,\"value\":339,\"score\":1},{\"id\":114,\"value\":342,\"score\":2},{\"id\":115,\"value\":345,\"score\":3},{\"id\":116,\"value\":348,\"score\":4},{\"id\":117,\"value\":351,\"score\":5},{\"id\":118,\"value\":354,\"score\":6},{\"id\":119,\"value\":357,\"score\":0},{\"id\":120,\"value\":360,\"score\":1},{\"id\":121,\"value\":363,\"score\":2},{\"id\":122,\"value\":366,\"score\":3},{\"id\":123,\"value\":369,\"score\":4},{\"id\":124,\"value\":372,\"score\":5},{\"id\":125,\"value\":375,\"score\":6},{\"id\":126,\"value\":378,\"score\":0},{\"id\":127,\"value\":381,\"score\":1},{\"id\":128,\"value\":384,\"score\":2},{\"id\":129,\"value\":387,\"score\":3},{\"id\":130,\"value\":390,\"score\":4},{\"id\":131,\"value\":393,\"score\":5},{\"id\":132,\"value\":396,\"score\":6},{\"id\":133,\"value\":399,\"score\":0},{\"id\":134,\"value\":402,\"score\":1},{\"id\":135,\"value\":405,\"score\":2},{\"id\":136,\"value\":408,\"score\":3},{\"id\":137,\"value\":411,\"score\":4},{\"id\":138,\"value\":414,\"score\":5},{\"id\":139,\"value\":417,\"score\":6},{\"id\":140,\"value\":420,\"score\":0},{\"id\":141,\"value\":423,\"score\":1},{\"id\":142,\"value\":426,\"score\":2},{\"id\":143,\"value\":429,\"score\":3},{\"id\":144,\"value\":432,\"score\":4},{\"id\":145,\"value\":435,\"score\":5},{\"id\":146,\"value\":438,\"score\":6},{\"id\":147,\"value\":441,\"score\":0},{\"id\":148,\"value\":444,\"score\":1},{\"id\":149,\"value\":447,\"score\":2},{\"id\":150,\"value\":450,\"score\":3},{\"id\":151,\"value\":453,\"score\":4},{\"id\":152,\"value\":456,\"score\":5},{\"id\":153,\"value\":459,\"score\":6},{\"id\":154,\"value\":462,\"score\":0},{\"id\":155,\"value\":465,\"score\":1},{\"id\":156,\"value\":468,\"score\":2},{\"id\":157,\"value\":471,\"score\":3},{\"id\":158,\"value\":474,\"score\":4},{\"id\":159,\"value\":477,\"score\":5},{\"id\":160,\"value\":480,\"score\":6},{\"id\":161,\"value\":483,\"score\":0},{\"id\":162,\"value\":486,\"score\":1},{\"id\":163,\"value\":489,\"score\":2},{\"id\":164,\"value\":492,\"score\":3},{\"id\":165,\"value\":495,\"score\":4},{\"id\":166,\"value\":498,\"score\":5},{\"id\":167,\"value\":501,\"score\":6},{\"id\":168,\"value\":504,\"score\":0},{\"id\":169,\"value\":507,\"score\":1},{\"id\":170,\"value\":510,\"score\":2},{\"id\":171,\"value\":513,\"score\":3},{\"id\":172,\"value\":516,\"score\":4},{\"id\":173,\"value\":519,\"score\":5},{\"id\":174,\"value\":522,\"score\":6},{\"id\":175,\"value\":525,\"score\":0},{\"id\":176,\"value\":528,\"score\":1},{\"id\":177,\"value\":531,\"score\":2},{\"id\":178,\"value\":534,\"score\":3},{\"id\":179,\"value\":537,\"score\":4},{\"id\":180,\"value\":540,\"score\":5},{\"id\":181,\"value\":543,\"score\":6},{\"id\":182,\"value\":546,\"score\":0},{\"id\":183,\"value\":549,\"score\":1},{\"id\":184,\"value\":552,\"score\":2},{\"id\":185,\"value\":555,\"score\":3},{\"id\":186,\"value\":558,\"score\":4},{\"id\":187,\"value\":561,\"score\":5},{\"id\":188,\"value\":564,\"score\":6},{\"id\":189,\"value\":567,\"score\":0},{\"id\":190,\"value\":570,\"score\":1},{\"id\":191,\"value\":573,\"score\":2},{\"id\":192,\"value\":576,\"score\":3},{\"id\":193,\"value\":579,\"score\":4},{\"id\":194,\"value\":582,\"score\":5},{\"id\":195,\"value\":585,\"score\":6},{\"id\":196,\"value\":588,\"score\":0},{\"id\":197,\"value\":591,\"score\":1},{\"id\":198,\"value\":594,\"score\":2},{\"id\":199,\"value\":597,\"score\":3}],\"last_seq_rx_state_\":1}}}]",
+          "hydration": {
+            "sent_bytes": 414,
+            "received_bytes": 26247,
+            "sent_frames": 3,
+            "received_frames": 4,
+            "largest_frame_bytes": 26011,
+            "delta_bytes": {
+              "reflex___state____state": 1391,
+              "reflex___state____state.wire_delta___state____wire_state": 24226,
+              "reflex___state____state.reflex___state____on_load_internal_state": 2,
+              "reflex___state____state.reflex___state____frontend_event_exception_state": 2,
+              "reflex___state____state.reflex___state____update_vars_internal_state": 2,
+              "reflex___state____state.reflex___istate___shared____shared_state_base_internal": 2
+            }
+          }
+        }
+      ],
+      "fixture_hash": "sha256:e27163f0e3d8cb949beea2789bf4f51d676668882252f8461a14fbe6d4d3e5e1"
+    },
+    {
+      "id": "wire.event",
+      "params": {
+        "shape": "simple"
+      },
+      "kind": "track",
+      "version": "sha256:0cd27e91b6e81d847c08c972bfb40918602687e24f58ac12d4076418ed935366",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.event/c294962a6c23/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/wire.py\", line 670, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.event/c294962a6c23/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "request_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_frames": {
+          "unit": "1",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "wire.event",
+      "params": {
+        "shape": "complex"
+      },
+      "kind": "track",
+      "version": "sha256:0cd27e91b6e81d847c08c972bfb40918602687e24f58ac12d4076418ed935366",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.event/5c96052421a7/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/wire.py\", line 670, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.event/5c96052421a7/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "request_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_frames": {
+          "unit": "1",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "wire.event",
+      "params": {
+        "shape": "cross"
+      },
+      "kind": "track",
+      "version": "sha256:0cd27e91b6e81d847c08c972bfb40918602687e24f58ac12d4076418ed935366",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.event/2a9ca27a6fd5/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/wire.py\", line 670, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.event/2a9ca27a6fd5/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "request_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_frames": {
+          "unit": "1",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "wire.event",
+      "params": {
+        "shape": "background"
+      },
+      "kind": "track",
+      "version": "sha256:0cd27e91b6e81d847c08c972bfb40918602687e24f58ac12d4076418ed935366",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.event/5b7cdc1ea137/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/wire.py\", line 670, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.event/5b7cdc1ea137/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "request_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_frames": {
+          "unit": "1",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "wire.hydrate",
+      "params": {},
+      "kind": "track",
+      "version": "sha256:21d83864ab9f1fc4c82b4ce2a568947ba61959ccd2de61a0410905ca5316a57a",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.hydrate/44136fa355b3/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/wire.py\", line 670, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.hydrate/44136fa355b3/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "hydrate_sent_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "hydrate_received_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "hydrate_frames": {
+          "unit": "1",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "wire.navigate",
+      "params": {
+        "route": "counter"
+      },
+      "kind": "track",
+      "version": "sha256:59d11d86f0088fab691cda1e35d176f15677cffef3cd197f4c8d33bfd1ffa41a",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.navigate/04ad3c330864/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/wire.py\", line 670, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.navigate/04ad3c330864/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "request_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_frames": {
+          "unit": "1",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    },
+    {
+      "id": "wire.navigate",
+      "params": {
+        "route": "item"
+      },
+      "kind": "track",
+      "version": "sha256:59d11d86f0088fab691cda1e35d176f15677cffef3cd197f4c8d33bfd1ffa41a",
+      "status": "failed",
+      "error": "RuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.navigate/b3e234efd5ee/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "traceback_tail": "  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/registry.py\", line 536, in _call\n    method(self.ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/wire.py\", line 670, in setup_cache\n    prepare_app(ctx)\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/suites/events.py\", line 558, in prepare_app\n    ).check()\n      ^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-bench/src/reflex_bench/drivers/app_process.py\", line 930, in check\n    raise RuntimeError(msg)\nRuntimeError: reflex compile exited with code 1:\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1552, in main\n    rv = self.invoke(ctx)\n         ^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 2032, in invoke\n    return _process_result(sub_ctx.command.invoke(sub_ctx))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 1415, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/.venv/lib/python3.12/site-packages/click/core.py\", line 910, in invoke\n    return callback(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/reflex.py\", line 846, in compile\n    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger=\"cli_compile\")\n  File \"/home/runner/work/reflex/reflex/reflex/utils/prerequisites.py\", line 339, in get_compiled_app\n    app._compile(\n  File \"/home/runner/work/reflex/reflex/reflex/app.py\", line 1734, in _compile\n    compiler.compile_app(\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 1322, in compile_app\n    compile_ctx.compile(\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 716, in compile\n    page_ctx = self.hooks.eval_page(\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-base/src/reflex_base/plugins/compiler.py\", line 268, in eval_page\n    result = hook_impl(page_fn, page=page, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/plugins/builtin.py\", line 42, in eval_page\n    component = compiler.into_component(page_fn)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/reflex/compiler/compiler.py\", line 968, in into_component\n    component_called = component()\n                       ^^^^^^^^^^^\n  File \"/home/runner/work/_temp/reflex-bench/cache/82392594f85d349f757f6b39a1b1e9f9b87c03f2/wire.navigate/b3e234efd5ee/app/playground/pages/charts.py\", line 89, in charts\n    rx.plotly(data=ChartsState.figure.to(Any)),\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/reflex/reflex/packages/reflex-components-plotly/src/reflex_components_plotly/plotly.py\", line 307, in create\n    from plotly.graph_objs.layout import Template\nModuleNotFoundError: No module named 'plotly'\nHappened while evaluating page 'charts'",
+      "dims": {},
+      "metrics": {
+        "request_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_bytes": {
+          "unit": "B",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        },
+        "response_frames": {
+          "unit": "1",
+          "direction": "lower",
+          "assume": "exact",
+          "samples": {},
+          "summary": {},
+          "comparison": null,
+          "warnings": []
+        }
+      },
+      "sample_meta": [],
+      "sample_extra": [],
+      "failed_arms": [
+        "A"
+      ]
+    }
+  ]
+}
