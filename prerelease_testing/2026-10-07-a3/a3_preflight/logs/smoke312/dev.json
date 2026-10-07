@@ -1,0 +1,15 @@
+{
+  "url": "http://localhost:3500/",
+  "title": "Smoke312 | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "Welcome to Reflex!\n\nGet started by editing smoke312/smoke312.py\n\nCheck out our docs!"
+}

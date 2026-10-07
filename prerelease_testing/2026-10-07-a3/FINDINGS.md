@@ -11,7 +11,12 @@ Previous pass (a2 train): [../2026-10-07/FINDINGS.md](../2026-10-07/FINDINGS.md)
 ## Pre-flight (orchestrator)
 - 19:25 UTC: `Release from changelog` run 37673748075 built reflex-base 0.10.0a3; its `publish` job waits for environment
   approval, so reflex / reflex-base 0.10.0a3 are not on PyPI yet (discovery script: 18/20 OK, the two a3 packages
-  "NOT ON PYPI"). Agents started with positive controls on a2 / 0.9.12 meanwhile.
+  "NOT ON PYPI"). Agents started with positive controls on a2 / 0.9.12 meanwhile. After the maintainer approved the
+  publish jobs, reflex-base 0.10.0a3 and reflex 0.10.0a3 (uploaded 19:51:42 UTC) resolved on PyPI at 19:52 UTC.
+- 19:52 UTC: all 20 train packages published with wheel + sdist; `.pyi` audit PASS (122 stubs, wheel == sdist, counts match
+  `pyi_hashes.json`, no foreign stubs). Published reflex 0.10.0a3 pins `reflex-base==0.10.0a3` exactly, so any install
+  or upgrade of reflex a3 brings the reflex-base fixes with it. `db` extra: alembic, `greenlet>=3.3`, pydantic, sqlmodel.
+- Blank-app smoke on a3 (`reflex init --template blank`, dev and prod): clean in Chromium.
 - reflex-enterprise 0.9.7a5: the offline wheel and the PyPI wheel differ only in `constants.py` (`IS_OFFLINE = True`).
   a4 → a5 changes only `formatColumnDefs` in `components/ag_grid/aggrid.py` (the `typeof __reflex === 'undefined'` early
   return and the unused `jsx`/`Fragment` lookups are gone) plus the CHANGELOG entry (enterprise#260). Metadata unchanged:
@@ -20,7 +25,7 @@ Previous pass (a2 train): [../2026-10-07/FINDINGS.md](../2026-10-07/FINDINGS.md)
 ## Re-verification table (must-fix findings of the a2 pass)
 | id | a2-pass status | a3 result | evidence | item |
 |---|---|---|---|---|
-| N-001 greenlet missing from `reflex[db]` | HIGH, all fresh installs | _pending_ | | a3_preflight |
+| N-001 greenlet missing from `reflex[db]` | HIGH, all fresh installs | **fixed**: fresh `reflex[db]==0.10.0a3` with uv and pip on 3.11–3.14 resolves greenlet 3.5.6 + SQLAlchemy 2.1.4 through the extra (8/8); `rx.Model`, `reflex db init/makemigrations/migrate` and prod CRUD work | `a3_preflight/logs/03-*`, `04-*`, `dbcli-prod.*` | a3_preflight |
 | N-025 prod AG Grid Var `column_defs` empty | HIGH regression | _pending_ | | a3_ent_grid |
 | N-032 OIDC cross-tab logout | HIGH regression | _pending_ | | a3_ent_auth |
 | N-004 0.10 state unreadable by 0.9 | MEDIUM, decided: document | _pending_ | | a3_class_state |
