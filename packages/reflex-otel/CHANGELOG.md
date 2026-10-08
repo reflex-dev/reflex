@@ -2,7 +2,7 @@
 
 <!-- towncrier release notes start -->
 
-## v0.2.0a1 (2026-10-06)
+## v0.2.0 (2026-10-08)
 
 ### Breaking Changes
 
