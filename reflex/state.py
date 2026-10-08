@@ -2627,7 +2627,7 @@ def _load_events_for_page(
         return None
     state.is_hydrated = False
     return [
-        *Event.from_event_type(load_events, router_data=state.router_data),
+        *Event.from_event_type(load_events),
         OnLoadInternalState.set_is_hydrated(True),
     ]
 
@@ -2940,24 +2940,9 @@ def serialize_state_update(update: StateUpdate) -> dict:
     Returns:
         The serialized StateUpdate.
     """
-    payload = {
+    return {
         name: value for name in _STATE_UPDATE_FIELDS if (value := getattr(update, name))
     }
-    if update.events:
-        payload["events"] = [
-            dataclasses.replace(
-                event,
-                router_data={
-                    key: value
-                    for key, value in event.router_data.items()
-                    if key in constants.ROUTER_DATA_INCLUDE
-                },
-            )
-            if event.router_data
-            else event
-            for event in update.events
-        ]
-    return payload
 
 
 def code_uses_state_contexts(javascript_code: str) -> bool:

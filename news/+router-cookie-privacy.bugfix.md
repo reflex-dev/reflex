@@ -1,1 +1,1 @@
-Stop sending request cookies, including HttpOnly cookies, and standard authorization, Cloudflare Access, and OAuth2 Proxy credential headers to frontend router data. Outbound events include only navigation metadata; server-side access to request headers is unchanged.
+Stop sending request cookies, including HttpOnly cookies, and standard authorization, Cloudflare Access, and OAuth2 Proxy credential headers to frontend router data. On-load events no longer copy request router metadata to the frontend; server-side access to request headers is unchanged.

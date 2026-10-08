@@ -74,6 +74,7 @@ from reflex.state import (
     OnLoadInternalState,
     State,
     StateUpdate,
+    _load_events_for_page,
     is_serializable,
     state_snapshot_hashes,
 )
@@ -344,29 +345,41 @@ def test_router_cookies_not_sent_to_frontend(test_state: TestState, method: str)
     assert test_state.router.headers.cookie == "session=secret"
 
 
-def test_frontend_events_do_not_serialize_request_headers():
-    """Outbound events retain navigation data without leaking request headers."""
+def test_load_events_do_not_copy_router_data(app_module_mock):
+    """On-load events leave routing in the server context without copying headers.
+
+    Args:
+        app_module_mock: The mock module holding the app.
+    """
+    app = app_module_mock.app = App(_state=State)
+    script = rx.call_script("window.loaded = true")
+    app.add_page(
+        lambda: "hello",
+        route="/",
+        on_load=[script, TestState.set_num1(1)],
+    )
     router_data: dict[str, Any] = {
         RouteVar.PATH: "/",
         RouteVar.ORIGIN: "https://example.com/",
         RouteVar.QUERY: {"name": "test"},
         RouteVar.HEADERS: {"cookie": "session=secret", "user-agent": "browser"},
     }
-    frontend_event = Event(
-        name="_call_function",
-        router_data=router_data,
-        payload={"javascript_code": "window.loaded = true"},
-    )
-    update = StateUpdate(events=[frontend_event])
-
-    payload = json.loads(json_dumps(update))
+    state = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.router_data = router_data
+    state.router = RouterData.from_router_data(router_data)
+    load_events = _load_events_for_page(state)
+    assert load_events is not None
+    assert len(load_events) == 3
+    frontend_event, backend_event, _ = load_events
+    assert isinstance(frontend_event, Event)
+    assert isinstance(backend_event, Event)
+    assert frontend_event.router_data == {}
+    assert backend_event.router_data == {}
+    payload = json.loads(json_dumps(StateUpdate(events=[frontend_event])))
 
     assert "secret" not in json_dumps(payload)
-    assert payload["events"][0]["router_data"] == {
-        key: router_data[key] for key in constants.ROUTER_DATA_INCLUDE
-    }
-    assert payload["events"][0]["payload"] == frontend_event.payload
-    assert frontend_event.router_data is router_data
+    assert payload["events"][0]["payload"] == Event.from_event_type(script)[0].payload
+    assert state.router_data is router_data
     assert router_data[RouteVar.HEADERS]["cookie"] == "session=secret"
 
 
