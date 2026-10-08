@@ -1,0 +1,3 @@
+reflex 0.9.12 reflex-dynoselect 0.1.0
+dynotimezone(): EXC AttributeError: type object 'Dynotimezone_n1' has no attribute 'set_search_phrase' @ ['dynoselect.py:369', 'dynoselect.py:192']
+dynolanguage(): EXC AttributeError: 'dict' object has no attribute 'value' @ ['probe_dynoselect.py:22', 'dynoselect.py:510']

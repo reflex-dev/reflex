@@ -1,0 +1,36 @@
+{
+ "S": {
+  "observe_windows_5s": [],
+  "finals": {
+   "t0": "s5",
+   "t1": "s5",
+   "t2": "s5",
+   "t3": "s5",
+   "t4": "s5",
+   "t5": "s5",
+   "t6": "s5"
+  },
+  "ls_final": "s5",
+  "storage_events_per_tab": {
+   "t0": 0,
+   "t1": 5,
+   "t2": 5,
+   "t3": 5,
+   "t4": 5,
+   "t5": 5,
+   "t6": 5
+  },
+  "uvi_per_tab": {
+   "t0": 0,
+   "t1": 3,
+   "t2": 3,
+   "t3": 4,
+   "t4": 3,
+   "t5": 3,
+   "t6": 4
+  },
+  "frames_total": 87,
+  "frames_in_quiet_2s": 0,
+  "converged": true
+ }
+}

@@ -1,0 +1,16 @@
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (<frozen abc>:106)
+`rx._x` contains experimental features and might be removed at any time in the future.
+reflex 0.9.12 python 3.12.3
+ROW parent var 'set_color' + child var 'color' (auto setter name collides) | created; C.set_color is StringCastedVar; setvar=EventHandlerSetVar
+ROW add_var parent/child + field default on a dynamic var | P.dyn=7 C.dyn=<reflex.Var>-4433520252268652742</reflex.Var>reflex___state____state____main_____p3.dyn_rx_state_ C.dyn2=x C.add_var(dyn) accepted P.dyn=5 accepted field default 8 -> 8
+ROW ComponentState.create x50 with cls.__fields__ defaults/factory/storage key | 50 instances own defaults=False; plain instance text='v49' items=['v49']; template field untouched=False; storage keys=1 (want 51: theme + 50 per-key) sample=['theme_k49']; reset->'v49'
+ROW ComponentState get_component doing `cls.text = initial` (a3 docs pattern) | accepted
+ROW ComponentState: get_component called directly on the template | after T.get_component on the template: template default='y'; a='y' b='y'
+ROW mixin field default before/after concrete states (docs: only later states) | A (before)=5 B (after)=5; A owns copy=False; M.m=2 accepted A.m=2 accepted
+ROW ClassVar / new names | C.x=6 (ClassVar over inherited var): ok; P.x=2 (var): ok; P.CFG=9: ok; C.CFG=10: ok; P.brand_new=1: ok; C.brand_new=2: ok | C.x=6 P.CFG=9 C.CFG=10 'x' in C.__fields__=True inst(C).x=1
+ROW delete inherited via substate / delete+re-set on declaring class | EXC AttributeError: type object 'C11' has no attribute 'x' @ probe_internals.py:200
+ROW rx.Model vars + default_factory + pickle + reset | EXC PicklingError: Can't pickle <class '__main__.S12'>: attribute lookup S12 on __main__ failed @ probe_internals.py:223
+ROW setvar / auto setters | EXC AttributeError: 'S13' object has no attribute 'set_v' @ state.py:1959
+ROW rx._x.client_state | client_state ok: ClientStateVar
+ROW rx.SharedState subclass | SharedState field default -> 3; SS.count=1 accepted; links default=None
+ROW dynamic route /post/[slug] | route arg var on State: True type=DynamicRouteVar

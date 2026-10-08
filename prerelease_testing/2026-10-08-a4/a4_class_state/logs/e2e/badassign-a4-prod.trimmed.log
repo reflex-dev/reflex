@@ -1,0 +1,23 @@
+──────────────────────────── Initializing badassign ────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized badassign. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-a4/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-a4/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 336, in get_compiled_app
+    app, app_module = get_and_validate_app(
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-a4/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 303, in get_and_validate_app
+    app_module = get_app(reload=reload)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-a4/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 263, in get_app
+    __import__(module, fromlist=(constants.CompileVars.APP,))
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_class_state/run/ba-a4-prod/badassign/badassign.py", line 13, in <module>
+    State.count = 5  # worked silently on 0.9.12 (instances still started at 0); TypeError on 0.10.0a4
+    ^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-a4/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4776, in __setattr__
+    raise _state_var_assignment_error(cls, name, "assigning")
+TypeError: 'count' is a state var of State; assigning it on the class would replace the var. Set its default with State.__fields__['count'].default = ..., or declare class-level config as ClassVar.

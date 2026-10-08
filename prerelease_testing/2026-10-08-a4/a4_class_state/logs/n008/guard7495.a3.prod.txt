@@ -1,0 +1,26 @@
+reflex 0.10.0a3 REFLEX_ENV_MODE=prod
+own class mangled self.__own (GChild)                                          -> accepted -> 3
+mixin mangled self.__mxv (GMixin)                                              -> accepted -> 1
+base mangled self.__bv (GBase)                                                 -> accepted -> 2
+underscore class _GUnder self.__u                                              -> accepted -> 4
+double-underscore class __GDunderName self.__d                                 -> accepted -> 5
+non-state Helper().poke(state) -> _Helper__h                                   -> accepted
+non-state Helper.poke_static(state) -> _Helper__hs                             -> accepted
+_sneaky__name = 1 (single _, '__' inside, undeclared)                          -> accepted
+_GChild__typo = 1 (own-prefix, undeclared; by design plain)                    -> accepted
+_GBase__x via setattr (base prefix)                                            -> accepted
+_State__x via setattr (rx.State in MRO)                                        -> accepted
+_BaseState__x via setattr (framework class in MRO)                             -> accepted
+_object__x via setattr                                                         -> accepted
+_OtherState__x via setattr (unrelated state name)                              -> accepted
+__x via setattr (dunder-prefixed string)                                       -> accepted
+__x__ via setattr (dunder)                                                     -> accepted
+_typo_x (control, no __)                                                       -> accepted
+typo (control, public)                                                         -> accepted
+_x__ (trailing __ only)                                                        -> accepted
+ComponentState generated class GTmpl_n1 tmpl self.__t                          -> accepted -> 8
+   local classes renamed to GLocal/GLocalSub, __original_name__='GLocal'/'GLocalSub'
+locally defined state self.__loc                                               -> accepted -> 9
+locally defined substate self.__locsub                                         -> accepted -> 10
+locally defined substate inherited self.__loc                                  -> accepted -> 9
+state whose __name__ was changed after creation, self.__r                      -> accepted -> 11

@@ -1,0 +1,4 @@
+python 3.12.3 venv a4_class_state-a4
+(1) set/restore field default: errors=0 final count=0 _f='d' field=(0, 'd', None) want (0, 'd', None) | instance creations that raised mid-update: 0 []
+(2) mock.patch.object(field,'default') x8 threads: errors=0 final field default=61221 fresh instance=61221
+(2') same on a plain Python object attribute: errors=0 final=71397

@@ -1,0 +1,43 @@
+reflex 0.9.12 reflex-base 0.9.12 python 3.12.3 venv a4_class_state-s912
+CASE del_unassigned_frontend | del=ok | class-dict entry after=NoneType | 'count' in get_fields=True | S.count is Var=False | fresh=0 | inst write=ok -> 3
+CASE del_unassigned_backend | del=ok | class-dict entry after=NoneType | fresh=1 | field default=1
+CASE del_twice_after_one_assignment | assign10=ok fresh=0 | del#1=ok fresh=0 | del#2=AttributeError: type object 'S3' has no attribute 'count' fresh=0 (depth -)
+CASE self_assign_after_config | S.count=10; S.count=S.count -> ok, fresh=0 | S._b=10; S._b=S._b -> ok, fresh=0
+CASE self_assign_no_config | S.count=S.count -> ok, fresh=0 | S._b=S._b -> ok, fresh=0
+CASE manual_save_restore_getattr | restore count -> ok, fresh=0 | restore _b -> ok, fresh=0
+CASE over16_assign_then_restore | 20 assignments 1..20, then 21 restores -> ['0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'] (orig 0)
+CASE over16_nested_monkeypatch | 20 nested monkeypatches: during=0 after LIFO undo=0 (orig 0) errors=[]
+CASE config_then_17_patch_roundtrips | config 10, 17 sequential patch round trips -> fresh=0 depth=- errors=[]
+CASE rejected_wrong_type_then_undo | config 10; monkeypatch.setattr(S,'count','bad') -> ok | during=0 | undo=ok | after=0 (want 10)
+CASE rejected_var_then_undo | config 10; monkeypatch.setattr(S,'count',Other.y (a Var)) -> ok | during=0 | undo=ok | after=0 (want 10)
+CASE rejected_field_then_undo | config 10; monkeypatch.setattr(S,'count',rx.field(5)) -> ok | during=0 | undo=ok | after=0 (want 10)
+CASE rejected_raising_factory_then_undo | config 10; monkeypatch.setattr(S,'count',lambda: 1/0) -> ok | during=0 | undo=ok | after=0 (want 10)
+CASE rejected_var_then_undo_mock | config 10; with mock.patch.object(S,'count',Other.y) -> no error | after=0 (want 10)
+CASE rejected_wrong_type_then_undo_mock | config 10; with mock.patch.object(S,'count','bad') -> no error | after=0 (want 10)
+CASE rejected_in_user_code_no_restore | S.count='bad' -> ok (depth now -) | later patch 5 -> ok + undo -> ok -> 0 | stray del -> ok, fresh=0
+CASE declared_factory_raises_on_plain_assign | declared factory calls: at class creation=0, by assigning a factory=0 | S.v='plain' after configuring a factory -> ok, fresh=<EXC RuntimeError: factory needs app context> | fresh class, raising declared factory, S2.v='x' -> ok
+CASE declared_factory_raising_assign_then_mp_undo_with_config | config factory; it later raises; monkeypatch.setattr(S,'v','patched') -> ok | undo -> ok | field now default='d' factory=None (want factory=cfg)
+CASE parent_patch_via_child_monkeypatch | patch via child -> ok; during P,C=('1', '1'); undo -> ok; after P=1 C=1 ; C.x still Var=True
+CASE parent_patch_via_child_mock | mock via child -> ok; during=('1', '1', '1'); after P.x=1 C.x=1 C._y=1 P._y=1
+CASE grandchild_patch | patch via grandchild -> ok; during P,C,G=('1', '1', '1'); undo -> ok; after=('1', '1', '1')
+CASE mixin_patch | patch mixin -> ok; undo -> ok; U(before)=1 U2(during)=1 U3(after)=1 | patch U._mb -> ok during=1 undo -> ok after=1 mixin _mb=1
+CASE shadowing_child_var | cannot declare shadowing var: BaseVarShadowsInheritedVarError: The var `x` in __main__.C37 shadows a var inherited from __m
+CASE componentstate_per_instance_defaults_and_patch | 3 instances count/_hidden=[('0', '0'), ('0', '0'), ('0', '0')] | template Ctr.count field=0 | reset->(0, 0) | patch inst2 -> ok during=0 undo -> ok | reset after restore -> 0 (want 20)
+CASE reset_after_assignment_and_after_restore | after assign: reset -> (0, [1]) (want (10,[7])) | del -> ok,ok | reset -> (0, [1]) (want (0,[1])) | fresh=0,[1]
+CASE storage_declared_factory_calls_str_ann | (#7498 known: str annotation) cumulative factory calls [('class', 0), ('is_client_storage', 0), ('compile', 0), ('2 instances', 2), ("assign 'x'", 2), ('inst+compile', 3)] | before=None | assign -> ok | after=None | fresh='d' is_cs=False
+CASE storage_declared_factory_calls_storage_ann | cumulative factory calls [('class', 0), ('is_client_storage', 0), ('compile', 0), ('2 instances', 2), ("assign 'x'", 2), ('inst+compile', 3)] | before={'kind': 'local', 'sync': False} | assign -> ok | after={'kind': 'local', 'sync': False} | fresh='d' is_cs=True
+CASE storage_assigned_factory_calls | S.v = fac -> ok | calls at assignment=0 after 2 instances+compile=0 | entry={'kind': 'local', 'name': 'k', 'sync': False} fresh='d'
+CASE storage_plain_returning_factory_on_storage_factory_decl | declared storage factory + assigned plain factory -> ok | calls at assign={'d': 0, 'a': 0} after inst={'d': 1, 'a': 0} | entry=None fresh='d'
+CASE storage_optional_none | v: Optional[str] = LocalStorage('d', name='kopt'): before=(True, {'kind': 'local', 'name': 'kopt', 'sync': False}) | S.v=None -> ok (True, {'kind': 'local', 'name': 'kopt', 'sync': False}, "'d'") | then S.v='x' -> ok (True, {'kind': 'local', 'name': 'kopt', 'sync': False}, "'d'")
+CASE storage_union_annotation_nonstr | v: Union[str,int] = LocalStorage(name='kany'): before=(True, {'kind': 'local', 'name': 'kany', 'sync': False}) | S.v=5 -> ok (True, {'kind': 'local', 'name': 'kany', 'sync': False}, "'d'")
+CASE storage_options_kept | Cookie(max_age,path,same_site,secure): assign -> ok; same entry=True; after={'kind': 'cookie', 'name': 'ckopt', 'path': '/p', 'maxAge': 3600, 'secure': True, 'sameSite': 'strict'}; fresh='d'; type=Cookie || LocalStorage(sync=True): assign -> ok; same entry=True; after={'kind': 'local', 'name': 'lsopt', 'sync': True}; fresh='d'; type=LocalStorage || SessionStorage(name): assign -> ok; same entry=True; after={'kind': 'session', 'name': 'ssopt'}; fresh='d'; type=SessionStorage
+CASE storage_restore_after_plain_assign | patch LocalStorage var 'patched' -> ok during=(True, {'kind': 'local', 'name': 'krest', 'sync': False}, "'d'") | undo -> ok | after default='d' type=LocalStorage name=krest is_cs=True
+CASE storage_cs_multi_instances_same_key | 3 ComponentState instances (fresh pref, entry pref, entry nameless): [("'light'", {'kind': 'local', 'name': 'box_pref', 'sync': False}, {'kind': 'local', 'sync': False}), ("'light'", {'kind': 'local', 'name': 'box_pref', 'sync': False}, {'kind': 'local', 'sync': False}), ("'light'", {'kind': 'local', 'name': 'box_pref', 'sync': False}, {'kind': 'local', 'sync': False})]
+CASE pickle_with_undo_stack | __getstate__ keys=['_b', '_backend_vars', '_reflex_internal_links', 'count', 'dirty_substates', 'dirty_vars', 'label', 'router_data'] | b'_replaced_defaults' in pickle=False in _serialize=False | dirty_vars/_backend_vars in _serialize=True/True | schema unchanged by assignment=True | pickle Field=ok:173 deepcopy Field=ok:'Field' | loads count/_b=0,0 | _deserialize=(0, 0)
+CASE patch_then_runtime_assign_then_undo | patch 99; code assigns 77; undo -> ok | after=0 (plain-attribute semantics: 0)
+CASE monkeypatch_delattr_with_config | config 10; monkeypatch.delattr -> ok, during=0 | undo -> ok, after=0 (want 10)
+CASE non_lifo_mock_start_stop | p1.start:0 -> p2.start:0 -> p1.stop:0 -> p2.stop:0 (plain-attribute semantics end at 1)
+CASE thread_stress_assign_restore | 8 threads x 1500 (assign, restore) -> errors=0 [] | count=0 (want 0) | _f='d' default='d' factory=None (want 'd', None) depth=-
+CASE module_reload_reuse | app module reloaded 20x (each assigns 10): fresh=0 depth=- | patch+undo -> ok/ok/0 | 3 dels -> ['ok', "AttributeError: type object 'Sharedm54' has no attribute 'count'", "AttributeError: type object 'Sharedm54' has no attribute 'count'"] fresh=0
+CASE classification_cache_after_restore | plain var, is_cs before=False; patch with LocalStorage -> ok during=(False, None); undo -> ok; after: default='p' is_cs=False entry=None | same without a lookup during the patch: is_cs after=False entry=None
+CASE non_field_attrs_delete_and_set | ClassVar set -> ok (2); del ClassVar -> ok hasattr=False; del method -> ok hasattr=False; del missing -> AttributeError: type object 'S57' has no attribute 'nonexistent'

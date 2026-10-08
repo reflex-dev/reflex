@@ -1,0 +1,158 @@
+F.FF.F
+(a) field default patched with a Var: instance reads NumberCastedVar reflex___state____state__test_a4_converted____other.y_rx_state_
+.FFF.F
+(d) delattr+setattr(77): Svc._quota=77 instance._quota=0 field default=10
+(d) after instance write: instance._quota=5 dirty={'_quota'}
+.F.F
+default over factory: a.items=['shared'] same object=True
+after: default=<dataclasses._MISSING_TYPE object at 0x7f94dde2daf0> factory=<function <lambda> at 0x7f94db8d6700>
+.F.F
+storage before=('local', {'name': 'svc_theme', 'sync': True})
+  during(storage value)=('local', {'name': 'svc_theme2', 'sync': True})
+  during(plain str)=None
+  after=('local', {'name': 'svc_theme', 'sync': True})
+.
+=================================== FAILURES ===================================
+__________________________ test_configured_at_import ___________________________
+
+    def test_configured_at_import():
+>       assert fresh() == CONFIGURED
+E       AssertionError: assert (10, 0, ['a']) == (10, 10, ['a'])
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_a4_converted.py:48: AssertionError
+_________________________ test_check_ctrl_monkeypatch __________________________
+
+    def test_check_ctrl_monkeypatch():
+>       assert fresh() == CONFIGURED
+E       AssertionError: assert (10, 0, ['a']) == (10, 10, ['a'])
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_a4_converted.py:69: AssertionError
+_____________________________ test_case_ctrl_mock ______________________________
+
+    def test_case_ctrl_mock():
+        with mock.patch.object(Svc.__fields__["_quota"], "default", 7):
+>           assert fresh()[1] == 7
+E           assert 0 == 7
+
+test_a4_converted.py:74: AssertionError
+____________________________ test_check_ctrl_nested ____________________________
+
+    def test_check_ctrl_nested():
+>       assert fresh() == CONFIGURED
+E       AssertionError: assert (10, 0, ['a']) == (10, 10, ['a'])
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_a4_converted.py:86: AssertionError
+_________________________________ test_check_a _________________________________
+
+    def test_check_a():
+>       assert fresh() == CONFIGURED
+E       AssertionError: assert (10, 0, ['a']) == (10, 10, ['a'])
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_a4_converted.py:97: AssertionError
+______________________________ test_case_b_mocker ______________________________
+
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7f94db73bfe0>
+
+    def test_case_b_mocker(mocker):
+        mocker.patch.object(Svc.__fields__["_quota"], "default", 5)
+>       assert fresh()[1] == 5
+E       assert 0 == 5
+
+test_a4_converted.py:103: AssertionError
+_________________________________ test_check_b _________________________________
+
+    def test_check_b():
+>       assert fresh() == CONFIGURED
+E       AssertionError: assert (10, 0, ['a']) == (10, 10, ['a'])
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_a4_converted.py:107: AssertionError
+_________________________________ test_check_c _________________________________
+
+    def test_check_c():
+>       assert fresh() == CONFIGURED  # plain attribute semantics: monkeypatch puts back what it saved
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert (10, 0, ['a']) == (10, 10, ['a'])
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_a4_converted.py:118: AssertionError
+_________________________________ test_check_d _________________________________
+
+    def test_check_d():
+>       assert fresh() == CONFIGURED
+E       AssertionError: assert (10, 0, ['a']) == (10, 10, ['a'])
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_a4_converted.py:133: AssertionError
+______________________________ test_check_factory ______________________________
+
+    def test_check_factory():
+>       assert fresh() == CONFIGURED
+E       AssertionError: assert (10, 0, ['a']) == (10, 10, ['a'])
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_a4_converted.py:145: AssertionError
+_______________________ test_check_default_over_factory ________________________
+
+    def test_check_default_over_factory():
+>       assert fresh() == CONFIGURED
+E       AssertionError: assert (10, 0, ['a']) == (10, 10, ['a'])
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff
+
+test_a4_converted.py:158: AssertionError
+__________________________ test_check_substate_field ___________________________
+
+    def test_check_substate_field():
+>       assert fresh() == CONFIGURED and fresh(SvcChild) == CONFIGURED
+E       AssertionError: assert ((10, 0, ['a']) == (10, 10, ['a'])
+E         
+E         At index 1 diff: 0 != 10
+E         Use -v to get more diff)
+
+test_a4_converted.py:169: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_a4_converted.py::test_case_ctrl_monkeypatch
+PASSED test_a4_converted.py::test_case_ctrl_nested
+PASSED test_a4_converted.py::test_case_a_mock_var
+PASSED test_a4_converted.py::test_case_c_assign_inside_window
+PASSED test_a4_converted.py::test_case_d_delattr_then_setattr
+PASSED test_a4_converted.py::test_case_factory
+PASSED test_a4_converted.py::test_case_default_over_factory
+PASSED test_a4_converted.py::test_case_substate_field
+PASSED test_a4_converted.py::test_case_storage_field_patch
+FAILED test_a4_converted.py::test_configured_at_import - AssertionError: asse...
+FAILED test_a4_converted.py::test_check_ctrl_monkeypatch - AssertionError: as...
+FAILED test_a4_converted.py::test_case_ctrl_mock - assert 0 == 7
+FAILED test_a4_converted.py::test_check_ctrl_nested - AssertionError: assert ...
+FAILED test_a4_converted.py::test_check_a - AssertionError: assert (10, 0, ['...
+FAILED test_a4_converted.py::test_case_b_mocker - assert 0 == 5
+FAILED test_a4_converted.py::test_check_b - AssertionError: assert (10, 0, ['...
+FAILED test_a4_converted.py::test_check_c - AssertionError: assert (10, 0, ['...
+FAILED test_a4_converted.py::test_check_d - AssertionError: assert (10, 0, ['...
+FAILED test_a4_converted.py::test_check_factory - AssertionError: assert (10,...
+FAILED test_a4_converted.py::test_check_default_over_factory - AssertionError...
+FAILED test_a4_converted.py::test_check_substate_field - AssertionError: asse...
+12 failed, 9 passed in 0.39s

@@ -1,0 +1,3 @@
+reflex 0.10.0a4 reflex-dynoselect 0.1.0
+dynotimezone(): EXC VarTypeError: Unsupported Operand type(s) for []: ObjectCastedVar, Field @ ['object.py:237', 'number.py:56']
+dynolanguage(): EXC AttributeError: 'dict' object has no attribute 'value' @ ['probe_dynoselect.py:22', 'dynoselect.py:510']

@@ -1,0 +1,10 @@
+--- a3 prod run 1
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 4, "t2": 4, "t3": 4, "t4": 4, "t5": 4, "t6": 4}, "frames_total": 95, "frames_in_quiet_2s": 0, "converged": true}
+--- a3 prod run 2
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 4, "t2": 4, "t3": 4, "t4": 4, "t5": 4, "t6": 4}, "frames_total": 95, "frames_in_quiet_2s": 0, "converged": true}
+--- a3 prod run 3
+S: {"observe_windows_5s": [], "finals": {"t0": "s1", "t1": "s1", "t2": "s0", "t3": "s0", "t4": "s0", "t5": "s1", "t6": "s1"}, "ls_final": "s0", "storage_events_per_tab": {"t0": 5992, "t1": 6019, "t2": 6018, "t3": 5991, "t4": 6043, "t5": 6040, "t6": 6109}, "uvi_per_tab": {"t0": 6029, "t1": 6049, "t2": 6041, "t3": 6009, "t4": 5840, "t5": 5984, "t6": 6109}, "frames_total": 54456, "frames_in_quiet_2s": 11844, "converged"
+--- a3 prod run 4
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 2, "t1": 9, "t2": 9, "t3": 9, "t4": 9, "t5": 9, "t6": 7}, "uvi_per_tab": {"t0": 2, "t1": 4, "t2": 4, "t3": 4, "t4": 4, "t5": 4, "t6": 7}, "frames_total": 105, "frames_in_quiet_2s": 0, "converged": true}
+--- a3 prod run 5
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 4, "t2": 4, "t3": 4, "t4": 4, "t5": 4, "t6": 4}, "frames_total": 95, "frames_in_quiet_2s": 0, "converged": true}

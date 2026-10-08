@@ -1,0 +1,54 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a4_class_state/harness
+plugins: platformdirs-4.12.4, mock-3.16.0, asyncio-1.4.0, anyio-4.15.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 2 items
+
+test_harness_a4.py ──────────────────────────── Initializing h4app_one ────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+INFO:     Started server process [21266]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8305 (Press CTRL+C to quit)
+INFO:     127.0.0.1:33742 - "WebSocket /_event/?token=8e3368bf-bf11-4c0c-cf28-40a49e858ef9&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [21266]
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3305/
+
+
+[a4_class_state-a4 pre=1] one: {"version": "a4_class_state-a4", "preimport": true, "app": "one", "pageerrors": [], "title_visible": true, "shared_text": "10", "box_text": "one-box", "local_text": "0", "shared_after_click": "11", "local_after_click": "1", "body_text": "app one\n\none-box\n\n11\n\ninc shared\n\n1\n\nhit local", "context_has_shared": true}
+.──────────────────────────── Initializing h4app_two ────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+INFO:     Started server process [21266]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8306 (Press CTRL+C to quit)
+INFO:     127.0.0.1:53962 - "WebSocket /_event/?token=3a866b39-cfb4-4c38-d569-9de6149962f8&EIO=4&transport=websocket" [accepted]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [21266]
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:3306/
+
+
+[a4_class_state-a4 pre=1] two: {"version": "a4_class_state-a4", "preimport": true, "app": "two", "pageerrors": [], "title_visible": true, "shared_text": "20", "box_text": "two-box", "local_text": "0", "shared_after_click": "21", "local_after_click": "1", "body_text": "app two\n\ntwo-box\n\n21\n\ninc shared\n\n1\n\nhit local", "context_has_shared": true}
+.
+
+============================== 2 passed in 25.21s ==============================

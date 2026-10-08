@@ -1,0 +1,45 @@
+.F.F.F.F                                                                 [100%]
+=================================== FAILURES ===================================
+___________________ test_a2_sentinel_limit_still_configured ____________________
+
+    def test_a2_sentinel_limit_still_configured():
+>       assert fresh("limit") == 10
+E       AssertionError: assert 0 == 10
+E        +  where 0 = fresh('limit')
+
+test_undo_edge.py:38: AssertionError
+___________________ test_b2_sentinel_quota_still_configured ____________________
+
+    def test_b2_sentinel_quota_still_configured():
+>       assert fresh("_quota") == 10
+E       AssertionError: assert 0 == 10
+E        +  where 0 = fresh('_quota')
+
+test_undo_edge.py:47: AssertionError
+__________________ test_c2_sentinel_limit_back_to_configured ___________________
+
+    def test_c2_sentinel_limit_back_to_configured():
+>       assert fresh("limit") == 10
+E       AssertionError: assert 99 == 10
+E        +  where 99 = fresh('limit')
+
+test_undo_edge.py:57: AssertionError
+__________________ test_d2_sentinel_quota_back_to_configured ___________________
+
+    def test_d2_sentinel_quota_back_to_configured():
+>       assert fresh("_quota") == 10
+E       AssertionError: assert 0 == 10
+E        +  where 0 = fresh('_quota')
+
+test_undo_edge.py:65: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_undo_edge.py::test_a1_mock_patch_with_a_var_is_rejected
+PASSED test_undo_edge.py::test_b1_mocker_patch_with_a_field_is_rejected
+PASSED test_undo_edge.py::test_c1_patch_then_code_under_test_reconfigures
+PASSED test_undo_edge.py::test_d1_monkeypatch_delattr
+FAILED test_undo_edge.py::test_a2_sentinel_limit_still_configured - Assertion...
+FAILED test_undo_edge.py::test_b2_sentinel_quota_still_configured - Assertion...
+FAILED test_undo_edge.py::test_c2_sentinel_limit_back_to_configured - Asserti...
+FAILED test_undo_edge.py::test_d2_sentinel_quota_back_to_configured - Asserti...
+4 failed, 4 passed in 0.81s

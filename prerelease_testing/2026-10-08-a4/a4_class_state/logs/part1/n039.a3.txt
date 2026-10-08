@@ -1,0 +1,1205 @@
+........................................................................ [ 42%]
+.............FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF [ 84%]
+FFFFFFFFFFFFFFFFFFFFFFFFFFs                                              [100%]
+=================================== FAILURES ===================================
+_____________________ test_class_spellings_raise[i-assign] _____________________
+
+name = 'i', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68de8a0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[i-setattr] _____________________
+
+name = 'i', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68df080>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+__________________ test_class_spellings_raise[i-monkeypatch] ___________________
+
+name = 'i', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68dfaa0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+______________________ test_class_spellings_raise[i-mock] ______________________
+
+name = 'i', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68df170>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[s-assign] _____________________
+
+name = 's', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68dede0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[s-setattr] _____________________
+
+name = 's', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674deb0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+__________________ test_class_spellings_raise[s-monkeypatch] ___________________
+
+name = 's', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674e540>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+______________________ test_class_spellings_raise[s-mock] ______________________
+
+name = 's', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674edb0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[f-assign] _____________________
+
+name = 'f', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674f800>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[f-setattr] _____________________
+
+name = 'f', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674d520>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+__________________ test_class_spellings_raise[f-monkeypatch] ___________________
+
+name = 'f', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674e450>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+______________________ test_class_spellings_raise[f-mock] ______________________
+
+name = 'f', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674f830>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[b-assign] _____________________
+
+name = 'b', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6796090>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[b-setattr] _____________________
+
+name = 'b', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6796840>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+__________________ test_class_spellings_raise[b-monkeypatch] ___________________
+
+name = 'b', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67971d0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+______________________ test_class_spellings_raise[b-mock] ______________________
+
+name = 'b', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674e7b0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[lst-assign] ____________________
+
+name = 'lst', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674ec60>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+___________________ test_class_spellings_raise[lst-setattr] ____________________
+
+name = 'lst', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674cef0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_________________ test_class_spellings_raise[lst-monkeypatch] __________________
+
+name = 'lst', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674e1b0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[lst-mock] _____________________
+
+name = 'lst', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6877a40>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[dct-assign] ____________________
+
+name = 'dct', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68dede0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+___________________ test_class_spellings_raise[dct-setattr] ____________________
+
+name = 'dct', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67956d0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_________________ test_class_spellings_raise[dct-monkeypatch] __________________
+
+name = 'dct', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6795970>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[dct-mock] _____________________
+
+name = 'dct', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6797290>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[opt-assign] ____________________
+
+name = 'opt', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6794440>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+___________________ test_class_spellings_raise[opt-setattr] ____________________
+
+name = 'opt', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6795820>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_________________ test_class_spellings_raise[opt-monkeypatch] __________________
+
+name = 'opt', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a4290>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[opt-mock] _____________________
+
+name = 'opt', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6796b40>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[fld-assign] ____________________
+
+name = 'fld', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6795a30>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+___________________ test_class_spellings_raise[fld-setattr] ____________________
+
+name = 'fld', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67948c0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_________________ test_class_spellings_raise[fld-monkeypatch] __________________
+
+name = 'fld', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68de990>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[fld-mock] _____________________
+
+name = 'fld', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6877e00>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+___________________ test_class_spellings_raise[fldf-assign] ____________________
+
+name = 'fldf', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674ec90>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+___________________ test_class_spellings_raise[fldf-setattr] ___________________
+
+name = 'fldf', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674dca0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_________________ test_class_spellings_raise[fldf-monkeypatch] _________________
+
+name = 'fldf', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674f740>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[fldf-mock] _____________________
+
+name = 'fldf', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a4ef0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[dc-assign] _____________________
+
+name = 'dc', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a6000>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[dc-setattr] ____________________
+
+name = 'dc', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a73b0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+__________________ test_class_spellings_raise[dc-monkeypatch] __________________
+
+name = 'dc', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a4920>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[dc-mock] ______________________
+
+name = 'dc', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674ebd0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[ls-assign] _____________________
+
+name = 'ls', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674cfb0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[ls-setattr] ____________________
+
+name = 'ls', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68a0350>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+__________________ test_class_spellings_raise[ls-monkeypatch] __________________
+
+name = 'ls', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68df9b0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[ls-mock] ______________________
+
+name = 'ls', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6796000>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[ck-assign] _____________________
+
+name = 'ck', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67954f0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[ck-setattr] ____________________
+
+name = 'ck', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a5400>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+__________________ test_class_spellings_raise[ck-monkeypatch] __________________
+
+name = 'ck', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a64b0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[ck-mock] ______________________
+
+name = 'ck', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a6ae0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[ss-assign] _____________________
+
+name = 'ss', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a6f90>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[ss-setattr] ____________________
+
+name = 'ss', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67ce180>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+__________________ test_class_spellings_raise[ss-monkeypatch] __________________
+
+name = 'ss', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67ce9c0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[ss-mock] ______________________
+
+name = 'ss', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a7e90>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[_bi-assign] ____________________
+
+name = '_bi', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67a69f0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+___________________ test_class_spellings_raise[_bi-setattr] ____________________
+
+name = '_bi', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a6795ca0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_________________ test_class_spellings_raise[_bi-monkeypatch] __________________
+
+name = '_bi', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67940e0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[_bi-mock] _____________________
+
+name = '_bi', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68a0f80>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[_bl-assign] ____________________
+
+name = '_bl', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674e450>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+___________________ test_class_spellings_raise[_bl-setattr] ____________________
+
+name = '_bl', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674e3c0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_________________ test_class_spellings_raise[_bl-monkeypatch] __________________
+
+name = '_bl', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67cc290>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[_bl-mock] _____________________
+
+name = '_bl', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67ce0f0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[inh-assign] ____________________
+
+name = 'inh', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67cd4f0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+___________________ test_class_spellings_raise[inh-setattr] ____________________
+
+name = 'inh', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67cce30>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_________________ test_class_spellings_raise[inh-monkeypatch] __________________
+
+name = 'inh', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67ce8d0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[inh-mock] _____________________
+
+name = 'inh', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67cd310>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[mx-assign] _____________________
+
+name = 'mx', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67cea50>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_class_spellings_raise[mx-setattr] ____________________
+
+name = 'mx', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a67cc1d0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+__________________ test_class_spellings_raise[mx-monkeypatch] __________________
+
+name = 'mx', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a674ee70>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+_____________________ test_class_spellings_raise[mx-mock] ______________________
+
+name = 'mx', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb4a68a18e0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+E       Failed: DID NOT RAISE TypeError
+
+test_n039_fields.py:98: Failed
+____________________ test_after_class_spellings_declared[i] ____________________
+
+name = 'i'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 30 == 3
+E        +  where 30 = fresh('i')
+
+test_n039_fields.py:112: AssertionError
+____________________ test_after_class_spellings_declared[s] ____________________
+
+name = 's'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 'S' == 's'
+E         
+E         - s
+E         + S
+
+test_n039_fields.py:112: AssertionError
+____________________ test_after_class_spellings_declared[f] ____________________
+
+name = 'f'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 2.5 == 1.5
+E        +  where 2.5 = fresh('f')
+
+test_n039_fields.py:112: AssertionError
+____________________ test_after_class_spellings_declared[b] ____________________
+
+name = 'b'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert True == False
+E        +  where True = fresh('b')
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[lst] ___________________
+
+name = 'lst'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       assert [9] == [1]
+E         
+E         At index 0 diff: 9 != 1
+E         Use -v to get more diff
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[dct] ___________________
+
+name = 'dct'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert {'z': 9} == {'a': 1}
+E         
+E         Left contains 1 more item:
+E         {'z': 9}
+E         Right contains 1 more item:
+E         {'a': 1}
+E         Use -v to get more diff
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[opt] ___________________
+
+name = 'opt'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 7 == None
+E        +  where 7 = fresh('opt')
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[fld] ___________________
+
+name = 'fld'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 40 == 4
+E        +  where 40 = fresh('fld')
+
+test_n039_fields.py:112: AssertionError
+__________________ test_after_class_spellings_declared[fldf] ___________________
+
+name = 'fldf'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert ['y'] == ['x']
+E         
+E         At index 0 diff: 'y' != 'x'
+E         Use -v to get more diff
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[dc] ____________________
+
+name = 'dc'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert DC(a=9) == DC(a=1)
+E         
+E         Differing attributes:
+E         ['a']
+E         
+E         Drill down into differing attribute a:
+E           a: 9 != 1
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[ls] ____________________
+
+name = 'ls'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 'L' == 'l'
+E         
+E         - l
+E         + L
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[ck] ____________________
+
+name = 'ck'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 'C' == 'c'
+E         
+E         - c
+E         + C
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[ss] ____________________
+
+name = 'ss'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 'S2' == 's'
+E         
+E         - s
+E         + S2
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[_bi] ___________________
+
+name = '_bi'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 50 == 5
+E        +  where 50 = fresh('_bi')
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[_bl] ___________________
+
+name = '_bl'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       assert [60] == [6]
+E         
+E         At index 0 diff: 60 != 6
+E         Use -v to get more diff
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[inh] ___________________
+
+name = 'inh'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 10 == 1
+E        +  where 10 = fresh('inh')
+
+test_n039_fields.py:112: AssertionError
+___________________ test_after_class_spellings_declared[mx] ____________________
+
+name = 'mx'
+
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_after_class_spellings_declared(name):
+>       assert fresh(name) == DECLARED[name]
+E       AssertionError: assert 20 == 2
+E        +  where 20 = fresh('mx')
+
+test_n039_fields.py:112: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_n039_fields.py::test_patch_field[i-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[i-mock]
+PASSED test_n039_fields.py::test_patch_field[i-mocker]
+PASSED test_n039_fields.py::test_patch_field[i-factory]
+PASSED test_n039_fields.py::test_patch_field[s-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[s-mock]
+PASSED test_n039_fields.py::test_patch_field[s-mocker]
+PASSED test_n039_fields.py::test_patch_field[s-factory]
+PASSED test_n039_fields.py::test_patch_field[f-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[f-mock]
+PASSED test_n039_fields.py::test_patch_field[f-mocker]
+PASSED test_n039_fields.py::test_patch_field[f-factory]
+PASSED test_n039_fields.py::test_patch_field[b-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[b-mock]
+PASSED test_n039_fields.py::test_patch_field[b-mocker]
+PASSED test_n039_fields.py::test_patch_field[b-factory]
+PASSED test_n039_fields.py::test_patch_field[lst-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[lst-mock]
+PASSED test_n039_fields.py::test_patch_field[lst-mocker]
+PASSED test_n039_fields.py::test_patch_field[lst-factory]
+PASSED test_n039_fields.py::test_patch_field[dct-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[dct-mock]
+PASSED test_n039_fields.py::test_patch_field[dct-mocker]
+PASSED test_n039_fields.py::test_patch_field[dct-factory]
+PASSED test_n039_fields.py::test_patch_field[opt-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[opt-mock]
+PASSED test_n039_fields.py::test_patch_field[opt-mocker]
+PASSED test_n039_fields.py::test_patch_field[opt-factory]
+PASSED test_n039_fields.py::test_patch_field[fld-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[fld-mock]
+PASSED test_n039_fields.py::test_patch_field[fld-mocker]
+PASSED test_n039_fields.py::test_patch_field[fld-factory]
+PASSED test_n039_fields.py::test_patch_field[fldf-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[fldf-mock]
+PASSED test_n039_fields.py::test_patch_field[fldf-mocker]
+PASSED test_n039_fields.py::test_patch_field[fldf-factory]
+PASSED test_n039_fields.py::test_patch_field[dc-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[dc-mock]
+PASSED test_n039_fields.py::test_patch_field[dc-mocker]
+PASSED test_n039_fields.py::test_patch_field[dc-factory]
+PASSED test_n039_fields.py::test_patch_field[ls-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[ls-mock]
+PASSED test_n039_fields.py::test_patch_field[ls-mocker]
+PASSED test_n039_fields.py::test_patch_field[ls-factory]
+PASSED test_n039_fields.py::test_patch_field[ck-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[ck-mock]
+PASSED test_n039_fields.py::test_patch_field[ck-mocker]
+PASSED test_n039_fields.py::test_patch_field[ck-factory]
+PASSED test_n039_fields.py::test_patch_field[ss-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[ss-mock]
+PASSED test_n039_fields.py::test_patch_field[ss-mocker]
+PASSED test_n039_fields.py::test_patch_field[ss-factory]
+PASSED test_n039_fields.py::test_patch_field[_bi-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[_bi-mock]
+PASSED test_n039_fields.py::test_patch_field[_bi-mocker]
+PASSED test_n039_fields.py::test_patch_field[_bi-factory]
+PASSED test_n039_fields.py::test_patch_field[_bl-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[_bl-mock]
+PASSED test_n039_fields.py::test_patch_field[_bl-mocker]
+PASSED test_n039_fields.py::test_patch_field[_bl-factory]
+PASSED test_n039_fields.py::test_patch_field[inh-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[inh-mock]
+PASSED test_n039_fields.py::test_patch_field[inh-mocker]
+PASSED test_n039_fields.py::test_patch_field[inh-factory]
+PASSED test_n039_fields.py::test_patch_field[mx-monkeypatch]
+PASSED test_n039_fields.py::test_patch_field[mx-mock]
+PASSED test_n039_fields.py::test_patch_field[mx-mocker]
+PASSED test_n039_fields.py::test_patch_field[mx-factory]
+PASSED test_n039_fields.py::test_after_all_patches_declared[i]
+PASSED test_n039_fields.py::test_after_all_patches_declared[s]
+PASSED test_n039_fields.py::test_after_all_patches_declared[f]
+PASSED test_n039_fields.py::test_after_all_patches_declared[b]
+PASSED test_n039_fields.py::test_after_all_patches_declared[lst]
+PASSED test_n039_fields.py::test_after_all_patches_declared[dct]
+PASSED test_n039_fields.py::test_after_all_patches_declared[opt]
+PASSED test_n039_fields.py::test_after_all_patches_declared[fld]
+PASSED test_n039_fields.py::test_after_all_patches_declared[fldf]
+PASSED test_n039_fields.py::test_after_all_patches_declared[dc]
+PASSED test_n039_fields.py::test_after_all_patches_declared[ls]
+PASSED test_n039_fields.py::test_after_all_patches_declared[ck]
+PASSED test_n039_fields.py::test_after_all_patches_declared[ss]
+PASSED test_n039_fields.py::test_after_all_patches_declared[_bi]
+PASSED test_n039_fields.py::test_after_all_patches_declared[_bl]
+PASSED test_n039_fields.py::test_after_all_patches_declared[inh]
+PASSED test_n039_fields.py::test_after_all_patches_declared[mx]
+SKIPPED [1] test_n039_fields.py:127: DOWNSTREAM=1 not set
+FAILED test_n039_fields.py::test_class_spellings_raise[i-assign] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[i-setattr] - Failed: D...
+FAILED test_n039_fields.py::test_class_spellings_raise[i-monkeypatch] - Faile...
+FAILED test_n039_fields.py::test_class_spellings_raise[i-mock] - Failed: DID ...
+FAILED test_n039_fields.py::test_class_spellings_raise[s-assign] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[s-setattr] - Failed: D...
+FAILED test_n039_fields.py::test_class_spellings_raise[s-monkeypatch] - Faile...
+FAILED test_n039_fields.py::test_class_spellings_raise[s-mock] - Failed: DID ...
+FAILED test_n039_fields.py::test_class_spellings_raise[f-assign] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[f-setattr] - Failed: D...
+FAILED test_n039_fields.py::test_class_spellings_raise[f-monkeypatch] - Faile...
+FAILED test_n039_fields.py::test_class_spellings_raise[f-mock] - Failed: DID ...
+FAILED test_n039_fields.py::test_class_spellings_raise[b-assign] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[b-setattr] - Failed: D...
+FAILED test_n039_fields.py::test_class_spellings_raise[b-monkeypatch] - Faile...
+FAILED test_n039_fields.py::test_class_spellings_raise[b-mock] - Failed: DID ...
+FAILED test_n039_fields.py::test_class_spellings_raise[lst-assign] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[lst-setattr] - Failed:...
+FAILED test_n039_fields.py::test_class_spellings_raise[lst-monkeypatch] - Fai...
+FAILED test_n039_fields.py::test_class_spellings_raise[lst-mock] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[dct-assign] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[dct-setattr] - Failed:...
+FAILED test_n039_fields.py::test_class_spellings_raise[dct-monkeypatch] - Fai...
+FAILED test_n039_fields.py::test_class_spellings_raise[dct-mock] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[opt-assign] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[opt-setattr] - Failed:...
+FAILED test_n039_fields.py::test_class_spellings_raise[opt-monkeypatch] - Fai...
+FAILED test_n039_fields.py::test_class_spellings_raise[opt-mock] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[fld-assign] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[fld-setattr] - Failed:...
+FAILED test_n039_fields.py::test_class_spellings_raise[fld-monkeypatch] - Fai...
+FAILED test_n039_fields.py::test_class_spellings_raise[fld-mock] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[fldf-assign] - Failed:...
+FAILED test_n039_fields.py::test_class_spellings_raise[fldf-setattr] - Failed...
+FAILED test_n039_fields.py::test_class_spellings_raise[fldf-monkeypatch] - Fa...
+FAILED test_n039_fields.py::test_class_spellings_raise[fldf-mock] - Failed: D...
+FAILED test_n039_fields.py::test_class_spellings_raise[dc-assign] - Failed: D...
+FAILED test_n039_fields.py::test_class_spellings_raise[dc-setattr] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[dc-monkeypatch] - Fail...
+FAILED test_n039_fields.py::test_class_spellings_raise[dc-mock] - Failed: DID...
+FAILED test_n039_fields.py::test_class_spellings_raise[ls-assign] - Failed: D...
+FAILED test_n039_fields.py::test_class_spellings_raise[ls-setattr] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[ls-monkeypatch] - Fail...
+FAILED test_n039_fields.py::test_class_spellings_raise[ls-mock] - Failed: DID...
+FAILED test_n039_fields.py::test_class_spellings_raise[ck-assign] - Failed: D...
+FAILED test_n039_fields.py::test_class_spellings_raise[ck-setattr] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[ck-monkeypatch] - Fail...
+FAILED test_n039_fields.py::test_class_spellings_raise[ck-mock] - Failed: DID...
+FAILED test_n039_fields.py::test_class_spellings_raise[ss-assign] - Failed: D...
+FAILED test_n039_fields.py::test_class_spellings_raise[ss-setattr] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[ss-monkeypatch] - Fail...
+FAILED test_n039_fields.py::test_class_spellings_raise[ss-mock] - Failed: DID...
+FAILED test_n039_fields.py::test_class_spellings_raise[_bi-assign] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[_bi-setattr] - Failed:...
+FAILED test_n039_fields.py::test_class_spellings_raise[_bi-monkeypatch] - Fai...
+FAILED test_n039_fields.py::test_class_spellings_raise[_bi-mock] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[_bl-assign] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[_bl-setattr] - Failed:...
+FAILED test_n039_fields.py::test_class_spellings_raise[_bl-monkeypatch] - Fai...
+FAILED test_n039_fields.py::test_class_spellings_raise[_bl-mock] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[inh-assign] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[inh-setattr] - Failed:...
+FAILED test_n039_fields.py::test_class_spellings_raise[inh-monkeypatch] - Fai...
+FAILED test_n039_fields.py::test_class_spellings_raise[inh-mock] - Failed: DI...
+FAILED test_n039_fields.py::test_class_spellings_raise[mx-assign] - Failed: D...
+FAILED test_n039_fields.py::test_class_spellings_raise[mx-setattr] - Failed: ...
+FAILED test_n039_fields.py::test_class_spellings_raise[mx-monkeypatch] - Fail...
+FAILED test_n039_fields.py::test_class_spellings_raise[mx-mock] - Failed: DID...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[i] - Assertio...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[s] - Assertio...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[f] - Assertio...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[b] - Assertio...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[lst] - assert...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[dct] - Assert...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[opt] - Assert...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[fld] - Assert...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[fldf] - Asser...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[dc] - Asserti...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[ls] - Asserti...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[ck] - Asserti...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[ss] - Asserti...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[_bi] - Assert...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[_bl] - assert...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[inh] - Assert...
+FAILED test_n039_fields.py::test_after_class_spellings_declared[mx] - Asserti...
+85 failed, 85 passed, 1 skipped in 0.73s

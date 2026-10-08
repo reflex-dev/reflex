@@ -1,0 +1,216 @@
+FFFFFFFFFFFFFFFFFF
+[a4_class_state-s912] (d) during the test _quota starts at 0
+.F
+=================================== FAILURES ===================================
+__________________________ test_case_ctrl_monkeypatch __________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9da6af8290>
+
+    def test_case_ctrl_monkeypatch(monkeypatch):
+        monkeypatch.setattr(CTRL_MP, "limit", 99)
+>       assert fresh(CTRL_MP) == (99, 10)
+E       assert (0, 0) == (99, 10)
+E         
+E         At index 0 diff: 0 != 99
+E         Use -v to get more diff
+
+test_v7_undo.py:55: AssertionError
+_________________________ test_check_ctrl_monkeypatch __________________________
+
+    def test_check_ctrl_monkeypatch():
+>       assert fresh(CTRL_MP) == (10, 10)
+E       assert (0, 0) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:59: AssertionError
+_______________________ test_case_ctrl_mock_patch_object _______________________
+
+    def test_case_ctrl_mock_patch_object():
+        with mock.patch.object(CTRL_MOCK, "_quota", 7):
+>           assert fresh(CTRL_MOCK) == (10, 7)
+E           assert (0, 0) == (10, 7)
+E             
+E             At index 0 diff: 0 != 10
+E             Use -v to get more diff
+
+test_v7_undo.py:64: AssertionError
+______________________ test_check_ctrl_mock_patch_object _______________________
+
+    def test_check_ctrl_mock_patch_object():
+>       assert fresh(CTRL_MOCK) == (10, 10)
+E       assert (0, 0) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:68: AssertionError
+______________________ test_case_ctrl_rejected_wrong_type ______________________
+
+    def test_case_ctrl_rejected_wrong_type():
+        # A wrong-type value is rejected AFTER _keep_default is pushed: control for case (a).
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_v7_undo.py:73: Failed
+_____________________ test_check_ctrl_rejected_wrong_type ______________________
+
+    def test_check_ctrl_rejected_wrong_type():
+>       assert fresh(CTRL_BADTYPE) == (10, 10)
+E       assert (0, 0) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:79: AssertionError
+____________________________ test_case_ctrl_nested _____________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9da6afa330>
+
+    def test_case_ctrl_nested(monkeypatch):
+        monkeypatch.setattr(CTRL_NESTED, "limit", 20)
+        with mock.patch.object(CTRL_NESTED, "limit", 30):
+>           assert fresh(CTRL_NESTED)[0] == 30
+E           assert 0 == 30
+
+test_v7_undo.py:85: AssertionError
+____________________________ test_check_ctrl_nested ____________________________
+
+    def test_check_ctrl_nested():
+>       assert fresh(CTRL_NESTED) == (10, 10)
+E       assert (0, 0) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:90: AssertionError
+______________________ test_case_a_mock_patch_object_var _______________________
+
+    def test_case_a_mock_patch_object_var():
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_v7_undo.py:95: Failed
+______________________ test_check_a_mock_patch_object_var ______________________
+
+    def test_check_a_mock_patch_object_var():
+>       assert fresh(A_MOCK_VAR) == (10, 10)
+E       assert (0, 0) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:101: AssertionError
+_________________________ test_case_a2_monkeypatch_var _________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9da6afb260>
+
+    def test_case_a2_monkeypatch_var(monkeypatch):
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_v7_undo.py:106: Failed
+________________________ test_check_a2_monkeypatch_var _________________________
+
+    def test_check_a2_monkeypatch_var():
+>       assert fresh(A2_MP_VAR) == (10, 10)
+E       assert (0, 0) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:111: AssertionError
+___________________________ test_case_b_mocker_field ___________________________
+
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7f9da6afa900>
+
+    def test_case_b_mocker_field(mocker):
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_v7_undo.py:116: Failed
+__________________________ test_check_b_mocker_field ___________________________
+
+    def test_check_b_mocker_field():
+>       assert fresh(B_MOCKER_FIELD) == (10, 10)
+E       assert (0, 0) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:121: AssertionError
+________________________ test_case_b2_monkeypatch_field ________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9da6af9f70>
+
+    def test_case_b2_monkeypatch_field(monkeypatch):
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_v7_undo.py:126: Failed
+_______________________ test_check_b2_monkeypatch_field ________________________
+
+    def test_check_b2_monkeypatch_field():
+>       assert fresh(B2_MP_FIELD) == (10, 10)
+E       assert (0, 0) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:131: AssertionError
+____________________ test_case_c_assign_inside_patch_window ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9da6b6fd70>
+
+    def test_case_c_assign_inside_patch_window(monkeypatch):
+        monkeypatch.setattr(C_ASSIGN_IN_WINDOW, "limit", 99)
+        C_ASSIGN_IN_WINDOW.limit = 50  # e.g. a configure() helper the test exercises
+>       assert fresh(C_ASSIGN_IN_WINDOW)[0] == 50
+E       assert 0 == 50
+
+test_v7_undo.py:138: AssertionError
+___________________ test_check_c_assign_inside_patch_window ____________________
+
+    def test_check_c_assign_inside_patch_window():
+        # Plain-Python-attribute semantics would put back what monkeypatch saved (10).
+>       assert fresh(C_ASSIGN_IN_WINDOW) == (10, 10)
+E       assert (0, 0) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:143: AssertionError
+_______________________ test_check_d_monkeypatch_delattr _______________________
+
+    def test_check_d_monkeypatch_delattr():
+>       assert fresh(D_MP_DELATTR) == (10, 10)
+E       assert (0, 0) == (10, 10)
+E         
+E         At index 0 diff: 0 != 10
+E         Use -v to get more diff
+
+test_v7_undo.py:153: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_v7_undo.py::test_case_d_monkeypatch_delattr
+FAILED test_v7_undo.py::test_case_ctrl_monkeypatch - assert (0, 0) == (99, 10)
+FAILED test_v7_undo.py::test_check_ctrl_monkeypatch - assert (0, 0) == (10, 10)
+FAILED test_v7_undo.py::test_case_ctrl_mock_patch_object - assert (0, 0) == (...
+FAILED test_v7_undo.py::test_check_ctrl_mock_patch_object - assert (0, 0) == ...
+FAILED test_v7_undo.py::test_case_ctrl_rejected_wrong_type - Failed: DID NOT ...
+FAILED test_v7_undo.py::test_check_ctrl_rejected_wrong_type - assert (0, 0) =...
+FAILED test_v7_undo.py::test_case_ctrl_nested - assert 0 == 30
+FAILED test_v7_undo.py::test_check_ctrl_nested - assert (0, 0) == (10, 10)
+FAILED test_v7_undo.py::test_case_a_mock_patch_object_var - Failed: DID NOT R...
+FAILED test_v7_undo.py::test_check_a_mock_patch_object_var - assert (0, 0) ==...
+FAILED test_v7_undo.py::test_case_a2_monkeypatch_var - Failed: DID NOT RAISE ...
+FAILED test_v7_undo.py::test_check_a2_monkeypatch_var - assert (0, 0) == (10,...
+FAILED test_v7_undo.py::test_case_b_mocker_field - Failed: DID NOT RAISE Type...
+FAILED test_v7_undo.py::test_check_b_mocker_field - assert (0, 0) == (10, 10)
+FAILED test_v7_undo.py::test_case_b2_monkeypatch_field - Failed: DID NOT RAIS...
+FAILED test_v7_undo.py::test_check_b2_monkeypatch_field - assert (0, 0) == (1...
+FAILED test_v7_undo.py::test_case_c_assign_inside_patch_window - assert 0 == 50
+FAILED test_v7_undo.py::test_check_c_assign_inside_patch_window - assert (0, ...
+FAILED test_v7_undo.py::test_check_d_monkeypatch_delattr - assert (0, 0) == (...
+19 failed, 1 passed in 0.35s

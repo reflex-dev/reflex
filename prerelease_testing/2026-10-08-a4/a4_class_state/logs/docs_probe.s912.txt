@@ -1,0 +1,12 @@
+Expected field 'FacSt.v' to receive type '<class 'reflex.istate.storage.LocalStorage'>', but got 'changed' of type '<class 'str'>'.
+reflex 0.9.12
+ROW base_vars: WatchlistState sample | new=MSFT,['AAPL', 'MSFT'] reset=MSFT,['AAPL', 'MSFT'] independent=True
+ROW base_vars: mock.patch.object(field, 'default') sample | during=MSFT after=MSFT
+ROW base_vars: 'uses its default when one is set' | str var with default + factory -> 'A' (docs: default wins)
+ROW base_vars: 'does not check the value against the annotation' | int var given str default -> instance 'not-an-int' (docs: field does not check)
+ROW base_vars: inherited var default changes for every inheriting state | C.__fields__['x'] is P's=True inst(C).x=5
+ROW base_vars: backend vars + ClassVar sample | EXC AttributeError: 'list' object has no attribute 'default_value'
+ROW base_vars: BackendVarState demo (numpy) | EXC ModuleNotFoundError: No module named 'numpy'
+ROW component_state: unnamed storage var -> own key per component | keys a=('local', {'sync': False}) b=('local', {'sync': False})
+ROW upgrade guide: 'Assigning a state var through its class' sample | count default=10 during patch=99 client=AsyncClient instance client is class client=True
+ROW CHANGELOG #7461: rx.Field[rx.LocalStorage] + default_factory | compiled=('local', {'sync': False}) reset->'fx'

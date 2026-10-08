@@ -1,0 +1,73 @@
+FFFFFF.F                                                                 [100%]
+=================================== FAILURES ===================================
+__________________ test_a1_mock_patch_with_a_var_is_rejected ___________________
+
+    def test_a1_mock_patch_with_a_var_is_rejected():
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_undo_edge.py:32: Failed
+___________________ test_a2_sentinel_limit_still_configured ____________________
+
+    def test_a2_sentinel_limit_still_configured():
+>       assert fresh("limit") == 10
+E       AssertionError: assert 0 == 10
+E        +  where 0 = fresh('limit')
+
+test_undo_edge.py:38: AssertionError
+________________ test_b1_mocker_patch_with_a_field_is_rejected _________________
+
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7f3d17a72750>
+
+    def test_b1_mocker_patch_with_a_field_is_rejected(mocker):
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_undo_edge.py:42: Failed
+___________________ test_b2_sentinel_quota_still_configured ____________________
+
+    def test_b2_sentinel_quota_still_configured():
+>       assert fresh("_quota") == 10
+E       AssertionError: assert 0 == 10
+E        +  where 0 = fresh('_quota')
+
+test_undo_edge.py:47: AssertionError
+_______________ test_c1_patch_then_code_under_test_reconfigures ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f3d17a73560>
+
+    def test_c1_patch_then_code_under_test_reconfigures(monkeypatch):
+        monkeypatch.setattr(Svc, "limit", 99)
+        Svc.limit = 50  # e.g. the code under test applies settings to the class
+>       assert fresh("limit") == 50
+E       AssertionError: assert 0 == 50
+E        +  where 0 = fresh('limit')
+
+test_undo_edge.py:53: AssertionError
+__________________ test_c2_sentinel_limit_back_to_configured ___________________
+
+    def test_c2_sentinel_limit_back_to_configured():
+>       assert fresh("limit") == 10
+E       AssertionError: assert 0 == 10
+E        +  where 0 = fresh('limit')
+
+test_undo_edge.py:57: AssertionError
+__________________ test_d2_sentinel_quota_back_to_configured ___________________
+
+    def test_d2_sentinel_quota_back_to_configured():
+>       assert fresh("_quota") == 10
+E       AssertionError: assert 0 == 10
+E        +  where 0 = fresh('_quota')
+
+test_undo_edge.py:65: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_undo_edge.py::test_d1_monkeypatch_delattr
+FAILED test_undo_edge.py::test_a1_mock_patch_with_a_var_is_rejected - Failed:...
+FAILED test_undo_edge.py::test_a2_sentinel_limit_still_configured - Assertion...
+FAILED test_undo_edge.py::test_b1_mocker_patch_with_a_field_is_rejected - Fai...
+FAILED test_undo_edge.py::test_b2_sentinel_quota_still_configured - Assertion...
+FAILED test_undo_edge.py::test_c1_patch_then_code_under_test_reconfigures - A...
+FAILED test_undo_edge.py::test_c2_sentinel_limit_back_to_configured - Asserti...
+FAILED test_undo_edge.py::test_d2_sentinel_quota_back_to_configured - Asserti...
+7 failed, 1 passed in 0.78s

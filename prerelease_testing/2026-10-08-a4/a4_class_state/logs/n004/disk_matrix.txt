@@ -1,0 +1,36 @@
+== writer=a4_class_state-a4 reader=a4_class_state-a4
+reflex 0.10.0a4 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.0a4 step: found user='alice' count=6 history=['0.10.0a4:6:v1'] _visits=1 child.note='by 0.10.0a4' | files=2
+reflex 0.10.0a4 load: found user='alice' count=7 history=['0.10.0a4:6:v1', '0.10.0a4:7:v2'] _visits=2 child.note='by 0.10.0a4' | files=2
+== writer=a4_class_state-a4 reader=a4_class_state-a3
+reflex 0.10.0a4 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.0a3 step: found user='alice' count=6 history=['0.10.0a4:6:v1'] _visits=1 child.note='by 0.10.0a4' | files=2
+reflex 0.10.0a4 load: found user='alice' count=7 history=['0.10.0a4:6:v1', '0.10.0a3:7:v2'] _visits=2 child.note='by 0.10.0a3' | files=2
+== writer=a4_class_state-a4 reader=a4_class_state-s912
+reflex 0.10.0a4 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.9.12 step: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.0a4 load: found user='alice' count=6 history=['0.9.12:6:v1'] _visits=1 child.note='by 0.9.12' | files=2
+== writer=a4_class_state-a3 reader=a4_class_state-a4
+reflex 0.10.0a3 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.0a4 step: found user='alice' count=6 history=['0.10.0a3:6:v1'] _visits=1 child.note='by 0.10.0a3' | files=2
+reflex 0.10.0a3 load: found user='alice' count=7 history=['0.10.0a3:6:v1', '0.10.0a4:7:v2'] _visits=2 child.note='by 0.10.0a4' | files=2
+== writer=a4_class_state-a3 reader=a4_class_state-a3
+reflex 0.10.0a3 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.0a3 step: found user='alice' count=6 history=['0.10.0a3:6:v1'] _visits=1 child.note='by 0.10.0a3' | files=2
+reflex 0.10.0a3 load: found user='alice' count=7 history=['0.10.0a3:6:v1', '0.10.0a3:7:v2'] _visits=2 child.note='by 0.10.0a3' | files=2
+== writer=a4_class_state-a3 reader=a4_class_state-s912
+reflex 0.10.0a3 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.9.12 step: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.0a3 load: found user='alice' count=6 history=['0.9.12:6:v1'] _visits=1 child.note='by 0.9.12' | files=2
+== writer=a4_class_state-s912 reader=a4_class_state-a4
+reflex 0.9.12 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.0a4 step: found user='alice' count=6 history=['0.9.12:6:v1'] _visits=1 child.note='by 0.9.12' | files=2
+reflex 0.9.12 load: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+== writer=a4_class_state-s912 reader=a4_class_state-a3
+reflex 0.9.12 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.10.0a3 step: found user='alice' count=6 history=['0.9.12:6:v1'] _visits=1 child.note='by 0.9.12' | files=2
+reflex 0.9.12 load: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+== writer=a4_class_state-s912 reader=a4_class_state-s912
+reflex 0.9.12 save: found user='' count=5 history=[] _visits=0 child.note='fresh' | files=2
+reflex 0.9.12 step: found user='alice' count=6 history=['0.9.12:6:v1'] _visits=1 child.note='by 0.9.12' | files=2
+reflex 0.9.12 load: found user='alice' count=7 history=['0.9.12:6:v1', '0.9.12:7:v2'] _visits=2 child.note='by 0.9.12' | files=2

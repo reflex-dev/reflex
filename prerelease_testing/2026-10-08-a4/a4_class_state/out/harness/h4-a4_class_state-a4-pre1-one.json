@@ -1,0 +1,20 @@
+{
+  "version": "a4_class_state-a4",
+  "preimport": true,
+  "app": "one",
+  "console": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  "pageerrors": [],
+  "title_visible": true,
+  "shared_text": "10",
+  "box_text": "one-box",
+  "local_text": "0",
+  "shared_after_click": "11",
+  "local_after_click": "1",
+  "body_text": "app one\n\none-box\n\n11\n\ninc shared\n\n1\n\nhit local",
+  "context_has_shared": true
+}

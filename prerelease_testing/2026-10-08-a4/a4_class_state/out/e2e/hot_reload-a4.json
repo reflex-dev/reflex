@@ -1,0 +1,173 @@
+[
+ {
+  "step": "add var hr + field default",
+  "reload_s": 8.5,
+  "want": {
+   "limit": "10",
+   "hr": "6"
+  },
+  "got": {
+   "limit": "10",
+   "hr": "6"
+  },
+  "pass": true,
+  "log_errors": [
+   "'react-error-boundary@6.1.6', 'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', "
+  ],
+  "console": [],
+  "log_tail": [
+   "Debug: 3:24:11 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:11 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:11 PM [vite] (ssr) page reload utils/context.jsx",
+   "Debug: 3:24:11 PM [vite] (ssr) program reload",
+   "Debug: 3:24:11 PM [vite] (client) hmr update /app/routes/[misc]._index.jsx",
+   "Debug: 3:24:11 PM [vite] (client) hmr update /app/routes/[misc]._index.jsx"
+  ]
+ },
+ {
+  "step": "change field-configured default limit 10->12",
+  "reload_s": 8.2,
+  "want": {
+   "limit": "12",
+   "hr": "6"
+  },
+  "got": {
+   "limit": "12",
+   "hr": "6"
+  },
+  "pass": true,
+  "log_errors": [
+   "'react-error-boundary@6.1.6', 'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', "
+  ],
+  "console": [],
+  "log_tail": [
+   "[INFO] Started worker-1",
+   "Debug: 3:24:20 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:20 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:20 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:20 PM [vite] (ssr) page reload utils/context.jsx",
+   "Debug: 3:24:20 PM [vite] (ssr) program reload"
+  ]
+ },
+ {
+  "step": "rename var hr->hr2",
+  "reload_s": 8.4,
+  "want": {
+   "limit": "12",
+   "hr": "6"
+  },
+  "got": {
+   "limit": "12",
+   "hr": "6"
+  },
+  "pass": true,
+  "log_errors": [
+   "'react-error-boundary@6.1.6', 'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', "
+  ],
+  "console": [],
+  "log_tail": [
+   "Debug: 3:24:28 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:28 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:28 PM [vite] (ssr) page reload utils/context.jsx",
+   "Debug: 3:24:28 PM [vite] (ssr) program reload",
+   "Debug: 3:24:28 PM [vite] (client) hmr update /app/routes/[misc]._index.jsx",
+   "Debug: 3:24:28 PM [vite] (client) hmr update /app/routes/[misc]._index.jsx"
+  ]
+ },
+ {
+  "step": "change declared default in class body (hr2 5->9, drop field config)",
+  "reload_s": 8.3,
+  "want": {
+   "limit": "12",
+   "hr": "9"
+  },
+  "got": {
+   "limit": "12",
+   "hr": "9"
+  },
+  "pass": true,
+  "log_errors": [
+   "'react-error-boundary@6.1.6', 'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', "
+  ],
+  "console": [],
+  "log_tail": [
+   "[INFO] Started worker-1",
+   "Debug: 3:24:36 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:36 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:36 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:36 PM [vite] (ssr) page reload utils/context.jsx",
+   "Debug: 3:24:36 PM [vite] (ssr) program reload"
+  ]
+ },
+ {
+  "step": "remove var hr2",
+  "reload_s": 8.3,
+  "want": {
+   "limit": "12",
+   "hr": "gone"
+  },
+  "got": {
+   "limit": "12",
+   "hr": "gone"
+  },
+  "pass": true,
+  "log_errors": [
+   "'react-error-boundary@6.1.6', 'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', "
+  ],
+  "console": [],
+  "log_tail": [
+   "Debug: 3:24:44 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:44 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:44 PM [vite] (ssr) page reload utils/context.jsx",
+   "Debug: 3:24:44 PM [vite] (ssr) program reload",
+   "Debug: 3:24:44 PM [vite] (client) hmr update /app/routes/[misc]._index.jsx",
+   "Debug: 3:24:44 PM [vite] (client) hmr update /app/routes/[misc]._index.jsx"
+  ]
+ },
+ {
+  "step": "add a class assignment (user error) -> TypeError expected",
+  "reload_s": 6.0,
+  "want": null,
+  "got": null,
+  "pass": null,
+  "log_errors": [
+   "Traceback (most recent call last):",
+   "    raise _state_var_assignment_error(cls, name, \"assigning\")",
+   "TypeError: 'limit' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['limit'].default = ..., or declare class-level config as ClassVar."
+  ],
+  "console": [],
+  "log_tail": [
+   "    Svc.limit = 3  # USER ERROR",
+   "    ^^^^^^^^^",
+   "  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-a4/lib/python3.12/site-packages/reflex_base/vars/base.py\", line 4776, in __setattr__",
+   "    raise _state_var_assignment_error(cls, name, \"assigning\")",
+   "TypeError: 'limit' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['limit'].default = ..., or declare class-level config as ClassVar.",
+   "[ERROR] Unexpected exit from worker-1"
+  ]
+ },
+ {
+  "step": "fix it again",
+  "reload_s": 8.2,
+  "want": {
+   "limit": "12",
+   "hr": "gone"
+  },
+  "got": {
+   "limit": "12",
+   "hr": "gone"
+  },
+  "pass": true,
+  "log_errors": [
+   "'react-error-boundary@6.1.6', 'sonner@2.0.8'],[],True,['/root/.bun/bin/bun', "
+  ],
+  "console": [],
+  "log_tail": [
+   "[INFO] Started worker-1",
+   "Debug: 3:24:59 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:59 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:59 PM [vite] (client) hmr update /utils/context.jsx",
+   "Debug: 3:24:59 PM [vite] (ssr) page reload utils/context.jsx",
+   "Debug: 3:24:59 PM [vite] (ssr) program reload"
+  ]
+ }
+]

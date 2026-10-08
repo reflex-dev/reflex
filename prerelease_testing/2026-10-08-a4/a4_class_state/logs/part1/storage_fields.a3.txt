@@ -1,0 +1,47 @@
+reflex 0.10.0a3 venv a4_class_state-a3
+
+== str LS(name,sync): declared -> entry=('local', {'name': 'k_ls', 'sync': True}) is_cs=True
+   default=storage value (same type, new name)    entry=('local', {'name': 'k_new', 'sync': False})                                 is_cs=True  instance='n'
+   default=plain str                              entry=None                                                                        is_cs=False instance='n'
+   default=None                                   entry=None                                                                        is_cs=False instance=None
+   default=int 5                                  entry=None                                                                        is_cs=False instance=5
+
+== str Cookie(opts): declared -> entry=('cookie', {'name': 'k_ck', 'path': '/', 'maxAge': 3600, 'sameSite': 'strict'}) is_cs=True
+   default=storage value (same type, new name)    entry=('cookie', {'name': 'k_new', 'path': '/', 'maxAge': 10, 'sameSite': 'lax'}) is_cs=True  instance='n'
+   default=plain str                              entry=None                                                                        is_cs=False instance='n'
+   default=None                                   entry=None                                                                        is_cs=False instance=None
+   default=int 5                                  entry=None                                                                        is_cs=False instance=5
+
+== str SS(name): declared -> entry=('session', {'name': 'k_ss'}) is_cs=True
+   default=storage value (same type, new name)    entry=('session', {'name': 'k_new'})                                              is_cs=True  instance='n'
+   default=plain str                              entry=None                                                                        is_cs=False instance='n'
+   default=None                                   entry=None                                                                        is_cs=False instance=None
+   default=int 5                                  entry=None                                                                        is_cs=False instance=5
+
+== LS-annot LS(name): declared -> entry=('local', {'name': 'k_lsa', 'sync': False}) is_cs=True
+   default=storage value (same type, new name)    entry=('local', {'name': 'k_new', 'sync': False})                                 is_cs=True  instance='n'
+   default=plain str                              entry=('local', {'sync': False})                                                  is_cs=True  instance='n'
+   default=None                                   entry=('local', {'sync': False})                                                  is_cs=True  instance=None
+   default=int 5                                  entry=('local', {'sync': False})                                                  is_cs=True  instance=5
+
+== Cookie-annot Cookie: declared -> entry=('cookie', {'name': 'k_cka', 'path': '/', 'maxAge': 60, 'sameSite': 'lax'}) is_cs=True
+   default=storage value (same type, new name)    entry=('cookie', {'name': 'k_new', 'path': '/', 'maxAge': 10, 'sameSite': 'lax'}) is_cs=True  instance='n'
+   default=plain str                              entry=('cookie', {'path': '/', 'sameSite': 'lax'})                                is_cs=True  instance='n'
+   default=None                                   entry=('cookie', {'path': '/', 'sameSite': 'lax'})                                is_cs=True  instance=None
+   default=int 5                                  entry=('cookie', {'path': '/', 'sameSite': 'lax'})                                is_cs=True  instance=5
+
+== Optional[str] LS: declared -> entry=('local', {'name': 'k_opt', 'sync': False}) is_cs=True
+   default=storage value (same type, new name)    entry=('local', {'name': 'k_new', 'sync': False})                                 is_cs=True  instance='n'
+   default=plain str                              entry=None                                                                        is_cs=False instance='n'
+   default=None                                   entry=None                                                                        is_cs=False instance=None
+   default=int 5                                  entry=None                                                                        is_cs=False instance=5
+
+== str plain: declared -> entry=None is_cs=False
+   default=storage value (same type, new name)    entry=('local', {'name': 'k_new', 'sync': False})                                 is_cs=True  instance='n'
+   default=plain str                              entry=None                                                                        is_cs=False instance='n'
+   default=None                                   entry=None                                                                        is_cs=False instance=None
+   default=int 5                                  entry=None                                                                        is_cs=False instance=5
+
+== LS-annot-annotated var, default MISSING + factory returning LocalStorage(name=k_fac,sync): entry=('local', {'name': 'k_fac', 'sync': True}) is_cs=True instance='f'
+
+== str-annotated var, default MISSING + factory returning LocalStorage(name=k_fac,sync): entry=None is_cs=False instance='f'

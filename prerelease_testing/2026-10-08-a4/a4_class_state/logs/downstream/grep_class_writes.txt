@@ -1,0 +1,22 @@
+--- <Name>.<attr> = (class attribute writes)
+apps/a4_class_state/downstream/unz/reflex_audio_capture-0.1.1-py3-none-any/reflex_audio_capture/audio_capture.py:60:                AudioRecorder.encoder = mpegEncoder
+apps/a4_class_state/downstream/unz/reflex_clerk-1.0.3-py3-none-any/reflex_clerk/lib/clerk_provider.py:396:            ClerkState._secret_key = props['secret_key']
+--- <x>.State.<attr> =
+apps/a4_class_state/downstream/unz/reflex_ag_grid-0.0.11-py3-none-any/reflex_ag_grid/wrapper.py:237:        comp.State._grid_component = comp
+apps/a4_class_state/downstream/unz/reflex_ag_grid-0.0.11-py3-none-any/reflex_ag_grid/wrapper.py:432:        comp.State._model_class = model_class
+apps/a4_class_state/downstream/unz/reflex_dynoselect-0.1.0-py3-none-any/reflex_dynoselect/dynoselect.py:443:    component.State._raw_options = options
+downloads/enterprise_wheel_a5/x/reflex_enterprise/components/ag_grid/wrapper.py:280:        comp.State._grid_component = comp  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+--- cls.<attr> =
+apps/a4_class_state/downstream/unz/reflex_chat-0.0.2a1-py3-none-any/reflex_chat/chat.py:69:        cls.process = props.pop("process", default_process)
+apps/a4_class_state/downstream/unz/reflex_clerk-1.0.3-py3-none-any/reflex_clerk/lib/clerk_provider.py:124:                cls._secret_key = os.environ['CLERK_SECRET_KEY']
+apps/a4_class_state/downstream/unz/reflex_clerk-1.0.3-py3-none-any/reflex_clerk/lib/clerk_provider.py:134:                cls._jwt_public_keys = list(map(json.loads, os.environ['CLERK_JWT_PUBLIC_KEYS'].split(',')))
+apps/a4_class_state/downstream/unz/reflex_clerk-1.0.3-py3-none-any/reflex_clerk/lib/clerk_provider.py:136:                cls._jwt_public_keys = cls._clerk_api_client.get_jwks().dict()['keys']
+apps/a4_class_state/downstream/unz/reflex_clerk-1.0.3-py3-none-any/reflex_clerk/lib/clerk_provider.py:144:            cls._clerk_api_client = clerk_client.get_client(cls.secret_key)
+apps/a4_class_state/downstream/unz/reflex_clerk-1.0.3-py3-none-any/reflex_clerk/lib/clerk_provider.py:168:        cls._fetch_user = fetch_user
+downloads/enterprise_wheel_a5/x/reflex_enterprise/components/ag_grid/wrapper.py:523:        cls._model_class = model_class  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+downloads/enterprise_wheel_a5/x/reflex_enterprise/components/ag_grid/wrapper.py:524:        cls._primary_key = tuple(  # pyright: ignore [reportAttributeAccessIssue]
+downloads/enterprise_wheel_a5/x/reflex_enterprise/auth/oidc/state.py:2773:        cls._has_registered_endpoints = True
+downloads/enterprise_wheel_a5/x/reflex_enterprise/auth/cookie.py:384:        cls._has_registered_handlers = True
+--- setattr/delattr on classes
+--- patch.object / monkeypatch
+downloads/enterprise_wheel_a5/x/reflex_enterprise/plugins/guards.py:41:``monkeypatch.setattr(guards, "has_plugin", lambda plugin_type: True)`` --

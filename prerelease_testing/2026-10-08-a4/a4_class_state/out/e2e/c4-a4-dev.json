@@ -1,0 +1,410 @@
+{
+ "outcomes": "{'St.sync=': 'TypeError', 'St.ck=': 'TypeError', 'St.opt=': 'TypeError', 'client_storage': 'sync,ck,ann,ss', 'Svc.limit=': 'TypeError', 'SvcChild.items=': 'TypeError', 'Mix.mval=': 'TypeError', 'Collab.count=': 'TypeError'}",
+ "0_initial": {
+  "sync": "assigned",
+  "ck": "assigned",
+  "ann": "assigned",
+  "ss": "assigned",
+  "opt": "",
+  "plainstr": "assigned"
+ },
+ "0_store": {
+  "local": {
+   "theme": "system",
+   "last_compiled_theme": "system"
+  },
+  "session": {
+   "token": "4d2990fa-d62c-4b31-87cc-6f01ebf22892"
+  },
+  "cookies": []
+ },
+ "1_store": {
+  "local": {
+   "theme": "system",
+   "k_sync": "A-sync",
+   "reflex___state____state.c4e2e___c4e2e____st.ann_rx_state_": "A-ann",
+   "last_compiled_theme": "system"
+  },
+  "session": {
+   "token": "4d2990fa-d62c-4b31-87cc-6f01ebf22892",
+   "k_ss": "A-ss"
+  },
+  "cookies": [
+   {
+    "name": "k_ck_opt",
+    "value": "A-ck",
+    "path": "/",
+    "sameSite": "Strict",
+    "expires_in_s": 3598
+   }
+  ]
+ },
+ "2_new_tab": {
+  "sync": "A-sync",
+  "ck": "A-ck",
+  "ann": "A-ann",
+  "ss": "assigned",
+  "opt": "",
+  "plainstr": "assigned"
+ },
+ "cs": {
+  "et1_text": "Click edit to change this text.",
+  "et2_text": "Second",
+  "et3_text": "Third",
+  "tt_a": "dark",
+  "tt_b": "light",
+  "pick_x": "cx",
+  "picks_x": "init-x",
+  "pick_y": "cy",
+  "picks_y": "init-y"
+ },
+ "cs_store": {
+  "theme": "system",
+  "k_sync": "from-tab2",
+  "reflex___state____state.c4e2e___c4e2e____st.ann_rx_state_": "A-ann",
+  "pick_x": "dark-x",
+  "last_compiled_theme": "system"
+ },
+ "cs_after_edit": {
+  "et1_text": "Click edit to change this text.",
+  "et2_text": "Edited2",
+  "et3_text": "Third"
+ },
+ "cs_reload": {
+  "pick_x": "dark-x",
+  "picks_x": "init-x,dark-x",
+  "pick_y": "cy"
+ },
+ "post_nav": [
+  "hello-world",
+  "1"
+ ],
+ "post_direct": [
+  "second",
+  "2"
+ ],
+ "misc0": {
+  "limit": "10",
+  "items": "cfg",
+  "total": "21",
+  "log": "",
+  "mval": "3",
+  "collab": "2",
+  "cfg": "CFG=7 childlimit=6",
+  "cnt": "3"
+ },
+ "misc_end": {
+  "limit": "110",
+  "items": "cfg",
+  "total": "121",
+  "log": "bg CFG=7|other.mval=3|upload x.txt 12",
+  "mval": "4",
+  "collab": "4",
+  "cfg": "CFG=7 childlimit=6",
+  "cnt": "4"
+ },
+ "checks": [
+  [
+   "PASS",
+   "index initial values",
+   {
+    "sync": "assigned",
+    "ck": "assigned",
+    "ann": "assigned",
+    "ss": "assigned",
+    "opt": "",
+    "plainstr": "assigned"
+   },
+   {
+    "sync": "assigned",
+    "ck": "assigned",
+    "ann": "assigned",
+    "ss": "assigned",
+    "opt": "",
+    "plainstr": "assigned"
+   }
+  ],
+  [
+   "PASS",
+   "k_sync written",
+   "A-sync",
+   "A-sync"
+  ],
+  [
+   "PASS",
+   "ann under default key (not k_ann)",
+   [
+    true,
+    false
+   ],
+   [
+    true,
+    false
+   ]
+  ],
+  [
+   "PASS",
+   "k_ss in session",
+   "A-ss",
+   "A-ss"
+  ],
+  [
+   "PASS",
+   "opt NOT stored (ordinary var)",
+   false,
+   false
+  ],
+  [
+   "PASS",
+   "plainstr NOT stored (ordinary var)",
+   false,
+   false
+  ],
+  [
+   "PASS",
+   "cookie k_ck_opt Strict ~3600s",
+   [
+    "A-ck",
+    "Strict",
+    true
+   ],
+   [
+    "A-ck",
+    "Strict",
+    true
+   ]
+  ],
+  [
+   "PASS",
+   "new tab restores storage vars",
+   {
+    "sync": "A-sync",
+    "ck": "A-ck",
+    "ann": "A-ann"
+   },
+   {
+    "sync": "A-sync",
+    "ck": "A-ck",
+    "ann": "A-ann"
+   }
+  ],
+  [
+   "PASS",
+   "new tab: ordinary vars back to defaults",
+   [
+    "",
+    "assigned"
+   ],
+   [
+    "",
+    "assigned"
+   ]
+  ],
+  [
+   "PASS",
+   "sync=True propagates to tab1",
+   "from-tab2",
+   "from-tab2"
+  ],
+  [
+   "PASS",
+   "EditableText initial_value per component",
+   [
+    "Click edit to change this text.",
+    "Second",
+    "Third"
+   ],
+   [
+    "Click edit to change this text.",
+    "Second",
+    "Third"
+   ]
+  ],
+  [
+   "PASS",
+   "ThemeToggle per-key initial",
+   [
+    "dark",
+    "light"
+   ],
+   [
+    "dark",
+    "light"
+   ]
+  ],
+  [
+   "PASS",
+   "ThemePick initial + per-component factory",
+   [
+    "cx",
+    "init-x",
+    "cy",
+    "init-y"
+   ],
+   [
+    "cx",
+    "init-x",
+    "cy",
+    "init-y"
+   ]
+  ],
+  [
+   "PASS",
+   "pick_x stored under its own key",
+   [
+    "dark-x",
+    false
+   ],
+   [
+    "dark-x",
+    false
+   ]
+  ],
+  [
+   "PASS",
+   "EditableText edit one instance",
+   {
+    "et1_text": "Click edit to change this text.",
+    "et2_text": "Edited2",
+    "et3_text": "Third"
+   },
+   {
+    "et1_text": "Click edit to change this text.",
+    "et2_text": "Edited2",
+    "et3_text": "Third"
+   }
+  ],
+  [
+   "PASS",
+   "after reload pick_x from storage, pick_y default",
+   [
+    "dark-x",
+    "cy"
+   ],
+   [
+    "dark-x",
+    "cy"
+   ]
+  ],
+  [
+   "PASS",
+   "dynamic route via client nav",
+   [
+    "hello-world",
+    "1"
+   ],
+   [
+    "hello-world",
+    "1"
+   ]
+  ],
+  [
+   "PASS",
+   "dynamic route direct load",
+   "second",
+   "second"
+  ],
+  [
+   "PASS",
+   "misc initial",
+   {
+    "limit": "10",
+    "items": "cfg",
+    "total": "21",
+    "log": "",
+    "mval": "3",
+    "collab": "2",
+    "cfg": "CFG=7 childlimit=6",
+    "cnt": "3"
+   },
+   {
+    "limit": "10",
+    "items": "cfg",
+    "total": "21",
+    "log": "",
+    "mval": "3",
+    "collab": "2",
+    "cfg": "CFG=7 childlimit=6",
+    "cnt": "3"
+   }
+  ],
+  [
+   "PASS",
+   "bump",
+   [
+    "11",
+    "cfg,b",
+    "24"
+   ],
+   [
+    "11",
+    "cfg,b",
+    "24"
+   ]
+  ],
+  [
+   "PASS",
+   "reset -> configured defaults",
+   [
+    "10",
+    "cfg",
+    "21"
+   ],
+   [
+    "10",
+    "cfg",
+    "21"
+   ]
+  ],
+  [
+   "PASS",
+   "background task",
+   [
+    "110",
+    "bg CFG=7"
+   ],
+   [
+    "110",
+    "bg CFG=7"
+   ]
+  ],
+  [
+   "PASS",
+   "get_state other",
+   "bg CFG=7|other.mval=3",
+   "bg CFG=7|other.mval=3"
+  ],
+  [
+   "PASS",
+   "mixin handler",
+   "4",
+   "4"
+  ],
+  [
+   "PASS",
+   "SharedState link",
+   "3",
+   "3"
+  ],
+  [
+   "PASS",
+   "SharedState inc",
+   "4",
+   "4"
+  ],
+  [
+   "PASS",
+   "client_state",
+   "4",
+   "4"
+  ],
+  [
+   "PASS",
+   "upload handler",
+   true,
+   true
+  ]
+ ],
+ "console": [],
+ "bad": []
+}

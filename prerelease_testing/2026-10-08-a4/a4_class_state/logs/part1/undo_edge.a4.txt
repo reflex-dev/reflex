@@ -1,0 +1,13 @@
+
+==================================== ERRORS ====================================
+______________________ ERROR collecting test_undo_edge.py ______________________
+test_undo_edge.py:23: in <module>
+    Svc.limit = 10
+    ^^^^^^^^^
+../../../../envs/a4_class_state-a4/lib/python3.12/site-packages/reflex_base/vars/base.py:4776: in __setattr__
+    raise _state_var_assignment_error(cls, name, "assigning")
+E   TypeError: 'limit' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['limit'].default = ..., or declare class-level config as ClassVar.
+=========================== short test summary info ============================
+ERROR test_undo_edge.py - TypeError: 'limit' is a state var of Svc; assigning...
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.88s
