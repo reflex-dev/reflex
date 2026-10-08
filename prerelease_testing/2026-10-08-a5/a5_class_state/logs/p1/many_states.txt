@@ -1,0 +1,5 @@
+0.9.12: 400 states x 4 small mutable defaults: 912 ms
+0.10.0a4: 400 states x 4 small mutable defaults: 303 ms
+0.10.0a5: 400 states x 4 small mutable defaults: 283 ms
+0.10.0a4: 400 states x 4 small mutable defaults: 291 ms
+0.10.0a5: 400 states x 4 small mutable defaults: 316 ms

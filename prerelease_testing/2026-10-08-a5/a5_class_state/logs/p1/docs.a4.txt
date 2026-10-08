@@ -1,0 +1,19 @@
+reflex 0.10.0a4
+ROW base_vars: WatchlistState sample + 'applies to values not yet stored / new session / reset(); stored stay' | EXC AttributeError: 'Field' object has no attribute 'set_default'
+ROW base_vars: 'Pass exactly one of default and default_factory' | EXC AttributeError: 'Field' object has no attribute 'set_default'
+ROW base_vars: 'a default_factory is called for each new instance' | EXC AttributeError: 'Field' object has no attribute 'set_default'
+ROW base_vars: 'set_default copies a mutable default when set + per instance; later changes do not reach it' | EXC AttributeError: 'Field' object has no attribute 'set_default'
+ROW base_vars: 'does not check the value against the var's annotation' | EXC AttributeError: 'Field' object has no attribute 'set_default'
+ROW base_vars: storage statements | EXC AttributeError: 'Field' object has no attribute 'set_default'
+ROW base_vars: 'inherited var ... changing its field also changes the default for every state that inherits it' | EXC AttributeError: 'Field' object has no attribute 'set_default'
+ROW base_vars: 'In tests, patch the field' sample | ticker during=MSFT; symbols(default patched over set_default factory) during=['P'] after=[]
+ROW base_vars: backend vars + ClassVar sample (verbatim) | MyState._token is Field; MyState._token='x' TypeError: '_token' is a state var of MyState; assigning it on the class would replace the var. Set its default with MyState.__fields__['_token'].default = ..., or declare class-level config as ClassVar.; ClassVar -> https://example.com/v2 instance sees https://example.com/v2; foreach(default_value()) Foreach; fresh copy each call=True
+ROW base_vars: 'ClassVar ... object that cannot be copied ... is shared' | ClassVar lock: class read is plain=lock instances share=True
+ROW base_vars: BackendVarState demo (numpy) | page len=10; instances share array=False; a len=176
+ROW base_vars: rx.field / rx.Field samples | components ok (VStack); flip -> True; dict default=MutableProxy({})
+ROW component_state: EditableText sample + statements | EXC AttributeError: 'Field' object has no attribute 'set_default'
+ROW component_state: ThemeToggle sample + storage key statements | EXC AttributeError: 'Field' object has no attribute 'set_default'
+ROW upgrade guide: 'Assigning a state var through its class' sample | EXC AttributeError: 'Field' object has no attribute 'set_default'
+ROW upgrade guide: 'On 0.9 .default = [] was safe / 0.10 shares / set_default copies' | .default = [] -> instances share (leak to new instance)=True, new instance=['leak']
+ROW upgrade guide: backend var default_value() sample | ok VStack; get_fields form=['a', 'b']
+ROW news/CHANGELOG: State.__fields__['items'].set_default(['a']) / ['count'].set_default(10) | EXC AttributeError: 'Field' object has no attribute 'set_default'

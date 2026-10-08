@@ -1,0 +1,3 @@
+a: ['AAPL', 'MSFT'] b: ['AAPL', 'MSFT'] shared obj: ['AAPL', 'MSFT'] | a.__dict__ value is shared: True
+new instance after mutation: ['AAPL', 'MSFT']
+after a.reset(): ['AAPL', 'MSFT']

@@ -1,0 +1,70 @@
+........................................................................ [ 42%]
+........................................................................ [ 84%]
+.FFFF.....................s                                              [100%]
+=================================== FAILURES ===================================
+____________________ test_class_spellings_raise[inh-assign] ____________________
+
+name = 'inh', spelling = 'assign'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7e27695a20>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'is a state var of K'
+E         Actual message: "'inh' is a state var of Base, inherited by K; assigning it on K would replace the var. Set its default with Base.__fields__['inh'].set_default(...), which applies to every state that inherits it, or declare class-level config as ClassVar."
+
+test_n039_fields.py:98: AssertionError
+___________________ test_class_spellings_raise[inh-setattr] ____________________
+
+name = 'inh', spelling = 'setattr'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7e276956a0>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'is a state var of K'
+E         Actual message: "'inh' is a state var of Base, inherited by K; assigning it on K would replace the var. Set its default with Base.__fields__['inh'].set_default(...), which applies to every state that inherits it, or declare class-level config as ClassVar."
+
+test_n039_fields.py:98: AssertionError
+_________________ test_class_spellings_raise[inh-monkeypatch] __________________
+
+name = 'inh', spelling = 'monkeypatch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7e27695390>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'is a state var of K'
+E         Actual message: "'inh' is a state var of Base, inherited by K; assigning it on K would replace the var. Set its default with Base.__fields__['inh'].set_default(...), which applies to every state that inherits it, or declare class-level config as ClassVar."
+
+test_n039_fields.py:98: AssertionError
+_____________________ test_class_spellings_raise[inh-mock] _____________________
+
+name = 'inh', spelling = 'mock'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7e27694590>
+
+    @pytest.mark.parametrize("spelling", ["assign", "setattr", "monkeypatch", "mock"])
+    @pytest.mark.parametrize("name", list(VARS))
+    def test_class_spellings_raise(name, spelling, monkeypatch):
+>       with pytest.raises(TypeError, match="is a state var of K"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'is a state var of K'
+E         Actual message: "'inh' is a state var of Base, inherited by K; deleting it on K would replace the var. Set its default with Base.__fields__['inh'].set_default(...), which applies to every state that inherits it, or declare class-level config as ClassVar."
+
+test_n039_fields.py:98: AssertionError
+=========================== short test summary info ============================
+FAILED test_n039_fields.py::test_class_spellings_raise[inh-assign] - Assertio...
+FAILED test_n039_fields.py::test_class_spellings_raise[inh-setattr] - Asserti...
+FAILED test_n039_fields.py::test_class_spellings_raise[inh-monkeypatch] - Ass...
+FAILED test_n039_fields.py::test_class_spellings_raise[inh-mock] - AssertionE...
+4 failed, 166 passed, 1 skipped in 0.70s

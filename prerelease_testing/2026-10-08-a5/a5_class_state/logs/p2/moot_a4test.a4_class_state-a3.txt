@@ -1,0 +1,362 @@
+FFFFFFFFFFFFFFFFFFFFFFF
+mval in UsesMix.__dict__: True
+.
+=================================== FAILURES ===================================
+_______________________ test_case_direct_assign_frontend _______________________
+
+    def test_case_direct_assign_frontend():
+>       with pytest.raises(TypeError) as ei:
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:94: Failed
+_______________________ test_case_direct_assign_backend ________________________
+
+    def test_case_direct_assign_backend():
+>       with pytest.raises(TypeError) as ei:
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:102: Failed
+__________________________ test_case_setattr_mutable ___________________________
+
+    def test_case_setattr_mutable():
+>       with pytest.raises(TypeError) as ei:
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:109: Failed
+_______________________ test_case_same_value_and_own_var _______________________
+
+    def test_case_same_value_and_own_var():
+        # S.x = S.x: frontend class access is a Var (raises); backend class access is the Field (no-op)
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:117: Failed
+_____________________________ test_case_a_mock_var _____________________________
+
+    def test_case_a_mock_var():
+        with pytest.raises(TypeError) as ei:
+            with mock.patch.object(Svc, "limit", Other.y):
+                pass
+>       check_msg(ei, "limit", "Svc")
+
+test_a4_moot.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+excinfo = <ExceptionInfo TypeError('A Var cannot be a field default. Use ClassVar[rx.Var] to save references to vars in state.') tblen=4>
+name = 'limit', cls_name = 'Svc', action = 'assigning'
+
+    def check_msg(excinfo, name, cls_name, action="assigning"):
+        m = MSG.fullmatch(str(excinfo.value))
+>       assert m, str(excinfo.value)
+E       AssertionError: A Var cannot be a field default. Use ClassVar[rx.Var] to save references to vars in state.
+E       assert None
+
+test_a4_moot.py:88: AssertionError
+_________________________________ test_check_a _________________________________
+
+    def test_check_a():
+>       intact()
+
+test_a4_moot.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'test_a4_moot.Svc'>, names = ('limit', '_quota', 'items')
+
+    def intact(cls=Svc, names=("limit", "_quota", "items")):
+        """Assert the vars still work: descriptor is the original Field, defaults, instance, reset, pickle."""
+        for name in names:
+            owner = next(k for k in cls.__mro__ if name in k.__dict__)
+            f = owner.__dict__[name]
+            assert type(f).__name__ == "Field", (name, type(f))
+            assert f is cls.__fields__[name] is ORIG_FIELDS[cls][name], name
+>           assert f.default_value() == DECLARED.get(name, getattr(f, "default", None)), (name, f.default_value())
+E           AssertionError: ('_quota', 10)
+E           assert 10 == 0
+E            +  where 10 = default_value()
+E            +    where default_value = Field(default=10, is_var=True, annotated_type=<class 'int'>).default_value
+E            +  and   0 = <built-in method get of dict object at 0x7fa647696880>('_quota', 10)
+E            +    where <built-in method get of dict object at 0x7fa647696880> = {'limit': 0, '_quota': 0, 'items': []}.get
+E            +    and   10 = getattr(Field(default=10, is_var=True, annotated_type=<class 'int'>), 'default', None)
+
+test_a4_moot.py:60: AssertionError
+____________________________ test_case_a_mock_plain ____________________________
+
+    def test_case_a_mock_plain():
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:137: Failed
+______________________________ test_check_a_plain ______________________________
+
+    def test_check_a_plain():
+>       intact()
+
+test_a4_moot.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'test_a4_moot.Svc'>, names = ('limit', '_quota', 'items')
+
+    def intact(cls=Svc, names=("limit", "_quota", "items")):
+        """Assert the vars still work: descriptor is the original Field, defaults, instance, reset, pickle."""
+        for name in names:
+            owner = next(k for k in cls.__mro__ if name in k.__dict__)
+            f = owner.__dict__[name]
+            assert type(f).__name__ == "Field", (name, type(f))
+            assert f is cls.__fields__[name] is ORIG_FIELDS[cls][name], name
+>           assert f.default_value() == DECLARED.get(name, getattr(f, "default", None)), (name, f.default_value())
+E           AssertionError: ('_quota', 10)
+E           assert 10 == 0
+E            +  where 10 = default_value()
+E            +    where default_value = Field(default=10, is_var=True, annotated_type=<class 'int'>).default_value
+E            +  and   0 = <built-in method get of dict object at 0x7fa647696880>('_quota', 10)
+E            +    where <built-in method get of dict object at 0x7fa647696880> = {'limit': 0, '_quota': 0, 'items': []}.get
+E            +    and   10 = getattr(Field(default=10, is_var=True, annotated_type=<class 'int'>), 'default', None)
+
+test_a4_moot.py:60: AssertionError
+___________________________ test_case_b_mocker_field ___________________________
+
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7fa6469aca70>
+
+    def test_case_b_mocker_field(mocker):
+        with pytest.raises(TypeError) as ei:
+            mocker.patch.object(Svc, "_quota", rx.field(5))
+>       check_msg(ei, "_quota", "Svc")
+
+test_a4_moot.py:150: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+excinfo = <ExceptionInfo TypeError('A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.') tblen=7>
+name = '_quota', cls_name = 'Svc', action = 'assigning'
+
+    def check_msg(excinfo, name, cls_name, action="assigning"):
+        m = MSG.fullmatch(str(excinfo.value))
+>       assert m, str(excinfo.value)
+E       AssertionError: A Field cannot overwrite another field. Define a computed var to read the field at runtime instead.
+E       assert None
+
+test_a4_moot.py:88: AssertionError
+_________________________________ test_check_b _________________________________
+
+    def test_check_b():
+>       intact()
+
+test_a4_moot.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'test_a4_moot.Svc'>, names = ('limit', '_quota', 'items')
+
+    def intact(cls=Svc, names=("limit", "_quota", "items")):
+        """Assert the vars still work: descriptor is the original Field, defaults, instance, reset, pickle."""
+        for name in names:
+            owner = next(k for k in cls.__mro__ if name in k.__dict__)
+            f = owner.__dict__[name]
+            assert type(f).__name__ == "Field", (name, type(f))
+            assert f is cls.__fields__[name] is ORIG_FIELDS[cls][name], name
+>           assert f.default_value() == DECLARED.get(name, getattr(f, "default", None)), (name, f.default_value())
+E           AssertionError: ('items', ['a'])
+E           assert ['a'] == []
+E             
+E             Left contains one more item: 'a'
+E             Use -v to get more diff
+
+test_a4_moot.py:60: AssertionError
+___________________________ test_case_c_monkeypatch ____________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fa6469ac080>
+
+    def test_case_c_monkeypatch(monkeypatch):
+>       with pytest.raises(TypeError) as ei:
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:159: Failed
+_________________________________ test_check_c _________________________________
+
+    def test_check_c():
+>       intact()
+
+test_a4_moot.py:167: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'test_a4_moot.Svc'>, names = ('limit', '_quota', 'items')
+
+    def intact(cls=Svc, names=("limit", "_quota", "items")):
+        """Assert the vars still work: descriptor is the original Field, defaults, instance, reset, pickle."""
+        for name in names:
+            owner = next(k for k in cls.__mro__ if name in k.__dict__)
+            f = owner.__dict__[name]
+            assert type(f).__name__ == "Field", (name, type(f))
+            assert f is cls.__fields__[name] is ORIG_FIELDS[cls][name], name
+>           assert f.default_value() == DECLARED.get(name, getattr(f, "default", None)), (name, f.default_value())
+E           AssertionError: ('items', ['a'])
+E           assert ['a'] == []
+E             
+E             Left contains one more item: 'a'
+E             Use -v to get more diff
+
+test_a4_moot.py:60: AssertionError
+_______________________ test_case_d_monkeypatch_delattr ________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fa6469ae6c0>
+
+    def test_case_d_monkeypatch_delattr(monkeypatch):
+        monkeypatch.delattr(Svc, "_quota")
+>       assert "_quota" not in Svc.__dict__
+E       AssertionError: assert '_quota' not in mappingproxy({'__module__': 'test_a4_moot', '__annotations__': {'limit': <class 'int'>, '_quota': <class 'int'>, 'item...rty_computed_vars': set(), '__abstractmethods__': frozenset(), '_abc_impl': <_abc._abc_data object at 0x7fa646927c00>})
+E        +  where mappingproxy({'__module__': 'test_a4_moot', '__annotations__': {'limit': <class 'int'>, '_quota': <class 'int'>, 'item...rty_computed_vars': set(), '__abstractmethods__': frozenset(), '_abc_impl': <_abc._abc_data object at 0x7fa646927c00>}) = Svc.__dict__
+
+test_a4_moot.py:173: AssertionError
+_________________________________ test_check_d _________________________________
+
+    def test_check_d():
+>       intact()
+
+test_a4_moot.py:179: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'test_a4_moot.Svc'>, names = ('limit', '_quota', 'items')
+
+    def intact(cls=Svc, names=("limit", "_quota", "items")):
+        """Assert the vars still work: descriptor is the original Field, defaults, instance, reset, pickle."""
+        for name in names:
+            owner = next(k for k in cls.__mro__ if name in k.__dict__)
+            f = owner.__dict__[name]
+            assert type(f).__name__ == "Field", (name, type(f))
+            assert f is cls.__fields__[name] is ORIG_FIELDS[cls][name], name
+>           assert f.default_value() == DECLARED.get(name, getattr(f, "default", None)), (name, f.default_value())
+E           AssertionError: ('items', ['a'])
+E           assert ['a'] == []
+E             
+E             Left contains one more item: 'a'
+E             Use -v to get more diff
+
+test_a4_moot.py:60: AssertionError
+___________________________ test_case_patch_multiple ___________________________
+
+    def test_case_patch_multiple():
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:184: Failed
+___________________________ test_case_patch_by_path ____________________________
+
+    def test_case_patch_by_path():
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:190: Failed
+_____________________ test_case_patch_autospec_newcallable _____________________
+
+    def test_case_patch_autospec_newcallable():
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:196: Failed
+_____________________________ test_check_spellings _____________________________
+
+    def test_check_spellings():
+>       intact()
+
+test_a4_moot.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'test_a4_moot.Svc'>, names = ('limit', '_quota', 'items')
+
+    def intact(cls=Svc, names=("limit", "_quota", "items")):
+        """Assert the vars still work: descriptor is the original Field, defaults, instance, reset, pickle."""
+        for name in names:
+            owner = next(k for k in cls.__mro__ if name in k.__dict__)
+            f = owner.__dict__[name]
+            assert type(f).__name__ == "Field", (name, type(f))
+            assert f is cls.__fields__[name] is ORIG_FIELDS[cls][name], name
+>           assert f.default_value() == DECLARED.get(name, getattr(f, "default", None)), (name, f.default_value())
+E           AssertionError: ('items', ['a'])
+E           assert ['a'] == []
+E             
+E             Left contains one more item: 'a'
+E             Use -v to get more diff
+
+test_a4_moot.py:60: AssertionError
+__________________________ test_case_substate_assign ___________________________
+
+    def test_case_substate_assign():
+>       with pytest.raises(TypeError) as ei:
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:207: Failed
+________________________ test_case_substate_mock_patch _________________________
+
+    def test_case_substate_mock_patch():
+>       with pytest.raises(TypeError) as ei:
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:221: Failed
+________________________ test_case_substate_monkeypatch ________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fa646917ce0>
+
+    def test_case_substate_monkeypatch(monkeypatch):
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:229: Failed
+_____________________________ test_check_substate ______________________________
+
+    def test_check_substate():
+>       intact(SvcChild)
+
+test_a4_moot.py:234: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'test_a4_moot.SvcChild'>, names = ('limit', '_quota', 'items')
+
+    def intact(cls=Svc, names=("limit", "_quota", "items")):
+        """Assert the vars still work: descriptor is the original Field, defaults, instance, reset, pickle."""
+        for name in names:
+            owner = next(k for k in cls.__mro__ if name in k.__dict__)
+            f = owner.__dict__[name]
+            assert type(f).__name__ == "Field", (name, type(f))
+            assert f is cls.__fields__[name] is ORIG_FIELDS[cls][name], name
+>           assert f.default_value() == DECLARED.get(name, getattr(f, "default", None)), (name, f.default_value())
+E           AssertionError: ('limit', 5)
+E           assert 5 == 0
+E            +  where 5 = default_value()
+E            +    where default_value = Field(default=5, is_var=True, annotated_type=<class 'int'>).default_value
+E            +  and   0 = <built-in method get of dict object at 0x7fa647696880>('limit', 5)
+E            +    where <built-in method get of dict object at 0x7fa647696880> = {'limit': 0, '_quota': 0, 'items': []}.get
+E            +    and   5 = getattr(Field(default=5, is_var=True, annotated_type=<class 'int'>), 'default', None)
+
+test_a4_moot.py:60: AssertionError
+____________________________ test_case_mixin_assign ____________________________
+
+    def test_case_mixin_assign():
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE TypeError
+
+test_a4_moot.py:240: Failed
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_a4_moot.py::test_case_mixin_delete_inherited
+FAILED test_a4_moot.py::test_case_direct_assign_frontend - Failed: DID NOT RA...
+FAILED test_a4_moot.py::test_case_direct_assign_backend - Failed: DID NOT RAI...
+FAILED test_a4_moot.py::test_case_setattr_mutable - Failed: DID NOT RAISE Typ...
+FAILED test_a4_moot.py::test_case_same_value_and_own_var - Failed: DID NOT RA...
+FAILED test_a4_moot.py::test_case_a_mock_var - AssertionError: A Var cannot b...
+FAILED test_a4_moot.py::test_check_a - AssertionError: ('_quota', 10)
+FAILED test_a4_moot.py::test_case_a_mock_plain - Failed: DID NOT RAISE TypeError
+FAILED test_a4_moot.py::test_check_a_plain - AssertionError: ('_quota', 10)
+FAILED test_a4_moot.py::test_case_b_mocker_field - AssertionError: A Field ca...
+FAILED test_a4_moot.py::test_check_b - AssertionError: ('items', ['a'])
+FAILED test_a4_moot.py::test_case_c_monkeypatch - Failed: DID NOT RAISE TypeE...
+FAILED test_a4_moot.py::test_check_c - AssertionError: ('items', ['a'])
+FAILED test_a4_moot.py::test_case_d_monkeypatch_delattr - AssertionError: ass...
+FAILED test_a4_moot.py::test_check_d - AssertionError: ('items', ['a'])
+FAILED test_a4_moot.py::test_case_patch_multiple - Failed: DID NOT RAISE Type...
+FAILED test_a4_moot.py::test_case_patch_by_path - Failed: DID NOT RAISE TypeE...
+FAILED test_a4_moot.py::test_case_patch_autospec_newcallable - Failed: DID NO...
+FAILED test_a4_moot.py::test_check_spellings - AssertionError: ('items', ['a'])
+FAILED test_a4_moot.py::test_case_substate_assign - Failed: DID NOT RAISE Typ...
+FAILED test_a4_moot.py::test_case_substate_mock_patch - Failed: DID NOT RAISE...
+FAILED test_a4_moot.py::test_case_substate_monkeypatch - Failed: DID NOT RAIS...
+FAILED test_a4_moot.py::test_check_substate - AssertionError: ('limit', 5)
+FAILED test_a4_moot.py::test_case_mixin_assign - Failed: DID NOT RAISE TypeError
+23 failed, 1 passed in 1.18s

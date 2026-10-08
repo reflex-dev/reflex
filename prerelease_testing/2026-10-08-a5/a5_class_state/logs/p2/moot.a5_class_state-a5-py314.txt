@@ -1,0 +1,54 @@
+............
+(d) during delattr: instance _quota -> '<AttributeError>'
+......
+INHERITED-MSG limit through SvcChild: owner=Svc
+
+INHERITED-MSG _quota through SvcChild: owner=Svc
+
+INHERITED-MSG limit through SvcChild: owner=Svc
+.
+substate mock.patch.object -> TypeError: 'limit' is a state var of Svc, inherited by SvcChild; deleting it on SvcChild would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), which applies to every state that inherits it, or declare class-level config as ClassVar. | context: TypeError("'limit' is a state var of Svc, inherited by SvcChild; assigning it on SvcChild would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), which applies to every state that inherits it, or declare class-level config as ClassVar.")
+....
+mval in UsesMix.__dict__: True
+.
+OWNERS (name, through, owner, action):
+   ('limit', 'Svc', 'Svc', 'assigning')
+   ('_quota', 'Svc', 'Svc', 'assigning')
+   ('items', 'Svc', 'Svc', 'assigning')
+   ('limit', 'Svc', 'Svc', 'assigning')
+   ('_quota', 'Svc', 'Svc', 'assigning')
+   ('limit', 'Svc', 'Svc', 'assigning')
+   ('limit', 'SvcChild', 'Svc', 'assigning')
+   ('_quota', 'SvcChild', 'Svc', 'assigning')
+   ('limit', 'SvcChild', 'Svc', 'deleting')
+   ('mval', 'Mix', 'Mix', 'assigning')
+   ('mval', 'UsesMix', 'UsesMix', 'assigning')
+.
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_a5_moot.py::test_case_direct_assign_frontend
+PASSED test_a5_moot.py::test_case_direct_assign_backend
+PASSED test_a5_moot.py::test_case_setattr_mutable
+PASSED test_a5_moot.py::test_case_same_value_and_own_var
+PASSED test_a5_moot.py::test_case_a_mock_var
+PASSED test_a5_moot.py::test_check_a
+PASSED test_a5_moot.py::test_case_a_mock_plain
+PASSED test_a5_moot.py::test_check_a_plain
+PASSED test_a5_moot.py::test_case_b_mocker_field
+PASSED test_a5_moot.py::test_check_b
+PASSED test_a5_moot.py::test_case_c_monkeypatch
+PASSED test_a5_moot.py::test_check_c
+PASSED test_a5_moot.py::test_case_d_monkeypatch_delattr
+PASSED test_a5_moot.py::test_check_d
+PASSED test_a5_moot.py::test_case_patch_multiple
+PASSED test_a5_moot.py::test_case_patch_by_path
+PASSED test_a5_moot.py::test_case_patch_autospec_newcallable
+PASSED test_a5_moot.py::test_check_spellings
+PASSED test_a5_moot.py::test_case_substate_assign
+PASSED test_a5_moot.py::test_case_substate_mock_patch
+PASSED test_a5_moot.py::test_case_substate_monkeypatch
+PASSED test_a5_moot.py::test_check_substate
+PASSED test_a5_moot.py::test_case_mixin_assign
+PASSED test_a5_moot.py::test_case_mixin_delete_inherited
+PASSED test_a5_moot.py::test_zz_owner_summary
+25 passed in 1.03s

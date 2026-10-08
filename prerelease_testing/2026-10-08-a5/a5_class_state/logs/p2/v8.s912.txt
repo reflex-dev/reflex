@@ -1,0 +1,36 @@
+[a5_class_state-s912] _is_client_storage('opt_cached') before assignment = True
+[a5_class_state-s912] declared
+    compiled storage: {'ck': ('cookies', 'k_ck'), 'plain': ('local', 'k_plain'), 'opt': ('local', 'k_opt'), 'opt_cached': ('local', 'k_opt_cached'), 'uni': ('local', 'k_uni')}
+    plain      default_type=LocalStorage  default='d'      instance='d'
+    opt        default_type=LocalStorage  default='d'      instance='d'
+    opt_cached default_type=LocalStorage  default='d'      instance='d'
+    uni        default_type=LocalStorage  default='d'      instance='d'
+    ck         default_type=Cookie        default='d'      instance='d'
+[a5_class_state-s912] St.plain = 'x': accepted
+[a5_class_state-s912] St.opt = None: accepted
+[a5_class_state-s912] St.opt_cached = None: accepted
+[a5_class_state-s912] St.uni = 5: accepted
+[a5_class_state-s912] St.ck = None: accepted
+[a5_class_state-s912] after non-str assignments
+    compiled storage: {'ck': ('cookies', 'k_ck'), 'plain': ('local', 'k_plain'), 'opt': ('local', 'k_opt'), 'opt_cached': ('local', 'k_opt_cached'), 'uni': ('local', 'k_uni')}
+    plain      default_type=LocalStorage  default='d'      instance='d'
+    opt        default_type=LocalStorage  default='d'      instance='d'
+    opt_cached default_type=LocalStorage  default='d'      instance='d'
+    uni        default_type=LocalStorage  default='d'      instance='d'
+    ck         default_type=Cookie        default='d'      instance='d'
+    _is_client_storage('opt') = True
+    _is_client_storage('opt_cached') = True
+    _is_client_storage('uni') = True
+    _is_client_storage('ck') = True
+[a5_class_state-s912] after St.opt = 'y'
+    compiled storage: {'ck': ('cookies', 'k_ck'), 'plain': ('local', 'k_plain'), 'opt': ('local', 'k_opt'), 'opt_cached': ('local', 'k_opt_cached'), 'uni': ('local', 'k_uni')}
+    plain      default_type=LocalStorage  default='d'      instance='d'
+    opt        default_type=LocalStorage  default='d'      instance='d'
+    opt_cached default_type=LocalStorage  default='d'      instance='d'
+    uni        default_type=LocalStorage  default='d'      instance='d'
+    ck         default_type=Cookie        default='d'      instance='d'
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_class_state/run/orig/v8/probe_v8_storage.py", line 77, in <module>
+    del St.opt
+        ^^^^^^
+AttributeError: type object 'St' has no attribute 'opt'

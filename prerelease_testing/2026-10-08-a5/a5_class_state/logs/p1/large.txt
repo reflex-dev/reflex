@@ -1,0 +1,12 @@
+0.9.12     list     value=  61.2MB classdef=   303.0ms (+  22.2MB) first-instance+access=   871.0ms (+  24.6MB) after `del value`= 124.2MB rss peak= 124.2MB
+0.10.0a4   list     value=  61.2MB classdef=   297.0ms (+  22.4MB) first-instance+access=   428.8ms (+  12.4MB) after `del value`= 112.3MB rss peak= 112.3MB
+0.10.0a5   list     value=  61.2MB classdef=   719.0ms (+  34.8MB) first-instance+access=   421.6ms (+  12.2MB) after `del value`= 112.2MB rss peak= 124.3MB
+0.9.12     ndarray  value=  17.6MB classdef=   293.3ms (+  17.2MB) first-instance+access=   759.2ms (+ 100.1MB) after `del value`= 151.1MB rss peak= 151.1MB
+0.10.0a4   ndarray  value=  17.8MB classdef=   291.1ms (+  17.3MB) first-instance+access=    20.9ms (+  50.1MB) after `del value`= 101.3MB rss peak= 101.4MB
+0.10.0a5   ndarray  value=  17.8MB classdef=   366.2ms (+  67.4MB) first-instance+access=   111.6ms (+  50.0MB) after `del value`= 151.3MB rss peak= 151.4MB
+0.9.12     df       value= 114.8MB classdef=   369.6ms (+   9.8MB) first-instance+access=   912.7ms (+ 100.0MB) after `del value`= 240.7MB rss peak= 240.7MB
+0.10.0a4   df       value= 114.8MB classdef=   281.3ms (+   9.9MB) first-instance+access=   267.3ms (+  50.0MB) after `del value`= 190.8MB rss peak= 190.8MB
+0.10.0a5   df       value= 114.8MB classdef=   673.6ms (+  59.9MB) first-instance+access=   340.0ms (+  50.0MB) after `del value`= 191.0MB rss peak= 240.8MB
+0.9.12     dictrows value=  56.9MB classdef=   302.4ms (+  21.9MB) first-instance+access=  1306.4ms (+ 101.7MB) after `del value`= 196.6MB rss peak= 196.6MB
+0.10.0a4   dictrows value=  56.7MB classdef=   280.7ms (+  22.3MB) first-instance+access=   591.6ms (+  48.5MB) after `del value`= 143.6MB rss peak= 153.5MB
+0.10.0a5   dictrows value=  56.7MB classdef=  1060.8ms (+  70.8MB) first-instance+access=   603.8ms (+  52.8MB) after `del value`= 195.0MB rss peak= 196.2MB

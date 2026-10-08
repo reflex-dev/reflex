@@ -1,0 +1,6 @@
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+reflex 0.10.0a4 auto_setters=False
+ROW 1 parent var set_color + child var color | created; CColl.set_color=StringCastedVar(reflex___state____state__reflex___istate___dynamic___p_coll.set_color_rx_state_) PColl.set_color=StringCastedVar(reflex___state____state__reflex___istate___dynamic___p_coll.set_color_rx_state_); 'set_color' in CColl.event_handlers=False in CColl.__fields__=True; no auto setter (auto setters off); c.set_color (instance read)=str; parent var still works: p.set_color='pp'; compiled P keys=['set_color_rx_state_'] C keys=['color_rx_state_']; rx.text(CColl.set_color) -> Text
+ROW 2 same class: set_color var + color var | created; SSame.set_color=StringCastedVar(reflex___state____state__reflex___istate___dynamic___s_same.set_color_rx_state_) 'set_color' in event_handlers=False; s.set_color='p'
+ROW 3 child declares an explicit handler named like an inherited var (set_color) | created; CExp.set_color=EventHandler
+ROW 4 grandparent var set_size + grandchild var size | created

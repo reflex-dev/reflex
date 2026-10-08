@@ -1,0 +1,180 @@
+FFF.F...F.F.
+(d) during delattr: instance _quota -> '<AttributeError>'
+......F
+substate mock.patch.object -> TypeError: 'limit' is a state var of Svc, inherited by SvcChild; deleting it on SvcChild would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), which applies to every state that inherits it, or declare class-level config as ClassVar. | context: TypeError("'limit' is a state var of Svc, inherited by SvcChild; assigning it on SvcChild would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), which applies to every state that inherits it, or declare class-level config as ClassVar.")
+....
+mval in UsesMix.__dict__: True
+.
+=================================== FAILURES ===================================
+_______________________ test_case_direct_assign_frontend _______________________
+
+    def test_case_direct_assign_frontend():
+        with pytest.raises(TypeError) as ei:
+            Svc.limit = 10  # MARK-direct-frontend
+>       check_msg(ei, "limit", "Svc")
+
+test_a4_moot.py:96: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+excinfo = <ExceptionInfo TypeError("'limit' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), or declare class-level config as ClassVar.") tblen=2>
+name = 'limit', cls_name = 'Svc', action = 'assigning'
+
+    def check_msg(excinfo, name, cls_name, action="assigning"):
+        m = MSG.fullmatch(str(excinfo.value))
+>       assert m, str(excinfo.value)
+E       AssertionError: 'limit' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), or declare class-level config as ClassVar.
+E       assert None
+
+test_a4_moot.py:88: AssertionError
+_______________________ test_case_direct_assign_backend ________________________
+
+    def test_case_direct_assign_backend():
+        with pytest.raises(TypeError) as ei:
+            Svc._quota = 10  # MARK-direct-backend
+>       check_msg(ei, "_quota", "Svc")
+
+test_a4_moot.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+excinfo = <ExceptionInfo TypeError("'_quota' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['_quota'].set_default(...), or declare class-level config as ClassVar.") tblen=2>
+name = '_quota', cls_name = 'Svc', action = 'assigning'
+
+    def check_msg(excinfo, name, cls_name, action="assigning"):
+        m = MSG.fullmatch(str(excinfo.value))
+>       assert m, str(excinfo.value)
+E       AssertionError: '_quota' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['_quota'].set_default(...), or declare class-level config as ClassVar.
+E       assert None
+
+test_a4_moot.py:88: AssertionError
+__________________________ test_case_setattr_mutable ___________________________
+
+    def test_case_setattr_mutable():
+        with pytest.raises(TypeError) as ei:
+            setattr(Svc, "items", ["a"])
+>       check_msg(ei, "items", "Svc")
+
+test_a4_moot.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+excinfo = <ExceptionInfo TypeError("'items' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['items'].set_default(...), or declare class-level config as ClassVar.") tblen=2>
+name = 'items', cls_name = 'Svc', action = 'assigning'
+
+    def check_msg(excinfo, name, cls_name, action="assigning"):
+        m = MSG.fullmatch(str(excinfo.value))
+>       assert m, str(excinfo.value)
+E       AssertionError: 'items' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['items'].set_default(...), or declare class-level config as ClassVar.
+E       assert None
+
+test_a4_moot.py:88: AssertionError
+_____________________________ test_case_a_mock_var _____________________________
+
+    def test_case_a_mock_var():
+        with pytest.raises(TypeError) as ei:
+            with mock.patch.object(Svc, "limit", Other.y):
+                pass
+>       check_msg(ei, "limit", "Svc")
+
+test_a4_moot.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+excinfo = <ExceptionInfo TypeError("'limit' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), or declare class-level config as ClassVar.") tblen=3>
+name = 'limit', cls_name = 'Svc', action = 'assigning'
+
+    def check_msg(excinfo, name, cls_name, action="assigning"):
+        m = MSG.fullmatch(str(excinfo.value))
+>       assert m, str(excinfo.value)
+E       AssertionError: 'limit' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), or declare class-level config as ClassVar.
+E       assert None
+
+test_a4_moot.py:88: AssertionError
+___________________________ test_case_b_mocker_field ___________________________
+
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7f5cdfdc8380>
+
+    def test_case_b_mocker_field(mocker):
+        with pytest.raises(TypeError) as ei:
+            mocker.patch.object(Svc, "_quota", rx.field(5))
+>       check_msg(ei, "_quota", "Svc")
+
+test_a4_moot.py:150: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+excinfo = <ExceptionInfo TypeError("'_quota' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['_quota'].set_default(...), or declare class-level config as ClassVar.") tblen=6>
+name = '_quota', cls_name = 'Svc', action = 'assigning'
+
+    def check_msg(excinfo, name, cls_name, action="assigning"):
+        m = MSG.fullmatch(str(excinfo.value))
+>       assert m, str(excinfo.value)
+E       AssertionError: '_quota' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['_quota'].set_default(...), or declare class-level config as ClassVar.
+E       assert None
+
+test_a4_moot.py:88: AssertionError
+___________________________ test_case_c_monkeypatch ____________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5cdfdc8e60>
+
+    def test_case_c_monkeypatch(monkeypatch):
+        with pytest.raises(TypeError) as ei:
+            monkeypatch.setattr(Svc, "limit", 99)
+>       check_msg(ei, "limit", "Svc")
+
+test_a4_moot.py:161: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+excinfo = <ExceptionInfo TypeError("'limit' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), or declare class-level config as ClassVar.") tblen=3>
+name = 'limit', cls_name = 'Svc', action = 'assigning'
+
+    def check_msg(excinfo, name, cls_name, action="assigning"):
+        m = MSG.fullmatch(str(excinfo.value))
+>       assert m, str(excinfo.value)
+E       AssertionError: 'limit' is a state var of Svc; assigning it on the class would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), or declare class-level config as ClassVar.
+E       assert None
+
+test_a4_moot.py:88: AssertionError
+__________________________ test_case_substate_assign ___________________________
+
+    def test_case_substate_assign():
+        with pytest.raises(TypeError) as ei:
+            SvcChild.limit = 5
+>       check_msg(ei, "limit", "SvcChild")
+
+test_a4_moot.py:209: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+excinfo = <ExceptionInfo TypeError("'limit' is a state var of Svc, inherited by SvcChild; assigning it on SvcChild would replace....set_default(...), which applies to every state that inherits it, or declare class-level config as ClassVar.") tblen=2>
+name = 'limit', cls_name = 'SvcChild', action = 'assigning'
+
+    def check_msg(excinfo, name, cls_name, action="assigning"):
+        m = MSG.fullmatch(str(excinfo.value))
+>       assert m, str(excinfo.value)
+E       AssertionError: 'limit' is a state var of Svc, inherited by SvcChild; assigning it on SvcChild would replace the var. Set its default with Svc.__fields__['limit'].set_default(...), which applies to every state that inherits it, or declare class-level config as ClassVar.
+E       assert None
+
+test_a4_moot.py:88: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED test_a4_moot.py::test_case_same_value_and_own_var
+PASSED test_a4_moot.py::test_check_a
+PASSED test_a4_moot.py::test_case_a_mock_plain
+PASSED test_a4_moot.py::test_check_a_plain
+PASSED test_a4_moot.py::test_check_b
+PASSED test_a4_moot.py::test_check_c
+PASSED test_a4_moot.py::test_case_d_monkeypatch_delattr
+PASSED test_a4_moot.py::test_check_d
+PASSED test_a4_moot.py::test_case_patch_multiple
+PASSED test_a4_moot.py::test_case_patch_by_path
+PASSED test_a4_moot.py::test_case_patch_autospec_newcallable
+PASSED test_a4_moot.py::test_check_spellings
+PASSED test_a4_moot.py::test_case_substate_mock_patch
+PASSED test_a4_moot.py::test_case_substate_monkeypatch
+PASSED test_a4_moot.py::test_check_substate
+PASSED test_a4_moot.py::test_case_mixin_assign
+PASSED test_a4_moot.py::test_case_mixin_delete_inherited
+FAILED test_a4_moot.py::test_case_direct_assign_frontend - AssertionError: 'l...
+FAILED test_a4_moot.py::test_case_direct_assign_backend - AssertionError: '_q...
+FAILED test_a4_moot.py::test_case_setattr_mutable - AssertionError: 'items' i...
+FAILED test_a4_moot.py::test_case_a_mock_var - AssertionError: 'limit' is a s...
+FAILED test_a4_moot.py::test_case_b_mocker_field - AssertionError: '_quota' i...
+FAILED test_a4_moot.py::test_case_c_monkeypatch - AssertionError: 'limit' is ...
+FAILED test_a4_moot.py::test_case_substate_assign - AssertionError: 'limit' i...
+7 failed, 17 passed in 0.43s

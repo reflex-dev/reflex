@@ -1,0 +1,25 @@
+────────────────────────────── Initializing c4e2e ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized c4e2e. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a5_class_state-a5/lib/python3.12/site-packages/reflex_components_radix/plu
+gin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3303/
+[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+Expected field 'St.ann' to receive type '<class 
+'reflex.istate.storage.LocalStorage'>', but got 'assigned' of type '<class 
+'str'>'.
+Info: Reflex app stopped.

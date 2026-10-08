@@ -1,0 +1,7 @@
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+state_auto_setters has been deprecated in version 0.9.0. auto setters will be removed; use explicit event handlers instead. It will be completely removed in 1.0. (rxconfig.py:3)
+reflex 0.10.0a5 auto_setters=True
+ROW 1 parent var set_color + child var color | EXC TypeError: 'set_color' is a state var of PColl, inherited by CColl; assigning it on CColl would replace the var. Set its default with PColl.__fields__['set_color'].set_default(...), which applies to every state  @ ['state.py:1303', 'state.py:1400', 'base.py:4822']
+ROW 2 same class: set_color var + color var | created; SSame.set_color=StringCastedVar(reflex___state____state__reflex___istate___dynamic___s_same.set_color_rx_state_) 'set_color' in event_handlers=False; s.set_color='p'
+ROW 3 child declares an explicit handler named like an inherited var (set_color) | created; CExp.set_color=EventHandler
+ROW 4 grandparent var set_size + grandchild var size | EXC TypeError: 'set_size' is a state var of GA, inherited by GC; assigning it on GC would replace the var. Set its default with GA.__fields__['set_size'].set_default(...), which applies to every state that inherits  @ ['state.py:1303', 'state.py:1400', 'base.py:4822']

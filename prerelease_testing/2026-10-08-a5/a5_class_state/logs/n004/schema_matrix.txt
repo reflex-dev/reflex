@@ -1,0 +1,77 @@
++ SCHEMA_DEFAULT=0 a5_class_state-a5 save
+reflex 0.10.0a5 default=0: saved count=42 schema=bbd147dc3cdaec5701080b994dc1875a
+saved=a5_class_state-a5      loader=a5_class_state-a5      d0 -> reflex 0.10.0a5 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a5      loader=a5_class_state-a5      d5 -> reflex 0.10.0a5 default=5: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a5      loader=a5_class_state-a4      d0 -> reflex 0.10.0a4 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a5      loader=a5_class_state-a4      d5 -> reflex 0.10.0a4 default=5: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a5      loader=a4_class_state-a3      d0 -> reflex 0.10.0a3 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a5      loader=a4_class_state-a3      d5 -> reflex 0.10.0a3 default=5: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a5      loader=a5_class_state-s912    d0 -> reflex 0.9.12 default=0: StateSchemaMismatchError: 
+saved=a5_class_state-a5      loader=a5_class_state-s912    d5 -> reflex 0.9.12 default=5: StateSchemaMismatchError: 
++ SCHEMA_DEFAULT=0 a5_class_state-a4 save
+reflex 0.10.0a4 default=0: saved count=42 schema=bbd147dc3cdaec5701080b994dc1875a
+saved=a5_class_state-a4      loader=a5_class_state-a5      d0 -> reflex 0.10.0a5 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a4      loader=a5_class_state-a5      d5 -> reflex 0.10.0a5 default=5: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a4      loader=a5_class_state-a4      d0 -> reflex 0.10.0a4 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a4      loader=a5_class_state-a4      d5 -> reflex 0.10.0a4 default=5: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a4      loader=a4_class_state-a3      d0 -> reflex 0.10.0a3 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a4      loader=a4_class_state-a3      d5 -> reflex 0.10.0a3 default=5: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-a4      loader=a5_class_state-s912    d0 -> reflex 0.9.12 default=0: StateSchemaMismatchError: 
+saved=a5_class_state-a4      loader=a5_class_state-s912    d5 -> reflex 0.9.12 default=5: StateSchemaMismatchError: 
++ SCHEMA_DEFAULT=0 a4_class_state-a3 save
+reflex 0.10.0a3 default=0: saved count=42 schema=bbd147dc3cdaec5701080b994dc1875a
+saved=a4_class_state-a3      loader=a5_class_state-a5      d0 -> reflex 0.10.0a5 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a4_class_state-a3      loader=a5_class_state-a5      d5 -> reflex 0.10.0a5 default=5: LOADED count=42 label='saved' _secret='be'
+saved=a4_class_state-a3      loader=a5_class_state-a4      d0 -> reflex 0.10.0a4 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a4_class_state-a3      loader=a5_class_state-a4      d5 -> reflex 0.10.0a4 default=5: LOADED count=42 label='saved' _secret='be'
+saved=a4_class_state-a3      loader=a4_class_state-a3      d0 -> reflex 0.10.0a3 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a4_class_state-a3      loader=a4_class_state-a3      d5 -> reflex 0.10.0a3 default=5: LOADED count=42 label='saved' _secret='be'
+saved=a4_class_state-a3      loader=a5_class_state-s912    d0 -> reflex 0.9.12 default=0: StateSchemaMismatchError: 
+saved=a4_class_state-a3      loader=a5_class_state-s912    d5 -> reflex 0.9.12 default=5: StateSchemaMismatchError: 
++ SCHEMA_DEFAULT=0 a5_class_state-s912 save
+reflex 0.9.12 default=0: saved count=42 schema=fae0a0e8c3092b67840dd414913f3e6e
+saved=a5_class_state-s912    loader=a5_class_state-a5      d0 -> reflex 0.10.0a5 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-s912    loader=a5_class_state-a5      d5 -> reflex 0.10.0a5 default=5: StateSchemaMismatchError: 
+saved=a5_class_state-s912    loader=a5_class_state-a4      d0 -> reflex 0.10.0a4 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-s912    loader=a5_class_state-a4      d5 -> reflex 0.10.0a4 default=5: StateSchemaMismatchError: 
+saved=a5_class_state-s912    loader=a4_class_state-a3      d0 -> reflex 0.10.0a3 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-s912    loader=a4_class_state-a3      d5 -> reflex 0.10.0a3 default=5: StateSchemaMismatchError: 
+saved=a5_class_state-s912    loader=a5_class_state-s912    d0 -> reflex 0.9.12 default=0: LOADED count=42 label='saved' _secret='be'
+saved=a5_class_state-s912    loader=a5_class_state-s912    d5 -> reflex 0.9.12 default=5: StateSchemaMismatchError: 
++ pickle contents
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_class_state/run/run/schema/out/saved-a5_class_state-a5.bin: schema=bbd147dc3cdaec5701080b994dc1875a class=schema_mod.SchemaState
+   '_secret'                = 'be'
+   'count'                  = 42
+   'label'                  = 'saved'
+   contains 'dirty_vars': False
+   contains 'dirty_substates': False
+   contains '_backend_vars': False
+   contains '_replaced_defaults': False
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_class_state/run/run/schema/out/saved-a5_class_state-a4.bin: schema=bbd147dc3cdaec5701080b994dc1875a class=schema_mod.SchemaState
+   '_secret'                = 'be'
+   'count'                  = 42
+   'label'                  = 'saved'
+   contains 'dirty_vars': False
+   contains 'dirty_substates': False
+   contains '_backend_vars': False
+   contains '_replaced_defaults': False
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_class_state/run/run/schema/out/saved-a4_class_state-a3.bin: schema=bbd147dc3cdaec5701080b994dc1875a class=schema_mod.SchemaState
+   '_secret'                = 'be'
+   'count'                  = 42
+   'label'                  = 'saved'
+   contains 'dirty_vars': False
+   contains 'dirty_substates': False
+   contains '_backend_vars': False
+   contains '_replaced_defaults': False
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_class_state/run/run/schema/out/saved-a5_class_state-s912.bin: schema=fae0a0e8c3092b67840dd414913f3e6e class=schema_mod.SchemaState
+   '_backend_vars'          = {'_secret': 'be'}
+   '_reflex_internal_links' = None
+   '_secret'                = 'be'
+   'count'                  = 42
+   'dirty_substates'        = set()
+   'dirty_vars'             = {'label', 'count'}
+   'label'                  = 'saved'
+   contains 'dirty_vars': True
+   contains 'dirty_substates': True
+   contains '_backend_vars': True
+   contains '_replaced_defaults': False

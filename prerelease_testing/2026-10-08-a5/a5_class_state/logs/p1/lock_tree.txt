@@ -1,0 +1,23 @@
+== s912
+reflex 0.9.12
+STEP classdef ok
+STEP root init FAIL TypeError cannot pickle '_thread.lock' object
+== a4
+reflex 0.10.0a4
+STEP classdef ok
+STEP root init ok; substates instantiated: ['__main______unused', '__main______used', 'reflex___state____frontend_event_exception_state', 'reflex___state____on_load_internal_state', 'reflex___state____update_vars_internal_state']
+STEP Used works 1
+STEP Unused._lock access FAIL TypeError cannot pickle '_thread.lock' object
+== a5
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-a5/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4091, in _with_default
+    return cls(annotated_type=annotated_type, **_default_arguments(value))
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-a5/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4706, in _default_arguments
+    "default_factory": functools.partial(copy.deepcopy, copy.deepcopy(value)),
+                                                        ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/copy.py", line 151, in deepcopy
+    rv = reductor(4)
+         ^^^^^^^^^^^
+TypeError: cannot pickle '_thread.lock' object
+reflex 0.10.0a5
+STEP classdef FAIL TypeError cannot pickle '_thread.lock' object

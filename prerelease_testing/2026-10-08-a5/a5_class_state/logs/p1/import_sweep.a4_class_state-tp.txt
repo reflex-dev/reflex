@@ -1,0 +1,119 @@
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-tp/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:156)
+Event handler on_submit expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> () as annotated in Chat_n1.submit_message instead. This may lead to unexpected behavior but is intentionally ignored for on_submit.
+{
+ "reflex": null,
+ "results": {
+  "reflex_local_auth": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_global_hotkey": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_google_auth": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_magic_link_auth": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_intersection_observer": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_audio_capture": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_webcam": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_simpleicons": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_monaco": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_calendar": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_pyplot": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_chakra": {
+   "status": "error",
+   "error": "Traceback (most recent call last):\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_class_state/run/sweep/import_sweep.py\", line 30, in <module>\n    importlib.import_module(m)\n  File \"/usr/lib/python3.12/importlib/__init__.py\", line 90, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1387, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1360, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1331, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 935, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 995, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-tp/lib/python3.12/site-packages/reflex_chakra/__init__.py\", line 3, in <module>\n    from .components import *\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-tp/lib/python3.12/site-packages/reflex_chakra/components/__init__.py\", line 9, in <module>\n    from .forms import *\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-tp/lib/python3.12/site-packages/reflex_chakra/components/forms/__init__.py\", line 35, in <module>\n    from .radio import Radio, RadioGroup\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-tp/lib/python3.12/site-packages/reflex_chakra/components/forms/radio.py\", line 8, in <module>\n    from reflex.utils.types import _issubclass\nImportError: cannot import name '_issubclass' from 'reflex.utils.types' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-tp/lib/python3.12/site-packages/reflex/utils/types.py)\n",
+   "warnings": []
+  },
+  "reflex_ag_grid": {
+   "status": "error",
+   "error": "Traceback (most recent call last):\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_class_state/run/sweep/import_sweep.py\", line 30, in <module>\n    importlib.import_module(m)\n  File \"/usr/lib/python3.12/importlib/__init__.py\", line 90, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1387, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1360, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1331, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 935, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 995, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-tp/lib/python3.12/site-packages/reflex_ag_grid/__init__.py\", line 1, in <module>\n    from .ag_grid import ag_grid\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-tp/lib/python3.12/site-packages/reflex_ag_grid/ag_grid.py\", line 15, in <module>\n    from .datasource import Datasource, SSRMDatasource\n  File \"/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4_class_state-tp/lib/python3.12/site-packages/reflex_ag_grid/datasource.py\", line 2, in <module>\n    from reflex.base import Base\nModuleNotFoundError: No module named 'reflex.base'\n",
+   "warnings": []
+  },
+  "reflex_google_recaptcha_v2": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_clerk": {
+   "status": "ok",
+   "error": null,
+   "warnings": [
+    "AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.\nIt will be compatible before version 2.0.0. (reflex_clerk/lib/clerk_provider.py:8)"
+   ]
+  },
+  "reflex_motion": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_type_animation": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_image_zoom": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_dynoselect": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "rx_color_picker": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_qrcode": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  },
+  "reflex_chat": {
+   "status": "ok",
+   "error": null,
+   "warnings": []
+  }
+ }
+}

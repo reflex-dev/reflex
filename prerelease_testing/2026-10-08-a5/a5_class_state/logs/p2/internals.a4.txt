@@ -1,0 +1,16 @@
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-a4/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:156)
+`rx._x` contains experimental features and might be removed at any time in the future.
+reflex 0.10.0a4 python 3.12.3
+ROW parent var 'set_color' + child var 'color' (auto setter name collides) | created; C.set_color is Field; setvar=EventHandlerSetVar
+ROW add_var parent/child + field default on a dynamic var | EXC TypeError: 'dyn' is a state var of C4; assigning it on the class would replace the var. Set its default with C4.__fields__['dyn'].default = ..., or declare class @ base.py:4776
+ROW ComponentState.create x50 with cls.__fields__ defaults/factory/storage key | 50 instances own defaults=True; plain instance text='init' items=[]; template field untouched=True; storage keys=51 (want 51: theme + 50 per-key) sample=['theme', 'theme_k0', 'theme_k1']; reset->'v3'
+ROW ComponentState get_component doing `cls.text = initial` (a3 docs pattern) | EXC TypeError: 'text' is a state var of Bad_n1; assigning it on the class would replace the var. Set its default with Bad_n1.__fields__['text'].default = ..., or dec @ base.py:4776
+ROW ComponentState: get_component called directly on the template | EXC ChildrenTypeError: Component Text received child Field(default='TEMPLATE', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. Acce @ component.py:1285
+ROW mixin field default before/after concrete states (docs: only later states) | A (before)=1 B (after)=5; A owns copy=True; M.m=2 TypeError A.m=2 TypeError
+ROW ClassVar / new names | C.x=6 (ClassVar over inherited var): ok; P.x=2 (var): TypeError; P.CFG=9: ok; C.CFG=10: ok; P.brand_new=1: ok; C.brand_new=2: ok | C.x=6 P.CFG=9 C.CFG=10 'x' in C.__fields__=True inst(C).x=6
+ROW delete inherited via substate / delete+re-set on declaring class | del C.x (inherited): TypeError ''x' is a state var of C11; deleting it on the class would re'; del P._b; P._b=99 -> P._b=99 inst=99
+ROW rx.Model vars + default_factory + pickle + reset | EXC PicklingError: Can't pickle <class '__main__.S12'>: attribute lookup S12 on __main__ failed @ probe_internals.py:223
+ROW setvar / auto setters | EXC AttributeError: 'S13' object has no attribute 'set_v' @ state.py:222
+ROW rx._x.client_state | client_state ok: ClientStateVar
+ROW rx.SharedState subclass | SharedState field default -> 3; SS.count=1 TypeError; links default=<dataclasses._MISSING_TYPE object at 0x7f75e5c930e0>
+ROW dynamic route /post/[slug] | route arg var on State: True type=DynamicRouteVar

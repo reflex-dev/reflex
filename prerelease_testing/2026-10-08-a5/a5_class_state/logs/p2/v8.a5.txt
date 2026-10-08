@@ -1,0 +1,31 @@
+[a5_class_state-a5] _is_client_storage('opt_cached') before assignment = True
+[a5_class_state-a5] declared
+    compiled storage: {'ck': ('cookies', 'k_ck'), 'plain': ('local', 'k_plain'), 'opt': ('local', 'k_opt'), 'opt_cached': ('local', 'k_opt_cached'), 'uni': ('local', 'k_uni')}
+    plain      default_type=LocalStorage  default='d'      instance='d'
+    opt        default_type=LocalStorage  default='d'      instance='d'
+    opt_cached default_type=LocalStorage  default='d'      instance='d'
+    uni        default_type=LocalStorage  default='d'      instance='d'
+    ck         default_type=Cookie        default='d'      instance='d'
+[a5_class_state-a5] St.plain = 'x': TypeError: 'plain' is a state var of St; assigning it on the class would replace the var. Set its default with St.__fields__['plain'].set_default(...), or declare class-level config as ClassVar.
+[a5_class_state-a5] St.opt = None: TypeError: 'opt' is a state var of St; assigning it on the class would replace the var. Set its default with St.__fields__['opt'].set_default(...), or declare class-level config as ClassVar.
+[a5_class_state-a5] St.opt_cached = None: TypeError: 'opt_cached' is a state var of St; assigning it on the class would replace the var. Set its default with St.__fields__['opt_cached'].set_default(...), or declare class-level config as ClassVar.
+[a5_class_state-a5] St.uni = 5: TypeError: 'uni' is a state var of St; assigning it on the class would replace the var. Set its default with St.__fields__['uni'].set_default(...), or declare class-level config as ClassVar.
+[a5_class_state-a5] St.ck = None: TypeError: 'ck' is a state var of St; assigning it on the class would replace the var. Set its default with St.__fields__['ck'].set_default(...), or declare class-level config as ClassVar.
+[a5_class_state-a5] after non-str assignments
+    compiled storage: {'ck': ('cookies', 'k_ck'), 'plain': ('local', 'k_plain'), 'opt': ('local', 'k_opt'), 'opt_cached': ('local', 'k_opt_cached'), 'uni': ('local', 'k_uni')}
+    plain      default_type=LocalStorage  default='d'      instance='d'
+    opt        default_type=LocalStorage  default='d'      instance='d'
+    opt_cached default_type=LocalStorage  default='d'      instance='d'
+    uni        default_type=LocalStorage  default='d'      instance='d'
+    ck         default_type=Cookie        default='d'      instance='d'
+    _is_client_storage('opt') = True
+    _is_client_storage('opt_cached') = True
+    _is_client_storage('uni') = True
+    _is_client_storage('ck') = True
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_class_state/run/orig/v8/probe_v8_storage.py", line 72, in <module>
+    St.opt = "y"
+    ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-a5/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4822, in __setattr__
+    raise _state_var_assignment_error(cls, existing, "assigning")
+TypeError: 'opt' is a state var of St; assigning it on the class would replace the var. Set its default with St.__fields__['opt'].set_default(...), or declare class-level config as ClassVar.

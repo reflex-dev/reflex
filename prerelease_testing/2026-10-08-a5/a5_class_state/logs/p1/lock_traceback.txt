@@ -1,0 +1,43 @@
+== a5
+  File "<string>", line 3, in <module>
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_class_state/run/lockmod/mystate.py", line 6, in <module>
+    class CacheState(rx.State):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-a5/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4895, in __new__
+    own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-a5/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4687, in _annotated_fields
+    fields[key] = Field._with_default(value, annotation)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-a5/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4091, in _with_default
+    return cls(annotated_type=annotated_type, **_default_arguments(value))
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-a5/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4706, in _default_arguments
+    "default_factory": functools.partial(copy.deepcopy, copy.deepcopy(value)),
+  File "/usr/lib/python3.12/copy.py", line 151, in deepcopy
+    rv = reductor(4)
+TypeError: cannot pickle '_thread.lock' object
+== a4
+            ~~~~~~~~~~~~~~^^^^^^^^^^^^
+KeyError: '_lock'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 6, in <module>
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-a4/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4318, in __get__
+    value = state.__dict__[self._name] = self.default_value()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-a4/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4105, in default_value
+    return self.default_factory()
+  File "/usr/lib/python3.12/copy.py", line 151, in deepcopy
+    rv = reductor(4)
+TypeError: cannot pickle '_thread.lock' object
+== s912
+import ok
+Traceback (most recent call last):
+  File "<string>", line 6, in <module>
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-s912/lib/python3.12/site-packages/reflex/state.py", line 857, in __init__
+    super().__init__(**kwargs)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-s912/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4314, in __init__
+    default_value = value.default_value()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5_class_state-s912/lib/python3.12/site-packages/reflex_base/vars/base.py", line 3820, in default_value
+    return self.default_factory()
+  File "/usr/lib/python3.12/copy.py", line 151, in deepcopy
+    rv = reductor(4)
+TypeError: cannot pickle '_thread.lock' object

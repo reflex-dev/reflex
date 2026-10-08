@@ -1,0 +1,21 @@
+== a5_class_state-a5
+python 3.12.3 venv a5_class_state-a5
+set_default stress: errors=0 [] instance errors=0 [] | final count=0 _f='d' items=['decl'] | fields: count=(0,None) _f=('d',None) items.default=<dataclasses._MISSING_TYPE object at 0x7f2701a92c30> | want 0 'd' ['decl']
+python 3.12.3 venv a5_class_state-a5
+(1) set/restore field default: errors=0 final count=0 _f='d' field=(0, 'd', None) want (0, 'd', None) | instance creations that raised mid-update: 0 []
+(2) mock.patch.object(field,'default') x8 threads: errors=0 final field default=41453 fresh instance=41453
+(2') same on a plain Python object attribute: errors=0 final=71459
+== a5_class_state-a5-py311
+python 3.11.17 venv a5_class_state-a5-py311
+set_default stress: errors=0 [] instance errors=0 [] | final count=0 _f='d' items=['decl'] | fields: count=(0,None) _f=('d',None) items.default=<dataclasses._MISSING_TYPE object at 0x7f41de198610> | want 0 'd' ['decl']
+python 3.11.17 venv a5_class_state-a5-py311
+(1) set/restore field default: errors=0 final count=0 _f='d' field=(0, 'd', None) want (0, 'd', None) | instance creations that raised mid-update: 0 []
+(2) mock.patch.object(field,'default') x8 threads: errors=0 final field default=71060 fresh instance=71060
+(2') same on a plain Python object attribute: errors=0 final=11043
+== a5_class_state-a5-py314
+python 3.14.6 venv a5_class_state-a5-py314
+set_default stress: errors=0 [] instance errors=0 [] | final count=0 _f='d' items=['decl'] | fields: count=(0,None) _f=('d',None) items.default=<dataclasses._MISSING_TYPE object at 0x7f9f6bc2fa10> | want 0 'd' ['decl']
+python 3.14.6 venv a5_class_state-a5-py314
+(1) set/restore field default: errors=0 final count=0 _f='d' field=(0, 'd', None) want (0, 'd', None) | instance creations that raised mid-update: 0 []
+(2) mock.patch.object(field,'default') x8 threads: errors=0 final field default=21300 fresh instance=21300
+(2') same on a plain Python object attribute: errors=0 final=70952

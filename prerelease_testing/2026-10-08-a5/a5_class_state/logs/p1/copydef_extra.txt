@@ -1,0 +1,25 @@
+== s912
+ROW add_var with a list populated afterwards | add_var(list) then append -> instance MutableProxy(['late'])
+ROW backend `_mod: Any = json` (module object default) | FAIL@instance TypeError: cannot pickle 'module' object
+ROW backend `_engine: Any = sqlalchemy.create_engine(...)` | FAIL@instance TypeError: cannot pickle 'module' object
+ROW ComponentState.create cost with large mutable class default | 100 x ComponentState.create with a 200k-item list default: 196 ms
+== a4
+ROW add_var with a list populated afterwards | add_var(list) then append -> instance MutableProxy(['late'])
+ROW backend `_mod: Any = json` (module object default) | FAIL@instance TypeError: cannot pickle 'module' object
+ROW backend `_engine: Any = sqlalchemy.create_engine(...)` | FAIL@instance TypeError: cannot pickle 'module' object
+ROW ComponentState.create cost with large mutable class default | 100 x ComponentState.create with a 200k-item list default: 101 ms
+== a5
+ROW add_var with a list populated afterwards | add_var(list) then append -> instance MutableProxy([])
+ROW backend `_mod: Any = json` (module object default) | FAIL@classdef TypeError: cannot pickle 'module' object
+ROW backend `_engine: Any = sqlalchemy.create_engine(...)` | FAIL@classdef TypeError: cannot pickle 'module' object
+ROW ComponentState.create cost with large mutable class default | 100 x ComponentState.create with a 200k-item list default: 131 ms
+== a5-py311
+ROW add_var with a list populated afterwards | add_var(list) then append -> instance MutableProxy([])
+ROW backend `_mod: Any = json` (module object default) | FAIL@classdef TypeError: cannot pickle 'module' object
+ROW backend `_engine: Any = sqlalchemy.create_engine(...)` | FAIL@classdef TypeError: cannot pickle 'module' object
+ROW ComponentState.create cost with large mutable class default | 100 x ComponentState.create with a 200k-item list default: 97 ms
+== a5-py314
+ROW add_var with a list populated afterwards | add_var(list) then append -> instance MutableProxy([])
+ROW backend `_mod: Any = json` (module object default) | FAIL@classdef TypeError: cannot pickle 'module' object
+ROW backend `_engine: Any = sqlalchemy.create_engine(...)` | FAIL@classdef TypeError: cannot pickle 'module' object
+ROW ComponentState.create cost with large mutable class default | 100 x ComponentState.create with a 200k-item list default: 108 ms

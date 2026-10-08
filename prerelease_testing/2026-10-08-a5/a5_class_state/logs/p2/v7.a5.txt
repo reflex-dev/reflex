@@ -1,0 +1,16 @@
+
+==================================== ERRORS ====================================
+_______________________ ERROR collecting test_v7_undo.py _______________________
+test_v7_undo.py:40: in <module>
+    CTRL_MP = _mk("ctrl_mp")
+              ^^^^^^^^^^^^^^
+test_v7_undo.py:30: in _mk
+    cls.limit = 10
+    ^^^^^^^^^
+../../../../../envs/a5_class_state-a5/lib/python3.12/site-packages/reflex_base/vars/base.py:4822: in __setattr__
+    raise _state_var_assignment_error(cls, existing, "assigning")
+E   TypeError: 'limit' is a state var of Cfg_ctrl_mp; assigning it on the class would replace the var. Set its default with Cfg_ctrl_mp.__fields__['limit'].set_default(...), or declare class-level config as ClassVar.
+=========================== short test summary info ============================
+ERROR test_v7_undo.py - TypeError: 'limit' is a state var of Cfg_ctrl_mp; ass...
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.62s

@@ -1,0 +1,12 @@
+reflex 0.9.12
+field after .default = []: default=[] factory=functools.partial(<function deepcopy at 0x7f4994c7e020>, [])
+direct instances: other session items=['leak'] _bitems=[]; new session items=['leak'] _bitems=[]; field default now=['leak']
+session trees (root State): other session items=['leak', 'leak'] _bitems=[]; new session items=['leak', 'leak'] _bitems=[]; field default now=['leak', 'leak']
+reflex 0.10.0a4
+field after .default = []: default=[] factory=functools.partial(<function deepcopy at 0x7f43f3479120>, [])
+direct instances: other session items=['leak'] _bitems=['bleak']; new session items=['leak'] _bitems=['bleak']; field default now=['leak']
+session trees (root State): other session items=['leak', 'leak'] _bitems=['bleak', 'bleak']; new session items=['leak', 'leak'] _bitems=['bleak', 'bleak']; field default now=['leak', 'leak']
+reflex 0.10.0a5
+field after .default = []: default=[] factory=functools.partial(<function deepcopy at 0x7fac986f51c0>, [])
+direct instances: other session items=['leak'] _bitems=['bleak']; new session items=['leak'] _bitems=['bleak']; field default now=['leak']
+session trees (root State): other session items=['leak', 'leak'] _bitems=['bleak', 'bleak']; new session items=['leak', 'leak'] _bitems=['bleak', 'bleak']; field default now=['leak', 'leak']
