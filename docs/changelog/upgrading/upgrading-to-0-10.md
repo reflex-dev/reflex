@@ -46,7 +46,7 @@ State.get_fields()["_items"].default_value()
 
 ## Assigning a state var through its class
 
-On 0.9, `State.count = 10` replaced the class attribute, but new instances still started at the declared default. In 0.10 a state var is a descriptor on its class, and assigning over it raises `TypeError` instead of breaking the var. This includes pytest's `monkeypatch.setattr` and `unittest.mock.patch.object` on a var. Change the default on the var's field, patch the field in tests, and declare class-level configuration as `ClassVar`:
+On 0.9, `State.count = 10` replaced the class attribute, but new instances still started at the declared default. In 0.10 a state var is a descriptor on its class, and assigning over it raises `TypeError` instead of breaking the var. This includes pytest's `monkeypatch.setattr` and `unittest.mock.patch.object` on a var. Change the default with the field's `set_default`, patch the field in tests, and declare class-level configuration as `ClassVar`:
 
 ```python
 from typing import ClassVar
@@ -62,14 +62,16 @@ class State(rx.State):
     _client: ClassVar[httpx.AsyncClient | None] = None
 
 
-State.__fields__["count"].default = 10
+State.__fields__["count"].set_default(10)
 State._client = httpx.AsyncClient()  # a ClassVar stays an ordinary class attribute
 
 with mock.patch.object(State.__fields__["count"], "default", 99):
     ...
 ```
 
-[Changing Defaults](/docs/vars/base-vars/#changing-defaults) has the details, including mutable defaults and browser storage vars.
+On 0.9, assigning `State.__fields__["items"].default = []` was safe, because each instance got a copy of the default. In 0.10 every instance shares the field's `default`, so a mutable value assigned there leaks changes between sessions. `set_default` copies a mutable value for each instance.
+
+[Changing Defaults](/docs/vars/base-vars/#changing-defaults) has the details, including browser storage vars.
 
 ## Calling inherited handlers from background tasks
 

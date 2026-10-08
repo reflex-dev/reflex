@@ -1,0 +1,1 @@
+Add `Field.set_default(value)` to change a state var's default, such as `State.__fields__["items"].set_default(["a"])`. A mutable value is copied for each instance, so sessions never share it. The `TypeError` for assigning a state var through its class now points at `set_default` on the field of the state that declares the var.

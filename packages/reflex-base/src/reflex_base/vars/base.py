@@ -4090,6 +4090,21 @@ class Field(Generic[FIELD_TYPE]):
         """
         return cls(annotated_type=annotated_type, **_default_arguments(value))
 
+    def set_default(self, value: FIELD_TYPE) -> None:
+        """Set the default value of the field, replacing its default or factory.
+
+        A mutable value, like a list, is copied now and then deep-copied for
+        each instance, so neither the caller nor any two instances share it; an
+        immutable value is used as is. The change applies to values not yet
+        stored on an instance, such as in a new session or after ``reset()``.
+
+        Args:
+            value: The new default value.
+        """
+        arguments = _default_arguments(value)
+        self.default = arguments["default"]
+        self.default_factory = arguments["default_factory"]
+
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
 
@@ -4665,38 +4680,27 @@ def _default_arguments(value: Any) -> dict[str, Any]:
     """
     if types.is_immutable(value):
         return {"default": value, "default_factory": None}
+    # Copy the value once, so later changes by whoever passed it in do not
+    # reach the default.
     return {
         "default": MISSING,
-        "default_factory": functools.partial(copy.deepcopy, value),
+        "default_factory": functools.partial(copy.deepcopy, copy.deepcopy(value)),
     }
 
 
-def _state_var_assignment_error(
-    cls: type, field: Field, action: str, value: Any = MISSING
-) -> TypeError:
+def _state_var_assignment_error(cls: type, field: Field, action: str) -> TypeError:
     """Build the error for replacing a state var through its class.
 
     Args:
         cls: The state class the attribute is set or deleted through.
         field: The field of the state var.
         action: What was done to the class attribute, like "assigning".
-        value: The value assigned, if any.
 
     Returns:
         The error, naming the state declaring the var and how to change its
         default there instead.
     """
     owner = field._owner or cls
-    name = field._name
-    target = f"{owner.__name__}.__fields__[{name!r}]"
-    if value is MISSING or types.is_immutable(value):
-        fix = f"{target}.default = ..."
-    else:
-        # A mutable default would be shared by every instance; a set default
-        # also wins over the factory, so it must be cleared first.
-        fix = f"{target}.default_factory = lambda: ..."
-        if field.default is not MISSING:
-            fix = f"{target}.default = dataclasses.MISSING and {fix}"
     if owner is cls:
         declared = f"{owner.__name__}; {action} it on the class"
         scope = ""
@@ -4707,8 +4711,9 @@ def _state_var_assignment_error(
         )
         scope = ", which applies to every state that inherits it"
     return TypeError(
-        f"{name!r} is a state var of {declared} would replace the var. Set its "
-        f"default with {fix}{scope}, or declare class-level config as ClassVar."
+        f"{field._name!r} is a state var of {declared} would replace the var. "
+        f"Set its default with {owner.__name__}.__fields__[{field._name!r}]"
+        f".set_default(...){scope}, or declare class-level config as ClassVar."
     )
 
 
@@ -4795,7 +4800,7 @@ class BaseStateMeta(ABCMeta):
                 # Assigning the var's own field back, as a patch undoing a
                 # failed assignment does, changes nothing.
                 return
-            raise _state_var_assignment_error(cls, existing, "assigning", value)
+            raise _state_var_assignment_error(cls, existing, "assigning")
         super().__setattr__(name, value)
 
     def __delattr__(cls, name: str) -> None:
