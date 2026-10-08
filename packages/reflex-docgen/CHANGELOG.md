@@ -1,3 +1,14 @@
+## v0.10.0a2 (2026-10-06)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Bug Fixes
+
+- Recognize YAML frontmatter after a UTF-8 BOM or leading whitespace and with CRLF line endings, keeping metadata out of rendered page content and tables of contents. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))
+
+
 ## v0.9.5 (2026-08-28)
 
 ### Miscellaneous
