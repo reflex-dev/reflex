@@ -1,3 +1,14 @@
+## v0.10.0a2 (2026-10-06)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Bug Fixes
+
+- Allow Recharts axis tick formatters to use Reflex function vars. ([#7366](https://github.com/reflex-dev/reflex/issues/7366))
+
+
 ## v0.9.4.post1 (2026-09-21)
 
 ### Bug Fixes
