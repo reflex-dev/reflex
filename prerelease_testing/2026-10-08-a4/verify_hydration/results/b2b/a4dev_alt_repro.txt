@@ -1,0 +1,6 @@
+# b2b_probe.py http://localhost:3660 a4dev_alt_repro.json 5 alt   (reporter's h4mix, a4 dev 3660/8660, state.js md5 b7915eda)
+rep 0: finals=['c8', 'c8'] ls=c8 t1_writes=['c0', 'c2', 'c4', 'c6', 'c8'] t2_writes=['c1', 'c3', 'c5', 'c7', 'c9']
+rep 1: finals=['c8', 'c8'] ls=c8 t1_writes=['c0', 'c2', 'c4', 'c6', 'c8'] t2_writes=['c1', 'c3', 'c5', 'c7', 'c9']
+rep 2: finals=['c8', 'c8'] ls=c8 t1_writes=['c0', 'c2', 'c4', 'c6', 'c8'] t2_writes=['c1', 'c3', 'c5', 'c7', 'c9']
+rep 3: finals=['c8', 'c8'] ls=c8 t1_writes=['c0', 'c2', 'c4', 'c6', 'c8'] t2_writes=['c1', 'c3', 'c5', 'c7', 'c9']
+rep 4: finals=['c8', 'c8'] ls=c8 t1_writes=['c0', 'c2', 'c4', 'c6', 'c8'] t2_writes=['c1', 'c3', 'c5', 'c7', 'c9']

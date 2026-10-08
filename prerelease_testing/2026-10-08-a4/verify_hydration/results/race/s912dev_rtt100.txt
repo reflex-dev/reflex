@@ -1,0 +1,61 @@
+gap:0 rep0: finals=['c8', 'c8'] ls=c8 backend=['c8', 'c8'] consistent=True last_action=c9 last_server=c9 last_store=c8 lost=True flips=['t2:c9->c8'] quiet=[3, 5] nwrites=[21, 22]
+    server: C:c8@+53 C:c9@+57
+    stores(last6): t2:c9@+1986 t2:c8@+2089 t1:c9@+2090 t1:c8@+2194 t2:c9@+2194 t2:c8@+2299
+gap:0 rep1: finals=['c8', 'c8'] ls=c8 backend=['c8', 'c8'] consistent=True last_action=c9 last_server=c9 last_store=c8 lost=True flips=['t2:c9->c8'] quiet=[0, 0] nwrites=[5, 6]
+    server: C:c8@+53 C:c9@+55
+    stores(last6): t2:c9@+314 t1:c9@+418 t2:c8@+418 t1:c8@+524 t2:c9@+524 t2:c8@+630
+gap:0 rep2: finals=['c9', 'c8'] ls=c9 backend=['c8', 'c8'] consistent=False last_action=c9 last_server=c9 last_store=c9 lost=False flips=['t1:c8->c9', 't2:c9->c8'] quiet=[18, 18] nwrites=[34, 34]
+    server: C:c8@+52 C:c9@+57
+    stores(last6): t2:c8@+3333 t1:c9@+3336 t1:c8@+3436 t2:c9@+3440 t2:c8@+3540 t1:c9@+3543
+gap:40 rep0: finals=['c8', 'c8'] ls=c8 backend=['c8', 'c8'] consistent=True last_action=c9 last_server=c9 last_store=c8 lost=True flips=['t2:c9->c8'] quiet=[19, 19] nwrites=[35, 34]
+    server: C:c8@+52 C:c9@+96
+    stores(last6): t1:c9@+3375 t1:c8@+3438 t2:c9@+3479 t2:c8@+3542 t1:c9@+3583 t1:c8@+3646
+gap:40 rep1: finals=['c8', 'c9'] ls=c9 backend=['c9', 'c8'] consistent=False last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[19, 19] nwrites=[35, 35]
+    server: C:c8@+53 C:c9@+97
+    stores(last6): t1:c8@+3423 t2:c9@+3468 t2:c8@+3527 t1:c9@+3571 t1:c8@+3630 t2:c9@+3675
+gap:40 rep2: finals=['c8', 'c8'] ls=c9 backend=['c9', 'c8'] consistent=False last_action=c9 last_server=c9 last_store=c8 lost=False flips=['t2:c9->c8'] quiet=[19, 19] nwrites=[35, 34]
+    server: C:c8@+52 C:c9@+96
+    stores(last6): t1:c9@+3368 t1:c8@+3428 t2:c9@+3470 t2:c8@+3532 t1:c9@+3574 t1:c8@+3635
+gap:80 rep0: finals=['c8', 'c8'] ls=c9 backend=['c9', 'c8'] consistent=False last_action=c9 last_server=c9 last_store=c8 lost=False flips=['t2:c9->c8'] quiet=[18, 18] nwrites=[35, 34]
+    server: C:c8@+52 C:c9@+136
+    stores(last6): t1:c9@+3411 t1:c8@+3431 t2:c9@+3514 t2:c8@+3534 t1:c9@+3618 t1:c8@+3638
+gap:80 rep1: finals=['c8', 'c8'] ls=c8 backend=['c9', 'c8'] consistent=False last_action=c9 last_server=c9 last_store=c8 lost=False flips=['t2:c9->c8'] quiet=[18, 18] nwrites=[35, 34]
+    server: C:c8@+52 C:c9@+137
+    stores(last6): t1:c9@+3413 t1:c8@+3434 t2:c9@+3516 t2:c8@+3538 t1:c9@+3620 t1:c8@+3641
+gap:80 rep2: finals=['c8', 'c8'] ls=c8 backend=['c8', 'c8'] consistent=True last_action=c9 last_server=c9 last_store=c8 lost=True flips=['t2:c9->c8'] quiet=[18, 18] nwrites=[35, 34]
+    server: C:c8@+52 C:c9@+136
+    stores(last6): t1:c9@+3421 t1:c8@+3436 t2:c9@+3526 t2:c8@+3541 t1:c9@+3630 t1:c8@+3646
+gap:150 rep0: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=['t1:c8->c9'] quiet=[0, 0] nwrites=[2, 2]
+    server: C:c8@+52 C:c9@+207
+    stores(last6): t1:c8@+103 t2:c8@+207 t2:c9@+259 t1:c9@+363
+gap:150 rep1: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=['t1:c8->c9'] quiet=[0, 0] nwrites=[2, 2]
+    server: C:c8@+52 C:c9@+206
+    stores(last6): t1:c8@+104 t2:c8@+208 t2:c9@+258 t1:c9@+363
+gap:150 rep2: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=['t1:c8->c9'] quiet=[0, 0] nwrites=[2, 2]
+    server: C:c8@+52 C:c9@+207
+    stores(last6): t1:c8@+104 t2:c8@+207 t2:c9@+258 t1:c9@+362
+bg:570 rep0: finals=['bg1', 'c9'] ls=c9 backend=['c9', 'bg1'] consistent=False last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[60, 60] nwrites=[111, 109]
+    server: B:bg1@+153 B:bg2@+255 B:bg3@+356 B:bg4@+458 B:bg5@+560 C:c9@+625
+    stores(last6): t1:bg5@+4137 t1:bg3@+4148 t1:bg1@+4148 t2:bg4@+4149 t2:bg2@+4154 t2:c9@+4194
+bg:570 rep1: finals=['bg1', 'c9'] ls=c9 backend=['c9', 'bg1'] consistent=False last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[60, 60] nwrites=[111, 109]
+    server: B:bg1@+153 B:bg2@+255 B:bg3@+357 B:bg4@+458 B:bg5@+560 C:c9@+626
+    stores(last6): t1:bg5@+4140 t1:bg3@+4146 t2:bg4@+4148 t2:bg2@+4148 t1:bg1@+4152 t2:c9@+4199
+bg:570 rep2: finals=['bg1', 'c9'] ls=c9 backend=['c9', 'bg1'] consistent=False last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[60, 60] nwrites=[111, 109]
+    server: B:bg1@+153 B:bg2@+254 B:bg3@+355 B:bg4@+456 B:bg5@+558 C:c9@+626
+    stores(last6): t1:bg5@+4160 t2:bg4@+4161 t1:bg3@+4164 t2:bg2@+4165 t1:bg1@+4166 t2:c9@+4201
+pwalt rep0: finals=['c8', 'c9'] ls=c9 backend=['c9', 'c8'] consistent=False last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[94, 94] nwrites=[282, 282]
+    server: C:c0@+73 C:c1@+104 C:c2@+120 C:c3@+152 C:c4@+168 C:c5@+201 C:c6@+1253 C:c7@+1284 C:c8@+3287 C:c9@+3319
+    stores(last6): t1:c0@+6830 t1:c5@+6831 t1:c7@+6835 t2:c1@+6839 t1:c8@+6857 t2:c9@+6892
+pwalt rep1: finals=['c8', 'c9'] ls=c9 backend=['c9', 'c8'] consistent=False last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[95, 95] nwrites=[284, 283]
+    server: C:c0@+83 C:c1@+115 C:c2@+130 C:c3@+163 C:c4@+178 C:c5@+211 C:c6@+1262 C:c7@+1295 C:c8@+3297 C:c9@+3330
+    stores(last6): t1:c2@+6859 t2:c1@+6860 t1:c4@+6860 t2:c3@+6861 t1:c8@+6876 t2:c9@+6908
+pwalt rep2: finals=['c8', 'c9'] ls=c9 backend=['c9', 'c8'] consistent=False last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[95, 96] nwrites=[284, 283]
+    server: C:c0@+80 C:c1@+113 C:c2@+128 C:c3@+159 C:c4@+177 C:c5@+210 C:c6@+1260 C:c7@+1292 C:c8@+3293 C:c9@+3326
+    stores(last6): t1:c7@+6853 t2:c3@+6874 t1:c2@+6874 t1:c4@+6877 t1:c8@+6878 t2:c9@+6905
+SUMMARY
+  gap:0        n=3 finals={'c8': 2, 'INCONSISTENT': 1} consistent=2/3 =last_action=0 =last_store=2 =last_server=0 flips=3 storm(quiet>10)=1 writes/rep max=68
+  gap:40       n=3 finals={'c8': 1, 'INCONSISTENT': 2} consistent=1/3 =last_action=0 =last_store=1 =last_server=0 flips=2 storm(quiet>10)=3 writes/rep max=70
+  gap:80       n=3 finals={'INCONSISTENT': 2, 'c8': 1} consistent=1/3 =last_action=0 =last_store=1 =last_server=0 flips=3 storm(quiet>10)=3 writes/rep max=69
+  gap:150      n=3 finals={'c9': 3} consistent=3/3 =last_action=3 =last_store=3 =last_server=3 flips=3 storm(quiet>10)=0 writes/rep max=4
+  bg:570       n=3 finals={'INCONSISTENT': 3} consistent=0/3 =last_action=0 =last_store=0 =last_server=0 flips=0 storm(quiet>10)=3 writes/rep max=220
+  pwalt        n=3 finals={'INCONSISTENT': 3} consistent=0/3 =last_action=0 =last_store=0 =last_server=0 flips=0 storm(quiet>10)=3 writes/rep max=567

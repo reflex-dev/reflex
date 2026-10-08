@@ -1,0 +1,1041 @@
+[
+ {
+  "path": "/norm",
+  "offset": 0,
+  "click_at": 0.7,
+  "finals": [
+   "c5",
+   "c5"
+  ],
+  "ls": "c5",
+  "backend": [
+   "c5",
+   "c5"
+  ],
+  "consistent": true,
+  "lost": true,
+  "reverted": true,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    5.5,
+    "c5",
+    "false"
+   ],
+   [
+    8.5,
+    "c5",
+    "-"
+   ],
+   [
+    8.9,
+    "c5",
+    "-"
+   ],
+   [
+    19.0,
+    "c5",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    4.3,
+    "t2",
+    "c9"
+   ],
+   [
+    9.1,
+    "t1",
+    "c5"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2393.5,
+    "c5"
+   ],
+   [
+    7.5,
+    "c9"
+   ],
+   [
+    13.2,
+    "c5"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "CLICK",
+    "tok": "f3885b",
+    "ts": 3.1,
+    "v": "c9"
+   },
+   {
+    "tag": "NORM",
+    "tok": "b62082",
+    "ts": 3.5,
+    "v": "c5"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 2,
+  "click_at": 3.6,
+  "finals": [
+   "c5",
+   "c5"
+  ],
+  "ls": "c5",
+  "backend": [
+   "c5",
+   "c5"
+  ],
+  "consistent": true,
+  "lost": true,
+  "reverted": true,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    19.2,
+    "c5",
+    "false"
+   ],
+   [
+    19.4,
+    "c5",
+    "-"
+   ],
+   [
+    19.6,
+    "c5",
+    "-"
+   ],
+   [
+    23.2,
+    "c5",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    6.5,
+    "t2",
+    "c9"
+   ],
+   [
+    19.6,
+    "t1",
+    "c5"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2351.7,
+    "c5"
+   ],
+   [
+    9.6,
+    "c9"
+   ],
+   [
+    23.3,
+    "c5"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "dee59c",
+    "ts": 3.9,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "ee798d",
+    "ts": 5.7,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 4,
+  "click_at": 4.6,
+  "finals": [
+   "c5",
+   "c5"
+  ],
+  "ls": "c5",
+  "backend": [
+   "c5",
+   "c5"
+  ],
+  "consistent": true,
+  "lost": true,
+  "reverted": true,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    5.3,
+    "c5",
+    "false"
+   ],
+   [
+    5.4,
+    "c5",
+    "-"
+   ],
+   [
+    8.2,
+    "c5",
+    "-"
+   ],
+   [
+    19.3,
+    "c5",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    7.9,
+    "t2",
+    "c9"
+   ],
+   [
+    8.2,
+    "t1",
+    "c5"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2285.3,
+    "c5"
+   ],
+   [
+    9.3,
+    "c9"
+   ],
+   [
+    18.3,
+    "c5"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "a9e922",
+    "ts": 2.7,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "874bd9",
+    "ts": 6.1,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 6,
+  "click_at": 6.5,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    6.0,
+    "c5",
+    "false"
+   ],
+   [
+    6.3,
+    "c5",
+    "-"
+   ],
+   [
+    6.5,
+    "c5",
+    "-"
+   ],
+   [
+    26.2,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    6.5,
+    "t1",
+    "c5"
+   ],
+   [
+    8.4,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2293.7,
+    "c5"
+   ],
+   [
+    10.0,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "88b16f",
+    "ts": 2.7,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "b4df4c",
+    "ts": 7.7,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 8,
+  "click_at": 8.7,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    5.6,
+    "c5",
+    "false"
+   ],
+   [
+    7.0,
+    "c5",
+    "-"
+   ],
+   [
+    7.9,
+    "c5",
+    "-"
+   ],
+   [
+    28.2,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    8.0,
+    "t1",
+    "c5"
+   ],
+   [
+    10.7,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2269.3,
+    "c5"
+   ],
+   [
+    11.9,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "7ddf28",
+    "ts": 4.4,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "799068",
+    "ts": 10.0,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 10,
+  "click_at": 10.8,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    4.8,
+    "c5",
+    "false"
+   ],
+   [
+    5.1,
+    "c5",
+    "-"
+   ],
+   [
+    5.4,
+    "c5",
+    "-"
+   ],
+   [
+    27.8,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    5.4,
+    "t1",
+    "c5"
+   ],
+   [
+    13.1,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2270.4,
+    "c5"
+   ],
+   [
+    14.5,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "9bf892",
+    "ts": 2.9,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "a370b0",
+    "ts": 11.9,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 12,
+  "click_at": 12.7,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    4.1,
+    "c5",
+    "false"
+   ],
+   [
+    4.3,
+    "c5",
+    "-"
+   ],
+   [
+    5.3,
+    "c5",
+    "-"
+   ],
+   [
+    30.9,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    5.4,
+    "t1",
+    "c5"
+   ],
+   [
+    14.7,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2273.1,
+    "c5"
+   ],
+   [
+    15.6,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "273f0e",
+    "ts": 2.3,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "101ccb",
+    "ts": 13.9,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 14,
+  "click_at": 14.7,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    4.9,
+    "c5",
+    "false"
+   ],
+   [
+    5.1,
+    "c5",
+    "-"
+   ],
+   [
+    6.2,
+    "c5",
+    "-"
+   ],
+   [
+    28.8,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    6.4,
+    "t1",
+    "c5"
+   ],
+   [
+    17.5,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2263.6,
+    "c5"
+   ],
+   [
+    19.4,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "922ff5",
+    "ts": 3.0,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "2d594a",
+    "ts": 16.2,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 16,
+  "click_at": 16.9,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    6.6,
+    "c5",
+    "false"
+   ],
+   [
+    6.9,
+    "c5",
+    "-"
+   ],
+   [
+    8.4,
+    "c5",
+    "-"
+   ],
+   [
+    31.7,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    8.7,
+    "t1",
+    "c5"
+   ],
+   [
+    18.9,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2277.8,
+    "c5"
+   ],
+   [
+    21.5,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "0f0c23",
+    "ts": 2.6,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "bf76e1",
+    "ts": 18.1,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 18,
+  "click_at": 18.9,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    5.3,
+    "c5",
+    "false"
+   ],
+   [
+    5.4,
+    "c5",
+    "-"
+   ],
+   [
+    5.6,
+    "c5",
+    "-"
+   ],
+   [
+    28.0,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    5.6,
+    "t1",
+    "c5"
+   ],
+   [
+    20.7,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2264.6,
+    "c5"
+   ],
+   [
+    23.9,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "77158c",
+    "ts": 2.4,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "3a75ed",
+    "ts": 20.1,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 20,
+  "click_at": 24.3,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    6.7,
+    "c5",
+    "false"
+   ],
+   [
+    6.8,
+    "c5",
+    "-"
+   ],
+   [
+    8.5,
+    "c5",
+    "-"
+   ],
+   [
+    51.3,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    8.6,
+    "t1",
+    "c5"
+   ],
+   [
+    28.4,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2279.3,
+    "c5"
+   ],
+   [
+    31.9,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "f4651b",
+    "ts": 4.0,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "873868",
+    "ts": 27.3,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 24,
+  "click_at": 24.7,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    6.4,
+    "c5",
+    "false"
+   ],
+   [
+    6.7,
+    "c5",
+    "-"
+   ],
+   [
+    7.0,
+    "c5",
+    "-"
+   ],
+   [
+    29.9,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    7.0,
+    "t1",
+    "c5"
+   ],
+   [
+    26.7,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2280.7,
+    "c5"
+   ],
+   [
+    29.6,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "e25f4d",
+    "ts": 4.0,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "90d5d9",
+    "ts": 26.0,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/norm",
+  "offset": 28,
+  "click_at": 28.9,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    4.4,
+    "c5",
+    "false"
+   ],
+   [
+    4.6,
+    "c5",
+    "-"
+   ],
+   [
+    4.8,
+    "c5",
+    "-"
+   ],
+   [
+    34.8,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    4.8,
+    "t1",
+    "c5"
+   ],
+   [
+    32.6,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2289.1,
+    "c5"
+   ],
+   [
+    36.5,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "NORM",
+    "tok": "67e328",
+    "ts": 2.6,
+    "v": "c5"
+   },
+   {
+    "tag": "CLICK",
+    "tok": "ce43bc",
+    "ts": 30.4,
+    "v": "c9"
+   }
+  ]
+ }
+]

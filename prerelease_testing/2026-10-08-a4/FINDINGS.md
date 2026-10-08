@@ -92,17 +92,38 @@ Numbered A4-xx. All low severity; none is a regression against 0.9.12 that a use
   deprecated (with a warning) since 0.9.0; with the default config every version creates the classes. Only the message
   is worth improving (name the auto setter and the colliding var). Repro: `verify_class_state/probe_autoset2.py`.
 
-### A4-03: Two tabs writing a `sync=True` LocalStorage var within ~1 round trip converge on the value stored last, not the user's last write (LOW, behaviour change vs a3, not a regression vs 0.9.12; verification: see below)
+### A4-03: Two tabs writing a `sync=True` LocalStorage var within ~1 round trip converge on the earlier write; the later writer's tab flips after ~1 RTT (LOW, by design: consistent last-storage-writer-wins; not a regression vs a3 or 0.9.12; RECLASSIFIED by independent verifier; not a blocker)
 - Item `a4_hydration`. `drivers/b2b_probe.py … alt`: t1 and t2 alternately click #c0..#c9 with no pause → a4 ends on c8
   in both tabs and localStorage 5/5 (dev, prod, prod + Redis) and t2 visibly flips c9 → c8; a3 ends on c9 5/5 after a
   short ping-pong; 0.9.12 c9 3/4 and c5 1/4 after a long ping-pong. Gaps ≥ 40 ms and single-tab bursts end on c9. Frame
   log: t1 sends c8 at +0, t2 sends c9 at +32 ms; t2's c9 delta is written at +43, t1's slower c8 delta at +49; t1's
   storage-event sync for c9 reads the stored c8 (#7505's "send the value stored now"), so t2 syncs to c8.
-- VERIFICATION: PENDING.
+- **Verification (`verify_hydration`, own app `src/h4v` + `drivers/race.py`, `drivers/bootwin.py`, 100 ms RTT proxy):
+  RECLASSIFIED — consistent last-storage-writer-wins, a4 better than a3 and 0.9.12 overall.** Reproduces (c8 5/5). Gap
+  sweep: localhost gap 0 → c8 4/6, ≥ 10 ms → c9; at 100 ms RTT gaps 20–80 ms → c8, ≥ 150 ms → c9 (the window is ~1 RTT of
+  the earlier writer; in all 23 c8 runs the server had applied c9 last). All 136 a4 runs ended with every display,
+  localStorage and every tab's backend in agreement, 0 storms, never a value nobody wrote. Two paths let the earlier
+  write win: the reporter's, and a more common one at real latency (t2's click still in flight when t1's c8 lands in
+  storage, so t2 sends `update_vars_internal(c8)` right after its click and its backend applies c9 then c8). Same race on
+  a3 (c8 4/4 at gap 0) and 0.9.12 (3/3); at 100 ms RTT over 18 runs each a4 had 0 storms / 0 inconsistent, a3 12 / 11,
+  0.9.12 13 / 11 (up to ~568 writes in 3 s). Background task in one tab + click in the other at 100 ms RTT: a4 ends
+  consistently on the task's value (the click shows ~36 ms then reverts); a3 and 0.9.12 stormed 3/3. #7505's rejected
+  design (a stale echo written over a newer value) stays fixed: no run wrote a recognised echo over a newer value.
+- **Boot-window facet (a4-specific, follow-up to `a4_upgrade_ent` O-2):** a page whose `on_load` re-assigns the stored
+  value (`/norm`) makes the booting tab write a non-echo value; if another tab stores a newer value within a few ms of
+  that, the newer value is lost at localhost in 6/25 runs (a3 6/6 and 0.9.12 5/5 recover it via `e.newValue`, at the cost
+  of extra writes); at 100 ms RTT 12/12 end on the newer value. Always converges, no storm. Pages without such an
+  `on_load` get one echoed boot delta that is not written, so the window does not exist there.
+- Repro: `verify_hydration/NOTES.md` "Setup / rerun": `srv.sh start hv-a4dev a4 dev src/h4v 3660 8660` (optionally behind
+  `latency_proxy.py 8661 8660 50` with `REFLEX_API_URL=http://localhost:8661`), `race.py … 3 gap:40 bg:570`,
+  `bootwin.py … /norm 0 1 2 3 4 5`. Evidence: `verify_hydration/results/race/`.
+- Suggested follow-up (not for 0.10.0): document `sync=True` as last-writer-wins across tabs; the PR's own suggested
+  backend echo correlation would close the in-flight path.
 
 ### Pre-existing, seen again (not caused by a4)
 - `rx.remove_local_storage` of a synced key in one tab makes the other tab sync `null` into a `str` var; a computed var
   then raises `TypeError: object of type 'NoneType' has no len()` and that tab keeps the old value (a3, a4, 0.9.12 alike).
+  Not filed yet (verifier searched reflex-dev/reflex: no matching issue). Repro: `a4_hydration` h4mix check C21.
 - Downstream: reflex-clerk 1.0.3 `clerk_provider(secret_key=...)` / `ClerkState.set_fetch_user_on_auth()` write backend
   vars `_secret_key` / `_fetch_user` through the class and now raise the #7516 TypeError at page build; the package was
   already broken on every 0.10 alpha (class reads return `Field`, its route fails to build) and works on 0.9.12. It
@@ -118,7 +139,8 @@ See above. `preflight/NOTES.md`.
 
 ### `a4_hydration` — done (positive control on a3 reproduced first in every scenario family)
 A3-11 and A3-12 fixed in dev, prod and prod + Redis (9 workers): 0 storms in 48 a4 runs, convergence on the user's last
-value / one value every time. #7505 regression hunt clean apart from A4-03. Notes: `a4_hydration/NOTES.md`.
+value / one value every time. #7505 regression hunt clean apart from A4-03. Notes: `a4_hydration/NOTES.md`;
+verification `verify_hydration/NOTES.md`.
 
 ### `a4_class_state` — done (positive controls on a3 reproduced first)
 A3-01 / A3-02 / A3-04 moot as designed; N-005 / N-039 work through the field API; N-008 and N-004 unchanged; #7516

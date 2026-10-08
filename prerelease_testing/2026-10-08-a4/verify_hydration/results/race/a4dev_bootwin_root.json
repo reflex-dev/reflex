@@ -1,0 +1,191 @@
+[
+ {
+  "path": "/",
+  "offset": 0,
+  "click_at": 0.3,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    5.5,
+    "c5",
+    "false"
+   ],
+   [
+    5.8,
+    "c5",
+    "true"
+   ],
+   [
+    10.2,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    3.4,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2279.3,
+    "c5"
+   ],
+   [
+    4.4,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "CLICK",
+    "tok": "b38a0c",
+    "ts": 2.8,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/",
+  "offset": 5,
+  "click_at": 5.8,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    7.0,
+    "c5",
+    "false"
+   ],
+   [
+    7.3,
+    "c5",
+    "true"
+   ],
+   [
+    27.5,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    8.7,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2309.2,
+    "c5"
+   ],
+   [
+    10.8,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "CLICK",
+    "tok": "c711cd",
+    "ts": 7.6,
+    "v": "c9"
+   }
+  ]
+ },
+ {
+  "path": "/",
+  "offset": 10,
+  "click_at": 10.7,
+  "finals": [
+   "c9",
+   "c9"
+  ],
+  "ls": "c9",
+  "backend": [
+   "c9",
+   "c9"
+  ],
+  "consistent": true,
+  "lost": false,
+  "reverted": false,
+  "quiet_frames_1s": [
+   0,
+   0
+  ],
+  "t1_in": [
+   [
+    3.8,
+    "c5",
+    "false"
+   ],
+   [
+    4.4,
+    "c5",
+    "true"
+   ],
+   [
+    25.1,
+    "c9",
+    "-"
+   ]
+  ],
+  "writes": [
+   [
+    13.3,
+    "t2",
+    "c9"
+   ]
+  ],
+  "t2_disp": [
+   [
+    -2340.0,
+    "c5"
+   ],
+   [
+    15.2,
+    "c9"
+   ]
+  ],
+  "traces": [
+   {
+    "tag": "CLICK",
+    "tok": "bf38bf",
+    "ts": 11.9,
+    "v": "c9"
+   }
+  ]
+ }
+]

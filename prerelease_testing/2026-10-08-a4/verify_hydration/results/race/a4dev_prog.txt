@@ -1,0 +1,105 @@
+onload:0 rep0: finals=['st-a', 'st-a'] ls=st-a backend=['st-a', 'st-a'] consistent=True last_action=st-b last_server=st-b last_store=st-a lost=True flips=[] quiet=[0, 0] nwrites=[1, 2]
+    server: S:st-a@+162 S:st-b@+168
+    stores(last6): t1:st-a@+167 t2:st-b@+173 t2:st-a@+174
+onload:0 rep1: finals=['st-b', 'st-b'] ls=st-b backend=['st-b', 'st-b'] consistent=True last_action=st-b last_server=st-a last_store=st-b lost=True flips=[] quiet=[0, 0] nwrites=[1, 1]
+    server: S:st-b@+166 S:st-a@+169
+    stores(last6): t1:st-a@+172 t2:st-b@+184
+onload:0 rep2: finals=['st-b', 'st-b'] ls=st-b backend=['st-b', 'st-b'] consistent=True last_action=st-b last_server=st-a last_store=st-b lost=True flips=[] quiet=[0, 0] nwrites=[2, 1]
+    server: S:st-b@+213 S:st-a@+224
+    stores(last6): t2:st-b@+218 t1:st-a@+231 t1:st-b@+231
+onload:0 rep3: finals=['st-b', 'st-b'] ls=st-b backend=['st-b', 'st-b'] consistent=True last_action=st-b last_server=st-b last_store=st-b lost=False flips=[] quiet=[0, 0] nwrites=[1, 1]
+    server: S:st-a@+161 S:st-b@+178
+    stores(last6): t1:st-a@+164 t2:st-b@+183
+onload:30 rep0: finals=['st-b', 'st-b'] ls=st-b backend=['st-b', 'st-b'] consistent=True last_action=st-b last_server=st-b last_store=st-b lost=False flips=[] quiet=[0, 0] nwrites=[1, 1]
+    server: S:st-a@+152 S:st-b@+218
+    stores(last6): t1:st-a@+158 t2:st-b@+220
+onload:30 rep1: finals=['st-b', 'st-b'] ls=st-b backend=['st-b', 'st-b'] consistent=True last_action=st-b last_server=st-b last_store=st-b lost=False flips=[] quiet=[0, 0] nwrites=[1, 1]
+    server: S:st-a@+137 S:st-b@+179
+    stores(last6): t1:st-a@+140 t2:st-b@+183
+onload:30 rep2: finals=['st-b', 'st-b'] ls=st-b backend=['st-b', 'st-b'] consistent=True last_action=st-b last_server=st-b last_store=st-b lost=False flips=[] quiet=[0, 0] nwrites=[1, 1]
+    server: S:st-a@+204 S:st-b@+222
+    stores(last6): t1:st-a@+211 t2:st-b@+226
+onload:30 rep3: finals=['st-b', 'st-b'] ls=st-b backend=['st-b', 'st-b'] consistent=True last_action=st-b last_server=st-b last_store=st-b lost=False flips=[] quiet=[0, 0] nwrites=[1, 1]
+    server: S:st-a@+152 S:st-b@+214
+    stores(last6): t1:st-a@+155 t2:st-b@+218
+bg:480 rep0: finals=['bg5', 'bg5'] ls=bg5 backend=['bg5', 'bg5'] consistent=True last_action=c9 last_server=bg5 last_store=bg5 lost=False flips=['t2:c9->bg5'] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+305 B:bg4@+408 C:c9@+486 B:bg5@+509
+    stores(last6): t1:bg1@+104 t1:bg2@+206 t1:bg3@+306 t1:bg4@+409 t2:c9@+486 t1:bg5@+510
+bg:480 rep1: finals=['bg5', 'bg5'] ls=bg5 backend=['bg5', 'bg5'] consistent=True last_action=c9 last_server=bg5 last_store=bg5 lost=False flips=['t2:c9->bg5'] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+306 B:bg4@+407 C:c9@+487 B:bg5@+509
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+307 t1:bg4@+408 t2:c9@+487 t1:bg5@+509
+bg:480 rep2: finals=['bg5', 'bg5'] ls=bg5 backend=['bg5', 'bg5'] consistent=True last_action=c9 last_server=bg5 last_store=bg5 lost=False flips=['t2:c9->bg5'] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+305 B:bg4@+406 C:c9@+487 B:bg5@+507
+    stores(last6): t1:bg1@+103 t1:bg2@+204 t1:bg3@+306 t1:bg4@+407 t2:c9@+488 t1:bg5@+508
+bg:480 rep3: finals=['bg5', 'bg5'] ls=bg5 backend=['bg5', 'bg5'] consistent=True last_action=c9 last_server=bg5 last_store=bg5 lost=False flips=['t2:c9->bg5'] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+305 B:bg4@+406 C:c9@+487 B:bg5@+509
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+306 t1:bg4@+408 t2:c9@+488 t1:bg5@+510
+bg:520 rep0: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+305 B:bg4@+407 B:bg5@+508 C:c9@+526
+    stores(last6): t1:bg1@+104 t1:bg2@+206 t1:bg3@+306 t1:bg4@+408 t1:bg5@+510 t2:c9@+526
+bg:520 rep1: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+203 B:bg3@+304 B:bg4@+406 B:bg5@+507 C:c9@+525
+    stores(last6): t1:bg1@+103 t1:bg2@+204 t1:bg3@+305 t1:bg4@+407 t1:bg5@+508 t2:c9@+525
+bg:520 rep2: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+203 B:bg3@+306 B:bg4@+407 B:bg5@+509 C:c9@+526
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+307 t1:bg4@+409 t1:bg5@+510 t2:c9@+527
+bg:520 rep3: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+305 B:bg4@+406 B:bg5@+508 C:c9@+525
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+306 t1:bg4@+407 t1:bg5@+509 t2:c9@+526
+bg:560 rep0: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+306 B:bg4@+407 B:bg5@+508 C:c9@+566
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+306 t1:bg4@+408 t1:bg5@+509 t2:c9@+566
+bg:560 rep1: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+203 B:bg3@+304 B:bg4@+405 B:bg5@+507 C:c9@+566
+    stores(last6): t1:bg1@+103 t1:bg2@+204 t1:bg3@+305 t1:bg4@+407 t1:bg5@+508 t2:c9@+566
+bg:560 rep2: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+203 B:bg3@+306 B:bg4@+407 B:bg5@+508 C:c9@+566
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+306 t1:bg4@+408 t1:bg5@+509 t2:c9@+567
+bg:560 rep3: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+305 B:bg4@+408 B:bg5@+510 C:c9@+566
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+306 t1:bg4@+409 t1:bg5@+510 t2:c9@+566
+bg:650 rep0: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+305 B:bg4@+406 B:bg5@+508 C:c9@+656
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+306 t1:bg4@+407 t1:bg5@+509 t2:c9@+657
+bg:650 rep1: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+203 B:bg3@+305 B:bg4@+406 B:bg5@+507 C:c9@+656
+    stores(last6): t1:bg1@+103 t1:bg2@+207 t1:bg3@+306 t1:bg4@+407 t1:bg5@+508 t2:c9@+657
+bg:650 rep2: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+306 B:bg4@+408 B:bg5@+509 C:c9@+656
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+307 t1:bg4@+409 t1:bg5@+510 t2:c9@+657
+bg:650 rep3: finals=['c9', 'c9'] ls=c9 backend=['c9', 'c9'] consistent=True last_action=c9 last_server=c9 last_store=c9 lost=False flips=[] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+306 B:bg4@+407 B:bg5@+508 C:c9@+656
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+307 t1:bg4@+408 t1:bg5@+509 t2:c9@+657
+freeze:1500 rep0: finals=['bg5', 'bg5'] ls=bg5 backend=['bg5', 'bg5'] consistent=True last_action=c9 last_server=bg5 last_store=bg5 lost=False flips=['t2:c9->bg5'] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+203 B:bg3@+305 C:c9@+357 B:bg4@+406 B:bg5@+507
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+305 t2:c9@+358 t1:bg4@+406 t1:bg5@+508
+freeze:1500 rep1: finals=['bg5', 'bg5'] ls=bg5 backend=['bg5', 'bg5'] consistent=True last_action=c9 last_server=bg5 last_store=bg5 lost=False flips=['t2:c9->bg5'] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+203 B:bg3@+304 C:c9@+357 B:bg4@+405 B:bg5@+507
+    stores(last6): t1:bg1@+103 t1:bg2@+204 t1:bg3@+305 t2:c9@+358 t1:bg4@+406 t1:bg5@+508
+freeze:1500 rep2: finals=['bg5', 'bg5'] ls=bg5 backend=['bg5', 'bg5'] consistent=True last_action=c9 last_server=bg5 last_store=bg5 lost=False flips=['t2:c9->bg5'] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+305 C:c9@+358 B:bg4@+406 B:bg5@+508
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+306 t2:c9@+358 t1:bg4@+406 t1:bg5@+509
+freeze:1500 rep3: finals=['bg5', 'bg5'] ls=bg5 backend=['bg5', 'bg5'] consistent=True last_action=c9 last_server=bg5 last_store=bg5 lost=False flips=['t2:c9->bg5'] quiet=[0, 0] nwrites=[5, 1]
+    server: B:bg1@+102 B:bg2@+204 B:bg3@+306 C:c9@+358 B:bg4@+407 B:bg5@+508
+    stores(last6): t1:bg1@+103 t1:bg2@+205 t1:bg3@+307 t2:c9@+358 t1:bg4@+408 t1:bg5@+509
+pwalt rep0: finals=['c8', 'c8'] ls=c8 backend=['c8', 'c8'] consistent=True last_action=c9 last_server=c9 last_store=c8 lost=True flips=['t2:c9->c8'] quiet=[0, 0] nwrites=[5, 5]
+    server: C:c0@+24 C:c1@+72 C:c2@+88 C:c3@+118 C:c4@+2153 C:c5@+2168 C:c6@+4187 C:c7@+4202 C:c8@+5254 C:c9@+5269
+    stores(last6): t2:c5@+2180 t1:c4@+2203 t2:c7@+4213 t1:c6@+4230 t2:c9@+5280 t1:c8@+5297
+pwalt rep1: finals=['c8', 'c8'] ls=c8 backend=['c8', 'c8'] consistent=True last_action=c9 last_server=c9 last_store=c8 lost=True flips=['t2:c9->c8'] quiet=[0, 0] nwrites=[5, 5]
+    server: C:c0@+18 C:c1@+36 C:c2@+80 C:c3@+97 C:c4@+2116 C:c5@+2131 C:c6@+3183 C:c7@+3214 C:c8@+4266 C:c9@+4280
+    stores(last6): t2:c5@+2143 t1:c4@+2160 t2:c7@+3226 t1:c6@+3233 t2:c9@+4293 t1:c8@+4310
+pwalt rep2: finals=['c8', 'c8'] ls=c8 backend=['c8', 'c8'] consistent=True last_action=c9 last_server=c9 last_store=c8 lost=True flips=['t2:c9->c8'] quiet=[0, 0] nwrites=[5, 5]
+    server: C:c0@+19 C:c1@+52 C:c2@+83 C:c3@+116 C:c4@+1151 C:c5@+1165 C:c6@+3185 C:c7@+3199 C:c8@+4251 C:c9@+4265
+    stores(last6): t2:c5@+1178 t1:c4@+1201 t2:c7@+3211 t1:c6@+3228 t2:c9@+4278 t1:c8@+4294
+pwalt rep3: finals=['c8', 'c8'] ls=c8 backend=['c8', 'c8'] consistent=True last_action=c9 last_server=c9 last_store=c8 lost=True flips=['t2:c9->c8'] quiet=[0, 0] nwrites=[5, 5]
+    server: C:c0@+22 C:c1@+54 C:c2@+85 C:c3@+118 C:c4@+1154 C:c5@+1167 C:c6@+3187 C:c7@+3201 C:c8@+4254 C:c9@+4285
+    stores(last6): t2:c5@+1180 t1:c4@+1204 t2:c7@+3214 t1:c6@+3230 t2:c9@+4296 t1:c8@+4304
+SUMMARY
+  onload:0     n=4 finals={'st-a': 1, 'st-b': 3} consistent=4/4 =last_action=3 =last_store=4 =last_server=1 flips=0 storm(quiet>10)=0 writes/rep max=3
+  onload:30    n=4 finals={'st-b': 4} consistent=4/4 =last_action=4 =last_store=4 =last_server=4 flips=0 storm(quiet>10)=0 writes/rep max=2
+  bg:480       n=4 finals={'bg5': 4} consistent=4/4 =last_action=0 =last_store=4 =last_server=4 flips=4 storm(quiet>10)=0 writes/rep max=6
+  bg:520       n=4 finals={'c9': 4} consistent=4/4 =last_action=4 =last_store=4 =last_server=4 flips=0 storm(quiet>10)=0 writes/rep max=6
+  bg:560       n=4 finals={'c9': 4} consistent=4/4 =last_action=4 =last_store=4 =last_server=4 flips=0 storm(quiet>10)=0 writes/rep max=6
+  bg:650       n=4 finals={'c9': 4} consistent=4/4 =last_action=4 =last_store=4 =last_server=4 flips=0 storm(quiet>10)=0 writes/rep max=6
+  freeze:1500  n=4 finals={'bg5': 4} consistent=4/4 =last_action=0 =last_store=4 =last_server=4 flips=4 storm(quiet>10)=0 writes/rep max=6
+  pwalt        n=4 finals={'c8': 4} consistent=4/4 =last_action=0 =last_store=4 =last_server=0 flips=4 storm(quiet>10)=0 writes/rep max=10

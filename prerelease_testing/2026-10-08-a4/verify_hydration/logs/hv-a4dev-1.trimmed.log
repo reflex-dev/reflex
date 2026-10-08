@@ -1,0 +1,69 @@
+# trimmed: first 15 lines, error/warning lines, H4TRACE lines (count 310)
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value api_url with env var 
+API_URL=http://localhost:8660
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a4/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='h4v', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8660', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+...
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+...
+H4TRACE CLICK {"tok": "bbed80", "ts": 1791478112711.0, "v": "c3"}
+H4TRACE CLICK {"tok": "32c1dd", "ts": 1791478114746.1, "v": "c4"}
+H4TRACE CLICK {"tok": "bbed80", "ts": 1791478114760.2, "v": "c5"}
+H4TRACE CLICK {"tok": "32c1dd", "ts": 1791478116779.9, "v": "c6"}
+H4TRACE CLICK {"tok": "bbed80", "ts": 1791478116794.4, "v": "c7"}
+H4TRACE CLICK {"tok": "32c1dd", "ts": 1791478117846.2, "v": "c8"}
+H4TRACE CLICK {"tok": "bbed80", "ts": 1791478117861.5, "v": "c9"}
+H4TRACE CLICK {"tok": "97cf06", "ts": 1791478122319.7, "v": "c5"}
+H4TRACE CLICK {"tok": "97cf06", "ts": 1791478123547.3, "v": "c0"}
+H4TRACE CLICK {"tok": "d9a0fa", "ts": 1791478123565.9, "v": "c1"}
+H4TRACE CLICK {"tok": "97cf06", "ts": 1791478123609.9, "v": "c2"}
+H4TRACE CLICK {"tok": "d9a0fa", "ts": 1791478123626.6, "v": "c3"}
+H4TRACE CLICK {"tok": "97cf06", "ts": 1791478125645.8, "v": "c4"}
+H4TRACE CLICK {"tok": "d9a0fa", "ts": 1791478125660.2, "v": "c5"}
+H4TRACE CLICK {"tok": "97cf06", "ts": 1791478126712.5, "v": "c6"}
+H4TRACE CLICK {"tok": "d9a0fa", "ts": 1791478126743.5, "v": "c7"}
+H4TRACE CLICK {"tok": "97cf06", "ts": 1791478127795.6, "v": "c8"}
+H4TRACE CLICK {"tok": "d9a0fa", "ts": 1791478127809.3, "v": "c9"}
+H4TRACE CLICK {"tok": "74674d", "ts": 1791478132416.9, "v": "c5"}
+H4TRACE CLICK {"tok": "74674d", "ts": 1791478133646.6, "v": "c0"}
+H4TRACE CLICK {"tok": "c4c423", "ts": 1791478133679.5, "v": "c1"}
+H4TRACE CLICK {"tok": "74674d", "ts": 1791478133711.0, "v": "c2"}
+H4TRACE CLICK {"tok": "c4c423", "ts": 1791478133743.7, "v": "c3"}
+H4TRACE CLICK {"tok": "74674d", "ts": 1791478134778.5, "v": "c4"}
+H4TRACE CLICK {"tok": "c4c423", "ts": 1791478134792.7, "v": "c5"}
+H4TRACE CLICK {"tok": "74674d", "ts": 1791478136812.3, "v": "c6"}
+H4TRACE CLICK {"tok": "c4c423", "ts": 1791478136826.7, "v": "c7"}
+H4TRACE CLICK {"tok": "74674d", "ts": 1791478137878.5, "v": "c8"}
+H4TRACE CLICK {"tok": "c4c423", "ts": 1791478137892.7, "v": "c9"}
+H4TRACE CLICK {"tok": "6c70a4", "ts": 1791478142364.0, "v": "c5"}
+H4TRACE CLICK {"tok": "6c70a4", "ts": 1791478143596.8, "v": "c0"}
+H4TRACE CLICK {"tok": "2e516f", "ts": 1791478143629.5, "v": "c1"}
+H4TRACE CLICK {"tok": "6c70a4", "ts": 1791478143660.6, "v": "c2"}
+H4TRACE CLICK {"tok": "2e516f", "ts": 1791478143692.8, "v": "c3"}
+H4TRACE CLICK {"tok": "6c70a4", "ts": 1791478144729.0, "v": "c4"}
+H4TRACE CLICK {"tok": "2e516f", "ts": 1791478144742.0, "v": "c5"}
+H4TRACE CLICK {"tok": "6c70a4", "ts": 1791478146762.3, "v": "c6"}
+H4TRACE CLICK {"tok": "2e516f", "ts": 1791478146775.9, "v": "c7"}
+H4TRACE CLICK {"tok": "6c70a4", "ts": 1791478147829.6, "v": "c8"}
+H4TRACE CLICK {"tok": "2e516f", "ts": 1791478147860.4, "v": "c9"}
