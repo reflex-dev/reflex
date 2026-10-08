@@ -61,7 +61,7 @@ from reflex.istate.data import (
     URLData,
     _FrozenDictStrStr,
 )
-from reflex.istate.delta import _suppress_delta_recording
+from reflex.istate.delta import Delta, _suppress_delta_recording
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -70,10 +70,11 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
 from reflex.state import (
     BaseState,
-    Delta,
     ImmutableStateError,
     OnLoadInternalState,
     State,
+    StateUpdate,
+    _load_events_for_page,
     is_serializable,
     state_snapshot_hashes,
 )
@@ -120,7 +121,6 @@ formatted_router_vars = {
         "origin": "",
         "upgrade": "",
         "connection": "",
-        "cookie": "",
         "pragma": "",
         "cache_control": "",
         "user_agent": "",
@@ -322,6 +322,65 @@ def test_state() -> TestState:
         A test state.
     """
     return TestState()  # pyright: ignore [reportCallIssue]
+
+
+@pytest.mark.parametrize("method", ["dict", "get_delta"])
+def test_router_cookies_not_sent_to_frontend(test_state: TestState, method: str):
+    """Initial state and deltas omit cookies while preserving server access.
+
+    Args:
+        test_state: A state.
+        method: The state serialization entry point.
+    """
+    test_state.router = RouterData.from_router_data({
+        RouteVar.HEADERS: {"cookie": "session=secret", "user-agent": "browser"},
+    })
+
+    payload = json.loads(json_dumps(getattr(test_state, method)()))
+    headers = payload[test_state.get_full_name()]["rx_router_headers" + FIELD_MARKER]
+
+    assert "cookie" not in headers
+    assert headers["raw_headers"] == {"user-agent": "browser"}
+    assert "secret" not in json_dumps(payload)
+    assert test_state.router.headers.cookie == "session=secret"
+
+
+def test_load_events_do_not_copy_router_data(app_module_mock):
+    """On-load events leave routing in the server context without copying headers.
+
+    Args:
+        app_module_mock: The mock module holding the app.
+    """
+    app = app_module_mock.app = App(_state=State)
+    script = rx.call_script("window.loaded = true")
+    app.add_page(
+        lambda: "hello",
+        route="/",
+        on_load=[script, TestState.set_num1(1)],
+    )
+    router_data: dict[str, Any] = {
+        RouteVar.PATH: "/",
+        RouteVar.ORIGIN: "https://example.com/",
+        RouteVar.QUERY: {"name": "test"},
+        RouteVar.HEADERS: {"cookie": "session=secret", "user-agent": "browser"},
+    }
+    state = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.router_data = router_data
+    state.router = RouterData.from_router_data(router_data)
+    load_events = _load_events_for_page(state)
+    assert load_events is not None
+    assert len(load_events) == 3
+    frontend_event, backend_event, _ = load_events
+    assert isinstance(frontend_event, Event)
+    assert isinstance(backend_event, Event)
+    assert frontend_event.router_data == {}
+    assert backend_event.router_data == {}
+    payload = json.loads(json_dumps(StateUpdate(events=[frontend_event])))
+
+    assert "secret" not in json_dumps(payload)
+    assert payload["events"][0]["payload"] == Event.from_event_type(script)[0].payload
+    assert state.router_data is router_data
+    assert router_data[RouteVar.HEADERS]["cookie"] == "session=secret"
 
 
 @pytest.fixture
@@ -4462,12 +4521,9 @@ def test_router_var_dep_does_not_warn_for_the_var_form(
     """
     # `console.deprecate` logs and dedupes rather than printing, so record the
     # calls instead of scraping output.
-    from reflex import state as state_module
-
     deprecations: list[str] = []
     monkeypatch.setattr(
-        state_module.console,
-        "deprecate",
+        "reflex.state.console.deprecate",
         lambda *, feature_name, **kwargs: deprecations.append(feature_name),
     )
 
