@@ -2,7 +2,14 @@
 
 ### Breaking Changes
 
-- Some `reflex cloud` commands changed what they report. A refused request now exits non-zero rather than printing a `"... failed: ..."` line and exiting 0, and `--json` writes no document on that path; `apps stop`, `apps start` and `apps delete` are the ones most likely to be scripted against, and they now report their own outcome rather than echoing the server's sentence. `vmtypes` and `regions` answered a failed request with an empty listing and exit 0, which a script could not tell from a control plane that offers neither; they exit non-zero now. `apps history --json` replaces `hostname` with the deployment's `url`, reports `vm type` as the machine's name rather than an object, and reports `timestamp` as an ISO 8601 string with an offset; `apps inspect --json` drops `hostname` from `latest_deployment` the same way, the URL carrying it already. `create-token --json` replaces `expires_in_days` with `expires_at`, an ISO 8601 string or `null`, carrying the expiry the server applied rather than the duration that was asked for. `apps logs` drops its inert `--cursor` option and its `--json` document returns every line in the window rather than one page. `project role-permissions` lists permission names rather than objects. `reflex deploy` now requires a control plane that signs upload URLs; the multipart fallback for older ones is gone, and with it the "payload is too large (over 100MB)" hint, which only that path could produce. And `apps status --watch --json` reports `"success": null` when the watch stopped before the deployment ended -- it is still running, and the command did not see how it finished -- rather than answering `true` or `false` for something it does not know. ([#7207](https://github.com/reflex-dev/reflex/issues/7207))
+- Some `reflex cloud` commands changed what they report: ([#7207](https://github.com/reflex-dev/reflex/issues/7207))
+  - A refused request exits non-zero instead of printing a `"... failed: ..."` line and exiting 0, and `--json` writes no document. This includes `vmtypes` and `regions`, which answered a failed request with an empty listing, and `apps stop`, `apps start` and `apps delete`, which now report their own outcome rather than echoing the server's message.
+  - `apps history --json` replaces `hostname` with the deployment's `url`, reports `vm type` as the machine's name rather than an object, and reports `timestamp` as an ISO 8601 string with an offset. `apps inspect --json` drops `hostname` from `latest_deployment`.
+  - `create-token --json` replaces `expires_in_days` with `expires_at`, an ISO 8601 string or `null`, carrying the expiry the server applied.
+  - `apps logs` drops its unused `--cursor` option, and its `--json` document returns every line in the window rather than one page.
+  - `apps status --watch --json` reports `"success": null` when the watch stopped before the deployment finished.
+  - `project role-permissions` lists permission names rather than objects.
+  - `reflex deploy` requires a control plane that signs upload URLs; the multipart upload fallback for older ones, and its "payload is too large (over 100MB)" hint, are gone.
 - Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
 
 ### Bug Fixes
@@ -18,7 +25,7 @@
 
 ### Miscellaneous
 
-- `reflex-hosting-cli` now talks to Reflex Build through `reflex-build-sdk` rather than its own HTTP layer, so every command shares the SDK's retries, timeouts and typed errors. While the SDK is pre-1.0, where any release may change its API, the requirement is capped to the single patch line the CLI was built against, so upgrade `reflex-hosting-cli` to move to a newer SDK rather than upgrading the SDK on its own. ([#7207](https://github.com/reflex-dev/reflex/issues/7207))
+- `reflex-hosting-cli` now talks to Reflex Build through `reflex-build-sdk`, so every command shares the SDK's retries, timeouts and typed errors. While the SDK is pre-1.0, the CLI pins it to a single patch line, so upgrade `reflex-hosting-cli` to move to a newer SDK rather than upgrading the SDK on its own. ([#7207](https://github.com/reflex-dev/reflex/issues/7207))
 
 
 ## v0.1.72 (2026-09-11)

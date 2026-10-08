@@ -4,9 +4,6 @@
 
 - Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
 
-
-## v0.10.0a1 (2026-10-05)
-
 ### Miscellaneous
 
 - Update Moment to 2.31.0, moment-timezone to 0.6.5, and moment-duration-format to 2.3.2. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))

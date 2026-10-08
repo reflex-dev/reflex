@@ -4,13 +4,6 @@
 
 - Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
 
-
-## v0.10.0a1 (2026-10-05)
-
-### Bug Fixes
-
-- Require reflex-base 0.9.12 or newer so all imported rendering APIs are available. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))
-
 ### Miscellaneous
 
 - Update the Radix slider and progress dependencies to 1.4.7 and 1.1.16. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))

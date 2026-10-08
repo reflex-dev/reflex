@@ -4,9 +4,6 @@
 
 - Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
 
-
-## v0.10.0a1 (2026-10-05)
-
 ### Features
 
 - The connection banner reads `REFLEX_BACKEND_COLD_START_TIMEOUT` as a duration, so it accepts a unit suffix such as `30s`. A bare number is still read as seconds. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))
@@ -15,7 +12,6 @@
 
 - Fix `rx.match` raising `ReferenceError: Can't find variable` at render when a state Var is used only in a case condition with component branches. ([#6675](https://github.com/reflex-dev/reflex/issues/6675))
 - Exclude IDs on forms and other non-controls from form submissions while preserving unset ID-backed controls and supporting custom controls marked with `_is_form_control`. ([#7227](https://github.com/reflex-dev/reflex/issues/7227))
-- Require reflex-base 0.9.12 or newer so all imported rendering APIs are available. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))
 
 ### Miscellaneous
 
