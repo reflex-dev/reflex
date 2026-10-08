@@ -62,7 +62,7 @@ class State(rx.State):
     _client: ClassVar[httpx.AsyncClient | None] = None
 
 
-State.__fields__["count"].default = 10  # 0.9: State.count = 10
+State.__fields__["count"].default = 10
 State._client = httpx.AsyncClient()  # a ClassVar stays an ordinary class attribute
 
 with mock.patch.object(State.__fields__["count"], "default", 99):

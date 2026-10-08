@@ -85,7 +85,6 @@ class WatchlistState(rx.State):
     symbols: list[str] = []
 
 
-WatchlistState.ticker = "MSFT"  # TypeError
 WatchlistState.__fields__["ticker"].default = "MSFT"
 WatchlistState.__fields__["symbols"].default_factory = lambda: ["AAPL", "MSFT"]
 ```
