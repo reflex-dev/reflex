@@ -84,6 +84,9 @@ _PRIVATE_HEADERS = frozenset({
     "cf-access-jwt-assertion",
     "x-auth-request-access-token",
     "x-forwarded-access-token",
+    "x-amzn-oidc-accesstoken",
+    "x-amzn-oidc-data",
+    "x-goog-iap-jwt-assertion",
 })
 
 

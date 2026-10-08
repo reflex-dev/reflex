@@ -28,6 +28,9 @@ SAMPLE_URL = "https://example.com:3000/posts/123?tab=comments&sort=new#top"
         "cf-access-jwt-assertion",
         "x-auth-request-access-token",
         "x-forwarded-access-token",
+        "x-amzn-oidc-accesstoken",
+        "x-amzn-oidc-data",
+        "x-goog-iap-jwt-assertion",
     ],
 )
 @pytest.mark.parametrize("casing", ["lower", "title", "upper"])

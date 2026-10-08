@@ -103,6 +103,12 @@ def RouterQueryApp():
                 == "OAUTHSECRET"
                 and self.router.headers.raw_headers.get("x-forwarded-access-token")
                 == "FORWARDEDSECRET"
+                and self.router.headers.raw_headers.get("x-amzn-oidc-accesstoken")
+                == "ALBACCESSSECRET"
+                and self.router.headers.raw_headers.get("x-amzn-oidc-data")
+                == "ALBDATASECRET"
+                and self.router.headers.raw_headers.get("x-goog-iap-jwt-assertion")
+                == "IAPSECRET"
             )
 
         @rx.event
@@ -318,6 +324,9 @@ def test_request_credentials_stay_server_side(router_query_app: AppHarness, page
         "Cf-Access-Jwt-Assertion": "CFJWTSECRET",
         "X-Auth-Request-Access-Token": "OAUTHSECRET",
         "X-Forwarded-Access-Token": "FORWARDEDSECRET",
+        "X-Amzn-Oidc-Accesstoken": "ALBACCESSSECRET",
+        "X-Amzn-Oidc-Data": "ALBDATASECRET",
+        "X-Goog-IAP-JWT-Assertion": "IAPSECRET",
     }
     page.context.set_extra_http_headers(credential_headers)
     frames: list[str | bytes] = []
