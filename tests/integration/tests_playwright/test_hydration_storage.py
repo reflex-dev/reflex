@@ -328,6 +328,18 @@ Storage.prototype.setItem = function (key, value) {
 };
 """
 
+# Stores a synced value as another tab would, optionally without its storage event.
+OTHER_TAB_STORES = """
+window.otherTabStores = (value, notify = true) => {
+    localStorage.setItem('hydrate-sync', value);
+    if (notify) {
+        window.dispatchEvent(new StorageEvent('storage', {
+            key: 'hydrate-sync', newValue: value, storageArea: localStorage,
+        }));
+    }
+};
+"""
+
 
 def wait_until(page: Page, condition: Callable[[], bool]):
     """Wait for a condition while Playwright keeps dispatching websocket messages.
@@ -345,6 +357,68 @@ def wait_until(page: Page, condition: Callable[[], bool]):
         page.wait_for_timeout(100)
     msg = "Condition not met within 10 seconds."
     raise TimeoutError(msg)
+
+
+class EventSocket:
+    """Records a page's event messages and holds back the server's replies on request."""
+
+    def __init__(self, page: Page, hold: bool = False):
+        """Route the page's event websocket through this object.
+
+        Args:
+            page: The page whose websocket to route.
+            hold: Whether to hold back the replies from the start.
+        """
+        self.page = page
+        self.sent: list[str] = []
+        self.held: list[str | bytes] | None = [] if hold else None
+        self.route: WebSocketRoute | None = None
+        page.route_web_socket(re.compile(r".*/_event"), self._connect)
+
+    def _connect(self, route: WebSocketRoute):
+        """Forward the page's messages and the server's, except held replies.
+
+        Args:
+            route: The intercepted websocket.
+        """
+        server = route.connect_to_server()
+        self.route = route
+
+        def to_server(message: str | bytes):
+            self.sent.append(str(message))
+            server.send(message)
+
+        def to_page(message: str | bytes):
+            if self.held is not None and '"event"' in str(message):
+                self.held.append(message)
+            else:
+                route.send(message)
+
+        route.on_message(to_server)
+        server.on_message(to_page)
+
+    def wait_sent(self, *parts: str):
+        """Wait until the page sent a message containing all the parts.
+
+        Args:
+            parts: The substrings of the message.
+        """
+        wait_until(
+            self.page,
+            lambda: any(all(part in m for part in parts) for m in self.sent),
+        )
+
+    def hold(self):
+        """Hold back the server's replies from now on."""
+        self.held = []
+
+    def release(self):
+        """Deliver the held replies in order and stop holding them back."""
+        assert self.route is not None
+        assert self.held is not None
+        held, self.held = self.held, None
+        for message in held:
+            self.route.send(message)
 
 
 def test_synced_storage_echo_keeps_newer_value(
@@ -368,52 +442,18 @@ def test_synced_storage_echo_keeps_newer_value(
     page.locator("#set-old").click()
     page.wait_for_function("localStorage.getItem('hydrate-sync') === 'old'")
 
-    sent: list[str] = []
-    held: list[str | bytes] = []
-    routes: list[WebSocketRoute] = []
-
-    def hold_replies(route: WebSocketRoute):
-        """Forward the page's messages; hold back the server's event replies.
-
-        Args:
-            route: The intercepted websocket.
-        """
-        server = route.connect_to_server()
-        routes.append(route)
-
-        def to_server(message: str | bytes):
-            sent.append(str(message))
-            server.send(message)
-
-        def to_page(message: str | bytes):
-            if routes and '"event"' in str(message):
-                held.append(message)
-            else:
-                route.send(message)
-
-        route.on_message(to_server)
-        server.on_message(to_page)
-
     other = page.context.new_page()
     other.add_init_script(RECORD_SYNC_WRITES)
-    other.route_web_socket(re.compile(r".*/_event"), hold_replies)
+    socket = EventSocket(other, hold=True)
     other.goto(url)
     # The boot event is sent once the page's effects, storage listener included, ran.
-    wait_until(
-        other,
-        lambda: any("hydrate_and_load" in m and '"old"' in m for m in sent),
-    )
+    socket.wait_sent("hydrate_and_load", '"old"')
 
     page.locator("#set-new").click()
     page.wait_for_function("localStorage.getItem('hydrate-sync') === 'new'")
-    wait_until(
-        other,
-        lambda: any("update_vars_internal" in m and '"new"' in m for m in sent),
-    )
+    socket.wait_sent("update_vars_internal", '"new"')
 
-    route = routes.pop()
-    for message in held:
-        route.send(message)
+    socket.release()
     expect(other.locator("#hydrated")).to_have_text("true")
     expect(other.locator("#sync-value")).to_have_text("new")
     expect(page.locator("#sync-value")).to_have_text("new")
@@ -452,35 +492,67 @@ def test_synced_storage_event_sends_stored_value(
     assert page.evaluate("localStorage.getItem('hydrate-sync')") == "stored"
 
 
+@pytest.mark.parametrize("notified", [True, False])
 def test_synced_storage_echo_crossed_by_another_tab_is_not_written(
-    hydration_storage_app: AppHarness, page: Page
+    hydration_storage_app: AppHarness, page: Page, notified: bool
 ):
     """An echo of a value another tab replaced after it was sent is not written back.
+
+    The tab may get the echo before the storage event of the newer value.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+        notified: Whether the tab got the newer value's storage event before the echo.
+    """
+    assert hydration_storage_app.frontend_url is not None
+    page.add_init_script(RECORD_SYNC_WRITES)
+    page.add_init_script(OTHER_TAB_STORES)
+    page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/synced")
+    expect(page.locator("#hydrated")).to_have_text("true")
+    # Another tab stores "sent", then "newer" before the echo of "sent" arrives.
+    page.evaluate(f"""() => {{
+        window.otherTabStores('sent');
+        window.otherTabStores('newer', {str(notified).lower()});
+        window.syncWrites.length = 0;
+    }}""")
+    if not notified:
+        expect(page.locator("#sync-value")).to_have_text("sent")
+        page.evaluate("window.otherTabStores('newer')")
+    expect(page.locator("#sync-value")).to_have_text("newer")
+    page.wait_for_timeout(500)
+    assert "sent" not in page.evaluate("window.syncWrites")
+    assert page.evaluate("localStorage.getItem('hydrate-sync')") == "newer"
+
+
+def test_synced_storage_echo_after_own_write_is_written(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """An echo is written over a value the tab itself stored after sending it.
+
+    The backend applies a tab's events in order, so the echo of a value sent
+    after a handler's event is newer than the value of the handler's reply.
 
     Args:
         hydration_storage_app: The running app.
         page: A fresh browser page.
     """
     assert hydration_storage_app.frontend_url is not None
-    page.add_init_script(RECORD_SYNC_WRITES)
+    page.add_init_script(OTHER_TAB_STORES)
+    socket = EventSocket(page)
     page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/synced")
     expect(page.locator("#hydrated")).to_have_text("true")
-    # Another tab stores "sent", then "newer" before the echo of "sent" arrives.
-    page.evaluate("""() => {
-        const otherTabStores = (value) => {
-            localStorage.setItem('hydrate-sync', value);
-            window.dispatchEvent(new StorageEvent('storage', {
-                key: 'hydrate-sync', newValue: value, storageArea: localStorage,
-            }));
-        };
-        otherTabStores('sent');
-        otherTabStores('newer');
-        window.syncWrites.length = 0;
-    }""")
-    expect(page.locator("#sync-value")).to_have_text("newer")
+
+    socket.hold()
+    page.locator("#set-old").click()
+    socket.wait_sent("set_value", '"old"')
+    page.evaluate("window.otherTabStores('sent')")
+    socket.wait_sent("update_vars_internal", '"sent"')
+
+    socket.release()
+    expect(page.locator("#sync-value")).to_have_text("sent")
     page.wait_for_timeout(500)
-    assert "sent" not in page.evaluate("window.syncWrites")
-    assert page.evaluate("localStorage.getItem('hydrate-sync')") == "newer"
+    assert page.evaluate("localStorage.getItem('hydrate-sync')") == "sent"
 
 
 def test_replaced_storage_echo_does_not_hide_later_change(
