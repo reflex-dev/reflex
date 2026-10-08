@@ -53,22 +53,22 @@ let backend_state_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
-// The event that applies browser storage values changed in another tab.
+// The event that sends browser storage values to the backend.
 const UPDATE_VARS_INTERNAL =
   "reflex___state____update_vars_internal_state.update_vars_internal";
 
-// Browser storage values this tab sent to the backend, oldest first, by state
-// key, each with the count of localStorage writes by this tab when it was
-// sent. The backend echoes them back, so that get_delta overrides see them.
+// Browser storage values sent to the backend, by state key, oldest first, each
+// with the count of this tab's localStorage writes when it was sent. The
+// backend echoes them back, so that get_delta overrides see them.
 const sentStorageValues = {};
-// The localStorage writes by this tab: their count, and the last value and
-// count by storage name, which vars of different state keys may share.
+// Bounds the values kept for a key whose echoes an override changes, so they
+// never match. One key has far fewer in flight: 60 writes a second over a one
+// second round trip.
+const MAX_SENT_STORAGE_VALUES = 256;
+// This tab's localStorage writes so far, and its last write by storage name,
+// which vars of different state keys may share.
 let localStorageWrites = 0;
 const lastLocalStorageWrites = {};
-// Bounds the values kept for a key whose replies never match, as when a
-// get_delta override changes them. It exceeds the values of one key in flight
-// at once: a synced var written at 60 Hz over a one second round trip.
-const MAX_SENT_STORAGE_VALUES = 256;
 
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
@@ -1061,14 +1061,16 @@ export const hydrateClientStorage = (client_storage) => {
  * @param event The event about to be sent.
  */
 const recordSentStorageValues = (event) => {
+  // ReflexEvent leaves out an empty payload.
+  const vars = event.payload?.vars;
   if (
-    event.name !== `${app.state_name}.hydrate_and_load` &&
-    event.name !== `${app.state_name}.${UPDATE_VARS_INTERNAL}`
+    vars === undefined ||
+    (event.name !== `${app.state_name}.hydrate_and_load` &&
+      event.name !== `${app.state_name}.${UPDATE_VARS_INTERNAL}`)
   ) {
     return;
   }
-  // ReflexEvent leaves out an empty payload.
-  for (const [state_key, value] of Object.entries(event.payload?.vars ?? {})) {
+  for (const [state_key, value] of Object.entries(vars)) {
     const sent = (sentStorageValues[state_key] ??= []);
     sent.push({ value, writes: localStorageWrites });
     if (sent.length > MAX_SENT_STORAGE_VALUES) {
@@ -1078,15 +1080,15 @@ const recordSentStorageValues = (event) => {
 };
 
 /**
- * Take the sent value a backend value echoes, with the values sent before it.
+ * Take the sent value that a backend value echoes, and the older ones with it.
  * @param state_key The state key of the browser storage var.
  * @param value The value the backend sent for it.
- * @returns The entry of the sent value, or undefined if the value is no echo.
+ * @returns The sent value's entry, or undefined if the value is no echo.
  */
-const takeSentStorageValue = (state_key, value) => {
+const takeEcho = (state_key, value) => {
   const sent = sentStorageValues[state_key];
-  const index = sent ? sent.findIndex((entry) => entry.value === value) : -1;
-  // The values sent before it were echoed already, or replaced on the way.
+  const index = sent?.findIndex((entry) => entry.value === value) ?? -1;
+  // Older values were echoed already, or changed by an override on the way.
   return index === -1 ? undefined : sent.splice(0, index + 1)[index];
 };
 
@@ -1116,7 +1118,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
     for (const key in delta[substate]) {
       const state_key = `${substate}.${key}`;
       const value = delta[substate][key];
-      const echo = takeSentStorageValue(state_key, value);
+      const echo = takeEcho(state_key, value);
       if (client_storage.cookies && state_key in client_storage.cookies) {
         const cookie_options = { ...client_storage.cookies[state_key] };
         const cookie_name = cookie_options.name || state_key;
@@ -1127,14 +1129,12 @@ const applyClientStorageDelta = (client_storage, delta) => {
         state_key in client_storage.local_storage &&
         typeof window !== "undefined"
       ) {
-        const options = client_storage.local_storage[state_key];
-        const name = options.name || state_key;
-        // The backend echoes the values a tab sends. Unless this tab wrote the
-        // value stored now after sending, it is the sent value or another
-        // tab's newer one: writing the echo back would overwrite the newer one
-        // and, for a synced var, make the other tabs answer with theirs, over
-        // and over.
+        const name = client_storage.local_storage[state_key].name || state_key;
         const last = lastLocalStorageWrites[name];
+        // Write an echo only over this tab's own later write, which the backend
+        // applied first. Any other stored value is the sent one or another
+        // tab's newer one, and writing over that sets synced tabs answering
+        // each other over and over.
         if (
           !echo ||
           (last?.writes > echo.writes &&
@@ -1334,16 +1334,16 @@ export const useEventLoop = (
 
     // e is StorageEvent
     const handleStorage = (e) => {
+      const state_key = storage_to_state_map[e.key];
       // Session storage changes in same-origin frames raise storage events too.
-      if (e.storageArea === localStorage && storage_to_state_map[e.key]) {
-        const vars = {};
-        // A tab gets the events of other tabs' writes after its own newer
-        // write too, so send the value stored now rather than e.newValue.
-        vars[storage_to_state_map[e.key]] = localStorage.getItem(e.key);
-        const event = ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, {
-          vars: vars,
-        });
-        addEvents([event], e);
+      if (state_key && e.storageArea === localStorage) {
+        // A tab can get another tab's event after its own newer write, so send
+        // the value stored now rather than e.newValue.
+        const vars = { [state_key]: localStorage.getItem(e.key) };
+        addEvents(
+          [ReflexEvent(`${app.state_name}.${UPDATE_VARS_INTERNAL}`, { vars })],
+          e,
+        );
       }
     };
 

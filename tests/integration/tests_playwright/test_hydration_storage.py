@@ -335,8 +335,10 @@ def test_assigned_storage_default_persists(
     assert page.evaluate("sessionStorage.getItem('assigned-session')") == "changed"
 
 
-# Records every localStorage write of the synced var.
-RECORD_SYNC_WRITES = """
+# Records the page's own writes of the synced var, and stores values as another
+# tab would: its storage event carries `event` (the value stored by default, none
+# if null).
+SYNC_HELPERS = """
 window.syncWrites = [];
 const setItem = Storage.prototype.setItem;
 Storage.prototype.setItem = function (key, value) {
@@ -345,19 +347,33 @@ Storage.prototype.setItem = function (key, value) {
     }
     return setItem.call(this, key, value);
 };
-"""
-
-# Stores a synced value as another tab would, optionally without its storage event.
-OTHER_TAB_STORES = """
-window.otherTabStores = (value, notify = true, key = 'hydrate-sync') => {
-    localStorage.setItem(key, value);
-    if (notify) {
-        window.dispatchEvent(new StorageEvent('storage', {
-            key, newValue: value, storageArea: localStorage,
+window.otherTabStores = (value, { key = "hydrate-sync", event = value } = {}) => {
+    setItem.call(localStorage, key, value);
+    if (event !== null) {
+        window.dispatchEvent(new StorageEvent("storage", {
+            key, newValue: event, storageArea: localStorage,
         }));
     }
 };
 """
+
+
+def open_synced(app: AppHarness, page: Page) -> str:
+    """Open the synced page with the helpers above and wait for hydration.
+
+    Args:
+        app: The running app.
+        page: The page to open it in.
+
+    Returns:
+        The URL of the synced page.
+    """
+    assert app.frontend_url is not None
+    url = f"{app.frontend_url.rstrip('/')}/synced"
+    page.add_init_script(SYNC_HELPERS)
+    page.goto(url)
+    expect(page.locator("#hydrated")).to_have_text("true")
+    return url
 
 
 def wait_until(page: Page, condition: Callable[[], bool]):
@@ -454,15 +470,12 @@ def test_synced_storage_echo_keeps_newer_value(
         hydration_storage_app: The running app.
         page: A fresh browser page.
     """
-    assert hydration_storage_app.frontend_url is not None
-    url = f"{hydration_storage_app.frontend_url.rstrip('/')}/synced"
-    page.goto(url)
-    expect(page.locator("#hydrated")).to_have_text("true")
+    url = open_synced(hydration_storage_app, page)
     page.locator("#set-old").click()
     page.wait_for_function("localStorage.getItem('hydrate-sync') === 'old'")
 
     other = page.context.new_page()
-    other.add_init_script(RECORD_SYNC_WRITES)
+    other.add_init_script(SYNC_HELPERS)
     socket = EventSocket(other, hold=True)
     other.goto(url)
     # The boot event is sent once the page's effects, storage listener included, ran.
@@ -493,18 +506,8 @@ def test_synced_storage_event_sends_stored_value(
         hydration_storage_app: The running app.
         page: A fresh browser page.
     """
-    assert hydration_storage_app.frontend_url is not None
-    page.add_init_script(RECORD_SYNC_WRITES)
-    page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/synced")
-    expect(page.locator("#hydrated")).to_have_text("true")
-    page.evaluate("""() => {
-        localStorage.setItem('hydrate-sync', 'stored');
-        window.syncWrites.length = 0;
-        window.dispatchEvent(new StorageEvent('storage', {
-            key: 'hydrate-sync', oldValue: '', newValue: 'late',
-            storageArea: localStorage,
-        }));
-    }""")
+    open_synced(hydration_storage_app, page)
+    page.evaluate("window.otherTabStores('stored', { event: 'late' })")
     expect(page.locator("#sync-value")).to_have_text("stored")
     page.wait_for_timeout(500)
     assert "late" not in page.evaluate("window.syncWrites")
@@ -524,17 +527,15 @@ def test_synced_storage_echo_crossed_by_another_tab_is_not_written(
         page: A fresh browser page.
         notified: Whether the tab got the newer value's storage event before the echo.
     """
-    assert hydration_storage_app.frontend_url is not None
-    page.add_init_script(RECORD_SYNC_WRITES)
-    page.add_init_script(OTHER_TAB_STORES)
-    page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/synced")
-    expect(page.locator("#hydrated")).to_have_text("true")
+    open_synced(hydration_storage_app, page)
     # Another tab stores "sent", then "newer" before the echo of "sent" arrives.
-    page.evaluate(f"""() => {{
-        window.otherTabStores('sent');
-        window.otherTabStores('newer', {str(notified).lower()});
-        window.syncWrites.length = 0;
-    }}""")
+    page.evaluate(
+        """notified => {
+            window.otherTabStores('sent');
+            window.otherTabStores('newer', { event: notified ? 'newer' : null });
+        }""",
+        notified,
+    )
     if not notified:
         expect(page.locator("#sync-value")).to_have_text("sent")
         page.evaluate("window.otherTabStores('newer')")
@@ -568,22 +569,19 @@ def test_synced_storage_echo_after_own_write_is_written(
         key: The storage name the handler writes.
         display: The id of the element showing the synced var.
     """
-    assert hydration_storage_app.frontend_url is not None
-    page.add_init_script(OTHER_TAB_STORES)
     socket = EventSocket(page)
-    page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/synced")
-    expect(page.locator("#hydrated")).to_have_text("true")
+    open_synced(hydration_storage_app, page)
 
     socket.hold()
     page.locator(f"#{button}").click()
     socket.wait_sent('"old"')
-    page.evaluate(f"window.otherTabStores('sent', true, '{key}')")
+    page.evaluate("key => window.otherTabStores('sent', { key })", key)
     socket.wait_sent("update_vars_internal", '"sent"')
 
     socket.release()
     expect(page.locator(f"#{display}")).to_have_text("sent")
     page.wait_for_timeout(500)
-    assert page.evaluate(f"localStorage.getItem('{key}')") == "sent"
+    assert page.evaluate("key => localStorage.getItem(key)", key) == "sent"
 
 
 def test_replaced_storage_echo_does_not_hide_later_change(
@@ -595,9 +593,7 @@ def test_replaced_storage_echo_does_not_hide_later_change(
         hydration_storage_app: The running app.
         page: A fresh browser page.
     """
-    assert hydration_storage_app.frontend_url is not None
-    page.goto(f"{hydration_storage_app.frontend_url.rstrip('/')}/synced")
-    expect(page.locator("#hydrated")).to_have_text("true")
+    open_synced(hydration_storage_app, page)
     page.evaluate("localStorage.setItem('hydrate-replace', 'sent')")
     page.reload()
     expect(page.locator("#hydrated")).to_have_text("true")
