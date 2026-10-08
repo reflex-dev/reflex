@@ -697,6 +697,15 @@ def test_class_assignment_monkeypatch_delattr_round_trip(name: str):
         assert getattr(ConfigState(), name) == 0
     assert getattr(ConfigState(), name) == 10
 
+    # A nested deletion with nothing left to undo is undone on its own.
+    with pytest.MonkeyPatch.context() as outer:
+        outer.delattr(ConfigState, name)
+        with pytest.MonkeyPatch.context() as inner:
+            inner.delattr(ConfigState, name)
+            assert getattr(ConfigState(), name) == 0
+        assert getattr(ConfigState(), name) == 0
+    assert getattr(ConfigState(), name) == 10
+
     delattr(ConfigState, name)
     assert getattr(ConfigState(), name) == 0
 

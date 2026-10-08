@@ -4160,7 +4160,8 @@ class Field(Generic[FIELD_TYPE]):
         undone = self.__dict__.get(_UNDONE_DEFAULTS_ATTR)
         if undone and not (replaced and replaced[-1][0] > undone[-1][0]):
             _, self.default, self.default_factory, entry = undone.pop()
-            self.__dict__[_REPLACED_DEFAULTS_ATTR].append(entry)
+            if entry is not None:
+                self.__dict__[_REPLACED_DEFAULTS_ATTR].append(entry)
         elif replaced:
             _, self.default, self.default_factory = replaced.pop()
 
@@ -4168,16 +4169,19 @@ class Field(Generic[FIELD_TYPE]):
         """Undo the most recent class assignment of the default, as its own change.
 
         Patching tools delete the attribute through the declaring state to patch
-        it, then assign the field back, which puts the assignment back.
+        it, then assign the field back, which puts the assignment back. A
+        deletion with no assignment left to undo is recorded too, so that its
+        own undo changes nothing.
         """
-        if replaced := self.__dict__.get(_REPLACED_DEFAULTS_ATTR):
-            entry = replaced.pop()
-            self._default_history(_UNDONE_DEFAULTS_ATTR).append((
-                next(_default_changes),
-                self.default,
-                self.default_factory,
-                entry,
-            ))
+        replaced = self._default_history(_REPLACED_DEFAULTS_ATTR)
+        entry = replaced.pop() if replaced else None
+        self._default_history(_UNDONE_DEFAULTS_ATTR).append((
+            next(_default_changes),
+            self.default,
+            self.default_factory,
+            entry,
+        ))
+        if entry is not None:
             _, self.default, self.default_factory = entry
 
     def _keep_default(self) -> None:
