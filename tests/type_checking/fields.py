@@ -2,13 +2,13 @@
 
 import dataclasses
 from dataclasses import MISSING
+from typing import assert_type
 
 from reflex_base.components.field import BaseField
 from reflex_base.utils.compat import MISSING_TYPE
 from reflex_base.vars.base import Field, field
 from reflex_base.vars.object import ObjectVar
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from typing_extensions import assert_type
 
 from reflex.state import State
 

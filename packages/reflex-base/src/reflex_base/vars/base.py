@@ -28,6 +28,7 @@ from typing import (
     Final,
     Generic,
     Literal,
+    LiteralString,
     NoReturn,
     ParamSpec,
     Protocol,
@@ -39,7 +40,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import LiteralString, dataclass_transform, override
+from typing_extensions import dataclass_transform, override
 
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
@@ -49,6 +50,7 @@ from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     ComputedVarSignatureError,
     EventHandlerShadowsBuiltInStateMethodError,
     ReflexRuntimeError,
@@ -1652,7 +1654,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             if self._var_type is Any:
                 raise exceptions.UntypedVarError(
                     self,
-                    f"access the item '{key}'",
+                    f"access the item '{key!s}'",
                 )
             msg = f"Var of type {self._var_type} does not support item access."
             raise TypeError(msg)
@@ -1937,7 +1939,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return ArrayVar.range(value.start, value.stop, value.step)
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
         raise TypeError(msg)
 
     if not TYPE_CHECKING:
@@ -2016,7 +2018,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return None
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
         raise TypeError(msg)
 
     @property
@@ -4088,6 +4090,40 @@ class Field(Generic[FIELD_TYPE]):
         """
         return cls(annotated_type=annotated_type, **_default_arguments(value))
 
+    def set_default(
+        self,
+        default: FIELD_TYPE | MISSING_TYPE = MISSING,
+        *,
+        default_factory: Callable[[], FIELD_TYPE] | None = None,
+    ) -> None:
+        """Set the default of the field, replacing its default or factory.
+
+        A mutable default, like a list, becomes a factory returning a copy of
+        the value as it was when set, so no two instances share it. The change
+        applies to values not yet stored on an instance, such as in a new
+        session or after ``reset()``.
+
+        Args:
+            default: The new default value.
+            default_factory: A function building the default for each instance.
+
+        Raises:
+            TypeError: If neither or both of default and default_factory are given.
+        """
+        if default is MISSING and default_factory is None:
+            msg = "set_default requires a default or a default_factory."
+            raise TypeError(msg)
+        if default is not MISSING and default_factory is not None:
+            msg = "set_default takes a default or a default_factory, not both."
+            raise TypeError(msg)
+        if default_factory is None:
+            arguments = _default_arguments(default)
+            self.default = arguments["default"]
+            self.default_factory = arguments["default_factory"]
+        else:
+            self.default = MISSING
+            self.default_factory = default_factory
+
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
 
@@ -4118,6 +4154,39 @@ class Field(Generic[FIELD_TYPE]):
         if self.default is not MISSING:
             return f"Field(default={self.default!r}, is_var={self.is_var}{annotated_type_str})"
         return f"Field(default_factory={self.default_factory!r}, is_var={self.is_var}{annotated_type_str})"
+
+    def __format__(self, format_spec: str) -> str:
+        """Refuse to format the field: only a Var has a frontend expression.
+
+        Class access reaches the field itself only when it has no Var (a backend
+        var, or any field of a mixin state), so formatting it would otherwise
+        silently embed its repr in the page.
+
+        Args:
+            format_spec: The format specifier (unused).
+
+        Raises:
+            BackendVarFormatError: Always; the field has no frontend var.
+        """
+        path = f"{self._owner.__name__}.{self._name}" if self._owner else None
+        name = f"'{path}'" if path else repr(self)
+        if self._backend:
+            msg = (
+                f"Backend var {name} exists only on the server and has no"
+                " frontend value, so it cannot be used in the UI. Use"
+                f" {path}.default_value() for its default value, declare it as"
+                " ClassVar[...] for a constant shared by all sessions, or use a"
+                " regular state var for a value the UI should show and update."
+            )
+        elif getattr(self._owner, "_mixin", False):
+            msg = (
+                f"Var {name} is declared on a mixin state, which has no"
+                " frontend vars. Access it through a state that includes the"
+                " mixin instead."
+            )
+        else:
+            msg = f"{name} has no frontend var, so it cannot be used in the UI."
+        raise BackendVarFormatError(msg)
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.
@@ -4166,7 +4235,7 @@ class Field(Generic[FIELD_TYPE]):
         ):
             logger.error(
                 f"Expected field '{type(state).__name__}.{self._name}' to receive type"
-                f" '{self.outer_type_}', but got '{value}' of type '{type(value)}'."
+                f" '{self.outer_type_}', but got {value!r} of type '{type(value)}'."
             )
         state.__dict__[self._name] = value
         if self._tracked:
@@ -4524,11 +4593,29 @@ def _validate_state_declaration(
         seen.update(vars(base))
 
 
-def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
+def _private_prefixes(class_name: str) -> tuple[str, str]:
+    """Get the prefixes of the names Python treats as private in a class body.
+
+    A private name is a plain attribute of the class unless it is declared a
+    field explicitly, as it was before fields became descriptors.
+
+    Args:
+        class_name: The name of the class being created.
+
+    Returns:
+        The dunder prefix and the prefix ``__name`` is mangled to in the class.
+    """
+    return "__", f"_{class_name.lstrip('_')}__"
+
+
+def _unannotated_fields(
+    namespace: Mapping[str, Any], private: tuple[str, ...]
+) -> dict[str, Field]:
     """Get the fields a class namespace declares by value alone.
 
     Args:
         namespace: The class namespace.
+        private: The prefixes of names that are fields only when declared as such.
 
     Returns:
         The fields by name.
@@ -4549,7 +4636,7 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
                     else figure_out_type(value.default)
                 )
         elif (
-            not key.startswith("__")
+            not key.startswith(private)
             and not callable(value)
             and not isinstance(value, (staticmethod, classmethod, Var))
             and not _is_descriptor(value)
@@ -4559,13 +4646,16 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
 
 
 def _annotated_fields(
-    namespace: Mapping[str, Any], lookup_order: Sequence[type]
+    namespace: Mapping[str, Any],
+    lookup_order: Sequence[type],
+    private: tuple[str, ...],
 ) -> dict[str, Field]:
     """Get the fields a class namespace declares by annotation.
 
     Args:
         namespace: The class namespace.
         lookup_order: The bases of the class in method resolution order.
+        private: The prefixes of names that are fields only when declared as such.
 
     Returns:
         The fields by name.
@@ -4578,9 +4668,16 @@ def _annotated_fields(
         if types.is_classvar(annotation) or key in slots:
             continue
         value = namespace.get(key, MISSING)
-        declared = (
-            value if value is not MISSING else _inherited_value(lookup_order, key)
-        )
+        inherited = _inherited_value(lookup_order, key)
+        if (
+            key.startswith(private)
+            and not isinstance(value, Field)
+            and not isinstance(inherited, Field)
+        ):
+            # A private name is a plain attribute unless declared a field, here
+            # or on a base it shadows.
+            continue
+        declared = value if value is not MISSING else inherited
         if _is_descriptor(declared):
             # A property, computed var or other descriptor under an annotated
             # name stays as is, here or on a base; a field would shadow it.
@@ -4596,7 +4693,7 @@ def _annotated_fields(
             fields[key] = Field(annotated_type=annotation)
         elif isinstance(value, Field):
             fields[key] = value._replace(annotated_type=annotation)
-        elif isinstance(inherited := _inherited_value(lookup_order, key), Field):
+        elif isinstance(inherited, Field):
             # A new default for an inherited field keeps its kind of field.
             fields[key] = inherited._replace(
                 annotated_type=annotation, **_default_arguments(value)
@@ -4617,10 +4714,41 @@ def _default_arguments(value: Any) -> dict[str, Any]:
     """
     if types.is_immutable(value):
         return {"default": value, "default_factory": None}
+    # Copy the value once, so later changes by whoever passed it in do not
+    # reach the default.
     return {
         "default": MISSING,
-        "default_factory": functools.partial(copy.deepcopy, value),
+        "default_factory": functools.partial(copy.deepcopy, copy.deepcopy(value)),
     }
+
+
+def _state_var_assignment_error(cls: type, field: Field, action: str) -> TypeError:
+    """Build the error for replacing a state var through its class.
+
+    Args:
+        cls: The state class the attribute is set or deleted through.
+        field: The field of the state var.
+        action: What was done to the class attribute, like "assigning".
+
+    Returns:
+        The error, naming the state declaring the var and how to change its
+        default there instead.
+    """
+    owner = field._owner or cls
+    if owner is cls:
+        declared = f"{owner.__name__}; {action} it on the class"
+        scope = ""
+    else:
+        declared = (
+            f"{owner.__name__}, inherited by {cls.__name__}; {action} it on "
+            f"{cls.__name__}"
+        )
+        scope = ", which applies to every state that inherits it"
+    return TypeError(
+        f"{field._name!r} is a state var of {declared} would replace the var. "
+        f"Set its default with {owner.__name__}.__fields__[{field._name!r}]"
+        f".set_default(...){scope}, or declare class-level config as ClassVar."
+    )
 
 
 def _is_descriptor(value: Any) -> bool:
@@ -4683,6 +4811,53 @@ class BaseStateMeta(ABCMeta):
         # from; its namespace is reserved for the whole hierarchy.
         _reflex_state_root: BaseStateMeta
 
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Set a class attribute, refusing to replace a state var.
+
+        A field is the descriptor of a state var, so assigning over it through
+        the class would replace the var. Deleting the attribute first still
+        replaces it on purpose, as a test patch can.
+
+        Args:
+            name: The class attribute being assigned.
+            value: Its new value.
+
+        Raises:
+            TypeError: If the attribute is a state var.
+        """
+        # Only a declared name can resolve to a field; skip the lookup otherwise.
+        existing = (
+            _inherited_value(cls.__mro__, name) if name in cls.__fields__ else None
+        )
+        if isinstance(existing, Field):
+            if value is existing:
+                # Assigning the var's own field back, as a patch undoing a
+                # failed assignment does, changes nothing.
+                return
+            raise _state_var_assignment_error(cls, existing, "assigning")
+        super().__setattr__(name, value)
+
+    def __delattr__(cls, name: str) -> None:
+        """Delete a class attribute, refusing to delete a state var it inherits.
+
+        The class does not hold an inherited var, so deleting it would fail, as
+        the cleanup of a refused patch through a substate does; this names the
+        var instead.
+
+        Args:
+            name: The class attribute being deleted.
+
+        Raises:
+            TypeError: If the attribute is a state var inherited from a base.
+        """
+        if (
+            name not in cls.__dict__
+            and name in cls.__fields__
+            and isinstance(existing := _inherited_value(cls.__mro__, name), Field)
+        ):
+            raise _state_var_assignment_error(cls, existing, "deleting")
+        super().__delattr__(name)
+
     def __new__(
         cls,
         name: str,
@@ -4727,12 +4902,13 @@ class BaseStateMeta(ABCMeta):
                 inherited_fields.update(
                     (key, value)
                     for key, value in _annotated_fields(
-                        vars(base), base.__mro__[1:]
+                        vars(base), base.__mro__[1:], _private_prefixes(base.__name__)
                     ).items()
-                    if key.startswith("_") and not key.startswith(f"_{base.__name__}__")
+                    if key.startswith("_")
                 )
-        own_fields = _unannotated_fields(namespace) | _annotated_fields(
-            namespace, lookup_order
+        private = _private_prefixes(name)
+        own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
+            namespace, lookup_order, private
         )
         annotations = annotations_from_namespace(namespace)
         for key, value in namespace.items():
