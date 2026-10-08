@@ -648,6 +648,59 @@ def test_class_assignment_patch_round_trip(kind: str, mechanism: str):
     assert getattr(target(), name) == original
 
 
+@pytest.mark.parametrize("rejected", ["var", "field"])
+def test_class_assignment_rejected_patch_round_trip(rejected: str):
+    """A rejected patch leaves the configured default once the patch is undone.
+
+    ``unittest.mock`` assigns the saved field back even when its own assignment
+    raised, so the failed assignment must leave the entry that undo removes.
+
+    Args:
+        rejected: Whether the patch assigns another state's Var or a fresh Field.
+    """
+
+    class OtherState(BaseState):
+        other: int = 1
+
+    class ConfigState(BaseState):
+        _value: int = 0
+
+    ConfigState._value = 10
+    value = OtherState.other if rejected == "var" else field(5)
+    with pytest.raises(TypeError), mock.patch.object(ConfigState, "_value", value):
+        pass
+    assert ConfigState()._value == 10
+
+    # The configured default is still the one a later undo removes.
+    del ConfigState._value
+    assert ConfigState()._value == 0
+
+
+@pytest.mark.parametrize("name", ["_value", "public"])
+def test_class_assignment_monkeypatch_delattr_round_trip(name: str):
+    """``monkeypatch.delattr`` undoes the configured default only while applied.
+
+    It deletes the attribute through the declaring state, which undoes the most
+    recent assignment, then assigns the saved field back to put it back.
+
+    Args:
+        name: The var to delete.
+    """
+
+    class ConfigState(BaseState):
+        _value: int = 0
+        public: int = 0
+
+    setattr(ConfigState, name, 10)
+    with pytest.MonkeyPatch.context() as patcher:
+        patcher.delattr(ConfigState, name)
+        assert getattr(ConfigState(), name) == 0
+    assert getattr(ConfigState(), name) == 10
+
+    delattr(ConfigState, name)
+    assert getattr(ConfigState(), name) == 0
+
+
 def test_class_assignment_nested_patches_unwind():
     """Nested patches of one default unwind to each previous default in turn."""
 
@@ -810,8 +863,11 @@ def test_class_assignment_delattr_restores_default():
     assert declared.default_factory is factory
     assert ConfigState()._value == [1]
 
+    # Assigning the field back undoes the deletions in turn.
     ConfigState._value = declared  # pyright: ignore[reportAttributeAccessIssue]
-    assert ConfigState()._value == [1]
+    assert ConfigState()._value == [2]
+    ConfigState._value = declared  # pyright: ignore[reportAttributeAccessIssue]
+    assert ConfigState()._value == [3]
     with pytest.raises(TypeError, match="computed var"):
         ConfigState._value = ConfigState.get_fields()["_other"]  # pyright: ignore[reportAttributeAccessIssue]
 

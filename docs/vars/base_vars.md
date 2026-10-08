@@ -105,11 +105,15 @@ through a subclass also changes that declaring state's default. Each generated
 [`get_component` to configure defaults](/docs/state-structure/component-state/#passing-props)
 independently for each component.
 
+Deleting the class attribute undoes the most recent default assignment.
 Assigning a var's own field or Var back to its state class, as read through the
-class before a change, or deleting the class attribute undoes the most recent
-default assignment. Testing tools such as pytest's `monkeypatch.setattr` and
-`unittest.mock.patch.object` restore a patched default this way, including a
-patch made through a subclass.
+class before a change, undoes the most recent assignment, or a deletion through
+the state that declares the var. Testing tools such as pytest's
+`monkeypatch.setattr` and `monkeypatch.delattr` and `unittest.mock.patch.object`
+restore a patched default this way, including a patch made through a subclass
+and one whose value was rejected. Undoing always reverses the latest change, so
+a default assigned while a patch is applied is the one the patch's restore
+undoes.
 
 ```md alert warning
 # Annotate the var, and keep shared objects out of defaults.

@@ -10,6 +10,7 @@ import datetime
 import functools
 import hashlib
 import inspect
+import itertools
 import json
 import logging
 import re
@@ -3898,9 +3899,17 @@ FIELD_TYPE = TypeVar("FIELD_TYPE")
 # undoing an assignment restores, most recent last.
 _REPLACED_DEFAULTS_ATTR = "_replaced_defaults"
 
+# The field attribute holding the assignments undone by deleting the class
+# attribute through the declaring state, which undoing the deletion puts back,
+# most recent last.
+_UNDONE_DEFAULTS_ATTR = "_undone_defaults"
+
 # How many replaced defaults a field keeps: undoing reaches back through as many
 # nested patches, and assigning a default repeatedly does not grow the history.
 _MAX_REPLACED_DEFAULTS = 16
+
+# Orders the entries of both histories, so that undoing reverses the latest change.
+_default_changes = itertools.count()
 
 # Custom attrs never copied from a source field: get_field_type duck-types
 # pydantic fields on `.annotation`, so carrying it over would shadow the
@@ -3915,6 +3924,7 @@ _RESERVED_FIELD_ATTRS = frozenset({
     "_plain_types",
     "_var",
     _REPLACED_DEFAULTS_ATTR,
+    _UNDONE_DEFAULTS_ATTR,
 })
 
 # Exact types of values that are never wrapped in a MutableProxy. Checking them
@@ -4119,18 +4129,56 @@ class Field(Generic[FIELD_TYPE]):
             default: The new default value, or MISSING.
             default_factory: The new default factory, or None.
         """
-        if (replaced := self.__dict__.get(_REPLACED_DEFAULTS_ATTR)) is None:
-            replaced = self.__dict__[_REPLACED_DEFAULTS_ATTR] = deque(
-                maxlen=_MAX_REPLACED_DEFAULTS
-            )
-        replaced.append((self.default, self.default_factory))
+        self._default_history(_REPLACED_DEFAULTS_ATTR).append((
+            next(_default_changes),
+            self.default,
+            self.default_factory,
+        ))
         self.default = default
         self.default_factory = default_factory
 
+    def _default_history(self, attr: str) -> deque[tuple[Any, ...]]:
+        """Get one of the field's default histories, created on first use.
+
+        Args:
+            attr: The field attribute holding the history.
+
+        Returns:
+            The history, most recent last.
+        """
+        if (history := self.__dict__.get(attr)) is None:
+            history = self.__dict__[attr] = deque(maxlen=_MAX_REPLACED_DEFAULTS)
+        return history
+
     def _restore_default(self) -> None:
-        """Undo the most recent class assignment of the default, if any."""
+        """Undo the most recent class assignment of the default, or its deletion.
+
+        Undoing a deletion through the declaring state puts back the assignment
+        that the deletion undid.
+        """
+        replaced = self.__dict__.get(_REPLACED_DEFAULTS_ATTR)
+        undone = self.__dict__.get(_UNDONE_DEFAULTS_ATTR)
+        if undone and not (replaced and replaced[-1][0] > undone[-1][0]):
+            _, self.default, self.default_factory, entry = undone.pop()
+            self.__dict__[_REPLACED_DEFAULTS_ATTR].append(entry)
+        elif replaced:
+            _, self.default, self.default_factory = replaced.pop()
+
+    def _delete_default(self) -> None:
+        """Undo the most recent class assignment of the default, as its own change.
+
+        Patching tools delete the attribute through the declaring state to patch
+        it, then assign the field back, which puts the assignment back.
+        """
         if replaced := self.__dict__.get(_REPLACED_DEFAULTS_ATTR):
-            self.default, self.default_factory = replaced.pop()
+            entry = replaced.pop()
+            self._default_history(_UNDONE_DEFAULTS_ATTR).append((
+                next(_default_changes),
+                self.default,
+                self.default_factory,
+                entry,
+            ))
+            _, self.default, self.default_factory = entry
 
     def _keep_default(self) -> None:
         """Record a failed class assignment, which leaves the default in place.
@@ -4781,6 +4829,52 @@ def _keep_client_storage(declared: Field, value: Any) -> Any:
     return value
 
 
+def _assigned_default_arguments(
+    declared: Field, name: str, value: Any
+) -> dict[str, Any]:
+    """Get the default and default factory a class assignment gives a field.
+
+    Args:
+        declared: The field assigned through its state class.
+        name: The field's name.
+        value: The assigned default value or zero-argument default factory.
+
+    Returns:
+        The default and default factory arguments of the field.
+
+    Raises:
+        TypeError: If the default is another Var or Field, does not satisfy
+            the field's annotation, or its factory fails.
+    """
+    default = _keep_client_storage(declared, value)
+    accepted = _accepts_default(declared, default)
+    if not accepted and callable(value):
+        # The field cannot hold the callable itself, so it is a factory: call
+        # it once to validate what it produces.
+        try:
+            default = value()
+        except Exception as err:
+            msg = f"Default factory for field '{name}' failed: {err}"
+            raise TypeError(msg) from err
+        if inspect.iscoroutine(default):
+            default.close()
+        default = _keep_client_storage(declared, default)
+        accepted = _accepts_default(declared, default)
+        if accepted and not isinstance(default, declared._client_storage):
+            # Keep the callable to produce future defaults.
+            return {"default": MISSING, "default_factory": value}
+        # Browser storage is classified and configured by the value itself, and
+        # the browser supplies later values, so the value produced once here is
+        # the default rather than the factory.
+    if not accepted:
+        msg = (
+            f"Invalid default for field '{name}': expected "
+            f"{declared.outer_type_}, got {default!r} of type {type(default)}."
+        )
+        raise TypeError(msg)
+    return _default_arguments(default)
+
+
 def _assigned_field(cls: BaseStateMeta, name: str) -> Field | None:
     """Get the field a class attribute assignment or deletion configures.
 
@@ -4869,9 +4963,9 @@ class BaseStateMeta(ABCMeta):
         a browser storage default, or of the value a frontend var's declared
         default factory produces, which is called once to find them. Assigning
         the field itself, or the Var read through the class, undoes the most
-        recent assignment, as patching tools do to restore what they saved; a
-        failed assignment is undone the same way and leaves the default as it
-        was.
+        recent assignment or deletion through the declaring state, as patching
+        tools do to restore what they saved; a failed assignment is undone the
+        same way and leaves the default as it was.
 
         Args:
             name: The class attribute being assigned.
@@ -4892,42 +4986,21 @@ class BaseStateMeta(ABCMeta):
             # A value read from a state instance is proxied for dirty tracking;
             # the default must not retain that instance through the proxy.
             value = value.__wrapped__
-        default = _keep_client_storage(declared, value)
-        accepted = _accepts_default(declared, default)
-        if not accepted and callable(value):
-            # The field cannot hold the callable itself, so it is a factory:
-            # call it once to validate what it produces.
-            try:
-                default = value()
-            except Exception as err:
-                declared._keep_default()
-                msg = f"Default factory for field '{name}' failed: {err}"
-                raise TypeError(msg) from err
-            if inspect.iscoroutine(default):
-                default.close()
-            default = _keep_client_storage(declared, default)
-            accepted = _accepts_default(declared, default)
-            if accepted and not isinstance(default, declared._client_storage):
-                # Keep the callable to produce future defaults.
-                declared._assign_default(MISSING, value)
-                return
-            # Browser storage is classified and configured by the value itself,
-            # and the browser supplies later values, so the value produced once
-            # here is the default rather than the factory.
-        if not accepted:
+        try:
+            arguments = _assigned_default_arguments(declared, name, value)
+        except Exception:
+            # Patching tools undo even an assignment that raised.
             declared._keep_default()
-            msg = (
-                f"Invalid default for field '{name}': expected "
-                f"{declared.outer_type_}, got {default!r} of type {type(default)}."
-            )
-            raise TypeError(msg)
-        declared._assign_default(**_default_arguments(default))
+            raise
+        declared._assign_default(**arguments)
 
     def __delattr__(cls, name: str) -> None:
         """Undo the most recent assignment of a field's default, retaining its descriptor.
 
         Patching tools delete the attribute to undo a patch made through a
-        class that inherits the field.
+        class that inherits the field, which undoes the latest change. A
+        deletion through the declaring state is a change of its own, which
+        assigning the field back undoes.
 
         Args:
             name: The class attribute being deleted.
@@ -4935,8 +5008,10 @@ class BaseStateMeta(ABCMeta):
         declared = _assigned_field(cls, name)
         if declared is None:
             super().__delattr__(name)
-            return
-        declared._restore_default()
+        elif name in cls.__dict__:
+            declared._delete_default()
+        else:
+            declared._restore_default()
 
     def __new__(
         cls,

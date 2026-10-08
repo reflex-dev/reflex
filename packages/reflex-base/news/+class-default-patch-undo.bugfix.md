@@ -1,0 +1,1 @@
+Undoing a `mock.patch.object` or pytest-mock patch of a state var's class default that rejected its value (a Var or `rx.field(...)`), or a `monkeypatch.delattr` of the var, no longer drops the default configured before the patch.
