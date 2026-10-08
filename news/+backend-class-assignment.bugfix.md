@@ -1,0 +1,1 @@
+Defaults are no longer part of the saved-state schema, so changing one keeps state saved by this release or later loadable. A browser storage var annotated with a storage type, such as `rx.Field[rx.LocalStorage]`, and declared with a `default_factory` compiles with the storage options the factory produces, and `reset()` restores the factory's value.

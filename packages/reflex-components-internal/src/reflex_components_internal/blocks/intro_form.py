@@ -10,6 +10,7 @@ from reflex.event import EventType, IndividualEventType
 from reflex.experimental.client_state import ClientStateVar
 from reflex.vars.base import get_unique_variable_name
 from reflex_components_internal.blocks.telemetry.posthog import (
+    PHONE_NUMBER_KEY,
     track_intro_form_posthog_submission,
 )
 from reflex_components_internal.components.base.button import button
@@ -314,7 +315,7 @@ def intro_form(
                     rx.Var(get_element_value(email_id))
                 ),
             ),
-            input_field("Phone number", "+1234567890", "phone_number", "tel", True),
+            input_field("Phone number", "+1234567890", PHONE_NUMBER_KEY, "tel", True),
             class_name="grid grid-cols-2 gap-4",
         ),
         rx.el.div(

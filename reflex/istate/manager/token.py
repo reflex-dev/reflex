@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import pickle
-from typing import TYPE_CHECKING, BinaryIO, Generic, TypeVar
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, BinaryIO, Generic, Self, TypeVar
 
 from reflex.utils import console
 
@@ -150,14 +148,27 @@ class BaseStateToken(StateToken["BaseState"]):
         """
         return super().with_cls(cls)
 
+    def _state_key(self, cls: type[BaseState]) -> str:
+        """Get the key a state of this token's tree is stored under.
+
+        Formats the key directly, which is cheaper than building a token for the
+        state class with `with_cls` and converting it to a string.
+
+        Args:
+            cls: The class of the state.
+
+        Returns:
+            The key of the state in the underlying StateManager store.
+        """
+        return f"{self.ident}_{cls.get_full_name()}"
+
     def __str__(self) -> str:
         """The key used in the underlying StateManager store.
 
         Returns:
             A string representation of the token, which is a combination of the ident and cls name.
         """
-        # urlencode the redis token to escape the slash delimiter.
-        return f"{self.ident}_{self.cls.get_full_name()}"
+        return self._state_key(self.cls)
 
     @classmethod
     def serialize(cls, state: BaseState) -> bytes:
