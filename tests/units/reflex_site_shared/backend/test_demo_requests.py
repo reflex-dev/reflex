@@ -80,7 +80,14 @@ def test_every_form_field_is_forwarded_once_and_escaped() -> None:
     )
     assert lines[1] == "*Email:* `first_last@acme.com`"
     assert lines[2] == "*Phone:* +1 555"
-    assert f"*Page:* {PAGE}" in lines
+    assert lines[3:8] == [
+        "*Company size:* 51-100",
+        "*Interested in:* MCP",
+        "*Technical level:* Technical",
+        "*Heard about us:* Blog",
+        f"*Page:* {PAGE}",
+    ]
+    assert len(lines) == 10
     assert lines[-2:] == [
         "*Looking to build:*",
         ">a &lt;!channel&gt; dashboard for ops",
