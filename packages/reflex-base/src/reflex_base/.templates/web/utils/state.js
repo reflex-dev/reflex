@@ -56,20 +56,17 @@ const event_queue = [];
 // The event that sends browser storage values to the backend.
 const UPDATE_VARS_INTERNAL =
   "reflex___state____update_vars_internal_state.update_vars_internal";
-// The frontend event that sends one synced localStorage var. It is built into
-// an UPDATE_VARS_INTERNAL event when it is sent: see syncLocalStorageEvent.
+// A frontend event naming one synced localStorage var, turned into an
+// UPDATE_VARS_INTERNAL event when it is sent: see syncLocalStorageEvent.
 const SYNC_LOCAL_STORAGE = "_sync_local_storage";
 
-// Synced localStorage values sent to the backend, by state key, oldest first,
-// each with the count of this tab's localStorage writes when it was sent. The
-// backend echoes them back, so that get_delta overrides see them.
+// Synced localStorage values sent to the backend and not yet echoed back, by
+// state key, oldest first, with this tab's localStorage write count at the send.
 const sentStorageValues = {};
-// Bounds the values kept for a key whose echoes an override changes, so they
-// never match. One key has far fewer in flight: 60 writes a second over a one
-// second round trip.
+// Bounds a key whose echoes a get_delta override changes, so they never match.
 const MAX_SENT_STORAGE_VALUES = 256;
-// This tab's localStorage writes so far, and its last write by storage name,
-// which vars of different state keys may share.
+// This tab's localStorage write count, and its last write by storage name
+// (vars of different state keys may share one).
 let localStorageWrites = 0;
 const lastLocalStorageWrites = {};
 
@@ -350,12 +347,10 @@ function urlFrom(string) {
 }
 
 /**
- * Build the event that sends a synced localStorage var to the backend.
+ * Build the update_vars_internal event for a synced localStorage var.
  *
- * A storage event queues only which var to send. The value is read here, when
- * the event is sent, so that it and the write count recorded with it come from
- * the same moment: the event may have waited for a reconnect, and storage may
- * have changed meanwhile.
+ * The value is read when the event is sent, so it and the write count recorded
+ * with it come from the same moment.
  * @param payload The storage name and state key of the var.
  * @returns The update_vars_internal event.
  */
@@ -1081,10 +1076,9 @@ export const hydrateClientStorage = (client_storage) => {
 };
 
 /**
- * Remember the synced localStorage values an event sends to the backend.
+ * Remember the synced localStorage values an event sends, to recognise their echoes.
  *
- * Only a synced var's echo may go unwritten, because only for a synced var
- * does the tab send the newer value another tab stored to its backend.
+ * Only synced vars: the tab sends another tab's newer value only for those.
  * @param event The event about to be sent.
  */
 const recordSentStorageValues = (event) => {
@@ -1162,10 +1156,9 @@ const applyClientStorageDelta = (client_storage, delta) => {
         const name = client_storage.local_storage[state_key].name || state_key;
         const echo = takeEcho(state_key, value);
         const last = lastLocalStorageWrites[name];
-        // Write a synced var's echo only over this tab's own later write, which
-        // the backend applied first. Any other stored value is the sent one or
-        // another tab's newer one, which this tab syncs to its backend; writing
-        // over it sets synced tabs answering each other over and over.
+        // Write an echo only over this tab's own later write, which the backend
+        // applied before the echoed event. Otherwise storage holds the sent
+        // value or another tab's newer one.
         if (
           !echo ||
           (last?.writes > echo.writes &&

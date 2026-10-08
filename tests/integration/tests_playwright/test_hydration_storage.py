@@ -464,10 +464,8 @@ def test_synced_storage_echo_keeps_newer_value(
 ):
     """A booting tab does not write back a synced value another tab changed meanwhile.
 
-    The second tab boots with the stored value while its websocket replies are
-    held back; the first tab then stores a newer value. Once the replies arrive,
-    the second tab must not write the value it booted with over the newer one,
-    which would also echo it back to the first tab through a storage event.
+    The second tab boots with the stored value while its replies are held back,
+    and the first tab stores a newer value before they arrive.
 
     Args:
         hydration_storage_app: The running app.
@@ -500,10 +498,7 @@ def test_synced_storage_echo_keeps_newer_value(
 def test_synced_storage_event_sends_stored_value(
     hydration_storage_app: AppHarness, page: Page
 ):
-    """A late storage event syncs the value stored now, not the value in the event.
-
-    A tab can get the event of another tab's write after a later write, so the
-    event's ``newValue`` may already be stale.
+    """A late storage event syncs the value stored now, not the event's ``newValue``.
 
     Args:
         hydration_storage_app: The running app.
@@ -561,9 +556,8 @@ def test_synced_storage_echo_after_own_write_is_written(
 ):
     """An echo is written over a value the tab itself stored after sending it.
 
-    The backend applies a tab's events in order, so the echo of a value sent
-    after a handler's event is newer than the value of the handler's reply,
-    whether the handler stored the synced var or another var of the same name.
+    The handler's reply is older than the echo, whether the handler stored the
+    synced var or another var of the same name.
 
     Args:
         hydration_storage_app: The running app.
@@ -594,8 +588,7 @@ def test_replaced_storage_echo_does_not_hide_later_change(
 ):
     """A value sent at boot whose echo was replaced is written when a handler sets it.
 
-    That holds after another tab stored a value meanwhile too, which a synced var
-    sends to the backend and a var that is not synced never does.
+    Also after another tab stored a value meanwhile, synced or not.
 
     Args:
         hydration_storage_app: The running app.
@@ -632,18 +625,14 @@ def test_synced_storage_event_while_disconnected_sends_current_value(
 ):
     """A storage event received while disconnected syncs the value stored at send time.
 
-    The event waits for the reconnect, and storage can change again before it
-    is sent. Sending the value from when the event fired would leave this tab's
-    backend behind storage and the other tabs.
-
     Args:
         hydration_storage_app: The running app.
         page: A fresh browser page.
     """
     socket = EventSocket(page)
     open_synced(hydration_storage_app, page)
-    # The tab disconnects as on navigation, another tab stores a value, and then
-    # another before the reconnect sends the queued event.
+    # Disconnect as on navigation, then another tab stores twice before the
+    # reconnect sends the queued event.
     page.evaluate(
         """() => {
             window.dispatchEvent(new Event('pagehide'));
