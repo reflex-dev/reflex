@@ -60,3 +60,18 @@ c38383dc8 ignores session-storage `storage` events (cubic); 05f0e4bfd tracks thi
 through a non-synced var sharing a synced var's `name` was missed; new `[shared_name]` test fails on c38383dc8); 4cfafa359 is a
 no-behaviour-change cleanup of the code and tests. `results/4cfafa359/`: explorer 24/24 converge, 0 storms (storm dev 71–83 frames,
 prod 95; stamp dev6 83–107, dev3 33–51, prod6 89–111); verifier 13/13, 0 storms, race fired 7/7. Playwright 24/24, Selenium 23/23.
+
+## 33bf76643 and 2063422c8 (10-08): send-time read, and echo skipping for synced vars only
+
+33bf76643 (another session) queues a storage event as `_sync_local_storage` and reads `localStorage` when the event is sent, so a
+sync that waits for a reconnect sends the value stored then (`test_synced_storage_event_while_disconnected_sends_current_value`).
+
+Maintainer review on 33bf76643 ([comment](https://github.com/reflex-dev/reflex/pull/7505#issuecomment-6052694969)): a `sync=False`
+var whose boot echo an override replaced keeps its sent value recorded; another tab writes the key; a later handler setting the
+recorded value is taken for its echo and skipped, so storage keeps the other tab's value for good. Reproduced in the browser:
+`test_replaced_storage_echo_does_not_hide_later_change[plain-other_tab]` fails on 33bf76643 in dev and prod, passes on main.
+
+2063422c8: only `sync=True` localStorage vars record sent values, so only their echoes can be skipped. Skipping is safe only
+because the tab then syncs another tab's newer value to its backend, which a non-synced var never does; non-synced values are
+written as on main. `results/2063422c8/matrix.txt`: stamp 6 tabs dev 0/3 storm (86–139 frames), storm dev 0/3 (65–83), prod 0/2
+(87–91), all converge, 0 frames in the quiet window. Playwright 32/32 (dev+prod), Selenium 23/23, state.js tests, pre-commit.
