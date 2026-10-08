@@ -103,7 +103,10 @@ An inherited var belongs to the state that declared it, so assigning a default
 through a subclass also changes that declaring state's default. Each generated
 `ComponentState` class owns its copied fields, allowing
 [`get_component` to configure defaults](/docs/state-structure/component-state/#passing-props)
-independently for each component.
+independently for each component. A browser storage var with a `name` keeps that
+name in every component, though, so all of them share one browser key: assign a
+storage value with its own `name` in `get_component`, or leave `name` unset to
+give each component its own key.
 
 Assigning a var's own field or Var back to its state class, as read through the
 class before a change, or deleting the class attribute undoes the most recent

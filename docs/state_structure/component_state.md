@@ -165,6 +165,14 @@ state class. Other components keep their own defaults, and `cls.text` still
 references the frontend var when building the UI. Resetting the component's state
 restores its last configured default.
 
+A browser storage var declared with a `name`, such as
+`rx.LocalStorage("light", name="theme")`, stores every component's value under
+that one key, so the components overwrite each other's stored value. To persist a
+value per component, assign a storage value with its own `name` in
+`get_component`, such as `cls.theme = rx.LocalStorage(initial, name=f"theme_{key}")`
+with a `key` prop that identifies the component, or leave `name` unset so each
+component state gets its own key.
+
 ```python eval
 rx.divider()
 ```
