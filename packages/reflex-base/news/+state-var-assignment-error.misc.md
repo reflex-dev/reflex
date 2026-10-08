@@ -1,0 +1,1 @@
+The `TypeError` for assigning a state var through its class now names the state that declares the var and points at that state's field, and suggests `default_factory = lambda: ...` when the assigned value is mutable, so the default is not shared between sessions.

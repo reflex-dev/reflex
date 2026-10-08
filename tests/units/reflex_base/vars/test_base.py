@@ -1447,12 +1447,72 @@ def test_class_assignment_over_a_var_raises(name: str):
     declared = Parent.get_fields()[name]
     for cls in (Parent, Child):
         with pytest.raises(
-            TypeError, match=f"'{name}' is a state var of {cls.__name__}"
+            TypeError, match=f"'{name}' is a state var of {Parent.__name__}"
         ):
             setattr(cls, name, 5)
     assert Parent.__dict__[name] is declared
     assert name not in Child.__dict__
     assert declared.default == 0
+
+
+def test_class_assignment_error_names_the_declaring_state():
+    """The error through a substate points at the state declaring the var."""
+
+    class Parent(BaseState):
+        count: int = 0
+
+    class Child(Parent):
+        pass
+
+    parent, child = Parent.__name__, Child.__name__
+    with pytest.raises(TypeError) as exc_info:
+        Child.count = 9  # pyright: ignore[reportAttributeAccessIssue]
+    message = str(exc_info.value)
+    assert message.startswith(
+        f"'count' is a state var of {parent}, inherited by {child}; assigning "
+        f"it on {child} would replace the var."
+    )
+    assert f"{parent}.__fields__['count'].default = ..." in message
+    assert "every state that inherits it" in message
+    assert f"{child}.__fields__" not in message
+
+    with pytest.raises(TypeError) as exc_info:
+        Parent.count = 9
+    message = str(exc_info.value)
+    assert message.startswith(
+        f"'count' is a state var of {parent}; assigning it on the class would "
+        "replace the var."
+    )
+    assert "every state that inherits it" not in message
+
+
+def test_class_assignment_error_suggests_factory_for_mutable_value():
+    """A mutable value is suggested as a default_factory, not a shared default."""
+
+    class S(BaseState):
+        items: list[str] = []
+        maybe: list[str] | None = None
+
+    s = S.__name__
+    with pytest.raises(TypeError) as exc_info:
+        S.items = ["a"]
+    message = str(exc_info.value)
+    assert f"{s}.__fields__['items'].default_factory = lambda: ..." in message
+    assert ".default = ..." not in message
+    assert "dataclasses.MISSING" not in message
+
+    # A set default wins over the factory, so the message says to clear it.
+    with pytest.raises(TypeError) as exc_info:
+        S.maybe = ["a"]
+    message = str(exc_info.value)
+    assert (
+        f"{s}.__fields__['maybe'].default = dataclasses.MISSING and "
+        f"{s}.__fields__['maybe'].default_factory = lambda: ..."
+    ) in message
+
+    with pytest.raises(TypeError) as exc_info:
+        S.items = ()  # pyright: ignore[reportAttributeAccessIssue]
+    assert f"{s}.__fields__['items'].default = ..." in str(exc_info.value)
 
 
 def test_class_assignment_of_other_attributes_is_allowed():
@@ -1512,11 +1572,15 @@ def test_inherited_var_patch_raises_type_error():
     declared = Parent.get_fields()["value"]
     # The patch's cleanup deletes the attribute it failed to set on Child.
     with (
-        pytest.raises(TypeError, match="'value' is a state var of Child"),
+        pytest.raises(
+            TypeError,
+            match=f"'value' is a state var of {Parent.__name__}, inherited by "
+            f"{Child.__name__}",
+        ),
         mock.patch.object(Child, "value", 99),
     ):
         pass
-    with pytest.raises(TypeError, match="deleting it on the class"):
+    with pytest.raises(TypeError, match=f"deleting it on {Child.__name__}"):
         del Child.value
     assert Parent.__dict__["value"] is declared
     assert "value" not in Child.__dict__

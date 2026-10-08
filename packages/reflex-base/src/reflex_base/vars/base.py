@@ -4671,22 +4671,44 @@ def _default_arguments(value: Any) -> dict[str, Any]:
     }
 
 
-def _state_var_assignment_error(cls: type, name: str, action: str) -> TypeError:
+def _state_var_assignment_error(
+    cls: type, field: Field, action: str, value: Any = MISSING
+) -> TypeError:
     """Build the error for replacing a state var through its class.
 
     Args:
         cls: The state class the attribute is set or deleted through.
-        name: The name of the state var.
+        field: The field of the state var.
         action: What was done to the class attribute, like "assigning".
+        value: The value assigned, if any.
 
     Returns:
-        The error, naming the var and how to change its default instead.
+        The error, naming the state declaring the var and how to change its
+        default there instead.
     """
+    owner = field._owner or cls
+    name = field._name
+    target = f"{owner.__name__}.__fields__[{name!r}]"
+    if value is MISSING or types.is_immutable(value):
+        fix = f"{target}.default = ..."
+    else:
+        # A mutable default would be shared by every instance; a set default
+        # also wins over the factory, so it must be cleared first.
+        fix = f"{target}.default_factory = lambda: ..."
+        if field.default is not MISSING:
+            fix = f"{target}.default = dataclasses.MISSING and {fix}"
+    if owner is cls:
+        declared = f"{owner.__name__}; {action} it on the class"
+        scope = ""
+    else:
+        declared = (
+            f"{owner.__name__}, inherited by {cls.__name__}; {action} it on "
+            f"{cls.__name__}"
+        )
+        scope = ", which applies to every state that inherits it"
     return TypeError(
-        f"{name!r} is a state var of {cls.__name__}; {action} it on the class "
-        f"would replace the var. Set its default with "
-        f"{cls.__name__}.__fields__[{name!r}].default = ..., or declare "
-        "class-level config as ClassVar."
+        f"{name!r} is a state var of {declared} would replace the var. Set its "
+        f"default with {fix}{scope}, or declare class-level config as ClassVar."
     )
 
 
@@ -4773,7 +4795,7 @@ class BaseStateMeta(ABCMeta):
                 # Assigning the var's own field back, as a patch undoing a
                 # failed assignment does, changes nothing.
                 return
-            raise _state_var_assignment_error(cls, name, "assigning")
+            raise _state_var_assignment_error(cls, existing, "assigning", value)
         super().__setattr__(name, value)
 
     def __delattr__(cls, name: str) -> None:
@@ -4792,9 +4814,9 @@ class BaseStateMeta(ABCMeta):
         if (
             name not in cls.__dict__
             and name in cls.__fields__
-            and isinstance(_inherited_value(cls.__mro__, name), Field)
+            and isinstance(existing := _inherited_value(cls.__mro__, name), Field)
         ):
-            raise _state_var_assignment_error(cls, name, "deleting")
+            raise _state_var_assignment_error(cls, existing, "deleting")
         super().__delattr__(name)
 
     def __new__(
