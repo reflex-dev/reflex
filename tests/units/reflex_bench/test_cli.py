@@ -7,6 +7,7 @@ import dataclasses
 import json
 import os
 import platform
+import signal
 import sys
 import time
 from collections.abc import Callable, Iterator, Mapping
@@ -200,6 +201,9 @@ def test_run_autosaves_and_resolves_baselines(home: Path):
 def interrupting() -> Iterator[None]:
     """Register a benchmark whose first sample interrupts the harness like Ctrl-C.
 
+    SIGINT gets Python's handler for the test: ``interrupt_main`` does nothing
+    when the runner was started with SIGINT ignored (CI, background jobs).
+
     Yields:
         Nothing; the benchmark is unregistered afterwards.
     """
@@ -215,9 +219,11 @@ def interrupting() -> Iterator[None]:
         Interrupting, id="test.interrupting", metrics={"value": Metric("s", "lower")}
     )
     registry.register(bench)
+    previous = signal.signal(signal.SIGINT, signal.default_int_handler)
     try:
         yield
     finally:
+        signal.signal(signal.SIGINT, previous)
         registry.REGISTRY.pop(bench.id)
 
 
