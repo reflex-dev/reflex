@@ -2415,11 +2415,30 @@ class State(BaseState):
             await ctx.emit_delta(delta=delta)
             # Follow-up corrections must be allowed to write browser storage.
             self.dirty_vars.discard(constants.CompileVars.IS_HYDRATED)
-        # The browser's values only: the reset defaults stay clean, so they are
-        # not written back to the browser.
+        # Let get_delta overrides inspect browser values without invalidating
+        # their computed dependents. Re-resolve only when an override changes
+        # a value, so dependent computed vars reflect that correction.
         for var_state, var_name in applied:
             var_state.dirty_vars.add(var_name)
-            var_state._mark_dirty((var_name,))
+            var_state._mark_ancestors_dirty()
+        if applied:
+            correction_delta = await self._get_resolved_delta()
+            dependent_deltas = []
+            for var_state, var_name in applied:
+                key = var_name + FIELD_MARKER
+                subdelta = correction_delta.get(var_state.get_full_name(), {})
+                if key in subdelta and subdelta[key] != var_state.get_value(var_name):
+                    setattr(var_state, var_name, subdelta[key])
+                    var_state._mark_dirty((var_name,))
+                    dependent_deltas.append(
+                        await _resolve_delta(BaseState.get_delta(var_state))
+                    )
+            for dependent_delta in dependent_deltas:
+                for state_name, changes in dependent_delta.items():
+                    correction_delta.setdefault(state_name, {}).update(changes)
+            if ctx.emit_delta_impl is not None and correction_delta:
+                await ctx.emit_delta(delta=correction_delta)
+            self._clean()
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
             return None
