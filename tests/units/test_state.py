@@ -21,7 +21,7 @@ from hashlib import md5
 from textwrap import dedent
 from types import MethodType, ModuleType
 from typing import Any, ClassVar, Literal, TypeVar, cast
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -5527,28 +5527,31 @@ class DefaultSchemaState(BaseState):
 
 
 @pytest.mark.parametrize("default", [2, 3, lambda: 4])
-def test_default_assignment_preserves_serialized_state(default: Any):
-    """Changing defaults preserves the schema and previously serialized values.
+def test_default_change_preserves_serialized_state(default: Any):
+    """Changing a default preserves the schema and previously serialized values.
 
     Args:
         default: The new default value or factory.
     """
-    original = DefaultSchemaState().value
     state = DefaultSchemaState(value=99)
     data = state._serialize()
     schema = DefaultSchemaState._to_schema()
+    defaults = (
+        {"default": dataclasses.MISSING, "default_factory": default}
+        if callable(default)
+        else {"default": default}
+    )
     try:
-        DefaultSchemaState.value = default
-        DefaultSchemaState._to_schema.cache_clear()
-        assert DefaultSchemaState._to_schema() == schema
-        restored = BaseState._deserialize(data)
-        assert isinstance(restored, DefaultSchemaState)
-        assert restored.value == 99
-        assert DefaultSchemaState().value == (
-            default() if callable(default) else default
-        )
+        with patch.multiple(DefaultSchemaState.get_fields()["value"], **defaults):
+            DefaultSchemaState._to_schema.cache_clear()
+            assert DefaultSchemaState._to_schema() == schema
+            restored = BaseState._deserialize(data)
+            assert isinstance(restored, DefaultSchemaState)
+            assert restored.value == 99
+            assert DefaultSchemaState().value == (
+                default() if callable(default) else default
+            )
     finally:
-        DefaultSchemaState.value = original
         DefaultSchemaState._to_schema.cache_clear()
 
 

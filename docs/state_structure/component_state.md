@@ -108,7 +108,7 @@ class EditableText(rx.ComponentState):
         # Set the initial value of the State var.
         initial_value = props.pop("initial_value", None)
         if initial_value is not None:
-            cls.text = initial_value
+            cls.__fields__["text"].default = initial_value
 
         # Form elements for editing, saving and reverting the text.
         edit_controls = rx.hstack(
@@ -160,10 +160,29 @@ def editable_text_example():
     )
 ```
 
-Assigning `cls.text` in `get_component` sets the default for that component's new
-state class. Other components keep their own defaults, and `cls.text` still
-references the frontend var when building the UI. Resetting the component's state
-restores its last configured default.
+Setting `cls.__fields__["text"].default` in `get_component` sets the default for
+that component's new state class, which owns a copy of each field: other
+components keep their own defaults. Resetting the component's state restores the
+configured default. Assigning `cls.text` itself raises `TypeError`, because
+`cls.text` is the var the UI references; see
+[Changing Defaults](/docs/vars/base-vars/#changing-defaults).
+
+A browser storage var declared with a `name`, such as
+`rx.LocalStorage("light", name="theme")`, stores every component's value under
+that one key, so the components overwrite each other's stored value. To persist a
+value per component, give each component its own storage value in
+`get_component`, here named by a `key` prop that identifies the component, or
+leave `name` unset so each component state gets its own key:
+
+```python
+class ThemeToggle(rx.ComponentState):
+    theme: str = rx.LocalStorage("light", name="theme")
+
+    @classmethod
+    def get_component(cls, key: str, initial: str = "light", **props):
+        cls.__fields__["theme"].default = rx.LocalStorage(initial, name=f"theme_{key}")
+        return rx.text(cls.theme, **props)
+```
 
 ```python eval
 rx.divider()

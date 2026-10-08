@@ -73,10 +73,12 @@ def HydrationStorageApp():
             self.cookie = "changed"
             self.factory = "changed"
 
-    AssignedStorageState.local = "assigned"
-    AssignedStorageState.session = "assigned"
-    AssignedStorageState.cookie = "assigned"
-    AssignedStorageState.factory = "assigned"
+    fields = AssignedStorageState.__fields__
+    fields["local"].default = rx.LocalStorage("assigned", name="assigned-local")
+    fields["session"].default = rx.SessionStorage("assigned", name="assigned-session")
+    fields["cookie"].default = rx.Cookie("assigned", name="assigned-cookie")
+    # A storage value as the default takes precedence over the declared factory.
+    fields["factory"].default = rx.LocalStorage("assigned", name="assigned-factory")
 
     class PreferenceState(rx.ComponentState):
         pref: str = rx.LocalStorage("declared", name="assigned-pref")
@@ -96,7 +98,9 @@ def HydrationStorageApp():
             Returns:
                 The preference and a button changing it.
             """
-            cls.pref = initial
+            cls.__fields__["pref"].default = rx.LocalStorage(
+                initial, name="assigned-pref"
+            )
             return rx.box(
                 rx.text(cls.pref, id="assigned-pref"),
                 rx.button("Change", on_click=cls.change, id="change-pref"),
@@ -298,7 +302,7 @@ VARS = ("local", "session", "cookie", "factory", "pref")
 def test_assigned_storage_default_persists(
     hydration_storage_app: AppHarness, page: Page
 ):
-    """A plain default assigned to a browser storage var keeps it in the browser.
+    """A browser storage default set through its field keeps the var in the browser.
 
     Args:
         hydration_storage_app: The running app.
