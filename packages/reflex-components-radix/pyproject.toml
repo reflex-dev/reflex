@@ -16,9 +16,9 @@ classifiers = [
     "Programming Language :: Python :: 3.15",
 ]
 dependencies = [
-    "reflex-base >= 0.10.0a2",
-    "reflex-components-core >= 0.10.0a2",
-    "reflex-components-lucide >= 1.1.0a1",
+    "reflex-base >= 0.10.0",
+    "reflex-components-core >= 0.10.0",
+    "reflex-components-lucide >= 1.1.0",
 ]
 
 [tool.hatch.version]
