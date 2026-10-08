@@ -2141,8 +2141,14 @@ def test_add_style_embedded_vars(test_state: type[TestState]):
     page._add_style_recursive(Style())
 
     assert (
-        f"const {test_state.get_name()} = useContext(StateContexts.{test_state.get_name()})"
+        f'const {test_state.get_name()} = useStateContext("{test_state.get_full_name()}")'
         in page._get_all_hooks_internal()
+    )
+    assert any(
+        import_var.tag == "useStateContext"
+        for import_var in dict(VarData.from_state(test_state).imports)[
+            "$/utils/context-registry"
+        ]
     )
     assert "useText" in page._get_all_hooks_internal()
     assert "useParent" in page._get_all_hooks_internal()

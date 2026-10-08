@@ -630,19 +630,17 @@ class VarData:
         from reflex_base.utils import format
 
         state_name = state if isinstance(state, str) else state.get_full_name()
+        state_var_name = format.format_state_name(state_name)
         return VarData(
             state=state_name,
             field_name=field_name,
             hooks={
-                "const {0} = useContext(StateContexts.{0})".format(
-                    format.format_state_name(state_name)
-                ): None
+                f"const {state_var_name} = useStateContext({json.dumps(state_name)})": None
             },
             imports={
-                f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
-                "react": [ImportVar(tag="useContext")],
+                "$/utils/context-registry": [ImportVar(tag="useStateContext")],
             },
-            # State Vars read ``StateContexts``/``EventLoopContext``, so the
+            # State Vars read the shared store/``EventLoopContext``, so the
             # providers must enclose every component that uses them.
             app_wraps=get_event_app_wraps(),
         )
