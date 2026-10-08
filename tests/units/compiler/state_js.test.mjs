@@ -80,6 +80,11 @@ async function setup({
         ]) {
           assert.ok(handlers.has(name), `missing handler: ${name}`);
         }
+        if (typeof this.auth === "function") {
+          this.auth((auth) => {
+            this.auth = auth;
+          });
+        }
         this.namespaceConnects++;
         this.connected = true;
         handlers.get("connect")();
@@ -193,6 +198,18 @@ test("warm the transport without hydrating, then reuse it with every handler att
   assert.equal(app.timers.size, 0);
   assert.equal(app.window.sessionStorage.getItem("token"), "assigned-token");
   assert.equal(app.socket.current.auth.event.router_data.pathname, "/page");
+});
+
+test("connection auth uses the route current when the namespace connects", async () => {
+  const app = await setup();
+  app.flush();
+  app.window.location = new URL("http://localhost:3000/other?query=value");
+  await app.connect();
+  assert.equal(app.socket.current.auth.event.router_data.pathname, "/other");
+  assert.equal(
+    app.socket.current.auth.event.router_data.asPath,
+    "/other?query=value",
+  );
 });
 
 test("a new session's token is saved only once the mounted app connects", async () => {
