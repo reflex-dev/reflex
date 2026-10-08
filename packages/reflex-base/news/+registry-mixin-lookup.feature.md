@@ -1,0 +1,1 @@
+Add `RegistrationContext.get_states_implementing()`, which lists the registered states that inherit from a state mixin, and `RegistrationContext.resolve_implementation()`, which returns the single state the mixin was mixed into and raises `StateValueError` when there is none or the choice is ambiguous.

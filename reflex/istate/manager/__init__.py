@@ -7,7 +7,7 @@ import sys
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from types import TracebackType
-from typing import TYPE_CHECKING, Generic, TypedDict, overload
+from typing import TYPE_CHECKING, Generic, TypedDict, cast, overload
 
 from reflex_base import constants
 from reflex_base.config import get_config
@@ -98,7 +98,7 @@ class StateManager(ABC):
 
     @staticmethod
     def _coerce_token(token: StateToken[TOKEN_TYPE] | str) -> StateToken[TOKEN_TYPE]:
-        """Convert a legacy string token to a StateToken if needed.
+        """Normalize a token: convert legacy string tokens and resolve state mixins.
 
         Args:
             token: The token, either a StateToken or legacy string.
@@ -111,6 +111,14 @@ class StateManager(ABC):
             from reflex.state import State
 
             return BaseStateToken.from_legacy_token(token, root_state=State)  # type: ignore[return-value]
+        # The store is never keyed on a mixin: resolve it to the state it was mixed into.
+        if getattr(token.cls, "_mixin", False):
+            from reflex_base.registry import RegistrationContext
+
+            resolved = RegistrationContext.get().resolve_implementation(
+                cast("type[BaseState]", token.cls)
+            )
+            return token.with_cls(cast("type[TOKEN_TYPE]", resolved))
         return token
 
     @overload
