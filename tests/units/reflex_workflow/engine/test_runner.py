@@ -1128,9 +1128,9 @@ async def test_wake_in_is_queryable_and_waits(session_factory):
     assert row is not None
     assert row.next_step == "finish"
     assert row.wake_at is not None
-    assert row.wake_at > datetime.datetime.now(
-        datetime.timezone.utc
-    ) - datetime.timedelta(seconds=1)
+    assert row.wake_at > datetime.datetime.now(datetime.UTC) - datetime.timedelta(
+        seconds=1
+    )
     await wait_until(status_is(Delayed, key, "done"))
     finished = next(e for e in EVENTS if e.startswith(f"finish:{key}:"))
     assert float(finished.rsplit(":", 1)[1]) - started >= 1
@@ -1214,7 +1214,7 @@ async def insert_due(
         key: The row's key.
         claimed_until: Lease expiry relative to now; negative means already expired.
     """
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     async with factory() as session, session.begin():
         await session.execute(
             insert(Chain).values(
@@ -1498,7 +1498,7 @@ async def claim_row(
     stmt = (
         update(cls)
         .where(cls.id == pk[0])
-        .values(claimed_until=func.now() + LEASE, wf_version=cls.wf_version + 1)
+        .values(claim.taking(cls, LEASE))
         .returning(cls.wf_version, cls.claimed_until)
         .execution_options(synchronize_session=False)
     )
@@ -1683,7 +1683,7 @@ async def test_an_interval_keeps_its_grid_and_skips_what_was_missed(session_fact
     # One run, not one per missed minute, and the next is on the original grid.
     assert row.ticks == 1
     assert row.wake_at == anchor + 10 * minute
-    assert row.wake_at > datetime.datetime.now(datetime.timezone.utc)
+    assert row.wake_at > datetime.datetime.now(datetime.UTC)
 
 
 async def test_a_cron_schedule_sets_the_next_time_it_names(session_factory):
@@ -1694,8 +1694,8 @@ async def test_a_cron_schedule_sets_the_next_time_it_names(session_factory):
     row = await Repeating.by(Repeating.key == key).get()
     assert row is not None
     assert row.wake_at is not None
-    wake_at = row.wake_at.astimezone(datetime.timezone.utc)
-    now = datetime.datetime.now(datetime.timezone.utc)
+    wake_at = row.wake_at.astimezone(datetime.UTC)
+    now = datetime.datetime.now(datetime.UTC)
     assert (wake_at.minute, wake_at.second) == (0, 0)
     assert now < wake_at <= now + datetime.timedelta(hours=1)
 
@@ -2207,6 +2207,72 @@ async def test_a_row_holding_an_event_for_a_laned_step_waits_for_that_lane(
     assert EVENTS.count(f"collect:{key}") == 1
 
 
+async def test_a_held_event_beats_a_due_timeout_in_another_lane(session_factory):
+    key = uuid.uuid4().hex
+    # Waiting on a gpu step with its event in hand, and the timeout, a step in
+    # the default lane, due as well: the default worker may run neither.
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            insert(Rendered).values(
+                key=key,
+                status="rendered",
+                next_step="prepare",
+                next_args={"args": [], "kwargs": {}},
+                wake_at=func.now(),
+                waiting_for="collect",
+                pending_event={"step": "collect", "args": {"args": [], "kwargs": {}}},
+                attempts=0,
+                wf_version=0,
+            )
+        )
+
+    async with lane_workers(["default"]):
+        await asyncio.sleep(0.5)
+        assert f"collect:{key}" not in EVENTS
+        assert f"prepare:{key}" not in EVENTS
+
+    async with lane_workers(["gpu"]):
+        await wait_until(status_is(Rendered, key, "collected"))
+    assert EVENTS.count(f"collect:{key}") == 1
+    assert f"prepare:{key}" not in EVENTS
+
+
+async def test_a_worker_does_not_wait_on_a_held_event_another_lane_will_take(
+    session_factory,
+):
+    await Rendered.by().cancel()
+    key = uuid.uuid4().hex
+    # Waiting on a gpu step with its event in hand, and the timeout, a step in
+    # the default lane, overdue.
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            insert(Rendered).values(
+                key=key,
+                status="rendered",
+                next_step="prepare",
+                next_args={"args": [], "kwargs": {}},
+                wake_at=func.now() - datetime.timedelta(minutes=5),
+                waiting_for="collect",
+                pending_event={"step": "collect", "args": {"args": [], "kwargs": {}}},
+                attempts=0,
+                wf_version=0,
+            )
+        )
+    rt = runtime.current()
+    lanes: dict[str, dict[type[Workflow], list[str] | None]] = {
+        lane: {Rendered: model.steps_in(Rendered, [lane])}
+        for lane in ("default", "gpu")
+    }
+    # The default worker can claim nothing here, so it has nothing to wait for:
+    # an overdue answer would have it look again every poll interval for good.
+    assert await claim.next_due(rt, [Rendered], lanes["default"]) is None
+    # The gpu worker can take the event now.
+    due = await claim.next_due(rt, [Rendered], lanes["gpu"])
+    assert due is not None
+    assert due.away <= datetime.timedelta()
+    await Rendered.by(Rendered.key == key).cancel()
+
+
 async def test_a_worker_serving_both_lanes_runs_the_whole_thing(session_factory):
     key = uuid.uuid4().hex
     async with lane_workers(["default", "gpu"]):
@@ -2413,7 +2479,7 @@ async def test_a_run_keyed_by_more_than_json_holds_commits_and_is_recorded(
 async def test_a_fan_out_joins_up_when_its_keys_are_more_than_json_holds(
     session_factory,
 ):
-    start = datetime.datetime.now(datetime.timezone.utc)
+    start = datetime.datetime.now(datetime.UTC)
     await Window(at=start).start(Window.split)
 
     async def gathered() -> bool:
@@ -2981,8 +3047,72 @@ async def test_a_second_event_cannot_take_a_wait_that_already_holds_one(
     # Due now rather than at its timeout, so it is not left behind every run
     # with a nearer deadline while it already has what it was waiting for.
     assert row.wake_at is not None
-    assert row.wake_at < datetime.datetime.now(datetime.timezone.utc) + LEASE
+    assert row.wake_at < datetime.datetime.now(datetime.UTC) + LEASE
 
+    assert await step_row(RaceReview, pk) == "ok"
+    assert await status_is(RaceReview, key, "decided:approve:manager")()
+    assert EVENTS.count(f"decide:{key}") == 1
+
+
+async def test_an_event_delivered_while_the_held_one_runs_is_held_for_the_next_wait(
+    session_factory, monkeypatch
+):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    handle = RaceReview.by(RaceReview.key == key)
+    # Held before the wait is armed, then taken as the wait arms.
+    assert await handle.deliver(RaceReview.decide("again"), key="first") == 1
+    pk = await arm_wait(key)
+
+    decide = RaceReview.decide.fn
+    accepted: list[int] = []
+
+    async def deciding(self, decision: str, *, by: str = "manager"):
+        if self.key == key and decision == "again":
+            # The held answer is being run, and it waits again: this one is for
+            # that next wait, and refusing it would lose it.
+            accepted.append(
+                await handle.deliver(RaceReview.decide("approve"), key="second")
+            )
+        return await decide(self, decision, by=by)
+
+    monkeypatch.setattr(RaceReview.decide, "fn", deciding)
+    assert await step_row(RaceReview, pk) == "ok"
+    assert accepted == [1]
+    assert await step_row(RaceReview, pk) == "ok"
+    assert await status_is(RaceReview, key, "decided:approve:manager")()
+    # Each was taken once, and both are remembered.
+    row = await handle.get()
+    assert row is not None
+    assert row.recent_event_keys == ["second", "first"]
+    assert await handle.deliver(RaceReview.decide("reject"), key="second") == 0
+
+
+async def test_an_event_taken_but_moved_past_before_it_ran_can_be_sent_again(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    handle = RaceReview.by(RaceReview.key == key)
+    assert await handle.deliver(RaceReview.decide("approve"), key="first") == 1
+    pk = await arm_wait(key)
+
+    # A worker takes the held event to run it.
+    taken = await claim_row(RaceReview, pk)
+    # While its step has yet to commit, a resend is a repeat, and refused.
+    assert await handle.deliver(RaceReview.decide("approve"), key="first") == 0
+
+    # The run is sent back to the start before that step runs, so the event
+    # never ran: its sender has to be able to send it again.
+    assert await handle.run(RaceReview.submit()) == 1
+    assert (
+        await execute.execute(
+            runtime.current(), RaceReview, pk, taken.version, execute.Lease(taken.until)
+        )
+        == "stale"
+    )
+    assert await step_row(RaceReview, pk) == "ok"
+    assert await handle.deliver(RaceReview.decide("approve"), key="first") == 1
     assert await step_row(RaceReview, pk) == "ok"
     assert await status_is(RaceReview, key, "decided:approve:manager")()
     assert EVENTS.count(f"decide:{key}") == 1
@@ -3045,7 +3175,7 @@ async def test_start_gives_the_row_the_key_the_database_made(session_factory):
 async def test_a_customer_at_its_limit_does_not_hide_another_customers_work(
     session_factory,
 ):
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     async with session_factory() as session, session.begin():
         for index in range(claim.GROUPS_PER_PASS):
             # A customer running all it may, with more waiting behind it, and
@@ -3115,7 +3245,7 @@ async def test_a_claim_moved_on_before_it_ran_gives_its_lease_back(session_facto
 
 
 async def test_a_group_of_rows_with_no_group_is_held_to_its_limit_too(session_factory):
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     spec = Crowded.__workflow_limit__
     assert spec is not None
     async with session_factory() as session, session.begin():

@@ -33,11 +33,11 @@ from typing import (  # noqa: UP035
     get_args,
     is_typeddict,
 )
+from typing import Self as Self
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 import typing_extensions
-from typing_extensions import Self as Self
 from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple
 from typing_extensions import override as override
 
@@ -66,13 +66,9 @@ TypeAliasTypes: tuple[type, ...] = (
     else (TypeAliasType,)
 )
 
-# Potential TypeVarTuple classes for isinstance checks (native on 3.11+,
-# typing_extensions backport otherwise).
-TypeVarTuples: tuple[type, ...] = (
-    (TypeVarTuple, typing.TypeVarTuple)
-    if sys.version_info >= (3, 11)
-    else (TypeVarTuple,)
-)
+# Potential TypeVarTuple classes for isinstance checks: the native class and
+# the typing_extensions backport, which may be distinct.
+TypeVarTuples: tuple[type, ...] = (TypeVarTuple, typing.TypeVarTuple)
 
 # Potential type parameter classes for isinstance checks. The typing_extensions
 # ParamSpec instantiates the native class, so it needs no separate entry.
@@ -498,8 +494,8 @@ def _apply_type_params(
     try:
         return value[tuple(flattened)]  # pyright: ignore[reportIndexIssue]
     except TypeError:
-        # Python 3.10 subscription predates PEP 646, and 3.11 rejects a ParamSpec
-        # next to an unpacked TypeVarTuple, so substitute by hand instead.
+        # Python 3.11 rejects a ParamSpec next to an unpacked TypeVarTuple, so
+        # substitute by hand instead.
         return _substitute_type_params(value, substitution)
 
 
@@ -536,9 +532,7 @@ def resolve_type_alias(cls: GenericType) -> GenericType:
     if (annotated := _annotated_origin(cls)) is not None:
         return resolve_type_alias(annotated)
     origin = get_origin(cls)
-    # The subscripted case is checked first: on Python 3.10 ``types.GenericAlias``
-    # proxies ``__class__`` to its origin, so ``Keys[str]`` passes an isinstance
-    # check against TypeAliasType and would lose its arguments.
+    # The subscripted case is checked first so ``Keys[str]`` keeps its arguments.
     if isinstance(origin, TypeAliasTypes):
         value = resolve_type_alias(origin.__value__)
         if params := getattr(value, "__parameters__", ()):
@@ -1017,6 +1011,32 @@ def _isinstance(
                     treat_var_as_type=treat_var_as_type,
                     treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
                 )
+            if isinstance(cls, TypeVar):
+                # A field never resolves its type parameter, so a value only
+                # has to satisfy the bound or one of the constraints. A string
+                # bound cannot be resolved here and accepts anything.
+                bounds = (
+                    (cls.__bound__,)
+                    if cls.__bound__ is not None
+                    else cls.__constraints__
+                )
+                return (
+                    not bounds
+                    or any(isinstance(bound, (str, ForwardRef)) for bound in bounds)
+                    or any(
+                        _isinstance(
+                            obj,
+                            bound,
+                            nested=nested,
+                            treat_var_as_type=treat_var_as_type,
+                            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                        )
+                        for bound in bounds
+                    )
+                )
+            if typing_extensions.is_protocol(cls):
+                # A protocol without @runtime_checkable cannot be checked.
+                return True
             raise
 
     args = _get_args_cached(cls)
@@ -1126,6 +1146,9 @@ def _isinstance(
                 treat_var_as_type=treat_var_as_type,
                 treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
             )
+        if typing_extensions.is_protocol(origin):
+            # A subscripted protocol without @runtime_checkable cannot be checked.
+            return True
         raise
 
 
@@ -1487,10 +1510,7 @@ def resolve_annotations(
     annotations = {}
     for name, value in raw_annotations.items():
         if isinstance(value, str):
-            if sys.version_info == (3, 10, 0):
-                value = ForwardRef(value, is_argument=False)
-            else:
-                value = ForwardRef(value, is_argument=False, is_class=True)
+            value = ForwardRef(value, is_argument=False, is_class=True)
         try:
             if sys.version_info >= (3, 13):
                 value = _eval_type(value, base_globals, None, type_params=())

@@ -1,16 +1,6 @@
 """Unit tests for scripts/check_outdated_deps.py (the outdated-dependency checker)."""
 
-import sys
-
 import pytest
-
-# The script relies on ``tomllib`` (stdlib only on 3.11+); on 3.10 it falls back to the
-# ``tomli`` backport. Skip the whole module when neither is available, so the tests still
-# run on 3.10 whenever ``tomli`` happens to be installed.
-if sys.version_info < (3, 11):
-    pytest.importorskip(
-        "tomli", reason="check_outdated_deps requires tomli on Python < 3.11"
-    )
 
 from scripts import check_outdated_deps
 
@@ -183,3 +173,28 @@ def test_load_config_reads_the_repo_config():
     # and the hold is policy, not a blocker.
     assert "ruff" in check_outdated_deps._load_config("backend")[1]
     assert "ag-grid*" in check_outdated_deps._load_config("frontend")[1]
+
+
+@pytest.mark.parametrize("sqlmodel_outdated", [False, True])
+def test_sqlmodel_updates_are_reported(sqlmodel_outdated: bool):
+    """SQLModel stays visible to the checker without a stale hold at latest.
+
+    Args:
+        sqlmodel_outdated: Whether SQLModel has an available update.
+    """
+    held, pinned = check_outdated_deps._load_config("backend")
+    other_held = [
+        package
+        for package in held
+        if not check_outdated_deps.matches(package, "sqlmodel")
+    ]
+    outdated = ["sqlmodel"] if sqlmodel_outdated else []
+    reportable, suppressed, stale = check_outdated_deps.partition(
+        outdated=[*other_held, *outdated],
+        installed=[*other_held, "sqlmodel"],
+        held=held,
+        pinned=pinned,
+    )
+    assert reportable == outdated
+    assert suppressed == other_held
+    assert stale == []

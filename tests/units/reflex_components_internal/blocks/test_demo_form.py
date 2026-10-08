@@ -3,7 +3,12 @@
 import re
 
 import pytest
+from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_internal.blocks.demo_form import demo_form, demo_form_dialog
+from reflex_components_internal.blocks.telemetry.posthog import (
+    PHONE_NUMBER_KEY,
+    track_demo_form_posthog_submission,
+)
 
 import reflex as rx
 
@@ -47,3 +52,24 @@ def test_demo_form_rejects_a_string_as_submit_events() -> None:
     """A string is a sequence, but not one of events."""
     with pytest.raises(TypeError, match="not the string"):
         demo_form(on_submit="first")  # pyright: ignore[reportArgumentType]
+
+
+def test_demo_form_asks_for_an_optional_phone_number() -> None:
+    """The phone number is a tel input that the form can be submitted without."""
+    rendered = str(demo_form())
+    field = re.search(rf'name:"{PHONE_NUMBER_KEY}"[^}}]*', rendered)
+
+    assert field is not None
+    assert 'type:"tel"' in field.group()
+    assert "required:false" in field.group()
+
+
+def test_demo_request_tracking_includes_the_phone_number() -> None:
+    """PostHog receives the phone number with the rest of the demo request."""
+    event = track_demo_form_posthog_submission({PHONE_NUMBER_KEY: "+15551234567"})
+    script = {str(name): value for name, value in event.args}["javascript_code"]
+    assert isinstance(script, LiteralStringVar)
+    script = script._var_value
+
+    assert "posthog.capture('demo_request', props)" in script
+    assert f'"{PHONE_NUMBER_KEY}": "+15551234567"' in script

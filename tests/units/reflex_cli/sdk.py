@@ -119,7 +119,7 @@ def provider_account(name: str, **fields: Any) -> ProviderAccount:
     Returns:
         The provider account.
     """
-    created = datetime.datetime(2026, 7, 1, tzinfo=datetime.timezone.utc)
+    created = datetime.datetime(2026, 7, 1, tzinfo=datetime.UTC)
     return ProviderAccount(**{
         "id": uuid.uuid5(uuid.NAMESPACE_OID, name),
         "provider": "gcp",
