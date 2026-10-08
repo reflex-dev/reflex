@@ -1,0 +1,11 @@
+storm_a3_dev_S_6_*: storms 3/4 (files 4)
+   storm_a3_dev_S_6_1.json: storm=True frames_total=65080 quiet2s=8555 tab_finals=['s3', 's4'] ls=s3 storage_ev_t1=7467
+   storm_a3_dev_S_6_2.json: storm=True frames_total=44570 quiet2s=8773 tab_finals=['s4', 's5'] ls=s4 storage_ev_t1=5071
+   storm_a3_dev_S_6_3.json: storm=False frames_total=63 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_a3_dev_S_6_4.json: storm=True frames_total=46216 quiet2s=14104 tab_finals=['s4', 's5'] ls=s5 storage_ev_t1=5057
+storm_a5_dev_S_6_*: storms 0/5 (files 5)
+   storm_a5_dev_S_6_1.json: storm=False frames_total=51 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_a5_dev_S_6_2.json: storm=False frames_total=49 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_a5_dev_S_6_3.json: storm=False frames_total=47 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_a5_dev_S_6_4.json: storm=False frames_total=57 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_a5_dev_S_6_5.json: storm=False frames_total=57 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5

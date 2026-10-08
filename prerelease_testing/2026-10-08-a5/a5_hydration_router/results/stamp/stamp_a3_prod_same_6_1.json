@@ -1,0 +1,44 @@
+{
+ "path": "/same",
+ "n": 6,
+ "hydrated": [
+  true,
+  true,
+  true,
+  true,
+  true,
+  true
+ ],
+ "finals": [
+  "same",
+  "same",
+  "same",
+  "same",
+  "same",
+  "same"
+ ],
+ "ls_final": "same",
+ "converged": true,
+ "storage_events": [
+  1,
+  1,
+  1,
+  1,
+  1,
+  0
+ ],
+ "uvi": [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "frames_total": 47,
+ "windows_5s": [
+  0,
+  0
+ ],
+ "storm": false
+}

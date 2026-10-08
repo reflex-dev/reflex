@@ -1,0 +1,21 @@
+SUMMARY a1dev-s4 a:
+   reload            [l='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen='seen=' noop_count='noop=0'
+   probe             [l='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen="seen=backend ls=''" noop_count='noop=0'
+   noop-event        [l='bad'] var='var=bad' check='check=cleared-by-cached-cv' seen="seen=backend ls=''" noop_count='noop=1'
+   after-client-nav  [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2           [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2-probe     [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+SUMMARY a1dev-s4 b:
+   reload            [l='bad'] var='var=bad' check='check=cleared-by-uncached-cv' seen='seen=' noop_count='noop=0'
+   probe             [l='bad'] var='var=bad' check='check=cleared-by-uncached-cv' seen="seen=backend ls=''" noop_count='noop=0'
+   noop-event        [l='bad'] var='var=bad' check='check=cleared-by-uncached-cv' seen="seen=backend ls=''" noop_count='noop=1'
+   after-client-nav  [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2           [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2-probe     [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+SUMMARY a1dev-s4 g:
+   reload            [l='bad'] var='var=bad' check='check=saw-bad' seen='seen=' noop_count='noop=0' plain='plain=initial'
+   probe             [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=0' plain='plain=initial'
+   noop-event        [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=initial'
+   after-client-nav  [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=initial'
+   reload2           [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=set-by-cv'
+   reload2-probe     [l='bad'] var='var=bad' check='check=saw-bad' seen="seen=backend ls='bad' plain='set-by-cv'" noop_count='noop=1' plain='plain=set-by-cv'

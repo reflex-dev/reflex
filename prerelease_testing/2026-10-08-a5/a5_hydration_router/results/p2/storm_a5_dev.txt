@@ -1,0 +1,10 @@
+--- a5 dev run 1
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 0, "t2": 0, "t3": 0, "t4": 1, "t5": 0, "t6": 1}, "frames_total": 51, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 dev run 2
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 1, "t2": 0, "t3": 0, "t4": 0, "t5": 0, "t6": 0}, "frames_total": 49, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 dev run 3
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 0, "t2": 0, "t3": 0, "t4": 0, "t5": 0, "t6": 0}, "frames_total": 47, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 dev run 4
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 1, "t2": 1, "t3": 1, "t4": 0, "t5": 1, "t6": 1}, "frames_total": 57, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 dev run 5
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 2, "t2": 0, "t3": 0, "t4": 1, "t5": 1, "t6": 1}, "frames_total": 57, "frames_in_quiet_2s": 0, "converged": true}

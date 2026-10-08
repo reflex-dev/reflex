@@ -1,0 +1,3 @@
+fd (form-designer): greenlet==3.5.6 pydantic==2.14.0 reflex==0.9.12 reflex-base==0.9.12 reflex-local-auth==0.5.0 sqlalchemy==2.0.54 sqlmodel==0.0.48 
+twr (twitter-redis): greenlet==3.5.6 pydantic==2.14.0 reflex==0.9.12 reflex-base==0.9.12 sqlalchemy==2.0.54 sqlmodel==0.0.48 
+twa4 (twitter-redis): greenlet==3.5.6 pydantic==2.13.5 reflex==0.10.0a4 reflex-base==0.10.0a4 sqlalchemy==2.1.4 sqlmodel==0.0.48 

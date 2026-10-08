@@ -1,0 +1,184 @@
+# reflex#7360 grep: frontend/backend uses of router headers / cookie / raw_headers / router_data in downstream packages
+# pattern: router\.headers|headers\.cookie|headers\[.cookie.\]|raw_headers|router_data|\.router\.session|router\.url|router\.page
+# sources: 37 wheels in $SB/downloads/wheels (a4 sweep set) + reflex-enterprise 0.9.7a5 PyPI wheel + downloads/{reflex-local-auth,reflex-google-auth,reflex-magic-link-auth} + reflex-examples (ebe19ff)
+reflex_azure_auth-0.1.2-py3-none-any/reflex_azure_auth/state.py:135:        current_url = urlparse(self.router.url)
+reflex_azure_auth-0.1.2-py3-none-any/reflex_azure_auth/state.py:141:        current_url = urlparse(self.router.url)
+reflex_azure_auth-0.1.2-py3-none-any/reflex_azure_auth/state.py:181:        self._redirect_to_url = self.router.url
+reflex_azure_auth-0.1.2-py3-none-any/reflex_azure_auth/state.py:240:        params = self.router.url.query_parameters
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/oidc/state.py:1066:            f"{self.router.session.client_token} "
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/oidc/state.py:1329:        current_url = urlparse(self.router.url)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/oidc/state.py:1342:        current_url = urlparse(self.router.url)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/oidc/state.py:1367:        current = urlparse(self.router.url)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/oidc/state.py:1571:        requested = self.router.url.query_parameters.get("redirect_to")
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/oidc/state.py:1572:        candidate = requested or self.router.url
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/oidc/state.py:2065:        request_params = self.router.url.query_parameters
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/oidc/state.py:2255:                    self.router.session.session_id
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/oidc/state.py:2274:            queued_by_session_id=self.router.session.session_id,
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/replay.py:84:    url = state.router.url
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/enforcement.py:638:    event's own ``router_data`` client token, which is stamped server-side on
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/enforcement.py:654:        return str((event.router_data or {}).get(RouteVar.CLIENT_TOKEN, ""))
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/enforcement.py:663:    the event processor from the event's ``router_data`` (which the API
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/enforcement.py:676:        client_token = state.router.session.client_token
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/enforcement.py:1769:        update = self._state_update_for(outcome, str(state.router.url))
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/access.py:20:  ``router_data``, whose custom keys a client can inject).
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:215:    def get_from_router_data(self, instance: BaseState) -> "str | None":
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:216:        """Get the cookie value from the router_data cookies.
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:225:            parsed_cookies = cookie_parser(instance.router.headers.cookie)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:282:        """Get the cookie value from the cache or from router_data cookies."""
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:295:            and (router_data_value := self.get_from_router_data(instance)) is not None
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:297:            cookie_value = router_data_value
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:362:                        token=instance.router.session.client_token,
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:363:                        router_data=instance.router_data,
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:366:                token=instance.router.session.client_token,
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:541:                for i in range(len(response.raw_headers) - 1, -1, -1):
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:542:                    key, value = response.raw_headers[i]
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:544:                        response.raw_headers[i] = (key, value + b"; Partitioned")
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/routes.py:107:            state_param = self.router.url.query_parameters.get("state")
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/page_guard.py:163:    return rx.redirect(login_url_for(str(state.router.url)), replace=True)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/page_guard.py:216:        return rx.redirect(login_url_for(str(state.router.url)), replace=True)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/audit.py:348:            route=_redact_route(str(router.url)),
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/api_tokens.py:216:            persist_router_data,
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/api_tokens.py:217:            router_data_for_token,
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/api_tokens.py:221:            await persist_router_data(
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/api_tokens.py:224:                router_data_for_token(reflex_client_token),
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp.py:1437:                "`query` object; they reach handlers via `self.router.page.params`, "
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:620:def router_data_for_token(
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:628:    """Build the ``router_data`` mapping for an event enqueued for ``token``.
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:631:    ``self.router.page.params``) and the ``asPath`` (the ``path`` plus the
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:632:    encoded ``query``), from which ``self.router.url.query_parameters`` is
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:644:        A ``router_data`` dict suitable for :meth:`reflex.event.Event.from_event_type`.
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:663:async def persist_router_data(
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:664:    app: App, token: str, router_data: Mapping[str, Any]
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:670:    processor keeps the state's *existing* ``router_data`` when an event's is
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:673:    with this ``router_data`` directly would.
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:678:        router_data: The router data to persist (see
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:679:            :func:`router_data_for_token`).
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:693:            state.router_data = dict(router_data)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:694:            state.router = RouterData.from_router_data(state.router_data)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:879:    session (its ``router_data`` path differs from the seeded one), so an
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:999:    router_data: Mapping[str, Any],
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1008:        router_data: The routing data for the event.
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1030:                    router_data=dict(router_data),
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1044:    router_data: Mapping[str, Any] | None = None,
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1059:        router_data: Optional routing data; a minimal token-only mapping is
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1067:    if router_data is None:
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1068:        router_data = router_data_for_token(token)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1072:        app, token, registered_event_handler, payload, router_data
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1348:        # Build router_data from the incoming HTTP request.
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1356:        router_data = router_data_for_token(
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1367:                    app, token, registered_event_handler, rbody, router_data
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:863:        from reflex_enterprise.plugins.event_handler_api import router_data_for_token
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:869:                # Give the session a non-empty router_data so the event
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:875:                # state manager (the Redis manager drops router_data on
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:878:                root.router_data = router_data_for_token(reflex_client_token)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:879:                # Also refresh the ``router`` var, not just ``router_data`` (as
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:880:                # ``persist_router_data`` does -- we can't call it here without
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:885:                # scope-aware ``auth=`` checks. Unlike ``router_data`` (which the
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:889:                root.router = RouterData.from_router_data(root.router_data)
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:33:    router_data_for_token,
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:303:            ``self.router.url`` is populated.
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:406:                    "`self.router.page.params`, e.g. the app's dynamic route "
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:433:                    via `self.router.page.params` -- e.g. the app's dynamic
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:479:                    persist_router_data,
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:483:                await persist_router_data(
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:486:                    router_data_for_token(
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:518:                # the MCP endpoint so ``self.router.url`` is populated, and pass
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:521:                router_data=router_data_for_token(
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/plugins/mcp_auth/consent_state.py:224:        txn_id = self.router.url.query_parameters.get("txn", "")
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/oidc/state.py:1066:            f"{self.router.session.client_token} "
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/oidc/state.py:1329:        current_url = urlparse(self.router.url)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/oidc/state.py:1342:        current_url = urlparse(self.router.url)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/oidc/state.py:1367:        current = urlparse(self.router.url)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/oidc/state.py:1571:        requested = self.router.url.query_parameters.get("redirect_to")
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/oidc/state.py:1572:        candidate = requested or self.router.url
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/oidc/state.py:2065:        request_params = self.router.url.query_parameters
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/oidc/state.py:2255:                    self.router.session.session_id
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/oidc/state.py:2274:            queued_by_session_id=self.router.session.session_id,
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/replay.py:84:    url = state.router.url
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/enforcement.py:638:    event's own ``router_data`` client token, which is stamped server-side on
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/enforcement.py:654:        return str((event.router_data or {}).get(RouteVar.CLIENT_TOKEN, ""))
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/enforcement.py:663:    the event processor from the event's ``router_data`` (which the API
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/enforcement.py:676:        client_token = state.router.session.client_token
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/enforcement.py:1769:        update = self._state_update_for(outcome, str(state.router.url))
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/access.py:20:  ``router_data``, whose custom keys a client can inject).
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:215:    def get_from_router_data(self, instance: BaseState) -> "str | None":
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:216:        """Get the cookie value from the router_data cookies.
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:225:            parsed_cookies = cookie_parser(instance.router.headers.cookie)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:282:        """Get the cookie value from the cache or from router_data cookies."""
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:295:            and (router_data_value := self.get_from_router_data(instance)) is not None
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:297:            cookie_value = router_data_value
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:362:                        token=instance.router.session.client_token,
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:363:                        router_data=instance.router_data,
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:366:                token=instance.router.session.client_token,
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:541:                for i in range(len(response.raw_headers) - 1, -1, -1):
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:542:                    key, value = response.raw_headers[i]
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:544:                        response.raw_headers[i] = (key, value + b"; Partitioned")
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/routes.py:107:            state_param = self.router.url.query_parameters.get("state")
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/page_guard.py:163:    return rx.redirect(login_url_for(str(state.router.url)), replace=True)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/page_guard.py:216:        return rx.redirect(login_url_for(str(state.router.url)), replace=True)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/audit.py:348:            route=_redact_route(str(router.url)),
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/api_tokens.py:216:            persist_router_data,
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/api_tokens.py:217:            router_data_for_token,
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/api_tokens.py:221:            await persist_router_data(
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/api_tokens.py:224:                router_data_for_token(reflex_client_token),
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp.py:1437:                "`query` object; they reach handlers via `self.router.page.params`, "
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:620:def router_data_for_token(
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:628:    """Build the ``router_data`` mapping for an event enqueued for ``token``.
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:631:    ``self.router.page.params``) and the ``asPath`` (the ``path`` plus the
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:632:    encoded ``query``), from which ``self.router.url.query_parameters`` is
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:644:        A ``router_data`` dict suitable for :meth:`reflex.event.Event.from_event_type`.
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:663:async def persist_router_data(
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:664:    app: App, token: str, router_data: Mapping[str, Any]
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:670:    processor keeps the state's *existing* ``router_data`` when an event's is
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:673:    with this ``router_data`` directly would.
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:678:        router_data: The router data to persist (see
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:679:            :func:`router_data_for_token`).
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:693:            state.router_data = dict(router_data)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:694:            state.router = RouterData.from_router_data(state.router_data)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:879:    session (its ``router_data`` path differs from the seeded one), so an
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:999:    router_data: Mapping[str, Any],
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1008:        router_data: The routing data for the event.
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1030:                    router_data=dict(router_data),
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1044:    router_data: Mapping[str, Any] | None = None,
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1059:        router_data: Optional routing data; a minimal token-only mapping is
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1067:    if router_data is None:
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1068:        router_data = router_data_for_token(token)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1072:        app, token, registered_event_handler, payload, router_data
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1348:        # Build router_data from the incoming HTTP request.
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1356:        router_data = router_data_for_token(
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/event_handler_api.py:1367:                    app, token, registered_event_handler, rbody, router_data
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:863:        from reflex_enterprise.plugins.event_handler_api import router_data_for_token
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:869:                # Give the session a non-empty router_data so the event
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:875:                # state manager (the Redis manager drops router_data on
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:878:                root.router_data = router_data_for_token(reflex_client_token)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:879:                # Also refresh the ``router`` var, not just ``router_data`` (as
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:880:                # ``persist_router_data`` does -- we can't call it here without
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:885:                # scope-aware ``auth=`` checks. Unlike ``router_data`` (which the
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/provider.py:889:                root.router = RouterData.from_router_data(root.router_data)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:33:    router_data_for_token,
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:303:            ``self.router.url`` is populated.
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:406:                    "`self.router.page.params`, e.g. the app's dynamic route "
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:433:                    via `self.router.page.params` -- e.g. the app's dynamic
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:479:                    persist_router_data,
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:483:                await persist_router_data(
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:486:                    router_data_for_token(
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:518:                # the MCP endpoint so ``self.router.url`` is populated, and pass
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/tools.py:521:                router_data=router_data_for_token(
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/plugins/mcp_auth/consent_state.py:224:        txn_id = self.router.url.query_parameters.get("txn", "")
+reflex_google_recaptcha_v2-0.1.0.post1-py3-none-any/reflex_google_recaptcha_v2/google_recaptcha_v2.py:49:                self.router.headers, "x_forwarded_for", self.router.session.client_ip
+reflex_local_auth-0.5.0-py3-none-any/reflex_local_auth/login.py:59:        current_route = self.router.url.path
+reflex_local_auth-0.5.0-py3-none-any/reflex_local_auth/local_auth.py:98:        self.auth_token = self.auth_token or self.router.session.client_token
+reflex_magic_link_auth-0.2.2-py3-none-any/reflex_magic_link_auth/page.py:16:        params = self.router.url.query_parameters
+reflex_magic_link_auth-0.2.2-py3-none-any/reflex_magic_link_auth/state.py:88:        forwarded_for = self.router.headers.raw_headers.get(
+reflex_magic_link_auth-0.2.2-py3-none-any/reflex_magic_link_auth/state.py:90:            self.router.session.client_ip,
+downloads/reflex-local-auth/local_auth_demo/local_auth_demo/custom_user_info.py:40:                            self.router.headers,
+downloads/reflex-local-auth/local_auth_demo/local_auth_demo/custom_user_info.py:42:                            self.router.session.client_ip,
+downloads/reflex-local-auth/custom_components/reflex_local_auth/login.py:59:        current_route = self.router.url.path
+downloads/reflex-local-auth/custom_components/reflex_local_auth/local_auth.py:98:        self.auth_token = self.auth_token or self.router.session.client_token
+downloads/reflex-magic-link-auth/custom_components/reflex_magic_link_auth/page.py:16:        params = self.router.url.query_parameters
+downloads/reflex-magic-link-auth/custom_components/reflex_magic_link_auth/state.py:88:        forwarded_for = self.router.headers.raw_headers.get(
+downloads/reflex-magic-link-auth/custom_components/reflex_magic_link_auth/state.py:90:            self.router.session.client_ip,
+downloads/reflex-examples/github-stats/github_stats/widget.py:18:        self.appearance = self.router.page.params.get("appearance", "light")
+downloads/reflex-examples/form-designer/form_designer/pages/form_entry.py:21:            self.client_token = self.router.session.client_token
+downloads/reflex-examples/azure_auth/azure_auth/auth/core.py:37:            scopes=scope, redirect_uri=f"{self.router.page.host}/callback"
+downloads/reflex-examples/azure_auth/azure_auth/auth/core.py:58:        query_components = self.router.page.params

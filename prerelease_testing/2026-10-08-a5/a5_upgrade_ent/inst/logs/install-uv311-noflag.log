@@ -1,0 +1,10 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.11.17 environment at: envs/a5_upgrade_ent-n001-uv311
+  × No solution found when resolving dependencies:
+  ╰─▶ Because there is no version of reflex-base==0.10.0a5 and
+      reflex>=0.10.0a5 depends on reflex-base==0.10.0a5, we can conclude that
+      reflex>=0.10.0a5 cannot be used.
+      And because you require reflex[db]==0.10.0a5, we can conclude that your
+      requirements are unsatisfiable.
+
+hint: `reflex-base` was requested with a pre-release marker (e.g., reflex-base==0.10.0a5), but pre-releases weren't enabled (try: `--prerelease=allow`)

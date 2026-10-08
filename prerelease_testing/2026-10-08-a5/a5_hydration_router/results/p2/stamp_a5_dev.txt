@@ -1,0 +1,5 @@
+state.js md5: b7915eda
+a5 dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 159, "finals": ["f4fcb8-1", "f4fcb8-1", "f4fcb8-1", "f4fcb8-1", "f4fcb8-1", "f4fcb8-1"], "storage_events": [11, 12, 9, 11, 11, 11]}
+a5 dev /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 100, "finals": ["fd402d-1", "fd402d-1", "fd402d-1", "fd402d-1", "fd402d-1", "fd402d-1"], "storage_events": [6, 6, 6, 6, 5, 6]}
+a5 dev /stamp n=6 run 3: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 145, "finals": ["2a06df-1", "2a06df-1", "2a06df-1", "2a06df-1", "2a06df-1", "2a06df-1"], "storage_events": [10, 10, 7, 9, 9, 10]}
+a5 dev /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 50, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [1, 0, 1, 1, 1, 1]}

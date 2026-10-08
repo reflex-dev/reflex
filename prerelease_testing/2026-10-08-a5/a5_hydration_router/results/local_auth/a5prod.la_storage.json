@@ -1,0 +1,108 @@
+{
+ "checks": [
+  {
+   "name": "fresh /: no client storage written",
+   "ok": true,
+   "detail": "({}, [])"
+  },
+  {
+   "name": "fresh /login: no client storage written",
+   "ok": true,
+   "detail": "({}, [])"
+  },
+  {
+   "name": "fresh /protected: no client storage written",
+   "ok": true,
+   "detail": "({}, [])"
+  },
+  {
+   "name": "fresh /need2login: no client storage written",
+   "ok": true,
+   "detail": "({}, [])"
+  },
+  {
+   "name": "login stores _auth_token in localStorage",
+   "ok": true,
+   "detail": "{'_auth_token': '94be1e16-34ae-4022-d8f0-99437060096e'}"
+  },
+  {
+   "name": "user-info shows user",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "reload: still logged in",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "reload: token unchanged",
+   "ok": true,
+   "detail": "{'_auth_token': '94be1e16-34ae-4022-d8f0-99437060096e'}"
+  },
+  {
+   "name": "second tab logged in",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "after logout index shows Login",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "tab B logged out after reload",
+   "ok": true,
+   "detail": "http://localhost:3152/login"
+  },
+  {
+   "name": "tab A /protected -> /login after logout",
+   "ok": true,
+   "detail": "http://localhost:3152/login"
+  },
+  {
+   "name": "bogus token -> /protected redirects to /login",
+   "ok": true,
+   "detail": "http://localhost:3152/login"
+  },
+  {
+   "name": "no console errors/warnings",
+   "ok": true,
+   "detail": "([], [])"
+  }
+ ],
+ "reload_frames": {
+  "in_frames": 2,
+  "in_bytes": 2598,
+  "auth_token_in_deltas": 2,
+  "auth_token_values": [
+   "94be1e16-34ae-4022-d8f0-99437060096e"
+  ]
+ },
+ "tab2_frames": {
+  "in_frames": 5,
+  "in_bytes": 3120,
+  "auth_token_in_deltas": 2,
+  "auth_token_values": [
+   "94be1e16-34ae-4022-d8f0-99437060096e"
+  ]
+ },
+ "ls_after_logout": {
+  "_auth_token": "94be1e16-34ae-4022-d8f0-99437060096e"
+ },
+ "bogus_frames": {
+  "in_frames": 10,
+  "in_bytes": 4537,
+  "auth_token_in_deltas": 3,
+  "auth_token_values": [
+   "bogus-token-123"
+  ]
+ },
+ "ls_after_bogus": {
+  "_auth_token": "bogus-token-123"
+ },
+ "console_A": [],
+ "console_B": [],
+ "passed": 14,
+ "total": 14
+}

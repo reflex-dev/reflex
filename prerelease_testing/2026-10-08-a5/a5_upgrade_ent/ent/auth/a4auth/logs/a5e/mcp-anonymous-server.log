@@ -1,0 +1,169 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a5-ent/lib/python3.12/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='components', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=8626, backend_path='', api_url='http://localhost:8626', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'telemetry_enabled', 'plugins',
+'backend_port'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a5 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/
+envs/a5-ent/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.046 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Checking if Backend port: 8626 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8626 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8626 is not in use.
+Backend running at: http://0.0.0.0:8626
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpa
+d/apps/a5_upgrade_ent/ent/auth/a4auth/apps/components/components', 
+'/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/apps/a5_upgrade_ent/ent/auth/a4auth/apps/components/rxconfig.py']
+[INFO] Starting granian (main PID: 3720)
+[INFO] Listening at: http://0.0.0.0:8626
+[INFO] Spawning worker-1 with PID: 3736
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Evaluating page: index
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a5-ent/lib/python3.12/site-packages/reflex_enterprise/components/ag_grid/a
+ggrid.py:1758)
+Debug: Evaluating page: suppress-overlay
+Debug: Evaluating page: charts
+Debug: Evaluating page: grouping
+Debug: Evaluating page: infinite
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a5-ent/lib/python3.12/site-packages/reflex_enterprise/components/ag_grid/d
+atasource.py:182)
+Debug: Evaluating page: server-side
+Debug: Evaluating page: fly-to-location
+Debug: Evaluating page: map-controls
+Debug: Evaluating page: advanced-serialization
+Debug: Evaluating page: vector-layers
+Debug: Evaluating page: 404
+Debug: [timing] Evaluate Pages (Backend): 0.28s
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/a5-ent/lib/python3.12/site-packages/reflex_enterprise/plugins/api_tokens.p
+y:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/08/26 20:22:20] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+[10/08/26 20:22:21] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+[10/08/26 20:22:22] INFO     Processing request of type            server.py:733
+                             ListResourceTemplatesRequest                       
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListResourceTemplatesRequest                       
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+[INFO] Stopping worker-1
+                    INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+Debug: StateManagerDisk._flush_write_queue: writing 3 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 3 items
+[INFO] Shutting down granian
+[WARNING] Killing worker-1 after it refused to gracefully stop
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

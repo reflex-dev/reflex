@@ -1,0 +1,17 @@
+migrate exit 0
+started la-a4dev pid=29114 venv=a4_hydration-tp-a4 mode=dev env=[] log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_hydration_router/logs/la-a4dev-2.log
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:3150/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+PASS login stores _auth_token in localStorage
+PASS user-info shows user
+PASS reload: still logged in
+PASS reload: token unchanged
+   reload frames: {'in_frames': 2, 'in_bytes': 2606, 'auth_token_in_deltas': 2, 'auth_token_values': ['5d82aaab-d518-4782-a4de-e916fcd41a5c']}
+PASS second tab logged in
+PASS after logout index shows Login
+PASS tab B logged out after reload
+PASS tab A /protected -> /login after logout
+PASS bogus token -> /protected redirects to /login
+PASS no console errors/warnings
+14/14 checks; ls_after_logout={'_auth_token': '5d82aaab-d518-4782-a4de-e916fcd41a5c'} ls_after_bogus={'_auth_token': 'bogus-token-123'}

@@ -1,0 +1,6 @@
+--- a3 prod run 1
+S: {"observe_windows_5s": [], "finals": {"t0": "s2", "t1": "s1", "t2": "s2", "t3": "s1", "t4": "s1", "t5": "s1", "t6": "s2"}, "ls_final": "s1", "storage_events_per_tab": {"t0": 3381, "t1": 3432, "t2": 3453, "t3": 3438, "t4": 3525, "t5": 3479, "t6": 3514}, "uvi_per_tab": {"t0": 3429, "t1": 3479, "t2": 3486, "t3": 3471, "t4": 3355, "t5": 3481, "t6": 3513}, "frames_total": 31176, "frames_in_quiet_2s": 5266, "converged":
+--- a3 prod run 2
+S: {"observe_windows_5s": [], "finals": {"t0": "s2", "t1": "s1", "t2": "s2", "t3": "s1", "t4": "s1", "t5": "s1", "t6": "s1"}, "ls_final": "s2", "storage_events_per_tab": {"t0": 1298, "t1": 1294, "t2": 1283, "t3": 1298, "t4": 1300, "t5": 1311, "t6": 1318}, "uvi_per_tab": {"t0": 1323, "t1": 1308, "t2": 1293, "t3": 1312, "t4": 1276, "t5": 1301, "t6": 1318}, "frames_total": 12157, "frames_in_quiet_2s": 3421, "converged":
+--- a3 prod run 3
+S: {"observe_windows_5s": [], "finals": {"t0": "s2", "t1": "s3", "t2": "s2", "t3": "s2", "t4": "s3", "t5": "s3", "t6": "s3"}, "ls_final": "s3", "storage_events_per_tab": {"t0": 1444, "t1": 1471, "t2": 1481, "t3": 1454, "t4": 1473, "t5": 1482, "t6": 1486}, "uvi_per_tab": {"t0": 1467, "t1": 1480, "t2": 1500, "t3": 1468, "t4": 1471, "t5": 1482, "t6": 1484}, "frames_total": 13731, "frames_in_quiet_2s": 4542, "converged":

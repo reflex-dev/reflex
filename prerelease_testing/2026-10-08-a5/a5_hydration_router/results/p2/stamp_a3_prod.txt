@@ -1,0 +1,4 @@
+state.js md5: caea5520
+a3 prod /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [58046, 54508], "frames_total": 176636, "finals": ["811df8-1", "811df8-1", "465aed-1", "465aed-1", "811df8-1", "465aed-1"], "storage_events": [23286, 23210, 23436, 23445, 23624, 23945]}
+a3 prod /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [113316, 71036], "frames_total": 272865, "finals": ["fda435-1", "af22cd-1", "c3d3f8-1", "c3d3f8-1", "fda435-1", "196855-1"], "storage_events": [35764, 35739, 35866, 35996, 36011, 36522]}
+a3 prod /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 47, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [1, 1, 1, 1, 1, 0]}

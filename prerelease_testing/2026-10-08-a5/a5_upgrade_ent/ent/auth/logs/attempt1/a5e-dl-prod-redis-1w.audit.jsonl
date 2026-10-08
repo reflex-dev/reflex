@@ -1,0 +1,2 @@
+{"t": 1791491773.61, "pid": 12641, "action": "page_load", "outcome": "redirected_to_login", "route": "http://localhost:8621/vault/", "session": true, "handler": null, "sub": null, "reason": null}
+{"t": 1791491773.622, "pid": 12641, "action": "event_handler", "outcome": "redirected_to_login", "route": "http://localhost:8621/vault/", "session": true, "handler": "on_page_load", "sub": null, "reason": null}

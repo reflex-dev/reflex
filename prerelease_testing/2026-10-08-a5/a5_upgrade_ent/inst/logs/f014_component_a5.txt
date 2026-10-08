@@ -1,0 +1,38 @@
+--- reflex component
+`reflex component` was removed in Reflex 0.10. Wrap React components directly in
+your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable 
+component packages from the component template: 
+https://github.com/reflex-dev/component-template
+rc=1
+--- reflex component init
+`reflex component` was removed in Reflex 0.10. Wrap React components directly in
+your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable 
+component packages from the component template: 
+https://github.com/reflex-dev/component-template
+rc=1
+--- reflex component build
+`reflex component` was removed in Reflex 0.10. Wrap React components directly in
+your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable 
+component packages from the component template: 
+https://github.com/reflex-dev/component-template
+rc=1
+--- reflex component share
+`reflex component` was removed in Reflex 0.10. Wrap React components directly in
+your app (https://reflex.dev/docs/wrapping-react/overview/) and start reusable 
+component packages from the component template: 
+https://github.com/reflex-dev/component-template
+rc=1
+--- reflex component --help
+Usage: reflex component [OPTIONS] [ARGS]...
+
+  `reflex component` was removed in Reflex 0.10. Wrap React components
+  directly in your app (https://reflex.dev/docs/wrapping-react/overview/) and
+  start reusable component packages from the component template:
+rc=0
+--- reflex component init --help
+Usage: reflex component [OPTIONS] [ARGS]...
+
+  `reflex component` was removed in Reflex 0.10. Wrap React components
+  directly in your app (https://reflex.dev/docs/wrapping-react/overview/) and
+  start reusable component packages from the component template:
+rc=0

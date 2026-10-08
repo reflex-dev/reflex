@@ -1,0 +1,6 @@
+PONG
+oidc pid 20725 redis pid 20724
+### part 1 vauth_a4e dev redis 20:45:32
+OK
+started pid/pgid 20782 (a4-ent vauth_a4e dev redis=yes workers=default) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a4e-dev-redis.server.log
+VENV_GUARD venv=a4-ent reflex 0.10.0a4 reflex-base 0.10.0a4 reflex-enterprise 0.9.7a5 file /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a4-ent/lib/python3.12/site-packages/reflex/__init__.py

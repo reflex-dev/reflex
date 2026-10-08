@@ -1,0 +1,63 @@
+== cv a1 dev s4 (positive control, rerun with space-separated variants)
+SUMMARY a1dev-s4 a:
+SUMMARY a1dev-s4 b:
+SUMMARY a1dev-s4 g:
+== storm a3 dev
+--- a3 dev run 1
+S: {"observe_windows_5s": [], "finals": {"t0": "s4", "t1": "s4", "t2": "s3", "t3": "s3", "t4": "s4", "t5": "s4", "t6": "s4"}, "ls_final": "s3", "storage_events_per_tab": {"t0": 7357, "t1": 7467, "t2": 7552, "t3": 7606, "t4": 7527, "t5": 7516, "t6": 7627}, "uvi_per_tab": {"t0": 7517, "t1": 7512, "t2": 7561, "t3": 7620, "t4": 7475, "t5": 7509, "t6": 7620}, "frames_total": 65080, "frames_in_quiet_2s": 8555, "converged":
+--- a3 dev run 2
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s4", "t3": "s5", "t4": "s4", "t5": "s4", "t6": "s4"}, "ls_final": "s4", "storage_events_per_tab": {"t0": 5054, "t1": 5071, "t2": 5061, "t3": 5090, "t4": 5044, "t5": 5146, "t6": 5227}, "uvi_per_tab": {"t0": 5161, "t1": 5174, "t2": 5136, "t3": 5120, "t4": 5085, "t5": 5136, "t6": 5219}, "frames_total": 44570, "frames_in_quiet_2s": 8773, "converged":
+--- a3 dev run 3
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 1, "t2": 1, "t3": 2, "t4": 1, "t5": 1, "t6": 2}, "frames_total": 63, "frames_in_quiet_2s": 0, "converged": true}
+--- a3 dev run 4
+S: {"observe_windows_5s": [], "finals": {"t0": "s4", "t1": "s4", "t2": "s5", "t3": "s4", "t4": "s5", "t5": "s4", "t6": "s4"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 4976, "t1": 5057, "t2": 5053, "t3": 5241, "t4": 5283, "t5": 5348, "t6": 5472}, "uvi_per_tab": {"t0": 5300, "t1": 5311, "t2": 5338, "t3": 5289, "t4": 5286, "t5": 5344, "t6": 5468}, "frames_total": 46216, "frames_in_quiet_2s": 14104, "converged"
+== storm a5 dev
+--- a5 dev run 1
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 0, "t2": 0, "t3": 0, "t4": 1, "t5": 0, "t6": 1}, "frames_total": 51, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 dev run 2
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 1, "t2": 0, "t3": 0, "t4": 0, "t5": 0, "t6": 0}, "frames_total": 49, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 dev run 3
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 0, "t2": 0, "t3": 0, "t4": 0, "t5": 0, "t6": 0}, "frames_total": 47, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 dev run 4
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 1, "t2": 1, "t3": 1, "t4": 0, "t5": 1, "t6": 1}, "frames_total": 57, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 dev run 5
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 2, "t2": 0, "t3": 0, "t4": 1, "t5": 1, "t6": 1}, "frames_total": 57, "frames_in_quiet_2s": 0, "converged": true}
+== storm a3 prod
+--- a3 prod run 1
+S: {"observe_windows_5s": [], "finals": {"t0": "s2", "t1": "s1", "t2": "s2", "t3": "s1", "t4": "s1", "t5": "s1", "t6": "s2"}, "ls_final": "s1", "storage_events_per_tab": {"t0": 3381, "t1": 3432, "t2": 3453, "t3": 3438, "t4": 3525, "t5": 3479, "t6": 3514}, "uvi_per_tab": {"t0": 3429, "t1": 3479, "t2": 3486, "t3": 3471, "t4": 3355, "t5": 3481, "t6": 3513}, "frames_total": 31176, "frames_in_quiet_2s": 5266, "converged":
+--- a3 prod run 2
+S: {"observe_windows_5s": [], "finals": {"t0": "s2", "t1": "s1", "t2": "s2", "t3": "s1", "t4": "s1", "t5": "s1", "t6": "s1"}, "ls_final": "s2", "storage_events_per_tab": {"t0": 1298, "t1": 1294, "t2": 1283, "t3": 1298, "t4": 1300, "t5": 1311, "t6": 1318}, "uvi_per_tab": {"t0": 1323, "t1": 1308, "t2": 1293, "t3": 1312, "t4": 1276, "t5": 1301, "t6": 1318}, "frames_total": 12157, "frames_in_quiet_2s": 3421, "converged":
+--- a3 prod run 3
+S: {"observe_windows_5s": [], "finals": {"t0": "s2", "t1": "s3", "t2": "s2", "t3": "s2", "t4": "s3", "t5": "s3", "t6": "s3"}, "ls_final": "s3", "storage_events_per_tab": {"t0": 1444, "t1": 1471, "t2": 1481, "t3": 1454, "t4": 1473, "t5": 1482, "t6": 1486}, "uvi_per_tab": {"t0": 1467, "t1": 1480, "t2": 1500, "t3": 1468, "t4": 1471, "t5": 1482, "t6": 1484}, "frames_total": 13731, "frames_in_quiet_2s": 4542, "converged":
+== storm a5 prod
+--- a5 prod run 1
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 2, "t2": 3, "t3": 2, "t4": 2, "t5": 2, "t6": 2}, "frames_total": 73, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 prod run 2
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 3, "t2": 4, "t3": 4, "t4": 4, "t5": 4, "t6": 4}, "frames_total": 93, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 prod run 3
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 3, "t2": 2, "t3": 2, "t4": 3, "t5": 2, "t6": 3}, "frames_total": 77, "frames_in_quiet_2s": 0, "converged": true}
+--- a5 prod run 4
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 3, "t2": 3, "t3": 3, "t4": 3, "t5": 3, "t6": 3}, "frames_total": 83, "frames_in_quiet_2s": 0, "converged": true}
+== stamp a3 dev
+state.js md5: caea5520
+a3 dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [69001, 80398], "frames_total": 769503, "finals": ["88d36c-1", "ea8605-1", "ea8605-1", "f40b51-1", "f40b51-1", "f40b51-1"], "storage_events": [103954, 104014, 104165, 103968, 104530, 104921]}
+a3 dev /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [132109, 62519], "frames_total": 441535, "finals": ["03bf03-1", "435094-1", "435094-1", "435094-1", "01325b-1", "01325b-1"], "storage_events": [46126, 46719, 47129, 47205, 47492, 48265]}
+a3 dev /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 47, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [1, 1, 1, 0, 1, 1]}
+== stamp a5 dev
+state.js md5: b7915eda
+a5 dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 159, "finals": ["f4fcb8-1", "f4fcb8-1", "f4fcb8-1", "f4fcb8-1", "f4fcb8-1", "f4fcb8-1"], "storage_events": [11, 12, 9, 11, 11, 11]}
+a5 dev /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 100, "finals": ["fd402d-1", "fd402d-1", "fd402d-1", "fd402d-1", "fd402d-1", "fd402d-1"], "storage_events": [6, 6, 6, 6, 5, 6]}
+a5 dev /stamp n=6 run 3: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 145, "finals": ["2a06df-1", "2a06df-1", "2a06df-1", "2a06df-1", "2a06df-1", "2a06df-1"], "storage_events": [10, 10, 7, 9, 9, 10]}
+a5 dev /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 50, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [1, 0, 1, 1, 1, 1]}
+== stamp a3 prod
+state.js md5: caea5520
+a3 prod /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [58046, 54508], "frames_total": 176636, "finals": ["811df8-1", "811df8-1", "465aed-1", "465aed-1", "811df8-1", "465aed-1"], "storage_events": [23286, 23210, 23436, 23445, 23624, 23945]}
+a3 prod /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [113316, 71036], "frames_total": 272865, "finals": ["fda435-1", "af22cd-1", "c3d3f8-1", "c3d3f8-1", "fda435-1", "196855-1"], "storage_events": [35764, 35739, 35866, 35996, 36011, 36522]}
+a3 prod /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 47, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [1, 1, 1, 1, 1, 0]}
+== stamp a5 prod
+state.js md5: b7915eda
+a5 prod /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 109, "finals": ["1e196c-1", "1e196c-1", "1e196c-1", "1e196c-1", "1e196c-1", "1e196c-1"], "storage_events": [8, 7, 7, 8, 7, 8]}
+a5 prod /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 82, "finals": ["0bbd10-1", "0bbd10-1", "0bbd10-1", "0bbd10-1", "0bbd10-1", "0bbd10-1"], "storage_events": [5, 6, 6, 6, 6, 6]}
+a5 prod /stamp n=6 run 3: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 132, "finals": ["284d84-1", "284d84-1", "284d84-1", "284d84-1", "284d84-1", "284d84-1"], "storage_events": [11, 11, 10, 10, 9, 9]}
+a5 prod /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 49, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [1, 1, 1, 1, 1, 0]}
+BATCH2_DONE

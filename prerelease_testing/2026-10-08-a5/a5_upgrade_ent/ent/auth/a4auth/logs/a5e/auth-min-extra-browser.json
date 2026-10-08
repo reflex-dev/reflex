@@ -1,0 +1,336 @@
+[
+  {
+    "case": "profile_login_reveal_logout",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on pagehide"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+        "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+      },
+      {
+        "url": "http://localhost:8623/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8623/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8623/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+        "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+      },
+      {
+        "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+        "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+      },
+      {
+        "url": "http://localhost:8623/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": []
+  },
+  {
+    "case": "anonymous_event_replay",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on pagehide"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+        "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+      },
+      {
+        "url": "http://localhost:8623/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": []
+  },
+  {
+    "case": "iframe_popup",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on pagehide"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8623/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8623/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": [],
+    "frame_observations": [
+      {
+        "url": "http://localhost:3623/",
+        "text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile",
+        "pending_event": null
+      }
+    ]
+  },
+  {
+    "case": "iframe_pending_event_replay",
+    "passed": true,
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "log",
+        "text": "Disconnect websocket on pagehide"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": [
+      {
+        "url": "http://localhost:8623/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8623/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:8623/_reflex/cookies/sync",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "http_errors": [],
+    "frame_observations": [
+      {
+        "url": "http://localhost:3623/",
+        "text": "Published enterprise auth test\n\nSigned in\n\nrevealed-alice\n\nReveal\nProtected profile",
+        "pending_event": ""
+      }
+    ]
+  }
+]

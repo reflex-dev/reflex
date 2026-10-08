@@ -1,0 +1,44 @@
+{
+ "path": "/stamp",
+ "n": 6,
+ "hydrated": [
+  true,
+  true,
+  true,
+  true,
+  true,
+  true
+ ],
+ "finals": [
+  "f4fcb8-1",
+  "f4fcb8-1",
+  "f4fcb8-1",
+  "f4fcb8-1",
+  "f4fcb8-1",
+  "f4fcb8-1"
+ ],
+ "ls_final": "f4fcb8-1",
+ "converged": true,
+ "storage_events": [
+  11,
+  12,
+  9,
+  11,
+  11,
+  11
+ ],
+ "uvi": [
+  11,
+  12,
+  6,
+  8,
+  8,
+  11
+ ],
+ "frames_total": 159,
+ "windows_5s": [
+  0,
+  0
+ ],
+ "storm": false
+}

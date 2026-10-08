@@ -1,0 +1,3 @@
+# frontend Var uses of the router (State.router... in components) — what #7360's serializer / deprecation touches
+reflex_enterprise-0.9.7a4-py3-none-any/reflex_enterprise/auth/cookie.py:225:            parsed_cookies = cookie_parser(instance.router.headers.cookie)
+reflex_enterprise-0.9.7a5-py3-none-any/reflex_enterprise/auth/cookie.py:225:            parsed_cookies = cookie_parser(instance.router.headers.cookie)

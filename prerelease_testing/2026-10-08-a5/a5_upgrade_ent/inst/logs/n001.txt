@@ -1,0 +1,20 @@
+py3.11/uv 'reflex[db]==0.10.0a5' rc=1: reflex=NOT-INSTALLED reflex-base=NOT-INSTALLED sqlalchemy=NOT-INSTALLED sqlmodel=NOT-INSTALLED greenlet=NOT-INSTALLED alembic=NOT-INSTALLED pydantic=NOT-INSTALLED reflex-components-core=NOT-INSTALLED reflex-components-radix=NOT-INSTALLED reflex-hosting-cli=NOT-INSTALLED reflex-build-sdk=NOT-INSTALLED
+  pre-releases in graph: 
+ModuleNotFoundError: No module named 'reflex'
+  uv pip check: All installed packages are compatible
+py3.14/uv 'reflex[db]==0.10.0a5' rc=1: reflex=NOT-INSTALLED reflex-base=NOT-INSTALLED sqlalchemy=NOT-INSTALLED sqlmodel=NOT-INSTALLED greenlet=NOT-INSTALLED alembic=NOT-INSTALLED pydantic=NOT-INSTALLED reflex-components-core=NOT-INSTALLED reflex-components-radix=NOT-INSTALLED reflex-hosting-cli=NOT-INSTALLED reflex-build-sdk=NOT-INSTALLED
+  pre-releases in graph: 
+ModuleNotFoundError: No module named 'reflex'
+  uv pip check: All installed packages are compatible
+py3.11/pip 'reflex[db]==0.10.0a5' rc=0: reflex=0.10.0a5 reflex-base=0.10.0a5 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.0 pydantic=2.14.0 reflex-components-core=0.10.0a2 reflex-components-radix=0.10.0a2 reflex-hosting-cli=0.2.0a1 reflex-build-sdk=0.1.0a1
+  pre-releases in graph: reflex==0.10.0a5 reflex-base==0.10.0a5 reflex-build-sdk==0.1.0a1 reflex-components-code==0.10.0a2 reflex-components-core==0.10.0a2 reflex-components-dataeditor==0.10.0a1 reflex-components-gridjs==0.10.0a2 reflex-components-lucide==1.1.0a1 reflex-components-markdown==0.10.0a2 reflex-components-moment==0.10.0a2 reflex-components-plotly==0.10.0a2 reflex-components-radix==0.10.0a2 reflex-components-react-player==0.10.0a1 reflex-components-recharts==0.10.0a2 reflex-components-sonner==0.10.0a1 reflex-hosting-cli==0.2.0a1 
+  import reflex.model OK
+  pip check: No broken requirements found.
+py3.14/pip 'reflex[db]==0.10.0a5' rc=0: reflex=0.10.0a5 reflex-base=0.10.0a5 sqlalchemy=2.1.4 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.0 pydantic=2.14.0 reflex-components-core=0.10.0a2 reflex-components-radix=0.10.0a2 reflex-hosting-cli=0.2.0a1 reflex-build-sdk=0.1.0a1
+  pre-releases in graph: reflex==0.10.0a5 reflex-base==0.10.0a5 reflex-build-sdk==0.1.0a1 reflex-components-code==0.10.0a2 reflex-components-core==0.10.0a2 reflex-components-dataeditor==0.10.0a1 reflex-components-gridjs==0.10.0a2 reflex-components-lucide==1.1.0a1 reflex-components-markdown==0.10.0a2 reflex-components-moment==0.10.0a2 reflex-components-plotly==0.10.0a2 reflex-components-radix==0.10.0a2 reflex-components-react-player==0.10.0a1 reflex-components-recharts==0.10.0a2 reflex-components-sonner==0.10.0a1 reflex-hosting-cli==0.2.0a1 
+  import reflex.model OK
+  pip check: No broken requirements found.
+py3.12/pip 'reflex==0.10.0a5' rc=0: reflex=0.10.0a5 reflex-base=0.10.0a5 sqlalchemy=NOT-INSTALLED sqlmodel=NOT-INSTALLED greenlet=NOT-INSTALLED alembic=NOT-INSTALLED pydantic=NOT-INSTALLED reflex-components-core=0.10.0a2 reflex-components-radix=0.10.0a2 reflex-hosting-cli=0.2.0a1 reflex-build-sdk=0.1.0a1
+  pre-releases in graph: reflex==0.10.0a5 reflex-base==0.10.0a5 reflex-build-sdk==0.1.0a1 reflex-components-code==0.10.0a2 reflex-components-core==0.10.0a2 reflex-components-dataeditor==0.10.0a1 reflex-components-gridjs==0.10.0a2 reflex-components-lucide==1.1.0a1 reflex-components-markdown==0.10.0a2 reflex-components-moment==0.10.0a2 reflex-components-plotly==0.10.0a2 reflex-components-radix==0.10.0a2 reflex-components-react-player==0.10.0a1 reflex-components-recharts==0.10.0a2 reflex-components-sonner==0.10.0a1 reflex-hosting-cli==0.2.0a1 
+  import reflex.model OK
+  pip check: No broken requirements found.

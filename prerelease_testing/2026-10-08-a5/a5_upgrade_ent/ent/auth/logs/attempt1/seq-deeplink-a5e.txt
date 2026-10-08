@@ -1,0 +1,21 @@
+PONG
+oidc pid 7113 redis pid 7112
+OK
+started pid/pgid 7165 (a5-ent vauthd_a5e dev redis=yes workers=default) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a5e-dl-dev-redis.server.log
+VENV_GUARD venv=a5-ent reflex 0.10.0a5 reflex-base 0.10.0a5 reflex-enterprise 0.9.7a5 file /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/a5-ent/lib/python3.12/site-packages/reflex/__init__.py
+ready after 7s
+{"rep": 1, "A_ok": false, "A_redirect_to": null, "A_final": null, "B_ok": false, "B_redirect_to": null, "B_final": null, "C_ok": null, "C_redirect_to": null, "D_ok": null, "E_ok": null, "F_ok": null, "F_after_logout_url": null, "G_ok": false, "G_leaks": 16, "exceptions": ["TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#nav-home\")\n"], "pageerrors": 0, "console_err": 0}
+{"rep": 2, "A_ok": false, "A_redirect_to": null, "A_final": null, "B_ok": false, "B_redirect_to": null, "B_final": null, "C_ok": null, "C_redirect_to": null, "D_ok": null, "E_ok": null, "F_ok": null, "F_after_logout_url": null, "G_ok": false, "G_leaks": 16, "exceptions": ["TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#nav-home\")\n"], "pageerrors": 0, "console_err": 0}
+{"rep": 3, "A_ok": false, "A_redirect_to": null, "A_final": null, "B_ok": false, "B_redirect_to": null, "B_final": null, "C_ok": null, "C_redirect_to": null, "D_ok": null, "E_ok": null, "F_ok": null, "F_after_logout_url": null, "G_ok": false, "G_leaks": 16, "exceptions": ["TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#nav-home\")\n"], "pageerrors": 0, "console_err": 0}
+SUMMARY a5e-dl-dev-redis deeplink: {"A": 0, "B": 0, "C": 0, "D": 0, "E": 0, "F": 0, "G": 0} of 3
+stopped
+server log a5e-dl-dev-redis: tracebacks=0 deprecate=3
+audit records: 18; session_id present in 18
+    3 x event_handler    redirected_to_login    route='/item/abc' sub=None
+    6 x event_handler    redirected_to_login    route='/vault' sub=None
+    3 x page_load        redirected_to_login    route='/item/abc' sub=None
+    6 x page_load        redirected_to_login    route='/vault' sub=None
+page_load records with a non-protected route (stale router view?): 0
+OK
+started pid/pgid 12323 (a5-ent vauthd_a5e prod redis=yes workers=1) log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_upgrade_ent/ent/auth/logs/a5e-dl-prod-redis-1w.server.log
+ready after 15s

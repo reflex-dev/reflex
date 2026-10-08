@@ -1,0 +1,2134 @@
+{
+ "front": "http://localhost:3147",
+ "steps": [
+  {
+   "step": "S01_first_load",
+   "tab": "t1",
+   "url": "http://localhost:3147/",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/index",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/index",
+     "params": {},
+     "pid": 21847,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/",
+     "route_id": "/index",
+     "sid": "qf9r3m",
+     "tag": "ol_index",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/",
+     "url_path": "/"
+    }
+   ],
+   "dt": 1.18,
+   "frames": 0
+  },
+  {
+   "step": "S02_reload",
+   "tab": "t1",
+   "url": "http://localhost:3147/",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/index",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/index",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/",
+     "route_id": "/index",
+     "sid": "MYZPY9",
+     "tag": "ol_index",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/",
+     "url_path": "/"
+    }
+   ],
+   "dt": 1.61,
+   "frames": 10
+  },
+  {
+   "step": "S03_probe",
+   "tab": "t1",
+   "url": "http://localhost:3147/",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/index",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/index",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/",
+     "route_id": "/index",
+     "sid": "MYZPY9",
+     "tag": "probe",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/",
+     "url_path": "/"
+    }
+   ],
+   "dt": 1.21,
+   "frames": 2
+  },
+  {
+   "step": "S100_nav/multi",
+   "tab": "t1",
+   "url": "http://localhost:3147/multi",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/multi",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/multi",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/multi",
+     "route_id": "/multi",
+     "sid": "MYZPY9",
+     "tag": "ol_a",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/multi",
+     "url_path": "/multi"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/multi",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/multi",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/multi",
+     "route_id": "/multi",
+     "sid": "MYZPY9",
+     "tag": "ol_b",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/multi",
+     "url_path": "/multi"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/multi",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/multi",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/multi",
+     "route_id": "/multi",
+     "sid": "MYZPY9",
+     "tag": "other_ol",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/multi",
+     "url_path": "/multi"
+    }
+   ],
+   "dt": 1.69,
+   "frames": 6
+  },
+  {
+   "step": "S101_nav/chain",
+   "tab": "t1",
+   "url": "http://localhost:3147/chain",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/chain",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/chain",
+     "route_id": "/chain",
+     "sid": "MYZPY9",
+     "tag": "ol_chain_yield",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/chain",
+     "url_path": "/chain"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/chain",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/chain",
+     "route_id": "/chain",
+     "sid": "MYZPY9",
+     "tag": "ol_chain_return",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/chain",
+     "url_path": "/chain"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/chain",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/chain",
+     "route_id": "/chain",
+     "sid": "MYZPY9",
+     "tag": "other_chained",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/chain",
+     "url_path": "/chain"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/chain",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/chain",
+     "route_id": "/chain",
+     "sid": "MYZPY9",
+     "tag": "returned",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/chain",
+     "url_path": "/chain"
+    }
+   ],
+   "dt": 1.55,
+   "frames": 7
+  },
+  {
+   "step": "S102_nav/bg",
+   "tab": "t1",
+   "url": "http://localhost:3147/bg",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/bg",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/bg",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/bg",
+     "route_id": "/bg",
+     "sid": "MYZPY9",
+     "tag": "bg_start",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/bg",
+     "url_path": "/bg"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/bg",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/bg",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/bg",
+     "route_id": "/bg",
+     "sid": "MYZPY9",
+     "tag": "bg_after",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/bg",
+     "url_path": "/bg"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/bg",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/bg",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/bg",
+     "route_id": "/bg",
+     "sid": "MYZPY9",
+     "tag": "after_bg",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/bg",
+     "url_path": "/bg"
+    }
+   ],
+   "dt": 2.55,
+   "frames": 7
+  },
+  {
+   "step": "S103_nav/post/hello?x=1",
+   "tab": "t1",
+   "url": "http://localhost:3147/post/hello?x=1",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/post/[slug]",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/post/[slug]",
+     "params": {
+      "slug": "hello",
+      "x": "1"
+     },
+     "pid": 21852,
+     "qp": {
+      "x": "1"
+     },
+     "raw_n": 23,
+     "raw_path": "/post/hello?x=1",
+     "route_id": "/post/[slug]",
+     "sid": "MYZPY9",
+     "tag": "ol_post",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/post/hello?x=1",
+     "url_path": "/post/hello"
+    }
+   ],
+   "dt": 1.63,
+   "frames": 4
+  },
+  {
+   "step": "S104_nav/post/hello?x=2",
+   "tab": "t1",
+   "url": "http://localhost:3147/post/hello?x=2",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/post/[slug]",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/post/[slug]",
+     "params": {
+      "slug": "hello",
+      "x": "2"
+     },
+     "pid": 21852,
+     "qp": {
+      "x": "2"
+     },
+     "raw_n": 23,
+     "raw_path": "/post/hello?x=2",
+     "route_id": "/post/[slug]",
+     "sid": "MYZPY9",
+     "tag": "ol_post",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/post/hello?x=2",
+     "url_path": "/post/hello"
+    }
+   ],
+   "dt": 1.53,
+   "frames": 4
+  },
+  {
+   "step": "S105_nav/post/other",
+   "tab": "t1",
+   "url": "http://localhost:3147/post/other",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/post/[slug]",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/post/[slug]",
+     "params": {
+      "slug": "other"
+     },
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/post/other",
+     "route_id": "/post/[slug]",
+     "sid": "MYZPY9",
+     "tag": "ol_post",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/post/other",
+     "url_path": "/post/other"
+    }
+   ],
+   "dt": 1.52,
+   "frames": 4
+  },
+  {
+   "step": "S106_nav/files",
+   "tab": "t1",
+   "url": "http://localhost:3147/files",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/files/[[...splat]]",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/files/[[...splat]]",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/files",
+     "route_id": "/files/[[...splat]]",
+     "sid": "MYZPY9",
+     "tag": "ol_splat",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/files",
+     "url_path": "/files"
+    }
+   ],
+   "dt": 1.65,
+   "frames": 4
+  },
+  {
+   "step": "S107_nav/files/a/b/c",
+   "tab": "t1",
+   "url": "http://localhost:3147/files/a/b/c",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/files/[[...splat]]",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/files/[[...splat]]",
+     "params": {
+      "splat": [
+       "a",
+       "b",
+       "c"
+      ]
+     },
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/files/a/b/c",
+     "route_id": "/files/[[...splat]]",
+     "sid": "MYZPY9",
+     "tag": "ol_splat",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/files/a/b/c",
+     "url_path": "/files/a/b/c"
+    }
+   ],
+   "dt": 1.51,
+   "frames": 4
+  },
+  {
+   "step": "S108_nav/redir",
+   "tab": "t1",
+   "url": "http://localhost:3147/target?from=redir",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/redir",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/redir",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/redir",
+     "route_id": "/redir",
+     "sid": "MYZPY9",
+     "tag": "ol_redirect",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/redir",
+     "url_path": "/redir"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/target",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/target",
+     "params": {
+      "from": "redir"
+     },
+     "pid": 21852,
+     "qp": {
+      "from": "redir"
+     },
+     "raw_n": 23,
+     "raw_path": "/target?from=redir",
+     "route_id": "/target",
+     "sid": "MYZPY9",
+     "tag": "ol_target",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/target?from=redir",
+     "url_path": "/target"
+    }
+   ],
+   "dt": 1.68,
+   "frames": 9
+  },
+  {
+   "step": "S109_nav/redir-chain",
+   "tab": "t1",
+   "url": "http://localhost:3147/target?from=redir",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/redir-chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/redir-chain",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/redir-chain",
+     "route_id": "/redir-chain",
+     "sid": "MYZPY9",
+     "tag": "ol_redirect2",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/redir-chain",
+     "url_path": "/redir-chain"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/redir",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/redir",
+     "params": {
+      "hop": "1"
+     },
+     "pid": 21852,
+     "qp": {
+      "hop": "1"
+     },
+     "raw_n": 23,
+     "raw_path": "/redir?hop=1",
+     "route_id": "/redir",
+     "sid": "MYZPY9",
+     "tag": "ol_redirect",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/redir?hop=1",
+     "url_path": "/redir"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/target",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/target",
+     "params": {
+      "from": "redir"
+     },
+     "pid": 21852,
+     "qp": {
+      "from": "redir"
+     },
+     "raw_n": 23,
+     "raw_path": "/target?from=redir",
+     "route_id": "/target",
+     "sid": "MYZPY9",
+     "tag": "ol_target",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/target?from=redir",
+     "url_path": "/target"
+    }
+   ],
+   "dt": 1.89,
+   "frames": 14
+  },
+  {
+   "step": "S110_nav/fe",
+   "tab": "t1",
+   "url": "http://localhost:3147/fe",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/fe",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/fe",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/fe",
+     "route_id": "/fe",
+     "sid": "MYZPY9",
+     "tag": "ol_fe",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/fe",
+     "url_path": "/fe"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/fe",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/fe",
+     "params": {},
+     "pid": 21852,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/fe",
+     "route_id": "/fe",
+     "sid": "MYZPY9",
+     "tag": "cb_script:scriptval",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/fe",
+     "url_path": "/fe"
+    }
+   ],
+   "dt": 1.66,
+   "frames": 7
+  },
+  {
+   "step": "S20_back",
+   "tab": "t1",
+   "url": "http://localhost:3147/target?from=redir",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/target",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/target",
+     "params": {
+      "from": "redir"
+     },
+     "pid": 21852,
+     "qp": {
+      "from": "redir"
+     },
+     "raw_n": 23,
+     "raw_path": "/target?from=redir",
+     "route_id": "/target",
+     "sid": "MYZPY9",
+     "tag": "ol_target",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/target?from=redir",
+     "url_path": "/target"
+    }
+   ],
+   "dt": 1.69,
+   "frames": 4
+  },
+  {
+   "step": "S21_back",
+   "tab": "t1",
+   "url": "http://localhost:3147/target?from=redir",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/redir",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/redir",
+     "params": {
+      "hop": "1"
+     },
+     "pid": 21852,
+     "qp": {
+      "hop": "1"
+     },
+     "raw_n": 23,
+     "raw_path": "/redir?hop=1",
+     "route_id": "/redir",
+     "sid": "MYZPY9",
+     "tag": "ol_redirect",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/redir?hop=1",
+     "url_path": "/redir"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/target",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/target",
+     "params": {
+      "from": "redir"
+     },
+     "pid": 21852,
+     "qp": {
+      "from": "redir"
+     },
+     "raw_n": 23,
+     "raw_path": "/target?from=redir",
+     "route_id": "/target",
+     "sid": "MYZPY9",
+     "tag": "ol_target",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/target?from=redir",
+     "url_path": "/target"
+    }
+   ],
+   "dt": 1.83,
+   "frames": 10
+  },
+  {
+   "step": "S22_forward",
+   "tab": "t1",
+   "url": "http://localhost:3147/target?from=redir",
+   "log": [],
+   "dt": 1.62,
+   "frames": 0
+  },
+  {
+   "step": "S30_goto/post/hello?x=1",
+   "tab": "t1",
+   "url": "http://localhost:3147/post/hello?x=1",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/post/[slug]",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/post/[slug]",
+     "params": {
+      "slug": "hello",
+      "x": "1"
+     },
+     "pid": 21861,
+     "qp": {
+      "x": "1"
+     },
+     "raw_n": 23,
+     "raw_path": "/post/hello?x=1",
+     "route_id": "/post/[slug]",
+     "sid": "WDsA9D",
+     "tag": "ol_post",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/post/hello?x=1",
+     "url_path": "/post/hello"
+    }
+   ],
+   "dt": 1.67,
+   "frames": 11
+  },
+  {
+   "step": "S31_goto/files/a/b/c?q=z",
+   "tab": "t1",
+   "url": "http://localhost:3147/files/a/b/c?q=z",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/files/[[...splat]]",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/files/[[...splat]]",
+     "params": {
+      "q": "z",
+      "splat": [
+       "a",
+       "b",
+       "c"
+      ]
+     },
+     "pid": 21866,
+     "qp": {
+      "q": "z"
+     },
+     "raw_n": 23,
+     "raw_path": "/files/a/b/c?q=z",
+     "route_id": "/files/[[...splat]]",
+     "sid": "cLnlVs",
+     "tag": "ol_splat",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/files/a/b/c?q=z",
+     "url_path": "/files/a/b/c"
+    }
+   ],
+   "dt": 1.59,
+   "frames": 10
+  },
+  {
+   "step": "S32_goto/files",
+   "tab": "t1",
+   "url": "http://localhost:3147/files",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/files/[[...splat]]",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/files/[[...splat]]",
+     "params": {},
+     "pid": 21845,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/files",
+     "route_id": "/files/[[...splat]]",
+     "sid": "I2vlrt",
+     "tag": "ol_splat",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/files",
+     "url_path": "/files"
+    }
+   ],
+   "dt": 1.67,
+   "frames": 10
+  },
+  {
+   "step": "S33_goto/redir-chain",
+   "tab": "t1",
+   "url": "http://localhost:3147/target?from=redir",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/redir-chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/redir-chain",
+     "params": {},
+     "pid": 21843,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/redir-chain/",
+     "route_id": "/redir-chain",
+     "sid": "Qh7hB8",
+     "tag": "ol_redirect2",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/redir-chain/",
+     "url_path": "/redir-chain/"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/redir",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/redir",
+     "params": {
+      "hop": "1"
+     },
+     "pid": 21843,
+     "qp": {
+      "hop": "1"
+     },
+     "raw_n": 23,
+     "raw_path": "/redir?hop=1",
+     "route_id": "/redir",
+     "sid": "Qh7hB8",
+     "tag": "ol_redirect",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/redir?hop=1",
+     "url_path": "/redir"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/target",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/target",
+     "params": {
+      "from": "redir"
+     },
+     "pid": 21843,
+     "qp": {
+      "from": "redir"
+     },
+     "raw_n": 23,
+     "raw_path": "/target?from=redir",
+     "route_id": "/target",
+     "sid": "Qh7hB8",
+     "tag": "ol_target",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/target?from=redir",
+     "url_path": "/target"
+    }
+   ],
+   "dt": 1.78,
+   "frames": 20
+  },
+  {
+   "step": "S34_goto/fe",
+   "tab": "t1",
+   "url": "http://localhost:3147/fe/",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/fe",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/fe",
+     "params": {},
+     "pid": 21866,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/fe/",
+     "route_id": "/fe",
+     "sid": "NUrrXf",
+     "tag": "ol_fe",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/fe/",
+     "url_path": "/fe/"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/fe",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/fe",
+     "params": {},
+     "pid": 21866,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/fe/",
+     "route_id": "/fe",
+     "sid": "NUrrXf",
+     "tag": "cb_script:scriptval",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/fe/",
+     "url_path": "/fe/"
+    }
+   ],
+   "dt": 1.6,
+   "frames": 13
+  },
+  {
+   "step": "S35_goto/bg",
+   "tab": "t1",
+   "url": "http://localhost:3147/bg/",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/bg",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/bg",
+     "params": {},
+     "pid": 21847,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/bg/",
+     "route_id": "/bg",
+     "sid": "44ppdl",
+     "tag": "bg_start",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/bg/",
+     "url_path": "/bg/"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/bg",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/bg",
+     "params": {},
+     "pid": 21847,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/bg/",
+     "route_id": "/bg",
+     "sid": "44ppdl",
+     "tag": "bg_after",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/bg/",
+     "url_path": "/bg/"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/bg",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/bg",
+     "params": {},
+     "pid": 21847,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/bg/",
+     "route_id": "/bg",
+     "sid": "44ppdl",
+     "tag": "after_bg",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/bg/",
+     "url_path": "/bg/"
+    }
+   ],
+   "dt": 2.71,
+   "frames": 13
+  },
+  {
+   "step": "S36_goto/multi",
+   "tab": "t1",
+   "url": "http://localhost:3147/multi/",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/multi",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/multi",
+     "params": {},
+     "pid": 21841,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/multi/",
+     "route_id": "/multi",
+     "sid": "5bkJBb",
+     "tag": "ol_a",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/multi/",
+     "url_path": "/multi/"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/multi",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/multi",
+     "params": {},
+     "pid": 21841,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/multi/",
+     "route_id": "/multi",
+     "sid": "5bkJBb",
+     "tag": "ol_b",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/multi/",
+     "url_path": "/multi/"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/multi",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/multi",
+     "params": {},
+     "pid": 21841,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/multi/",
+     "route_id": "/multi",
+     "sid": "5bkJBb",
+     "tag": "other_ol",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/multi/",
+     "url_path": "/multi/"
+    }
+   ],
+   "dt": 1.6,
+   "frames": 12
+  },
+  {
+   "step": "S37_goto/chain",
+   "tab": "t1",
+   "url": "http://localhost:3147/chain/",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/chain",
+     "params": {},
+     "pid": 21845,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/chain/",
+     "route_id": "/chain",
+     "sid": "GKwFbF",
+     "tag": "ol_chain_yield",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/chain/",
+     "url_path": "/chain/"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/chain",
+     "params": {},
+     "pid": 21845,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/chain/",
+     "route_id": "/chain",
+     "sid": "GKwFbF",
+     "tag": "ol_chain_return",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/chain/",
+     "url_path": "/chain/"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/chain",
+     "params": {},
+     "pid": 21845,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/chain/",
+     "route_id": "/chain",
+     "sid": "GKwFbF",
+     "tag": "other_chained",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/chain/",
+     "url_path": "/chain/"
+    },
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/chain",
+     "params": {},
+     "pid": 21845,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/chain/",
+     "route_id": "/chain",
+     "sid": "GKwFbF",
+     "tag": "returned",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/chain/",
+     "url_path": "/chain/"
+    }
+   ],
+   "dt": 1.69,
+   "frames": 13
+  },
+  {
+   "step": "S40_probe_after_bg",
+   "tab": "t1",
+   "url": "http://localhost:3147/chain/",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/chain",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/chain",
+     "params": {},
+     "pid": 21845,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/chain/",
+     "route_id": "/chain",
+     "sid": "GKwFbF",
+     "tag": "probe",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/chain/",
+     "url_path": "/chain/"
+    }
+   ],
+   "dt": 1.2,
+   "frames": 2
+  },
+  {
+   "step": "S41_goto/front",
+   "tab": "t1",
+   "url": "http://localhost:3147/front/?fq=1",
+   "log": [],
+   "dt": 1.33,
+   "frames": 8,
+   "front": {
+    "f_page_path": "/front",
+    "f_params": "{\"fq\":\"1\"}",
+    "f_url": "http://localhost:3147/front/?fq=1",
+    "f_url_path": "/front/",
+    "f_qp": "{\"fq\":\"1\"}",
+    "f_ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+    "f_cookie": "[]",
+    "f_cookie_idx": "[]",
+    "f_cookie_contains": "contains=no",
+    "f_raw_cookie_idx": "[]",
+    "f_raw_cookie_get": "[]",
+    "f_raw_auth_idx": "[]",
+    "f_raw": "{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"qZAuHET+zoZKWxryoZTZCw==\",\"sec-websocket-protocol\":\"0.10.0a5\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}",
+    "f_raw_fe": "accept-encoding=gzip, deflate, br, zstd\n\naccept-language=en-US,en;q=0.9\n\nasgi-scope-client=127.0.0.1\n\ncache-control=no-cache\n\nconnection=Upgrade\n\nhost=localhost:3147\n\norigin=http://localhost:3147\n\npragma=no-cache\n\nsec-websocket-extensions=permessage-deflate; client_max_window_bits\n\nsec-websocket-key=qZAuHET+zoZKWxryoZTZCw==\n\nsec-websocket-protocol=0.10.0a5\n\nsec-websocket-version=13\n\nupgrade=websocket\n\nuser-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+    "f_headers_all": "{\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"qZAuHET+zoZKWxryoZTZCw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"qZAuHET+zoZKWxryoZTZCw==\",\"sec-websocket-protocol\":\"0.10.0a5\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}}",
+    "f_ip": "127.0.0.1",
+    "f_tok": "11e4b42b-5220-40f3-be15-a6aa7e724c33",
+    "f_router_all": "{\"session\":{\"client_token\":\"11e4b42b-5220-40f3-be15-a6aa7e724c33\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"rZAI0N-iMPJawpaNAAAD\"},\"headers\":{\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"qZAuHET+zoZKWxryoZTZCw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"qZAuHET+zoZKWxryoZTZCw==\",\"sec-websocket-protocol\":\"0.10.0a5\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"page\":{\"host\":\"http://localhost:3147\",\"path\":\"/front\",\"raw_path\":\"/front/?fq=1\",\"full_path\":\"http://localhost:3147/front\",\"full_raw_path\":\"http://localhost:3147/front/?fq=1\",\"params\":{\"fq\":\"1\"}},\"url\":{\"scheme\":\"http\",\"netloc\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"path\":\"/front/\",\"query\":\"fq=1\",\"query_parameters\":{\"fq\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3147/front/?fq=1\"},\"route_id\":\"/front\"}",
+    "cv_router": "/front/|{\"fq\": \"1\"}|{\"fq\": \"1\"}",
+    "cv_has_cookie": "cv_has_cookie=yes",
+    "cv_has_auth": "cv_has_auth=yes"
+   }
+  },
+  {
+   "step": "S42_send_headers",
+   "tab": "t1",
+   "url": "http://localhost:3147/front/?fq=1",
+   "log": [],
+   "dt": 1.18,
+   "frames": 2,
+   "front": {
+    "f_page_path": "/front",
+    "f_params": "{\"fq\":\"1\"}",
+    "f_url": "http://localhost:3147/front/?fq=1",
+    "f_url_path": "/front/",
+    "f_qp": "{\"fq\":\"1\"}",
+    "f_ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+    "f_cookie": "[]",
+    "f_cookie_idx": "[]",
+    "f_cookie_contains": "contains=no",
+    "f_raw_cookie_idx": "[]",
+    "f_raw_cookie_get": "[]",
+    "f_raw_auth_idx": "[]",
+    "f_raw": "{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"qZAuHET+zoZKWxryoZTZCw==\",\"sec-websocket-protocol\":\"0.10.0a5\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}",
+    "f_raw_fe": "accept-encoding=gzip, deflate, br, zstd\n\naccept-language=en-US,en;q=0.9\n\nasgi-scope-client=127.0.0.1\n\ncache-control=no-cache\n\nconnection=Upgrade\n\nhost=localhost:3147\n\norigin=http://localhost:3147\n\npragma=no-cache\n\nsec-websocket-extensions=permessage-deflate; client_max_window_bits\n\nsec-websocket-key=qZAuHET+zoZKWxryoZTZCw==\n\nsec-websocket-protocol=0.10.0a5\n\nsec-websocket-version=13\n\nupgrade=websocket\n\nuser-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+    "f_headers_all": "{\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"qZAuHET+zoZKWxryoZTZCw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"qZAuHET+zoZKWxryoZTZCw==\",\"sec-websocket-protocol\":\"0.10.0a5\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}}",
+    "f_ip": "127.0.0.1",
+    "f_tok": "11e4b42b-5220-40f3-be15-a6aa7e724c33",
+    "f_router_all": "{\"session\":{\"client_token\":\"11e4b42b-5220-40f3-be15-a6aa7e724c33\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"rZAI0N-iMPJawpaNAAAD\"},\"headers\":{\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"qZAuHET+zoZKWxryoZTZCw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"qZAuHET+zoZKWxryoZTZCw==\",\"sec-websocket-protocol\":\"0.10.0a5\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"page\":{\"host\":\"http://localhost:3147\",\"path\":\"/front\",\"raw_path\":\"/front/?fq=1\",\"full_path\":\"http://localhost:3147/front\",\"full_raw_path\":\"http://localhost:3147/front/?fq=1\",\"params\":{\"fq\":\"1\"}},\"url\":{\"scheme\":\"http\",\"netloc\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"path\":\"/front/\",\"query\":\"fq=1\",\"query_parameters\":{\"fq\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3147/front/?fq=1\"},\"route_id\":\"/front\"}",
+    "cv_router": "/front/|{\"fq\": \"1\"}|{\"fq\": \"1\"}",
+    "cv_has_cookie": "cv_has_cookie=yes",
+    "cv_has_auth": "cv_has_auth=yes"
+   }
+  },
+  {
+   "step": "S43_send_cookie",
+   "tab": "t1",
+   "url": "http://localhost:3147/front/?fq=1",
+   "log": [],
+   "dt": 1.17,
+   "frames": 2
+  },
+  {
+   "step": "S44_nav_front_from_index",
+   "tab": "t1",
+   "url": "http://localhost:3147/front",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/index",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/index",
+     "params": {},
+     "pid": 21841,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/",
+     "route_id": "/index",
+     "sid": "-MSDAC",
+     "tag": "ol_index",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/",
+     "url_path": "/"
+    }
+   ],
+   "dt": 2.86,
+   "frames": 13,
+   "front": {
+    "f_page_path": "/front",
+    "f_params": "{}",
+    "f_url": "http://localhost:3147/front",
+    "f_url_path": "/front",
+    "f_qp": "{}",
+    "f_ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+    "f_cookie": "[]",
+    "f_cookie_idx": "[]",
+    "f_cookie_contains": "contains=no",
+    "f_raw_cookie_idx": "[]",
+    "f_raw_cookie_get": "[]",
+    "f_raw_auth_idx": "[]",
+    "f_raw": "{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"Vx9TN94SQFhi+7RbVYgCnA==\",\"sec-websocket-protocol\":\"0.10.0a5\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}",
+    "f_raw_fe": "accept-encoding=gzip, deflate, br, zstd\n\naccept-language=en-US,en;q=0.9\n\nasgi-scope-client=127.0.0.1\n\ncache-control=no-cache\n\nconnection=Upgrade\n\nhost=localhost:3147\n\norigin=http://localhost:3147\n\npragma=no-cache\n\nsec-websocket-extensions=permessage-deflate; client_max_window_bits\n\nsec-websocket-key=Vx9TN94SQFhi+7RbVYgCnA==\n\nsec-websocket-protocol=0.10.0a5\n\nsec-websocket-version=13\n\nupgrade=websocket\n\nuser-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+    "f_headers_all": "{\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Vx9TN94SQFhi+7RbVYgCnA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"Vx9TN94SQFhi+7RbVYgCnA==\",\"sec-websocket-protocol\":\"0.10.0a5\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}}",
+    "f_ip": "127.0.0.1",
+    "f_tok": "11e4b42b-5220-40f3-be15-a6aa7e724c33",
+    "f_router_all": "{\"session\":{\"client_token\":\"11e4b42b-5220-40f3-be15-a6aa7e724c33\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"-MSDAClDjSDq_QtMAAAD\"},\"headers\":{\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"Vx9TN94SQFhi+7RbVYgCnA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"Vx9TN94SQFhi+7RbVYgCnA==\",\"sec-websocket-protocol\":\"0.10.0a5\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"page\":{\"host\":\"http://localhost:3147\",\"path\":\"/front\",\"raw_path\":\"/front\",\"full_path\":\"http://localhost:3147/front\",\"full_raw_path\":\"http://localhost:3147/front\",\"params\":{}},\"url\":{\"scheme\":\"http\",\"netloc\":\"localhost:3147\",\"origin\":\"http://localhost:3147\",\"path\":\"/front\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3147/front\"},\"route_id\":\"/front\"}",
+    "cv_router": "/front|{}|{}",
+    "cv_has_cookie": "cv_has_cookie=yes",
+    "cv_has_auth": "cv_has_auth=yes"
+   }
+  },
+  {
+   "step": "S50_tab2_first_load",
+   "tab": "t2",
+   "url": "http://localhost:3147/post/tab2?t=2",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/post/[slug]",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/post/[slug]",
+     "params": {
+      "slug": "tab2",
+      "t": "2"
+     },
+     "pid": 21859,
+     "qp": {
+      "t": "2"
+     },
+     "raw_n": 23,
+     "raw_path": "/post/tab2?t=2",
+     "route_id": "/post/[slug]",
+     "sid": "cvEYL1",
+     "tag": "ol_post",
+     "tok": "38ffa4a1",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/post/tab2?t=2",
+     "url_path": "/post/tab2"
+    }
+   ],
+   "dt": 1.23,
+   "frames": 0
+  },
+  {
+   "step": "S51_tab1_probe_after_tab2",
+   "tab": "t1",
+   "url": "http://localhost:3147/front",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/front",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/front",
+     "params": {},
+     "pid": 21841,
+     "qp": {},
+     "raw_n": 23,
+     "raw_path": "/front",
+     "route_id": "/front",
+     "sid": "-MSDAC",
+     "tag": "probe",
+     "tok": "11e4b42b",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/front",
+     "url_path": "/front"
+    }
+   ],
+   "dt": 1.06,
+   "frames": 2
+  },
+  {
+   "step": "S52_tab2_probe",
+   "tab": "t2",
+   "url": "http://localhost:3147/post/tab2?t=2",
+   "log": [
+    {
+     "be_auth": true,
+     "be_cfjwt": true,
+     "be_ck_httponly": true,
+     "be_ck_plain": true,
+     "be_raw_cookie": true,
+     "be_xfat": true,
+     "ck_names": [
+      "rtr_httponly",
+      "rtr_plain"
+     ],
+     "full_path": "http://localhost:3147/post/[slug]",
+     "host": "localhost:3147",
+     "ip": "127.0.0.1",
+     "origin": "http://localhost:3147",
+     "page_host": "http://localhost:3147",
+     "page_path": "/post/[slug]",
+     "params": {
+      "slug": "tab2",
+      "t": "2"
+     },
+     "pid": 21859,
+     "qp": {
+      "t": "2"
+     },
+     "raw_n": 23,
+     "raw_path": "/post/tab2?t=2",
+     "route_id": "/post/[slug]",
+     "sid": "cvEYL1",
+     "tag": "probe",
+     "tok": "38ffa4a1",
+     "ua": "Mozilla/5.0 ",
+     "url": "http://localhost:3147/post/tab2?t=2",
+     "url_path": "/post/tab2"
+    }
+   ],
+   "dt": 1.38,
+   "frames": 2
+  },
+  {
+   "step": "S60_tab1_sync",
+   "tab": "t1",
+   "url": "http://localhost:3147/sync/",
+   "log": [],
+   "dt": 1.5,
+   "frames": 8
+  },
+  {
+   "step": "S61_tab2_sync",
+   "tab": "t2",
+   "url": "http://localhost:3147/sync/",
+   "log": [],
+   "dt": 1.53,
+   "frames": 8
+  }
+ ],
+ "anomalies": [],
+ "setck": [
+  200,
+  "cookie set"
+ ],
+ "cookies_in_browser": [
+  [
+   "rtr_plain",
+   false
+  ],
+  [
+   "rtr_httponly",
+   true
+  ]
+ ],
+ "recv_headers": "{\"keys\": [\"accept_encoding\", \"accept_language\", \"cache_control\", \"connection\", \"host\", \"origin\", \"pragma\", \"raw_headers\", \"sec_websocket_extensions\", \"sec_websocket_key\", \"sec_websocket_version\", \"upgrade\", \"user_agent\"], \"raw_keys\": [\"accept-encoding\", \"accept-language\", \"asgi-scope-client\", \"cache-control\", \"connection\", \"host\", \"origin\", \"pragma\", \"sec-websocket-extensions\", \"sec-websocket-key\", \"sec-websocket-protocol\", \"sec-websocket-version\", \"upgrade\", \"user-agent\"], \"has_secret\": false}",
+ "recv_cookie": "{\"cookie_arg\": \"\", \"has_secret\": false}",
+ "front_html_has": {
+  "ck_plain": false,
+  "ck_httponly": false,
+  "authorization": false,
+  "proxy-authorization": false,
+  "cf-access-jwt-assertion": false,
+  "x-forwarded-access-token": false,
+  "x-auth-request-access-token": false,
+  "x-amzn-oidc-accesstoken": false,
+  "x-amzn-oidc-data": false,
+  "x-goog-iap-jwt-assertion": false
+ },
+ "sync": {
+  "t1": "s2",
+  "t2": "s2",
+  "uvi_frames": [
+   [
+    68.676,
+    "t2",
+    "out",
+    "ws://localhost:3147/_event/?token=38ffa4a1-0f5e-4e7b-eb3d-1b953c371ca6&EIO=4&transport=websocket",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.rtr___rtr___rs.synced_rx_state_\":\"s1\"}},\"router_data\":{\"pathname\":\"/sync/\",\"asPath\":\"/sync/\"}}]"
+   ],
+   [
+    70.218,
+    "t1",
+    "out",
+    "ws://localhost:3147/_event/?token=11e4b42b-5220-40f3-be15-a6aa7e724c33&EIO=4&transport=websocket",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.rtr___rtr___rs.synced_rx_state_\":\"s2\"}},\"router_data\":{\"pathname\":\"/sync/\",\"asPath\":\"/sync/\"}}]"
+   ]
+  ]
+ },
+ "storage": {
+  "ls": {
+   "rtr_synced": "s2",
+   "theme": "system"
+  },
+  "ss": {
+   "token": "11e4b42b-5220-40f3-be15-a6aa7e724c33",
+   "react-router-scroll-positions": "{\"rglh89dnoq4\":0,\"q3gwvaaf\":0,\"s35mj1cl\":0,\"7z5gzrfb\":0,\"fh1tyxow\":0,\"8sh7vx7l\":0,\"pbjjlu9d\":0,\"7oq0u9i0\":0,\"m8pt940v\":0,\"yid7ocrx\":0,\"o7i8gma2\":0,\"r5rcxsei\":0,\"oaxz2xnh\":0,\"q0gktfau\":0,\"cl4mt836\":0,\"l4mpj1d5\":0,\"default\":0,\"cfsmn8megvs\":0,\"ebtkkgjx\":0,\"uhqtzpus\":0,\"g0krv89jnko\":0,\"8v11ek91nj\":0,\"3toeasekhbs\":0,\"naklkueecv8\":0,\"5pgr9g5r1rs\":0,\"oh22dsd07ok\":0,\"0ue5ljv8\":0}"
+  },
+  "ck": "rtr_plain=PLAINSECRET7a1"
+ },
+ "leaks": {
+  "ck_plain": {
+   "in": 0,
+   "out": 0,
+   "example": null,
+   "docs": 0,
+   "console": 0
+  },
+  "ck_httponly": {
+   "in": 0,
+   "out": 0,
+   "example": null,
+   "docs": 0,
+   "console": 0
+  },
+  "authorization": {
+   "in": 0,
+   "out": 0,
+   "example": null,
+   "docs": 0,
+   "console": 0
+  },
+  "proxy-authorization": {
+   "in": 0,
+   "out": 0,
+   "example": null,
+   "docs": 0,
+   "console": 0
+  },
+  "cf-access-jwt-assertion": {
+   "in": 0,
+   "out": 0,
+   "example": null,
+   "docs": 0,
+   "console": 0
+  },
+  "x-forwarded-access-token": {
+   "in": 0,
+   "out": 0,
+   "example": null,
+   "docs": 0,
+   "console": 0
+  },
+  "x-auth-request-access-token": {
+   "in": 0,
+   "out": 0,
+   "example": null,
+   "docs": 0,
+   "console": 0
+  },
+  "x-amzn-oidc-accesstoken": {
+   "in": 0,
+   "out": 0,
+   "example": null,
+   "docs": 0,
+   "console": 0
+  },
+  "x-amzn-oidc-data": {
+   "in": 0,
+   "out": 0,
+   "example": null,
+   "docs": 0,
+   "console": 0
+  },
+  "x-goog-iap-jwt-assertion": {
+   "in": 0,
+   "out": 0,
+   "example": null,
+   "docs": 0,
+   "console": 0
+  }
+ },
+ "n_frames": {
+  "in": 211,
+  "out": 94,
+  "open": 15
+ },
+ "n_docs": 24,
+ "console": [
+  [
+   "t1",
+   "error",
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+ ],
+ "console_all_n": 18,
+ "failed": []
+}

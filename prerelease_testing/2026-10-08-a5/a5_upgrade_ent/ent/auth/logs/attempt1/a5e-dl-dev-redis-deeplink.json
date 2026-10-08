@@ -1,0 +1,411 @@
+[
+ {
+  "rep": 1,
+  "A": {
+   "start": "/vault?x=1&y=two%20words",
+   "at_login": false,
+   "url": "http://localhost:3620/vault?x=1&y=two%20words",
+   "redirect_to_ok": false,
+   "ok": false,
+   "leaks": [
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"use"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"query_"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"() => {\\n    try {\\n        return window.self !== window.top;\\n    } catch (e) {\\n        // This catch block handles potential security errors "
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirec"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"is_iframed_rx_state_\":false}}}]"
+    }
+   ]
+  },
+  "B": {
+   "start": "/item/abc?z=9",
+   "at_login": false,
+   "url": "http://localhost:3620/item/abc?z=9",
+   "redirect_to_ok": false,
+   "ok": false,
+   "leaks": [
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"abc\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_c"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"query_parameters\":"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"() => {\\n    try {\\n        return window.self !== window.top;\\n    } catch (e) {\\n        // This catch block handles potential security errors "
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirec"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"is_iframed_rx_state_\":false}}}]"
+    }
+   ]
+  },
+  "CDEFG": {
+   "G_anon_fe_cookie": "",
+   "G_anon_fe_raw_keys": "accept-encoding,accept-language,asgi-scope-client,cache-control,connection,host,origin,pragma,sec-websocket-extensions,sec-websocket-key,sec-websocket-protocol,sec-websocket-version,upgrade,user-agent",
+   "C_redirect": {
+    "at_login": false,
+    "url": "http://localhost:3620/"
+   },
+   "C_redirect_to_ok": false,
+   "C_navs": [
+    "http://localhost:3620/",
+    "http://localhost:3620/"
+   ],
+   "exception": "TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#nav-home\")\n",
+   "exception_url": "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav",
+   "G_leaks": [
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"use"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\","
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3Dnav\",\"query_parameters\":{\"redi"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"() => {\\n    try {\\n        return window.self !== window.top;\\n    } catch (e) {\\n        // This catch block handles potential security errors "
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirec"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"is_iframed_rx_state_\":false}}}]"
+    }
+   ],
+   "G_ok": false
+  },
+  "events": []
+ },
+ {
+  "rep": 2,
+  "A": {
+   "start": "/vault?x=1&y=two%20words",
+   "at_login": false,
+   "url": "http://localhost:3620/vault?x=1&y=two%20words",
+   "redirect_to_ok": false,
+   "ok": false,
+   "leaks": [
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"use"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"query_"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"() => {\\n    try {\\n        return window.self !== window.top;\\n    } catch (e) {\\n        // This catch block handles potential security errors "
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirec"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"is_iframed_rx_state_\":false}}}]"
+    }
+   ]
+  },
+  "B": {
+   "start": "/item/abc?z=9",
+   "at_login": false,
+   "url": "http://localhost:3620/item/abc?z=9",
+   "redirect_to_ok": false,
+   "ok": false,
+   "leaks": [
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"abc\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_c"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"query_parameters\":"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"() => {\\n    try {\\n        return window.self !== window.top;\\n    } catch (e) {\\n        // This catch block handles potential security errors "
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirec"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"is_iframed_rx_state_\":false}}}]"
+    }
+   ]
+  },
+  "CDEFG": {
+   "G_anon_fe_cookie": "",
+   "G_anon_fe_raw_keys": "accept-encoding,accept-language,asgi-scope-client,cache-control,connection,host,origin,pragma,sec-websocket-extensions,sec-websocket-key,sec-websocket-protocol,sec-websocket-version,upgrade,user-agent",
+   "C_redirect": {
+    "at_login": false,
+    "url": "http://localhost:3620/vault?x=nav"
+   },
+   "C_redirect_to_ok": false,
+   "C_navs": [
+    "http://localhost:3620/",
+    "http://localhost:3620/",
+    "http://localhost:3620/vault?x=nav"
+   ],
+   "exception": "TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#nav-home\")\n",
+   "exception_url": "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav",
+   "G_leaks": [
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"use"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\","
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3Dnav\",\"query_parameters\":{\"redi"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"() => {\\n    try {\\n        return window.self !== window.top;\\n    } catch (e) {\\n        // This catch block handles potential security errors "
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirec"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"is_iframed_rx_state_\":false}}}]"
+    }
+   ],
+   "G_ok": false
+  },
+  "events": []
+ },
+ {
+  "rep": 3,
+  "A": {
+   "start": "/vault?x=1&y=two%20words",
+   "at_login": false,
+   "url": "http://localhost:3620/vault?x=1&y=two%20words",
+   "redirect_to_ok": false,
+   "ok": false,
+   "leaks": [
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"use"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3D1%26y%3Dtwo%2520words\",\"query_"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"() => {\\n    try {\\n        return window.self !== window.top;\\n    } catch (e) {\\n        // This catch block handles potential security errors "
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirec"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"is_iframed_rx_state_\":false}}}]"
+    }
+   ]
+  },
+  "B": {
+   "start": "/item/abc?z=9",
+   "at_login": false,
+   "url": "http://localhost:3620/item/abc?z=9",
+   "redirect_to_ok": false,
+   "ok": false,
+   "leaks": [
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"abc\",\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_c"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/item/abc\",\"query\":\"redirect_to=%2Fitem%2Fabc%3Fz%3D9\",\"query_parameters\":"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"() => {\\n    try {\\n        return window.self !== window.top;\\n    } catch (e) {\\n        // This catch block handles potential security errors "
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirec"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"is_iframed_rx_state_\":false}}}]"
+    }
+   ]
+  },
+  "CDEFG": {
+   "G_anon_fe_cookie": "",
+   "G_anon_fe_raw_keys": "accept-encoding,accept-language,asgi-scope-client,cache-control,connection,host,origin,pragma,sec-websocket-extensions,sec-websocket-key,sec-websocket-protocol,sec-websocket-version,upgrade,user-agent",
+   "C_redirect": {
+    "at_login": false,
+    "url": "http://localhost:3620/"
+   },
+   "C_redirect_to_ok": false,
+   "C_navs": [
+    "http://localhost:3620/",
+    "http://localhost:3620/"
+   ],
+   "exception": "TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#nav-home\")\n",
+   "exception_url": "http://localhost:3620/login?redirect_to=%2Fvault%3Fx%3Dnav",
+   "G_leaks": [
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8620\",\"origin\":\"http://localhost:3620\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"use"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"x=nav\","
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/vault\",\"query\":\"redirect_to=%2Fvault%3Fx%3Dnav\",\"query_parameters\":{\"redi"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"() => {\\n    try {\\n        return window.self !== window.top;\\n    } catch (e) {\\n        // This catch block handles potential security errors "
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"item_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3620\",\"origin\":\"http://localhost:3620\",\"path\":\"/login\",\"query\":\"redirec"
+    },
+    {
+     "why": [
+      "oidc cookie name"
+     ],
+     "frame": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"is_iframed_rx_state_\":false}}}]"
+    }
+   ],
+   "G_ok": false
+  },
+  "events": []
+ }
+]
