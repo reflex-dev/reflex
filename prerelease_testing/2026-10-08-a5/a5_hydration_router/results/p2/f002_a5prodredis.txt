@@ -1,0 +1,47 @@
+started f1-a5prodredis pid=6918 venv=a5 mode=prod env=[REFLEX_REDIS_URL=redis://localhost:8149] log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_hydration_router/logs/f1-a5prodredis-1.log
+UP http://localhost:3144/ping after 6.1s
+UP http://localhost:3144/ after 6.1s
+== fresh_1
+{"hydrated": true, "shown": {"pl-ls": "pl-light", "wu-ls": "wu-light", "wu-sync": "wu-sync-default", "cs-ls": "cs-light", "cu-ls": "cu-light", "ws-ls": "ws-light", "wt-ls": "wt-light"}, "localStorage": {"theme": "system"}, "sessionStorage": {}, "cookies": []}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.427 delta root_has_is_hydrated=True root_is_hydrated=False states={"reflex___state____state": ["is_hydrated_rx_state_", "rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo___f1combo____with_clock_var": ["wt_ls_rx_state_", "wt_stamp_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"]}
+  IN t=0.427 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== fresh_2
+{"hydrated": true, "shown": {"pl-ls": "pl-light", "wu-ls": "wu-light", "wu-sync": "wu-sync-default", "cs-ls": "cs-light", "cu-ls": "cu-light", "ws-ls": "ws-light", "wt-ls": "wt-light"}, "localStorage": {"theme": "system"}, "sessionStorage": {}, "cookies": []}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.358 delta root_has_is_hydrated=True root_is_hydrated=False states={"reflex___state____state": ["is_hydrated_rx_state_", "rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo___f1combo____with_clock_var": ["wt_ls_rx_state_", "wt_stamp_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"]}
+  IN t=0.364 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== returning_same (state1, same build)
+{"hydrated": true, "shown": {"pl-ls": "pl-light", "wu-ls": "wu-light", "wu-sync": "wu-sync-default", "cs-ls": "cs-light", "cu-ls": "cu-light", "ws-ls": "ws-light", "wt-ls": "wt-light"}, "localStorage": {"theme": "system"}, "sessionStorage": {}, "cookies": []}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.26 delta root_has_is_hydrated=True root_is_hydrated=False states={"reflex___state____state": ["is_hydrated_rx_state_", "rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo___f1combo____with_clock_var": ["wt_ls_rx_state_", "wt_stamp_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"]}
+  IN t=0.262 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== sync tabs
+p2_A_shown_final = "sync-from-tabA"
+p2_B2_shown_final = "sync-from-tabA"
+p2_ls_final = "sync-from-tabA"
+p2_A_sync_frames = ["in: 42/_event,[\"event\",{\"delta\":{\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_sync_rx_state_\":\"sync-from-tabA\"}}}]"]
+p2_B2_sync_frames = ["in: 42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3144\",\"origin\":\"http://localhost:3144\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_webso", "out: 42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.f1combo___f1combo____with_uuid.wu_sync_rx_state_\":\"sync-from-tabA\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]", "in: 42/_event,[\"event\",{\"delta\":{\"reflex___state____state.f1combo___f1combo____with_uuid\":{\"wu_sync_rx_state_\":\"sync-from-tabA\"}}}]"]
+stopped f1-a5prodredis (pgid 6918)
+redis-ser 6897 root    6u  IPv4  26923      0t0  TCP *:8149 (LISTEN)
+started f1-a5prodredis pid=7730 venv=a5 mode=prod env=[REFLEX_REDIS_URL=redis://localhost:8149] log=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/a5_hydration_router/logs/f1-a5prodredis-2.log
+UP http://localhost:3144/ after 3.0s
+UP http://localhost:3144/ping after 3.1s
+== v2 returning (state1 from v1)
+{"hydrated": true, "shown": {"pl-ls": "pl-dark-v2", "wu-ls": "wu-dark-v2", "wu-sync": "wu-sync-v2", "cs-ls": "cs-dark-v2", "cu-ls": "cu-dark-v2", "ws-ls": "ws-light", "wt-ls": "wt-dark-v2"}, "localStorage": {"theme": "system"}, "sessionStorage": {}, "cookies": []}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.374 delta root_has_is_hydrated=True root_is_hydrated=False states={"reflex___state____state": ["is_hydrated_rx_state_", "rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo___f1combo____with_clock_var": ["wt_ls_rx_state_", "wt_stamp_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"]}
+  IN t=0.382 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== v2 fresh
+{"hydrated": true, "shown": {"pl-ls": "pl-dark-v2", "wu-ls": "wu-dark-v2", "wu-sync": "wu-sync-v2", "cs-ls": "cs-dark-v2", "cu-ls": "cu-dark-v2", "ws-ls": "ws-light", "wt-ls": "wt-dark-v2"}, "localStorage": {"theme": "system"}, "sessionStorage": {}, "cookies": []}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.297 delta root_has_is_hydrated=True root_is_hydrated=False states={"reflex___state____state": ["is_hydrated_rx_state_", "rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo___f1combo____with_clock_var": ["wt_ls_rx_state_", "wt_stamp_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"]}
+  IN t=0.298 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+stopped f1-a5prodredis (pgid 7730)
+redis-ser 6897 root    6u  IPv4  26923      0t0  TCP *:8149 (LISTEN)
+P2_F002_DONE

@@ -1,0 +1,57 @@
+=== stable
+Mutable default values are not recommended. Use default_factory instead to avoid unexpected behavior.
+Mutable default values are not recommended. Use default_factory instead to avoid unexpected behavior.
+reflex 0.9.12 reflex-base 0.9.12
+p1  options (list extended after class)       : ['red', 'green']
+p2  early (list extended before class)        : ['e1', 'e2']
+p3  rebound (name rebound after class)        : []
+p4  backend rx.field(LATE) appended after      : []
+p5  backend rx.field(default_factory=time.time): two instances differ = False
+p5b frontend rx.field(default_factory=time.time): two instances differ = True
+p6  frontend rx.field(LATE) appended after     : ['late']
+p7  backend registry filled by later import    : {'plugin_a': 'Plugin A'}
+p13 backend dataclass config mutated after     : Cfg(api='https://x', retries=3)
+p9  VState.__fields__['options'].default_value(): ['red', 'green']
+p8  new session after a global append          : ['alice']
+p10 compiled initial state options             : ['red', 'green']
+p10 compiled initial state entries             : ['alice']
+p11 reset() options                            : ['red', 'green']
+p12 VChild instance options                    : ['red', 'green']
+=== a4
+Mutable default values are not recommended. Use default_factory instead to avoid unexpected behavior.
+Mutable default values are not recommended. Use default_factory instead to avoid unexpected behavior.
+reflex 0.10.0a4 reflex-base 0.10.0a4
+p1  options (list extended after class)       : ['red', 'green']
+p2  early (list extended before class)        : ['e1', 'e2']
+p3  rebound (name rebound after class)        : []
+p4  backend rx.field(LATE) appended after      : ['late']
+p5  backend rx.field(default_factory=time.time): two instances differ = True
+p5b frontend rx.field(default_factory=time.time): two instances differ = True
+p6  frontend rx.field(LATE) appended after     : ['late']
+p7  backend registry filled by later import    : {'plugin_a': 'Plugin A'}
+p13 backend dataclass config mutated after     : Cfg(api='https://x', retries=3)
+p9  VState.__fields__['options'].default_value(): ['red', 'green']
+p8  new session after a global append          : ['alice']
+p10 compiled initial state options             : ['red', 'green']
+p10 compiled initial state entries             : ['alice']
+p11 reset() options                            : ['red', 'green']
+p12 VChild instance options                    : ['red', 'green']
+=== a5
+Mutable default values are not recommended. Use default_factory instead to avoid unexpected behavior.
+Mutable default values are not recommended. Use default_factory instead to avoid unexpected behavior.
+reflex 0.10.0a5 reflex-base 0.10.0a5
+p1  options (list extended after class)       : []
+p2  early (list extended before class)        : ['e1', 'e2']
+p3  rebound (name rebound after class)        : []
+p4  backend rx.field(LATE) appended after      : ['late']
+p5  backend rx.field(default_factory=time.time): two instances differ = True
+p5b frontend rx.field(default_factory=time.time): two instances differ = True
+p6  frontend rx.field(LATE) appended after     : ['late']
+p7  backend registry filled by later import    : {}
+p13 backend dataclass config mutated after     : Cfg(api='', retries=0)
+p9  VState.__fields__['options'].default_value(): []
+p8  new session after a global append          : []
+p10 compiled initial state options             : []
+p10 compiled initial state entries             : []
+p11 reset() options                            : []
+p12 VChild instance options                    : []

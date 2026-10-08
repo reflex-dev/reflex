@@ -1,0 +1,41 @@
+S01_first_load: url=http://localhost:3142/ log=['ol_index'] dt=1.16
+S02_reload: url=http://localhost:3142/ log=['ol_index'] dt=1.51
+S03_probe: url=http://localhost:3142/ log=['probe'] dt=1.3
+S100_nav/multi: url=http://localhost:3142/multi log=['ol_a', 'ol_b', 'other_ol'] dt=1.64
+S101_nav/chain: url=http://localhost:3142/chain log=['ol_chain_yield', 'ol_chain_return', 'other_chained', 'returned'] dt=1.65
+S102_nav/bg: url=http://localhost:3142/bg log=['bg_start', 'bg_after', 'after_bg'] dt=2.57
+S103_nav/post/hello?x=1: url=http://localhost:3142/post/hello?x=1 log=['ol_post'] dt=1.62
+S104_nav/post/hello?x=2: url=http://localhost:3142/post/hello?x=2 log=['ol_post'] dt=1.46
+S105_nav/post/other: url=http://localhost:3142/post/other log=['ol_post'] dt=1.46
+S106_nav/files: url=http://localhost:3142/files log=['ol_splat'] dt=1.61
+S107_nav/files/a/b/c: url=http://localhost:3142/files/a/b/c log=['ol_splat'] dt=1.47
+S108_nav/redir: url=http://localhost:3142/target?from=redir log=['ol_redirect', 'ol_target'] dt=1.62
+S109_nav/redir-chain: url=http://localhost:3142/target?from=redir log=['ol_redirect2', 'ol_redirect', 'ol_target'] dt=1.46
+S110_nav/fe: url=http://localhost:3142/fe log=['ol_fe', 'cb_script:scriptval'] dt=1.61
+S20_back: url=http://localhost:3142/target?from=redir log=['ol_target'] dt=1.64
+S21_back: url=http://localhost:3142/target?from=redir log=['ol_redirect', 'ol_target'] dt=1.8
+S22_forward: url=http://localhost:3142/target?from=redir log=[] dt=1.61
+S30_goto/post/hello?x=1: url=http://localhost:3142/post/hello?x=1 log=['ol_post'] dt=1.67
+S31_goto/files/a/b/c?q=z: url=http://localhost:3142/files/a/b/c?q=z log=['ol_splat'] dt=1.63
+S32_goto/files: url=http://localhost:3142/files log=['ol_splat'] dt=1.62
+S33_goto/redir-chain: url=http://localhost:3142/target?from=redir log=['ol_redirect2', 'ol_redirect', 'ol_target'] dt=1.78
+S34_goto/fe: url=http://localhost:3142/fe log=['ol_fe', 'cb_script:scriptval'] dt=1.62
+S35_goto/bg: url=http://localhost:3142/bg log=['bg_start', 'bg_after', 'after_bg'] dt=2.53
+S36_goto/multi: url=http://localhost:3142/multi log=['ol_a', 'ol_b', 'other_ol'] dt=1.61
+S37_goto/chain: url=http://localhost:3142/chain log=['ol_chain_yield', 'ol_chain_return', 'other_chained', 'returned'] dt=1.61
+S40_probe_after_bg: url=http://localhost:3142/chain log=['probe'] dt=1.3
+S41_goto/front: url=http://localhost:3142/front?fq=1 log=[] dt=1.62
+S42_send_headers: url=http://localhost:3142/front?fq=1 log=[] dt=1.18
+S43_send_cookie: url=http://localhost:3142/front?fq=1 log=[] dt=1.18
+S44_nav_front_from_index: url=http://localhost:3142/front log=['ol_index'] dt=2.86
+S50_tab2_first_load: url=http://localhost:3142/post/tab2?t=2 log=['ol_post'] dt=1.15
+S51_tab1_probe_after_tab2: url=http://localhost:3142/front log=['probe'] dt=1.32
+S52_tab2_probe: url=http://localhost:3142/post/tab2?t=2 log=['probe'] dt=1.33
+S60_tab1_sync: url=http://localhost:3142/sync log=[] dt=1.48
+S61_tab2_sync: url=http://localhost:3142/sync log=[] dt=1.4
+S70_probe_after_reconnect: url=http://localhost:3142/post/recon?r=1 log=['probe'] dt=3.22
+S71_nav_after_reconnect: url=http://localhost:3142/post/hello?x=1 log=['ol_post'] dt=3.23
+LEAKS {"ck_plain": [0, 0, 0, 0], "ck_httponly": [0, 0, 0, 0], "authorization": [0, 0, 0, 0], "proxy-authorization": [0, 0, 0, 0], "cf-access-jwt-assertion": [0, 0, 0, 0], "x-forwarded-access-token": [0, 0, 0, 0], "x-auth-request-access-token": [0, 0, 0, 0], "x-amzn-oidc-accesstoken": [0, 0, 0, 0], "x-amzn-oidc-data": [0, 0, 0, 0], "x-goog-iap-jwt-assertion": [0, 0, 0, 0]}
+NFRAMES {'in': 257, 'out': 111, 'open': 34} anomalies []
+CONSOLE [('t1', 'error', 'Failed to load resource: the server responded with a status of 404 (Not Found)')]
+FAILED []

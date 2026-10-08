@@ -1,0 +1,44 @@
+=== fevar on stable
+reflex 0.9.12
+IMPORT FAILED: VarTypeError: State vars must be of a serializable type. Valid types include strings, numbers, booleans, lists, dictionaries, dataclasses, datetime objects, and pydantic models. Found var "reflex___state____state__fevar____fe_state.holder_rx_state_" with type <class 'fevar.Holder'>.
+  user frames: [('fevar.py', 11, 'class FeState(rx.State):')]
+  last frame : state.py 1627
+  var name in message: True
+  chained cause/context: None | None
+  notes: None
+=== fevar on a4
+reflex 0.10.0a4
+IMPORT FAILED: VarTypeError: State vars must be of a serializable type. Valid types include strings, numbers, booleans, lists, dictionaries, dataclasses, datetime objects, and pydantic models. Found var "reflex___state____state__fevar____fe_state.holder_rx_state_" with type <class 'fevar.Holder'>.
+  user frames: [('fevar.py', 11, 'class FeState(rx.State):')]
+  last frame : state.py 1300
+  var name in message: True
+  chained cause/context: None | None
+  notes: None
+=== fevar on a5
+reflex 0.10.0a5
+IMPORT FAILED: TypeError: cannot pickle '_thread.lock' object
+  user frames: [('fevar.py', 11, 'class FeState(rx.State):')]
+  last frame : copy.py 151
+  var name in message: False
+  chained cause/context: None | None
+  notes: None
+=== mystate on stable
+reflex 0.9.12
+import OK
+compile_state(rx.State) FAILED: TypeError: cannot pickle '_thread.lock' object
+instance FAILED: TypeError: cannot pickle '_thread.lock' object
+=== mystate on a4
+reflex 0.10.0a4
+import OK
+compile_state(rx.State): OK
+instance OK; hits = 0
+touch other var OK: 1
+access _lock FAILED: TypeError: cannot pickle '_thread.lock' object
+=== mystate on a5
+reflex 0.10.0a5
+IMPORT FAILED: TypeError: cannot pickle '_thread.lock' object
+  user frames: [('mystate.py', 6, 'class CacheState(rx.State):')]
+  last frame : copy.py 151
+  var name in message: False
+  chained cause/context: None | None
+  notes: None

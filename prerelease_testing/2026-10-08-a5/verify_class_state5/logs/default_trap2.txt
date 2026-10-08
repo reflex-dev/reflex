@@ -1,0 +1,16 @@
+reflex 0.9.12
+new session                 : items=['new'] _bitems=['decl'] count=10 _bcount=0
+items shared across sessions: True
+after s1 appends, s3 sees   : items=['new', 'leak'] _bitems=['decl']; NEW=['new', 'leak'] BNEW=['new']
+s3 after reset()            : items=['decl'] _bitems=['decl'] count=10 _bcount=0
+reflex 0.10.0a4
+new session                 : items=['new'] _bitems=['new'] count=10 _bcount=10
+items shared across sessions: True
+after s1 appends, s3 sees   : items=['new', 'leak'] _bitems=['new', 'bleak']; NEW=['new', 'leak'] BNEW=['new', 'bleak']
+s3 after reset()            : items=['new', 'leak'] _bitems=['new', 'bleak'] count=10 _bcount=10
+reflex 0.10.0a5
+new session                 : items=['new'] _bitems=['new'] count=10 _bcount=10
+items shared across sessions: True
+after s1 appends, s3 sees   : items=['new', 'leak'] _bitems=['new', 'bleak']; NEW=['new', 'leak'] BNEW=['new', 'bleak']
+s3 after reset()            : items=['new', 'leak'] _bitems=['new', 'bleak'] count=10 _bcount=10
+set_default(['sd']) (0.10)  : s4=['sd', 'x'] s5=['sd']

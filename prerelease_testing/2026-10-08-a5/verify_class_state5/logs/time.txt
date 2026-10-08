@@ -1,0 +1,12 @@
+0.9.12    rows    classdef ms (3 runs):     1.9     1.2     1.2
+0.10.0a4  rows    classdef ms (3 runs):     0.6     0.3     0.2
+0.10.0a5  rows    classdef ms (3 runs):   884.7  1125.4  1029.1
+0.9.12    floats  classdef ms (3 runs):     1.5     1.1    14.2
+0.10.0a4  floats  classdef ms (3 runs):     0.6     0.4     0.2
+0.10.0a5  floats  classdef ms (3 runs):   272.9   278.2   264.1
+0.9.12    ndarray classdef ms (3 runs):     1.9     1.1     1.0
+0.10.0a4  ndarray classdef ms (3 runs):     0.9     0.2     0.2
+0.10.0a5  ndarray classdef ms (3 runs):   384.8   309.7   223.8
+0.9.12    df      classdef ms (3 runs):     1.8     1.2     1.2
+0.10.0a4  df      classdef ms (3 runs):     0.6     0.3     0.2
+0.10.0a5  df      classdef ms (3 runs):    22.8   124.2   262.2

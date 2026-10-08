@@ -1,0 +1,8 @@
+{
+ "late_opts": "red,green|",
+ "late_field_opts": "red,green|",
+ "late_regs": "plugin_a",
+ "late_cfg": "api=https://x,retries=3",
+ "console": [],
+ "bad": []
+}

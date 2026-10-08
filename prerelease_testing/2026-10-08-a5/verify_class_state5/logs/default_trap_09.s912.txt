@@ -1,0 +1,4 @@
+reflex 0.9.12
+field after .default = []: default=[] factory=functools.partial(<function deepcopy at 0x7fdb30d9a020>, [])
+direct instances: other session items=['leak'] _bitems=[]; new session items=['leak'] _bitems=[]; field default now=['leak']
+session trees (root State): other session items=['leak', 'leak'] _bitems=[]; new session items=['leak', 'leak'] _bitems=[]; field default now=['leak', 'leak']

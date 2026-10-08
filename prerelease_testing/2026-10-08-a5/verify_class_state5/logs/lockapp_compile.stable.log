@@ -1,0 +1,40 @@
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/reflex.py", line 794, in compile
+    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 338, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/app.py", line 1719, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1495, in compile_app
+    compile_contexts(
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 782, in compile_contexts
+    return output_path, _compile_contexts(
+                        ^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 265, in _compile_contexts
+    utils._compile_initial_state(state, component_imports=component_imports)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/compiler/utils.py", line 270, in _compile_initial_state
+    initial_state = compile_state(state)
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/compiler/utils.py", line 224, in compile_state
+    initial_state = state(_reflex_internal_init=True).dict(initial=True)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 862, in __init__
+    self.substates[substate.get_name()] = substate(
+                                          ^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex/state.py", line 857, in __init__
+    super().__init__(**kwargs)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/vars/base.py", line 4314, in __init__
+    default_value = value.default_value()
+                    ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/stable/lib/python3.12/site-packages/reflex_base/vars/base.py", line 3820, in default_value
+    return self.default_factory()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/copy.py", line 151, in deepcopy
+    rv = reductor(4)
+         ^^^^^^^^^^^
+TypeError: cannot pickle '_thread.lock' object

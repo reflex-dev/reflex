@@ -1,0 +1,178 @@
+{
+ "url": "http://localhost:3140/",
+ "hydrated": true,
+ "shown": {
+  "pl-ls": "pl-dark-v2",
+  "wu-ls": "wu-light",
+  "wu-sync": "wu-sync-default",
+  "cs-ls": "cs-dark-v2",
+  "cu-ls": "cu-light",
+  "ws-ls": "ws-light",
+  "wt-ls": "wt-light"
+ },
+ "localStorage": {
+  "cu_ls": "cu-light",
+  "theme": "system",
+  "wt_ls": "wt-light",
+  "wu_ls": "wu-light",
+  "wu_sync": "wu-sync-default"
+ },
+ "sessionStorage": {
+  "cu_ss": "cu-x",
+  "wu_ss": "wu-x"
+ },
+ "cookies": [
+  {
+   "name": "wu_ck",
+   "value": "wu-unset",
+   "expires": 1791488993.618478
+  },
+  {
+   "name": "cu_ck",
+   "value": "cu-unset",
+   "expires": -1
+  }
+ ],
+ "frames": [
+  {
+   "dir": "in",
+   "t": 0.172,
+   "kind": "other",
+   "len": 108
+  },
+  {
+   "dir": "out",
+   "t": 0.208,
+   "kind": "connect",
+   "len": 1017,
+   "boot": "reflex___state____state.hydrate_and_load",
+   "boot_router_data": {
+    "pathname": "/",
+    "asPath": "/"
+   },
+   "boot_vars": {
+    "reflex___state____state.f1combo___f1combo____with_uuid.wu_ck_rx_state_": "wu-unset",
+    "reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid.cu_ck_rx_state_": "cu-unset",
+    "reflex___state____state.f1combo___f1combo____with_uuid.wu_ls_rx_state_": "wu-light",
+    "reflex___state____state.f1combo___f1combo____with_uuid.wu_sync_rx_state_": "wu-sync-default",
+    "reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid.cu_ls_rx_state_": "cu-light",
+    "reflex___state____state.f1combo___f1combo____with_clock_var.wt_ls_rx_state_": "wt-light"
+   },
+   "n_hashes": 14
+  },
+  {
+   "dir": "in",
+   "t": 0.213,
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_router_data": null,
+   "boot_vars": null,
+   "n_hashes": 0
+  },
+  {
+   "dir": "in",
+   "t": 0.218,
+   "kind": "event",
+   "len": 2547,
+   "delta": {
+    "reflex___state____state": {
+     "rx_router_headers_rx_state_": {
+      "host": "localhost:3140",
+      "origin": "http://localhost:3140",
+      "upgrade": "websocket",
+      "connection": "Upgrade",
+      "cookie": "wu_ck=wu-unset; cu_ck=cu-unset",
+      "pragma": "no-cache",
+      "cache_control": "no-cache",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+      "sec_websocket_version": "13",
+      "sec_websocket_key": "82fTlXYToBqI6EuE50oivA==",
+      "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+      "accept_encoding": "gzip, deflate, br, zstd",
+      "accept_language": "en-US,en;q=0.9",
+      "raw_headers": {
+       "accept-encoding": "gzip, deflate, br, zstd",
+       "accept-language": "en-US,en;q=0.9",
+       "asgi-scope-client": "127.0.0.1",
+       "cache-control": "no-cache",
+       "connection": "Upgrade",
+       "cookie": "wu_ck=wu-unset; cu_ck=cu-unset",
+       "host": "localhost:3140",
+       "origin": "http://localhost:3140",
+       "pragma": "no-cache",
+       "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+       "sec-websocket-key": "82fTlXYToBqI6EuE50oivA==",
+       "sec-websocket-protocol": "0.10.0a1",
+       "sec-websocket-version": "13",
+       "upgrade": "websocket",
+       "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+      }
+     },
+     "rx_router_page_rx_state_": {
+      "host": "http://localhost:3140",
+      "path": "/index",
+      "raw_path": "/",
+      "full_path": "http://localhost:3140/index",
+      "full_raw_path": "http://localhost:3140/",
+      "params": {}
+     },
+     "rx_router_route_id_rx_state_": "/index",
+     "rx_router_session_rx_state_": {
+      "client_token": "1c2e8592-a992-44f4-bb92-e174614ad630",
+      "client_ip": "127.0.0.1",
+      "session_id": "B79vZNhftCzmBLEmAAAB"
+     },
+     "rx_router_url_rx_state_": {
+      "scheme": "http",
+      "netloc": "localhost:3140",
+      "origin": "http://localhost:3140",
+      "path": "/",
+      "query": "",
+      "query_parameters": {},
+      "fragment": "",
+      "href": "http://localhost:3140/"
+     }
+    },
+    "reflex___state____state.f1combo___f1combo____with_uuid": {
+     "wu_ck_rx_state_": "wu-unset",
+     "wu_id_rx_state_": "2174f929db2b4fb78c39c59d0a540a76",
+     "wu_ls_rx_state_": "wu-light",
+     "wu_ss_rx_state_": "wu-x",
+     "wu_sync_rx_state_": "wu-sync-default"
+    },
+    "reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid": {
+     "cu_ck_rx_state_": "cu-unset",
+     "cu_id_rx_state_": "e1f422e773504a57809865150c39dde2",
+     "cu_ls_rx_state_": "cu-light",
+     "cu_ss_rx_state_": "cu-x"
+    },
+    "reflex___state____state.f1combo___f1combo____with_clock_var": {
+     "wt_ls_rx_state_": "wt-light",
+     "wt_stamp_rx_state_": "1791488393613052277"
+    },
+    "reflex___state____state.f1combo___f1combo____parent_uuid": {
+     "pu_id_rx_state_": "86528feb1a8a469cb20e17bc30dd9983"
+    }
+   },
+   "root_has_is_hydrated": false,
+   "root_is_hydrated": null
+  },
+  {
+   "dir": "in",
+   "t": 0.218,
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": {
+     "is_hydrated_rx_state_": true
+    }
+   },
+   "root_has_is_hydrated": true,
+   "root_is_hydrated": true
+  }
+ ],
+ "console_err_warn": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}

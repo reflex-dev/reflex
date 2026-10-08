@@ -1,0 +1,152 @@
+{
+ "url": "http://localhost:3140/",
+ "hydrated": true,
+ "shown": {
+  "pl-ls": "pl-light",
+  "wu-ls": "wu-light",
+  "wu-sync": "wu-sync-default",
+  "cs-ls": "cs-light",
+  "cu-ls": "cu-light",
+  "ws-ls": "ws-light",
+  "wt-ls": "wt-light"
+ },
+ "localStorage": {
+  "theme": "system"
+ },
+ "sessionStorage": {},
+ "cookies": [],
+ "frames": [
+  {
+   "dir": "in",
+   "t": 0.185,
+   "kind": "other",
+   "len": 108
+  },
+  {
+   "dir": "out",
+   "t": 0.221,
+   "kind": "connect",
+   "len": 404,
+   "boot": "reflex___state____state.hydrate_and_load",
+   "boot_router_data": {
+    "pathname": "/",
+    "asPath": "/"
+   },
+   "boot_vars": null,
+   "n_hashes": 14
+  },
+  {
+   "dir": "in",
+   "t": 0.23,
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_router_data": null,
+   "boot_vars": null,
+   "n_hashes": 0
+  },
+  {
+   "dir": "in",
+   "t": 0.233,
+   "kind": "event",
+   "len": 2493,
+   "delta": {
+    "reflex___state____state": {
+     "rx_router_headers_rx_state_": {
+      "host": "localhost:3140",
+      "origin": "http://localhost:3140",
+      "upgrade": "websocket",
+      "connection": "Upgrade",
+      "pragma": "no-cache",
+      "cache_control": "no-cache",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+      "sec_websocket_version": "13",
+      "sec_websocket_key": "tu+QeV2Cy6lvFwmcL4KmXA==",
+      "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+      "accept_encoding": "gzip, deflate, br, zstd",
+      "accept_language": "en-US,en;q=0.9",
+      "raw_headers": {
+       "accept-encoding": "gzip, deflate, br, zstd",
+       "accept-language": "en-US,en;q=0.9",
+       "asgi-scope-client": "127.0.0.1",
+       "cache-control": "no-cache",
+       "connection": "Upgrade",
+       "host": "localhost:3140",
+       "origin": "http://localhost:3140",
+       "pragma": "no-cache",
+       "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+       "sec-websocket-key": "tu+QeV2Cy6lvFwmcL4KmXA==",
+       "sec-websocket-protocol": "0.10.0a5",
+       "sec-websocket-version": "13",
+       "upgrade": "websocket",
+       "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+      }
+     },
+     "rx_router_page_rx_state_": {
+      "host": "http://localhost:3140",
+      "path": "/index",
+      "raw_path": "/",
+      "full_path": "http://localhost:3140/index",
+      "full_raw_path": "http://localhost:3140/",
+      "params": {}
+     },
+     "rx_router_route_id_rx_state_": "/index",
+     "rx_router_session_rx_state_": {
+      "client_token": "25f11a50-c9a1-4150-d0d9-0e0e501e444f",
+      "client_ip": "127.0.0.1",
+      "session_id": "vJCHRXXkxuA27eFmAAAB"
+     },
+     "rx_router_url_rx_state_": {
+      "scheme": "http",
+      "netloc": "localhost:3140",
+      "origin": "http://localhost:3140",
+      "path": "/",
+      "query": "",
+      "query_parameters": {},
+      "fragment": "",
+      "href": "http://localhost:3140/"
+     },
+     "is_hydrated_rx_state_": false
+    },
+    "reflex___state____state.f1combo___f1combo____with_clock_var": {
+     "wt_ls_rx_state_": "wt-light",
+     "wt_stamp_rx_state_": "1791488414784234564"
+    },
+    "reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid": {
+     "cu_ck_rx_state_": "cu-unset",
+     "cu_id_rx_state_": "10dde6d42aa74b02868405efb0063ebc",
+     "cu_ls_rx_state_": "cu-light",
+     "cu_ss_rx_state_": "cu-x"
+    },
+    "reflex___state____state.f1combo___f1combo____parent_uuid": {
+     "pu_id_rx_state_": "3e071a212e1d474a9aee2dfd79d50db3"
+    },
+    "reflex___state____state.f1combo___f1combo____with_uuid": {
+     "wu_ck_rx_state_": "wu-unset",
+     "wu_id_rx_state_": "bd8cd58e3a4547cd8ab15873f63b96a5",
+     "wu_ls_rx_state_": "wu-light",
+     "wu_ss_rx_state_": "wu-x",
+     "wu_sync_rx_state_": "wu-sync-default"
+    }
+   },
+   "root_has_is_hydrated": true,
+   "root_is_hydrated": false
+  },
+  {
+   "dir": "in",
+   "t": 0.233,
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": {
+     "is_hydrated_rx_state_": true
+    }
+   },
+   "root_has_is_hydrated": true,
+   "root_is_hydrated": true
+  }
+ ],
+ "console_err_warn": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}

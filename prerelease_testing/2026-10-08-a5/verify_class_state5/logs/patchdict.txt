@@ -1,0 +1,3 @@
+reflex 0.9.12    under mock.patch.dict -> filters={'status': 'closed'} _features=['base', 'beta']
+reflex 0.10.0a4  under mock.patch.dict -> filters={'status': 'closed'} _features=['base', 'beta']
+reflex 0.10.0a5  under mock.patch.dict -> filters={'status': 'open'} _features=['base']
