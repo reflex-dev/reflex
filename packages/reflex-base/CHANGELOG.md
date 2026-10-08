@@ -1,3 +1,14 @@
+## v0.10.0a4 (2026-10-08)
+
+### Breaking Changes
+
+- Assigning over a state var's field through its state class raises `TypeError`; change its default on the field in `__fields__` instead. ([#7516](https://github.com/reflex-dev/reflex/issues/7516))
+
+### Bug Fixes
+
+- `sync=True` `rx.LocalStorage` vars no longer bounce between open tabs forever when the value changes while other tabs are loading, or in several tabs at once: a tab no longer writes a value it sent to the backend back over a newer one another tab stored meanwhile. ([#7505](https://github.com/reflex-dev/reflex/issues/7505))
+
+
 ## v0.10.0a3 (2026-10-07)
 
 ### Bug Fixes

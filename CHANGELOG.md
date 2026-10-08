@@ -1,3 +1,10 @@
+## v0.10.0a4 (2026-10-08)
+
+### Breaking Changes
+
+- Assigning a state var through its state class, such as `State.count = 10`, raises `TypeError` instead of replacing the var; so do pytest's `monkeypatch.setattr` and `unittest.mock.patch.object` on a var. Change a default with `State.__fields__["count"].default = 10`, patch the field in tests, and declare class-level configuration as `ClassVar`. ([#7516](https://github.com/reflex-dev/reflex/issues/7516))
+
+
 ## v0.10.0a3 (2026-10-07)
 
 ### Breaking Changes
