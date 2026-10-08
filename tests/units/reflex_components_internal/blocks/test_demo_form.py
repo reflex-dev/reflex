@@ -2,8 +2,10 @@
 
 import re
 
+from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_internal.blocks.demo_form import demo_form, demo_form_dialog
 from reflex_components_internal.blocks.telemetry.posthog import (
+    PHONE_NUMBER_KEY,
     track_demo_form_posthog_submission,
 )
 
@@ -38,7 +40,7 @@ def test_demo_form_dialog_renders_given_trigger() -> None:
 def test_demo_form_asks_for_an_optional_phone_number() -> None:
     """The phone number is a tel input that the form can be submitted without."""
     rendered = str(demo_form())
-    field = re.search(r'name:"phone_number"[^}]*', rendered)
+    field = re.search(rf'name:"{PHONE_NUMBER_KEY}"[^}}]*', rendered)
 
     assert field is not None
     assert 'type:"tel"' in field.group()
@@ -47,6 +49,10 @@ def test_demo_form_asks_for_an_optional_phone_number() -> None:
 
 def test_demo_request_tracking_includes_the_phone_number() -> None:
     """PostHog receives the phone number with the rest of the demo request."""
-    event = str(track_demo_form_posthog_submission({"phone_number": "+15551234567"}))
+    event = track_demo_form_posthog_submission({PHONE_NUMBER_KEY: "+15551234567"})
+    script = {str(name): value for name, value in event.args}["javascript_code"]
+    assert isinstance(script, LiteralStringVar)
+    script = script._var_value
 
-    assert "+15551234567" in event
+    assert "posthog.capture('demo_request', props)" in script
+    assert f'"{PHONE_NUMBER_KEY}": "+15551234567"' in script
