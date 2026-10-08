@@ -73,6 +73,7 @@ from reflex.state import (
     ImmutableStateError,
     OnLoadInternalState,
     State,
+    StateUpdate,
     is_serializable,
     state_snapshot_hashes,
 )
@@ -341,6 +342,32 @@ def test_router_cookies_not_sent_to_frontend(test_state: TestState, method: str)
     assert headers["raw_headers"] == {"user-agent": "browser"}
     assert "secret" not in json_dumps(payload)
     assert test_state.router.headers.cookie == "session=secret"
+
+
+def test_frontend_events_do_not_serialize_request_headers():
+    """Outbound events retain navigation data without leaking request headers."""
+    router_data: dict[str, Any] = {
+        RouteVar.PATH: "/",
+        RouteVar.ORIGIN: "https://example.com/",
+        RouteVar.QUERY: {"name": "test"},
+        RouteVar.HEADERS: {"cookie": "session=secret", "user-agent": "browser"},
+    }
+    frontend_event = Event(
+        name="_call_function",
+        router_data=router_data,
+        payload={"javascript_code": "window.loaded = true"},
+    )
+    update = StateUpdate(events=[frontend_event])
+
+    payload = json.loads(json_dumps(update))
+
+    assert "secret" not in json_dumps(payload)
+    assert payload["events"][0]["router_data"] == {
+        key: router_data[key] for key in constants.ROUTER_DATA_INCLUDE
+    }
+    assert payload["events"][0]["payload"] == frontend_event.payload
+    assert frontend_event.router_data is router_data
+    assert router_data[RouteVar.HEADERS]["cookie"] == "session=secret"
 
 
 @pytest.fixture

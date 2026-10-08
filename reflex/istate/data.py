@@ -3,7 +3,7 @@
 import dataclasses
 from collections.abc import Callable, Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Final, NoReturn
+from typing import TYPE_CHECKING, Any, ClassVar, Final, NoReturn, cast
 from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
 
 from reflex_base import constants
@@ -77,6 +77,15 @@ _HEADER_DATA_FIELDS = frozenset([
     field.name for field in dataclasses.fields(_HeaderData)
 ])
 
+_PRIVATE_HEADERS = frozenset({
+    "cookie",
+    "authorization",
+    "proxy-authorization",
+    "cf-access-jwt-assertion",
+    "x-auth-request-access-token",
+    "x-forwarded-access-token",
+})
+
 
 @dataclasses.dataclass(frozen=True)
 class HeaderData(_HeaderData):
@@ -109,13 +118,13 @@ class HeaderData(_HeaderData):
 
 @serializer(to=dict)
 def _serialize_header_data(obj: HeaderData) -> dict:
-    """Serialize request headers without exposing cookies to the frontend.
+    """Serialize request headers without exposing credentials to the frontend.
 
     Args:
         obj: The headers to serialize.
 
     Returns:
-        The headers with cookies omitted from both representations.
+        The headers with credentials omitted from both representations.
     """
     headers = {
         field.name: getattr(obj, field.name)
@@ -123,13 +132,30 @@ def _serialize_header_data(obj: HeaderData) -> dict:
         if field.name != "cookie"
     }
     headers["raw_headers"] = {
-        key: value for key, value in obj.raw_headers.items() if key.lower() != "cookie"
+        key: value
+        for key, value in obj.raw_headers.items()
+        if key.lower() not in _PRIVATE_HEADERS
     }
     return headers
 
 
 class _HeaderDataVar(ObjectVar[HeaderData], python_types=HeaderData):
     """Frontend headers with deprecated cookie access."""
+
+    def __getitem__(self, key: Var | Any) -> Var:
+        """Resolve indexed cookie access through the deprecated fallback.
+
+        Args:
+            key: The requested header field.
+
+        Returns:
+            The cookie fallback or the requested frontend header field.
+        """
+        if (isinstance(key, str) and key == "cookie") or (
+            isinstance(key, LiteralStringVar) and key._var_value == "cookie"
+        ):
+            return self.cookie
+        return ObjectVar.__getitem__(cast(ObjectVar[Any], self), key)
 
     @property
     def cookie(self) -> StringVar:
@@ -746,13 +772,13 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
         return self._session_var.to(ObjectVar, SessionData)
 
     @property
-    def headers(self) -> ObjectVar[HeaderData]:
+    def headers(self) -> _HeaderDataVar:
         """The headers of the websocket connection request.
 
         Returns:
-            ObjectVar for the ``rx_router_headers`` base var.
+            Header Var for the ``rx_router_headers`` base var.
         """
-        return self._headers_var.to(_HeaderDataVar, HeaderData)
+        return cast(_HeaderDataVar, self._headers_var.to(_HeaderDataVar, HeaderData))
 
     @property
     def page(self) -> ObjectVar[PageData]:

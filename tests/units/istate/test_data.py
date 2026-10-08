@@ -11,7 +11,7 @@ from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.object import ObjectVar
-from reflex_base.vars.sequence import StringVar
+from reflex_base.vars.sequence import LiteralStringVar, StringVar
 
 import reflex as rx
 from reflex.istate.data import HeaderData, ReflexURL, ReflexURLCastedVar, RouterData
@@ -19,16 +19,29 @@ from reflex.istate.data import HeaderData, ReflexURL, ReflexURLCastedVar, Router
 SAMPLE_URL = "https://example.com:3000/posts/123?tab=comments&sort=new#top"
 
 
-@pytest.mark.parametrize("cookie_header", ["cookie", "Cookie", "COOKIE"])
-def test_header_data_does_not_serialize_cookies(cookie_header: str):
-    """Cookie headers stay server-side, including in nested router payloads.
+@pytest.mark.parametrize(
+    "header",
+    [
+        "cookie",
+        "authorization",
+        "proxy-authorization",
+        "cf-access-jwt-assertion",
+        "x-auth-request-access-token",
+        "x-forwarded-access-token",
+    ],
+)
+@pytest.mark.parametrize("casing", ["lower", "title", "upper"])
+def test_header_data_does_not_serialize_credentials(header: str, casing: str):
+    """Credential headers stay server-side, including in nested router payloads.
 
     Args:
-        cookie_header: The case variant of the HTTP cookie header.
+        header: The HTTP header carrying credentials.
+        casing: The case variant of the header name.
     """
+    credential_header = getattr(header, casing)()
     router = RouterData.from_router_data({
         constants.RouteVar.HEADERS: {
-            cookie_header: "session=secret",
+            credential_header: "session=secret",
             "x-custom-header": "public",
         },
     })
@@ -38,25 +51,35 @@ def test_header_data_does_not_serialize_cookies(cookie_header: str):
     assert "cookie" not in payload["headers"]
     assert payload["headers"]["raw_headers"] == {"x-custom-header": "public"}
     assert "secret" not in json_dumps(router.headers)
-    assert router.headers.cookie == "session=secret"
-    assert router.headers.raw_headers[cookie_header] == "session=secret"
+    assert router.headers.cookie == ("session=secret" if header == "cookie" else "")
+    assert router.headers.raw_headers[credential_header] == "session=secret"
     restored = pickle.loads(pickle.dumps(router))
     assert restored.headers == router.headers
 
 
-def test_router_cookie_var_is_deprecated(mocker: MockerFixture):
+@pytest.mark.parametrize("accessor", ["attribute", "item", "literal-item"])
+def test_router_cookie_var_is_deprecated(mocker: MockerFixture, accessor: str):
     """Frontend cookie access warns and has an empty string fallback.
 
     Args:
         mocker: Mock fixture.
+        accessor: The frontend header access syntax.
     """
     deprecate = mocker.patch("reflex.istate.data.console.deprecate")
 
-    assert str(rx.State.router.headers.cookie) == '""'
+    headers = rx.State.router.headers
+    if accessor == "attribute":
+        cookie = headers.cookie
+    else:
+        key = "cookie" if accessor == "item" else LiteralStringVar.create("cookie")
+        cookie = headers[key]
+    assert str(cookie) == '""'
     deprecate.assert_called_once()
     assert "rx.Cookie" in deprecate.call_args.kwargs["reason"]
     deprecate.reset_mock()
 
+    assert str(headers["user_agent"]) == str(headers.user_agent)
+    assert str(headers["raw_headers"]) == str(headers.raw_headers)
     assert HeaderData(cookie="session=secret").cookie == "session=secret"
     deprecate.assert_not_called()
 

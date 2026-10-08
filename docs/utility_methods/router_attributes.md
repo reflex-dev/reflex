@@ -124,9 +124,9 @@ The `self.router` attribute has several sub-attributes that provide various info
   - `sec_websocket_extensions`: The websocket extensions.
   - `accept_encoding`: The accepted encodings.
   - `accept_language`: The accepted languages.
-  - `raw_headers`: A mapping of HTTP headers as a frozen dictionary. The server can access every header; the cookie header is omitted when this mapping is sent to the frontend.
+  - `raw_headers`: A mapping of HTTP headers as a frozen dictionary. The server can access every header. Frontend serialization omits `Cookie`, `Authorization`, `Proxy-Authorization`, `Cf-Access-Jwt-Assertion`, `X-Auth-Request-Access-Token`, and `X-Forwarded-Access-Token`, regardless of case.
 
-Request cookies, including `HttpOnly` cookies, are never included in router data sent to the frontend. Using `State.router.headers.cookie` in a component is deprecated and renders an empty string. Use [rx.Cookie](/docs/client-storage/overview/) for cookies that need to be accessible to the frontend. Server-side access through `self.router.headers.cookie` is unchanged.
+Request cookies, including `HttpOnly` cookies, are never included in router data sent to the frontend. Outbound events retain only navigation metadata; their request headers stay on the server. Using `State.router.headers.cookie` or `State.router.headers["cookie"]` in a component is deprecated and renders an empty string. Filtered keys in `State.router.headers.raw_headers`, including `["cookie"]`, are absent and indexed access evaluates to JavaScript `undefined`; use `.get("cookie", "")` for an empty string fallback. Use [rx.Cookie](/docs/client-storage/overview/) for cookies that need to be accessible to the frontend. Server-side access through `self.router.headers.cookie` is unchanged.
 
 ## URL Attributes
 
