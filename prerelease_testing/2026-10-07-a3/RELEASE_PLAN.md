@@ -1,6 +1,6 @@
 # Release plan after the 0.10.0a3 re-verification (reflex / reflex-base 0.10.0a3 + reflex-enterprise 0.9.7a5)
 
-**Status: FINAL (#7505 merged 10-08 as 03a2e95e7; class-default assignment backed out by #7516, in review)** — every exploration item and all four independent verifications (A3-01..A3-12) are in. Rubric (testing skill): fix before release =
+**Status: FINAL (#7505 merged as 03a2e95e7, #7513 as 9b81d8c3f; class-default assignment backed out by #7516, in review)** — every exploration item and all four independent verifications (A3-01..A3-12) are in. Rubric (testing skill): fix before release =
 confirmed regression vs the previous stable (0.9.12), security-relevant, significant user impact, or trivially small. Evidence:
 [FINDINGS.md](./FINDINGS.md). Supersedes [../2026-10-07/RELEASE_PLAN.md](../2026-10-07/RELEASE_PLAN.md) for everything it re-checked.
 
@@ -34,7 +34,7 @@ No upgrade regression 0.9.12 → a3 or a2 → a3; F-002/F-003/F-004 stay fixed; 
 - **A3-01** (LOW, regression vs a2; CONFIRMED) — PR #7512 closed 10-08: the maintainer decided to back class-level default assignment out of 0.10 instead ([review](https://github.com/reflex-dev/reflex/pull/7512)). **[reflex-dev/reflex#7516](https://github.com/reflex-dev/reflex/pull/7516)** removes the #7461/#7495 assignment layer; `BaseStateMeta.__setattr__` now raises `TypeError` on an assignment over a state var (a ClassVar or new name is fine), defaults are set with `State.__fields__[name].default`, tests patch the field. Breaking vs 0.9.12 (which silently accepted the assignment), documented in the upgrade guide. Original plan, trivially small arm: in `BaseStateMeta.__setattr__`, push the "kept default" undo entry
   before `_keep_client_storage` / `_accepts_default` can raise (so a rejected `mock.patch.object` / pytest-mock patch round-trips), and
   make `__delattr__` and the identity restore pop only an entry that the same patch pushed. The docs already promise the round trip.
-- **A3-06** (LOW, docs; CONFIRMED by a verifier and found independently by two clusters) — **PR [reflex-dev/reflex#7513](https://github.com/reflex-dev/reflex/pull/7513)**: add to the upgrade guide's background-task
+- **A3-06** (LOW, docs; CONFIRMED by a verifier and found independently by two clusters) — **merged 10-08 as [reflex-dev/reflex#7513](https://github.com/reflex-dev/reflex/pull/7513)**: add to the upgrade guide's background-task
   section and the #7312 changelog entry: "Writing a var inherited from a parent state outside `async with self` — directly or through any
   handler — now raises `ImmutableStateError`. On 0.9 it raised nothing: with the in-memory state manager the write landed without the lock,
   with Redis it was silently lost."
