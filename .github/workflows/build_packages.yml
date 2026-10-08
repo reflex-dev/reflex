@@ -27,7 +27,7 @@ jobs:
       builds: ${{ steps.discover.outputs.builds }}
       checkable: ${{ steps.checkable.outputs.packages }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup_build_env
@@ -54,7 +54,7 @@ jobs:
         include: ${{ fromJson(needs.discover.outputs.builds) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-tags: true
           fetch-depth: 0
@@ -94,7 +94,7 @@ jobs:
     steps:
       # fetch-tags/fetch-depth are required: the package is installed editable via
       # uv-dynamic-versioning, which derives the version from git tags/history.
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-tags: true
           fetch-depth: 0
@@ -120,7 +120,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/ci_gate
