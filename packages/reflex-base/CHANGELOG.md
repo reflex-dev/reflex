@@ -1,3 +1,10 @@
+## v0.10.0a5 (2026-10-08)
+
+### Features
+
+- Add `Field.set_default` to change a state var's default, given exactly one of `default` or `default_factory`, such as `State.__fields__["items"].set_default(["a"])`. A mutable `default` is copied when set and again for each instance, so sessions never share it. The `TypeError` for assigning a state var through its class now points at `set_default` on the field of the state that declares the var. ([#7519](https://github.com/reflex-dev/reflex/issues/7519))
+
+
 ## v0.10.0a4 (2026-10-08)
 
 ### Breaking Changes

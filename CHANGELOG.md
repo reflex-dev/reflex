@@ -1,3 +1,14 @@
+## v0.10.0a5 (2026-10-08)
+
+### Deprecations
+
+- Deprecate `State.router.headers.cookie` and `State.router.headers["cookie"]` in components; both now render an empty string. Use `rx.Cookie` for cookies that need to be accessible to the frontend. ([#7360](https://github.com/reflex-dev/reflex/issues/7360))
+
+### Bug Fixes
+
+- Stop sending request cookies, including HttpOnly cookies, and standard authorization, Cloudflare Access, OAuth2 Proxy, AWS ALB, and Google IAP credential headers to frontend router data. On-load events no longer copy request router metadata to the frontend; server-side access to request headers is unchanged. ([#7360](https://github.com/reflex-dev/reflex/issues/7360))
+
+
 ## v0.10.0a4 (2026-10-08)
 
 ### Breaking Changes
