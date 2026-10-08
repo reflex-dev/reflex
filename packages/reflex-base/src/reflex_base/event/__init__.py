@@ -2419,9 +2419,9 @@ def call_event_fn(
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
 
-    # Normalize common heterogeneous event collections into individual events
-    # while keeping other scalar values for validation below.
-    out = list(out) if isinstance(out, (list, tuple)) else [out]
+    # A sequence holds individual events; wrap any other value for validation below.
+    if not is_non_string_sequence(out):
+        out = [out]
 
     def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
         """Wrap a mixed event-like Var into a callable frontend dispatcher.

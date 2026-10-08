@@ -1,7 +1,8 @@
 import json
 import shutil
 import subprocess
-from collections.abc import Callable
+from collections import UserList
+from collections.abc import Callable, Sequence
 from typing import Any, cast
 
 import pytest
@@ -1296,6 +1297,24 @@ def test_event_chain_create_accepts_a_tuple_of_events():
     from_list = EventChain.create(list(events), args_spec=lambda: ())
 
     assert str(LiteralVar.create(from_tuple)) == str(LiteralVar.create(from_list))
+
+
+@pytest.mark.parametrize("sequence_type", [tuple, UserList])
+def test_event_chain_create_lambda_returns_a_sequence_of_events(
+    sequence_type: Callable[[list[Any]], Sequence[Any]],
+):
+    """A lambda returning any sequence of events binds like one returning a list."""
+    events = [_handler_with_arg()(1), rx.console_log("logged")]
+
+    from_sequence = EventChain.create(
+        cast(LambdaEventCallback[()], lambda: sequence_type(events)),
+        args_spec=lambda: (),
+    )
+    from_list = EventChain.create(
+        cast(LambdaEventCallback[()], lambda: events), args_spec=lambda: ()
+    )
+
+    assert str(LiteralVar.create(from_sequence)) == str(LiteralVar.create(from_list))
 
 
 def test_event_chain_create_wraps_plain_function_var_kwargs():
