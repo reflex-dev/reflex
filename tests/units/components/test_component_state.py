@@ -84,8 +84,8 @@ def test_component_state_defaults_from_props():
             Returns:
                 The component using the configured state vars.
             """
-            cls.__fields__["count"].set_default(initial_count)
-            cls.__fields__["labels"].set_default([label])
+            cls.__fields__["count"].set_default(default=initial_count)
+            cls.__fields__["labels"].set_default(default_factory=lambda: [label])
             return rx.text(cls.count, cls.labels)
 
     first = ConfiguredComponentState.create(initial_count=5, label="first")
@@ -129,7 +129,7 @@ def test_component_state_storage_default_per_component():
                 The component showing the preference.
             """
             cls.__fields__["pref"].set_default(
-                rx.LocalStorage(initial, name=f"pref-{initial}", sync=True)
+                default=rx.LocalStorage(initial, name=f"pref-{initial}", sync=True)
             )
             return rx.text(cls.pref)
 

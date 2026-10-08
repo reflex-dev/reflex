@@ -1472,7 +1472,7 @@ def test_class_assignment_error_names_the_declaring_state():
         f"'count' is a state var of {parent}, inherited by {child}; assigning "
         f"it on {child} would replace the var."
     )
-    assert f"{parent}.__fields__['count'].set_default(...)" in message
+    assert f"{parent}.__fields__['count'].set_default(default=...)" in message
     assert "every state that inherits it" in message
     assert f"{child}.__fields__" not in message
 
@@ -1508,7 +1508,7 @@ def test_class_assignment_error_names_the_state_mixing_in_a_var():
             cls.count = 9
         message = str(exc_info.value)
         assert message.startswith(f"'count' is a state var of {declared}; "), cls
-        assert f"{owner}.__fields__['count'].set_default(...)" in message
+        assert f"{owner}.__fields__['count'].set_default(default=...)" in message
     assert Mixed.get_fields()["count"] is not Mixin.get_fields()["count"]
 
 
@@ -1521,27 +1521,29 @@ def test_class_assignment_error_suggests_set_default():
     for value in (["a"], ("a",)):
         with pytest.raises(TypeError) as exc_info:
             S.items = value  # pyright: ignore[reportAttributeAccessIssue]
-        assert f"{S.__name__}.__fields__['items'].set_default(...)" in str(
+        assert f"{S.__name__}.__fields__['items'].set_default(default=...)" in str(
             exc_info.value
         )
 
 
 def test_field_set_default():
-    """set_default copies a mutable value per instance and keeps one kind of default."""
+    """set_default copies a mutable default per instance and keeps one kind of default."""
 
     class S(BaseState):
         count: int = 0
         items: list[str] = []
         maybe: list[str] | None = None
+        stamp: list[int] = []
 
     fields = S.get_fields()
-    fields["count"].set_default(5)
+    fields["count"].set_default(default=5)
     assert (fields["count"].default, fields["count"].default_factory) == (5, None)
     assert S().count == 5
 
-    # A mutable value replaces a set default with a factory copying the value.
+    # A mutable default replaces a set default with a factory copying the value
+    # as it was when set.
     value = ["a"]
-    fields["maybe"].set_default(value)
+    fields["maybe"].set_default(default=value)
     assert fields["maybe"].default is dataclasses.MISSING
     first, second = S(), S()
     assert first.maybe is not value
@@ -1551,11 +1553,38 @@ def test_field_set_default():
     assert second.maybe == ["a"]
     assert S().maybe == ["a"]
 
-    # An immutable value replaces a factory.
-    fields["items"].set_default(("x",))
+    # An immutable default replaces a factory.
+    fields["items"].set_default(default=("x",))
     assert fields["items"].default == ("x",)
     assert fields["items"].default_factory is None
     assert S().items == ("x",)
+
+    # A factory replaces a set default and is called for each instance.
+    calls = iter(range(10))
+    fields["count"].set_default(default_factory=lambda: next(calls))
+    assert fields["count"].default is dataclasses.MISSING
+    assert (S().count, S().count) == (0, 1)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [{}, {"default": 1, "default_factory": lambda: 1}],
+    ids=["neither", "both"],
+)
+def test_field_set_default_takes_exactly_one(kwargs: dict[str, Any]):
+    """set_default needs exactly one of default and default_factory.
+
+    Args:
+        kwargs: The arguments passed to set_default.
+    """
+
+    class S(BaseState):
+        count: int = 0
+
+    field = S.get_fields()["count"]
+    with pytest.raises(TypeError, match="exactly one of default or default_factory"):
+        field.set_default(**kwargs)
+    assert (field.default, field.default_factory) == (0, None)
 
 
 def test_class_assignment_of_other_attributes_is_allowed():

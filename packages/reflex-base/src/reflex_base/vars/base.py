@@ -4090,20 +4090,36 @@ class Field(Generic[FIELD_TYPE]):
         """
         return cls(annotated_type=annotated_type, **_default_arguments(value))
 
-    def set_default(self, value: FIELD_TYPE) -> None:
-        """Set the default value of the field, replacing its default or factory.
+    def set_default(
+        self,
+        *,
+        default: FIELD_TYPE | MISSING_TYPE = MISSING,
+        default_factory: Callable[[], FIELD_TYPE] | MISSING_TYPE = MISSING,
+    ) -> None:
+        """Set the default of the field, replacing its default or factory.
 
-        A mutable value, like a list, is copied now and then deep-copied for
-        each instance, so neither the caller nor any two instances share it; an
-        immutable value is used as is. The change applies to values not yet
-        stored on an instance, such as in a new session or after ``reset()``.
+        A mutable default, like a list, becomes a factory returning a copy of
+        the value as it was when set, so no two instances share it. The change
+        applies to values not yet stored on an instance, such as in a new
+        session or after ``reset()``.
 
         Args:
-            value: The new default value.
+            default: The new default value.
+            default_factory: A function building the default for each instance.
+
+        Raises:
+            TypeError: If not exactly one of default and default_factory is given.
         """
-        arguments = _default_arguments(value)
-        self.default = arguments["default"]
-        self.default_factory = arguments["default_factory"]
+        if (default is MISSING) == (default_factory is MISSING):
+            msg = "set_default takes exactly one of default or default_factory."
+            raise TypeError(msg)
+        if default_factory is MISSING:
+            arguments = _default_arguments(default)
+            self.default = arguments["default"]
+            self.default_factory = arguments["default_factory"]
+        else:
+            self.default = MISSING
+            self.default_factory = default_factory
 
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
@@ -4713,7 +4729,8 @@ def _state_var_assignment_error(cls: type, field: Field, action: str) -> TypeErr
     return TypeError(
         f"{field._name!r} is a state var of {declared} would replace the var. "
         f"Set its default with {owner.__name__}.__fields__[{field._name!r}]"
-        f".set_default(...){scope}, or declare class-level config as ClassVar."
+        f".set_default(default=...){scope}, or declare class-level config as "
+        "ClassVar."
     )
 
 

@@ -62,14 +62,14 @@ class State(rx.State):
     _client: ClassVar[httpx.AsyncClient | None] = None
 
 
-State.__fields__["count"].set_default(10)
+State.__fields__["count"].set_default(default=10)
 State._client = httpx.AsyncClient()  # a ClassVar stays an ordinary class attribute
 
 with mock.patch.object(State.__fields__["count"], "default", 99):
     ...
 ```
 
-On 0.9, assigning `State.__fields__["items"].default = []` was safe, because each instance got a copy of the default. In 0.10 every instance shares the field's `default`, so a mutable value assigned there leaks changes between sessions. `set_default` copies a mutable value for each instance.
+On 0.9, assigning `State.__fields__["items"].default = []` was safe, because each instance got a copy of the default. In 0.10 every instance shares the field's `default`, so a mutable value assigned there leaks changes between sessions. `set_default(default=[])` copies a mutable value for each instance.
 
 [Changing Defaults](/docs/vars/base-vars/#changing-defaults) has the details, including browser storage vars.
 
