@@ -52,3 +52,11 @@ echo is still written. Result: it does **not** stop the loop. PR Playwright test
 1/3 runs stormed (~3.5k storage events per tab, tabs split s3/s2); `/stamp 6` 2/3 stormed (32–36k frames per 5 s), the third
 converged after 1,737 frames (PR: ~100). Writing a stale echo flips storage and the other tab answers that flip, so a frontend
 fix has to recognise and skip stale echoes, which needs a record of the values sent.
+
+## Final head 4cfafa359 (10-08): design kept, tightened
+
+After the lean-variant result the maintainer kept the design and asked for it to be as tight as possible. Since d03ddb107:
+c38383dc8 ignores session-storage `storage` events (cubic); 05f0e4bfd tracks this tab's writes by storage name (Greptile: a write
+through a non-synced var sharing a synced var's `name` was missed; new `[shared_name]` test fails on c38383dc8); 4cfafa359 is a
+no-behaviour-change cleanup of the code and tests. `results/4cfafa359/`: explorer 24/24 converge, 0 storms (storm dev 71–83 frames,
+prod 95; stamp dev6 83–107, dev3 33–51, prod6 89–111); verifier 13/13, 0 storms, race fired 7/7. Playwright 24/24, Selenium 23/23.

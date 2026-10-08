@@ -196,7 +196,7 @@ Numbered A3-xx. "Pending verification" until a `verify_*` item reports.
   overrides, but never write back an unchanged echo (the verifier's scratch patch of the compiled state.js: 0 storms).
 - **Fix prototyped (10-07, at the maintainer's request)** on branch `claude/a3-11-storage-echo` (frontend only, `state.js`): do not write
   an echoed localStorage value back unless the value stored now is one the tab itself wrote after sending it (cookies and session
-  storage written as before); on a storage event send the value stored now, not `e.newValue`. Final commit d03ddb107 vs published
+  storage written as before); on a storage event send the value stored now, not `e.newValue`. Final head 4cfafa359 vs published
   a3: storm driver dev 0/5 (a3 3/4), prod 0/3; `on_load` stamps (A3-12) 0 storms in 16 runs, all converge (a3 4/4 storms); verifier
   100 ms RTT and dev-reload scenarios 0 storms in 13 runs (race fired in all 7 click runs). Playwright regression tests fail on main.
   PR [reflex-dev/reflex#7505](https://github.com/reflex-dev/reflex/pull/7505); design history in `a3_hydration/pr7505/NOTES.md`.

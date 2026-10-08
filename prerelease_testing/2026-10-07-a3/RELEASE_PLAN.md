@@ -1,6 +1,6 @@
 # Release plan after the 0.10.0a3 re-verification (reflex / reflex-base 0.10.0a3 + reflex-enterprise 0.9.7a5)
 
-**Status: FINAL (#7505 pushed at d03ddb107, awaiting CI/review)** — every exploration item and all four independent verifications (A3-01..A3-12) are in. Rubric (testing skill): fix before release =
+**Status: FINAL (#7505 at 4cfafa359, awaiting CI/review)** — every exploration item and all four independent verifications (A3-01..A3-12) are in. Rubric (testing skill): fix before release =
 confirmed regression vs the previous stable (0.9.12), security-relevant, significant user impact, or trivially small. Evidence:
 [FINDINGS.md](./FINDINGS.md). Supersedes [../2026-10-07/RELEASE_PLAN.md](../2026-10-07/RELEASE_PLAN.md) for everything it re-checked.
 
@@ -27,7 +27,7 @@ No upgrade regression 0.9.12 → a3 or a2 → a3; F-002/F-003/F-004 stay fixed; 
   can leave localStorage on the old value; A3-12 is set off by any dev save/deploy/restart with ≥4 tabs whose on_load stamps a synced
   var). **Decided 10-07: fix in 0.10.0** — [reflex-dev/reflex#7505](https://github.com/reflex-dev/reflex/pull/7505) (frontend only: an echo
   is written back only over a value the tab itself stored after sending it, storage events send the stored value; final commit
-  d03ddb107: 0 storms and full convergence in 37/37 matrix runs dev/prod incl. 100 ms RTT and dev reload; Playwright regression tests
+  4cfafa359: 0 storms and full convergence in 37/37 matrix runs dev/prod incl. 100 ms RTT and dev reload; Playwright regression tests
   fail on main). Two intermediate designs were rejected during review (one reintroduced the storm, one lost a value when the socket
   reply beat the `storage` event) — [a3_hydration/pr7505/NOTES.md](./a3_hydration/pr7505/NOTES.md).
 - **A3-01** (LOW, regression vs a2; CONFIRMED) — trivially small arm: in `BaseStateMeta.__setattr__`, push the "kept default" undo entry
