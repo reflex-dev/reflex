@@ -162,6 +162,29 @@ def serializer(
     return wrapper
 
 
+@functools.lru_cache
+def _dataclass_serializer(type_: type) -> Serializer | None:
+    """Get the fallback serializer of a dataclass type.
+
+    A dataclass without a registered serializer is serialized to a dict of its
+    fields. The field names are resolved once per type, not once per instance.
+
+    Args:
+        type_: The type to get the serializer for.
+
+    Returns:
+        The serializer for instances of the type, or None if it is not a dataclass.
+    """
+    if not dataclasses.is_dataclass(type_):
+        return None
+    names = tuple(field.name for field in dataclasses.fields(type_))
+
+    def serialize_dataclass(value: Any) -> dict[str, Any]:
+        return {name: getattr(value, name) for name in names}
+
+    return serialize_dataclass
+
+
 @overload
 def serialize(
     value: Any, get_type: Literal[True]
@@ -188,13 +211,15 @@ def serialize(
     Returns:
         The serialized value, or None if a serializer is not found.
     """
-    # Get the serializer for the type.
-    serializer = get_serializer(type(value))
+    type_ = type(value)
 
-    # If there is no serializer, return None.
+    # Get the serializer for the type.
+    serializer = get_serializer(type_)
+
+    # If there is no serializer, dataclasses serialize to their fields.
     if serializer is None:
-        if dataclasses.is_dataclass(value) and not isinstance(value, type):
-            return {k.name: getattr(value, k.name) for k in dataclasses.fields(value)}
+        if (serializer := _dataclass_serializer(type_)) is not None:
+            return serializer(value)
 
         if get_type:
             return None, None
@@ -205,7 +230,7 @@ def serialize(
 
     # Return the serialized value and the type.
     if get_type:
-        return serialized, get_serializer_type(type(value))
+        return serialized, get_serializer_type(type_)
     return serialized
 
 

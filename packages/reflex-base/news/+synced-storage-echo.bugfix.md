@@ -1,0 +1,1 @@
+`sync=True` `rx.LocalStorage` vars no longer bounce between open tabs forever when the value changes while other tabs are loading, or in several tabs at once: a tab no longer writes a value it sent to the backend back over a newer one another tab stored meanwhile.

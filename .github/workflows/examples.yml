@@ -82,7 +82,7 @@ jobs:
       - name: Install reflex 0.8.23 into a fresh venv
         run: |
           uv venv --python 3.12 "$RUNNER_TEMP/reflex-0.8.23"
-          uv pip install --python "$RUNNER_TEMP/reflex-0.8.23/bin/python" "reflex==0.8.23"
+          uv pip install --python "$RUNNER_TEMP/reflex-0.8.23/bin/python" "reflex==0.8.23" "plotly>=6.0,<7.0"
           echo "$RUNNER_TEMP/reflex-0.8.23/bin" >> "$GITHUB_PATH"
       - name: Show the reflex under test
         working-directory: examples/playground
